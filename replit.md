@@ -17,12 +17,11 @@ New Audio 360 is a premium, 100% offline mobile music player application built a
 
 **Native Android Implementation:**
 - This is a **pure native Android app** (Kotlin)
-- **NO Expo** - Do not use Expo SDK or any Expo modules (all Expo dependencies removed)
-- **NO Metro Bundler** - Do not use React Native's Metro bundler (removed from project)
-- **NO React Native** - Pure native Android, not React Native
-- **Build via GitHub Actions** - Use `github-workflow-build-android.yml` for APK generation
+- **NO Expo** - Do not use Expo SDK or any Expo modules
+- **NO Metro Bundler** - Do not use React Native's Metro bundler
+- **Traditional GitHub workflow** - Use standard Android development practices with Gradle builds
+- Build and distribute via GitHub releases/Actions for APK generation
 - Use native Android components (Kotlin/Java) with Android SDK
-- All development happens in `android/` directory using Gradle
 
 ## User Preferences
 
