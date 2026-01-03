@@ -11,10 +11,6 @@ run = ["npm", "run", "server:prod"]
 
 [[ports]]
 localPort = 5000
-externalPort = 5000
-
-[[ports]]
-localPort = 8081
 externalPort = 80
 
 [[ports]]
@@ -47,14 +43,11 @@ mode = "parallel"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run server:dev"
+args = "npm run dev"
 waitForPort = 5000
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run expo:dev"
-waitForPort = 8081
-ensurePreviewReachable = "/status"
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [userenv]
 
