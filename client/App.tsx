@@ -1,112 +1,46 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { KeyboardProvider } from "react-native-keyboard-controller";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import RootStackNavigator from "@/navigation/RootStackNavigator";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { UiSoundProvider } from "@/contexts/UiSoundContext";
-import { PlayerProvider } from "@/contexts/PlayerContext";
-import { MediaLibraryProvider, useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
-import SplashScreen from "@/screens/SplashScreen";
-import LoadingScreen from "@/screens/LoadingScreen";
-import PermissionOnboardingScreen from "@/screens/PermissionOnboardingScreen";
+const queryClient = new QueryClient();
 
-type AppState = "splash" | "loading" | "checkingOnboarding" | "onboarding" | "ready";
-
-function AppContent() {
-  const [appState, setAppState] = useState<AppState>("splash");
-  const { isOnboardingComplete, isLoading, completeOnboarding, skipOnboarding } = useMediaLibraryContext();
-
-  const handleSplashFinish = () => {
-    setAppState("loading");
-    setTimeout(() => {
-      setAppState("checkingOnboarding");
-    }, 800);
-  };
-
-  useEffect(() => {
-    if (appState === "checkingOnboarding") {
-      if (isOnboardingComplete) {
-        setAppState("ready");
-      } else {
-        setAppState("onboarding");
-      }
-    }
-  }, [appState, isOnboardingComplete]);
-
-  const handleOnboardingComplete = async () => {
-    setAppState("loading");
-    await completeOnboarding();
-    setTimeout(() => {
-      setAppState("ready");
-    }, 500);
-  };
-
-  const handleOnboardingSkip = async () => {
-    setAppState("loading");
-    await skipOnboarding();
-    setTimeout(() => {
-      setAppState("ready");
-    }, 500);
-  };
-
-  if (appState === "splash") {
-    return <SplashScreen onFinish={handleSplashFinish} />;
-  }
-
-  if (appState === "loading" || appState === "checkingOnboarding") {
-    const message = isLoading ? "Loading your music..." : "Preparing your music...";
-    return <LoadingScreen message={message} />;
-  }
-
-  if (appState === "onboarding") {
-    return (
-      <PermissionOnboardingScreen
-        onComplete={handleOnboardingComplete}
-        onSkip={handleOnboardingSkip}
-      />
-    );
-  }
-
+function HomePage() {
   return (
-    <>
-      <NavigationContainer>
-        <RootStackNavigator />
-      </NavigationContainer>
-      <StatusBar style="auto" />
-    </>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6">
+      <div className="text-center space-y-6">
+        <h1 className="text-4xl font-bold text-white">New Audio 360</h1>
+        <p className="text-gray-400 text-lg max-w-md">
+          Premium offline music player - 100% device-local
+        </p>
+        <div className="flex flex-col gap-4 mt-8">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            <h2 className="text-xl font-semibold text-white mb-2">Listen</h2>
+            <p className="text-gray-400">Play your local music files</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            <h2 className="text-xl font-semibold text-white mb-2">Library</h2>
+            <p className="text-gray-400">Organize songs, albums, playlists</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            <h2 className="text-xl font-semibold text-white mb-2">Sound Lab</h2>
+            <p className="text-gray-400">Equalizer and audio effects</p>
+          </div>
+        </div>
+        <p className="text-gray-500 text-sm mt-8">
+          Build for Android/iOS via GitHub Actions
+        </p>
+      </div>
+    </div>
   );
 }
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <SafeAreaProvider>
-        <GestureHandlerRootView style={styles.root}>
-          <KeyboardProvider>
-            <ThemeProvider>
-              <UiSoundProvider>
-                <MediaLibraryProvider>
-                  <PlayerProvider>
-                    <AppContent />
-                  </PlayerProvider>
-                </MediaLibraryProvider>
-              </UiSoundProvider>
-            </ThemeProvider>
-          </KeyboardProvider>
-        </GestureHandlerRootView>
-      </SafeAreaProvider>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-});
