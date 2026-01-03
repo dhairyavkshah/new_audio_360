@@ -2,7 +2,18 @@
 
 ## Overview
 
-New Audio 360 is a premium, 100% offline mobile music player application built with Expo React Native. Its core purpose is to provide audio enthusiasts with a full-featured, device-local music experience. Key capabilities include a robust music player ("Listen Mode"), comprehensive music organization ("Library"), professional sound customization ("Sound Lab"), and extensive personalization through 55 themes. The project aims to offer a high-quality, private, and fully self-contained music experience without relying on any external servers, cloud services, or internet connectivity.
+New Audio 360 is a premium, 100% offline mobile music player application built as a **pure native Android app**. Its core purpose is to provide audio enthusiasts with a full-featured, device-local music experience. Key capabilities include a robust music player ("Listen Mode"), comprehensive music organization ("Library"), professional sound customization ("Sound Lab"), and extensive personalization through 55 themes. The project aims to offer a high-quality, private, and fully self-contained music experience without relying on any external servers, cloud services, or internet connectivity.
+
+## Project Rules
+
+**CRITICAL - Native Android Only:**
+- This is a **purely device-local native Android app**
+- **NO Expo** - Do not use Expo SDK or any Expo modules
+- **NO Metro Bundler** - Do not use React Native's Metro bundler
+- **NO Server** - Purely client-side logic only, no backend/server components whatsoever
+- **Traditional GitHub workflow** - Use standard Android development practices with Gradle builds
+- Build and distribute via GitHub releases/Actions for APK generation
+- Use native Android components (Kotlin/Java) with Android SDK
 
 ## User Preferences
 
@@ -10,15 +21,16 @@ I prefer concise and direct communication. When making changes, prioritize core 
 
 ## System Architecture
 
-The application is built using Expo React Native, ensuring a fully offline and device-local experience. There is no backend server, API calls, or cloud integration; all data persists locally via AsyncStorage. The UI/UX adheres to the Microsoft Fluent 2 design system (v5.0), emphasizing clarity, consistency, and adaptability, with a comprehensive theming system offering 55 unique skins.
+The application is built as a **pure native Android app** (Kotlin), ensuring a fully offline and device-local experience. There is no backend server, API calls, or cloud integration; all data persists locally via SharedPreferences/Room database. The UI/UX adheres to the Microsoft Fluent 2 design system (v5.0), emphasizing clarity, consistency, and adaptability, with a comprehensive theming system offering 55 unique skins.
 
 **Technical Implementations:**
-- **Frontend Framework**: Expo SDK with React Navigation 7+.
-- **State Management**: React hooks and Context API.
-- **Data Persistence**: AsyncStorage for all local data storage (favorites, recently played, settings, playlists).
-- **Styling**: React Native StyleSheet, implementing Fluent 2 design tokens for colors, typography, spacing, and component variants.
-- **Audio Playback**: `expo-audio` for local device audio file playback.
-- **Media Access**: `expo-media-library` for reading audio files from device storage.
+- **Platform**: Native Android (Kotlin)
+- **Build System**: Gradle with Android Gradle Plugin
+- **State Management**: ViewModel + LiveData/StateFlow
+- **Data Persistence**: Room database and SharedPreferences for local storage
+- **Styling**: Material Design 3 components customized for Fluent 2 design tokens
+- **Audio Playback**: Android MediaPlayer/ExoPlayer for local audio file playback
+- **Media Access**: MediaStore API for reading audio files from device storage
 
 **Navigation Structure:**
 The app features a 3-tab navigation structure:
@@ -38,11 +50,12 @@ The app features a 3-tab navigation structure:
 
 ## External Dependencies
 
-The project relies exclusively on client-side Expo modules and standard React Native libraries for its functionality, maintaining a strict offline-first architecture.
+The project relies exclusively on native Android libraries, maintaining a strict offline-first architecture with no external network dependencies.
 
-- **Expo SDK**: Core framework for development.
-- **React Navigation**: For app navigation flow.
-- **AsyncStorage**: For local data persistence.
-- **expo-audio**: For audio playback from device storage.
-- **expo-media-library**: For accessing and managing local audio files on the device.
-- **MaterialCommunityIcons**: For iconography across the application.
+- **Android SDK**: Core platform for development (minSdk 24+, targetSdk 34)
+- **Kotlin**: Primary programming language
+- **Jetpack Libraries**: Navigation, ViewModel, LiveData, Room
+- **Material Design 3**: For UI components (customized for Fluent 2)
+- **ExoPlayer/MediaPlayer**: For audio playback from device storage
+- **MediaStore API**: For accessing and managing local audio files on the device
+- **Material Icons**: For iconography across the application

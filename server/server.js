@@ -1,13 +1,15 @@
 import express from "express";
-import type { Request, Response, NextFunction } from "express";
-import * as fs from "fs";
-import * as path from "path";
-import * as http from "http";
+import fs from "fs";
+import path from "path";
+import http from "http";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const log = console.log;
 
-function getAppName(): string {
+function getAppName() {
   try {
     const appJsonPath = path.resolve(process.cwd(), "app.json");
     const appJsonContent = fs.readFileSync(appJsonPath, "utf-8");
@@ -18,12 +20,12 @@ function getAppName(): string {
   }
 }
 
-function serveLandingPage(req: Request, res: Response) {
+function serveLandingPage(req, res) {
   const templatePath = path.resolve(
     process.cwd(),
     "server",
     "templates",
-    "landing-page.html",
+    "landing-page.html"
   );
   const landingPageTemplate = fs.readFileSync(templatePath, "utf-8");
   const appName = getAppName();
@@ -37,7 +39,7 @@ function serveLandingPage(req: Request, res: Response) {
 app.get("/", serveLandingPage);
 app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
 
-app.use((_req: Request, res: Response) => {
+app.use((req, res) => {
   res.redirect("/");
 });
 
@@ -50,6 +52,6 @@ server.listen(
     host: "0.0.0.0",
   },
   () => {
-    log(`Native Android project info page serving on port ${port}`);
-  },
+    console.log(`Native Android project info page serving on port ${port}`);
+  }
 );
