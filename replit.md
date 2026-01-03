@@ -6,11 +6,19 @@ New Audio 360 is a premium, 100% offline mobile music player application built a
 
 ## Project Rules
 
-**CRITICAL - Native Android Only:**
-- This is a **purely device-local native Android app**
+### CRITICAL - 100% LOCAL-DEVICE ONLY (MANDATORY)
+
+**This app is PURELY LOCAL - NO SERVER, NO CLOUD, NO NETWORK:**
+- **NO Server/Backend** - Absolutely no server-side logic, no backend, no API endpoints
+- **NO Cloud Services** - No Firebase, no AWS, no any cloud database or storage
+- **NO Network Requests** - No HTTP calls, no WebSockets, no internet connectivity required
+- **NO Web App** - This is NOT a web application; do not create web endpoints or web UI
+- **ALL Data Stays on Device** - All user data, settings, and media stored locally only
+
+**Native Android Implementation:**
+- This is a **pure native Android app** (Kotlin)
 - **NO Expo** - Do not use Expo SDK or any Expo modules
 - **NO Metro Bundler** - Do not use React Native's Metro bundler
-- **NO Server** - Purely client-side logic only, no backend/server components whatsoever
 - **Traditional GitHub workflow** - Use standard Android development practices with Gradle builds
 - Build and distribute via GitHub releases/Actions for APK generation
 - Use native Android components (Kotlin/Java) with Android SDK
