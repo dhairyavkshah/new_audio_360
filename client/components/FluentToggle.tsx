@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import { View, StyleSheet, Pressable, Animated, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useThemeContext } from "@/contexts/ThemeContext";
+import { useUiSound } from "@/contexts/UiSoundContext";
 import { Fluent2Tokens } from "@/constants/theme";
 
 interface FluentToggleProps {
@@ -30,6 +31,7 @@ export function FluentToggle({
   size = 'default',
 }: FluentToggleProps) {
   const { theme, isDark } = useThemeContext();
+  const { playTickSound } = useUiSound();
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [hoverActive, setHoverActive] = useState(false);
@@ -97,6 +99,7 @@ export function FluentToggle({
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    playTickSound();
     onValueChange(!value);
   };
 

@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useState, useCallback } from "react";
 import { StyleSheet, Pressable, ViewStyle, StyleProp, Platform } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -10,6 +10,7 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useSkin } from "@/contexts/ThemeContext";
+import { useUiSound } from "@/contexts/UiSoundContext";
 import { Spacing, BorderRadius, Fluent2Tokens } from "@/constants/theme";
 
 type ButtonVariant = 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'subtle';
@@ -66,6 +67,7 @@ export function Button({
 }: ButtonProps) {
   const { theme, isDark } = useTheme();
   const { shapes } = useSkin();
+  const { playKeypressSound } = useUiSound();
   const scale = useSharedValue(1);
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
@@ -74,6 +76,13 @@ export function Button({
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
+
+  const handlePress = useCallback(() => {
+    if (!disabled && onPress) {
+      playKeypressSound();
+      onPress();
+    }
+  }, [disabled, onPress, playKeypressSound]);
 
   const handlePressIn = () => {
     if (!disabled) {
@@ -212,7 +221,7 @@ export function Button({
 
   return (
     <AnimatedPressable
-      onPress={disabled ? undefined : onPress}
+      onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onHoverIn={handleHoverIn}

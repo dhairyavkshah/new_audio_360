@@ -1,20 +1,24 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { useAudioPlayer } from 'expo-audio';
 import { getUiSoundEnabled, setUiSoundEnabled as saveUiSoundEnabled } from '@/lib/storage';
 
 interface UiSoundContextValue {
   uiSoundEnabled: boolean;
   setUiSoundEnabled: (enabled: boolean) => void;
+  playTickSound: () => void;
+  playKeypressSound: () => void;
   playTapSound: () => void;
 }
 
 const UiSoundContext = createContext<UiSoundContextValue | undefined>(undefined);
 
-const TAP_SOUND_URI = 'https://cdn.jsdelivr.net/npm/ion-sound@3.0.7/sounds/water_droplet.mp3';
+const tickSound = require('@/assets/sounds/tick.ogg');
+const keypressSound = require('@/assets/sounds/keypress.ogg');
 
 export function UiSoundProvider({ children }: { children: ReactNode }) {
   const [uiSoundEnabled, setUiSoundEnabledState] = useState(false);
-  const player = useAudioPlayer(TAP_SOUND_URI);
+  const tickPlayer = useAudioPlayer(tickSound);
+  const keypressPlayer = useAudioPlayer(keypressSound);
 
   useEffect(() => {
     getUiSoundEnabled().then(setUiSoundEnabledState);
@@ -25,19 +29,40 @@ export function UiSoundProvider({ children }: { children: ReactNode }) {
     saveUiSoundEnabled(enabled);
   }, []);
 
-  const playTapSound = useCallback(() => {
-    if (uiSoundEnabled && player) {
+  const playTickSound = useCallback(() => {
+    if (uiSoundEnabled && tickPlayer) {
       try {
-        player.seekTo(0);
-        player.play();
+        tickPlayer.seekTo(0);
+        tickPlayer.play();
       } catch (error) {
         // Silently fail if sound can't play
       }
     }
-  }, [uiSoundEnabled, player]);
+  }, [uiSoundEnabled, tickPlayer]);
+
+  const playKeypressSound = useCallback(() => {
+    if (uiSoundEnabled && keypressPlayer) {
+      try {
+        keypressPlayer.seekTo(0);
+        keypressPlayer.play();
+      } catch (error) {
+        // Silently fail if sound can't play
+      }
+    }
+  }, [uiSoundEnabled, keypressPlayer]);
+
+  const playTapSound = useCallback(() => {
+    playKeypressSound();
+  }, [playKeypressSound]);
 
   return (
-    <UiSoundContext.Provider value={{ uiSoundEnabled, setUiSoundEnabled, playTapSound }}>
+    <UiSoundContext.Provider value={{ 
+      uiSoundEnabled, 
+      setUiSoundEnabled, 
+      playTickSound,
+      playKeypressSound,
+      playTapSound,
+    }}>
       {children}
     </UiSoundContext.Provider>
   );
