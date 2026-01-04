@@ -1,16 +1,15 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated, Easing } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ThemedText } from "@/components/ThemedText";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing } from "@/constants/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
+import { FluentText } from "@/components/fluent2/FluentText";
 
 type LoadingScreenProps = {
   message?: string;
 };
 
 export default function LoadingScreen({ message = "Loading..." }: LoadingScreenProps) {
-  const { theme } = useThemeContext();
+  const { colors, spacing } = useFluent2Theme();
   const spinAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -56,7 +55,7 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <Animated.View
         style={[
           styles.iconContainer,
@@ -65,11 +64,15 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
           },
         ]}
       >
-        <MaterialCommunityIcons name="music-circle" size={64} color={theme.primary} />
+        <Ionicons name="musical-notes" size={64} color={colors.brand.primary} />
       </Animated.View>
-      <ThemedText type="body" style={[styles.message, { color: theme.textSecondary }]}>
+      <FluentText 
+        variant="body1" 
+        color="secondary" 
+        style={{ marginTop: spacing.xl, textAlign: 'center' }}
+      >
         {message}
-      </ThemedText>
+      </FluentText>
     </View>
   );
 }
@@ -81,9 +84,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   iconContainer: {
-    marginBottom: Spacing.size5,
-  },
-  message: {
-    textAlign: "center",
+    marginBottom: 16,
   },
 });

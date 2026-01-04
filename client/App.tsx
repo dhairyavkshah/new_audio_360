@@ -8,8 +8,7 @@ import { StatusBar } from "expo-status-bar";
 
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { UiSoundProvider } from "@/contexts/UiSoundContext";
+import { Fluent2ThemeProvider, useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
 import { PlayerProvider } from "@/contexts/PlayerContext";
 import { MediaLibraryProvider, useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import SplashScreen from "@/screens/SplashScreen";
@@ -19,6 +18,7 @@ import PermissionOnboardingScreen from "@/screens/PermissionOnboardingScreen";
 type AppState = "splash" | "loading" | "checkingOnboarding" | "onboarding" | "ready";
 
 function AppContent() {
+  const { isDark } = useFluent2Theme();
   const [appState, setAppState] = useState<AppState>("splash");
   const { isOnboardingComplete, isLoading, completeOnboarding, skipOnboarding } = useMediaLibraryContext();
 
@@ -75,10 +75,10 @@ function AppContent() {
 
   return (
     <>
+      <StatusBar style={isDark ? "light" : "dark"} />
       <NavigationContainer>
         <RootStackNavigator />
       </NavigationContainer>
-      <StatusBar style="auto" />
     </>
   );
 }
@@ -89,15 +89,13 @@ export default function App() {
       <SafeAreaProvider>
         <GestureHandlerRootView style={styles.root}>
           <KeyboardProvider>
-            <ThemeProvider>
-              <UiSoundProvider>
-                <MediaLibraryProvider>
-                  <PlayerProvider>
-                    <AppContent />
-                  </PlayerProvider>
-                </MediaLibraryProvider>
-              </UiSoundProvider>
-            </ThemeProvider>
+            <Fluent2ThemeProvider>
+              <MediaLibraryProvider>
+                <PlayerProvider>
+                  <AppContent />
+                </PlayerProvider>
+              </MediaLibraryProvider>
+            </Fluent2ThemeProvider>
           </KeyboardProvider>
         </GestureHandlerRootView>
       </SafeAreaProvider>

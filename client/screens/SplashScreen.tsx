@@ -1,16 +1,15 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated } from "react-native";
 import { Image } from "expo-image";
-import { ThemedText } from "@/components/ThemedText";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
+import { FluentText } from "@/components/fluent2/FluentText";
 
 type SplashScreenProps = {
   onFinish: () => void;
 };
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
-  const { theme } = useThemeContext();
+  const { colors, spacing, radius } = useFluent2Theme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
@@ -43,7 +42,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <Animated.View
         style={[
           styles.content,
@@ -53,24 +52,24 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           },
         ]}
       >
-        <View style={[styles.iconContainer, { backgroundColor: theme.primary }]}>
+        <View style={[styles.iconContainer, { backgroundColor: colors.brand.primary, borderRadius: radius.xl }]}>
           <Image
             source={require("../../assets/images/icon.png")}
             style={styles.icon}
             contentFit="contain"
           />
         </View>
-        <ThemedText type="h1" style={styles.title}>
+        <FluentText variant="title2" style={{ marginTop: spacing.xl, textAlign: 'center' }}>
           New Audio 360
-        </ThemedText>
-        <ThemedText type="body" style={[styles.tagline, { color: theme.textSecondary }]}>
+        </FluentText>
+        <FluentText variant="body1" color="secondary" style={{ marginTop: spacing.sm, textAlign: 'center' }}>
           Your personal music experience
-        </ThemedText>
+        </FluentText>
       </Animated.View>
-      <View style={styles.footer}>
-        <ThemedText type="caption" style={{ color: theme.textTertiary }}>
+      <View style={[styles.footer, { bottom: spacing.xxxl }]}>
+        <FluentText variant="caption1" color="tertiary">
           v1.0.0
-        </ThemedText>
+        </FluentText>
       </View>
     </View>
   );
@@ -88,25 +87,15 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 120,
     height: 120,
-    borderRadius: BorderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: Spacing.size6,
     overflow: "hidden",
   },
   icon: {
     width: 120,
     height: 120,
   },
-  title: {
-    marginBottom: Spacing.size2,
-    textAlign: "center",
-  },
-  tagline: {
-    textAlign: "center",
-  },
   footer: {
     position: "absolute",
-    bottom: Spacing.size8,
   },
 });
