@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
@@ -12,6 +11,7 @@ import { MiniPlayer } from "@/components/MiniPlayer";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
+import { useNavigationContext } from "@/contexts/NavigationContext";
 import { Layout, Spacing, Typography, Motion } from "@/constants/theme";
 
 export type MainTabParamList = {
@@ -66,12 +66,11 @@ export default function MainTabNavigator() {
   const { theme } = useThemeContext();
   const { playTapSound } = useUiSound();
   const { currentSong } = usePlayerContext();
+  const { isNowPlayingVisible } = useNavigationContext();
   const [currentTab, setCurrentTab] = useState<string>("ListenTab");
-  const [currentNestedRoute, setCurrentNestedRoute] = useState<string | undefined>(undefined);
   
   const tabBarHeight = Platform.OS === "ios" ? Layout.bottomNavHeight + 20 : Layout.bottomNavHeight;
-  const isOnNowPlayingScreen = currentNestedRoute === "NowPlaying";
-  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && !isOnNowPlayingScreen;
+  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && !isNowPlayingVisible;
 
   return (
     <View style={{ flex: 1 }}>
@@ -110,19 +109,6 @@ export default function MainTabNavigator() {
           const tabName = e.target?.split("-")[0];
           if (tabName) {
             setCurrentTab(tabName);
-          }
-        },
-        state: (e) => {
-          const state = e.data.state;
-          if (state) {
-            const currentRoute = state.routes[state.index];
-            if (currentRoute?.name === "ListenTab" && currentRoute.state) {
-              const nestedState = currentRoute.state;
-              const nestedRouteName = nestedState.routes[nestedState.index || 0]?.name;
-              setCurrentNestedRoute(nestedRouteName);
-            } else {
-              setCurrentNestedRoute(undefined);
-            }
           }
         },
       }}

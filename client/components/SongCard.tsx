@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from "react";
-import { View, StyleSheet, Pressable, Image, Platform } from "react-native";
+import { View, StyleSheet, Pressable, Image, Platform, GestureResponderEvent } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
@@ -13,6 +13,43 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
 import { Spacing, BorderRadius, Fluent2Tokens } from "@/constants/theme";
+
+const ActionButton = ({ onPress, accessibilityLabel, children }: { 
+  onPress: (e: any) => void; 
+  accessibilityLabel: string; 
+  children: React.ReactNode;
+}) => {
+  return (
+    <View
+      style={actionButtonStyles.button}
+      onStartShouldSetResponder={() => true}
+      onResponderRelease={(e) => {
+        e.stopPropagation();
+        onPress(e);
+      }}
+      {...(Platform.OS === "web" ? {
+        onClick: (e: any) => {
+          e.stopPropagation();
+          e.preventDefault();
+          onPress(e);
+        },
+      } : {})}
+      accessible={true}
+      accessibilityLabel={accessibilityLabel}
+    >
+      {children}
+    </View>
+  );
+};
+
+const actionButtonStyles = StyleSheet.create({
+  button: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
 
 interface SongCardProps {
   song: PlayableSong;
@@ -139,6 +176,20 @@ export function SongCard({
       delayLongPress={400}
       style={[
         styles.container,
+        {
+          backgroundColor: theme.surfaceContainerLow,
+          borderColor: isPlaying ? theme.primary : theme.outlineVariant,
+          borderWidth: Fluent2Tokens.strokeWidthThin,
+          ...(Platform.OS === "web" ? {
+            boxShadow: Fluent2Tokens.shadow2,
+          } : {
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.08,
+            shadowRadius: 2,
+            elevation: 1,
+          }),
+        },
         animatedStyle,
       ]}
       accessibilityRole="button"
@@ -148,7 +199,7 @@ export function SongCard({
       <Animated.View 
         style={[
           StyleSheet.absoluteFill, 
-          { backgroundColor: theme.surfaceContainerHigh, borderRadius: BorderRadius.large },
+          { backgroundColor: theme.surfaceContainerHigh, borderRadius: BorderRadius.large - 1 },
           bgAnimatedStyle,
         ]} 
       />
@@ -178,34 +229,22 @@ export function SongCard({
         </ThemedText>
       ) : null}
       {showAddToPlaylist ? (
-        <Pressable
-          onPress={handleAddToPlaylistPress}
-          style={styles.actionButton}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel="Add to playlist"
-        >
+        <ActionButton onPress={handleAddToPlaylistPress} accessibilityLabel="Add to playlist">
           <MaterialCommunityIcons 
             name="playlist-plus" 
             size={20} 
             color={theme.primary} 
           />
-        </Pressable>
+        </ActionButton>
       ) : null}
       {showFavoriteButton ? (
-        <Pressable
-          onPress={handleFavoritePress}
-          style={styles.actionButton}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel={favorite ? "Remove from favorites" : "Add to favorites"}
-        >
+        <ActionButton onPress={handleFavoritePress} accessibilityLabel={favorite ? "Remove from favorites" : "Add to favorites"}>
           <MaterialCommunityIcons 
             name={favorite ? "heart" : "heart-outline"} 
             size={20} 
             color={favorite ? "#FF4D67" : theme.textSecondary} 
           />
-        </Pressable>
+        </ActionButton>
       ) : null}
       <MaterialCommunityIcons name="chevron-right" size={18} color={theme.textSecondary} />
     </AnimatedPressable>
@@ -249,11 +288,5 @@ const styles = StyleSheet.create({
   },
   duration: {
     marginRight: Spacing.s,
-  },
-  actionButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
   },
 });

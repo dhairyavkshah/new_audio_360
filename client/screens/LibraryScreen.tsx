@@ -9,10 +9,11 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { SongContextMenu } from "@/components/SongContextMenu";
+import { AnimatedCard } from "@/components/AnimatedCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
-import { Spacing, BorderRadius, Layout, Typography } from "@/constants/theme";
+import { Spacing, BorderRadius, Layout, Typography, Fluent2Tokens } from "@/constants/theme";
 import { mockSongs, mockAlbums, mockArtists, Song } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 import { Playlist, getPlaylists } from "@/lib/storage";
@@ -331,13 +332,14 @@ export default function LibraryScreen() {
         return (
           <View style={styles.albumsGrid}>
             {filteredData.albums.map((album) => (
-              <Pressable
+              <AnimatedCard
                 key={album.id}
                 style={styles.albumItem}
+                borderRadius={BorderRadius.lg}
                 onPress={() => {
-                  playTapSound();
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  navigation.navigate("AlbumDetail", { album });
                 }}
+                accessibilityLabel={`${album.name} by ${album.artist}`}
               >
                 <Image source={{ uri: album.artwork }} style={styles.albumArtwork} />
                 <ThemedText type="small" numberOfLines={1} style={styles.albumName}>
@@ -346,7 +348,7 @@ export default function LibraryScreen() {
                 <ThemedText type="caption" numberOfLines={1} style={{ color: theme.textSecondary }}>
                   {album.artist}
                 </ThemedText>
-              </Pressable>
+              </AnimatedCard>
             ))}
           </View>
         );
@@ -354,13 +356,14 @@ export default function LibraryScreen() {
         return (
           <View style={styles.artistsList}>
             {filteredData.artists.map((artist) => (
-              <Pressable
+              <AnimatedCard
                 key={artist.id}
-                style={[styles.artistItem, { backgroundColor: theme.backgroundDefault }]}
+                style={styles.artistItem}
+                borderRadius={BorderRadius.lg}
                 onPress={() => {
-                  playTapSound();
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  navigation.navigate("ArtistDetail", { artist });
                 }}
+                accessibilityLabel={`${artist.name}, ${artist.songCount} songs`}
               >
                 <Image source={{ uri: artist.artwork }} style={styles.artistArtwork} />
                 <View style={styles.artistInfo}>
@@ -372,7 +375,7 @@ export default function LibraryScreen() {
                   </ThemedText>
                 </View>
                 <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
-              </Pressable>
+              </AnimatedCard>
             ))}
           </View>
         );
@@ -402,10 +405,12 @@ export default function LibraryScreen() {
         return (
           <View style={styles.playlistsGrid}>
             {filteredData.playlists.map((playlist) => (
-              <Pressable
+              <AnimatedCard
                 key={playlist.id}
-                style={[styles.playlistItem, { backgroundColor: theme.backgroundDefault }]}
+                style={styles.playlistItem}
+                borderRadius={BorderRadius.lg}
                 onPress={() => handlePlaylistPress(playlist)}
+                accessibilityLabel={`${playlist.name}, ${playlist.songIds.length} songs`}
               >
                 <View style={[styles.playlistCover, { backgroundColor: theme.primary + "20" }]}>
                   <MaterialCommunityIcons name="playlist-music" size={28} color={theme.primary} />
@@ -416,7 +421,7 @@ export default function LibraryScreen() {
                 <ThemedText type="caption" numberOfLines={1} style={{ color: theme.textSecondary }}>
                   {playlist.songIds.length} songs
                 </ThemedText>
-              </Pressable>
+              </AnimatedCard>
             ))}
           </View>
         );
@@ -725,6 +730,8 @@ const styles = StyleSheet.create({
   },
   albumItem: {
     width: "47%",
+    padding: Spacing.size3,
+    borderRadius: BorderRadius.lg,
   },
   albumArtwork: {
     width: "100%",
@@ -744,6 +751,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: Spacing.size4,
     borderRadius: BorderRadius.lg,
+    overflow: "visible",
   },
   artistArtwork: {
     width: 56,

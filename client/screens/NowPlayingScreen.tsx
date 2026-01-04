@@ -1,9 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { View, StyleSheet, Image, Dimensions, ImageBackground, Platform, Pressable, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -19,6 +19,7 @@ import { AudioWaveform } from "@/components/AudioWaveform";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
+import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
 import { Spacing, BorderRadius, ModeStyles, Layout } from "@/constants/theme";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
@@ -42,6 +43,7 @@ export default function NowPlayingScreen() {
   const { theme, isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
   const { isFavorite, toggleFavorite } = usePlayerContext();
+  const { setNowPlayingVisible } = useNavigationContext();
   const {
     currentSong,
     isPlaying,
@@ -62,6 +64,15 @@ export default function NowPlayingScreen() {
   } = usePlayer();
 
   const artworkScale = useSharedValue(1);
+
+  useFocusEffect(
+    useCallback(() => {
+      setNowPlayingVisible(true);
+      return () => {
+        setNowPlayingVisible(false);
+      };
+    }, [setNowPlayingVisible])
+  );
 
   useEffect(() => {
     if (isPlaying) {

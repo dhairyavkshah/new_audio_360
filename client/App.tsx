@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { UiSoundProvider } from "@/contexts/UiSoundContext";
 import { PlayerProvider } from "@/contexts/PlayerContext";
 import { MediaLibraryProvider, useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
+import { NavigationProvider } from "@/contexts/NavigationContext";
 import SplashScreen from "@/screens/SplashScreen";
 import LoadingScreen from "@/screens/LoadingScreen";
 import PermissionOnboardingScreen from "@/screens/PermissionOnboardingScreen";
@@ -76,7 +77,9 @@ function AppContent() {
   return (
     <>
       <NavigationContainer>
-        <RootStackNavigator />
+        <NavigationProvider>
+          <RootStackNavigator />
+        </NavigationProvider>
       </NavigationContainer>
       <StatusBar style="auto" />
     </>

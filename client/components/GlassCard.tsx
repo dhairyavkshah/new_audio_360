@@ -4,11 +4,11 @@ import { BlurView } from "expo-blur";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
-  WithSpringConfig,
+  withTiming,
+  Easing,
 } from "react-native-reanimated";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, Fluent2Tokens } from "@/constants/theme";
 
 interface GlassCardProps {
   children?: React.ReactNode;
@@ -16,14 +16,8 @@ interface GlassCardProps {
   style?: ViewStyle;
   intensity?: number;
   disabled?: boolean;
+  selected?: boolean;
 }
-
-const springConfig: WithSpringConfig = {
-  damping: 15,
-  mass: 0.3,
-  stiffness: 150,
-  overshootClamping: true,
-};
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -33,22 +27,46 @@ export function GlassCard({
   style,
   intensity = 50,
   disabled = false,
+  selected = false,
 }: GlassCardProps) {
   const { theme, isDark } = useThemeContext();
   const scale = useSharedValue(1);
+  const bgOpacity = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
+  const bgAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: bgOpacity.value,
+  }));
+
   const handlePressIn = () => {
     if (!disabled && onPress) {
-      scale.value = withSpring(0.98, springConfig);
+      scale.value = withTiming(0.98, { 
+        duration: Fluent2Tokens.durationFast,
+        easing: Easing.out(Easing.cubic),
+      });
+      bgOpacity.value = withTiming(1, { duration: Fluent2Tokens.durationFast });
     }
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, springConfig);
+    scale.value = withTiming(1, { 
+      duration: Fluent2Tokens.durationNormal,
+      easing: Easing.out(Easing.cubic),
+    });
+    bgOpacity.value = withTiming(0, { duration: Fluent2Tokens.durationNormal });
+  };
+
+  const shadowStyle = Platform.OS === "web" ? {
+    boxShadow: Fluent2Tokens.shadow2,
+  } : {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
   };
 
   return (
@@ -57,14 +75,27 @@ export function GlassCard({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled || !onPress}
-      style={[styles.card, animatedStyle, style]}
+      style={[styles.card, shadowStyle, animatedStyle, style]}
     >
       {Platform.OS === "ios" ? (
         <BlurView
           intensity={intensity}
           tint={isDark ? "dark" : "light"}
-          style={[styles.blur, { borderColor: theme.outlineVariant }]}
+          style={[
+            styles.blur, 
+            { 
+              borderColor: selected ? theme.primary : theme.outlineVariant,
+              borderWidth: Fluent2Tokens.strokeWidthThin,
+            }
+          ]}
         >
+          <Animated.View 
+            style={[
+              StyleSheet.absoluteFill, 
+              { backgroundColor: theme.surfaceContainerHigh, borderRadius: BorderRadius.card - 1 },
+              bgAnimatedStyle,
+            ]} 
+          />
           {children}
         </BlurView>
       ) : (
@@ -72,11 +103,19 @@ export function GlassCard({
           style={[
             styles.blur,
             {
-              backgroundColor: theme.surfaceContainerHigh,
-              borderColor: theme.outlineVariant,
+              backgroundColor: theme.surfaceContainerLow,
+              borderColor: selected ? theme.primary : theme.outlineVariant,
+              borderWidth: Fluent2Tokens.strokeWidthThin,
             },
           ]}
         >
+          <Animated.View 
+            style={[
+              StyleSheet.absoluteFill, 
+              { backgroundColor: theme.surfaceContainerHigh, borderRadius: BorderRadius.card - 1 },
+              bgAnimatedStyle,
+            ]} 
+          />
           {children}
         </Animated.View>
       )}
@@ -92,6 +131,5 @@ const styles = StyleSheet.create({
   blur: {
     padding: Spacing.size4,
     borderRadius: BorderRadius.card,
-    borderWidth: 1,
   },
 });
