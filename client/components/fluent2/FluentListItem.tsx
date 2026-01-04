@@ -76,7 +76,7 @@ export function FluentListItem({
         <Ionicons 
           name="chevron-forward" 
           size={20} 
-          color={colors.foreground.tertiary} 
+          color={colors.textTertiary} 
           style={{ marginLeft: spacing.sm }}
         />
       )}
@@ -89,7 +89,7 @@ export function FluentListItem({
         onPress={onPress} 
         activeOpacity={0.7}
         style={{
-          backgroundColor: colors.surface.card,
+          backgroundColor: colors.surfacePrimary,
           borderRadius: radius.md,
         }}
       >
@@ -101,7 +101,7 @@ export function FluentListItem({
   return (
     <View 
       style={{
-        backgroundColor: colors.surface.card,
+        backgroundColor: colors.surfacePrimary,
         borderRadius: radius.md,
       }}
     >

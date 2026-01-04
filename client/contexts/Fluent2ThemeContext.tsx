@@ -8,7 +8,7 @@ type ThemeMode = 'light' | 'dark' | 'system';
 interface Fluent2ThemeContextType {
   mode: ThemeMode;
   scheme: FluentColorScheme;
-  colors: typeof Fluent2.colors.light;
+  colors: ReturnType<typeof getFluentColors>;
   typography: typeof Fluent2.typography;
   spacing: typeof Fluent2.spacing;
   radius: typeof Fluent2.radius;

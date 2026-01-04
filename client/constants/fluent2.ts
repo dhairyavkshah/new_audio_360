@@ -204,5 +204,35 @@ export const Fluent2 = {
 
 export type FluentColorScheme = 'light' | 'dark';
 
-export const getFluentColors = (scheme: FluentColorScheme) => 
-  Fluent2.colors[scheme];
+export const getFluentColors = (scheme: FluentColorScheme) => {
+  const colors = Fluent2.colors[scheme];
+  return {
+    background: colors.background.primary,
+    backgroundSecondary: colors.background.secondary,
+    backgroundTertiary: colors.background.tertiary,
+    backgroundElevated: colors.background.elevated,
+    textPrimary: colors.foreground.primary,
+    textSecondary: colors.foreground.secondary,
+    textTertiary: colors.foreground.tertiary,
+    textDisabled: colors.foreground.disabled,
+    textOnAccent: colors.foreground.onAccent,
+    brandPrimary: colors.brand.primary,
+    brandSecondary: colors.brand.secondary,
+    brandTertiary: colors.brand.tertiary,
+    brandBackground: colors.brand.background,
+    brandForeground: colors.brand.foreground,
+    strokePrimary: colors.stroke.primary,
+    strokeSecondary: colors.stroke.secondary,
+    strokeFocus: colors.stroke.focus,
+    strokeSubtle: colors.stroke.primary,
+    strokeDisabled: colors.stroke.disabled,
+    statusSuccess: colors.status.success,
+    statusWarning: colors.status.warning,
+    statusDanger: colors.status.error,
+    statusInfo: colors.status.info,
+    surfacePrimary: colors.surface.card,
+    surfaceSecondary: colors.surface.cardHover,
+    surfacePressed: colors.surface.cardPressed,
+    overlay: colors.surface.overlay,
+  };
+};

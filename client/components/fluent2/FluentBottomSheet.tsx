@@ -83,7 +83,7 @@ export function FluentBottomSheet({
           style={[
             styles.overlay,
             {
-              backgroundColor: colors.surface.overlay,
+              backgroundColor: colors.overlay,
               opacity,
             },
           ]}
@@ -99,7 +99,7 @@ export function FluentBottomSheet({
           style={[
             styles.sheet,
             {
-              backgroundColor: colors.background.elevated,
+              backgroundColor: colors.backgroundElevated,
               borderTopLeftRadius: radius.xl,
               borderTopRightRadius: radius.xl,
               paddingBottom: insets.bottom + spacing.lg,
@@ -114,7 +114,7 @@ export function FluentBottomSheet({
                 style={[
                   styles.handle,
                   {
-                    backgroundColor: colors.stroke.primary,
+                    backgroundColor: colors.strokePrimary,
                     borderRadius: radius.xs,
                   },
                 ]}

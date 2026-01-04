@@ -38,7 +38,7 @@ export function FluentProgressBar({
         styles.track,
         {
           height,
-          backgroundColor: colors.stroke.secondary,
+          backgroundColor: colors.strokeSecondary,
           borderRadius: radius.full,
         },
         style,
@@ -48,7 +48,7 @@ export function FluentProgressBar({
         style={[
           styles.fill,
           {
-            backgroundColor: colors.brand.primary,
+            backgroundColor: colors.brandPrimary,
             borderRadius: radius.full,
             width: animatedWidth.interpolate({
               inputRange: [0, 1],

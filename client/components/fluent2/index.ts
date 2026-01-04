@@ -12,3 +12,7 @@ export { FluentIcon } from './FluentIcon';
 export { FluentAvatar } from './FluentAvatar';
 export { FluentProgressBar } from './FluentProgressBar';
 export { FluentSlider } from './FluentSlider';
+export { FluentSearchBar } from './FluentSearchBar';
+export { FluentSectionHeader } from './FluentSectionHeader';
+export { FluentMenuItem } from './FluentMenuItem';
+export { FluentSortChip } from './FluentSortChip';

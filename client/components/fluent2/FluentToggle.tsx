@@ -31,14 +31,14 @@ export function FluentToggle({
   }, [value]);
 
   const trackColor = disabled
-    ? colors.stroke.disabled
+    ? colors.strokeDisabled
     : value
-    ? colors.brand.primary
-    : colors.stroke.primary;
+    ? colors.brandPrimary
+    : colors.strokePrimary;
 
   const thumbColor = disabled
-    ? colors.foreground.disabled
-    : colors.foreground.onAccent;
+    ? colors.textDisabled
+    : colors.textOnAccent;
 
   return (
     <TouchableOpacity

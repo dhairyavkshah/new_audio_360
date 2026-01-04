@@ -34,10 +34,10 @@ export function FluentTabBar({
       style={[
         styles.container,
         {
-          backgroundColor: colors.background.primary,
+          backgroundColor: colors.background,
           paddingBottom: insets.bottom,
           borderTopWidth: 1,
-          borderTopColor: colors.stroke.secondary,
+          borderTopColor: colors.strokeSecondary,
           ...elevation.level1,
         },
       ]}
@@ -57,7 +57,7 @@ export function FluentTabBar({
                 style={[
                   styles.iconContainer,
                   isActive && {
-                    backgroundColor: colors.brand.background,
+                    backgroundColor: colors.brandBackground,
                     borderRadius: 16,
                   },
                 ]}

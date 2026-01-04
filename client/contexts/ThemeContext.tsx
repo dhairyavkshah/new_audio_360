@@ -40,22 +40,22 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const { colors, isDark, mode, setMode } = useFluent2Theme();
 
   const theme: LegacyTheme = useMemo(() => ({
-    backgroundRoot: colors.background.primary,
-    backgroundDefault: colors.background.primary,
-    backgroundSecondary: colors.background.secondary,
-    backgroundElevated: colors.background.elevated,
-    surface: colors.surface.card,
-    surfaceVariant: colors.background.tertiary,
-    text: colors.foreground.primary,
-    textSecondary: colors.foreground.secondary,
-    textTertiary: colors.foreground.tertiary,
-    primary: colors.brand.primary,
-    secondary: colors.brand.secondary,
-    tertiary: colors.brand.tertiary,
-    outline: colors.stroke.primary,
-    error: colors.status.error,
-    success: colors.status.success,
-    warning: colors.status.warning,
+    backgroundRoot: colors.background,
+    backgroundDefault: colors.background,
+    backgroundSecondary: colors.backgroundSecondary,
+    backgroundElevated: colors.backgroundElevated,
+    surface: colors.surfacePrimary,
+    surfaceVariant: colors.backgroundTertiary,
+    text: colors.textPrimary,
+    textSecondary: colors.textSecondary,
+    textTertiary: colors.textTertiary,
+    primary: colors.brandPrimary,
+    secondary: colors.brandSecondary,
+    tertiary: colors.brandTertiary,
+    outline: colors.strokePrimary,
+    error: colors.statusDanger,
+    success: colors.statusSuccess,
+    warning: colors.statusWarning,
   }), [colors]);
 
   const fluentDefaults = useMemo(() => getFluentDefaults(), []);

@@ -37,30 +37,30 @@ export function FluentChip({
   const getVariantStyles = () => {
     if (disabled) {
       return {
-        backgroundColor: colors.background.tertiary,
-        borderColor: colors.stroke.disabled,
-        textColor: colors.foreground.disabled,
+        backgroundColor: colors.backgroundTertiary,
+        borderColor: colors.strokeDisabled,
+        textColor: colors.textDisabled,
       };
     }
 
     switch (variant) {
       case 'filled':
         return {
-          backgroundColor: selected ? colors.brand.primary : colors.background.tertiary,
+          backgroundColor: selected ? colors.brandPrimary : colors.backgroundTertiary,
           borderColor: 'transparent',
-          textColor: selected ? colors.foreground.onAccent : colors.foreground.primary,
+          textColor: selected ? colors.textOnAccent : colors.textPrimary,
         };
       case 'outlined':
         return {
           backgroundColor: 'transparent',
-          borderColor: selected ? colors.brand.primary : colors.stroke.primary,
-          textColor: selected ? colors.brand.foreground : colors.foreground.primary,
+          borderColor: selected ? colors.brandPrimary : colors.strokePrimary,
+          textColor: selected ? colors.brandForeground : colors.textPrimary,
         };
       case 'subtle':
         return {
-          backgroundColor: selected ? colors.brand.background : colors.background.secondary,
+          backgroundColor: selected ? colors.brandBackground : colors.backgroundSecondary,
           borderColor: 'transparent',
-          textColor: selected ? colors.brand.foreground : colors.foreground.primary,
+          textColor: selected ? colors.brandForeground : colors.textPrimary,
         };
     }
   };

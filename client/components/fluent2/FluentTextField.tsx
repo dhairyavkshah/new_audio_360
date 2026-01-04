@@ -31,10 +31,10 @@ export function FluentTextField({
   const [isFocused, setIsFocused] = useState(false);
 
   const borderColor = error
-    ? colors.status.error
+    ? colors.statusDanger
     : isFocused
-    ? colors.stroke.focus
-    : colors.stroke.primary;
+    ? colors.strokeFocus
+    : colors.strokePrimary;
 
   return (
     <View style={containerStyle}>
@@ -52,7 +52,7 @@ export function FluentTextField({
         style={[
           styles.inputContainer,
           {
-            backgroundColor: colors.background.secondary,
+            backgroundColor: colors.backgroundSecondary,
             borderColor,
             borderRadius: radius.md,
             paddingHorizontal: spacing.md,
@@ -78,12 +78,12 @@ export function FluentTextField({
           style={[
             styles.input,
             {
-              color: colors.foreground.primary,
+              color: colors.textPrimary,
               fontSize: typography.fontSize.body1,
             },
             textInputProps.style,
           ]}
-          placeholderTextColor={colors.foreground.tertiary}
+          placeholderTextColor={colors.textTertiary}
         />
 
         {trailingIcon && (

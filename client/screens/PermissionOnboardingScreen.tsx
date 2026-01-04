@@ -75,8 +75,8 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
   const PermissionItem = ({ icon, title, description, status }: PermissionItemProps) => (
     <FluentCard variant="outlined" padding="medium" style={{ marginBottom: spacing.md }}>
       <View style={styles.permissionItem}>
-        <View style={[styles.permissionIcon, { backgroundColor: colors.brand.background, borderRadius: radius.full }]}>
-          <Ionicons name={icon} size={24} color={colors.brand.primary} />
+        <View style={[styles.permissionIcon, { backgroundColor: colors.brandBackground, borderRadius: radius.full }]}>
+          <Ionicons name={icon} size={24} color={colors.brandPrimary} />
         </View>
         <View style={styles.permissionContent}>
           <FluentText variant="body1" weight="semibold">{title}</FluentText>
@@ -84,11 +84,11 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
         </View>
         <View style={styles.permissionStatus}>
           {status === 'granted' ? (
-            <Ionicons name="checkmark-circle" size={24} color={colors.status.success} />
+            <Ionicons name="checkmark-circle" size={24} color={colors.statusSuccess} />
           ) : status === 'denied' ? (
-            <Ionicons name="close-circle" size={24} color={colors.status.error} />
+            <Ionicons name="close-circle" size={24} color={colors.statusDanger} />
           ) : (
-            <Ionicons name="ellipse-outline" size={24} color={colors.foreground.tertiary} />
+            <Ionicons name="ellipse-outline" size={24} color={colors.textTertiary} />
           )}
         </View>
       </View>
@@ -96,10 +96,10 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background.primary, paddingTop: insets.top + spacing.xxl, paddingBottom: insets.bottom + spacing.xxl }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + spacing.xxl, paddingBottom: insets.bottom + spacing.xxl }]}>
       <View style={styles.header}>
-        <View style={[styles.iconContainer, { backgroundColor: colors.brand.background, borderRadius: radius.full }]}>
-          <Ionicons name="musical-notes" size={64} color={colors.brand.primary} />
+        <View style={[styles.iconContainer, { backgroundColor: colors.brandBackground, borderRadius: radius.full }]}>
+          <Ionicons name="musical-notes" size={64} color={colors.brandPrimary} />
         </View>
         <FluentText variant="title2" style={{ textAlign: 'center', marginTop: spacing.lg }}>
           Welcome to New Audio 360

@@ -69,21 +69,21 @@ export function FluentButton({
       case 'primary':
         return {
           container: {
-            backgroundColor: colors.brand.primary,
+            backgroundColor: colors.brandPrimary,
             opacity: baseOpacity,
           },
           text: {
-            color: colors.foreground.onAccent,
+            color: colors.textOnAccent,
           },
         };
       case 'secondary':
         return {
           container: {
-            backgroundColor: colors.background.tertiary,
+            backgroundColor: colors.backgroundTertiary,
             opacity: baseOpacity,
           },
           text: {
-            color: colors.foreground.primary,
+            color: colors.textPrimary,
           },
         };
       case 'outline':
@@ -91,21 +91,21 @@ export function FluentButton({
           container: {
             backgroundColor: 'transparent',
             borderWidth: 1,
-            borderColor: colors.stroke.primary,
+            borderColor: colors.strokePrimary,
             opacity: baseOpacity,
           },
           text: {
-            color: colors.foreground.primary,
+            color: colors.textPrimary,
           },
         };
       case 'subtle':
         return {
           container: {
-            backgroundColor: colors.brand.background,
+            backgroundColor: colors.brandBackground,
             opacity: baseOpacity,
           },
           text: {
-            color: colors.brand.foreground,
+            color: colors.brandForeground,
           },
         };
       case 'transparent':
@@ -115,7 +115,7 @@ export function FluentButton({
             opacity: baseOpacity,
           },
           text: {
-            color: colors.brand.foreground,
+            color: colors.brandForeground,
           },
         };
     }

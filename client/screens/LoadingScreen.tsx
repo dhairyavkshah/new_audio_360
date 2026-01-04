@@ -19,7 +19,7 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
         toValue: 1,
         duration: 1200,
         easing: Easing.linear,
-        useNativeDriver: false,
+        useNativeDriver: true,
       })
     );
 
@@ -29,13 +29,13 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
           toValue: 1.1,
           duration: 600,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
           duration: 600,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
       ])
     );
@@ -55,7 +55,7 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.View
         style={[
           styles.iconContainer,
@@ -64,7 +64,7 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
           },
         ]}
       >
-        <Ionicons name="musical-notes" size={64} color={colors.brand.primary} />
+        <Ionicons name="musical-notes" size={64} color={colors.brandPrimary} />
       </Animated.View>
       <FluentText 
         variant="body1" 

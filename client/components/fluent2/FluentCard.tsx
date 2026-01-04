@@ -37,20 +37,20 @@ export function FluentCard({
     switch (variant) {
       case 'elevated':
         return {
-          backgroundColor: colors.surface.card,
+          backgroundColor: colors.surfacePrimary,
           ...elevation.level2,
           borderWidth: 0,
         };
       case 'outlined':
         return {
-          backgroundColor: colors.surface.card,
+          backgroundColor: colors.surfacePrimary,
           borderWidth: 1,
-          borderColor: colors.stroke.primary,
+          borderColor: colors.strokePrimary,
           ...elevation.none,
         };
       case 'filled':
         return {
-          backgroundColor: colors.background.tertiary,
+          backgroundColor: colors.backgroundTertiary,
           borderWidth: 0,
           ...elevation.none,
         };

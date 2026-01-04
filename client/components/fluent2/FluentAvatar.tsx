@@ -52,7 +52,7 @@ export function FluentAvatar({
     width: avatarSize,
     height: avatarSize,
     borderRadius: radius.full,
-    backgroundColor: colors.brand.background,
+    backgroundColor: colors.brandBackground,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

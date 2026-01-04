@@ -12,6 +12,8 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const { colors, spacing, radius } = useFluent2Theme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const onFinishRef = useRef(onFinish);
+  onFinishRef.current = onFinish;
 
   useEffect(() => {
     Animated.parallel([
@@ -29,20 +31,14 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     ]).start();
 
     const timer = setTimeout(() => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: false,
-      }).start(() => {
-        onFinish();
-      });
-    }, 2000);
+      onFinishRef.current();
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.View
         style={[
           styles.content,
@@ -52,7 +48,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           },
         ]}
       >
-        <View style={[styles.iconContainer, { backgroundColor: colors.brand.primary, borderRadius: radius.xl }]}>
+        <View style={[styles.iconContainer, { backgroundColor: colors.brandPrimary, borderRadius: radius.xl }]}>
           <Image
             source={require("../../assets/images/icon.png")}
             style={styles.icon}

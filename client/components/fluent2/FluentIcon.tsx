@@ -24,21 +24,21 @@ export function FluentIcon({
   const getColor = () => {
     switch (color) {
       case 'primary':
-        return colors.foreground.primary;
+        return colors.textPrimary;
       case 'secondary':
-        return colors.foreground.secondary;
+        return colors.textSecondary;
       case 'tertiary':
-        return colors.foreground.tertiary;
+        return colors.textTertiary;
       case 'brand':
-        return colors.brand.foreground;
+        return colors.brandForeground;
       case 'onAccent':
-        return colors.foreground.onAccent;
+        return colors.textOnAccent;
       case 'error':
-        return colors.status.error;
+        return colors.statusDanger;
       case 'success':
-        return colors.status.success;
+        return colors.statusSuccess;
       case 'warning':
-        return colors.status.warning;
+        return colors.statusWarning;
     }
   };
 

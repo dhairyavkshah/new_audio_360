@@ -1,20 +1,19 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { View, StyleSheet, FlatList, Pressable, Image, Platform, TextInput, ActivityIndicator } from "react-native";
+import React, { useState, useMemo, useCallback } from "react";
+import { View, StyleSheet, FlatList, Pressable } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { SongCard } from "@/components/SongCard";
-import { SongContextMenu } from "@/components/SongContextMenu";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { Spacing, BorderRadius, Layout, Typography } from "@/constants/theme";
+import { Fluent2 } from "@/constants/fluent2";
+import { FluentText, FluentSearchBar } from "@/components/fluent2";
+import { SongCard } from "@/components/SongCard";
+import { SongContextMenu } from "@/components/SongContextMenu";
 import { mockSongs, Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import { PlayableSong } from "@/contexts/PlayerContext";
@@ -35,10 +34,10 @@ export default function ListenScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
-  const { theme } = useThemeContext();
+  const { colors } = useFluent2Theme();
   const { playTapSound } = useUiSound();
-  const { currentSong, isPlaying, playSong, setQueue, isLoading: isPlayerLoading, isBuffering } = usePlayer();
-  const { songs: deviceSongs, isLoading: isLoadingSongs, progress, usingMockData } = useMediaLibraryContext();
+  const { currentSong, isPlaying, playSong, setQueue } = usePlayer();
+  const { songs: deviceSongs } = useMediaLibraryContext();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("title_asc");
@@ -113,37 +112,17 @@ export default function ListenScreen() {
   }, []);
 
   const renderStickyHeader = () => (
-    <View style={[styles.stickyHeader, { backgroundColor: theme.backgroundDefault, top: headerHeight }]}>
+    <View style={[styles.stickyHeader, { backgroundColor: colors.background, top: headerHeight }]}>
       <View style={styles.searchSortRow}>
-        <View style={[styles.searchContainer, { backgroundColor: theme.surfaceVariant }]}>
-          <MaterialCommunityIcons
-            name="magnify"
-            size={18}
-            color={theme.textSecondary}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={[styles.searchInput, { color: theme.text }]}
-            placeholder="Search..."
-            placeholderTextColor={theme.textSecondary}
+        <View style={{ flex: 1 }}>
+          <FluentSearchBar
             value={searchQuery}
             onChangeText={setSearchQuery}
-            returnKeyType="search"
+            placeholder="Search..."
           />
-          {searchQuery.length > 0 ? (
-            <Pressable
-              onPress={() => {
-                playTapSound();
-                setSearchQuery("");
-              }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <MaterialCommunityIcons name="close-circle" size={16} color={theme.textSecondary} />
-            </Pressable>
-          ) : null}
         </View>
         <Pressable
-          style={[styles.sortButton, { backgroundColor: theme.surfaceVariant }]}
+          style={[styles.sortButton, { backgroundColor: colors.surfaceSecondary }]}
           onPress={() => {
             playTapSound();
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -153,19 +132,19 @@ export default function ListenScreen() {
           <MaterialCommunityIcons
             name={SORT_OPTIONS.find((o) => o.key === sortBy)?.icon as any || "sort"}
             size={16}
-            color={theme.text}
+            color={colors.textPrimary}
           />
           <MaterialCommunityIcons
             name={showSortOptions ? "chevron-up" : "chevron-down"}
             size={14}
-            color={theme.textSecondary}
+            color={colors.textSecondary}
             style={{ marginLeft: 2 }}
           />
         </Pressable>
       </View>
-      <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
+      <FluentText variant="caption1" style={{ color: colors.textSecondary, marginTop: Fluent2.spacing.xxs }}>
         {filteredAndSortedSongs.length} {filteredAndSortedSongs.length === 1 ? "song" : "songs"}
-      </ThemedText>
+      </FluentText>
     </View>
   );
 
@@ -176,35 +155,35 @@ export default function ListenScreen() {
           style={styles.sortOverlayBackdrop} 
           onPress={() => setShowSortOptions(false)} 
         />
-        <View style={[styles.sortOptionsOverlay, { backgroundColor: theme.surface, top: headerHeight + 70 }]}>
+        <View style={[styles.sortOptionsOverlay, { backgroundColor: colors.surfacePrimary, top: headerHeight + 70 }]}>
           {SORT_OPTIONS.map((option) => (
             <Pressable
               key={option.key}
               style={[
                 styles.sortOption,
-                sortBy === option.key && { backgroundColor: theme.surfaceVariant },
+                sortBy === option.key && { backgroundColor: colors.surfaceSecondary },
               ]}
               onPress={() => handleSortPress(option.key)}
             >
               <MaterialCommunityIcons
                 name={option.icon as any}
                 size={18}
-                color={sortBy === option.key ? theme.primary : theme.text}
+                color={sortBy === option.key ? colors.brandPrimary : colors.textPrimary}
               />
-              <ThemedText
-                type="small"
+              <FluentText
+                variant="caption1"
                 style={[
-                  { marginLeft: Spacing.sm },
-                  sortBy === option.key && { color: theme.primary, fontWeight: "600" },
+                  { marginLeft: Fluent2.spacing.s },
+                  sortBy === option.key && { color: colors.brandPrimary, fontWeight: "600" },
                 ]}
               >
                 {option.label}
-              </ThemedText>
+              </FluentText>
               {sortBy === option.key ? (
                 <MaterialCommunityIcons
                   name="check"
                   size={16}
-                  color={theme.primary}
+                  color={colors.brandPrimary}
                   style={{ marginLeft: "auto" }}
                 />
               ) : null}
@@ -226,17 +205,17 @@ export default function ListenScreen() {
 
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
-      <MaterialCommunityIcons name="music-note-off" size={48} color={theme.textSecondary} />
-      <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.md, textAlign: "center" }}>
+      <MaterialCommunityIcons name="music-note-off" size={48} color={colors.textSecondary} />
+      <FluentText variant="body1" style={{ color: colors.textSecondary, marginTop: Fluent2.spacing.m, textAlign: "center" }}>
         No songs found matching "{searchQuery}"
-      </ThemedText>
+      </FluentText>
     </View>
   );
 
   const STICKY_HEADER_HEIGHT = 80;
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {renderStickyHeader()}
       <FlatList
         data={filteredAndSortedSongs}
@@ -244,7 +223,7 @@ export default function ListenScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContent,
-          { paddingTop: headerHeight + STICKY_HEADER_HEIGHT + Spacing.sm, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
+          { paddingTop: headerHeight + STICKY_HEADER_HEIGHT + Fluent2.spacing.s, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Fluent2.spacing.xl },
         ]}
         ListEmptyComponent={renderEmptyList}
         showsVerticalScrollIndicator={false}
@@ -259,61 +238,44 @@ export default function ListenScreen() {
       />
 
       {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: theme.success }]}>
+        <View style={[styles.successToast, { backgroundColor: colors.statusSuccess }]}>
           <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
-          <ThemedText type="small" style={{ color: "#FFFFFF", marginLeft: Spacing.sm, flex: 1 }}>
+          <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: Fluent2.spacing.s, flex: 1 }}>
             {successMessage}
-          </ThemedText>
+          </FluentText>
         </View>
       ) : null}
-    </ThemedView>
+    </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: Fluent2.spacing.m,
   },
   stickyHeader: {
     position: "absolute",
     left: 0,
     right: 0,
     zIndex: 10,
-    paddingHorizontal: Layout.horizontalPadding,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: Fluent2.spacing.m,
+    paddingVertical: Fluent2.spacing.s,
   },
   searchSortRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.sm,
-  },
-  searchContainer: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.sm,
-    minHeight: 44,
-  },
-  searchIcon: {
-    marginRight: Spacing.xs,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: Typography.body.fontSize,
-    height: "100%",
+    gap: Fluent2.spacing.s,
   },
   sortButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    minHeight: 44,
+    paddingHorizontal: Fluent2.spacing.s,
+    paddingVertical: Fluent2.spacing.s,
+    borderRadius: Fluent2.radius.medium,
+    minHeight: 40,
   },
   sortOverlayBackdrop: {
     position: "absolute",
@@ -325,9 +287,9 @@ const styles = StyleSheet.create({
   },
   sortOptionsOverlay: {
     position: "absolute",
-    right: Layout.horizontalPadding,
+    right: Fluent2.spacing.m,
     zIndex: 20,
-    borderRadius: BorderRadius.md,
+    borderRadius: Fluent2.radius.medium,
     overflow: "hidden",
     elevation: 8,
     shadowColor: "#000",
@@ -339,24 +301,24 @@ const styles = StyleSheet.create({
   sortOption: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: Fluent2.spacing.m,
+    paddingVertical: Fluent2.spacing.s,
   },
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing["3xl"],
+    paddingVertical: Fluent2.spacing.xxxl,
   },
   successToast: {
     position: "absolute",
     bottom: 100,
-    left: Spacing.lg,
-    right: Spacing.lg,
+    left: Fluent2.spacing.m,
+    right: Fluent2.spacing.m,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
+    paddingHorizontal: Fluent2.spacing.m,
+    paddingVertical: Fluent2.spacing.m,
+    borderRadius: Fluent2.radius.medium,
     elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

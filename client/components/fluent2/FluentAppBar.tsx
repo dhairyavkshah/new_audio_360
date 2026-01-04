@@ -44,7 +44,7 @@ export function FluentAppBar({
         styles.container,
         {
           paddingTop: insets.top,
-          backgroundColor: transparent ? 'transparent' : colors.background.primary,
+          backgroundColor: transparent ? 'transparent' : colors.background,
           ...(elevated ? elevation.level2 : elevation.none),
         },
         style,
@@ -60,7 +60,7 @@ export function FluentAppBar({
               <Ionicons
                 name="arrow-back"
                 size={iconSize.lg}
-                color={colors.foreground.primary}
+                color={colors.textPrimary}
               />
             </TouchableOpacity>
           )}

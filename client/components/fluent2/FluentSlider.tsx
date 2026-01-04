@@ -82,7 +82,7 @@ export function FluentSlider({
         style={[
           styles.track,
           {
-            backgroundColor: colors.stroke.secondary,
+            backgroundColor: colors.strokeSecondary,
             borderRadius: radius.full,
           },
         ]}
@@ -91,7 +91,7 @@ export function FluentSlider({
           style={[
             styles.fill,
             {
-              backgroundColor: disabled ? colors.foreground.disabled : colors.brand.primary,
+              backgroundColor: disabled ? colors.textDisabled : colors.brandPrimary,
               borderRadius: radius.full,
               width: `${normalizedValue * 100}%`,
             },
@@ -103,7 +103,7 @@ export function FluentSlider({
         style={[
           styles.thumb,
           {
-            backgroundColor: disabled ? colors.foreground.disabled : colors.brand.primary,
+            backgroundColor: disabled ? colors.textDisabled : colors.brandPrimary,
             borderRadius: radius.full,
             left: `${normalizedValue * 100}%`,
             marginLeft: -12,
