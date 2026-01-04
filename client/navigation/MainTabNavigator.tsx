@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
@@ -66,9 +67,11 @@ export default function MainTabNavigator() {
   const { playTapSound } = useUiSound();
   const { currentSong } = usePlayerContext();
   const [currentTab, setCurrentTab] = useState<string>("ListenTab");
+  const [currentNestedRoute, setCurrentNestedRoute] = useState<string | undefined>(undefined);
   
   const tabBarHeight = Platform.OS === "ios" ? Layout.bottomNavHeight + 20 : Layout.bottomNavHeight;
-  const showMiniPlayer = currentSong && currentTab !== "SettingsTab";
+  const isOnNowPlayingScreen = currentNestedRoute === "NowPlaying";
+  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && !isOnNowPlayingScreen;
 
   return (
     <View style={{ flex: 1 }}>
@@ -107,6 +110,19 @@ export default function MainTabNavigator() {
           const tabName = e.target?.split("-")[0];
           if (tabName) {
             setCurrentTab(tabName);
+          }
+        },
+        state: (e) => {
+          const state = e.data.state;
+          if (state) {
+            const currentRoute = state.routes[state.index];
+            if (currentRoute?.name === "ListenTab" && currentRoute.state) {
+              const nestedState = currentRoute.state;
+              const nestedRouteName = nestedState.routes[nestedState.index || 0]?.name;
+              setCurrentNestedRoute(nestedRouteName);
+            } else {
+              setCurrentNestedRoute(undefined);
+            }
           }
         },
       }}
