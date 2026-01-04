@@ -33,7 +33,7 @@ export default function SettingsScreen() {
   } catch {
     tabBarHeight = 80 + insets.bottom;
   }
-  const { colors } = useFluent2Theme();
+  const { colors, spacing, radius } = useFluent2Theme();
   const { uiSoundEnabled, setUiSoundEnabled, playTapSound } = useUiSound();
   const { sleepTimerMinutes, setSleepTimer } = usePlayerContext();
   const [hapticEnabled, setHapticEnabled] = useState(true);
@@ -74,19 +74,19 @@ export default function SettingsScreen() {
   };
 
   const SectionHeader = ({ icon, title, iconColor }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; iconColor?: string }) => (
-    <View style={styles.sectionHeader}>
+    <View style={[styles.sectionHeader, { paddingHorizontal: spacing.xs, marginBottom: spacing.xs }]}>
       <MaterialCommunityIcons name={icon} size={Fluent2.iconSize.md} color={iconColor || colors.brandPrimary} />
-      <FluentText variant="subtitle1" style={styles.sectionTitle}>
+      <FluentText variant="subtitle1" style={[styles.sectionTitle, { marginLeft: spacing.xs }]}>
         {title}
       </FluentText>
     </View>
   );
 
   const SettingToggle = ({ icon, label, value, onValueChange }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: boolean; onValueChange: (v: boolean) => void }) => (
-    <View style={[styles.settingItem, { backgroundColor: colors.surfaceSecondary }]}>
+    <View style={[styles.settingItem, { backgroundColor: colors.surfaceSecondary, padding: spacing.m, borderRadius: radius.medium }]}>
       <View style={styles.settingInfo}>
         <MaterialCommunityIcons name={icon} size={Fluent2.iconSize.sm} color={colors.textPrimary} />
-        <FluentText variant="body1" style={styles.settingLabel}>
+        <FluentText variant="body1" style={[styles.settingLabel, { marginLeft: spacing.s }]}>
           {label}
         </FluentText>
       </View>
@@ -94,20 +94,23 @@ export default function SettingsScreen() {
     </View>
   );
 
+  const HEADER_HEIGHT = insets.top + 56;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+        <View style={[styles.headerContent, { paddingHorizontal: spacing.m }]}>
+          <FluentText variant="title1">Settings</FluentText>
+        </View>
+      </View>
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + Fluent2.spacing.s, paddingBottom: tabBarHeight + Fluent2.spacing.l },
+          { paddingTop: HEADER_HEIGHT + spacing.s, paddingBottom: tabBarHeight + spacing.l, paddingHorizontal: spacing.m },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <FluentText variant="title1" style={styles.screenTitle}>
-          Settings
-        </FluentText>
-
-        <View style={styles.section}>
+        <View style={[styles.section, { marginBottom: spacing.l }]}>
           <SectionHeader icon="music-note" title="Audio" />
           <FluentMenuItem
             icon="tune-vertical"
@@ -117,7 +120,7 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <View style={styles.section}>
+        <View style={[styles.section, { marginBottom: spacing.l }]}>
           <SectionHeader icon="palette" title="Display" />
           <FluentMenuItem
             icon="palette-outline"
@@ -127,7 +130,7 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <View style={styles.section}>
+        <View style={[styles.section, { marginBottom: spacing.l }]}>
           <SectionHeader icon="cog-outline" title="Preferences" />
           <SettingToggle
             icon="vibrate"
@@ -135,7 +138,7 @@ export default function SettingsScreen() {
             value={hapticEnabled}
             onValueChange={handleHapticToggle}
           />
-          <View style={{ height: Fluent2.spacing.xs }} />
+          <View style={{ height: spacing.xs }} />
           <SettingToggle
             icon="volume-high"
             label="UI Sounds"
@@ -144,9 +147,9 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <View style={styles.section}>
+        <View style={[styles.section, { marginBottom: spacing.l }]}>
           <SectionHeader icon="timer-outline" title="Sleep Timer" />
-          <View style={styles.timerGrid}>
+          <View style={[styles.timerGrid, { gap: spacing.xs }]}>
             {SLEEP_TIMER_OPTIONS.map((option) => (
               <FluentChip
                 key={option.label}
@@ -160,14 +163,14 @@ export default function SettingsScreen() {
               />
             ))}
           </View>
-          {sleepTimerMinutes ? (
-            <FluentText variant="caption1" style={{ color: colors.textSecondary, marginTop: Fluent2.spacing.s }}>
+          {sleepTimerMinutes && (
+            <FluentText variant="caption1" style={{ color: colors.textSecondary, marginTop: spacing.s }}>
               Playback will stop in {sleepTimerMinutes} minutes
             </FluentText>
-          ) : null}
+          )}
         </View>
 
-        <View style={styles.section}>
+        <View style={[styles.section, { marginBottom: spacing.l }]}>
           <SectionHeader icon="heart" title="Support" iconColor={colors.statusDanger} />
           <FluentMenuItem
             icon="crown-outline"
@@ -185,7 +188,7 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <View style={styles.section}>
+        <View style={[styles.section, { marginBottom: spacing.l }]}>
           <SectionHeader icon="information" title="About" />
           <FluentMenuItem
             icon="information-outline"
@@ -202,24 +205,24 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingVertical: spacing.m }]}>
           <FluentText variant="caption1" style={{ color: colors.textSecondary, textAlign: "center" }}>
             New Audio 360 v1.0.0
           </FluentText>
           <FluentText
             variant="caption1"
-            style={{ color: colors.textSecondary, textAlign: "center", marginTop: Fluent2.spacing.xxs }}
+            style={{ color: colors.textSecondary, textAlign: "center", marginTop: spacing.xxs }}
           >
             Your personal music experience
           </FluentText>
         </View>
       </ScrollView>
-      {showExitScreen ? (
+      {showExitScreen && (
         <ExitScreen
           onCancel={() => setShowExitScreen(false)}
           onConfirm={handleExitConfirm}
         />
-      ) : null}
+      )}
     </View>
   );
 }
@@ -228,45 +231,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    paddingHorizontal: Fluent2.spacing.m,
+  header: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    zIndex: 20,
   },
-  screenTitle: {
-    marginBottom: Fluent2.spacing.m,
+  headerContent: {
+    height: 56,
+    justifyContent: "center",
   },
-  section: {
-    marginBottom: Fluent2.spacing.l,
-  },
+  content: {},
+  section: {},
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Fluent2.spacing.xs,
-    paddingHorizontal: Fluent2.spacing.xs,
   },
-  sectionTitle: {
-    marginLeft: Fluent2.spacing.xs,
-  },
+  sectionTitle: {},
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: Fluent2.spacing.m,
-    borderRadius: Fluent2.radius.medium,
   },
   settingInfo: {
     flexDirection: "row",
     alignItems: "center",
   },
-  settingLabel: {
-    marginLeft: Fluent2.spacing.s,
-  },
+  settingLabel: {},
   footer: {
-    paddingVertical: Fluent2.spacing.m,
     alignItems: "center",
   },
   timerGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Fluent2.spacing.xs,
   },
 });

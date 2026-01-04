@@ -3,8 +3,8 @@ import { View, StyleSheet, ViewStyle, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { ThemedView } from "@/components/ThemedView";
-import { Layout, Spacing } from "@/constants/theme";
+import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
+import { Fluent2 } from "@/constants/fluent2";
 
 interface ScreenLayoutProps {
   children: ReactNode;
@@ -13,7 +13,6 @@ interface ScreenLayoutProps {
   hasBottomControls?: boolean;
   style?: ViewStyle;
   contentStyle?: ViewStyle;
-  mode?: "listen" | "create";
 }
 
 export function ScreenLayout({
@@ -23,45 +22,45 @@ export function ScreenLayout({
   hasBottomControls = false,
   style,
   contentStyle,
-  mode = "listen",
 }: ScreenLayoutProps) {
   const insets = useSafeAreaInsets();
+  const { colors, spacing } = useFluent2Theme();
   
   let headerHeight = 0;
   try {
     headerHeight = useHeaderHeight();
   } catch {
-    headerHeight = hasHeader ? Layout.topBarHeight + insets.top : insets.top;
+    headerHeight = hasHeader ? 56 + insets.top : insets.top;
   }
   
   let tabBarHeight = 0;
   try {
     tabBarHeight = useBottomTabBarHeight();
   } catch {
-    tabBarHeight = hasTabBar ? Layout.bottomNavHeight + insets.bottom : insets.bottom;
+    tabBarHeight = hasTabBar ? 80 + insets.bottom : insets.bottom;
   }
 
-  const topPadding = hasHeader ? headerHeight + Spacing.md : insets.top + Layout.safeAreaPadding;
+  const topPadding = hasHeader ? headerHeight + spacing.m : insets.top + spacing.m;
   const bottomPadding = hasBottomControls
-    ? tabBarHeight + Spacing.xl
-    : tabBarHeight + Spacing.md;
+    ? tabBarHeight + spacing.xl
+    : tabBarHeight + spacing.m;
 
   return (
-    <ThemedView style={[styles.container, style]}>
+    <View style={[styles.container, { backgroundColor: colors.background }, style]}>
       <View
         style={[
           styles.content,
           {
             paddingTop: topPadding,
             paddingBottom: bottomPadding,
-            paddingHorizontal: Layout.horizontalPadding,
+            paddingHorizontal: spacing.m,
           },
           contentStyle,
         ]}
       >
         {children}
       </View>
-    </ThemedView>
+    </View>
   );
 }
 
@@ -71,8 +70,10 @@ interface SectionProps {
 }
 
 export function Section({ children, style }: SectionProps) {
+  const { spacing } = useFluent2Theme();
+  
   return (
-    <View style={[styles.section, style]}>
+    <View style={[styles.section, { marginBottom: spacing.l }, style]}>
       {children}
     </View>
   );
@@ -85,7 +86,5 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  section: {
-    marginBottom: Layout.sectionGap,
-  },
+  section: {},
 });

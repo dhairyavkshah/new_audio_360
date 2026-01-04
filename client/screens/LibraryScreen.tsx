@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator, Platform } from "react-native";
-import { useHeaderHeight } from "@react-navigation/elements";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -42,10 +42,10 @@ const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
 ];
 
 export default function LibraryScreen() {
-  const headerHeight = useHeaderHeight();
+  const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
-  const { colors } = useFluent2Theme();
+  const { colors, spacing, radius } = useFluent2Theme();
   const { playTapSound } = useUiSound();
   const { favorites, recentlyPlayed, mostPlayed, playSong, setQueue } = usePlayerContext();
   const { songs: deviceSongs, isLoading: isLoadingSongs, progress, usingMockData, hideSong, refreshSongs, error: mediaError, hasPermission } = useMediaLibraryContext();
@@ -224,6 +224,9 @@ export default function LibraryScreen() {
     setTimeout(() => setSuccessMessage(null), 3000);
   }, [loadPlaylists]);
 
+  const HEADER_HEIGHT = insets.top + 56;
+  const STICKY_HEADER_HEIGHT = 100;
+
   const renderSongGrid = (songs: PlayableSong[], emptyMessage: string, emptyIcon: keyof typeof MaterialCommunityIcons.glyphMap) => {
     if (songs.length === 0) {
       return (
@@ -248,7 +251,7 @@ export default function LibraryScreen() {
           return (
             <Pressable
               key={song.id}
-              style={[styles.songItem, { backgroundColor: colors.surfacePrimary }]}
+              style={[styles.songItem, { backgroundColor: colors.surfacePrimary, borderRadius: radius.medium }]}
               onPress={() => handleSongPress(song, songs)}
               onLongPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -258,7 +261,7 @@ export default function LibraryScreen() {
               delayLongPress={400}
               {...webContextProps}
             >
-              <Image source={{ uri: song.artwork }} style={styles.songArtwork} />
+              <Image source={{ uri: song.artwork }} style={[styles.songArtwork, { borderRadius: radius.small }]} />
               <FluentText variant="caption1" numberOfLines={1} style={styles.songTitle}>
                 {song.title}
               </FluentText>
@@ -303,7 +306,7 @@ export default function LibraryScreen() {
               <FluentText variant="body1" style={[styles.emptyText, { color: colors.textSecondary }]}>
                 {mediaError}
               </FluentText>
-              <FluentButton variant="primary" onPress={refreshSongs} style={{ marginTop: Fluent2.spacing.m }}>
+              <FluentButton variant="primary" onPress={refreshSongs} style={{ marginTop: spacing.m }}>
                 Try Again
               </FluentButton>
             </View>
@@ -322,7 +325,7 @@ export default function LibraryScreen() {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
               >
-                <Image source={{ uri: album.artwork }} style={styles.albumArtwork} />
+                <Image source={{ uri: album.artwork }} style={[styles.albumArtwork, { borderRadius: radius.medium }]} />
                 <FluentText variant="caption1" numberOfLines={1} style={styles.albumName}>
                   {album.name}
                 </FluentText>
@@ -339,7 +342,7 @@ export default function LibraryScreen() {
             {filteredData.artists.map((artist) => (
               <Pressable
                 key={artist.id}
-                style={[styles.artistItem, { backgroundColor: colors.surfacePrimary }]}
+                style={[styles.artistItem, { backgroundColor: colors.surfacePrimary, borderRadius: radius.medium }]}
                 onPress={() => {
                   playTapSound();
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -370,7 +373,7 @@ export default function LibraryScreen() {
               <FluentText variant="caption1" style={{ color: colors.textSecondary, textAlign: "center" }}>
                 Create your first playlist to organize your favorite songs
               </FluentText>
-              <FluentButton variant="primary" onPress={handleManagePlaylists} style={{ marginTop: Fluent2.spacing.m }}>
+              <FluentButton variant="primary" onPress={handleManagePlaylists} style={{ marginTop: spacing.m }}>
                 Create Playlist
               </FluentButton>
             </View>
@@ -381,10 +384,10 @@ export default function LibraryScreen() {
             {filteredData.playlists.map((playlist) => (
               <Pressable
                 key={playlist.id}
-                style={[styles.playlistItem, { backgroundColor: colors.surfacePrimary }]}
+                style={[styles.playlistItem, { backgroundColor: colors.surfacePrimary, borderRadius: radius.medium }]}
                 onPress={() => handlePlaylistPress(playlist)}
               >
-                <View style={[styles.playlistCover, { backgroundColor: colors.brandPrimary + "20" }]}>
+                <View style={[styles.playlistCover, { backgroundColor: colors.brandPrimary + "20", borderRadius: radius.medium }]}>
                   <MaterialCommunityIcons name="playlist-music" size={28} color={colors.brandPrimary} />
                 </View>
                 <FluentText variant="caption1" numberOfLines={1} style={styles.playlistName}>
@@ -400,10 +403,16 @@ export default function LibraryScreen() {
     }
   };
 
-  const STICKY_HEADER_HEIGHT = 96;
+  const renderHeader = () => (
+    <View style={[styles.header, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <View style={[styles.headerContent, { paddingHorizontal: spacing.m }]}>
+        <FluentText variant="title1">Library</FluentText>
+      </View>
+    </View>
+  );
 
   const renderStickyHeader = () => (
-    <View style={[styles.stickyHeader, { backgroundColor: colors.background, top: headerHeight }]}>
+    <View style={[styles.stickyHeader, { backgroundColor: colors.background, top: HEADER_HEIGHT, paddingHorizontal: spacing.m }]}>
       <View style={styles.searchSortRow}>
         <View style={{ flex: 1 }}>
           <FluentSearchBar
@@ -413,7 +422,7 @@ export default function LibraryScreen() {
           />
         </View>
         <Pressable
-          style={[styles.sortButton, { backgroundColor: colors.surfaceSecondary }]}
+          style={[styles.sortButton, { backgroundColor: colors.surfaceSecondary, borderRadius: radius.medium }]}
           onPress={() => {
             playTapSound();
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -433,7 +442,7 @@ export default function LibraryScreen() {
           />
         </Pressable>
         <Pressable
-          style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary }]}
+          style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary, borderRadius: radius.medium }]}
           onPress={handleManagePlaylists}
         >
           <MaterialCommunityIcons name="playlist-edit" size={18} color={colors.textPrimary} />
@@ -443,7 +452,7 @@ export default function LibraryScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.categoriesInHeader}
-        contentContainerStyle={styles.categoriesContent}
+        contentContainerStyle={[styles.categoriesContent, { gap: spacing.xs }]}
       >
         {categories.map((category) => (
           <FluentChip
@@ -471,7 +480,7 @@ export default function LibraryScreen() {
           style={styles.sortOverlayBackdrop} 
           onPress={() => setShowSortOptions(false)} 
         />
-        <View style={[styles.sortOptionsOverlay, { backgroundColor: colors.surfacePrimary, top: headerHeight + 50 }]}>
+        <View style={[styles.sortOptionsOverlay, { backgroundColor: colors.surfacePrimary, top: HEADER_HEIGHT + 50, borderRadius: radius.medium }]}>
           {SORT_OPTIONS.map((option) => (
             <Pressable
               key={option.key}
@@ -489,20 +498,20 @@ export default function LibraryScreen() {
               <FluentText
                 variant="caption1"
                 style={[
-                  { marginLeft: Fluent2.spacing.s },
+                  { marginLeft: spacing.s },
                   sortBy === option.key && { color: colors.brandPrimary, fontWeight: "600" },
                 ]}
               >
                 {option.label}
               </FluentText>
-              {sortBy === option.key ? (
+              {sortBy === option.key && (
                 <MaterialCommunityIcons
                   name="check"
                   size={16}
                   color={colors.brandPrimary}
                   style={{ marginLeft: "auto" }}
                 />
-              ) : null}
+              )}
             </Pressable>
           ))}
         </View>
@@ -512,11 +521,16 @@ export default function LibraryScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {renderHeader()}
       {renderStickyHeader()}
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: headerHeight + STICKY_HEADER_HEIGHT + Fluent2.spacing.s, paddingBottom: tabBarHeight + Fluent2.spacing.xl },
+          { 
+            paddingTop: HEADER_HEIGHT + STICKY_HEADER_HEIGHT + spacing.s, 
+            paddingBottom: tabBarHeight + spacing.xl,
+            paddingHorizontal: spacing.m,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -533,14 +547,14 @@ export default function LibraryScreen() {
         showHideOption={activeCategory === "songs"}
       />
 
-      {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: colors.statusSuccess }]}>
+      {successMessage && (
+        <View style={[styles.successToast, { backgroundColor: colors.statusSuccess, borderRadius: radius.medium }]}>
           <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
-          <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: Fluent2.spacing.s, flex: 1 }}>
+          <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: spacing.s, flex: 1 }}>
             {successMessage}
           </FluentText>
         </View>
-      ) : null}
+      )}
     </View>
   );
 }
@@ -549,15 +563,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    paddingHorizontal: Fluent2.spacing.m,
+  header: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    zIndex: 20,
   },
+  headerContent: {
+    height: 56,
+    justifyContent: "center",
+  },
+  content: {},
   stickyHeader: {
     position: "absolute",
     left: 0,
     right: 0,
     zIndex: 10,
-    paddingHorizontal: Fluent2.spacing.m,
     paddingTop: Fluent2.spacing.xxs,
     paddingBottom: Fluent2.spacing.s,
   },
@@ -571,7 +593,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Fluent2.spacing.s,
     paddingVertical: Fluent2.spacing.xxs,
-    borderRadius: Fluent2.radius.medium,
     minHeight: 40,
   },
   iconButton: {
@@ -579,7 +600,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: Fluent2.radius.medium,
   },
   sortOverlayBackdrop: {
     position: "absolute",
@@ -593,7 +613,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: Fluent2.spacing.m,
     zIndex: 20,
-    borderRadius: Fluent2.radius.medium,
     overflow: "hidden",
     elevation: 8,
     shadowColor: "#000",
@@ -609,120 +628,110 @@ const styles = StyleSheet.create({
     paddingVertical: Fluent2.spacing.s,
   },
   categoriesInHeader: {
-    marginTop: Fluent2.spacing.xxs,
+    marginTop: Fluent2.spacing.s,
   },
   categoriesContent: {
-    gap: Fluent2.spacing.xxs,
+    flexDirection: "row",
+    alignItems: "center",
   },
   contentContainer: {
-    minHeight: 300,
+    flex: 1,
   },
   gridContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Fluent2.spacing.m,
+    gap: Fluent2.spacing.s,
   },
   songItem: {
     width: "31%",
-    padding: Fluent2.spacing.s,
-    borderRadius: Fluent2.radius.medium,
+    padding: Fluent2.spacing.xs,
   },
   songArtwork: {
     width: "100%",
     aspectRatio: 1,
-    borderRadius: Fluent2.radius.medium,
     marginBottom: Fluent2.spacing.xs,
   },
   songTitle: {
     fontWeight: "500",
-    marginBottom: 2,
   },
   albumsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Fluent2.spacing.m,
+    gap: Fluent2.spacing.s,
   },
   albumItem: {
-    width: "47%",
+    width: "31%",
   },
   albumArtwork: {
     width: "100%",
     aspectRatio: 1,
-    borderRadius: Fluent2.radius.medium,
     marginBottom: Fluent2.spacing.xs,
   },
   albumName: {
-    fontWeight: "600",
-    marginBottom: 2,
+    fontWeight: "500",
   },
   artistsList: {
-    gap: Fluent2.spacing.m,
+    gap: Fluent2.spacing.xs,
   },
   artistItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Fluent2.spacing.m,
-    borderRadius: Fluent2.radius.medium,
+    padding: Fluent2.spacing.s,
   },
   artistArtwork: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
   artistInfo: {
     flex: 1,
     marginLeft: Fluent2.spacing.m,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: Fluent2.spacing.xxxl,
-  },
-  emptyText: {
-    textAlign: "center",
-    marginTop: Fluent2.spacing.m,
-    paddingHorizontal: Fluent2.spacing.xl,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: Fluent2.spacing.xxxl,
-    gap: Fluent2.spacing.m,
-  },
-  loadingText: {
-    marginTop: Fluent2.spacing.m,
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: Fluent2.spacing.xxl,
-  },
-  emptyTitle: {
-    marginTop: Fluent2.spacing.m,
-    marginBottom: Fluent2.spacing.s,
-  },
   playlistsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Fluent2.spacing.m,
+    gap: Fluent2.spacing.s,
   },
   playlistItem: {
-    width: "47%",
+    width: "31%",
     padding: Fluent2.spacing.s,
-    borderRadius: Fluent2.radius.medium,
+    alignItems: "center",
   },
   playlistCover: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: Fluent2.radius.medium,
+    width: 64,
+    height: 64,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Fluent2.spacing.xs,
   },
   playlistName: {
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: Fluent2.spacing.xxxl,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: Fluent2.spacing.xxxl,
+  },
+  emptyTitle: {
+    marginTop: Fluent2.spacing.m,
+    marginBottom: Fluent2.spacing.xs,
     fontWeight: "600",
-    marginBottom: 2,
+  },
+  emptyText: {
+    marginTop: Fluent2.spacing.m,
+    textAlign: "center",
+    paddingHorizontal: Fluent2.spacing.xl,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    paddingVertical: Fluent2.spacing.xxxl,
+  },
+  loadingText: {
+    marginTop: Fluent2.spacing.m,
   },
   successToast: {
     position: "absolute",
@@ -733,7 +742,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Fluent2.spacing.m,
     paddingVertical: Fluent2.spacing.m,
-    borderRadius: Fluent2.radius.medium,
     elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

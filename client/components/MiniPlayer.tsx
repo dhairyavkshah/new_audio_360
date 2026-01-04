@@ -4,11 +4,11 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { useNavigation } from "@react-navigation/native";
-import { ThemedText } from "@/components/ThemedText";
-import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
+import { FluentText } from "@/components/fluent2";
+import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import { Spacing, BorderRadius, Layout } from "@/constants/theme";
+import { Fluent2 } from "@/constants/fluent2";
 
 interface MiniPlayerProps {
   bottomOffset?: number;
@@ -16,8 +16,7 @@ interface MiniPlayerProps {
 
 export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
   const navigation = useNavigation<any>();
-  const { theme, isDark } = useThemeContext();
-  const { icons } = useSkin();
+  const { colors, spacing, radius, isDark } = useFluent2Theme();
   const { playTapSound } = useUiSound();
   const { currentSong, isPlaying, togglePlayPause } = usePlayerContext();
 
@@ -42,8 +41,8 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
   };
 
   return (
-    <View style={[styles.container, { bottom: bottomOffset + Spacing.sm }]}>
-      <View style={styles.background}>
+    <View style={[styles.container, { bottom: bottomOffset + spacing.sm, left: spacing.m, right: spacing.m, borderRadius: radius.large }]}>
+      <View style={[styles.background, { borderRadius: radius.large }]}>
         <Image 
           source={{ uri: currentSong.artwork }} 
           style={StyleSheet.absoluteFill}
@@ -54,23 +53,23 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
           style={StyleSheet.absoluteFill}
           experimentalBlurMethod={Platform.OS === "android" ? "dimezisBlurView" : undefined}
         />
-        <Pressable style={styles.content} onPress={handlePress}>
-          <Image source={{ uri: currentSong.artwork }} style={styles.artwork} />
-          <View style={styles.info}>
-            <ThemedText type="small" numberOfLines={1} style={{ fontWeight: "600" }}>
+        <Pressable style={[styles.content, { paddingVertical: spacing.xs, paddingHorizontal: spacing.m }]} onPress={handlePress}>
+          <Image source={{ uri: currentSong.artwork }} style={[styles.artwork, { borderRadius: radius.medium }]} />
+          <View style={[styles.info, { marginLeft: spacing.sm }]}>
+            <FluentText variant="body2" numberOfLines={1} style={{ fontWeight: "600" }}>
               {currentSong.title}
-            </ThemedText>
-            <ThemedText type="caption" style={{ color: theme.textSecondary }} numberOfLines={1}>
+            </FluentText>
+            <FluentText variant="caption1" color="secondary" numberOfLines={1}>
               {currentSong.artist}
-            </ThemedText>
+            </FluentText>
           </View>
           <Pressable
             onPress={handlePlayPause}
-            style={[styles.playButton, { backgroundColor: theme.primary }]}
+            style={[styles.playButton, { backgroundColor: colors.brandPrimary }]}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <MaterialCommunityIcons 
-              name={(isPlaying ? icons.pause : icons.play) as keyof typeof MaterialCommunityIcons.glyphMap} 
+              name={isPlaying ? "pause" : "play"} 
               size={18} 
               color="#FFFFFF" 
             />
@@ -84,9 +83,6 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    left: Layout.horizontalPadding,
-    right: Layout.horizontalPadding,
-    borderRadius: BorderRadius.lg,
     overflow: "hidden",
     elevation: 8,
     shadowColor: "#000",
@@ -95,23 +91,18 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   background: {
-    borderRadius: BorderRadius.lg,
     overflow: "hidden",
   },
   content: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.size2,
-    paddingHorizontal: Spacing.size3,
   },
   artwork: {
     width: 48,
     height: 48,
-    borderRadius: BorderRadius.md,
   },
   info: {
     flex: 1,
-    marginLeft: Spacing.sm,
   },
   playButton: {
     width: 44,

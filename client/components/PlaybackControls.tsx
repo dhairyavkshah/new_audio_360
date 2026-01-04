@@ -7,9 +7,9 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
+import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing } from "@/constants/theme";
+import { Fluent2 } from "@/constants/fluent2";
 
 interface PlaybackControlsProps {
   isPlaying: boolean;
@@ -32,9 +32,6 @@ function ControlButton({
   isPrimary = false,
   backgroundColor,
   isActive = false,
-  borderRadius,
-  glowColor,
-  useGlow,
 }: {
   icon: string;
   size: number;
@@ -43,12 +40,8 @@ function ControlButton({
   isPrimary?: boolean;
   backgroundColor?: string;
   isActive?: boolean;
-  borderRadius?: number;
-  glowColor?: string | null;
-  useGlow?: boolean;
 }) {
-  const { theme } = useThemeContext();
-  const { shapes, components } = useSkin();
+  const { colors, radius } = useFluent2Theme();
   const { playTapSound } = useUiSound();
   const scale = useSharedValue(1);
 
@@ -72,23 +65,8 @@ function ControlButton({
     onPress();
   };
 
-  const buttonRadius = borderRadius ?? (isPrimary ? shapes.controlSizeLg / 2 : shapes.controlSize / 2);
-  const buttonSize = isPrimary ? shapes.controlSizeLg : shapes.controlSize;
-
-  const glowStyle = useGlow && glowColor ? {
-    shadowColor: glowColor,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: components.glowIntensity,
-    shadowRadius: 8,
-  } : {};
-
-  const bevelStyle = components.useBevel ? {
-    borderWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.3)',
-    borderLeftColor: 'rgba(255,255,255,0.2)',
-    borderBottomColor: 'rgba(0,0,0,0.4)',
-    borderRightColor: 'rgba(0,0,0,0.3)',
-  } : {};
+  const buttonSize = isPrimary ? 64 : 48;
+  const buttonRadius = isPrimary ? radius.full : radius.full;
 
   return (
     <AnimatedPressable
@@ -103,10 +81,8 @@ function ControlButton({
           justifyContent: "center",
           alignItems: "center",
         },
-        isPrimary && { backgroundColor: backgroundColor || theme.primary },
-        isActive && { backgroundColor: theme.primary + "30" },
-        glowStyle,
-        bevelStyle,
+        isPrimary && { backgroundColor: backgroundColor || colors.brandPrimary },
+        isActive && { backgroundColor: colors.brandPrimary + "30" },
         animatedStyle,
       ]}
     >
@@ -129,68 +105,57 @@ export function PlaybackControls({
   shuffleEnabled = false,
   repeatMode = "off",
 }: PlaybackControlsProps) {
-  const { theme } = useThemeContext();
-  const { icons, shapes, components } = useSkin();
+  const { colors, spacing } = useFluent2Theme();
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.secondaryControls, { width: shapes.controlSize }]}>
+    <View style={[styles.container, { paddingHorizontal: spacing.xl }]}>
+      <View style={styles.secondaryControls}>
         {onShuffle ? (
           <ControlButton
-            icon={icons.shuffle}
+            icon="shuffle"
             size={20}
-            color={shuffleEnabled ? theme.primary : theme.textSecondary}
+            color={shuffleEnabled ? colors.brandPrimary : colors.textSecondary}
             onPress={onShuffle}
             isActive={shuffleEnabled}
-            useGlow={components.useGlow && shuffleEnabled}
-            glowColor={components.glowColor}
           />
         ) : (
-          <View style={{ width: shapes.controlSize, height: shapes.controlSize }} />
+          <View style={{ width: 48, height: 48 }} />
         )}
       </View>
 
-      <View style={styles.mainControls}>
+      <View style={[styles.mainControls, { gap: spacing.xl }]}>
         <ControlButton
-          icon={icons.skipPrevious}
+          icon="skip-previous"
           size={28}
-          color={theme.text}
+          color={colors.textPrimary}
           onPress={onPrevious}
-          useGlow={components.useGlow}
-          glowColor={components.glowColor}
         />
         <ControlButton
-          icon={isPlaying ? icons.pause : icons.play}
+          icon={isPlaying ? "pause" : "play"}
           size={32}
           color="#FFFFFF"
           onPress={onPlayPause}
           isPrimary
-          useGlow={components.useGlow}
-          glowColor={components.glowColor}
         />
         <ControlButton
-          icon={icons.skipNext}
+          icon="skip-next"
           size={28}
-          color={theme.text}
+          color={colors.textPrimary}
           onPress={onNext}
-          useGlow={components.useGlow}
-          glowColor={components.glowColor}
         />
       </View>
 
-      <View style={[styles.secondaryControls, { width: shapes.controlSize }]}>
+      <View style={styles.secondaryControls}>
         {onRepeat ? (
           <ControlButton
-            icon={repeatMode === "one" ? icons.repeatOnce : icons.repeat}
+            icon={repeatMode === "one" ? "repeat-once" : "repeat"}
             size={20}
-            color={repeatMode !== "off" ? theme.primary : theme.textSecondary}
+            color={repeatMode !== "off" ? colors.brandPrimary : colors.textSecondary}
             onPress={onRepeat}
             isActive={repeatMode !== "off"}
-            useGlow={components.useGlow && repeatMode !== "off"}
-            glowColor={components.glowColor}
           />
         ) : (
-          <View style={{ width: shapes.controlSize, height: shapes.controlSize }} />
+          <View style={{ width: 48, height: 48 }} />
         )}
       </View>
     </View>
@@ -202,14 +167,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.xl,
   },
   mainControls: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.xl,
   },
   secondaryControls: {
     alignItems: "center",
+    width: 48,
   },
 });

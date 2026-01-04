@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, FlatList, Pressable } from "react-native";
-import { useHeaderHeight } from "@react-navigation/elements";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -31,10 +31,10 @@ const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
 ];
 
 export default function ListenScreen() {
-  const headerHeight = useHeaderHeight();
+  const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
-  const { colors } = useFluent2Theme();
+  const { colors, spacing, radius } = useFluent2Theme();
   const { playTapSound } = useUiSound();
   const { currentSong, isPlaying, playSong, setQueue } = usePlayer();
   const { songs: deviceSongs } = useMediaLibraryContext();
@@ -111,8 +111,19 @@ export default function ListenScreen() {
     setTimeout(() => setSuccessMessage(null), 3000);
   }, []);
 
+  const HEADER_HEIGHT = insets.top + 56;
+  const STICKY_HEADER_HEIGHT = 80;
+
+  const renderHeader = () => (
+    <View style={[styles.header, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <View style={[styles.headerContent, { paddingHorizontal: spacing.m }]}>
+        <FluentText variant="title1">New Audio 360</FluentText>
+      </View>
+    </View>
+  );
+
   const renderStickyHeader = () => (
-    <View style={[styles.stickyHeader, { backgroundColor: colors.background, top: headerHeight }]}>
+    <View style={[styles.stickyHeader, { backgroundColor: colors.background, top: HEADER_HEIGHT, paddingHorizontal: spacing.m }]}>
       <View style={styles.searchSortRow}>
         <View style={{ flex: 1 }}>
           <FluentSearchBar
@@ -122,7 +133,7 @@ export default function ListenScreen() {
           />
         </View>
         <Pressable
-          style={[styles.sortButton, { backgroundColor: colors.surfaceSecondary }]}
+          style={[styles.sortButton, { backgroundColor: colors.surfaceSecondary, borderRadius: radius.medium }]}
           onPress={() => {
             playTapSound();
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -142,7 +153,7 @@ export default function ListenScreen() {
           />
         </Pressable>
       </View>
-      <FluentText variant="caption1" style={{ color: colors.textSecondary, marginTop: Fluent2.spacing.xxs }}>
+      <FluentText variant="caption1" style={{ color: colors.textSecondary, marginTop: spacing.xxs }}>
         {filteredAndSortedSongs.length} {filteredAndSortedSongs.length === 1 ? "song" : "songs"}
       </FluentText>
     </View>
@@ -155,7 +166,7 @@ export default function ListenScreen() {
           style={styles.sortOverlayBackdrop} 
           onPress={() => setShowSortOptions(false)} 
         />
-        <View style={[styles.sortOptionsOverlay, { backgroundColor: colors.surfacePrimary, top: headerHeight + 70 }]}>
+        <View style={[styles.sortOptionsOverlay, { backgroundColor: colors.surfacePrimary, top: HEADER_HEIGHT + 70, borderRadius: radius.medium }]}>
           {SORT_OPTIONS.map((option) => (
             <Pressable
               key={option.key}
@@ -173,20 +184,20 @@ export default function ListenScreen() {
               <FluentText
                 variant="caption1"
                 style={[
-                  { marginLeft: Fluent2.spacing.s },
+                  { marginLeft: spacing.s },
                   sortBy === option.key && { color: colors.brandPrimary, fontWeight: "600" },
                 ]}
               >
                 {option.label}
               </FluentText>
-              {sortBy === option.key ? (
+              {sortBy === option.key && (
                 <MaterialCommunityIcons
                   name="check"
                   size={16}
                   color={colors.brandPrimary}
                   style={{ marginLeft: "auto" }}
                 />
-              ) : null}
+              )}
             </Pressable>
           ))}
         </View>
@@ -206,16 +217,15 @@ export default function ListenScreen() {
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
       <MaterialCommunityIcons name="music-note-off" size={48} color={colors.textSecondary} />
-      <FluentText variant="body1" style={{ color: colors.textSecondary, marginTop: Fluent2.spacing.m, textAlign: "center" }}>
+      <FluentText variant="body1" style={{ color: colors.textSecondary, marginTop: spacing.m, textAlign: "center" }}>
         No songs found matching "{searchQuery}"
       </FluentText>
     </View>
   );
 
-  const STICKY_HEADER_HEIGHT = 80;
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {renderHeader()}
       {renderStickyHeader()}
       <FlatList
         data={filteredAndSortedSongs}
@@ -223,7 +233,11 @@ export default function ListenScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContent,
-          { paddingTop: headerHeight + STICKY_HEADER_HEIGHT + Fluent2.spacing.s, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Fluent2.spacing.xl },
+          { 
+            paddingTop: HEADER_HEIGHT + STICKY_HEADER_HEIGHT + spacing.s, 
+            paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + spacing.xl,
+            paddingHorizontal: spacing.m,
+          },
         ]}
         ListEmptyComponent={renderEmptyList}
         showsVerticalScrollIndicator={false}
@@ -237,14 +251,14 @@ export default function ListenScreen() {
         onSuccess={handleContextMenuSuccess}
       />
 
-      {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: colors.statusSuccess }]}>
+      {successMessage && (
+        <View style={[styles.successToast, { backgroundColor: colors.statusSuccess, borderRadius: radius.medium }]}>
           <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
-          <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: Fluent2.spacing.s, flex: 1 }}>
+          <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: spacing.s, flex: 1 }}>
             {successMessage}
           </FluentText>
         </View>
-      ) : null}
+      )}
     </View>
   );
 }
@@ -253,15 +267,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  listContent: {
-    paddingHorizontal: Fluent2.spacing.m,
+  header: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    zIndex: 20,
   },
+  headerContent: {
+    height: 56,
+    justifyContent: "center",
+  },
+  listContent: {},
   stickyHeader: {
     position: "absolute",
     left: 0,
     right: 0,
     zIndex: 10,
-    paddingHorizontal: Fluent2.spacing.m,
     paddingVertical: Fluent2.spacing.s,
   },
   searchSortRow: {
@@ -274,7 +296,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Fluent2.spacing.s,
     paddingVertical: Fluent2.spacing.s,
-    borderRadius: Fluent2.radius.medium,
     minHeight: 40,
   },
   sortOverlayBackdrop: {
@@ -289,7 +310,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: Fluent2.spacing.m,
     zIndex: 20,
-    borderRadius: Fluent2.radius.medium,
     overflow: "hidden",
     elevation: 8,
     shadowColor: "#000",
@@ -318,7 +338,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Fluent2.spacing.m,
     paddingVertical: Fluent2.spacing.m,
-    borderRadius: Fluent2.radius.medium,
     elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
