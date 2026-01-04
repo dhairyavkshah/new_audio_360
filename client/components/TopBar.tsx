@@ -1,12 +1,12 @@
 import React from "react";
 import { View, StyleSheet, Pressable, Platform } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useNavigationState } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { FluentText } from "@/components/fluent2";
-import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
-import { Fluent2 } from "@/constants/fluent2";
+import { ThemedText } from "@/components/ThemedText";
+import { useThemeContext } from "@/contexts/ThemeContext";
+import { Layout, Spacing, Typography } from "@/constants/theme";
 
 interface TopBarProps {
   title: string;
@@ -25,7 +25,7 @@ export function TopBar({
 }: TopBarProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { colors, spacing, radius } = useFluent2Theme();
+  const { theme } = useThemeContext();
   
   const canGoBack = navigation.canGoBack();
   const shouldShowBack = showBack && canGoBack;
@@ -53,46 +53,43 @@ export function TopBar({
         styles.container,
         {
           paddingTop: insets.top,
-          backgroundColor: transparent ? "transparent" : colors.background,
+          backgroundColor: transparent ? "transparent" : theme.surfaceContainer,
         },
       ]}
     >
-      <View style={[styles.content, { paddingHorizontal: spacing.m }]}>
+      <View style={styles.content}>
         <View style={styles.leftSection}>
-          {shouldShowBack && (
+          {shouldShowBack ? (
             <Pressable
               onPress={handleBack}
-              style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary, borderRadius: radius.full }]}
+              style={[styles.iconButton, { backgroundColor: theme.elevation1 }]}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
               <MaterialCommunityIcons
                 name="arrow-left"
                 size={24}
-                color={colors.textPrimary}
+                color={theme.onSurface}
               />
             </Pressable>
-          )}
-          {showHome && !shouldShowBack && (
+          ) : null}
+          {showHome && !shouldShowBack ? (
             <Pressable
               onPress={handleHome}
-              style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary, borderRadius: radius.full }]}
+              style={[styles.iconButton, { backgroundColor: theme.elevation1 }]}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
               <MaterialCommunityIcons
                 name="home-outline"
                 size={24}
-                color={colors.textPrimary}
+                color={theme.onSurface}
               />
             </Pressable>
-          )}
-          <FluentText 
-            variant="title2" 
-            style={[styles.title, { marginLeft: shouldShowBack || showHome ? spacing.m : 0 }]}
-          >
+          ) : null}
+          <ThemedText style={[styles.title, { marginLeft: shouldShowBack || showHome ? Spacing.md : 0 }]}>
             {title}
-          </FluentText>
+          </ThemedText>
         </View>
-        {actions && <View style={[styles.actions, { gap: spacing.xs }]}>{actions}</View>}
+        {actions ? <View style={styles.actions}>{actions}</View> : null}
       </View>
     </View>
   );
@@ -107,7 +104,7 @@ export function TopBarAction({
   onPress: () => void;
   badge?: number;
 }) {
-  const { colors, radius } = useFluent2Theme();
+  const { theme } = useThemeContext();
 
   const handlePress = () => {
     if (Platform.OS !== "web") {
@@ -119,15 +116,15 @@ export function TopBarAction({
   return (
     <Pressable
       onPress={handlePress}
-      style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary, borderRadius: radius.full }]}
+      style={[styles.iconButton, { backgroundColor: theme.elevation1 }]}
       hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
     >
-      <MaterialCommunityIcons name={icon} size={24} color={colors.textPrimary} />
-      {badge && badge > 0 && (
-        <View style={[styles.badge, { backgroundColor: colors.statusDanger }]}>
-          <FluentText variant="caption2" style={styles.badgeText}>{badge > 99 ? "99+" : badge}</FluentText>
+      <MaterialCommunityIcons name={icon} size={24} color={theme.onSurface} />
+      {badge && badge > 0 ? (
+        <View style={[styles.badge, { backgroundColor: theme.error }]}>
+          <ThemedText style={styles.badgeText}>{badge > 99 ? "99+" : badge}</ThemedText>
         </View>
-      )}
+      ) : null}
     </Pressable>
   );
 }
@@ -137,10 +134,11 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   content: {
-    height: 56,
+    height: Layout.topBarHeight,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingHorizontal: Layout.horizontalPadding,
   },
   leftSection: {
     flexDirection: "row",
@@ -148,17 +146,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontWeight: "700",
+    fontSize: Typography.titleLarge.fontSize,
+    fontWeight: Typography.titleLarge.fontWeight,
   },
   iconButton: {
     width: 40,
     height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
   },
   actions: {
     flexDirection: "row",
     alignItems: "center",
+    gap: Spacing.xs,
   },
   badge: {
     position: "absolute",

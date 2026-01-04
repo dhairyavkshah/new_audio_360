@@ -1,32 +1,13 @@
-import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import { useFluent2Theme } from '@/contexts/Fluent2ThemeContext';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ThemeColors, ThemeName, themeRegistry } from '@/constants/theme';
 import { SkinDefinition, IconPack, ShapeTokens, ComponentStyles, getFluentDefaults } from '@/constants/skins';
-
-type ThemeName = 'fluent' | 'fluent_dark' | 'fluent_light';
-
-interface LegacyTheme {
-  backgroundRoot: string;
-  backgroundDefault: string;
-  backgroundSecondary: string;
-  backgroundElevated: string;
-  surface: string;
-  surfaceVariant: string;
-  text: string;
-  textSecondary: string;
-  textTertiary: string;
-  primary: string;
-  secondary: string;
-  tertiary: string;
-  outline: string;
-  error: string;
-  success: string;
-  warning: string;
-}
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 interface ThemeContextValue {
   themeName: ThemeName;
   setThemeName: (name: ThemeName) => void;
-  theme: LegacyTheme;
+  theme: typeof ThemeColors.fluent.light;
   isDark: boolean;
   skin: SkinDefinition;
   icons: IconPack;
@@ -36,33 +17,36 @@ interface ThemeContextValue {
 
 export const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const { colors, isDark, mode, setMode } = useFluent2Theme();
+const THEME_STORAGE_KEY = '@new_audio_360_theme';
 
-  const theme: LegacyTheme = useMemo(() => ({
-    backgroundRoot: colors.background,
-    backgroundDefault: colors.background,
-    backgroundSecondary: colors.backgroundSecondary,
-    backgroundElevated: colors.backgroundElevated,
-    surface: colors.surfacePrimary,
-    surfaceVariant: colors.backgroundTertiary,
-    text: colors.textPrimary,
-    textSecondary: colors.textSecondary,
-    textTertiary: colors.textTertiary,
-    primary: colors.brandPrimary,
-    secondary: colors.brandSecondary,
-    tertiary: colors.brandTertiary,
-    outline: colors.strokePrimary,
-    error: colors.statusDanger,
-    success: colors.statusSuccess,
-    warning: colors.statusWarning,
-  }), [colors]);
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const systemColorScheme = useColorScheme();
+  const [themeName, setThemeNameState] = useState<ThemeName>('fluent');
+
+  useEffect(() => {
+    AsyncStorage.getItem(THEME_STORAGE_KEY).then((stored) => {
+      if (stored && (stored in ThemeColors)) {
+        setThemeNameState(stored as ThemeName);
+      }
+    });
+  }, []);
+
+  const setThemeName = (name: ThemeName) => {
+    setThemeNameState(name);
+    AsyncStorage.setItem(THEME_STORAGE_KEY, name);
+  };
+
+  const themeInfo = themeRegistry.find(t => t.name === themeName);
+  const isDark = themeInfo ? themeInfo.isDark : systemColorScheme === 'dark';
+
+  const themeColors = ThemeColors[themeName];
+  const theme = themeColors[isDark ? 'dark' : 'light'];
 
   const fluentDefaults = useMemo(() => getFluentDefaults(), []);
   
   const fluentSkin: SkinDefinition = useMemo(() => ({
-    id: 'fluent',
-    name: 'Fluent',
+    id: themeName,
+    name: themeInfo?.label || 'Fluent',
     family: 'fluent' as const,
     icons: fluentDefaults.icons,
     shapes: fluentDefaults.shapes,
@@ -74,19 +58,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       hasVisualizer: false,
       hasMetallicTexture: false,
     },
-  }), [fluentDefaults]);
-
-  const setThemeName = (name: ThemeName) => {
-    if (name === 'fluent_dark') {
-      setMode('dark');
-    } else if (name === 'fluent_light') {
-      setMode('light');
-    } else {
-      setMode('system');
-    }
-  };
-
-  const themeName: ThemeName = mode === 'dark' ? 'fluent_dark' : mode === 'light' ? 'fluent_light' : 'fluent';
+  }), [themeName, themeInfo?.label, fluentDefaults]);
 
   return (
     <ThemeContext.Provider value={{ 

@@ -8,7 +8,8 @@ import Animated, {
   withDelay,
   Easing,
 } from "react-native-reanimated";
-import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
+import { useThemeContext } from "@/contexts/ThemeContext";
+import { Spacing } from "@/constants/theme";
 
 interface AudioWaveformProps {
   isAnimating?: boolean;
@@ -75,8 +76,8 @@ export function AudioWaveform({
   style,
   color,
 }: AudioWaveformProps) {
-  const { colors } = useFluent2Theme();
-  const barColor = color || colors.brandPrimary;
+  const { theme } = useThemeContext();
+  const barColor = color || theme.primary;
 
   return (
     <View style={[styles.container, { height }, style]}>

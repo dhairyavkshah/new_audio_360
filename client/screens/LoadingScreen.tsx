@@ -1,15 +1,16 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated, Easing } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
-import { FluentText } from "@/components/fluent2/FluentText";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { ThemedText } from "@/components/ThemedText";
+import { useThemeContext } from "@/contexts/ThemeContext";
+import { Spacing } from "@/constants/theme";
 
 type LoadingScreenProps = {
   message?: string;
 };
 
 export default function LoadingScreen({ message = "Loading..." }: LoadingScreenProps) {
-  const { colors, spacing } = useFluent2Theme();
+  const { theme } = useThemeContext();
   const spinAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -55,7 +56,7 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <Animated.View
         style={[
           styles.iconContainer,
@@ -64,15 +65,11 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
           },
         ]}
       >
-        <Ionicons name="musical-notes" size={64} color={colors.brandPrimary} />
+        <MaterialCommunityIcons name="music-circle" size={64} color={theme.primary} />
       </Animated.View>
-      <FluentText 
-        variant="body1" 
-        color="secondary" 
-        style={{ marginTop: spacing.xl, textAlign: 'center' }}
-      >
+      <ThemedText type="body" style={[styles.message, { color: theme.textSecondary }]}>
         {message}
-      </FluentText>
+      </ThemedText>
     </View>
   );
 }
@@ -84,6 +81,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   iconContainer: {
-    marginBottom: 16,
+    marginBottom: Spacing.size5,
+  },
+  message: {
+    textAlign: "center",
   },
 });

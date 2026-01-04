@@ -6,10 +6,12 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { FluentToggle } from "@/components/FluentToggle";
+import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Fluent2 } from "@/constants/fluent2";
-import { FluentText, FluentToggle, FluentMenuItem, FluentChip } from "@/components/fluent2";
+import { Spacing, BorderRadius, Layout } from "@/constants/theme";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 import { getHapticEnabled, setHapticEnabled as saveHapticEnabled } from "@/lib/storage";
 import { usePlayerContext } from "@/contexts/PlayerContext";
@@ -24,6 +26,45 @@ const SLEEP_TIMER_OPTIONS = [
   { label: "90 min", value: 90 },
 ];
 
+type MenuItemProps = {
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  iconColor?: string;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+};
+
+function MenuItem({ icon, iconColor, title, subtitle, onPress }: MenuItemProps) {
+  const { theme } = useThemeContext();
+  const { playTapSound } = useUiSound();
+  
+  const handlePress = () => {
+    playTapSound();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+  
+  return (
+    <Pressable
+      onPress={handlePress}
+      style={[styles.menuItem, { backgroundColor: theme.backgroundSecondary }]}
+    >
+      <View style={[styles.menuIconContainer, { backgroundColor: theme.backgroundDefault }]}>
+        <MaterialCommunityIcons name={icon} size={24} color={iconColor || theme.primary} />
+      </View>
+      <View style={styles.menuTextContainer}>
+        <ThemedText type="body" style={styles.menuTitle}>
+          {title}
+        </ThemedText>
+        <ThemedText type="small" style={{ color: theme.textSecondary }}>
+          {subtitle}
+        </ThemedText>
+      </View>
+      <MaterialCommunityIcons name="chevron-right" size={24} color={theme.textSecondary} />
+    </Pressable>
+  );
+}
+
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
@@ -31,9 +72,9 @@ export default function SettingsScreen() {
   try {
     tabBarHeight = useBottomTabBarHeight();
   } catch {
-    tabBarHeight = 80 + insets.bottom;
+    tabBarHeight = Layout.bottomNavHeight + insets.bottom;
   }
-  const { colors, spacing, radius } = useFluent2Theme();
+  const { theme } = useThemeContext();
   const { uiSoundEnabled, setUiSoundEnabled, playTapSound } = useUiSound();
   const { sleepTimerMinutes, setSleepTimer } = usePlayerContext();
   const [hapticEnabled, setHapticEnabled] = useState(true);
@@ -73,157 +114,198 @@ export default function SettingsScreen() {
     }
   };
 
-  const SectionHeader = ({ icon, title, iconColor }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; iconColor?: string }) => (
-    <View style={[styles.sectionHeader, { paddingHorizontal: spacing.xs, marginBottom: spacing.xs }]}>
-      <MaterialCommunityIcons name={icon} size={Fluent2.iconSize.md} color={iconColor || colors.brandPrimary} />
-      <FluentText variant="subtitle1" style={[styles.sectionTitle, { marginLeft: spacing.xs }]}>
-        {title}
-      </FluentText>
-    </View>
-  );
-
-  const SettingToggle = ({ icon, label, value, onValueChange }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: boolean; onValueChange: (v: boolean) => void }) => (
-    <View style={[styles.settingItem, { backgroundColor: colors.surfaceSecondary, padding: spacing.m, borderRadius: radius.medium }]}>
-      <View style={styles.settingInfo}>
-        <MaterialCommunityIcons name={icon} size={Fluent2.iconSize.sm} color={colors.textPrimary} />
-        <FluentText variant="body1" style={[styles.settingLabel, { marginLeft: spacing.s }]}>
-          {label}
-        </FluentText>
-      </View>
-      <FluentToggle value={value} onValueChange={onValueChange} />
-    </View>
-  );
-
-  const HEADER_HEIGHT = insets.top + 56;
-
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        <View style={[styles.headerContent, { paddingHorizontal: spacing.m }]}>
-          <FluentText variant="title1">Settings</FluentText>
-        </View>
-      </View>
+    <ThemedView style={styles.container}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: HEADER_HEIGHT + spacing.s, paddingBottom: tabBarHeight + spacing.l, paddingHorizontal: spacing.m },
+          { paddingTop: insets.top + Spacing.sm, paddingBottom: tabBarHeight + Spacing.lg },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.section, { marginBottom: spacing.l }]}>
-          <SectionHeader icon="music-note" title="Audio" />
-          <FluentMenuItem
-            icon="tune-vertical"
-            title="Sound Lab"
-            subtitle="Equalizer presets and immersive modes"
-            onPress={() => navigation.navigate("SoundLab")}
-          />
+        <ThemedText type="h4" style={styles.screenTitle}>
+          Settings
+        </ThemedText>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="music-note" size={20} color={theme.primary} />
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Audio
+            </ThemedText>
+          </View>
+          <View style={styles.menuGroup}>
+            <MenuItem
+              icon="tune-vertical"
+              title="Sound Lab"
+              subtitle="Equalizer presets and immersive modes"
+              onPress={() => navigation.navigate("SoundLab")}
+            />
+          </View>
         </View>
 
-        <View style={[styles.section, { marginBottom: spacing.l }]}>
-          <SectionHeader icon="palette" title="Display" />
-          <FluentMenuItem
-            icon="palette-outline"
-            title="Appearance"
-            subtitle="Themes and visual customization"
-            onPress={() => navigation.navigate("Appearance")}
-          />
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="palette" size={20} color={theme.primary} />
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Display
+            </ThemedText>
+          </View>
+          <View style={styles.menuGroup}>
+            <MenuItem
+              icon="palette-outline"
+              title="Appearance"
+              subtitle="Themes and visual customization"
+              onPress={() => navigation.navigate("Appearance")}
+            />
+          </View>
         </View>
 
-        <View style={[styles.section, { marginBottom: spacing.l }]}>
-          <SectionHeader icon="cog-outline" title="Preferences" />
-          <SettingToggle
-            icon="vibrate"
-            label="Haptic Feedback"
-            value={hapticEnabled}
-            onValueChange={handleHapticToggle}
-          />
-          <View style={{ height: spacing.xs }} />
-          <SettingToggle
-            icon="volume-high"
-            label="UI Sounds"
-            value={uiSoundEnabled}
-            onValueChange={handleUiSoundToggle}
-          />
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="cog-outline" size={20} color={theme.primary} />
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Preferences
+            </ThemedText>
+          </View>
+          <View style={[styles.settingItem, { backgroundColor: theme.backgroundSecondary }]}>
+            <View style={styles.settingInfo}>
+              <MaterialCommunityIcons name="vibrate" size={18} color={theme.text} />
+              <ThemedText type="body" style={styles.settingLabel}>
+                Haptic Feedback
+              </ThemedText>
+            </View>
+            <FluentToggle
+              value={hapticEnabled}
+              onValueChange={handleHapticToggle}
+            />
+          </View>
+          <View style={[styles.settingItem, { backgroundColor: theme.backgroundSecondary, marginTop: Spacing.size2 }]}>
+            <View style={styles.settingInfo}>
+              <MaterialCommunityIcons name="volume-high" size={18} color={theme.text} />
+              <ThemedText type="body" style={styles.settingLabel}>
+                UI Sounds
+              </ThemedText>
+            </View>
+            <FluentToggle
+              value={uiSoundEnabled}
+              onValueChange={handleUiSoundToggle}
+            />
+          </View>
         </View>
 
-        <View style={[styles.section, { marginBottom: spacing.l }]}>
-          <SectionHeader icon="timer-outline" title="Sleep Timer" />
-          <View style={[styles.timerGrid, { gap: spacing.xs }]}>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="timer-outline" size={20} color={theme.primary} />
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Sleep Timer
+            </ThemedText>
+          </View>
+          <View style={[styles.timerGrid]}>
             {SLEEP_TIMER_OPTIONS.map((option) => (
-              <FluentChip
+              <Pressable
                 key={option.label}
-                label={option.label}
-                selected={sleepTimerMinutes === option.value}
+                style={[
+                  styles.timerOption,
+                  { 
+                    backgroundColor: sleepTimerMinutes === option.value 
+                      ? theme.primary 
+                      : theme.backgroundSecondary 
+                  },
+                ]}
                 onPress={() => {
                   playTapSound();
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setSleepTimer(option.value);
                 }}
-              />
+              >
+                <ThemedText
+                  type="small"
+                  style={{
+                    color: sleepTimerMinutes === option.value ? "#FFFFFF" : theme.text,
+                    fontWeight: "600",
+                  }}
+                >
+                  {option.label}
+                </ThemedText>
+              </Pressable>
             ))}
           </View>
-          {sleepTimerMinutes && (
-            <FluentText variant="caption1" style={{ color: colors.textSecondary, marginTop: spacing.s }}>
+          {sleepTimerMinutes ? (
+            <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
               Playback will stop in {sleepTimerMinutes} minutes
-            </FluentText>
-          )}
+            </ThemedText>
+          ) : null}
         </View>
 
-        <View style={[styles.section, { marginBottom: spacing.l }]}>
-          <SectionHeader icon="heart" title="Support" iconColor={colors.statusDanger} />
-          <FluentMenuItem
-            icon="crown-outline"
-            iconColor={colors.statusWarning}
-            title="Plan"
-            subtitle="View your current plan"
-            onPress={() => navigation.navigate("Plan")}
-          />
-          <FluentMenuItem
-            icon="gift-outline"
-            iconColor={colors.brandPrimary}
-            title="Support the Developer"
-            subtitle="Help us improve the app"
-            onPress={() => navigation.navigate("SupportDeveloper")}
-          />
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="heart" size={20} color={theme.error} />
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Support
+            </ThemedText>
+          </View>
+          <View style={styles.menuGroup}>
+            <MenuItem
+              icon="crown-outline"
+              iconColor={theme.warning}
+              title="Plan"
+              subtitle="View your current plan"
+              onPress={() => navigation.navigate("Plan")}
+            />
+            <MenuItem
+              icon="gift-outline"
+              iconColor={theme.primary}
+              title="Support the Developer"
+              subtitle="Help us improve the app"
+              onPress={() => navigation.navigate("SupportDeveloper")}
+            />
+          </View>
         </View>
 
-        <View style={[styles.section, { marginBottom: spacing.l }]}>
-          <SectionHeader icon="information" title="About" />
-          <FluentMenuItem
-            icon="information-outline"
-            title="About New Audio 360"
-            subtitle="Version, legal, and more"
-            onPress={() => navigation.navigate("About")}
-          />
-          <FluentMenuItem
-            icon="power"
-            iconColor={colors.statusDanger}
-            title="Close App"
-            subtitle="Securely exit the application"
-            onPress={handleCloseApp}
-          />
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="information" size={20} color={theme.primary} />
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              About
+            </ThemedText>
+          </View>
+          <View style={styles.menuGroup}>
+            <MenuItem
+              icon="information-outline"
+              title="About New Audio 360"
+              subtitle="Version, legal, and more"
+              onPress={() => navigation.navigate("About")}
+            />
+            <MenuItem
+              icon="power"
+              iconColor={theme.error}
+              title="Close App"
+              subtitle="Securely exit the application"
+              onPress={handleCloseApp}
+            />
+          </View>
         </View>
 
-        <View style={[styles.footer, { paddingVertical: spacing.m }]}>
-          <FluentText variant="caption1" style={{ color: colors.textSecondary, textAlign: "center" }}>
+        <View style={styles.footer}>
+          <ThemedText type="caption" style={{ color: theme.textSecondary, textAlign: "center" }}>
             New Audio 360 v1.0.0
-          </FluentText>
-          <FluentText
-            variant="caption1"
-            style={{ color: colors.textSecondary, textAlign: "center", marginTop: spacing.xxs }}
+          </ThemedText>
+          <ThemedText
+            type="caption"
+            style={{ color: theme.textSecondary, textAlign: "center", marginTop: Spacing.xs }}
           >
             Your personal music experience
-          </FluentText>
+          </ThemedText>
         </View>
       </ScrollView>
-      {showExitScreen && (
+      {showExitScreen ? (
         <ExitScreen
           onCancel={() => setShowExitScreen(false)}
           onConfirm={handleExitConfirm}
         />
-      )}
-    </View>
+      ) : null}
+    </ThemedView>
   );
 }
 
@@ -231,39 +313,76 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    zIndex: 20,
+  content: {
+    paddingHorizontal: Layout.horizontalPadding,
   },
-  headerContent: {
-    height: 56,
+  screenTitle: {
+    marginBottom: Spacing.size4,
+    fontWeight: "700",
+  },
+  menuGroup: {
+    gap: Spacing.size3,
+    marginBottom: Spacing.size5,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.size4,
+    borderRadius: BorderRadius.lg,
+  },
+  menuIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.lg,
+    alignItems: "center",
     justifyContent: "center",
   },
-  content: {},
-  section: {},
+  menuTextContainer: {
+    flex: 1,
+    marginLeft: Spacing.size3,
+  },
+  menuTitle: {
+    fontWeight: "600",
+  },
+  section: {
+    marginBottom: Spacing.size5,
+  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: Spacing.size2,
   },
-  sectionTitle: {},
+  sectionTitle: {
+    marginLeft: Spacing.size2,
+  },
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    padding: Spacing.size4,
+    borderRadius: BorderRadius.lg,
   },
   settingInfo: {
     flexDirection: "row",
     alignItems: "center",
   },
-  settingLabel: {},
+  settingLabel: {
+    marginLeft: Spacing.size3,
+  },
   footer: {
+    paddingVertical: Spacing.size4,
     alignItems: "center",
   },
   timerGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: Spacing.size2,
+  },
+  timerOption: {
+    paddingVertical: Spacing.size3,
+    paddingHorizontal: Spacing.size4,
+    borderRadius: BorderRadius.md,
+    minWidth: 70,
+    alignItems: "center",
   },
 });

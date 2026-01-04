@@ -1,44 +1,49 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated } from "react-native";
 import { Image } from "expo-image";
-import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
-import { FluentText } from "@/components/fluent2/FluentText";
+import { ThemedText } from "@/components/ThemedText";
+import { useThemeContext } from "@/contexts/ThemeContext";
+import { Spacing, BorderRadius } from "@/constants/theme";
 
 type SplashScreenProps = {
   onFinish: () => void;
 };
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
-  const { colors, spacing, radius } = useFluent2Theme();
+  const { theme } = useThemeContext();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const onFinishRef = useRef(onFinish);
-  onFinishRef.current = onFinish;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 600,
-        useNativeDriver: false,
+        useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
         toValue: 1,
         friction: 8,
         tension: 40,
-        useNativeDriver: false,
+        useNativeDriver: true,
       }),
     ]).start();
 
     const timer = setTimeout(() => {
-      onFinishRef.current();
-    }, 2500);
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        onFinish();
+      });
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <Animated.View
         style={[
           styles.content,
@@ -48,24 +53,24 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           },
         ]}
       >
-        <View style={[styles.iconContainer, { backgroundColor: colors.brandPrimary, borderRadius: radius.xl }]}>
+        <View style={[styles.iconContainer, { backgroundColor: theme.primary }]}>
           <Image
             source={require("../../assets/images/icon.png")}
             style={styles.icon}
             contentFit="contain"
           />
         </View>
-        <FluentText variant="title2" style={{ marginTop: spacing.xl, textAlign: 'center' }}>
+        <ThemedText type="h1" style={styles.title}>
           New Audio 360
-        </FluentText>
-        <FluentText variant="body1" color="secondary" style={{ marginTop: spacing.sm, textAlign: 'center' }}>
+        </ThemedText>
+        <ThemedText type="body" style={[styles.tagline, { color: theme.textSecondary }]}>
           Your personal music experience
-        </FluentText>
+        </ThemedText>
       </Animated.View>
-      <View style={[styles.footer, { bottom: spacing.xxxl }]}>
-        <FluentText variant="caption1" color="tertiary">
+      <View style={styles.footer}>
+        <ThemedText type="caption" style={{ color: theme.textTertiary }}>
           v1.0.0
-        </FluentText>
+        </ThemedText>
       </View>
     </View>
   );
@@ -83,15 +88,25 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 120,
     height: 120,
+    borderRadius: BorderRadius.xl,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: Spacing.size6,
     overflow: "hidden",
   },
   icon: {
     width: 120,
     height: 120,
   },
+  title: {
+    marginBottom: Spacing.size2,
+    textAlign: "center",
+  },
+  tagline: {
+    textAlign: "center",
+  },
   footer: {
     position: "absolute",
+    bottom: Spacing.size8,
   },
 });
