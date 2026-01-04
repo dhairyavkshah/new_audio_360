@@ -8,7 +8,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import { Spacing, BorderRadius, Layout } from "@/constants/theme";
+import { Spacing, BorderRadius, Layout, Fluent2Tokens } from "@/constants/theme";
 
 interface MiniPlayerProps {
   bottomOffset?: number;
@@ -19,7 +19,7 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
   const { theme, isDark } = useThemeContext();
   const { icons } = useSkin();
   const { playTapSound } = useUiSound();
-  const { currentSong, isPlaying, togglePlayPause } = usePlayerContext();
+  const { currentSong, isPlaying, togglePlayPause, progress } = usePlayerContext();
 
   if (!currentSong) {
     return null;
@@ -27,7 +27,9 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
 
   const handlePress = () => {
     playTapSound();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     navigation.navigate("ListenTab", {
       screen: "NowPlaying",
       params: { songId: currentSong.id },
@@ -37,27 +39,46 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
   const handlePlayPause = (event: any) => {
     event.stopPropagation();
     playTapSound();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     togglePlayPause();
   };
 
   return (
-    <View style={[styles.container, { bottom: bottomOffset + Spacing.sm }]}>
+    <View style={[styles.container, { bottom: bottomOffset + Spacing.s }]}>
+      <View style={styles.progressTrack}>
+        <View 
+          style={[
+            styles.progressFill, 
+            { 
+              width: `${(progress || 0) * 100}%`,
+              backgroundColor: theme.primary,
+            }
+          ]} 
+        />
+      </View>
       <View style={styles.background}>
         <Image 
           source={{ uri: currentSong.artwork }} 
           style={StyleSheet.absoluteFill}
         />
         <BlurView 
-          intensity={Platform.OS === "ios" ? 60 : 80} 
+          intensity={Platform.OS === "ios" ? 80 : 100} 
           tint={isDark ? "dark" : "light"} 
           style={StyleSheet.absoluteFill}
           experimentalBlurMethod={Platform.OS === "android" ? "dimezisBlurView" : undefined}
         />
+        <View 
+          style={[
+            StyleSheet.absoluteFill, 
+            { backgroundColor: isDark ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)' }
+          ]} 
+        />
         <Pressable style={styles.content} onPress={handlePress}>
           <Image source={{ uri: currentSong.artwork }} style={styles.artwork} />
           <View style={styles.info}>
-            <ThemedText type="small" numberOfLines={1} style={{ fontWeight: "600" }}>
+            <ThemedText type="labelMedium" numberOfLines={1}>
               {currentSong.title}
             </ThemedText>
             <ThemedText type="caption" style={{ color: theme.textSecondary }} numberOfLines={1}>
@@ -68,10 +89,12 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
             onPress={handlePlayPause}
             style={[styles.playButton, { backgroundColor: theme.primary }]}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel={isPlaying ? "Pause" : "Play"}
           >
             <MaterialCommunityIcons 
               name={(isPlaying ? icons.pause : icons.play) as keyof typeof MaterialCommunityIcons.glyphMap} 
-              size={18} 
+              size={20} 
               color="#FFFFFF" 
             />
           </Pressable>
@@ -84,39 +107,61 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    left: Layout.horizontalPadding,
-    right: Layout.horizontalPadding,
-    borderRadius: BorderRadius.lg,
+    left: Spacing.l,
+    right: Spacing.l,
+    borderRadius: BorderRadius.large,
     overflow: "hidden",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+      default: {
+        boxShadow: Fluent2Tokens.shadow16,
+      },
+    }),
+  },
+  progressTrack: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    zIndex: 10,
+  },
+  progressFill: {
+    height: "100%",
   },
   background: {
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.large,
     overflow: "hidden",
   },
   content: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.size2,
-    paddingHorizontal: Spacing.size3,
+    paddingVertical: Spacing.s,
+    paddingHorizontal: Spacing.m,
   },
   artwork: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.md,
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.medium,
   },
   info: {
     flex: 1,
-    marginLeft: Spacing.sm,
+    marginLeft: Spacing.m,
+    gap: 2,
   },
   playButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
   },

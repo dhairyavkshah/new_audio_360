@@ -3,14 +3,15 @@ import { View, StyleSheet, Platform } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
+  Easing,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
-import { Spacing } from "@/constants/theme";
+import { Spacing, Fluent2Tokens, BorderRadius } from "@/constants/theme";
 
 interface ProgressBarProps {
   progress: number;
@@ -22,8 +23,9 @@ interface ProgressBarProps {
   showTextShadow?: boolean;
 }
 
-const THUMB_SIZE = 14;
-const DEFAULT_HEIGHT = Spacing.waveformHeight;
+const THUMB_SIZE = 16;
+const TRACK_HEIGHT = 4;
+const ACTIVE_TRACK_HEIGHT = 6;
 
 export function ProgressBar({
   progress,
@@ -31,7 +33,7 @@ export function ProgressBar({
   currentTime,
   onSeek,
   width = 320,
-  height = DEFAULT_HEIGHT,
+  height = TRACK_HEIGHT,
   showTextShadow = false,
 }: ProgressBarProps) {
   const { theme, isDark } = useThemeContext();
@@ -42,8 +44,10 @@ export function ProgressBar({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   } : {};
+  
   const translateX = useSharedValue(progress * (width - THUMB_SIZE));
   const isDragging = useSharedValue(false);
+  const trackHeight = useSharedValue(TRACK_HEIGHT);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -64,6 +68,10 @@ export function ProgressBar({
   const panGesture = Gesture.Pan()
     .onStart(() => {
       isDragging.value = true;
+      trackHeight.value = withTiming(ACTIVE_TRACK_HEIGHT, { 
+        duration: Fluent2Tokens.durationFast,
+        easing: Easing.out(Easing.cubic),
+      });
     })
     .onUpdate((event) => {
       const newX = Math.max(0, Math.min(event.x, width - THUMB_SIZE));
@@ -71,6 +79,10 @@ export function ProgressBar({
     })
     .onEnd(() => {
       isDragging.value = false;
+      trackHeight.value = withTiming(TRACK_HEIGHT, { 
+        duration: Fluent2Tokens.durationNormal,
+        easing: Easing.out(Easing.cubic),
+      });
       const seekTime = (translateX.value / (width - THUMB_SIZE)) * duration;
       scheduleOnRN(handleSeek, seekTime);
       scheduleOnRN(triggerHaptic);
@@ -79,7 +91,10 @@ export function ProgressBar({
   const tapGesture = Gesture.Tap()
     .onEnd((event) => {
       const tapX = Math.max(0, Math.min(event.x, width - THUMB_SIZE));
-      translateX.value = withSpring(tapX, { damping: 15, stiffness: 150 });
+      translateX.value = withTiming(tapX, { 
+        duration: Fluent2Tokens.durationNormal,
+        easing: Easing.out(Easing.cubic),
+      });
       const seekTime = (tapX / (width - THUMB_SIZE)) * duration;
       scheduleOnRN(handleSeek, seekTime);
       scheduleOnRN(triggerHaptic);
@@ -100,77 +115,66 @@ export function ProgressBar({
     width: translateX.value + THUMB_SIZE / 2,
   }));
 
-  const trackRadius = components.progressStyle === 'lcd' || components.progressStyle === 'segments' 
-    ? shapes.sliderTrackRadius 
-    : height / 2;
-
-  const bevelStyle = components.useBevel ? {
-    borderWidth: shapes.borderWidth,
-    borderTopColor: 'rgba(0,0,0,0.4)',
-    borderLeftColor: 'rgba(0,0,0,0.3)',
-    borderBottomColor: 'rgba(255,255,255,0.2)',
-    borderRightColor: 'rgba(255,255,255,0.15)',
-  } : {};
-
-  const glowStyle = components.useGlow && components.glowColor ? {
-    shadowColor: components.glowColor,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: components.glowIntensity * 0.7,
-    shadowRadius: 6,
-  } : {};
-
-  const lcdStyle = components.useLcdEffect ? {
-    backgroundColor: 'rgba(0,0,0,0.9)',
-  } : {};
+  const trackAnimatedStyle = useAnimatedStyle(() => ({
+    height: trackHeight.value,
+  }));
 
   return (
     <View style={[styles.container, { width }]}>
       <GestureDetector gesture={composedGesture}>
-        <Animated.View
-          style={[
-            styles.track,
-            {
-              height,
-              borderRadius: trackRadius,
-              backgroundColor: theme.backgroundSecondary,
-            },
-            bevelStyle,
-            lcdStyle,
-          ]}
-        >
+        <View style={styles.trackWrapper}>
           <Animated.View
             style={[
-              styles.fill,
+              styles.track,
               {
-                height,
-                borderRadius: trackRadius,
-                backgroundColor: theme.primary,
+                borderRadius: BorderRadius.circular,
+                backgroundColor: theme.surfaceContainerHigh,
               },
-              glowStyle,
-              fillStyle,
+              trackAnimatedStyle,
             ]}
-          />
+          >
+            <Animated.View
+              style={[
+                styles.fill,
+                {
+                  borderRadius: BorderRadius.circular,
+                  backgroundColor: theme.primary,
+                },
+                fillStyle,
+              ]}
+            />
+          </Animated.View>
           <Animated.View
             style={[
               styles.thumb,
               {
                 width: THUMB_SIZE,
                 height: THUMB_SIZE,
-                borderRadius: shapes.sliderThumbRadius,
-                backgroundColor: "#FFFFFF",
-                top: (height - THUMB_SIZE) / 2,
-                borderColor: theme.primary,
+                borderRadius: THUMB_SIZE / 2,
+                backgroundColor: theme.primary,
+                ...Platform.select({
+                  ios: {
+                    shadowColor: theme.primary,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 4,
+                  },
+                  android: {
+                    elevation: 4,
+                  },
+                  default: {},
+                }),
               },
               thumbStyle,
             ]}
           />
-        </Animated.View>
+        </View>
       </GestureDetector>
       <View style={styles.timeContainer}>
-        <ThemedText type="caption" style={[{ color: theme.text }, textShadowStyle]}>
+        <ThemedText type="caption" style={[{ color: theme.textSecondary }, textShadowStyle]}>
           {formatTime(currentTime)}
         </ThemedText>
-        <ThemedText type="caption" style={[{ color: theme.text }, textShadowStyle]}>
+        <ThemedText type="caption" style={[{ color: theme.textSecondary }, textShadowStyle]}>
           {formatTime(duration)}
         </ThemedText>
       </View>
@@ -182,25 +186,26 @@ const styles = StyleSheet.create({
   container: {
     alignSelf: "center",
   },
+  trackWrapper: {
+    height: 32,
+    justifyContent: "center",
+  },
   track: {
+    height: TRACK_HEIGHT,
     justifyContent: "center",
   },
   fill: {
     position: "absolute",
     left: 0,
+    height: "100%",
   },
   thumb: {
     position: "absolute",
-    borderWidth: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    top: (32 - THUMB_SIZE) / 2,
   },
   timeContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: Spacing.md,
+    marginTop: Spacing.s,
   },
 });

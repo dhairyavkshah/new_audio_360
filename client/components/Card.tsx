@@ -1,16 +1,16 @@
 import React from "react";
-import { StyleSheet, Pressable, ViewStyle } from "react-native";
+import { StyleSheet, Pressable, ViewStyle, Platform } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
-  WithSpringConfig,
+  withTiming,
+  Easing,
 } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useSkin } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, Fluent2Tokens } from "@/constants/theme";
 
 interface CardProps {
   elevation?: number;
@@ -21,27 +21,23 @@ interface CardProps {
   style?: ViewStyle;
 }
 
-const springConfig: WithSpringConfig = {
-  damping: 15,
-  mass: 0.3,
-  stiffness: 150,
-  overshootClamping: true,
-  energyThreshold: 0.001,
-};
-
 const getBackgroundColorForElevation = (
   elevation: number,
   theme: any,
 ): string => {
   switch (elevation) {
+    case 0:
+      return theme.surfaceContainerLowest;
     case 1:
-      return theme.backgroundDefault;
+      return theme.surfaceContainerLow;
     case 2:
-      return theme.backgroundSecondary;
+      return theme.surfaceContainer;
     case 3:
-      return theme.backgroundTertiary;
+      return theme.surfaceContainerHigh;
+    case 4:
+      return theme.surfaceContainerHighest;
     default:
-      return theme.backgroundRoot;
+      return theme.surface;
   }
 };
 
@@ -58,75 +54,84 @@ export function Card({
   const { theme } = useTheme();
   const { shapes, components } = useSkin();
   const scale = useSharedValue(1);
+  const bgOpacity = useSharedValue(1);
 
   const cardBackgroundColor = getBackgroundColorForElevation(elevation, theme);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+    opacity: bgOpacity.value,
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.98, springConfig);
+    if (onPress) {
+      scale.value = withTiming(0.98, { 
+        duration: Fluent2Tokens.durationFast,
+        easing: Easing.out(Easing.cubic),
+      });
+      bgOpacity.value = withTiming(0.95, { 
+        duration: Fluent2Tokens.durationFast,
+      });
+    }
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, springConfig);
+    if (onPress) {
+      scale.value = withTiming(1, { 
+        duration: Fluent2Tokens.durationNormal,
+        easing: Easing.out(Easing.cubic),
+      });
+      bgOpacity.value = withTiming(1, { 
+        duration: Fluent2Tokens.durationNormal,
+      });
+    }
   };
 
-  const glassStyle = components.useGlass ? {
-    backgroundColor: cardBackgroundColor + 'CC',
-  } : {};
-
-  const bevelStyle = components.useBevel ? {
-    borderWidth: shapes.borderWidth,
-    borderTopColor: 'rgba(255,255,255,0.25)',
-    borderLeftColor: 'rgba(255,255,255,0.15)',
-    borderBottomColor: 'rgba(0,0,0,0.35)',
-    borderRightColor: 'rgba(0,0,0,0.25)',
-  } : {};
-
-  const glowStyle = components.useGlow && components.glowColor ? {
-    shadowColor: components.glowColor,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: components.glowIntensity * 0.5,
-    shadowRadius: 12,
-  } : {};
-
-  const shadowStyle = components.useShadow ? {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: components.shadowIntensity,
-    shadowRadius: 6,
-    elevation: 3,
-  } : {};
+  const getShadowStyle = () => {
+    if (!components.useShadow) return {};
+    
+    return Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: elevation },
+        shadowOpacity: 0.08 + (elevation * 0.02),
+        shadowRadius: elevation * 2,
+      },
+      android: {
+        elevation: elevation,
+      },
+      default: {
+        boxShadow: elevation >= 2 ? Fluent2Tokens.shadow4 : Fluent2Tokens.shadow2,
+      },
+    }) || {};
+  };
 
   return (
     <AnimatedPressable
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      disabled={!onPress}
+      accessibilityRole={onPress ? "button" : undefined}
       style={[
         styles.card,
         {
           backgroundColor: cardBackgroundColor,
-          borderRadius: shapes.cardBorderRadius || BorderRadius.card,
-          borderColor: theme.cardBorder || theme.outline,
+          borderRadius: shapes.cardBorderRadius || BorderRadius.large,
+          borderColor: theme.outlineVariant,
         },
-        glassStyle,
-        bevelStyle,
-        shadowStyle,
-        glowStyle,
+        getShadowStyle(),
         animatedStyle,
         style,
       ]}
     >
       {title ? (
-        <ThemedText type="h4" style={styles.cardTitle}>
+        <ThemedText type="titleSmall" style={styles.cardTitle}>
           {title}
         </ThemedText>
       ) : null}
       {description ? (
-        <ThemedText type="small" style={styles.cardDescription}>
+        <ThemedText type="bodySmall" style={[styles.cardDescription, { color: theme.textSecondary }]}>
           {description}
         </ThemedText>
       ) : null}
@@ -137,13 +142,13 @@ export function Card({
 
 const styles = StyleSheet.create({
   card: {
-    padding: Spacing.size4,
-    borderWidth: 1,
+    padding: Spacing.l,
+    borderWidth: Fluent2Tokens.strokeWidthThin,
   },
   cardTitle: {
-    marginBottom: Spacing.size2,
+    marginBottom: Spacing.s,
   },
   cardDescription: {
-    opacity: 0.7,
+    marginBottom: Spacing.m,
   },
 });

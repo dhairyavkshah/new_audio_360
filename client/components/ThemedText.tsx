@@ -8,16 +8,23 @@ export type ThemedTextProps = TextProps & {
   darkColor?: string;
   type?:
     | "display"
+    | "displayLarge"
+    | "displayMedium"
+    | "displaySmall"
     | "titleLarge"
     | "titleMedium"
     | "titleSmall"
+    | "subtitle1"
+    | "subtitle2"
     | "bodyLarge"
     | "body"
+    | "bodyMedium"
     | "bodySmall"
     | "labelLarge"
     | "labelMedium"
     | "labelSmall"
     | "caption"
+    | "captionSmall"
     | "link"
     | "h1"
     | "h2"
@@ -48,7 +55,7 @@ export function ThemedText({
       return theme.link;
     }
 
-    if (type === "caption" || type === "small" || type === "labelSmall") {
+    if (type === "caption" || type === "captionSmall" || type === "small" || type === "labelSmall") {
       return theme.textSecondary;
     }
 
@@ -59,6 +66,12 @@ export function ThemedText({
     switch (type) {
       case "display":
         return Typography.display;
+      case "displayLarge":
+        return Typography.displayLarge;
+      case "displayMedium":
+        return Typography.displayMedium;
+      case "displaySmall":
+        return Typography.displaySmall;
       case "titleLarge":
       case "h1":
         return Typography.titleLarge;
@@ -70,9 +83,14 @@ export function ThemedText({
         return Typography.titleSmall;
       case "h4":
         return Typography.h4;
+      case "subtitle1":
+        return Typography.subtitle1;
+      case "subtitle2":
+        return Typography.subtitle2;
       case "bodyLarge":
         return Typography.bodyLarge;
       case "body":
+      case "bodyMedium":
         return Typography.body;
       case "bodySmall":
       case "small":
@@ -85,6 +103,8 @@ export function ThemedText({
         return Typography.labelSmall;
       case "caption":
         return Typography.caption;
+      case "captionSmall":
+        return Typography.captionSmall;
       case "link":
         return Typography.link;
       default:
@@ -93,6 +113,9 @@ export function ThemedText({
   };
 
   return (
-    <Text style={[{ color: getColor() }, getTypeStyle(), style]} {...rest} />
+    <Text 
+      style={[{ color: getColor() }, getTypeStyle(), style]} 
+      {...rest} 
+    />
   );
 }

@@ -1,12 +1,18 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { View, StyleSheet, Pressable, Platform } from "react-native";
-import { useNavigation, useNavigationState } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Layout, Spacing, Typography } from "@/constants/theme";
+import { Layout, Spacing, BorderRadius, Fluent2Tokens } from "@/constants/theme";
 
 interface TopBarProps {
   title: string;
@@ -15,6 +21,8 @@ interface TopBarProps {
   actions?: React.ReactNode;
   transparent?: boolean;
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function TopBar({
   title,
@@ -54,44 +62,127 @@ export function TopBar({
         {
           paddingTop: insets.top,
           backgroundColor: transparent ? "transparent" : theme.surfaceContainer,
+          borderBottomColor: transparent ? "transparent" : theme.outlineVariant,
         },
       ]}
     >
       <View style={styles.content}>
         <View style={styles.leftSection}>
           {shouldShowBack ? (
-            <Pressable
+            <IconButton
+              icon="arrow-left"
               onPress={handleBack}
-              style={[styles.iconButton, { backgroundColor: theme.elevation1 }]}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <MaterialCommunityIcons
-                name="arrow-left"
-                size={24}
-                color={theme.onSurface}
-              />
-            </Pressable>
+              label="Go back"
+              theme={theme}
+            />
           ) : null}
           {showHome && !shouldShowBack ? (
-            <Pressable
+            <IconButton
+              icon="home-outline"
               onPress={handleHome}
-              style={[styles.iconButton, { backgroundColor: theme.elevation1 }]}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <MaterialCommunityIcons
-                name="home-outline"
-                size={24}
-                color={theme.onSurface}
-              />
-            </Pressable>
+              label="Go to home"
+              theme={theme}
+            />
           ) : null}
-          <ThemedText style={[styles.title, { marginLeft: shouldShowBack || showHome ? Spacing.md : 0 }]}>
+          <ThemedText 
+            type="titleMedium" 
+            style={[styles.title, { marginLeft: shouldShowBack || showHome ? Spacing.m : 0 }]}
+          >
             {title}
           </ThemedText>
         </View>
         {actions ? <View style={styles.actions}>{actions}</View> : null}
       </View>
     </View>
+  );
+}
+
+function IconButton({ 
+  icon, 
+  onPress, 
+  label, 
+  theme 
+}: { 
+  icon: keyof typeof MaterialCommunityIcons.glyphMap; 
+  onPress: () => void; 
+  label: string;
+  theme: any;
+}) {
+  const scale = useSharedValue(1);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+  const [hoverActive, setHoverActive] = useState(false);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    setIsPressed(true);
+    scale.value = withTiming(0.95, { 
+      duration: Fluent2Tokens.durationFast,
+      easing: Easing.out(Easing.cubic),
+    });
+  };
+
+  const handlePressOut = () => {
+    setIsPressed(false);
+    scale.value = withTiming(1, { 
+      duration: Fluent2Tokens.durationNormal,
+      easing: Easing.out(Easing.cubic),
+    });
+  };
+
+  const handleHoverIn = () => {
+    setHoverActive(true);
+  };
+
+  const handleHoverOut = () => {
+    setHoverActive(false);
+  };
+
+  const getBackgroundColor = () => {
+    if (isPressed) return theme.surfaceContainerHighest;
+    if (hoverActive) return theme.surfaceContainerHigh;
+    return theme.surfaceContainer;
+  };
+
+  const focusStyle = isFocused ? Platform.select({
+    web: {
+      outline: `2px solid ${theme.primary}`,
+      outlineOffset: 2,
+    },
+    default: {
+      borderWidth: Fluent2Tokens.strokeWidthThick,
+      borderColor: theme.primary,
+    },
+  }) : {};
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onHoverIn={handleHoverIn}
+      onHoverOut={handleHoverOut}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      style={[
+        styles.iconButton, 
+        { backgroundColor: getBackgroundColor() },
+        focusStyle,
+        animatedStyle,
+      ]}
+      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <MaterialCommunityIcons
+        name={icon}
+        size={20}
+        color={theme.onSurface}
+      />
+    </AnimatedPressable>
   );
 }
 
@@ -105,6 +196,14 @@ export function TopBarAction({
   badge?: number;
 }) {
   const { theme } = useThemeContext();
+  const scale = useSharedValue(1);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+  const [hoverActive, setHoverActive] = useState(false);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const handlePress = () => {
     if (Platform.OS !== "web") {
@@ -113,32 +212,85 @@ export function TopBarAction({
     onPress();
   };
 
+  const handlePressIn = () => {
+    setIsPressed(true);
+    scale.value = withTiming(0.95, { 
+      duration: Fluent2Tokens.durationFast,
+      easing: Easing.out(Easing.cubic),
+    });
+  };
+
+  const handlePressOut = () => {
+    setIsPressed(false);
+    scale.value = withTiming(1, { 
+      duration: Fluent2Tokens.durationNormal,
+      easing: Easing.out(Easing.cubic),
+    });
+  };
+
+  const handleHoverIn = () => {
+    setHoverActive(true);
+  };
+
+  const handleHoverOut = () => {
+    setHoverActive(false);
+  };
+
+  const getBackgroundColor = () => {
+    if (isPressed) return theme.surfaceContainerHighest;
+    if (hoverActive) return theme.surfaceContainerHigh;
+    return theme.surfaceContainer;
+  };
+
+  const focusStyle = isFocused ? Platform.select({
+    web: {
+      outline: `2px solid ${theme.primary}`,
+      outlineOffset: 2,
+    },
+    default: {
+      borderWidth: Fluent2Tokens.strokeWidthThick,
+      borderColor: theme.primary,
+    },
+  }) : {};
+
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={handlePress}
-      style={[styles.iconButton, { backgroundColor: theme.elevation1 }]}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onHoverIn={handleHoverIn}
+      onHoverOut={handleHoverOut}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      style={[
+        styles.iconButton, 
+        { backgroundColor: getBackgroundColor() },
+        focusStyle,
+        animatedStyle,
+      ]}
       hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      accessibilityRole="button"
     >
-      <MaterialCommunityIcons name={icon} size={24} color={theme.onSurface} />
+      <MaterialCommunityIcons name={icon} size={20} color={theme.onSurface} />
       {badge && badge > 0 ? (
         <View style={[styles.badge, { backgroundColor: theme.error }]}>
           <ThemedText style={styles.badgeText}>{badge > 99 ? "99+" : badge}</ThemedText>
         </View>
       ) : null}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    width: "100%",
+    borderBottomWidth: Fluent2Tokens.strokeWidthThin,
   },
   content: {
     height: Layout.topBarHeight,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: Spacing.l,
   },
   leftSection: {
     flexDirection: "row",
@@ -146,35 +298,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: Typography.titleLarge.fontSize,
-    fontWeight: Typography.titleLarge.fontWeight,
+    flex: 1,
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.large,
     alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
   },
   actions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.xs,
+    gap: Spacing.s,
   },
   badge: {
     position: "absolute",
     top: -4,
     right: -4,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: "center",
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 4,
   },
   badgeText: {
+    color: "#FFFFFF",
     fontSize: 10,
     fontWeight: "600",
-    color: "#FFFFFF",
   },
 });
