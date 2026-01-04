@@ -12,21 +12,21 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent2";
 import { PlaybackControls } from "@/components/PlaybackControls";
 import { ProgressBar } from "@/components/ProgressBar";
 import { AudioWaveform } from "@/components/AudioWaveform";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { Spacing, BorderRadius, ModeStyles, Layout } from "@/constants/theme";
+import { Fluent2 } from "@/constants/fluent2";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const ARTWORK_SIZE = Math.min(SCREEN_WIDTH - Spacing["2xl"] * 2, 320);
+const ARTWORK_SIZE = Math.min(SCREEN_WIDTH - 64, 320);
 const BLUR_INTENSITY = 40;
 
 export default function NowPlayingScreen() {
@@ -37,9 +37,9 @@ export default function NowPlayingScreen() {
   try {
     tabBarHeight = useBottomTabBarHeight();
   } catch {
-    tabBarHeight = Layout.bottomNavHeight + insets.bottom;
+    tabBarHeight = 80 + insets.bottom;
   }
-  const { theme, isDark } = useThemeContext();
+  const { colors, spacing, radius, isDark } = useFluent2Theme();
   const { playTapSound } = useUiSound();
   const { isFavorite, toggleFavorite } = usePlayerContext();
   const {
@@ -83,12 +83,12 @@ export default function NowPlayingScreen() {
 
   if (!currentSong) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.emptyState}>
-          <ThemedText type="h3">No song playing</ThemedText>
-          <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+          <FluentText variant="title2">No song playing</FluentText>
+          <FluentText variant="body1" color="secondary" style={{ marginTop: spacing.sm }}>
             Select a song from your library
-          </ThemedText>
+          </FluentText>
         </View>
       </View>
     );
@@ -101,48 +101,48 @@ export default function NowPlayingScreen() {
         style={StyleSheet.absoluteFill}
         blurRadius={Platform.OS === "ios" ? BLUR_INTENSITY : BLUR_INTENSITY / 2}
       >
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? `rgba(0,0,0,${ModeStyles.listen.overlayOpacityDark + 0.2})` : `rgba(255,255,255,${ModeStyles.listen.overlayOpacityLight + 0.1})` }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.7)' }]} />
       </ImageBackground>
 
-      <View style={[styles.content, { paddingTop: headerHeight + Spacing.lg, paddingBottom: tabBarHeight + Spacing.xl }]}>
-        <View style={styles.artworkContainer}>
-          <Animated.View style={[styles.artworkWrapper, artworkStyle]}>
+      <View style={[styles.content, { paddingTop: headerHeight + spacing.lg, paddingBottom: tabBarHeight + spacing.xl, paddingHorizontal: spacing.xl }]}>
+        <View style={[styles.artworkContainer, { marginTop: spacing.lg }]}>
+          <Animated.View style={[styles.artworkWrapper, { borderRadius: radius.xl }, artworkStyle]}>
             <Image
               source={{ uri: currentSong.artwork }}
-              style={[styles.artwork, { width: ARTWORK_SIZE, height: ARTWORK_SIZE }]}
+              style={[styles.artwork, { width: ARTWORK_SIZE, height: ARTWORK_SIZE, borderRadius: radius.xl }]}
             />
-            {(isLoading || isBuffering) ? (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color={theme.primary} />
-                <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+            {(isLoading || isBuffering) && (
+              <View style={[styles.loadingOverlay, { borderRadius: radius.xl }]}>
+                <ActivityIndicator size="large" color={colors.brandPrimary} />
+                <FluentText variant="caption1" color="secondary" style={{ marginTop: spacing.sm }}>
                   {isLoading ? "Loading..." : "Buffering..."}
-                </ThemedText>
+                </FluentText>
               </View>
-            ) : null}
+            )}
           </Animated.View>
         </View>
         
-        {error ? (
-          <View style={styles.errorContainer}>
-            <MaterialCommunityIcons name="alert-circle" size={20} color="#FF4D67" />
-            <ThemedText type="caption" style={{ color: "#FF4D67", marginLeft: Spacing.xs }}>
+        {error && (
+          <View style={[styles.errorContainer, { marginTop: spacing.sm, paddingHorizontal: spacing.md }]}>
+            <MaterialCommunityIcons name="alert-circle" size={20} color={colors.statusDanger} />
+            <FluentText variant="caption1" style={{ color: colors.statusDanger, marginLeft: spacing.xs }}>
               {error}
-            </ThemedText>
+            </FluentText>
           </View>
-        ) : null}
+        )}
 
-        <View style={styles.songInfo}>
-          <ThemedText type="h3" style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
+        <View style={[styles.songInfo, { marginTop: spacing.xxl, marginBottom: spacing.md }]}>
+          <FluentText variant="title2" style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
             {currentSong.title}
-          </ThemedText>
-          <ThemedText 
-            type="body" 
-            style={[styles.artistName, textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.85)' : theme.textSecondary }]} 
+          </FluentText>
+          <FluentText 
+            variant="body1" 
+            style={[styles.artistName, textShadowStyle, { marginTop: spacing.sm, color: isDark ? 'rgba(255,255,255,0.85)' : colors.textSecondary }]} 
             numberOfLines={1}
           >
             {currentSong.artist}
-          </ThemedText>
-          <View style={styles.actionButtons}>
+          </FluentText>
+          <View style={[styles.actionButtons, { marginTop: spacing.md, gap: spacing.lg }]}>
             <Pressable
               style={styles.actionButton}
               onPress={() => {
@@ -154,7 +154,7 @@ export default function NowPlayingScreen() {
               <MaterialCommunityIcons
                 name={isFavorite(currentSong.id) ? "heart" : "heart-outline"}
                 size={24}
-                color={isFavorite(currentSong.id) ? "#FF4D67" : (isDark ? "rgba(255,255,255,0.85)" : theme.textSecondary)}
+                color={isFavorite(currentSong.id) ? colors.statusDanger : (isDark ? "rgba(255,255,255,0.85)" : colors.textSecondary)}
               />
             </Pressable>
             <Pressable
@@ -168,34 +168,34 @@ export default function NowPlayingScreen() {
               <MaterialCommunityIcons
                 name="playlist-music"
                 size={24}
-                color={isDark ? "rgba(255,255,255,0.85)" : theme.textSecondary}
+                color={isDark ? "rgba(255,255,255,0.85)" : colors.textSecondary}
               />
             </Pressable>
           </View>
         </View>
 
-        <View style={styles.waveformContainer}>
+        <View style={[styles.waveformContainer, { marginVertical: spacing.lg }]}>
           <AudioWaveform
             isAnimating={isPlaying}
             barCount={50}
             barWidth={3}
             height={40}
-            color={theme.primary}
+            color={colors.brandPrimary}
           />
         </View>
 
-        <View style={styles.progressContainer}>
+        <View style={[styles.progressContainer, { marginBottom: spacing.xl }]}>
           <ProgressBar
             progress={progress}
             duration={duration || currentSong.duration}
             currentTime={currentTime}
             onSeek={seek}
-            width={SCREEN_WIDTH - Spacing["2xl"] * 2}
+            width={SCREEN_WIDTH - 64}
             showTextShadow={true}
           />
         </View>
 
-        <View style={styles.controlsContainer}>
+        <View style={[styles.controlsContainer, { marginBottom: spacing.md }]}>
           <PlaybackControls
             isPlaying={isPlaying}
             onPlayPause={togglePlayPause}
@@ -220,7 +220,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.xl,
   },
   emptyState: {
     flex: 1,
@@ -230,10 +229,8 @@ const styles = StyleSheet.create({
   artworkContainer: {
     justifyContent: "center",
     alignItems: "center",
-    marginTop: Spacing.lg,
   },
   artworkWrapper: {
-    borderRadius: BorderRadius.xl,
     elevation: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
@@ -241,26 +238,19 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     position: "relative",
   },
-  artwork: {
-    borderRadius: BorderRadius.xl,
-  },
+  artwork: {},
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: BorderRadius.xl,
     justifyContent: "center",
     alignItems: "center",
   },
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: Spacing.sm,
-    paddingHorizontal: Spacing.md,
   },
   songInfo: {
     alignItems: "center",
-    marginTop: Spacing["2xl"],
-    marginBottom: Spacing.md,
     width: "100%",
   },
   songTitle: {
@@ -268,14 +258,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   artistName: {
-    marginTop: Spacing.sm,
     textAlign: "center",
     fontWeight: "500",
   },
   actionButtons: {
     flexDirection: "row",
-    marginTop: Spacing.md,
-    gap: Spacing.lg,
   },
   actionButton: {
     width: 44,
@@ -283,14 +270,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  waveformContainer: {
-    marginVertical: Spacing.lg,
-  },
-  progressContainer: {
-    marginBottom: Spacing.xl,
-  },
+  waveformContainer: {},
+  progressContainer: {},
   controlsContainer: {
     width: "100%",
-    marginBottom: Spacing.md,
   },
 });

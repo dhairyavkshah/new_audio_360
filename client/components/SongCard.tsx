@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from "react";
-import { View, StyleSheet, Pressable, Image, Platform, GestureResponderEvent } from "react-native";
+import { View, StyleSheet, Pressable, Image, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
@@ -7,12 +7,11 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { FluentText } from "@/components/fluent2";
+import { useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
-import { Song } from "@/lib/data";
+import { Fluent2 } from "@/constants/fluent2";
 
 interface SongCardProps {
   song: PlayableSong;
@@ -28,7 +27,7 @@ interface SongCardProps {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function SongCard({ song, onPress, onContextMenu, onAddToPlaylist, isPlaying = false, showDuration = true, showFavoriteButton = true, showAddToPlaylist = false }: SongCardProps) {
-  const { theme } = useThemeContext();
+  const { colors, spacing, radius } = useFluent2Theme();
   const { playTapSound } = useUiSound();
   const { isFavorite, toggleFavorite } = usePlayerContext();
   const scale = useSharedValue(1);
@@ -109,37 +108,38 @@ export function SongCard({ song, onPress, onContextMenu, onAddToPlaylist, isPlay
       delayLongPress={400}
       style={[
         styles.container,
-        { backgroundColor: theme.backgroundDefault },
+        { 
+          backgroundColor: colors.surfacePrimary,
+          borderRadius: radius.md,
+          padding: spacing.sm,
+          marginBottom: spacing.xs,
+        },
         animatedStyle,
       ]}
       {...containerProps}
     >
       <View style={styles.artworkContainer}>
-        <Image source={{ uri: song.artwork }} style={styles.artwork} />
-        {isPlaying ? (
-          <View style={[styles.playingIndicator, { backgroundColor: theme.primary }]}>
+        <Image source={{ uri: song.artwork }} style={[styles.artwork, { borderRadius: radius.md }]} />
+        {isPlaying && (
+          <View style={[styles.playingIndicator, { backgroundColor: colors.brandPrimary }]}>
             <MaterialCommunityIcons name="volume-high" size={12} color="#FFFFFF" />
           </View>
-        ) : null}
+        )}
       </View>
-      <View style={styles.info}>
-        <ThemedText type="body" numberOfLines={1} style={styles.title}>
+      <View style={[styles.info, { marginLeft: spacing.sm }]}>
+        <FluentText variant="body1" numberOfLines={1} style={{ fontWeight: "500" }}>
           {song.title}
-        </ThemedText>
-        <ThemedText
-          type="small"
-          style={[styles.artist, { color: theme.textSecondary }]}
-          numberOfLines={1}
-        >
+        </FluentText>
+        <FluentText variant="caption1" color="secondary" numberOfLines={1} style={{ marginTop: 2 }}>
           {song.artist}
-        </ThemedText>
+        </FluentText>
       </View>
-      {showDuration ? (
-        <ThemedText type="small" style={[styles.duration, { color: theme.textSecondary }]}>
+      {showDuration && (
+        <FluentText variant="caption1" color="secondary" style={{ marginRight: spacing.xs }}>
           {formatDuration(song.duration)}
-        </ThemedText>
-      ) : null}
-      {showAddToPlaylist ? (
+        </FluentText>
+      )}
+      {showAddToPlaylist && (
         <Pressable
           onPress={handleAddToPlaylistPress}
           style={styles.actionButton}
@@ -148,11 +148,11 @@ export function SongCard({ song, onPress, onContextMenu, onAddToPlaylist, isPlay
           <MaterialCommunityIcons 
             name="playlist-plus" 
             size={22} 
-            color={theme.primary} 
+            color={colors.brandPrimary} 
           />
         </Pressable>
-      ) : null}
-      {showFavoriteButton ? (
+      )}
+      {showFavoriteButton && (
         <Pressable
           onPress={handleFavoritePress}
           style={styles.actionButton}
@@ -161,11 +161,11 @@ export function SongCard({ song, onPress, onContextMenu, onAddToPlaylist, isPlay
           <MaterialCommunityIcons 
             name={favorite ? "heart" : "heart-outline"} 
             size={22} 
-            color={favorite ? "#FF4D67" : theme.textSecondary} 
+            color={favorite ? colors.statusDanger : colors.textSecondary} 
           />
         </Pressable>
-      ) : null}
-      <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
+      )}
+      <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
     </AnimatedPressable>
   );
 }
@@ -174,44 +174,30 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.size4,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.size3,
   },
   artworkContainer: {
     position: "relative",
   },
   artwork: {
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.lg,
+    width: 52,
+    height: 52,
   },
   playingIndicator: {
     position: "absolute",
     bottom: -4,
     right: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     justifyContent: "center",
     alignItems: "center",
   },
   info: {
     flex: 1,
-    marginLeft: Spacing.size3,
-  },
-  title: {
-    fontWeight: "500",
-  },
-  artist: {
-    marginTop: 2,
-  },
-  duration: {
-    marginRight: Spacing.sm,
   },
   actionButton: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
   },
