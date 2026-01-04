@@ -9,6 +9,8 @@ import { StatusBar } from "expo-status-bar";
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Fluent2ThemeProvider, useFluent2Theme } from "@/contexts/Fluent2ThemeContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { UiSoundProvider } from "@/contexts/UiSoundContext";
 import { PlayerProvider } from "@/contexts/PlayerContext";
 import { MediaLibraryProvider, useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import SplashScreen from "@/screens/SplashScreen";
@@ -90,11 +92,15 @@ export default function App() {
         <GestureHandlerRootView style={styles.root}>
           <KeyboardProvider>
             <Fluent2ThemeProvider>
-              <MediaLibraryProvider>
-                <PlayerProvider>
-                  <AppContent />
-                </PlayerProvider>
-              </MediaLibraryProvider>
+              <ThemeProvider>
+                <UiSoundProvider>
+                  <MediaLibraryProvider>
+                    <PlayerProvider>
+                      <AppContent />
+                    </PlayerProvider>
+                  </MediaLibraryProvider>
+                </UiSoundProvider>
+              </ThemeProvider>
             </Fluent2ThemeProvider>
           </KeyboardProvider>
         </GestureHandlerRootView>

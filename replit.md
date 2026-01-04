@@ -2,7 +2,7 @@
 
 ## Overview
 
-New Audio 360 is a premium, 100% offline mobile music player application built as a **pure native Android app**. Its core purpose is to provide audio enthusiasts with a full-featured, device-local music experience. Key capabilities include a robust music player ("Listen Mode"), comprehensive music organization ("Library"), professional sound customization ("Sound Lab"), and extensive personalization through 55 themes. The project aims to offer a high-quality, private, and fully self-contained music experience without relying on any external servers, cloud services, or internet connectivity.
+New Audio 360 is a premium, 100% offline mobile music player application built with **Expo/React Native** for cross-platform support. Its core purpose is to provide audio enthusiasts with a full-featured, device-local music experience. Key capabilities include a robust music player ("Listen Mode"), comprehensive music organization ("Library"), professional sound customization ("Sound Lab"), and extensive personalization through themes. The project aims to offer a high-quality, private, and fully self-contained music experience without relying on any external servers, cloud services, or internet connectivity.
 
 ## Project Rules
 
@@ -12,16 +12,17 @@ New Audio 360 is a premium, 100% offline mobile music player application built a
 - **NO Server/Backend** - Absolutely no server-side logic, no backend, no API endpoints
 - **NO Cloud Services** - No Firebase, no AWS, no any cloud database or storage
 - **NO Network Requests** - No HTTP calls, no WebSockets, no internet connectivity required
-- **NO Web App** - This is NOT a web application; do not create web endpoints or web UI
-- **ALL Data Stays on Device** - All user data, settings, and media stored locally only
+- **ALL Data Stays on Device** - All user data, settings, and media stored locally only using AsyncStorage
 
-**Native Android Implementation:**
-- This is a **pure native Android app** (Kotlin)
-- **NO Expo** - Do not use Expo SDK or any Expo modules
-- **NO Metro Bundler** - Do not use React Native's Metro bundler
-- **Traditional GitHub workflow** - Use standard Android development practices with Gradle builds
-- Build and distribute via GitHub releases/Actions for APK generation
-- Use native Android components (Kotlin/Java) with Android SDK
+## Recent Changes
+
+### Fluent 2 Design System Implementation (January 2026)
+- Implemented complete Microsoft Fluent 2 design system for Android
+- Created comprehensive design tokens: colors, typography, spacing, elevation, radius, icon sizes, durations
+- Built 14 Fluent 2 components: Button, Card, Text, ListItem, Toggle, Chip, TextField, AppBar, TabBar, BottomSheet, Icon, Avatar, ProgressBar, Slider
+- Created Fluent2ThemeContext for theme management with light/dark mode support
+- Updated SplashScreen, LoadingScreen, and PermissionOnboardingScreen with new Fluent 2 components
+- Implemented compatibility layer in ThemeContext to support legacy screens during migration
 
 ## User Preferences
 
@@ -29,41 +30,49 @@ I prefer concise and direct communication. When making changes, prioritize core 
 
 ## System Architecture
 
-The application is built as a **pure native Android app** (Kotlin), ensuring a fully offline and device-local experience. There is no backend server, API calls, or cloud integration; all data persists locally via SharedPreferences/Room database. The UI/UX adheres to the Microsoft Fluent 2 design system (v5.0), emphasizing clarity, consistency, and adaptability, with a comprehensive theming system offering 55 unique skins.
+The application is built with **Expo/React Native** (TypeScript), ensuring a fully offline and device-local experience. There is no backend server, API calls, or cloud integration; all data persists locally via AsyncStorage. The UI/UX adheres to the **Microsoft Fluent 2 design system**, emphasizing clarity, consistency, and adaptability.
 
-**Technical Implementations:**
-- **Platform**: Native Android (Kotlin)
-- **Build System**: Gradle with Android Gradle Plugin
-- **State Management**: ViewModel + LiveData/StateFlow
-- **Data Persistence**: Room database and SharedPreferences for local storage
-- **Styling**: Material Design 3 components customized for Fluent 2 design tokens
-- **Audio Playback**: Android MediaPlayer/ExoPlayer for local audio file playback
-- **Media Access**: MediaStore API for reading audio files from device storage
+**Technical Stack:**
+- **Framework**: Expo SDK 54 with React Native
+- **Language**: TypeScript
+- **State Management**: React Context + Hooks
+- **Data Persistence**: AsyncStorage for local storage
+- **Styling**: Fluent 2 design tokens with React Native StyleSheet
+- **Audio Playback**: expo-audio for local audio file playback
+- **Media Access**: expo-media-library for reading audio files from device storage
+
+**Key Directories:**
+- `client/` - Main application code
+  - `components/fluent2/` - Fluent 2 design system components
+  - `constants/fluent2.ts` - Fluent 2 design tokens
+  - `contexts/` - React Context providers (Fluent2ThemeContext, ThemeContext, PlayerContext, etc.)
+  - `screens/` - Application screens
+  - `navigation/` - React Navigation setup
 
 **Navigation Structure:**
 The app features a 3-tab navigation structure:
 - **MainTabNavigator**: Hosts Listen, Library, and Settings tabs, with a persistent MiniPlayer overlay.
     - **ListenTab**: Main music player, Now Playing, Sound Lab, and Queue management.
-    - **LibraryTab**: Music organization (Songs, Albums, Artists, Playlists, Liked Songs, Recently Played), and Playlist Management (CRUD).
-    - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Support Developer (donation), and About.
+    - **LibraryTab**: Music organization (Songs, Albums, Artists, Playlists, Liked Songs, Recently Played), and Playlist Management.
+    - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Support Developer, and About.
 
-**Feature Specifications:**
-- **Theming**: 55 themes with custom icons (MaterialCommunityIcons), shapes, and component variants.
-- **Sound Lab**: Offers mutually exclusive Equalizer presets (Flat, Rock, Pop, etc.) or Immersive modes (Cinema, Music, etc.), integrated into Settings. These are UI selections due to `expo-audio` limitations for native DSP.
-- **Donation System**: Replaces subscriptions, allowing users to support development via multi-currency donations (UPI, PayPal.me), unlocking premium features.
-- **MiniPlayer**: A persistent, glassmorphism-effect mini-player for quick control and navigation.
-- **Media Library Integration**: Onboarding for media access, paginated loading of device audio, and "Hide Song" functionality.
-- **Playlist Management**: Full CRUD operations for playlists, stored locally.
-- **Playback Features**: Favorites, Recently Played, Most Played, Queue Management, and Sleep Timer.
+**Fluent 2 Design System:**
+- Design tokens in `client/constants/fluent2.ts`
+- Theme provider in `client/contexts/Fluent2ThemeContext.tsx`
+- Components in `client/components/fluent2/`
+- Compatibility wrapper in `client/contexts/ThemeContext.tsx` for legacy screens
 
 ## External Dependencies
 
-The project relies exclusively on native Android libraries, maintaining a strict offline-first architecture with no external network dependencies.
+The project relies on Expo and React Native libraries, maintaining a strict offline-first architecture with no external network dependencies.
 
-- **Android SDK**: Core platform for development (minSdk 24+, targetSdk 34)
-- **Kotlin**: Primary programming language
-- **Jetpack Libraries**: Navigation, ViewModel, LiveData, Room
-- **Material Design 3**: For UI components (customized for Fluent 2)
-- **ExoPlayer/MediaPlayer**: For audio playback from device storage
-- **MediaStore API**: For accessing and managing local audio files on the device
-- **Material Icons**: For iconography across the application
+- **expo**: Core Expo SDK
+- **react-native**: Cross-platform mobile framework
+- **@react-navigation/native**: Navigation framework
+- **@react-native-async-storage/async-storage**: Local data persistence
+- **expo-audio**: Audio playback
+- **expo-media-library**: Device media access
+- **expo-haptics**: Haptic feedback
+- **expo-image**: Image display
+- **react-native-gesture-handler**: Touch gesture handling
+- **react-native-reanimated**: Advanced animations

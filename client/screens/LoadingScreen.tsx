@@ -19,7 +19,7 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
         toValue: 1,
         duration: 1200,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: false,
       })
     );
 
@@ -29,13 +29,13 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
           toValue: 1.1,
           duration: 600,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
           duration: 600,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     );
