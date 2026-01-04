@@ -85,8 +85,8 @@ export default function MainTabNavigator() {
           borderTopWidth: 0,
           elevation: 0,
           height: Platform.OS === "ios" ? Layout.bottomNavHeight + 20 : Layout.bottomNavHeight,
-          paddingBottom: Platform.OS === "ios" ? Spacing.lg : Spacing.xs,
-          paddingTop: Spacing.xs,
+          paddingBottom: Platform.OS === "ios" ? Spacing.l : Spacing.s,
+          paddingTop: Spacing.s,
           shadowColor: theme.scrim,
           shadowOffset: { width: 0, height: -1 },
           shadowOpacity: 0.08,
@@ -96,10 +96,10 @@ export default function MainTabNavigator() {
         tabBarLabelStyle: {
           fontSize: Typography.labelSmall.fontSize,
           fontWeight: Typography.labelSmall.fontWeight,
-          marginTop: 2,
+          marginTop: Spacing.titleToSubtitle,
         },
         tabBarItemStyle: {
-          paddingTop: 8,
+          paddingVertical: Spacing.s,
         },
       }}
       screenListeners={{

@@ -41,10 +41,10 @@ export function ScreenLayout({
     tabBarHeight = hasTabBar ? Layout.bottomNavHeight + insets.bottom : insets.bottom;
   }
 
-  const topPadding = hasHeader ? headerHeight + Spacing.md : insets.top + Layout.safeAreaPadding;
+  const topPadding = hasHeader ? headerHeight + Spacing.l : insets.top + Layout.safeAreaPadding;
   const bottomPadding = hasBottomControls
-    ? tabBarHeight + Spacing.xl
-    : tabBarHeight + Spacing.md;
+    ? tabBarHeight + Spacing.xxl
+    : tabBarHeight + Spacing.l;
 
   return (
     <ThemedView style={[styles.container, style]}>

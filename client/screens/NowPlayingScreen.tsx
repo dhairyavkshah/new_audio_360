@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: Layout.horizontalPadding,
   },
   emptyState: {
     flex: 1,
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   artworkContainer: {
     justifyContent: "center",
     alignItems: "center",
-    marginTop: Spacing.lg,
+    marginTop: Spacing.artworkMargin,
   },
   artworkWrapper: {
     borderRadius: BorderRadius.xl,
@@ -265,13 +265,13 @@ const styles = StyleSheet.create({
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: Spacing.sm,
-    paddingHorizontal: Spacing.md,
+    marginTop: Spacing.contentBlock,
+    paddingHorizontal: Spacing.l,
   },
   songInfo: {
     alignItems: "center",
-    marginTop: Spacing["2xl"],
-    marginBottom: Spacing.md,
+    marginTop: Spacing.artworkMarginLarge,
+    marginBottom: Spacing.l,
     width: "100%",
   },
   songTitle: {
@@ -279,29 +279,29 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   artistName: {
-    marginTop: Spacing.sm,
+    marginTop: Spacing.titleToSubtitle,
     textAlign: "center",
     fontWeight: "500",
   },
   actionButtons: {
     flexDirection: "row",
-    marginTop: Spacing.md,
-    gap: Spacing.lg,
+    marginTop: Spacing.l,
+    gap: Spacing.controlCluster,
   },
   actionButton: {
-    width: 44,
-    height: 44,
+    width: Layout.touchTargetMin,
+    height: Layout.touchTargetMin,
     justifyContent: "center",
     alignItems: "center",
   },
   waveformContainer: {
-    marginVertical: Spacing.lg,
+    marginVertical: Spacing.progressBarSpacing,
   },
   progressContainer: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.progressBarSpacing,
   },
   controlsContainer: {
     width: "100%",
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.l,
   },
 });

@@ -9,7 +9,7 @@ import Animated, {
 import * as Haptics from "expo-haptics";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing } from "@/constants/theme";
+import { Spacing, Layout } from "@/constants/theme";
 
 interface PlaybackControlsProps {
   isPlaying: boolean;
@@ -202,12 +202,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: Spacing.xxl,
   },
   mainControls: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.xl,
+    gap: Spacing.controlCluster,
   },
   secondaryControls: {
     alignItems: "center",

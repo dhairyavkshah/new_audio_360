@@ -86,7 +86,7 @@ export function TopBar({
           ) : null}
           <ThemedText 
             type="titleMedium" 
-            style={[styles.title, { marginLeft: shouldShowBack || showHome ? Spacing.m : 0 }]}
+            style={[styles.title, { marginLeft: shouldShowBack || showHome ? 0 : Spacing.s }]}
           >
             {title}
           </ThemedText>
@@ -173,13 +173,13 @@ function IconButton({
         focusStyle,
         animatedStyle,
       ]}
-      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
       accessibilityRole="button"
       accessibilityLabel={label}
     >
       <MaterialCommunityIcons
         name={icon}
-        size={20}
+        size={24}
         color={theme.onSurface}
       />
     </AnimatedPressable>
@@ -268,10 +268,10 @@ export function TopBarAction({
         focusStyle,
         animatedStyle,
       ]}
-      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
       accessibilityRole="button"
     >
-      <MaterialCommunityIcons name={icon} size={20} color={theme.onSurface} />
+      <MaterialCommunityIcons name={icon} size={24} color={theme.onSurface} />
       {badge && badge > 0 ? (
         <View style={[styles.badge, { backgroundColor: theme.error }]}>
           <ThemedText style={styles.badgeText}>{badge > 99 ? "99+" : badge}</ThemedText>
@@ -290,20 +290,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.l,
+    paddingHorizontal: Layout.horizontalPaddingMin,
   },
   leftSection: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    gap: Spacing.iconGap,
   },
   title: {
     flex: 1,
   },
   iconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.large,
+    width: Layout.touchTargetMin,
+    height: Layout.touchTargetMin,
+    borderRadius: BorderRadius.button,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -311,18 +312,18 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.s,
+    gap: Spacing.iconGap,
   },
   badge: {
     position: "absolute",
     top: -4,
     right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 4,
+    paddingHorizontal: Spacing.xs,
   },
   badgeText: {
     color: "#FFFFFF",

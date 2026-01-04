@@ -146,9 +146,9 @@ const styles = StyleSheet.create({
     borderWidth: Fluent2Tokens.strokeWidthThin,
   },
   cardTitle: {
-    marginBottom: Spacing.s,
+    marginBottom: Spacing.titleToSubtitle,
   },
   cardDescription: {
-    marginBottom: Spacing.m,
+    marginBottom: Spacing.contentBlock,
   },
 });

@@ -29,18 +29,18 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const sizeStyles = {
   sm: { 
-    height: 24, 
-    paddingHorizontal: Spacing.s,
+    height: 36,
+    paddingHorizontal: Spacing.l,
     minWidth: 64,
   },
   default: { 
-    height: 32, 
-    paddingHorizontal: Spacing.m,
+    height: 44,
+    paddingHorizontal: Spacing.xl,
     minWidth: 96,
   },
   lg: { 
-    height: 40, 
-    paddingHorizontal: Spacing.l,
+    height: 48,
+    paddingHorizontal: Spacing.xxl,
     minWidth: 120,
   },
 };

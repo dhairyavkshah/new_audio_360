@@ -12,7 +12,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
-import { Spacing, BorderRadius, Fluent2Tokens } from "@/constants/theme";
+import { Spacing, BorderRadius, Fluent2Tokens, Layout } from "@/constants/theme";
 
 const ActionButton = ({ onPress, accessibilityLabel, children }: { 
   onPress: (e: any) => void; 
@@ -44,8 +44,8 @@ const ActionButton = ({ onPress, accessibilityLabel, children }: {
 
 const actionButtonStyles = StyleSheet.create({
   button: {
-    width: 40,
-    height: 40,
+    width: Layout.touchTargetMin,
+    height: Layout.touchTargetMin,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -255,11 +255,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.s,
-    paddingHorizontal: Spacing.m,
-    borderRadius: BorderRadius.large,
-    marginBottom: Spacing.xs,
-    minHeight: Spacing.listItemHeight,
+    paddingVertical: Spacing.m,
+    paddingHorizontal: Layout.horizontalPadding,
+    borderRadius: BorderRadius.card,
+    marginBottom: Spacing.s,
+    minHeight: Layout.listItemRich,
   },
   artworkContainer: {
     position: "relative",
@@ -283,10 +283,10 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
-    marginLeft: Spacing.m,
-    gap: 2,
+    marginLeft: Spacing.miniPlayerArtworkGap,
+    gap: Spacing.titleToSubtitle,
   },
   duration: {
-    marginRight: Spacing.s,
+    marginRight: Spacing.iconGap,
   },
 });

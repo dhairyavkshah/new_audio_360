@@ -107,9 +107,9 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    left: Spacing.l,
-    right: Spacing.l,
-    borderRadius: BorderRadius.large,
+    left: Layout.horizontalPadding,
+    right: Layout.horizontalPadding,
+    borderRadius: BorderRadius.miniPlayer,
     overflow: "hidden",
     ...Platform.select({
       ios: {
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 2,
+    height: 3,
     backgroundColor: "rgba(255,255,255,0.2)",
     zIndex: 10,
   },
@@ -139,29 +139,30 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   background: {
-    borderRadius: BorderRadius.large,
+    borderRadius: BorderRadius.miniPlayer,
     overflow: "hidden",
   },
   content: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.s,
+    height: Layout.miniPlayerHeight,
+    paddingVertical: Spacing.m,
     paddingHorizontal: Spacing.m,
   },
   artwork: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: BorderRadius.medium,
   },
   info: {
     flex: 1,
-    marginLeft: Spacing.m,
-    gap: 2,
+    marginLeft: Spacing.miniPlayerArtworkGap,
+    gap: Spacing.titleToSubtitle,
   },
   playButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: Layout.touchTargetMin,
+    height: Layout.touchTargetMin,
+    borderRadius: Layout.touchTargetMin / 2,
     justifyContent: "center",
     alignItems: "center",
   },
