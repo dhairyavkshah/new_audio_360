@@ -8,7 +8,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius, Fluent2Tokens } from "@/constants/theme";
+import { Spacing, BorderRadius, M3Motion } from "@/constants/theme";
 
 interface GlassCardProps {
   children?: React.ReactNode;
@@ -44,23 +44,23 @@ export function GlassCard({
   const handlePressIn = () => {
     if (!disabled && onPress) {
       scale.value = withTiming(0.98, { 
-        duration: Fluent2Tokens.durationFast,
-        easing: Easing.out(Easing.cubic),
+        duration: M3Motion.durationShort3,
+        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
       });
-      bgOpacity.value = withTiming(1, { duration: Fluent2Tokens.durationFast });
+      bgOpacity.value = withTiming(1, { duration: M3Motion.durationShort3 });
     }
   };
 
   const handlePressOut = () => {
     scale.value = withTiming(1, { 
-      duration: Fluent2Tokens.durationNormal,
-      easing: Easing.out(Easing.cubic),
+      duration: M3Motion.durationShort4,
+      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
     });
-    bgOpacity.value = withTiming(0, { duration: Fluent2Tokens.durationNormal });
+    bgOpacity.value = withTiming(0, { duration: M3Motion.durationShort4 });
   };
 
   const shadowStyle = Platform.OS === "web" ? {
-    boxShadow: Fluent2Tokens.shadow2,
+    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.14)",
   } : {
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -85,7 +85,7 @@ export function GlassCard({
             styles.blur, 
             { 
               borderColor: selected ? theme.primary : theme.outlineVariant,
-              borderWidth: Fluent2Tokens.strokeWidthThin,
+              borderWidth: 1,
             }
           ]}
         >
@@ -105,7 +105,7 @@ export function GlassCard({
             {
               backgroundColor: theme.surfaceContainerLow,
               borderColor: selected ? theme.primary : theme.outlineVariant,
-              borderWidth: Fluent2Tokens.strokeWidthThin,
+              borderWidth: 1,
             },
           ]}
         >

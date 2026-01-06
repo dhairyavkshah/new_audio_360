@@ -3,7 +3,7 @@ import { View, StyleSheet, Pressable, Animated, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Fluent2Tokens } from "@/constants/theme";
+import { M3Motion } from "@/constants/theme";
 
 interface FluentToggleProps {
   value: boolean;
@@ -56,7 +56,7 @@ export function FluentToggle({
       }),
       Animated.timing(trackOpacity, {
         toValue: value ? 1 : 0,
-        duration: Fluent2Tokens.durationFast,
+        duration: M3Motion.durationShort3,
         useNativeDriver: false,
       }),
     ]).start();
@@ -179,7 +179,7 @@ export function FluentToggle({
               borderRadius: trackHeight / 2,
               backgroundColor: trackBackgroundColor,
               opacity: disabled ? 0.38 : 1,
-              borderWidth: value ? 0 : Fluent2Tokens.strokeWidthThin,
+              borderWidth: value ? 0 : 1,
               borderColor: getBorderColor(),
             },
           ]}
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   },
   focusRing: {
     position: 'absolute',
-    borderWidth: Fluent2Tokens.strokeWidthThick,
+    borderWidth: 2,
   },
   pressable: {
     minHeight: 44,

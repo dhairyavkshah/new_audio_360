@@ -13,7 +13,7 @@ import { AnimatedCard } from "@/components/AnimatedCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
-import { Spacing, BorderRadius, Layout, Typography, Fluent2Tokens } from "@/constants/theme";
+import { Spacing, BorderRadius, Layout, Typography, M3Shape, M3Motion } from "@/constants/theme";
 import { mockSongs, mockAlbums, mockArtists, Song } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 import { Playlist, getPlaylists } from "@/lib/storage";

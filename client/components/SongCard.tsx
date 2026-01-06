@@ -12,7 +12,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
-import { Spacing, BorderRadius, Fluent2Tokens, Layout } from "@/constants/theme";
+import { Spacing, BorderRadius, M3Motion, Layout } from "@/constants/theme";
 
 const ActionButton = ({ onPress, accessibilityLabel, children }: { 
   onPress: (e: any) => void; 
@@ -111,18 +111,18 @@ export function SongCard({
   const handlePressIn = () => {
     longPressTriggered.current = false;
     scale.value = withTiming(0.98, { 
-      duration: Fluent2Tokens.durationFast,
-      easing: Easing.out(Easing.cubic),
+      duration: M3Motion.durationShort3,
+      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
     });
-    bgOpacity.value = withTiming(1, { duration: Fluent2Tokens.durationFast });
+    bgOpacity.value = withTiming(1, { duration: M3Motion.durationShort3 });
   };
 
   const handlePressOut = () => {
     scale.value = withTiming(1, { 
-      duration: Fluent2Tokens.durationNormal,
-      easing: Easing.out(Easing.cubic),
+      duration: M3Motion.durationShort4,
+      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
     });
-    bgOpacity.value = withTiming(0, { duration: Fluent2Tokens.durationNormal });
+    bgOpacity.value = withTiming(0, { duration: M3Motion.durationShort4 });
   };
 
   const handlePress = () => {
@@ -179,9 +179,9 @@ export function SongCard({
         {
           backgroundColor: theme.surfaceContainerLow,
           borderColor: isPlaying ? theme.primary : theme.outlineVariant,
-          borderWidth: Fluent2Tokens.strokeWidthThin,
+          borderWidth: 1,
           ...(Platform.OS === "web" ? {
-            boxShadow: Fluent2Tokens.shadow2,
+            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.14)",
           } : {
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 1 },

@@ -11,7 +11,7 @@ import { scheduleOnRN } from "react-native-worklets";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
-import { Spacing, Fluent2Tokens, BorderRadius } from "@/constants/theme";
+import { Spacing, M3Motion, BorderRadius } from "@/constants/theme";
 
 interface ProgressBarProps {
   progress: number;
@@ -69,8 +69,8 @@ export function ProgressBar({
     .onStart(() => {
       isDragging.value = true;
       trackHeight.value = withTiming(ACTIVE_TRACK_HEIGHT, { 
-        duration: Fluent2Tokens.durationFast,
-        easing: Easing.out(Easing.cubic),
+        duration: M3Motion.durationShort3,
+        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
       });
     })
     .onUpdate((event) => {
@@ -80,8 +80,8 @@ export function ProgressBar({
     .onEnd(() => {
       isDragging.value = false;
       trackHeight.value = withTiming(TRACK_HEIGHT, { 
-        duration: Fluent2Tokens.durationNormal,
-        easing: Easing.out(Easing.cubic),
+        duration: M3Motion.durationShort4,
+        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
       });
       const seekTime = (translateX.value / (width - THUMB_SIZE)) * duration;
       scheduleOnRN(handleSeek, seekTime);
@@ -92,8 +92,8 @@ export function ProgressBar({
     .onEnd((event) => {
       const tapX = Math.max(0, Math.min(event.x, width - THUMB_SIZE));
       translateX.value = withTiming(tapX, { 
-        duration: Fluent2Tokens.durationNormal,
-        easing: Easing.out(Easing.cubic),
+        duration: M3Motion.durationShort4,
+        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
       });
       const seekTime = (tapX / (width - THUMB_SIZE)) * duration;
       scheduleOnRN(handleSeek, seekTime);

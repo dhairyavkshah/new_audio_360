@@ -11,7 +11,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, BorderRadius, Fluent2Tokens } from "@/constants/theme";
+import { Spacing, BorderRadius, M3Motion } from "@/constants/theme";
 
 type ButtonVariant = 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'subtle';
 type ButtonSize = 'sm' | 'default' | 'lg';
@@ -88,8 +88,8 @@ export function Button({
     if (!disabled) {
       setIsPressed(true);
       scale.value = withTiming(0.98, { 
-        duration: Fluent2Tokens.durationFast,
-        easing: Easing.out(Easing.cubic),
+        duration: M3Motion.durationShort3,
+        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
       });
     }
   };
@@ -98,8 +98,8 @@ export function Button({
     if (!disabled) {
       setIsPressed(false);
       scale.value = withTiming(1, { 
-        duration: Fluent2Tokens.durationNormal,
-        easing: Easing.out(Easing.cubic),
+        duration: M3Motion.durationShort4,
+        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
       });
     }
   };
@@ -201,7 +201,7 @@ export function Button({
       outlineOffset: 2,
     },
     default: {
-      borderWidth: Fluent2Tokens.strokeWidthThick,
+      borderWidth: 2,
       borderColor: getFocusRingColor(),
     },
   }) : {};
@@ -237,7 +237,7 @@ export function Button({
         {
           opacity: disabled ? 0.38 : 1,
           borderRadius: shapes.buttonBorderRadius || BorderRadius.medium,
-          borderWidth: variant === 'outline' ? Fluent2Tokens.strokeWidthThin : 0,
+          borderWidth: variant === 'outline' ? 1 : 0,
           borderColor: getBorderColor(),
           backgroundColor: getBackgroundColor() as string,
         },
