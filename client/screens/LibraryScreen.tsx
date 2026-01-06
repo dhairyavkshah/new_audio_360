@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Image, TextInput, Platform, ActivityIndicator } from "react-native";
-import { useHeaderHeight } from "@react-navigation/elements";
+import { View, StyleSheet, ScrollView, Pressable, Image, TextInput, Platform, ActivityIndicator, FlatList } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -8,12 +8,13 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { TopBar } from "@/components/TopBar";
 import { SongContextMenu } from "@/components/SongContextMenu";
 import { AnimatedCard } from "@/components/AnimatedCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
-import { Spacing, BorderRadius, Layout, Typography, M3Shape, M3Motion } from "@/constants/theme";
+import { Spacing, BorderRadius, Layout, Typography, M3Shape, M3Elevation } from "@/constants/theme";
 import { mockSongs, mockAlbums, mockArtists, Song } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 import { Playlist, getPlaylists } from "@/lib/storage";
@@ -23,14 +24,21 @@ type NavigationProp = NativeStackNavigationProp<LibraryStackParamList>;
 
 type CategoryType = "liked" | "recent" | "top" | "songs" | "albums" | "artists" | "playlists";
 
-const categories: { key: CategoryType; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
-  { key: "liked", label: "Liked Songs", icon: "heart" },
-  { key: "recent", label: "Recently Played", icon: "history" },
-  { key: "top", label: "Most Played", icon: "chart-line" },
-  { key: "songs", label: "All Songs", icon: "music" },
-  { key: "albums", label: "Albums", icon: "album" },
-  { key: "artists", label: "Artists", icon: "account-group" },
-  { key: "playlists", label: "Playlists", icon: "playlist-music" },
+interface CategoryConfig {
+  key: CategoryType;
+  label: string;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  color: string;
+}
+
+const categories: CategoryConfig[] = [
+  { key: "liked", label: "Liked", icon: "heart", color: "#E91E63" },
+  { key: "recent", label: "Recent", icon: "history", color: "#9C27B0" },
+  { key: "top", label: "Top", icon: "chart-line", color: "#FF9800" },
+  { key: "songs", label: "Songs", icon: "music", color: "#2196F3" },
+  { key: "albums", label: "Albums", icon: "album", color: "#4CAF50" },
+  { key: "artists", label: "Artists", icon: "account-group", color: "#00BCD4" },
+  { key: "playlists", label: "Playlists", icon: "playlist-music", color: "#673AB7" },
 ];
 
 type SortOption = "title_asc" | "title_desc" | "artist_asc" | "duration_asc" | "duration_desc";
@@ -43,15 +51,69 @@ const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
   { key: "duration_desc", label: "Longest", icon: "sort-clock-descending" },
 ];
 
+function CategoryCard({ 
+  category, 
+  isActive, 
+  count, 
+  onPress,
+  theme 
+}: { 
+  category: CategoryConfig; 
+  isActive: boolean; 
+  count: number;
+  onPress: () => void;
+  theme: any;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.categoryCard,
+        {
+          backgroundColor: isActive ? category.color : theme.surfaceContainerHigh,
+          borderColor: isActive ? category.color : theme.outlineVariant,
+        },
+      ]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isActive }}
+      accessibilityLabel={`${category.label}, ${count} items`}
+    >
+      <View style={styles.categoryCardContent}>
+        <MaterialCommunityIcons
+          name={category.icon}
+          size={22}
+          color={isActive ? "#FFFFFF" : category.color}
+        />
+        <ThemedText
+          type="labelMedium"
+          style={[
+            styles.categoryLabel,
+            { color: isActive ? "#FFFFFF" : theme.onSurface },
+          ]}
+          numberOfLines={1}
+        >
+          {category.label}
+        </ThemedText>
+      </View>
+      <ThemedText
+        type="labelSmall"
+        style={{ color: isActive ? "rgba(255,255,255,0.8)" : theme.onSurfaceVariant }}
+      >
+        {count}
+      </ThemedText>
+    </Pressable>
+  );
+}
+
 export default function LibraryScreen() {
-  const headerHeight = useHeaderHeight();
+  const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useThemeContext();
   const { playTapSound } = useUiSound();
   const { favorites, recentlyPlayed, mostPlayed, playSong, setQueue } = usePlayerContext();
-  const { songs: deviceSongs, isLoading: isLoadingSongs, progress, usingMockData, hideSong, refreshSongs, error: mediaError, hasPermission } = useMediaLibraryContext();
-  const [activeCategory, setActiveCategory] = useState<CategoryType>("liked");
+  const { songs: deviceSongs, isLoading: isLoadingSongs, progress, usingMockData, hideSong, refreshSongs, error: mediaError } = useMediaLibraryContext();
+  const [activeCategory, setActiveCategory] = useState<CategoryType>("songs");
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("title_asc");
@@ -70,6 +132,10 @@ export default function LibraryScreen() {
       loadPlaylists();
     }, [loadPlaylists])
   );
+
+  const allSongs = useMemo(() => {
+    return deviceSongs.length > 0 ? deviceSongs : mockSongs;
+  }, [deviceSongs]);
 
   const filteredData = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
@@ -96,8 +162,6 @@ export default function LibraryScreen() {
       });
       return result;
     };
-    
-    const allSongs = deviceSongs.length > 0 ? deviceSongs : mockSongs;
 
     const filterAlbums = (albums: typeof mockAlbums) => {
       let result = [...albums];
@@ -108,14 +172,7 @@ export default function LibraryScreen() {
             album.artist.toLowerCase().includes(query)
         );
       }
-      result.sort((a, b) => {
-        switch (sortBy) {
-          case "title_asc": return a.name.localeCompare(b.name);
-          case "title_desc": return b.name.localeCompare(a.name);
-          case "artist_asc": return a.artist.localeCompare(b.artist);
-          default: return a.name.localeCompare(b.name);
-        }
-      });
+      result.sort((a, b) => a.name.localeCompare(b.name));
       return result;
     };
 
@@ -124,13 +181,7 @@ export default function LibraryScreen() {
       if (query) {
         result = result.filter((artist) => artist.name.toLowerCase().includes(query));
       }
-      result.sort((a, b) => {
-        switch (sortBy) {
-          case "title_asc": return a.name.localeCompare(b.name);
-          case "title_desc": return b.name.localeCompare(a.name);
-          default: return a.name.localeCompare(b.name);
-        }
-      });
+      result.sort((a, b) => a.name.localeCompare(b.name));
       return result;
     };
 
@@ -139,13 +190,7 @@ export default function LibraryScreen() {
       if (query) {
         result = result.filter((pl) => pl.name.toLowerCase().includes(query));
       }
-      result.sort((a, b) => {
-        switch (sortBy) {
-          case "title_asc": return a.name.localeCompare(b.name);
-          case "title_desc": return b.name.localeCompare(a.name);
-          default: return a.name.localeCompare(b.name);
-        }
-      });
+      result.sort((a, b) => a.name.localeCompare(b.name));
       return result;
     };
 
@@ -161,25 +206,34 @@ export default function LibraryScreen() {
       liked: filterSongs(likedSongs),
       recent: recentSongs.filter(song => {
         if (!query) return true;
-        return song.title.toLowerCase().includes(query) ||
-          song.artist.toLowerCase().includes(query);
+        return song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query);
       }),
       top: topSongs.filter(song => {
         if (!query) return true;
-        return song.title.toLowerCase().includes(query) ||
-          song.artist.toLowerCase().includes(query);
+        return song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query);
       }),
       songs: filterSongs(allSongs),
       albums: filterAlbums(mockAlbums),
       artists: filterArtists(mockArtists),
       playlists: filterPlaylists(playlists),
     };
-  }, [searchQuery, sortBy, playlists, favorites, recentlyPlayed, mostPlayed, deviceSongs]);
+  }, [searchQuery, sortBy, playlists, favorites, recentlyPlayed, mostPlayed, allSongs]);
+
+  const categoryCounts = useMemo(() => ({
+    liked: favorites.length,
+    recent: recentlyPlayed.length,
+    top: mostPlayed.length,
+    songs: allSongs.length,
+    albums: mockAlbums.length,
+    artists: mockArtists.length,
+    playlists: playlists.length,
+  }), [favorites, recentlyPlayed, mostPlayed, allSongs, playlists]);
 
   const handleCategoryChange = (category: CategoryType) => {
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setActiveCategory(category);
+    setSearchQuery("");
     setShowSortOptions(false);
   };
 
@@ -226,345 +280,250 @@ export default function LibraryScreen() {
     setTimeout(() => setSuccessMessage(null), 3000);
   }, [loadPlaylists]);
 
-  const getItemCount = () => {
-    switch (activeCategory) {
-      case "liked": return filteredData.liked.length;
-      case "recent": return filteredData.recent.length;
-      case "top": return filteredData.top.length;
-      case "songs": return filteredData.songs.length;
-      case "albums": return filteredData.albums.length;
-      case "artists": return filteredData.artists.length;
-      case "playlists": return filteredData.playlists.length;
-      default: return 0;
-    }
+  const renderCategoryGrid = () => (
+    <View style={styles.categoryGrid}>
+      {categories.map((category) => (
+        <CategoryCard
+          key={category.key}
+          category={category}
+          isActive={activeCategory === category.key}
+          count={categoryCounts[category.key]}
+          onPress={() => handleCategoryChange(category.key)}
+          theme={theme}
+        />
+      ))}
+    </View>
+  );
+
+  const renderSearchBar = () => (
+    <View style={[styles.searchRow, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
+      <View style={[styles.searchContainer, { backgroundColor: theme.surfaceContainerHigh }]}>
+        <MaterialCommunityIcons name="magnify" size={18} color={theme.onSurfaceVariant} style={styles.searchIcon} />
+        <TextInput
+          style={[styles.searchInput, { color: theme.onSurface }]}
+          placeholder={`Search ${categories.find(c => c.key === activeCategory)?.label || ''}...`}
+          placeholderTextColor={theme.onSurfaceVariant}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
+        />
+        {searchQuery.length > 0 ? (
+          <Pressable onPress={() => setSearchQuery("")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <MaterialCommunityIcons name="close-circle" size={16} color={theme.onSurfaceVariant} />
+          </Pressable>
+        ) : null}
+      </View>
+      <Pressable
+        style={[styles.sortButton, { backgroundColor: theme.surfaceContainerHigh }]}
+        onPress={() => {
+          playTapSound();
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setShowSortOptions(!showSortOptions);
+        }}
+      >
+        <MaterialCommunityIcons name={SORT_OPTIONS.find((o) => o.key === sortBy)?.icon as any || "sort"} size={16} color={theme.onSurface} />
+        <MaterialCommunityIcons name={showSortOptions ? "chevron-up" : "chevron-down"} size={14} color={theme.onSurfaceVariant} style={{ marginLeft: 2 }} />
+      </Pressable>
+      {activeCategory === "playlists" ? (
+        <Pressable style={[styles.addButton, { backgroundColor: theme.primary }]} onPress={handleManagePlaylists}>
+          <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
+        </Pressable>
+      ) : null}
+    </View>
+  );
+
+  const renderSongItem = ({ item: song, songs }: { item: PlayableSong; songs: PlayableSong[] }) => {
+    const webContextProps = Platform.OS === "web" ? {
+      onContextMenu: (e: any) => {
+        e.preventDefault?.();
+        handleSongContextMenu(song);
+      }
+    } : {};
+    return (
+      <Pressable
+        style={[styles.songListItem, { backgroundColor: theme.surfaceContainerLow }]}
+        onPress={() => handleSongPress(song, songs)}
+        onLongPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          handleSongContextMenu(song);
+        }}
+        delayLongPress={400}
+        {...webContextProps}
+      >
+        <Image source={{ uri: song.artwork }} style={styles.songListArtwork} />
+        <View style={styles.songListInfo}>
+          <ThemedText type="bodyMedium" numberOfLines={1}>{song.title}</ThemedText>
+          <ThemedText type="bodySmall" numberOfLines={1} style={{ color: theme.onSurfaceVariant }}>{song.artist}</ThemedText>
+        </View>
+        <ThemedText type="labelSmall" style={{ color: theme.onSurfaceVariant }}>
+          {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
+        </ThemedText>
+      </Pressable>
+    );
   };
 
-  const renderSongGrid = (songs: PlayableSong[], emptyMessage: string, emptyIcon: keyof typeof MaterialCommunityIcons.glyphMap) => {
+  const renderEmptyState = (icon: keyof typeof MaterialCommunityIcons.glyphMap, message: string) => (
+    <View style={styles.emptyState}>
+      <MaterialCommunityIcons name={icon} size={64} color={theme.onSurfaceVariant} />
+      <ThemedText type="bodyMedium" style={[styles.emptyText, { color: theme.onSurfaceVariant }]}>{message}</ThemedText>
+    </View>
+  );
+
+  const renderSongsList = (songs: PlayableSong[], emptyIcon: keyof typeof MaterialCommunityIcons.glyphMap, emptyMessage: string) => {
     if (songs.length === 0) {
+      return renderEmptyState(emptyIcon, emptyMessage);
+    }
+    return (
+      <FlatList
+        data={songs}
+        renderItem={({ item }) => renderSongItem({ item, songs })}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
+    );
+  };
+
+  const renderAlbumsList = () => {
+    if (filteredData.albums.length === 0) {
+      return renderEmptyState("album", "No albums found");
+    }
+    return (
+      <FlatList
+        data={filteredData.albums}
+        numColumns={2}
+        renderItem={({ item: album }) => (
+          <AnimatedCard
+            style={styles.albumCard}
+            borderRadius={M3Shape.cornerMedium}
+            onPress={() => navigation.navigate("AlbumDetail" as any, { album })}
+            accessibilityLabel={`${album.name} by ${album.artist}`}
+          >
+            <Image source={{ uri: album.artwork }} style={styles.albumArtwork} />
+            <ThemedText type="bodyMedium" numberOfLines={1} style={styles.albumName}>{album.name}</ThemedText>
+            <ThemedText type="bodySmall" numberOfLines={1} style={{ color: theme.onSurfaceVariant }}>{album.artist}</ThemedText>
+          </AnimatedCard>
+        )}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.gridContent}
+        columnWrapperStyle={styles.albumRow}
+        showsVerticalScrollIndicator={false}
+      />
+    );
+  };
+
+  const renderArtistsList = () => {
+    if (filteredData.artists.length === 0) {
+      return renderEmptyState("account-group", "No artists found");
+    }
+    return (
+      <FlatList
+        data={filteredData.artists}
+        renderItem={({ item: artist }) => (
+          <Pressable
+            style={[styles.artistItem, { backgroundColor: theme.surfaceContainerLow }]}
+            onPress={() => navigation.navigate("ArtistDetail" as any, { artist })}
+          >
+            <Image source={{ uri: artist.artwork }} style={styles.artistArtwork} />
+            <View style={styles.artistInfo}>
+              <ThemedText type="bodyLarge">{artist.name}</ThemedText>
+              <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>{artist.songCount} songs</ThemedText>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color={theme.onSurfaceVariant} />
+          </Pressable>
+        )}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
+    );
+  };
+
+  const renderPlaylistsList = () => {
+    if (filteredData.playlists.length === 0) {
       return (
-        <View style={styles.emptyContainer}>
-          <MaterialCommunityIcons name={emptyIcon} size={64} color={theme.textSecondary} />
-          <ThemedText type="body" style={[styles.emptyText, { color: theme.textSecondary }]}>
-            {emptyMessage}
-          </ThemedText>
+        <View style={styles.emptyState}>
+          <MaterialCommunityIcons name="playlist-music" size={64} color={theme.onSurfaceVariant} />
+          <ThemedText type="bodyMedium" style={[styles.emptyText, { color: theme.onSurfaceVariant }]}>No playlists yet</ThemedText>
+          <Pressable style={[styles.createButton, { backgroundColor: theme.primary }]} onPress={handleManagePlaylists}>
+            <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
+            <ThemedText type="labelLarge" style={{ color: "#FFFFFF", marginLeft: Spacing.s }}>Create Playlist</ThemedText>
+          </Pressable>
         </View>
       );
     }
     return (
-      <View style={styles.gridContainer}>
-        {songs.map((song) => {
-          const webContextProps = Platform.OS === "web" ? {
-            onContextMenu: (e: any) => {
-              e.preventDefault?.();
-              e.stopPropagation?.();
-              handleSongContextMenu(song);
-            }
-          } : {};
-          return (
-            <Pressable
-              key={song.id}
-              style={[styles.songItem, { backgroundColor: theme.backgroundDefault }]}
-              onPress={() => handleSongPress(song, songs)}
-              onLongPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                playTapSound();
-                handleSongContextMenu(song);
-              }}
-              delayLongPress={400}
-              {...webContextProps}
-            >
-              <Image source={{ uri: song.artwork }} style={styles.songArtwork} />
-              <ThemedText type="small" numberOfLines={1} style={styles.songTitle}>
-                {song.title}
-              </ThemedText>
-              <ThemedText type="caption" numberOfLines={1} style={{ color: theme.textSecondary }}>
-                {song.artist}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
-      </View>
+      <FlatList
+        data={filteredData.playlists}
+        renderItem={({ item: playlist }) => (
+          <Pressable
+            style={[styles.playlistItem, { backgroundColor: theme.surfaceContainerLow }]}
+            onPress={() => handlePlaylistPress(playlist)}
+          >
+            <View style={[styles.playlistIcon, { backgroundColor: theme.primaryContainer }]}>
+              <MaterialCommunityIcons name="playlist-music" size={24} color={theme.primary} />
+            </View>
+            <View style={styles.playlistInfo}>
+              <ThemedText type="bodyLarge">{playlist.name}</ThemedText>
+              <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>{playlist.songIds.length} songs</ThemedText>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color={theme.onSurfaceVariant} />
+          </Pressable>
+        )}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
     );
   };
 
   const renderContent = () => {
+    if (activeCategory === "songs" && isLoadingSongs) {
+      return (
+        <View style={styles.loadingState}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <ThemedText type="bodyMedium" style={{ color: theme.onSurfaceVariant, marginTop: Spacing.m }}>Loading your music...</ThemedText>
+          {typeof progress.total === 'number' && progress.total > 0 && (
+            <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>{progress.loaded || 0} of {progress.total} songs</ThemedText>
+          )}
+        </View>
+      );
+    }
+
     switch (activeCategory) {
       case "liked":
-        return renderSongGrid(filteredData.liked, "No liked songs yet. Tap the heart icon on any song to add it here.", "heart-outline");
+        return renderSongsList(filteredData.liked, "heart-outline", "No liked songs yet. Tap the heart icon on any song to add it here.");
       case "recent":
-        return renderSongGrid(filteredData.recent, "No recently played songs. Start listening to see your history here.", "history");
+        return renderSongsList(filteredData.recent, "history", "No recently played songs. Start listening to see your history here.");
       case "top":
-        return renderSongGrid(filteredData.top, "No play history yet. Keep listening to see your most played songs here.", "chart-line");
+        return renderSongsList(filteredData.top, "chart-line", "No play history yet. Keep listening to see your most played songs here.");
       case "songs":
-        if (isLoadingSongs) {
-          return (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={theme.primary} />
-              <ThemedText type="body" style={[styles.loadingText, { color: theme.textSecondary }]}>
-                Loading your music...
-              </ThemedText>
-              {typeof progress.total === 'number' && progress.total > 0 && (
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  {progress.loaded || 0} of {progress.total} songs found
-                </ThemedText>
-              )}
-            </View>
-          );
-        }
-        if (mediaError) {
-          return (
-            <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="alert-circle-outline" size={48} color={theme.textSecondary} />
-              <ThemedText type="body" style={[styles.emptyText, { color: theme.textSecondary }]}>
-                {mediaError}
-              </ThemedText>
-              <Pressable
-                style={[styles.refreshButton, { backgroundColor: theme.primary }]}
-                onPress={refreshSongs}
-              >
-                <ThemedText type="body" style={{ color: '#FFFFFF' }}>Try Again</ThemedText>
-              </Pressable>
-            </View>
-          );
-        }
-        return renderSongGrid(filteredData.songs, usingMockData ? "Using sample music. Grant media access to play your own music." : "No songs found.", "music-off");
+        return renderSongsList(filteredData.songs, "music-off", usingMockData ? "Using sample music. Grant media access to play your own music." : "No songs found.");
       case "albums":
-        return (
-          <View style={styles.albumsGrid}>
-            {filteredData.albums.map((album) => (
-              <AnimatedCard
-                key={album.id}
-                style={styles.albumItem}
-                borderRadius={BorderRadius.lg}
-                onPress={() => {
-                  navigation.navigate("AlbumDetail", { album });
-                }}
-                accessibilityLabel={`${album.name} by ${album.artist}`}
-              >
-                <Image source={{ uri: album.artwork }} style={styles.albumArtwork} />
-                <ThemedText type="small" numberOfLines={1} style={styles.albumName}>
-                  {album.name}
-                </ThemedText>
-                <ThemedText type="caption" numberOfLines={1} style={{ color: theme.textSecondary }}>
-                  {album.artist}
-                </ThemedText>
-              </AnimatedCard>
-            ))}
-          </View>
-        );
+        return renderAlbumsList();
       case "artists":
-        return (
-          <View style={styles.artistsList}>
-            {filteredData.artists.map((artist) => (
-              <AnimatedCard
-                key={artist.id}
-                style={styles.artistItem}
-                borderRadius={BorderRadius.lg}
-                onPress={() => {
-                  navigation.navigate("ArtistDetail", { artist });
-                }}
-                accessibilityLabel={`${artist.name}, ${artist.songCount} songs`}
-              >
-                <Image source={{ uri: artist.artwork }} style={styles.artistArtwork} />
-                <View style={styles.artistInfo}>
-                  <ThemedText type="body" style={{ fontWeight: "600" }}>
-                    {artist.name}
-                  </ThemedText>
-                  <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                    {artist.songCount} songs
-                  </ThemedText>
-                </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
-              </AnimatedCard>
-            ))}
-          </View>
-        );
+        return renderArtistsList();
       case "playlists":
-        if (filteredData.playlists.length === 0 && playlists.length === 0) {
-          return (
-            <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="playlist-music" size={48} color={theme.textSecondary} />
-              <ThemedText type="body" style={[styles.emptyTitle, { color: theme.textSecondary }]}>
-                No Playlists Yet
-              </ThemedText>
-              <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: "center" }}>
-                Create your first playlist to organize your favorite songs
-              </ThemedText>
-              <Pressable
-                style={[styles.createButton, { backgroundColor: theme.primary }]}
-                onPress={handleManagePlaylists}
-              >
-                <MaterialCommunityIcons name="plus" size={18} color="#FFFFFF" />
-                <ThemedText type="small" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-                  Create Playlist
-                </ThemedText>
-              </Pressable>
-            </View>
-          );
-        }
-        return (
-          <View style={styles.playlistsGrid}>
-            {filteredData.playlists.map((playlist) => (
-              <AnimatedCard
-                key={playlist.id}
-                style={styles.playlistItem}
-                borderRadius={BorderRadius.lg}
-                onPress={() => handlePlaylistPress(playlist)}
-                accessibilityLabel={`${playlist.name}, ${playlist.songIds.length} songs`}
-              >
-                <View style={[styles.playlistCover, { backgroundColor: theme.primary + "20" }]}>
-                  <MaterialCommunityIcons name="playlist-music" size={28} color={theme.primary} />
-                </View>
-                <ThemedText type="small" numberOfLines={1} style={styles.playlistName}>
-                  {playlist.name}
-                </ThemedText>
-                <ThemedText type="caption" numberOfLines={1} style={{ color: theme.textSecondary }}>
-                  {playlist.songIds.length} songs
-                </ThemedText>
-              </AnimatedCard>
-            ))}
-          </View>
-        );
+        return renderPlaylistsList();
+      default:
+        return null;
     }
   };
-
-  const STICKY_HEADER_HEIGHT = 96;
-
-  const renderStickyHeader = () => (
-    <View style={[styles.stickyHeader, { backgroundColor: theme.backgroundDefault, top: headerHeight }]}>
-      <View style={styles.searchSortRow}>
-        <View style={[styles.searchContainer, { backgroundColor: theme.surfaceVariant }]}>
-          <MaterialCommunityIcons
-            name="magnify"
-            size={18}
-            color={theme.textSecondary}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={[styles.searchInput, { color: theme.text }]}
-            placeholder="Search..."
-            placeholderTextColor={theme.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 ? (
-            <Pressable
-              onPress={() => {
-                playTapSound();
-                setSearchQuery("");
-              }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <MaterialCommunityIcons name="close-circle" size={16} color={theme.textSecondary} />
-            </Pressable>
-          ) : null}
-        </View>
-        <Pressable
-          style={[styles.sortButton, { backgroundColor: theme.surfaceVariant }]}
-          onPress={() => {
-            playTapSound();
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setShowSortOptions(!showSortOptions);
-          }}
-        >
-          <MaterialCommunityIcons
-            name={SORT_OPTIONS.find((o) => o.key === sortBy)?.icon as any || "sort"}
-            size={16}
-            color={theme.text}
-          />
-          <MaterialCommunityIcons
-            name={showSortOptions ? "chevron-up" : "chevron-down"}
-            size={14}
-            color={theme.textSecondary}
-            style={{ marginLeft: 2 }}
-          />
-        </Pressable>
-        <Pressable
-          style={[styles.iconButton, { backgroundColor: theme.surfaceVariant }]}
-          onPress={handleManagePlaylists}
-        >
-          <MaterialCommunityIcons name="playlist-edit" size={18} color={theme.text} />
-        </Pressable>
-      </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoriesInHeader}
-        contentContainerStyle={styles.categoriesContent}
-      >
-        {categories.map((category) => (
-          <Pressable
-            key={category.key}
-            onPress={() => handleCategoryChange(category.key)}
-            style={[
-              styles.categoryChip,
-              {
-                backgroundColor:
-                  activeCategory === category.key ? theme.primary : theme.backgroundSecondary,
-              },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name={category.icon}
-              size={16}
-              color={activeCategory === category.key ? "#FFFFFF" : theme.text}
-            />
-            <ThemedText
-              type="small"
-              style={{
-                color: activeCategory === category.key ? "#FFFFFF" : theme.text,
-                marginLeft: Spacing.xs,
-                fontWeight: "500",
-              }}
-            >
-              {category.label}
-            </ThemedText>
-          </Pressable>
-        ))}
-      </ScrollView>
-    </View>
-  );
 
   const renderSortOverlay = () => (
     showSortOptions ? (
       <>
-        <Pressable 
-          style={styles.sortOverlayBackdrop} 
-          onPress={() => setShowSortOptions(false)} 
-        />
-        <View style={[styles.sortOptionsOverlay, { backgroundColor: theme.surface, top: headerHeight + 50 }]}>
+        <Pressable style={styles.sortOverlayBackdrop} onPress={() => setShowSortOptions(false)} />
+        <View style={[styles.sortOptionsOverlay, { backgroundColor: theme.surfaceContainerHigh }]}>
           {SORT_OPTIONS.map((option) => (
             <Pressable
               key={option.key}
-              style={[
-                styles.sortOption,
-                sortBy === option.key && { backgroundColor: theme.surfaceVariant },
-              ]}
+              style={[styles.sortOption, sortBy === option.key && { backgroundColor: theme.primaryContainer }]}
               onPress={() => handleSortPress(option.key)}
             >
-              <MaterialCommunityIcons
-                name={option.icon as any}
-                size={18}
-                color={sortBy === option.key ? theme.primary : theme.text}
-              />
-              <ThemedText
-                type="small"
-                style={[
-                  { marginLeft: Spacing.m },
-                  sortBy === option.key && { color: theme.primary, fontWeight: "600" },
-                ]}
-              >
-                {option.label}
-              </ThemedText>
-              {sortBy === option.key ? (
-                <MaterialCommunityIcons
-                  name="check"
-                  size={16}
-                  color={theme.primary}
-                  style={{ marginLeft: "auto" }}
-                />
-              ) : null}
+              <MaterialCommunityIcons name={option.icon as any} size={18} color={sortBy === option.key ? theme.primary : theme.onSurface} />
+              <ThemedText type="bodyMedium" style={[{ marginLeft: Spacing.m }, sortBy === option.key && { color: theme.primary }]}>{option.label}</ThemedText>
+              {sortBy === option.key ? <MaterialCommunityIcons name="check" size={16} color={theme.primary} style={{ marginLeft: "auto" }} /> : null}
             </Pressable>
           ))}
         </View>
@@ -574,18 +533,20 @@ export default function LibraryScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      {renderStickyHeader()}
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: headerHeight + STICKY_HEADER_HEIGHT + Spacing.l, paddingBottom: tabBarHeight + Spacing.xl },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.contentContainer}>{renderContent()}</View>
-      </ScrollView>
-      {renderSortOverlay()}
+      <TopBar title="Library" showBack={false} />
       
+      <View style={[styles.categorySection, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
+        {renderCategoryGrid()}
+      </View>
+
+      {renderSearchBar()}
+
+      <View style={[styles.contentArea, { paddingBottom: tabBarHeight + Spacing.m }]}>
+        {renderContent()}
+      </View>
+
+      {renderSortOverlay()}
+
       <SongContextMenu
         visible={showContextMenu}
         song={contextMenuSong}
@@ -596,11 +557,9 @@ export default function LibraryScreen() {
       />
 
       {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: theme.success }]}>
+        <View style={[styles.successToast, { backgroundColor: theme.primary, bottom: tabBarHeight + 16 }]}>
           <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
-          <ThemedText type="small" style={{ color: "#FFFFFF", marginLeft: Spacing.sm, flex: 1 }}>
-            {successMessage}
-          </ThemedText>
+          <ThemedText type="bodyMedium" style={{ color: "#FFFFFF", marginLeft: Spacing.s, flex: 1 }}>{successMessage}</ThemedText>
         </View>
       ) : null}
     </ThemedView>
@@ -611,37 +570,58 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    paddingHorizontal: Spacing.lg,
-  },
-  stickyHeader: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    zIndex: 10,
+  categorySection: {
     paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.m,
-    paddingBottom: Spacing.l,
+    paddingVertical: Spacing.m,
+    borderBottomWidth: 1,
   },
-  searchSortRow: {
+  categoryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.s,
+  },
+  categoryCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.contentBlock,
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.s,
+    borderRadius: M3Shape.cornerMedium,
+    borderWidth: 1,
+    minWidth: "30%",
+    flex: 1,
+    maxWidth: "33%",
+  },
+  categoryCardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  categoryLabel: {
+    fontWeight: "600",
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Layout.horizontalPadding,
+    paddingVertical: Spacing.s,
+    gap: Spacing.s,
+    borderBottomWidth: 1,
   },
   searchContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: BorderRadius.input,
+    borderRadius: M3Shape.cornerFull,
     paddingHorizontal: Spacing.m,
-    height: Layout.inputFieldHeight,
+    height: 40,
   },
   searchIcon: {
-    marginRight: Spacing.iconGap,
+    marginRight: Spacing.s,
   },
   searchInput: {
     flex: 1,
-    fontSize: Typography.body.fontSize,
+    fontSize: Typography.bodyMedium.fontSize,
     height: "100%",
   },
   sortButton: {
@@ -649,109 +629,64 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.s,
-    borderRadius: BorderRadius.button,
-    height: Layout.buttonStandard,
+    borderRadius: M3Shape.cornerFull,
+    height: 40,
   },
-  iconButton: {
-    width: Layout.touchTargetMin,
-    height: Layout.touchTargetMin,
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-    borderRadius: BorderRadius.button,
   },
-  sortOverlayBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 15,
+  contentArea: {
+    flex: 1,
   },
-  sortOptionsOverlay: {
-    position: "absolute",
-    right: Layout.horizontalPadding,
-    zIndex: 20,
-    borderRadius: BorderRadius.md,
-    overflow: "hidden",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    minWidth: 150,
+  listContent: {
+    padding: Layout.horizontalPadding,
+    gap: Spacing.s,
   },
-  sortOption: {
+  gridContent: {
+    padding: Layout.horizontalPadding,
+  },
+  songListItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    padding: Spacing.m,
+    borderRadius: M3Shape.cornerMedium,
+    gap: Spacing.m,
   },
-  categoriesInHeader: {
-    marginTop: Spacing.contentBlock,
+  songListArtwork: {
+    width: 48,
+    height: 48,
+    borderRadius: M3Shape.cornerSmall,
   },
-  categoriesContent: {
-    gap: Spacing.iconGap,
+  songListInfo: {
+    flex: 1,
   },
-  categoryChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.l,
-    paddingVertical: Spacing.s,
-    borderRadius: BorderRadius.full,
-    height: Layout.buttonSmall,
+  albumRow: {
+    gap: Spacing.m,
+    marginBottom: Spacing.m,
   },
-  contentContainer: {
-    minHeight: 300,
-  },
-  gridContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.md,
-  },
-  songItem: {
-    width: "31%",
-    padding: Spacing.size3,
-    borderRadius: BorderRadius.lg,
-  },
-  songArtwork: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.size2,
-  },
-  songTitle: {
-    fontWeight: "500",
-    marginBottom: 2,
-  },
-  albumsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.lg,
-  },
-  albumItem: {
-    width: "47%",
-    padding: Spacing.size3,
-    borderRadius: BorderRadius.lg,
+  albumCard: {
+    flex: 1,
+    padding: Spacing.s,
   },
   albumArtwork: {
     width: "100%",
     aspectRatio: 1,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.size2,
+    borderRadius: M3Shape.cornerSmall,
+    marginBottom: Spacing.s,
   },
   albumName: {
     fontWeight: "600",
-    marginBottom: 2,
-  },
-  artistsList: {
-    gap: Spacing.md,
   },
   artistItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.size4,
-    borderRadius: BorderRadius.lg,
-    overflow: "visible",
+    padding: Spacing.m,
+    borderRadius: M3Shape.cornerMedium,
+    gap: Spacing.m,
   },
   artistArtwork: {
     width: 56,
@@ -760,88 +695,98 @@ const styles = StyleSheet.create({
   },
   artistInfo: {
     flex: 1,
-    marginLeft: Spacing.lg,
   },
-  emptyContainer: {
+  playlistItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.m,
+    borderRadius: M3Shape.cornerMedium,
+    gap: Spacing.m,
+  },
+  playlistIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: M3Shape.cornerSmall,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  playlistInfo: {
+    flex: 1,
+  },
+  emptyState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: Spacing["3xl"],
+    padding: Layout.horizontalPadding,
   },
   emptyText: {
     textAlign: "center",
-    marginTop: Spacing.lg,
-    paddingHorizontal: Spacing.xl,
+    marginTop: Spacing.m,
+    marginBottom: Spacing.l,
   },
-  loadingContainer: {
+  loadingState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: Spacing["3xl"],
-    gap: Spacing.md,
-  },
-  loadingText: {
-    marginTop: Spacing.md,
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: Spacing["2xl"],
-  },
-  emptyTitle: {
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.sm,
   },
   createButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-    marginTop: Spacing.lg,
-    gap: Spacing.xs,
+    paddingHorizontal: Spacing.l,
+    paddingVertical: Spacing.m,
+    borderRadius: M3Shape.cornerFull,
   },
-  refreshButton: {
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginTop: Spacing.lg,
+  sortOverlayBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 15,
   },
-  playlistsGrid: {
+  sortOptionsOverlay: {
+    position: "absolute",
+    top: 200,
+    right: Layout.horizontalPadding,
+    zIndex: 20,
+    borderRadius: M3Shape.cornerMedium,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: M3Elevation.level3.elevation,
+      },
+      default: {},
+    }),
+    minWidth: 160,
+  },
+  sortOption: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.md,
-  },
-  playlistItem: {
-    width: "47%",
-    padding: Spacing.size3,
-    borderRadius: BorderRadius.lg,
-  },
-  playlistCover: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: BorderRadius.lg,
-    justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.size2,
-  },
-  playlistName: {
-    fontWeight: "600",
-    marginBottom: 2,
+    paddingHorizontal: Spacing.l,
+    paddingVertical: Spacing.m,
   },
   successToast: {
     position: "absolute",
-    bottom: 100,
-    left: Spacing.lg,
-    right: Spacing.lg,
+    left: Layout.horizontalPadding,
+    right: Layout.horizontalPadding,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    paddingHorizontal: Spacing.l,
+    paddingVertical: Spacing.m,
+    borderRadius: M3Shape.cornerMedium,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: M3Elevation.level2.elevation,
+      },
+      default: {},
+    }),
   },
 });
