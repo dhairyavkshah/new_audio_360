@@ -190,10 +190,12 @@ export function TopBarAction({
   icon,
   onPress,
   badge,
+  label,
 }: {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   onPress: () => void;
   badge?: number;
+  label: string;
 }) {
   const { theme } = useThemeContext();
   const scale = useSharedValue(1);
@@ -270,6 +272,7 @@ export function TopBarAction({
       ]}
       hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
       accessibilityRole="button"
+      accessibilityLabel={label}
     >
       <MaterialCommunityIcons name={icon} size={24} color={theme.onSurface} />
       {badge && badge > 0 ? (

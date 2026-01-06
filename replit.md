@@ -64,9 +64,21 @@ The app uses **Material Design 3** (Material You) design language with:
 | Touch Target Min | 48px |
 
 ### Token Files
-- `client/constants/theme.ts` - All design tokens
+- `client/constants/theme.ts` - All design tokens (M3Motion, M3Shape, M3Elevation, Spacing, etc.)
 - `client/constants/DESIGN_LANGUAGE.md` - Usage guidelines
 - `client/components/ThemedText.tsx` - Typography component
+
+### Reusable UI Components
+- `client/components/SearchBar.tsx` - M3 styled search input with clear button
+- `client/components/SortButton.tsx` - Dropdown sort menu with M3 styling
+- `client/components/EmptyState.tsx` - Consistent empty state with icon, title, description
+- `client/components/LoadingState.tsx` - Loading indicator with optional progress bar
+- `client/components/TopBar.tsx` - App header with M3 IconButton and TopBarAction
+- `client/components/MiniPlayer.tsx` - Glassmorphism persistent player
+- `client/components/SongCard.tsx` - M3 styled song list item with actions
+- `client/components/AnimatedCard.tsx` - Base pressable card with M3 animations
+- `client/components/Button.tsx` - M3 styled button variants
+- `client/components/Card.tsx` - M3 elevation-based card
 
 **Feature Specifications:**
 - **Theming**: 55 themes with custom icons (MaterialCommunityIcons), shapes, and component variants
