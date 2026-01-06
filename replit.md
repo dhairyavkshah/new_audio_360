@@ -20,16 +20,16 @@ I prefer concise and direct communication. When making changes, prioritize core 
 
 ## System Architecture
 
-The application is built with **React Native and Expo**, ensuring cross-platform support while maintaining a fully offline and device-local experience. There is no backend server, API calls, or cloud integration; all data persists locally via AsyncStorage. The UI/UX adheres to the **Microsoft Fluent 2 design system**, emphasizing clarity, consistency, and adaptability, with a comprehensive theming system offering 55 unique skins.
+The application is built with **React Native and Expo**, ensuring cross-platform support while maintaining a fully offline and device-local experience. There is no backend server, API calls, or cloud integration; all data persists locally via AsyncStorage. The UI/UX adheres to **Material Design 3 (Material You)** guidelines with Android 16 design patterns, emphasizing dynamic color, clarity, and adaptability, with a comprehensive theming system offering 55 unique skins.
 
 **Technical Implementations:**
 - **Platform**: React Native with Expo SDK
 - **State Management**: React Context API with custom hooks
 - **Data Persistence**: AsyncStorage for local storage
-- **Styling**: Microsoft Fluent 2 design tokens and components
+- **Styling**: Material Design 3 tokens and components
 - **Audio Playback**: expo-av for local audio file playback
 - **Media Access**: expo-media-library for accessing device audio files
-- **Animations**: react-native-reanimated for smooth transitions
+- **Animations**: react-native-reanimated with M3 motion curves
 
 **Navigation Structure:**
 The app features a 3-tab navigation structure:
@@ -42,13 +42,15 @@ The app features a 3-tab navigation structure:
 
 **See `client/constants/DESIGN_LANGUAGE.md` for the complete design specification.**
 
-The app uses a custom design language based on Microsoft Fluent 2 principles with standardized:
+The app uses **Material Design 3** (Material You) design language with:
+- **Typography**: M3 type scale (displayLarge 57px, headlineLarge 32px, titleLarge 22px, bodyLarge 16px, labelLarge 14px)
+- **Color System**: M3 tonal palette with primaryContainer, secondaryContainer, tertiaryContainer, and on-color variants
 - **Spacing**: 4px base unit with named tokens (xs, s, m, l, xl, xxl, xxxl)
-- **Typography**: Hierarchical text styles via ThemedText component
-- **Layout**: Fixed dimensions for navigation bars, list items, buttons, inputs
-- **Border Radius**: Consistent corner rounding per component type
-- **Touch Targets**: Minimum 48px for all interactive elements
-- **Motion**: Standardized duration and easing curves
+- **Shape**: M3 corner radii (cornerExtraSmall 4px, cornerSmall 8px, cornerMedium 12px, cornerLarge 16px)
+- **Elevation**: M3 elevation levels (level0-5) with tonal surface colors
+- **Motion**: M3 duration tokens (durationShort1-4, durationMedium1-4) and easing curves (easingStandard, easingEmphasized)
+- **Touch Targets**: Minimum 48dp for all interactive elements
+- **Navigation Bar**: M3 pattern with pill-style active indicators using secondaryContainer
 
 ### Quick Reference
 | Element | Height/Size |
