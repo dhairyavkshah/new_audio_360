@@ -42,20 +42,24 @@ function TabIcon({
   
   const iconName = iconMap[iconKey] as keyof typeof MaterialCommunityIcons.glyphMap;
   
+  const themeAny = theme as any;
+  const activeIndicatorColor = themeAny.secondaryContainer || (theme.primary + "24");
+  const activeIconColor = themeAny.onSecondaryContainer || color;
+  
   return (
     <View style={styles.tabIconContainer}>
       {focused ? (
         <Animated.View
           style={[
-            styles.pillIndicator,
-            { backgroundColor: theme.primary + "24" },
+            styles.m3ActiveIndicator,
+            { backgroundColor: activeIndicatorColor },
           ]}
         />
       ) : null}
       <MaterialCommunityIcons
         name={iconName}
         size={24}
-        color={color}
+        color={focused ? activeIconColor : color}
         style={styles.tabIcon}
       />
     </View>
@@ -176,7 +180,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 32,
   },
-  pillIndicator: {
+  m3ActiveIndicator: {
     position: "absolute",
     width: 64,
     height: 32,
