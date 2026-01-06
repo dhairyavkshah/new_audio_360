@@ -42,9 +42,8 @@ function TabIcon({
   
   const iconName = iconMap[iconKey] as keyof typeof MaterialCommunityIcons.glyphMap;
   
-  const themeAny = theme as any;
-  const activeIndicatorColor = themeAny.secondaryContainer || (theme.primary + "24");
-  const activeIconColor = themeAny.onSecondaryContainer || color;
+  const activeIndicatorColor = theme.secondaryContainer;
+  const activeIconColor = theme.onSecondaryContainer;
   
   return (
     <View style={styles.tabIconContainer}>
