@@ -8,6 +8,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { TopBar } from "@/components/TopBar";
 import { FluentToggle } from "@/components/FluentToggle";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
@@ -116,16 +117,14 @@ export default function SettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <TopBar title="Settings" showBack={false} />
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + Spacing.sm, paddingBottom: tabBarHeight + Spacing.lg },
+          { paddingTop: Spacing.l, paddingBottom: tabBarHeight + Spacing.size7 },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <ThemedText type="h4" style={styles.screenTitle}>
-          Settings
-        </ThemedText>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -316,73 +315,73 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Layout.horizontalPadding,
   },
-  screenTitle: {
-    marginBottom: Spacing.size4,
-    fontWeight: "700",
-  },
   menuGroup: {
-    gap: Spacing.size3,
-    marginBottom: Spacing.size5,
+    gap: Spacing.contentBlock,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.size4,
-    borderRadius: BorderRadius.lg,
+    padding: Spacing.l,
+    borderRadius: BorderRadius.card,
+    minHeight: Layout.listItemStandard,
   },
   menuIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.lg,
+    width: Layout.touchTargetMin,
+    height: Layout.touchTargetMin,
+    borderRadius: BorderRadius.card,
     alignItems: "center",
     justifyContent: "center",
   },
   menuTextContainer: {
     flex: 1,
-    marginLeft: Spacing.size3,
+    marginLeft: Spacing.contentBlock,
+    gap: Spacing.titleToSubtitle,
   },
   menuTitle: {
     fontWeight: "600",
   },
   section: {
-    marginBottom: Spacing.size5,
+    marginBottom: Layout.sectionGap,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.size2,
+    marginBottom: Spacing.contentBlock,
   },
   sectionTitle: {
-    marginLeft: Spacing.size2,
+    marginLeft: Spacing.iconGap,
   },
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: Spacing.size4,
-    borderRadius: BorderRadius.lg,
+    padding: Spacing.l,
+    borderRadius: BorderRadius.card,
+    minHeight: Layout.listItemStandard,
   },
   settingInfo: {
     flexDirection: "row",
     alignItems: "center",
   },
   settingLabel: {
-    marginLeft: Spacing.size3,
+    marginLeft: Spacing.contentBlock,
   },
   footer: {
-    paddingVertical: Spacing.size4,
+    paddingVertical: Layout.sectionGap,
     alignItems: "center",
   },
   timerGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.size2,
+    gap: Spacing.iconGap,
   },
   timerOption: {
-    paddingVertical: Spacing.size3,
-    paddingHorizontal: Spacing.size4,
-    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.m,
+    paddingHorizontal: Spacing.l,
+    borderRadius: BorderRadius.button,
     minWidth: 70,
     alignItems: "center",
+    height: Layout.buttonStandard,
+    justifyContent: "center",
   },
 });
