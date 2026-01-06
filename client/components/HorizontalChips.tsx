@@ -127,19 +127,18 @@ export function HorizontalChips({
     <View style={[
       styles.container, 
       { 
-        backgroundColor: theme.surfaceContainerLow,
-        borderTopColor: theme.outlineVariant,
+        backgroundColor: theme.surfaceContainer,
         borderBottomColor: theme.outlineVariant,
       },
       Platform.select({
         ios: {
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.05,
-          shadowRadius: 2,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 4,
         },
         android: {
-          elevation: M3Elevation.level1.elevation,
+          elevation: M3Elevation.level2.elevation,
         },
         default: {},
       }),
@@ -161,7 +160,6 @@ const styles = StyleSheet.create({
   container: {
     height: Layout.tabHeight,
     justifyContent: "center",
-    borderTopWidth: 1,
     borderBottomWidth: 1,
   },
   listContent: {

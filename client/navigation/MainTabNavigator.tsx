@@ -125,11 +125,11 @@ export default function MainTabNavigator() {
             ios: {
               shadowColor: "#000",
               shadowOffset: { width: 0, height: -2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 6,
+              shadowOpacity: 0.08,
+              shadowRadius: 4,
             },
             android: {
-              elevation: M3Elevation.level3.elevation,
+              elevation: M3Elevation.level2.elevation,
             },
             default: {},
           }),

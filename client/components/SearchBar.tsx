@@ -25,8 +25,8 @@ export function SearchBar({ value, onChangeText, placeholder = "Search..." }: Se
   };
 
   return (
-    <View style={[styles.wrapper, { backgroundColor: theme.surfaceContainerHigh, borderBottomColor: theme.outlineVariant }]}>
-      <View style={[styles.container, { backgroundColor: theme.surfaceContainerHighest }]}>
+    <View style={[styles.wrapper, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
+      <View style={[styles.container, { backgroundColor: theme.surfaceContainerHigh }]}>
         <MaterialCommunityIcons
           name="magnify"
           size={20}
