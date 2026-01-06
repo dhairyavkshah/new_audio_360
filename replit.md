@@ -78,7 +78,11 @@ The app uses **Material Design 3** (Material You) design language with:
 - `client/components/SongCard.tsx` - M3 styled song list item with actions
 - `client/components/AnimatedCard.tsx` - Base pressable card with M3 animations
 - `client/components/Button.tsx` - M3 styled button variants
-- `client/components/Card.tsx` - M3 elevation-based card
+- `client/components/Card.tsx` - M3 elevation-based card with ElevatedCard, OutlinedCard, FilledCard variants
+- `client/components/HorizontalChips.tsx` - Bar 2 category chips with horizontal scrolling
+- `client/components/BottomSheet.tsx` - M3 styled bottom sheet modal with gesture support
+- `client/components/Dialog.tsx` - M3 styled centered dialog modal
+- `client/components/ContextMenu.tsx` - M3 styled context/action menu
 
 **Feature Specifications:**
 - **Theming**: 55 themes with custom icons (MaterialCommunityIcons), shapes, and component variants

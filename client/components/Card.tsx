@@ -140,6 +140,59 @@ export function Card({
   );
 }
 
+interface ElevatedCardProps {
+  children: React.ReactNode;
+  onPress?: () => void;
+  style?: ViewStyle;
+}
+
+export function ElevatedCard({ children, onPress, style }: ElevatedCardProps) {
+  return (
+    <Card elevation={3} onPress={onPress} style={style}>
+      {children}
+    </Card>
+  );
+}
+
+interface OutlinedCardProps {
+  children: React.ReactNode;
+  onPress?: () => void;
+  style?: ViewStyle;
+}
+
+export function OutlinedCard({ children, onPress, style }: OutlinedCardProps) {
+  const { theme } = useTheme();
+  
+  const outlinedStyle: ViewStyle = {
+    borderWidth: 1, 
+    borderColor: theme.outline,
+  };
+  
+  const mergedStyle: ViewStyle = style 
+    ? { ...outlinedStyle, ...style }
+    : outlinedStyle;
+  
+  return (
+    <Card elevation={0} onPress={onPress} style={mergedStyle}>
+      {children}
+    </Card>
+  );
+}
+
+interface FilledCardProps {
+  children: React.ReactNode;
+  onPress?: () => void;
+  style?: ViewStyle;
+}
+
+export function FilledCard({ children, onPress, style }: FilledCardProps) {
+  return (
+    <Card elevation={0} onPress={onPress} style={style}>
+      {children}
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
     padding: Spacing.l,

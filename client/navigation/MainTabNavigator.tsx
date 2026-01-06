@@ -2,7 +2,13 @@ import React, { useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated, { 
+  FadeIn, 
+  FadeOut,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import ListenStackNavigator from "@/navigation/ListenStackNavigator";
 import LibraryStackNavigator from "@/navigation/LibraryStackNavigator";
@@ -12,7 +18,7 @@ import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
-import { Layout, Spacing, Typography, Motion } from "@/constants/theme";
+import { Layout, Spacing, Typography, Motion, M3Motion } from "@/constants/theme";
 
 export type MainTabParamList = {
   ListenTab: undefined;
@@ -33,6 +39,19 @@ function TabIcon({
 }) {
   const { theme } = useThemeContext();
   const skin = useSkin();
+  const indicatorScale = useSharedValue(focused ? 1 : 0);
+  const iconScale = useSharedValue(1);
+  
+  React.useEffect(() => {
+    indicatorScale.value = withSpring(focused ? 1 : 0, {
+      damping: 15,
+      stiffness: 200,
+    });
+    iconScale.value = withSpring(focused ? 1.05 : 1, {
+      damping: 15,
+      stiffness: 200,
+    });
+  }, [focused]);
   
   const iconMap = {
     listen: focused ? skin.icons.tabListenFocused : skin.icons.tabListen,
@@ -45,22 +64,34 @@ function TabIcon({
   const activeIndicatorColor = theme.secondaryContainer;
   const activeIconColor = theme.onSecondaryContainer;
   
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scaleX: indicatorScale.value },
+      { scaleY: indicatorScale.value },
+    ],
+    opacity: indicatorScale.value,
+  }));
+  
+  const iconAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconScale.value }],
+  }));
+  
   return (
     <View style={styles.tabIconContainer}>
-      {focused ? (
-        <Animated.View
-          style={[
-            styles.m3ActiveIndicator,
-            { backgroundColor: activeIndicatorColor },
-          ]}
-        />
-      ) : null}
-      <MaterialCommunityIcons
-        name={iconName}
-        size={24}
-        color={focused ? activeIconColor : color}
-        style={styles.tabIcon}
+      <Animated.View
+        style={[
+          styles.m3ActiveIndicator,
+          { backgroundColor: activeIndicatorColor },
+          indicatorStyle,
+        ]}
       />
+      <Animated.View style={[styles.tabIcon, iconAnimatedStyle]}>
+        <MaterialCommunityIcons
+          name={iconName}
+          size={24}
+          color={focused ? activeIconColor : color}
+        />
+      </Animated.View>
     </View>
   );
 }
@@ -187,5 +218,7 @@ const styles = StyleSheet.create({
   },
   tabIcon: {
     zIndex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

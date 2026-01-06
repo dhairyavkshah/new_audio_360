@@ -33,7 +33,7 @@ The primary navigation header on the app's main entry point (Listen tab home).
 | Title Color | `theme.text` | - |
 | Icon Color | `theme.text` | - |
 | Bottom Border | None (use elevation shadow) | - |
-| Shadow | `Fluent2Tokens.shadow2` | - |
+| Shadow | `M3Elevation.level2` | - |
 
 ### Example Structure
 ```
@@ -68,7 +68,7 @@ Header bar for all screens other than the main home tabs (Now Playing, Settings 
 | Background | `theme.surfaceContainer` or transparent (for Now Playing) | - |
 | Title Color | `theme.text` | - |
 | Back Icon Color | `theme.text` | - |
-| Shadow | Optional `Fluent2Tokens.shadow2` | - |
+| Shadow | Optional `M3Elevation.level2` | - |
 
 ### Example Structure
 ```
@@ -264,7 +264,7 @@ The persistent mini player floating above the bottom navigation.
 |----------|-------|-------|
 | Background | Glassmorphism blur OR `theme.surfaceContainer` | - |
 | Blur Intensity | 20-40 (iOS), 15-25 (Android) | - |
-| Shadow | `Fluent2Tokens.shadow8` | - |
+| Shadow | `M3Elevation.level3` | - |
 | Text Color | `theme.text` | - |
 | Icon Color | `theme.text` | - |
 
@@ -322,7 +322,7 @@ Full-screen or partial overlays including dialogs, sheets, and context menus.
 | Property | Value | Token |
 |----------|-------|-------|
 | Background | `theme.surface` | - |
-| Shadow | `Fluent2Tokens.shadow16` | - |
+| Shadow | `M3Elevation.level4` | - |
 | Handle Bar Color | `theme.outline` | - |
 
 ### Example Structure (Bottom Sheet)
@@ -373,7 +373,7 @@ The persistent bottom tab bar for primary navigation.
 | Active Pill Color | `theme.primary` with 15% opacity | - |
 | Active Pill Radius | 16px | - |
 | Top Border | None (use shadow) | - |
-| Shadow | Inverted `Fluent2Tokens.shadow4` | - |
+| Shadow | `M3Elevation.level2` (inverted) | - |
 
 ### Example Structure
 ```
