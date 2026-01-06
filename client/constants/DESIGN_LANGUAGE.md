@@ -2,391 +2,433 @@
 
 ## Overview
 
-This document establishes the official design language for New Audio 360, a premium offline music player. All UI components, screens, and interactions must adhere to these specifications to ensure visual consistency and professional quality.
+This document establishes the official design language for New Audio 360, organized by UI component region. All screens must follow these specifications for visual consistency.
+
+**Base Unit**: 4px (all values are multiples of 4)
 
 ---
 
-## 1. SPACING SYSTEM
+## 1. TOP BAR (HOME SCREEN)
 
-### Base Unit: 4px
+The primary navigation header on the app's main entry point (Listen tab home).
 
-All spacing values are multiples of 4px to ensure consistent rhythm.
+### Dimensions
+| Property | Value | Token |
+|----------|-------|-------|
+| Height | 56px | `Layout.topBarHeight` |
+| Horizontal Padding | 20px | `Layout.horizontalPadding` |
+| Vertical Padding | 12px | `Spacing.m` |
 
-### Spacing Scale (USE THESE TOKENS ONLY)
+### Content Layout
+| Element | Specification |
+|---------|---------------|
+| App Title/Logo | Left-aligned, `ThemedText type="h1"` (20px, weight 600) |
+| Action Icons | Right-aligned, 24px icons, 48px touch target |
+| Icon Gap | 8px between multiple icons |
 
-| Token Name | Value | Usage |
-|------------|-------|-------|
-| `Spacing.none` | 0px | No spacing |
-| `Spacing.xxs` | 2px | Micro adjustments only |
-| `Spacing.xs` | 4px | Icon-to-text gaps, tight element separation |
-| `Spacing.s` | 8px | Inline elements, small gaps, icon gaps |
-| `Spacing.m` | 12px | Content block spacing, compact padding |
-| `Spacing.l` | 16px | Standard padding, input fields, between sections |
-| `Spacing.xl` | 20px | Comfortable padding, card padding |
-| `Spacing.xxl` | 24px | Section gaps, major separation |
-| `Spacing.xxxl` | 32px | Large structural gaps, page-level separation |
+### Styling
+| Property | Value | Token |
+|----------|-------|-------|
+| Background | `theme.surfaceContainer` | - |
+| Title Color | `theme.text` | - |
+| Icon Color | `theme.text` | - |
+| Bottom Border | None (use elevation shadow) | - |
+| Shadow | `Fluent2Tokens.shadow2` | - |
 
-### Semantic Spacing Tokens
-
-| Token Name | Value | Context |
-|------------|-------|---------|
-| `Spacing.iconGap` | 8px | Gap between icon and text |
-| `Spacing.titleToSubtitle` | 4px | Gap between title and subtitle text |
-| `Spacing.contentBlock` | 12px | Gap between content elements |
-| `Spacing.sectionGap` | 24px | Gap between major sections (use `Layout.sectionGap`) |
-
-### DEPRECATED TOKENS (DO NOT USE)
-
-The following tokens exist for backward compatibility but should be migrated:
-- `Spacing.size1` through `Spacing.size20` → Use named tokens instead
-- `Spacing.sm`, `Spacing.md`, `Spacing.lg` → Use `Spacing.m`, `Spacing.l`, `Spacing.xl`
-- `Spacing["2xs"]`, `Spacing["2xl"]`, `Spacing["3xl"]` → Use named equivalents
-
----
-
-## 2. LAYOUT DIMENSIONS
-
-### Fixed Heights (MUST USE)
-
-| Token Name | Value | Component |
-|------------|-------|-----------|
-| `Layout.topBarHeight` | 56px | Navigation/header bars |
-| `Layout.secondaryBarHeight` | 48px | Filter bars, search bars |
-| `Layout.bottomNavHeight` | 64px | Bottom tab navigation |
-| `Layout.miniPlayerHeight` | 68px | Mini player overlay |
-| `Layout.inputFieldHeight` | 48px | Text inputs, search inputs |
-| `Layout.touchTargetMin` | 48px | Minimum tappable area |
-
-### List Item Heights
-
-| Token Name | Value | Usage |
-|------------|-------|-------|
-| `Layout.listItemCompact` | 48px | Dense lists, settings items |
-| `Layout.listItemStandard` | 56px | Standard list items |
-| `Layout.listItemRich` | 72px | Items with artwork/thumbnail |
-
-### Button Heights
-
-| Token Name | Value | Usage |
-|------------|-------|-------|
-| `Layout.buttonSmall` | 36px | Secondary actions, chips |
-| `Layout.buttonStandard` | 44px | Default buttons |
-| `Layout.buttonLarge` | 48px | Primary call-to-action |
-| `Layout.playButtonLarge` | 56px | Main playback control |
-
-### Horizontal Padding
-
-| Token Name | Value | Usage |
-|------------|-------|-------|
-| `Layout.horizontalPaddingMin` | 16px | Minimum screen padding |
-| `Layout.horizontalPadding` | 20px | Standard screen padding |
-| `Layout.horizontalPaddingMax` | 24px | Maximum (never exceed) |
-
----
-
-## 3. TYPOGRAPHY SYSTEM
-
-### Primary Text Styles (USE THESE)
-
-| Style Name | Size | Weight | Line Height | Usage |
-|------------|------|--------|-------------|-------|
-| `display` | 40px | 600 | 52px | Large hero numbers/text |
-| `titleLarge` / `h1` | 20px | 600 | 28px | Screen titles, major headings |
-| `titleMedium` / `h2` | 16px | 600 | 22px | Section headings, card titles |
-| `titleSmall` / `h3` | 14px | 600 | 20px | Subsection headings |
-| `body` / `bodyMedium` | 14px | 400 | 20px | Primary body text |
-| `bodySmall` / `small` | 12px | 400 | 16px | Secondary text, descriptions |
-| `labelLarge` | 14px | 600 | 20px | Button text, emphasized labels |
-| `labelMedium` | 12px | 600 | 16px | Chips, tags, small buttons |
-| `labelSmall` | 10px | 600 | 14px | Minimal labels |
-| `caption` | 12px | 400 | 16px | Helper text, metadata |
-| `captionSmall` | 10px | 400 | 14px | Timestamps, minimal info |
-
-### ThemedText Type Mapping
-
-Always use `<ThemedText type="...">` with these types:
-- Screen titles: `type="h1"` or `type="titleLarge"`
-- Section headers: `type="h2"` or `type="titleMedium"`
-- Card/item titles: `type="h3"` or `type="titleSmall"`
-- Body content: `type="body"`
-- Secondary info: `type="bodySmall"` or `type="small"`
-- Buttons: `type="labelLarge"`
-- Chips/badges: `type="labelMedium"`
-- Captions: `type="caption"`
-
-### NEVER DO
-
-- Never use raw `fontSize` values in StyleSheet
-- Never mix type styles inconsistently (e.g., caption for titles)
-- Never use `fontWeight` directly; let ThemedText handle it
-
----
-
-## 4. BORDER RADIUS
-
-### Standard Radii
-
-| Token Name | Value | Usage |
-|------------|-------|-------|
-| `BorderRadius.none` | 0px | Sharp corners |
-| `BorderRadius.small` | 4px | Subtle rounding, chips |
-| `BorderRadius.medium` | 8px | Buttons, inputs |
-| `BorderRadius.large` | 12px | Cards, containers |
-| `BorderRadius.xLarge` | 16px | Large cards, modals, mini player |
-| `BorderRadius.circular` | 9999px | Pills, circular elements |
-
-### Component-Specific
-
-| Token Name | Value | Component |
-|------------|-------|-----------|
-| `BorderRadius.button` | 8px | All buttons |
-| `BorderRadius.input` | 8px | Text inputs |
-| `BorderRadius.card` | 12px | Standard cards |
-| `BorderRadius.cardLarge` | 16px | Featured cards |
-| `BorderRadius.miniPlayer` | 16px | Mini player |
-| `BorderRadius.dialog` | 16px | Modals, dialogs |
-| `BorderRadius.pill` | 9999px | Pill-shaped elements |
-
----
-
-## 5. ELEVATION & SHADOWS
-
-### Elevation Levels
-
-| Level | Value | Usage |
-|-------|-------|-------|
-| `Elevation.level0` | 0 | Flat surfaces |
-| `Elevation.level1` | 2 | Subtle lift (cards) |
-| `Elevation.level2` | 4 | Floating elements |
-| `Elevation.level3` | 8 | Modals, overlays |
-| `Elevation.level4` | 16 | High emphasis |
-| `Elevation.level5` | 24 | Maximum elevation |
-
-### Shadow Tokens (Web/CSS)
-
-Use `Fluent2Tokens.shadow2` through `Fluent2Tokens.shadow64` for box shadows.
-
----
-
-## 6. TOUCH TARGETS
-
-### Minimum Requirements
-
-- **Minimum touch target**: 48x48px (`Layout.touchTargetMin`)
-- **Comfortable touch target**: 56x56px
-- **Icon buttons**: 48x48px minimum, even if icon is 24px
-- **List items**: Full-width, minimum 48px height
-
-### Implementation
-
-```tsx
-// CORRECT: Touch target wrapper
-<Pressable 
-  style={{ minWidth: Layout.touchTargetMin, minHeight: Layout.touchTargetMin }}
-  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
->
-  <Icon size={24} />
-</Pressable>
-
-// INCORRECT: No touch expansion
-<Pressable>
-  <Icon size={24} />
-</Pressable>
+### Example Structure
+```
+[56px height]
+├── [20px padding] App Title ─────────────── [Icon 48x48] [8px] [Icon 48x48] [20px padding]
 ```
 
 ---
 
-## 7. ANIMATION & MOTION
+## 2. TOP BAR (SUB-PAGES)
 
-### Duration Tokens
+Header bar for all screens other than the main home tabs (Now Playing, Settings sub-pages, Playlist Detail, etc.).
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `Motion.duration.fast` | 100ms | Micro-interactions, button presses |
-| `Motion.duration.normal` | 200ms | Standard transitions |
-| `Motion.duration.slow` | 300ms | Complex animations |
-| `Motion.duration.slower` | 400ms | Page transitions |
+### Dimensions
+| Property | Value | Token |
+|----------|-------|-------|
+| Height | 56px | `Layout.topBarHeight` |
+| Horizontal Padding | 16px | `Layout.horizontalPaddingMin` |
+| Back Button Size | 48x48px | `Layout.touchTargetMin` |
 
-### Easing Curves
+### Content Layout
+| Element | Specification |
+|---------|---------------|
+| Back Button | Left-aligned, chevron-left icon (24px), 48px touch target |
+| Page Title | Center-aligned, `ThemedText type="h2"` (16px, weight 600) |
+| Action Icons | Right-aligned (optional), 24px icons, 48px touch target |
+| Back-to-Title Gap | 8px | `Spacing.s` |
 
-| Token | Usage |
-|-------|-------|
-| `Motion.easing.fluent` | Standard transitions |
-| `Motion.easing.fluentDecelerate` | Elements entering |
-| `Motion.easing.fluentAccelerate` | Elements exiting |
-| `Motion.easing.emphasized` | Important transitions |
+### Styling
+| Property | Value | Token |
+|----------|-------|-------|
+| Background | `theme.surfaceContainer` or transparent (for Now Playing) | - |
+| Title Color | `theme.text` | - |
+| Back Icon Color | `theme.text` | - |
+| Shadow | Optional `Fluent2Tokens.shadow2` | - |
 
-### Spring Animations (Reanimated)
-
-```tsx
-// Standard spring
-withSpring(value, Motion.spring)
-
-// Gentle spring
-withSpring(value, Motion.slowSpring)
+### Example Structure
+```
+[56px height]
+├── [16px] [Back 48x48] [8px] ─── Page Title (centered) ─── [Action 48x48] [16px]
 ```
 
 ---
 
-## 8. ICON SIZING
+## 3. BAR 1 BELOW TOP BAR (Search/Filter Bar)
 
-### Standard Sizes
+The primary utility bar directly below the top bar, typically containing search input.
 
-| Size | Value | Usage |
-|------|-------|-------|
-| Small | 16px | Inline icons, badges |
-| Medium | 20px | List item icons |
-| Default | 24px | Navigation, actions |
-| Large | 28px | Featured icons |
-| XLarge | 32px | Hero icons |
+### Dimensions
+| Property | Value | Token |
+|----------|-------|-------|
+| Height | 48px (content area) | `Layout.secondaryBarHeight` |
+| Total Height with Padding | 64px | - |
+| Horizontal Padding | 20px | `Layout.horizontalPadding` |
+| Vertical Padding | 8px top, 8px bottom | `Spacing.s` |
+| Input Field Height | 48px | `Layout.inputFieldHeight` |
 
-### Icon Colors
+### Content Layout
+| Element | Specification |
+|---------|---------------|
+| Search Input | Full-width minus action button, 48px height |
+| Search Icon | 18px, inside input left, 12px from edge |
+| Clear Button | 16px icon, 44px touch target, inside input right |
+| Sort/Filter Button | 48x48px, 8px gap from input |
 
-Always use theme colors:
-- Primary action: `theme.primary`
-- Interactive: `theme.text`
-- Secondary: `theme.textSecondary`
-- Disabled: `theme.textTertiary`
+### Styling
+| Property | Value | Token |
+|----------|-------|-------|
+| Background | `theme.backgroundDefault` | - |
+| Input Background | `theme.surfaceVariant` | - |
+| Input Border Radius | 8px | `BorderRadius.input` |
+| Placeholder Color | `theme.textSecondary` | - |
+| Input Text | `ThemedText type="body"` (14px) | - |
 
----
-
-## 9. COLOR USAGE
-
-### Text Colors
-
-| Color | Token | Usage |
-|-------|-------|-------|
-| Primary text | `theme.text` | Main content, titles |
-| Secondary text | `theme.textSecondary` | Descriptions, captions |
-| Tertiary text | `theme.textTertiary` | Disabled, hints |
-
-### Background Colors
-
-| Color | Token | Usage |
-|-------|-------|-------|
-| Root | `theme.backgroundRoot` | App background |
-| Default | `theme.backgroundDefault` | Screen backgrounds |
-| Surface | `theme.surface` | Cards, containers |
-| Surface Variant | `theme.surfaceVariant` | Inputs, secondary surfaces |
-
-### Interactive Colors
-
-| Color | Token | Usage |
-|-------|-------|-------|
-| Primary | `theme.primary` | CTAs, links, active states |
-| Primary Hover | `theme.primaryHover` | Hover states |
-| Primary Pressed | `theme.primaryPressed` | Press states |
-
----
-
-## 10. COMPONENT PATTERNS
-
-### Card Pattern
-
-```tsx
-const cardStyle = {
-  backgroundColor: theme.cardBackground,
-  borderRadius: BorderRadius.card,
-  padding: Spacing.l,
-  gap: Spacing.m,
-};
+### Example Structure
 ```
-
-### List Item Pattern
-
-```tsx
-const listItemStyle = {
-  minHeight: Layout.listItemStandard,
-  paddingHorizontal: Layout.horizontalPadding,
-  paddingVertical: Spacing.m,
-  gap: Spacing.s,
-};
-```
-
-### Button Pattern
-
-```tsx
-const buttonStyle = {
-  height: Layout.buttonStandard,
-  paddingHorizontal: Spacing.l,
-  borderRadius: BorderRadius.button,
-};
-```
-
-### Input Pattern
-
-```tsx
-const inputStyle = {
-  height: Layout.inputFieldHeight,
-  paddingHorizontal: Spacing.l,
-  borderRadius: BorderRadius.input,
-  backgroundColor: theme.surfaceVariant,
-};
+[64px total]
+├── [8px top padding]
+├── [48px content] [20px] [Search Input ─────────────────] [8px] [Sort 48x48] [20px]
+├── [8px bottom padding]
 ```
 
 ---
 
-## 11. SCREEN LAYOUT STRUCTURE
+## 4. BAR 2 BELOW TOP BAR (Category/Tab Bar)
 
-### Standard Screen Template
+Secondary filter bar with horizontal scrolling chips or tabs.
 
-```tsx
-<View style={{ flex: 1, backgroundColor: theme.backgroundDefault }}>
-  {/* TopBar: 56px */}
-  <TopBar title="Screen Title" />
-  
-  {/* Content with horizontal padding */}
-  <ScrollView contentContainerStyle={{ 
-    paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.l,
-    paddingBottom: Layout.bottomNavHeight + Layout.miniPlayerHeight + Spacing.xxl,
-  }}>
-    {/* Section with gap */}
-    <View style={{ gap: Layout.sectionGap }}>
-      {/* Section Header */}
-      <ThemedText type="h2">Section Title</ThemedText>
-      
-      {/* Content */}
-      <View style={{ gap: Spacing.m }}>
-        {/* Items */}
-      </View>
-    </View>
-  </ScrollView>
-</View>
+### Dimensions
+| Property | Value | Token |
+|----------|-------|-------|
+| Height | 48px | `Layout.tabHeight` |
+| Horizontal Padding | 20px (first/last item margin) | `Layout.horizontalPadding` |
+| Chip Height | 36px | `Layout.buttonSmall` |
+| Chip Gap | 8px | `Spacing.s` |
+
+### Content Layout
+| Element | Specification |
+|---------|---------------|
+| Chips/Tabs | Horizontal scroll, 36px height |
+| Chip Padding | 16px horizontal | `Spacing.l` |
+| Chip Text | `ThemedText type="labelMedium"` (12px, weight 600) |
+| Active Indicator | Background color change or underline |
+
+### Styling
+| Property | Value | Token |
+|----------|-------|-------|
+| Background | `theme.backgroundDefault` | - |
+| Chip Background (inactive) | `theme.surfaceVariant` | - |
+| Chip Background (active) | `theme.primary` with 15% opacity | - |
+| Chip Text (inactive) | `theme.textSecondary` | - |
+| Chip Text (active) | `theme.primary` | - |
+| Chip Border Radius | 9999px (pill) | `BorderRadius.pill` |
+
+### Example Structure
+```
+[48px height]
+├── [scroll] [20px] [Chip 36px] [8px] [Chip 36px] [8px] [Chip 36px] ... [20px]
 ```
 
 ---
 
-## 12. CHECKLIST FOR CONSISTENCY
+## 5. MAIN CONTENT AREA
 
-Before completing any UI work, verify:
+The primary scrollable content region between bars.
 
-- [ ] All spacing uses Spacing tokens (no magic numbers)
-- [ ] All heights use Layout tokens
-- [ ] All text uses ThemedText with proper type
-- [ ] All border radius uses BorderRadius tokens
-- [ ] Touch targets are minimum 48px
-- [ ] Colors use theme tokens, never hardcoded
-- [ ] Animations use Motion tokens
-- [ ] Icons use standard sizes (16, 20, 24, 28, 32)
+### Dimensions
+| Property | Value | Token |
+|----------|-------|-------|
+| Horizontal Padding | 20px | `Layout.horizontalPadding` |
+| Top Padding | 16px | `Spacing.l` |
+| Bottom Padding | 156px minimum (Nav + MiniPlayer + gap) | Calculated |
+| Section Gap | 24px | `Layout.sectionGap` |
+| Card Gap | 12px | `Layout.cardGap` |
+
+### List Items
+
+#### Standard List Item (Song, Setting)
+| Property | Value | Token |
+|----------|-------|-------|
+| Height | 56px | `Layout.listItemStandard` |
+| Horizontal Padding | 16px | `Spacing.l` |
+| Vertical Padding | 12px | `Spacing.m` |
+| Icon Size | 24px | - |
+| Icon-to-Text Gap | 12px | `Spacing.contentBlock` |
+
+#### Rich List Item (with Artwork)
+| Property | Value | Token |
+|----------|-------|-------|
+| Height | 72px | `Layout.listItemRich` |
+| Artwork Size | 48x48px | - |
+| Artwork Border Radius | 8px | `BorderRadius.medium` |
+| Artwork-to-Text Gap | 12px | `Spacing.contentBlock` |
+
+#### Compact List Item
+| Property | Value | Token |
+|----------|-------|-------|
+| Height | 48px | `Layout.listItemCompact` |
+| Vertical Padding | 8px | `Spacing.s` |
+
+### List Item Typography
+| Element | Style | Size |
+|---------|-------|------|
+| Primary Text | `ThemedText type="body"` | 14px |
+| Secondary Text | `ThemedText type="caption"` | 12px |
+| Title-to-Subtitle Gap | 4px | `Spacing.titleToSubtitle` |
+
+### Cards
+
+| Property | Value | Token |
+|----------|-------|-------|
+| Padding | 16px | `CardPadding.standard` |
+| Border Radius | 12px | `BorderRadius.card` |
+| Background | `theme.cardBackground` | - |
+| Border | 1px `theme.cardBorder` | - |
+| Gap Between Cards | 12px | `Layout.cardGap` |
+
+### Section Headers
+| Element | Style |
+|---------|-------|
+| Section Title | `ThemedText type="h2"` (16px, weight 600) |
+| Section Title Margin Bottom | 12px | `Spacing.contentBlock` |
+
+### Example Structure
+```
+[Main Content Area]
+├── [16px top padding]
+├── Section Title (h2)
+├── [12px gap]
+├── [Card or List Items]
+├── [24px section gap]
+├── Section Title (h2)
+├── [12px gap]
+├── [Card or List Items]
+├── [156px bottom padding for nav/player]
+```
 
 ---
 
-## 13. MIGRATION NOTES
+## 6. FLOATING BAR (MINI PLAYER)
 
-### Tokens to Replace
+The persistent mini player floating above the bottom navigation.
 
-| Old | New |
-|-----|-----|
-| `Spacing.sm` | `Spacing.m` (12px) |
-| `Spacing.md` | `Spacing.l` (16px) |
-| `Spacing.lg` | `Spacing.xl` (20px) |
-| `Spacing.size4` | `Spacing.l` (16px) |
-| Raw `24` | `Spacing.xxl` or `Layout.sectionGap` |
-| Raw `48` | `Layout.touchTargetMin` |
-| Raw `56` | `Layout.listItemStandard` |
+### Dimensions
+| Property | Value | Token |
+|----------|-------|-------|
+| Height | 68px | `Layout.miniPlayerHeight` |
+| Horizontal Margin | 16px from screen edges | `Spacing.l` |
+| Bottom Margin | 8px above bottom nav | `Layout.miniPlayerGapFromNav` |
+| Internal Padding | 12px | `Spacing.m` |
+| Border Radius | 16px | `BorderRadius.miniPlayer` |
+
+### Content Layout
+| Element | Specification |
+|---------|---------------|
+| Artwork | 44x44px, left-aligned, 8px border radius |
+| Song Info | Left of controls, flex-grow |
+| Song Title | `ThemedText type="body"` (14px), single line, ellipsis |
+| Artist | `ThemedText type="caption"` (12px), single line, ellipsis |
+| Title-to-Artist Gap | 2px | `Spacing.xxs` |
+| Artwork-to-Info Gap | 12px | `Spacing.m` |
+| Play/Pause Button | 44x44px touch target, 24px icon |
+| Next Button | 44x44px touch target, 20px icon |
+| Button Gap | 4px | `Spacing.xs` |
+
+### Styling
+| Property | Value | Token |
+|----------|-------|-------|
+| Background | Glassmorphism blur OR `theme.surfaceContainer` | - |
+| Blur Intensity | 20-40 (iOS), 15-25 (Android) | - |
+| Shadow | `Fluent2Tokens.shadow8` | - |
+| Text Color | `theme.text` | - |
+| Icon Color | `theme.text` | - |
+
+### Example Structure
+```
+[68px height, 16px margins]
+├── [12px] [Art 44x44] [12px] [Title/Artist ───] [Play 44x44] [4px] [Next 44x44] [12px]
+```
+
+---
+
+## 7. MODAL / OVERLAY
+
+Full-screen or partial overlays including dialogs, sheets, and context menus.
+
+### Bottom Sheet
+| Property | Value | Token |
+|----------|-------|-------|
+| Border Radius (top) | 16px | `BorderRadius.dialog` |
+| Horizontal Padding | 20px | `Layout.horizontalPadding` |
+| Top Padding | 16px | `Spacing.l` |
+| Bottom Padding | 24px + safe area | `Spacing.xxl` |
+| Handle Bar Width | 40px | - |
+| Handle Bar Height | 4px | - |
+| Handle Bar Margin | 8px bottom | `Spacing.s` |
+
+### Dialog/Modal
+| Property | Value | Token |
+|----------|-------|-------|
+| Width | 90% of screen, max 400px | - |
+| Border Radius | 16px | `BorderRadius.dialog` |
+| Padding | 24px | `Spacing.xxl` |
+| Title | `ThemedText type="h2"` (16px, weight 600) |
+| Body Text | `ThemedText type="body"` (14px) |
+| Title-to-Body Gap | 12px | `Spacing.contentBlock` |
+| Body-to-Buttons Gap | 24px | `Spacing.xxl` |
+| Button Gap | 12px | `Spacing.m` |
+
+### Context Menu
+| Property | Value | Token |
+|----------|-------|-------|
+| Width | 200-280px | - |
+| Border Radius | 12px | `BorderRadius.card` |
+| Item Height | 48px | `Layout.listItemCompact` |
+| Item Padding | 16px horizontal | `Spacing.l` |
+| Icon Size | 20px | - |
+| Icon-to-Text Gap | 12px | `Spacing.contentBlock` |
+
+### Overlay Background
+| Property | Value | Token |
+|----------|-------|-------|
+| Scrim Color | `theme.scrim` (rgba black 40-70%) | - |
+
+### Styling
+| Property | Value | Token |
+|----------|-------|-------|
+| Background | `theme.surface` | - |
+| Shadow | `Fluent2Tokens.shadow16` | - |
+| Handle Bar Color | `theme.outline` | - |
+
+### Example Structure (Bottom Sheet)
+```
+[Bottom Sheet]
+├── [Scrim Overlay 40% black]
+├── [Sheet with 16px top radius]
+│   ├── [16px top padding]
+│   ├── [Handle Bar 40x4px, centered]
+│   ├── [8px gap]
+│   ├── Content Area
+│   │   ├── [Menu Item 48px height] × N
+│   ├── [24px + safe area bottom padding]
+```
+
+---
+
+## 8. BOTTOM BAR (Tab Navigation)
+
+The persistent bottom tab bar for primary navigation.
+
+### Dimensions
+| Property | Value | Token |
+|----------|-------|-------|
+| Height | 64px + safe area (iOS) | `Layout.bottomNavHeight` |
+| Icon Size | 24px | - |
+| Label Size | 10px | `Typography.labelSmall` |
+| Icon-to-Label Gap | 4px | `Spacing.xs` |
+| Touch Target | Full tab width, 64px height | - |
+
+### Content Layout
+| Element | Specification |
+|---------|---------------|
+| Tab Count | 3 (Listen, Library, Settings) |
+| Tab Distribution | Equal width |
+| Icon Position | Centered horizontally |
+| Label Position | Below icon, centered |
+| Active Indicator | Pill background behind icon (optional) |
+
+### Styling
+| Property | Value | Token |
+|----------|-------|-------|
+| Background | `theme.surfaceContainer` | - |
+| Icon (inactive) | `theme.onSurfaceVariant` | - |
+| Icon (active) | `theme.primary` | - |
+| Label (inactive) | `theme.onSurfaceVariant` | - |
+| Label (active) | `theme.primary` | - |
+| Active Pill Color | `theme.primary` with 15% opacity | - |
+| Active Pill Radius | 16px | - |
+| Top Border | None (use shadow) | - |
+| Shadow | Inverted `Fluent2Tokens.shadow4` | - |
+
+### Example Structure
+```
+[64px height + safe area]
+├── [Tab 1: Listen]     [Tab 2: Library]    [Tab 3: Settings]
+│   ├── [Icon 24px]     ├── [Icon 24px]     ├── [Icon 24px]
+│   ├── [4px gap]       ├── [4px gap]       ├── [4px gap]
+│   └── [Label 10px]    └── [Label 10px]    └── [Label 10px]
+```
+
+---
+
+## QUICK REFERENCE TABLE
+
+| Component | Height | Horizontal Padding | Key Token |
+|-----------|--------|-------------------|-----------|
+| Top Bar (Home) | 56px | 20px | `Layout.topBarHeight` |
+| Top Bar (Sub-page) | 56px | 16px | `Layout.topBarHeight` |
+| Bar 1 (Search) | 48px content | 20px | `Layout.secondaryBarHeight` |
+| Bar 2 (Chips) | 48px | 20px | `Layout.tabHeight` |
+| Main Content | Flex | 20px | `Layout.horizontalPadding` |
+| Mini Player | 68px | 16px margin | `Layout.miniPlayerHeight` |
+| Modal/Sheet | Varies | 20-24px | `BorderRadius.dialog` |
+| Bottom Nav | 64px + safe | Full width | `Layout.bottomNavHeight` |
+
+---
+
+## TYPOGRAPHY QUICK REFERENCE
+
+| Usage | ThemedText Type | Size | Weight |
+|-------|-----------------|------|--------|
+| App Title (Home) | `h1` / `titleLarge` | 20px | 600 |
+| Page Title (Sub-page) | `h2` / `titleMedium` | 16px | 600 |
+| Section Header | `h2` / `titleMedium` | 16px | 600 |
+| Card Title | `h3` / `titleSmall` | 14px | 600 |
+| Body Text | `body` | 14px | 400 |
+| Secondary Text | `bodySmall` / `small` | 12px | 400 |
+| Button Label | `labelLarge` | 14px | 600 |
+| Chip Label | `labelMedium` | 12px | 600 |
+| Caption/Metadata | `caption` | 12px | 400 |
+| Tab Label | `labelSmall` | 10px | 600 |
+
+---
+
+## TOUCH TARGET REQUIREMENTS
+
+| Component | Minimum Size |
+|-----------|--------------|
+| Icon Buttons | 48x48px |
+| List Items | Full width × 48px min |
+| Chips/Tags | 36px height, 48px if standalone |
+| Tab Bar Tabs | Full width × 64px |
+| Mini Player | Full width × 68px |
 
 ---
 
 *Last Updated: January 2026*
-*Version: 1.0.0*
+*Version: 2.0.0*
