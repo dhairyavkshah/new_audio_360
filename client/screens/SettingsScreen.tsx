@@ -12,7 +12,7 @@ import { TopBar } from "@/components/TopBar";
 import { FluentToggle } from "@/components/FluentToggle";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, BorderRadius, Layout } from "@/constants/theme";
+import { Spacing, BorderRadius, Layout, M3Shape } from "@/constants/theme";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 import { getHapticEnabled, setHapticEnabled as saveHapticEnabled } from "@/lib/storage";
 import { usePlayerContext } from "@/contexts/PlayerContext";
@@ -48,20 +48,22 @@ function MenuItem({ icon, iconColor, title, subtitle, onPress }: MenuItemProps) 
   return (
     <Pressable
       onPress={handlePress}
-      style={[styles.menuItem, { backgroundColor: theme.backgroundSecondary }]}
+      style={[styles.menuItem, { backgroundColor: theme.surfaceContainerLow }]}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${subtitle}`}
     >
-      <View style={[styles.menuIconContainer, { backgroundColor: theme.backgroundDefault }]}>
+      <View style={[styles.menuIconContainer, { backgroundColor: theme.surfaceContainerHigh }]}>
         <MaterialCommunityIcons name={icon} size={24} color={iconColor || theme.primary} />
       </View>
       <View style={styles.menuTextContainer}>
-        <ThemedText type="body" style={styles.menuTitle}>
+        <ThemedText type="bodyLarge" style={styles.menuTitle}>
           {title}
         </ThemedText>
-        <ThemedText type="small" style={{ color: theme.textSecondary }}>
+        <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>
           {subtitle}
         </ThemedText>
       </View>
-      <MaterialCommunityIcons name="chevron-right" size={24} color={theme.textSecondary} />
+      <MaterialCommunityIcons name="chevron-right" size={24} color={theme.onSurfaceVariant} />
     </Pressable>
   );
 }

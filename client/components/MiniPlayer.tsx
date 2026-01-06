@@ -8,7 +8,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import { Spacing, BorderRadius, Layout, Fluent2Tokens } from "@/constants/theme";
+import { Spacing, BorderRadius, Layout, M3Shape, M3Elevation } from "@/constants/theme";
 
 interface MiniPlayerProps {
   bottomOffset?: number;
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
         elevation: 8,
       },
       default: {
-        boxShadow: Fluent2Tokens.shadow16,
+        boxShadow: "0 8px 16px rgba(0, 0, 0, 0.14)",
       },
     }),
   },

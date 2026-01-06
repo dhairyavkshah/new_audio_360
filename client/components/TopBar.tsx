@@ -12,7 +12,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Layout, Spacing, BorderRadius, Fluent2Tokens } from "@/constants/theme";
+import { Layout, Spacing, BorderRadius, M3Motion, M3Shape } from "@/constants/theme";
 
 interface TopBarProps {
   title: string;
@@ -120,16 +120,16 @@ function IconButton({
   const handlePressIn = () => {
     setIsPressed(true);
     scale.value = withTiming(0.95, { 
-      duration: Fluent2Tokens.durationFast,
-      easing: Easing.out(Easing.cubic),
+      duration: M3Motion.durationShort3,
+      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
     });
   };
 
   const handlePressOut = () => {
     setIsPressed(false);
     scale.value = withTiming(1, { 
-      duration: Fluent2Tokens.durationNormal,
-      easing: Easing.out(Easing.cubic),
+      duration: M3Motion.durationShort4,
+      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
     });
   };
 
@@ -153,7 +153,7 @@ function IconButton({
       outlineOffset: 2,
     },
     default: {
-      borderWidth: Fluent2Tokens.strokeWidthThick,
+      borderWidth: 2,
       borderColor: theme.primary,
     },
   }) : {};
@@ -215,16 +215,16 @@ export function TopBarAction({
   const handlePressIn = () => {
     setIsPressed(true);
     scale.value = withTiming(0.95, { 
-      duration: Fluent2Tokens.durationFast,
-      easing: Easing.out(Easing.cubic),
+      duration: M3Motion.durationShort3,
+      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
     });
   };
 
   const handlePressOut = () => {
     setIsPressed(false);
     scale.value = withTiming(1, { 
-      duration: Fluent2Tokens.durationNormal,
-      easing: Easing.out(Easing.cubic),
+      duration: M3Motion.durationShort4,
+      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
     });
   };
 
@@ -248,7 +248,7 @@ export function TopBarAction({
       outlineOffset: 2,
     },
     default: {
-      borderWidth: Fluent2Tokens.strokeWidthThick,
+      borderWidth: 2,
       borderColor: theme.primary,
     },
   }) : {};
@@ -283,7 +283,7 @@ export function TopBarAction({
 
 const styles = StyleSheet.create({
   container: {
-    borderBottomWidth: Fluent2Tokens.strokeWidthThin,
+    borderBottomWidth: 1,
   },
   content: {
     height: Layout.topBarHeight,
