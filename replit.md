@@ -38,48 +38,33 @@ The app features a 3-tab navigation structure:
     - **LibraryTab**: Music organization (Songs, Albums, Artists, Playlists, Liked Songs, Recently Played), and Playlist Management (CRUD)
     - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Support Developer (donation), and About
 
-## Microsoft Fluent 2 Design System
+## Design Language
 
-### Spacing System (4px Base Unit)
-All spacing uses multiples of 4px:
-- `size1`: 4px - Icon gaps, micro spacing
-- `size2`: 8px - Inline elements
-- `size3`: 12px - Compact padding
-- `size4`: 16px - Standard padding
-- `size5`: 20px - Comfortable padding
-- `size6`: 24px - Section spacing
-- `size7`: 32px - Major separation
-- `size8`: 40px - Page rhythm
-- `size9`: 48px - Large structural gaps
+**See `client/constants/DESIGN_LANGUAGE.md` for the complete design specification.**
 
-### Layout Heights
-- Top Bar: 56px
-- Secondary/Filter Bars: 48px
-- Bottom Navigation: 64px
-- Mini Player: 68px (floats 8px above bottom nav)
-- List Items: 48px (compact), 56px (standard), 72px (rich)
-- Buttons: 36px (small), 44px (standard), 48px (large)
-- Input Fields: 48px
-- Touch Targets: Minimum 48px
+The app uses a custom design language based on Microsoft Fluent 2 principles with standardized:
+- **Spacing**: 4px base unit with named tokens (xs, s, m, l, xl, xxl, xxxl)
+- **Typography**: Hierarchical text styles via ThemedText component
+- **Layout**: Fixed dimensions for navigation bars, list items, buttons, inputs
+- **Border Radius**: Consistent corner rounding per component type
+- **Touch Targets**: Minimum 48px for all interactive elements
+- **Motion**: Standardized duration and easing curves
 
-### Border Radius
-- Small: 4px
-- Medium: 8px
-- Large/Card: 12px
-- XLarge: 16px
-- Mini Player: 16px
+### Quick Reference
+| Element | Height/Size |
+|---------|-------------|
+| TopBar | 56px |
+| BottomNav | 64px |
+| MiniPlayer | 68px |
+| List Item (standard) | 56px |
+| Button (standard) | 44px |
+| Input Field | 48px |
+| Touch Target Min | 48px |
 
-### Card Padding
-- Dense: 12px
-- Standard: 16px
-- Rich: 20px
-
-### Key Spacing Tokens
-- Title to Subtitle: 4px
-- Icon Gap: 8px
-- Content Block: 12px
-- Section Gap: 24-32px
-- Horizontal Padding: 16-20px (never exceed 24px)
+### Token Files
+- `client/constants/theme.ts` - All design tokens
+- `client/constants/DESIGN_LANGUAGE.md` - Usage guidelines
+- `client/components/ThemedText.tsx` - Typography component
 
 **Feature Specifications:**
 - **Theming**: 55 themes with custom icons (MaterialCommunityIcons), shapes, and component variants
