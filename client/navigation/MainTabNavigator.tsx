@@ -18,7 +18,7 @@ import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
-import { Layout, Spacing, Typography, Motion, M3Motion } from "@/constants/theme";
+import { Layout, Spacing, Typography, Motion, M3Motion, M3Elevation } from "@/constants/theme";
 
 export type MainTabParamList = {
   ListenTab: undefined;
@@ -116,20 +116,29 @@ export default function MainTabNavigator() {
         tabBarStyle: {
           position: "absolute",
           backgroundColor: theme.surfaceContainer,
-          borderTopWidth: 0,
-          elevation: 0,
+          borderTopWidth: 1,
+          borderTopColor: theme.outlineVariant,
           height: Platform.OS === "ios" ? Layout.bottomNavHeight + 20 : Layout.bottomNavHeight,
           paddingBottom: Platform.OS === "ios" ? Spacing.l : Spacing.s,
           paddingTop: Spacing.s,
-          shadowColor: theme.scrim,
-          shadowOffset: { width: 0, height: -1 },
-          shadowOpacity: 0.08,
-          shadowRadius: 4,
+          ...Platform.select({
+            ios: {
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 6,
+            },
+            android: {
+              elevation: M3Elevation.level3.elevation,
+            },
+            default: {},
+          }),
         },
         headerShown: false,
         tabBarLabelStyle: {
-          fontSize: Typography.labelSmall.fontSize,
-          fontWeight: Typography.labelSmall.fontWeight,
+          fontSize: Typography.labelMedium.fontSize,
+          fontWeight: Typography.labelMedium.fontWeight,
+          letterSpacing: Typography.labelMedium.letterSpacing,
           marginTop: Spacing.titleToSubtitle,
         },
         tabBarItemStyle: {

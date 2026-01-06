@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, M3Shape, Layout } from "@/constants/theme";
+import { Spacing, M3Shape, Layout, Typography, M3Elevation } from "@/constants/theme";
 
 interface SearchBarProps {
   value: string;
@@ -25,41 +25,56 @@ export function SearchBar({ value, onChangeText, placeholder = "Search..." }: Se
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.surfaceContainerHigh }]}>
-      <MaterialCommunityIcons
-        name="magnify"
-        size={20}
-        color={theme.onSurfaceVariant}
-        style={styles.searchIcon}
-      />
-      <TextInput
-        style={[styles.input, { color: theme.onSurface }]}
-        placeholder={placeholder}
-        placeholderTextColor={theme.onSurfaceVariant}
-        value={value}
-        onChangeText={onChangeText}
-        returnKeyType="search"
-        autoCapitalize="none"
-        autoCorrect={false}
-        accessibilityLabel={placeholder}
-        accessibilityRole="search"
-      />
-      {value.length > 0 ? (
-        <Pressable
-          onPress={handleClear}
-          style={styles.clearButton}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          accessibilityLabel="Clear search"
-          accessibilityRole="button"
-        >
-          <MaterialCommunityIcons name="close-circle" size={18} color={theme.onSurfaceVariant} />
-        </Pressable>
-      ) : null}
+    <View style={[styles.wrapper, { backgroundColor: theme.surfaceContainerHigh, borderBottomColor: theme.outlineVariant }]}>
+      <View style={[styles.container, { backgroundColor: theme.surfaceContainerHighest }]}>
+        <MaterialCommunityIcons
+          name="magnify"
+          size={20}
+          color={theme.onSurfaceVariant}
+          style={styles.searchIcon}
+        />
+        <TextInput
+          style={[
+            styles.input, 
+            { 
+              color: theme.onSurface,
+              fontSize: Typography.bodyMedium.fontSize,
+              lineHeight: Typography.bodyMedium.lineHeight,
+            }
+          ]}
+          placeholder={placeholder}
+          placeholderTextColor={theme.onSurfaceVariant}
+          value={value}
+          onChangeText={onChangeText}
+          returnKeyType="search"
+          autoCapitalize="none"
+          autoCorrect={false}
+          accessibilityLabel={placeholder}
+          accessibilityRole="search"
+        />
+        {value.length > 0 ? (
+          <Pressable
+            onPress={handleClear}
+            style={styles.clearButton}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityLabel="Clear search"
+            accessibilityRole="button"
+          >
+            <MaterialCommunityIcons name="close-circle" size={18} color={theme.onSurfaceVariant} />
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    paddingHorizontal: Layout.horizontalPadding,
+    paddingVertical: Spacing.s,
+    borderBottomWidth: 1,
+  },
   container: {
     flex: 1,
     flexDirection: "row",
@@ -73,8 +88,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    lineHeight: 24,
     paddingVertical: 0,
   },
   clearButton: {

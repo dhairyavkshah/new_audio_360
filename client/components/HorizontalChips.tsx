@@ -10,7 +10,7 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, M3Motion, M3Shape, Layout } from "@/constants/theme";
+import { Spacing, M3Motion, M3Shape, Layout, M3Elevation } from "@/constants/theme";
 
 interface ChipItem {
   id: string;
@@ -124,7 +124,26 @@ export function HorizontalChips({
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundDefault }]}>
+    <View style={[
+      styles.container, 
+      { 
+        backgroundColor: theme.surfaceContainerLow,
+        borderTopColor: theme.outlineVariant,
+        borderBottomColor: theme.outlineVariant,
+      },
+      Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 2,
+        },
+        android: {
+          elevation: M3Elevation.level1.elevation,
+        },
+        default: {},
+      }),
+    ]}>
       <FlatList
         data={items}
         renderItem={renderItem}
@@ -142,6 +161,8 @@ const styles = StyleSheet.create({
   container: {
     height: Layout.tabHeight,
     justifyContent: "center",
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
   },
   listContent: {
     paddingHorizontal: Layout.horizontalPadding,

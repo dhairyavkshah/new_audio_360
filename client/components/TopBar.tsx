@@ -12,7 +12,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Layout, Spacing, BorderRadius, M3Motion, M3Shape } from "@/constants/theme";
+import { Layout, Spacing, BorderRadius, M3Motion, M3Shape, M3Elevation } from "@/constants/theme";
 
 interface TopBarProps {
   title: string;
@@ -55,6 +55,19 @@ export function TopBar({
     });
   };
 
+  const shadowStyle = !transparent ? Platform.select({
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+    },
+    android: {
+      elevation: M3Elevation.level2.elevation,
+    },
+    default: {},
+  }) : {};
+
   return (
     <View
       style={[
@@ -64,6 +77,7 @@ export function TopBar({
           backgroundColor: transparent ? "transparent" : theme.surfaceContainer,
           borderBottomColor: transparent ? "transparent" : theme.outlineVariant,
         },
+        shadowStyle,
       ]}
     >
       <View style={styles.content}>
@@ -85,7 +99,7 @@ export function TopBar({
             />
           ) : null}
           <ThemedText 
-            type="titleMedium" 
+            type="titleLarge" 
             style={[styles.title, { marginLeft: shouldShowBack || showHome ? 0 : Spacing.s }]}
           >
             {title}
