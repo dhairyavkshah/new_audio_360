@@ -29,7 +29,7 @@ export default function AppearanceScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Spacing.sm, paddingBottom: tabBarHeight + Spacing.lg },
+          { paddingTop: Spacing.m, paddingBottom: tabBarHeight + Spacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
@@ -52,6 +52,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.horizontalPadding,
   },
   sectionDesc: {
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.m,
   },
 });

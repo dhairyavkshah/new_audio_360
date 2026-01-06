@@ -121,7 +121,7 @@ export default function SettingsScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Spacing.l, paddingBottom: tabBarHeight + Spacing.size7 },
+          { paddingTop: Spacing.l, paddingBottom: tabBarHeight + Spacing.xxxl },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -179,7 +179,7 @@ export default function SettingsScreen() {
               onValueChange={handleHapticToggle}
             />
           </View>
-          <View style={[styles.settingItem, { backgroundColor: theme.backgroundSecondary, marginTop: Spacing.size2 }]}>
+          <View style={[styles.settingItem, { backgroundColor: theme.backgroundSecondary, marginTop: Spacing.s }]}>
             <View style={styles.settingInfo}>
               <MaterialCommunityIcons name="volume-high" size={18} color={theme.text} />
               <ThemedText type="body" style={styles.settingLabel}>
@@ -231,7 +231,7 @@ export default function SettingsScreen() {
             ))}
           </View>
           {sleepTimerMinutes ? (
-            <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+            <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.m }}>
               Playback will stop in {sleepTimerMinutes} minutes
             </ThemedText>
           ) : null}

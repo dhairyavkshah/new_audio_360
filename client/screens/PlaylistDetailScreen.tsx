@@ -13,7 +13,7 @@ import { useUiSound } from "@/contexts/UiSoundContext";
 import { PlayableSong } from "@/contexts/PlayerContext";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, Layout } from "@/constants/theme";
 import { mockSongs, Song } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 import { Playlist, getPlaylists, removeSongFromPlaylist, reorderPlaylistSongs } from "@/lib/storage";
@@ -162,7 +162,7 @@ export default function PlaylistDetailScreen() {
       <ThemedView style={styles.container}>
         <View style={[styles.loadingContainer, { paddingTop: headerHeight }]}>
           <MaterialCommunityIcons name="playlist-music" size={48} color={theme.textSecondary} />
-          <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
+          <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.l }}>
             Playlist not found
           </ThemedText>
         </View>
@@ -227,7 +227,7 @@ export default function PlaylistDetailScreen() {
         {songs.length === 0 ? (
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="music-off" size={40} color={theme.textSecondary} />
-            <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
+            <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.l }}>
               No songs in this playlist
             </ThemedText>
             <ThemedText type="caption" style={{ color: theme.textSecondary, textAlign: "center", marginTop: Spacing.xs }}>
@@ -316,21 +316,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   content: {
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.l,
   },
   header: {
     alignItems: "center",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.lg,
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.large,
+    marginBottom: Spacing.xl,
   },
   coverArt: {
     width: 120,
     height: 120,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.large,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.l,
   },
   playlistTitle: {
     fontSize: 20,
@@ -340,16 +340,16 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: Spacing.lg,
-    gap: Spacing.sm,
+    marginTop: Spacing.xl,
+    gap: Spacing.m,
   },
   playButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    borderRadius: BorderRadius.full,
-    minHeight: 44,
+    paddingVertical: Spacing.m,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.circular,
+    minHeight: Layout.buttonStandard,
   },
   shuffleButton: {
     width: 44,
@@ -360,21 +360,21 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: Spacing["2xl"],
+    paddingVertical: Spacing.xxl,
   },
   songsList: {
     gap: Spacing.xs,
   },
   sectionTitle: {
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.m,
     fontWeight: "600",
   },
   songItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    minHeight: 56,
+    padding: Spacing.m,
+    borderRadius: BorderRadius.medium,
+    minHeight: Layout.listItemStandard,
   },
   songIndex: {
     width: 24,
@@ -383,12 +383,12 @@ const styles = StyleSheet.create({
   songArtwork: {
     width: 40,
     height: 40,
-    borderRadius: BorderRadius.sm,
-    marginLeft: Spacing.sm,
+    borderRadius: BorderRadius.small,
+    marginLeft: Spacing.m,
   },
   songInfo: {
     flex: 1,
-    marginLeft: Spacing.sm,
+    marginLeft: Spacing.m,
   },
   removeButton: {
     padding: Spacing.xs,
@@ -404,12 +404,12 @@ const styles = StyleSheet.create({
   },
   successToast: {
     position: "absolute",
-    left: Spacing.md,
-    right: Spacing.md,
+    left: Spacing.l,
+    right: Spacing.l,
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
+    padding: Spacing.l,
+    borderRadius: BorderRadius.medium,
     elevation: 4,
   },
 });

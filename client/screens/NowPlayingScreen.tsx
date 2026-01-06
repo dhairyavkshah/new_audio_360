@@ -27,7 +27,7 @@ import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const ARTWORK_SIZE = Math.min(SCREEN_WIDTH - Spacing["2xl"] * 2, 320);
+const ARTWORK_SIZE = Math.min(SCREEN_WIDTH - Spacing.xxl * 2, 320);
 const BLUR_INTENSITY = 40;
 
 export default function NowPlayingScreen() {
@@ -97,7 +97,7 @@ export default function NowPlayingScreen() {
       <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
         <View style={styles.emptyState}>
           <ThemedText type="h3">No song playing</ThemedText>
-          <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+          <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.m }}>
             Select a song from your library
           </ThemedText>
         </View>
@@ -115,7 +115,7 @@ export default function NowPlayingScreen() {
         <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? `rgba(0,0,0,${ModeStyles.listen.overlayOpacityDark + 0.2})` : `rgba(255,255,255,${ModeStyles.listen.overlayOpacityLight + 0.1})` }]} />
       </ImageBackground>
 
-      <View style={[styles.content, { paddingTop: headerHeight + Spacing.lg, paddingBottom: tabBarHeight + Spacing.xl }]}>
+      <View style={[styles.content, { paddingTop: headerHeight + Spacing.xl, paddingBottom: tabBarHeight + Spacing.xl }]}>
         <View style={styles.artworkContainer}>
           <Animated.View style={[styles.artworkWrapper, artworkStyle]}>
             <Image
@@ -125,7 +125,7 @@ export default function NowPlayingScreen() {
             {(isLoading || isBuffering) ? (
               <View style={styles.loadingOverlay}>
                 <ActivityIndicator size="large" color={theme.primary} />
-                <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+                <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.m }}>
                   {isLoading ? "Loading..." : "Buffering..."}
                 </ThemedText>
               </View>
@@ -201,7 +201,7 @@ export default function NowPlayingScreen() {
             duration={duration || currentSong.duration}
             currentTime={currentTime}
             onSeek={seek}
-            width={SCREEN_WIDTH - Spacing["2xl"] * 2}
+            width={SCREEN_WIDTH - Spacing.xxl * 2}
             showTextShadow={true}
           />
         </View>

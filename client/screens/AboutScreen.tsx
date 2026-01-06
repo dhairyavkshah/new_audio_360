@@ -30,7 +30,7 @@ export default function AboutScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Spacing.sm, paddingBottom: tabBarHeight + Spacing.lg },
+          { paddingTop: Spacing.m, paddingBottom: tabBarHeight + Spacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
@@ -134,7 +134,7 @@ export default function AboutScreen() {
           </ThemedText>
           <ThemedText
             type="caption"
-            style={{ color: theme.textSecondary, textAlign: "center", marginTop: Spacing["2xs"] }}
+            style={{ color: theme.textSecondary, textAlign: "center", marginTop: Spacing.xs }}
           >
             2024-2026 New Audio 360. All rights reserved.
           </ThemedText>
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   logoCircle: {
     width: 80,
@@ -189,28 +189,28 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.m,
   },
   appName: {
     fontWeight: "700",
   },
   version: {
-    marginTop: Spacing["2xs"],
+    marginTop: Spacing.xs,
   },
   descriptionCard: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   description: {
     textAlign: "center",
     lineHeight: 20,
   },
   section: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.m,
   },
   sectionTitle: {
     marginLeft: Spacing.xs,
@@ -222,8 +222,8 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    padding: Spacing.m,
+    borderRadius: BorderRadius.medium,
   },
   featureIcon: {
     width: 44,
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     flex: 1,
-    marginLeft: Spacing.sm,
+    marginLeft: Spacing.m,
   },
   legalLinks: {
     gap: Spacing.xs,
@@ -242,15 +242,15 @@ const styles = StyleSheet.create({
   linkItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    padding: Spacing.m,
+    borderRadius: BorderRadius.medium,
   },
   linkText: {
     flex: 1,
-    marginLeft: Spacing.sm,
+    marginLeft: Spacing.m,
   },
   footer: {
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.l,
     alignItems: "center",
   },
 });

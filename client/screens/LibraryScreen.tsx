@@ -551,7 +551,7 @@ export default function LibraryScreen() {
               <ThemedText
                 type="small"
                 style={[
-                  { marginLeft: Spacing.sm },
+                  { marginLeft: Spacing.m },
                   sortBy === option.key && { color: theme.primary, fontWeight: "600" },
                 ]}
               >

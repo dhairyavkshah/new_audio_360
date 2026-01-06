@@ -152,7 +152,7 @@ export default function SoundLabScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Spacing.sm, paddingBottom: tabBarHeight + Spacing.lg },
+          { paddingTop: Spacing.m, paddingBottom: tabBarHeight + Spacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
@@ -177,7 +177,7 @@ export default function SoundLabScreen() {
             <ThemedText
               type="small"
               style={{
-                marginLeft: Spacing["2xs"],
+                marginLeft: Spacing.xs,
                 fontWeight: "600",
                 color: soundLabMode === "equalizer" ? "#FFFFFF" : theme.text,
               }}
@@ -200,7 +200,7 @@ export default function SoundLabScreen() {
             <ThemedText
               type="small"
               style={{
-                marginLeft: Spacing["2xs"],
+                marginLeft: Spacing.xs,
                 fontWeight: "600",
                 color: soundLabMode === "immersive" ? "#FFFFFF" : theme.text,
               }}
@@ -232,7 +232,7 @@ export default function SoundLabScreen() {
               <ThemedText type="body" style={{ fontWeight: "600" }}>
                 {selectedEQ}
               </ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing["2xs"] }}>
+              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
                 {EQ_PRESETS.find(p => p.name === selectedEQ)?.description}
               </ThemedText>
             </GlassCard>
@@ -302,7 +302,7 @@ export default function SoundLabScreen() {
                 <ThemedText type="small" style={{ fontWeight: "600" }}>
                   No Audio Enhancement Active
                 </ThemedText>
-                <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing["2xs"] }}>
+                <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
                   Select Equalizer or Immersive above to customize your sound experience.
                 </ThemedText>
               </View>
@@ -317,7 +317,7 @@ export default function SoundLabScreen() {
               <ThemedText type="small" style={{ fontWeight: "600" }}>
                 Sound Experience
               </ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing["2xs"] }}>
+              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
                 Your audio settings are saved automatically and applied to all playback.
               </ThemedText>
             </View>
@@ -336,23 +336,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.horizontalPadding,
   },
   sectionDesc: {
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.m,
   },
   modeToggle: {
     flexDirection: "row",
-    gap: Spacing.xs,
-    marginBottom: Spacing.md,
+    gap: Spacing.s,
+    marginBottom: Spacing.l,
   },
   modeButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.m,
+    borderRadius: BorderRadius.medium,
   },
   section: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.l,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -369,14 +369,14 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   presetInfo: {
-    marginTop: Spacing.sm,
+    marginTop: Spacing.m,
   },
   modesContainer: {
-    gap: Spacing.xs,
+    gap: Spacing.s,
   },
   modeCard: {
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    padding: Spacing.m,
+    borderRadius: BorderRadius.medium,
   },
   modeCardContent: {
     flexDirection: "row",
@@ -384,10 +384,10 @@ const styles = StyleSheet.create({
   },
   modeCardText: {
     flex: 1,
-    marginLeft: Spacing.sm,
+    marginLeft: Spacing.m,
   },
   infoCard: {
-    marginTop: Spacing.sm,
+    marginTop: Spacing.m,
   },
   infoContent: {
     flexDirection: "row",
@@ -395,6 +395,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     flex: 1,
-    marginLeft: Spacing.sm,
+    marginLeft: Spacing.m,
   },
 });

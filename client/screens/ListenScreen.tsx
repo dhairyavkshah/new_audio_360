@@ -194,7 +194,7 @@ export default function ListenScreen() {
               <ThemedText
                 type="small"
                 style={[
-                  { marginLeft: Spacing.sm },
+                  { marginLeft: Spacing.m },
                   sortBy === option.key && { color: theme.primary, fontWeight: "600" },
                 ]}
               >
@@ -227,7 +227,7 @@ export default function ListenScreen() {
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
       <MaterialCommunityIcons name="music-note-off" size={48} color={theme.textSecondary} />
-      <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.md, textAlign: "center" }}>
+      <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.l, textAlign: "center" }}>
         No songs found matching "{searchQuery}"
       </ThemedText>
     </View>
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.size9,
+    paddingVertical: Spacing.xxxl,
   },
   successToast: {
     position: "absolute",

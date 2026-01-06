@@ -218,30 +218,30 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.md,
+    paddingTop: Spacing.l,
   },
   headerSection: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   sectionTitle: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.l,
     fontWeight: "600",
   },
   currentSongCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
+    padding: Spacing.l,
+    borderRadius: BorderRadius.large,
     marginBottom: Spacing.xl,
   },
   currentArtwork: {
     width: 56,
     height: 56,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.medium,
   },
   currentInfo: {
     flex: 1,
-    marginLeft: Spacing.md,
+    marginLeft: Spacing.l,
   },
   upNextHeader: {
     flexDirection: "row",
@@ -251,8 +251,8 @@ const styles = StyleSheet.create({
   songItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    padding: Spacing.m,
+    borderRadius: BorderRadius.medium,
     marginBottom: Spacing.xs,
   },
   currentSong: {
@@ -266,12 +266,12 @@ const styles = StyleSheet.create({
   artwork: {
     width: 44,
     height: 44,
-    borderRadius: BorderRadius.sm,
+    borderRadius: BorderRadius.small,
     marginLeft: Spacing.xs,
   },
   songInfo: {
     flex: 1,
-    marginLeft: Spacing.sm,
+    marginLeft: Spacing.m,
   },
   songTitle: {
     fontWeight: "500",
@@ -282,16 +282,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: Spacing.sm,
+    marginLeft: Spacing.m,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: Spacing["3xl"],
+    paddingVertical: Spacing.xxxl,
   },
   emptyText: {
-    marginTop: Spacing.lg,
+    marginTop: Spacing.xl,
   },
   emptySubtext: {
     marginTop: Spacing.xs,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Layout.horizontalPadding,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.m,
   },
   selectionButton: {
     width: 44,
