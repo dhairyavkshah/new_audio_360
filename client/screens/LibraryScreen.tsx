@@ -578,7 +578,7 @@ export default function LibraryScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: headerHeight + STICKY_HEADER_HEIGHT + Spacing.sm, paddingBottom: tabBarHeight + Spacing.xl },
+          { paddingTop: headerHeight + STICKY_HEADER_HEIGHT + Spacing.l, paddingBottom: tabBarHeight + Spacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
     paddingHorizontal: Layout.horizontalPadding,
     paddingTop: Spacing.m,
-    paddingBottom: Spacing.m,
+    paddingBottom: Spacing.l,
   },
   searchSortRow: {
     flexDirection: "row",

@@ -244,7 +244,7 @@ export default function ListenScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContent,
-          { paddingTop: headerHeight + STICKY_HEADER_HEIGHT + Spacing.sm, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
+          { paddingTop: headerHeight + STICKY_HEADER_HEIGHT + Spacing.l, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
         ]}
         ListEmptyComponent={renderEmptyList}
         showsVerticalScrollIndicator={false}
@@ -284,7 +284,8 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
     paddingHorizontal: Layout.horizontalPadding,
-    paddingVertical: Spacing.m,
+    paddingTop: Spacing.m,
+    paddingBottom: Spacing.l,
   },
   searchSortRow: {
     flexDirection: "row",
