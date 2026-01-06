@@ -743,9 +743,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   copyButton: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.md,
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.medium,
     justifyContent: "center",
     alignItems: "center",
   },

@@ -264,8 +264,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   artwork: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: BorderRadius.small,
     marginLeft: Spacing.xs,
   },
@@ -305,8 +305,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.m,
   },
   selectionButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
   },

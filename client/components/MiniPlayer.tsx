@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: Layout.miniPlayerHeight,
     paddingVertical: Spacing.m,
-    paddingHorizontal: Spacing.m,
+    paddingHorizontal: Spacing.l,
   },
   artwork: {
     width: 48,

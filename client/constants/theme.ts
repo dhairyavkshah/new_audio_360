@@ -976,9 +976,9 @@ export const Typography = {
     letterSpacing: -0.5,
   },
   titleLarge: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "600" as const,
-    lineHeight: 28,
+    lineHeight: 32,
     letterSpacing: 0,
   },
   titleMedium: {
@@ -1066,9 +1066,9 @@ export const Typography = {
     letterSpacing: 0,
   },
   h2: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "600" as const,
-    lineHeight: 28,
+    lineHeight: 32,
     letterSpacing: 0,
   },
   h3: {

@@ -352,9 +352,9 @@ const styles = StyleSheet.create({
     minHeight: Layout.buttonStandard,
   },
   shuffleButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -381,8 +381,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   songArtwork: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     borderRadius: BorderRadius.small,
     marginLeft: Spacing.m,
   },
