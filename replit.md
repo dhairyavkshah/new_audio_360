@@ -38,8 +38,11 @@ The app features a 3-tab navigation structure:
     - **LibraryTab**: Music organization with **Quick Access Category Grid** (7 color-coded cards: Liked, Recent, Top, Songs, Albums, Artists, Playlists) - all categories visible at once without horizontal scrolling
     - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Support Developer (donation), and About
 
-## Recent Changes (2026-01-06)
-- **LibraryScreen redesign**: Replaced horizontal scrolling category chips with a 2-row quick access grid showing all 7 categories as color-coded cards with item counts. Categories are always visible without scrolling. FlatList virtualization for better performance.
+## Recent Changes (2026-01-07)
+- **Expo SDK update**: Updated all Expo packages to latest compatible versions (~54.0.31) for improved stability
+- **MiniPlayer navigation fix**: Fixed navigation error when tapping MiniPlayer by using proper nested navigation pattern
+- **FlatList performance optimization**: Added virtualization props (initialNumToRender, maxToRenderPerBatch, windowSize, getItemLayout) with platform-conditional removeClippedSubviews for smooth scrolling with thousands of songs
+- **LibraryScreen redesign**: 2-row quick access grid showing all 7 categories as color-coded cards with item counts
 
 ## Design Language
 
