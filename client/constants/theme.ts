@@ -1368,15 +1368,6 @@ export const Elevation = {
 export const EQPresets = ['Rock', 'Pop', 'Jazz', 'Classical', 'Balanced'] as const;
 export const SoundModes = ['Cinema', 'Music', 'Sports', '360 Reality'] as const;
 
-export const VoiceEffects = {
-  free: ['Studio Clean', 'Small Room'] as const,
-  premium: [
-    'Mini Studio', 'Medium Studio', 'Large Studio',
-    'Concert Hall', 'Cathedral', 'Cave', 'Bathroom',
-    'Underwater', 'Radio Voice', 'Robot', 'Helium'
-  ] as const,
-};
-
 export const Motion = {
   easing: {
     emphasized: "cubic-bezier(0.2, 0.0, 0, 1.0)",

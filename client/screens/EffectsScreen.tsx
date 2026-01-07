@@ -12,7 +12,8 @@ import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius, VoiceEffects } from "@/constants/theme";
+import { useStudioContext, REVERB_PRESETS, NOISE_REDUCTION_LEVELS } from "@/contexts/StudioContext";
+import { Spacing, BorderRadius } from "@/constants/theme";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<CreateStackParamList>;
@@ -24,17 +25,18 @@ export default function EffectsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<EffectsRouteProp>();
   const { theme } = useThemeContext();
+  const { selectedReverb, noiseReduction, setSelectedReverb, setNoiseReduction } = useStudioContext();
 
-  const [selectedEffect, setSelectedEffect] = useState<string>("Studio Clean");
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const handleEffectSelect = (effect: string, isPremium: boolean) => {
-    if (isPremium) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      return;
-    }
+  const handleNoiseReductionSelect = (level: typeof noiseReduction) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedEffect(effect);
+    setNoiseReduction(level);
+  };
+
+  const handleReverbSelect = (reverb: typeof selectedReverb) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedReverb(reverb);
   };
 
   const handlePlayPreview = () => {
@@ -63,7 +65,7 @@ export default function EffectsScreen() {
                 Effect Preview
               </ThemedText>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                {selectedEffect}
+                Reverb: {selectedReverb} • Noise: {noiseReduction}
               </ThemedText>
             </View>
             <Pressable
@@ -84,21 +86,21 @@ export default function EffectsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="microphone" size={20} color={theme.primary} />
+            <MaterialCommunityIcons name="volume-off" size={20} color={theme.primary} />
             <ThemedText type="h4" style={styles.sectionTitle}>
-              Free Effects
+              Noise Reduction
             </ThemedText>
           </View>
           <ThemedText type="small" style={[styles.sectionDesc, { color: theme.textSecondary }]}>
-            Natural voice enhancement
+            Reduce background noise from your recording
           </ThemedText>
           <View style={styles.effectsContainer}>
-            {VoiceEffects.free.map((effect) => (
+            {NOISE_REDUCTION_LEVELS.map((level) => (
               <EffectChip
-                key={effect}
-                label={effect}
-                isSelected={selectedEffect === effect}
-                onPress={() => handleEffectSelect(effect, false)}
+                key={level}
+                label={level}
+                isSelected={noiseReduction === level}
+                onPress={() => handleNoiseReductionSelect(level)}
               />
             ))}
           </View>
@@ -106,50 +108,23 @@ export default function EffectsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="star" size={20} color={theme.primary} />
+            <MaterialCommunityIcons name="waveform" size={20} color={theme.primary} />
             <ThemedText type="h4" style={styles.sectionTitle}>
-              Premium Effects
+              Reverb
             </ThemedText>
-            <View style={[styles.premiumBadge, { backgroundColor: theme.primary + "20" }]}>
-              <MaterialCommunityIcons name="lock" size={10} color={theme.primary} />
-            </View>
           </View>
           <ThemedText type="small" style={[styles.sectionDesc, { color: theme.textSecondary }]}>
-            Studio-quality voice transformations
-          </ThemedText>
-
-          <ThemedText type="small" style={[styles.categoryLabel, { color: theme.textSecondary }]}>
-            Studio Spaces
+            Add space and depth to your voice
           </ThemedText>
           <View style={styles.effectsContainer}>
-            {["Mini Studio", "Medium Studio", "Large Studio", "Concert Hall", "Cathedral"].map(
-              (effect) => (
-                <EffectChip
-                  key={effect}
-                  label={effect}
-                  isSelected={selectedEffect === effect}
-                  onPress={() => handleEffectSelect(effect, true)}
-                  isPremium
-                />
-              )
-            )}
-          </View>
-
-          <ThemedText type="small" style={[styles.categoryLabel, { color: theme.textSecondary }]}>
-            Fun Effects
-          </ThemedText>
-          <View style={styles.effectsContainer}>
-            {["Cave", "Bathroom", "Underwater", "Radio Voice", "Robot", "Helium"].map(
-              (effect) => (
-                <EffectChip
-                  key={effect}
-                  label={effect}
-                  isSelected={selectedEffect === effect}
-                  onPress={() => handleEffectSelect(effect, true)}
-                  isPremium
-                />
-              )
-            )}
+            {REVERB_PRESETS.map((reverb) => (
+              <EffectChip
+                key={reverb}
+                label={reverb}
+                isSelected={selectedReverb === reverb}
+                onPress={() => handleReverbSelect(reverb)}
+              />
+            ))}
           </View>
         </View>
 
@@ -203,16 +178,6 @@ const styles = StyleSheet.create({
   },
   sectionDesc: {
     marginBottom: Spacing.lg,
-  },
-  premiumBadge: {
-    marginLeft: Spacing.sm,
-    padding: Spacing.xs,
-    borderRadius: BorderRadius.full,
-  },
-  categoryLabel: {
-    fontWeight: "500",
-    marginBottom: Spacing.sm,
-    marginTop: Spacing.sm,
   },
   effectsContainer: {
     flexDirection: "row",
