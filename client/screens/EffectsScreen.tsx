@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Pressable } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, ScrollView, Pressable, Platform } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -17,6 +17,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
+import { studioAudioEngine } from "@/services/StudioAudioEngine";
 
 type NavigationProp = NativeStackNavigationProp<CreateStackParamList>;
 type EffectsRouteProp = RouteProp<CreateStackParamList, "Effects">;
@@ -32,6 +33,25 @@ export default function EffectsScreen() {
   const { isNoiseReductionUnlocked, isReverbUnlocked } = useSubscription();
 
   const [isPlaying, setIsPlaying] = useState(false);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    setDuration(studioAudioEngine.getDuration());
+    
+    studioAudioEngine.setProgressCallback((pos, dur) => {
+      setPosition(pos);
+      setDuration(dur);
+      if (pos >= dur && dur > 0) {
+        setIsPlaying(false);
+      }
+    });
+
+    return () => {
+      studioAudioEngine.setProgressCallback(null);
+      studioAudioEngine.stopMix();
+    };
+  }, []);
 
   const handleNoiseReductionSelect = (level: typeof noiseReduction) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -49,14 +69,38 @@ export default function EffectsScreen() {
     setSelectedReverb(reverb);
   };
 
-  const handlePlayPreview = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setIsPlaying(!isPlaying);
+  const handlePlayPreview = async () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    
+    if (isPlaying) {
+      await studioAudioEngine.pauseMix();
+      setIsPlaying(false);
+    } else {
+      await studioAudioEngine.playMix();
+      setIsPlaying(true);
+    }
   };
 
-  const handleContinue = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  const handleContinue = async () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    
+    if (isPlaying) {
+      await studioAudioEngine.stopMix();
+      setIsPlaying(false);
+    }
+    
     navigation.navigate("Save", { recordingId: route.params.recordingId });
+  };
+
+  const formatTime = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   return (
