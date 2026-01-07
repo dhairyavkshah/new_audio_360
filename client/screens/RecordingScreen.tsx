@@ -34,7 +34,8 @@ export default function RecordingScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [showHeadphoneReminder, setShowHeadphoneReminder] = useState(true);
+  const [showHeadphoneDialog, setShowHeadphoneDialog] = useState(true);
+  const [usingHeadphones, setUsingHeadphones] = useState(false);
   const [isBackingTrackLoaded, setIsBackingTrackLoaded] = useState(false);
   const [isBackingTrackPlaying, setIsBackingTrackPlaying] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -61,6 +62,31 @@ export default function RecordingScreen() {
     
     return null;
   };
+
+  useEffect(() => {
+    Alert.alert(
+      "Use Headphones for Best Results",
+      "Connect headphones or earphones before recording. This ensures clean vocal capture without the backing track bleeding into your recording.",
+      [
+        {
+          text: "I'm Using Headphones",
+          onPress: () => {
+            setUsingHeadphones(true);
+            setShowHeadphoneDialog(false);
+          },
+        },
+        {
+          text: "Continue Without",
+          style: "cancel",
+          onPress: () => {
+            setUsingHeadphones(false);
+            setShowHeadphoneDialog(false);
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  }, []);
 
   useEffect(() => {
     const initAudio = async () => {
@@ -123,7 +149,6 @@ export default function RecordingScreen() {
       try {
         setIsRecording(true);
         setIsPaused(false);
-        setShowHeadphoneReminder(false);
         setRecordingTime(0);
         setHasRecorded(true);
         
@@ -303,21 +328,18 @@ export default function RecordingScreen() {
           </Pressable>
         </View>
 
-        {showHeadphoneReminder ? (
+        {!usingHeadphones && !showHeadphoneDialog ? (
           <GlassCard style={styles.reminderCard}>
             <View style={styles.reminderContent}>
-              <MaterialCommunityIcons name="headphones" size={24} color={theme.primary} />
+              <MaterialCommunityIcons name="headphones-off" size={24} color={theme.warning} />
               <View style={styles.reminderText}>
-                <ThemedText type="body" style={{ fontWeight: "600" }}>
-                  Use Headphones
+                <ThemedText type="body" style={{ fontWeight: "600", color: theme.warning }}>
+                  No Headphones Detected
                 </ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  For the best recording experience
+                  Recording quality may be affected. Use headphones for cleaner vocals.
                 </ThemedText>
               </View>
-              <Pressable onPress={() => setShowHeadphoneReminder(false)}>
-                <MaterialCommunityIcons name="close" size={20} color={theme.textSecondary} />
-              </Pressable>
             </View>
           </GlassCard>
         ) : null}
