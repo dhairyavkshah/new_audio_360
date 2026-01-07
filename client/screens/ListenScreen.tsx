@@ -113,7 +113,7 @@ export default function ListenScreen() {
   }, []);
 
   const renderStickyHeader = () => (
-    <View style={[styles.stickyHeader, { backgroundColor: theme.backgroundDefault, top: headerHeight }]}>
+    <View style={[styles.stickyHeader, { backgroundColor: theme.backgroundDefault, top: headerHeight, borderBottomColor: theme.outlineVariant }]}>
       <View style={styles.searchSortRow}>
         <View style={[styles.searchContainer, { backgroundColor: theme.surfaceVariant }]}>
           <MaterialCommunityIcons
@@ -233,7 +233,7 @@ export default function ListenScreen() {
     </View>
   );
 
-  const STICKY_HEADER_HEIGHT = 64;
+  const STICKY_HEADER_HEIGHT = 76;
   const SONG_ITEM_HEIGHT = 72;
 
   const getItemLayout = useCallback(
@@ -301,7 +301,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
     paddingHorizontal: Layout.horizontalPadding,
     paddingTop: Spacing.s,
-    paddingBottom: Spacing.s,
+    paddingBottom: Spacing.m,
+    borderBottomWidth: 1,
   },
   searchSortRow: {
     flexDirection: "row",
