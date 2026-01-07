@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { View, StyleSheet, FlatList, Pressable, Image, Platform, TextInput, ActivityIndicator } from "react-native";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { View, StyleSheet, FlatList, Pressable, Image, Platform, TextInput, ActivityIndicator, LayoutChangeEvent } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
@@ -46,6 +46,14 @@ export default function ListenScreen() {
   const [contextMenuSong, setContextMenuSong] = useState<PlayableSong | null>(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [stickyHeaderHeight, setStickyHeaderHeight] = useState(90);
+
+  const handleStickyHeaderLayout = useCallback((event: LayoutChangeEvent) => {
+    const { height } = event.nativeEvent.layout;
+    if (height > 0 && Math.abs(height - stickyHeaderHeight) > 2) {
+      setStickyHeaderHeight(height);
+    }
+  }, [stickyHeaderHeight]);
 
   const allSongs: PlayableSong[] = useMemo(() => {
     return deviceSongs.length > 0 ? deviceSongs : mockSongs;
@@ -113,7 +121,10 @@ export default function ListenScreen() {
   }, []);
 
   const renderStickyHeader = () => (
-    <View style={[styles.stickyHeader, { backgroundColor: theme.backgroundDefault, top: headerHeight, borderBottomColor: theme.outlineVariant }]}>
+    <View 
+      style={[styles.stickyHeader, { backgroundColor: theme.backgroundDefault, top: headerHeight, borderBottomColor: theme.outlineVariant }]}
+      onLayout={handleStickyHeaderLayout}
+    >
       <View style={styles.searchSortRow}>
         <View style={[styles.searchContainer, { backgroundColor: theme.surfaceVariant }]}>
           <MaterialCommunityIcons
@@ -176,7 +187,7 @@ export default function ListenScreen() {
           style={styles.sortOverlayBackdrop} 
           onPress={() => setShowSortOptions(false)} 
         />
-        <View style={[styles.sortOptionsOverlay, { backgroundColor: theme.surface, top: headerHeight + 70 }]}>
+        <View style={[styles.sortOptionsOverlay, { backgroundColor: theme.surface, top: headerHeight + stickyHeaderHeight - 20 }]}>
           {SORT_OPTIONS.map((option) => (
             <Pressable
               key={option.key}
@@ -233,7 +244,6 @@ export default function ListenScreen() {
     </View>
   );
 
-  const STICKY_HEADER_HEIGHT = 76;
   const SONG_ITEM_HEIGHT = 72;
 
   const getItemLayout = useCallback(
@@ -254,7 +264,7 @@ export default function ListenScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContent,
-          { paddingTop: headerHeight + STICKY_HEADER_HEIGHT + Spacing.m, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
+          { paddingTop: headerHeight + stickyHeaderHeight + Spacing.m, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
         ]}
         ListEmptyComponent={renderEmptyList}
         showsVerticalScrollIndicator={false}

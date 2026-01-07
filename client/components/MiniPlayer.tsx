@@ -30,11 +30,20 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // Navigate to ListenTab first, then to NowPlaying within it
-    navigation.navigate("ListenTab", {
-      screen: "NowPlaying",
-      params: { songId: currentSong.id },
-    });
+    // MiniPlayer is rendered outside Tab.Navigator, so use getParent() to access the tab navigator
+    const tabNavigator = navigation.getParent();
+    if (tabNavigator) {
+      tabNavigator.navigate("ListenTab", {
+        screen: "NowPlaying",
+        params: { songId: currentSong.id },
+      });
+    } else {
+      // Fallback: try direct navigation
+      navigation.navigate("ListenTab", {
+        screen: "NowPlaying",
+        params: { songId: currentSong.id },
+      });
+    }
   };
 
   const handlePlayPause = (event: any) => {
