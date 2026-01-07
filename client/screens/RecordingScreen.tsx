@@ -184,6 +184,7 @@ export default function RecordingScreen() {
   };
 
   const handleStopRecording = async () => {
+    console.log("Stop button pressed");
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
@@ -262,6 +263,7 @@ export default function RecordingScreen() {
   };
 
   const handleClose = async () => {
+    console.log("Close button pressed, isRecording:", isRecording, "isPaused:", isPaused);
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -373,7 +375,11 @@ export default function RecordingScreen() {
 
       <View style={[styles.content, { paddingTop: insets.top + Spacing.lg, paddingBottom: tabBarHeight + Spacing.xl }]}>
         <View style={styles.header}>
-          <Pressable onPress={handleClose} style={styles.closeButton}>
+          <Pressable 
+            onPress={handleClose} 
+            style={styles.closeButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <MaterialCommunityIcons name="close" size={24} color={theme.text} />
           </Pressable>
           <View style={styles.headerCenter}>
@@ -485,6 +491,7 @@ export default function RecordingScreen() {
               <Pressable 
                 onPress={handleStopRecording} 
                 style={[styles.stopButton, { backgroundColor: theme.surfaceContainer }]}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <MaterialCommunityIcons name="stop" size={32} color={theme.text} />
               </Pressable>
