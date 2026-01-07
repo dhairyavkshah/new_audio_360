@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet, Image, Pressable, ImageBackground, Platform, Alert } from "react-native";
+import { View, StyleSheet, Image, Pressable, ImageBackground, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
@@ -10,6 +10,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { RecordButton } from "@/components/RecordButton";
 import { LiveAudioWaveform } from "@/components/LiveAudioWaveform";
 import { GlassCard } from "@/components/GlassCard";
+import { Dialog } from "@/components/Dialog";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useStudioContext } from "@/contexts/StudioContext";
 import { Spacing, BorderRadius, ModeStyles, Layout } from "@/constants/theme";
@@ -42,6 +43,12 @@ export default function RecordingScreen() {
   const [audioLevel, setAudioLevel] = useState<number>(-160);
   const [hasRecorded, setHasRecorded] = useState(false);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const [showHeadphoneDialogModal, setShowHeadphoneDialogModal] = useState(true);
+  const [showStopDialog, setShowStopDialog] = useState(false);
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const textShadowStyle = {
     textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
@@ -63,30 +70,17 @@ export default function RecordingScreen() {
     return null;
   };
 
-  useEffect(() => {
-    Alert.alert(
-      "Use Headphones for Best Results",
-      "Connect headphones or earphones before recording. This ensures clean vocal capture without the backing track bleeding into your recording.",
-      [
-        {
-          text: "I'm Using Headphones",
-          onPress: () => {
-            setUsingHeadphones(true);
-            setShowHeadphoneDialog(false);
-          },
-        },
-        {
-          text: "Continue Without",
-          style: "cancel",
-          onPress: () => {
-            setUsingHeadphones(false);
-            setShowHeadphoneDialog(false);
-          },
-        },
-      ],
-      { cancelable: false }
-    );
-  }, []);
+  const handleHeadphonesYes = () => {
+    setUsingHeadphones(true);
+    setShowHeadphoneDialog(false);
+    setShowHeadphoneDialogModal(false);
+  };
+
+  const handleHeadphonesNo = () => {
+    setUsingHeadphones(false);
+    setShowHeadphoneDialog(false);
+    setShowHeadphoneDialogModal(false);
+  };
 
   useEffect(() => {
     const initAudio = async () => {
@@ -138,11 +132,8 @@ export default function RecordingScreen() {
 
     if (!isRecording && !isPaused) {
       if (!isBackingTrackLoaded) {
-        Alert.alert(
-          "Cannot Record",
-          loadError || "Backing track not loaded. Please try again.",
-          [{ text: "OK" }]
-        );
+        setErrorMessage(loadError || "Backing track not loaded. Please try again.");
+        setShowErrorDialog(true);
         return;
       }
 
@@ -161,11 +152,8 @@ export default function RecordingScreen() {
       } catch (error) {
         console.error("Failed to start recording:", error);
         setIsRecording(false);
-        Alert.alert(
-          "Recording Failed",
-          "Could not start recording. Please check microphone permissions.",
-          [{ text: "OK" }]
-        );
+        setErrorMessage("Could not start recording. Please check microphone permissions.");
+        setShowErrorDialog(true);
       }
     } else if (isRecording && !isPaused) {
       if (recordingIntervalRef.current) {
@@ -189,58 +177,49 @@ export default function RecordingScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    Alert.alert(
-      "Finish Recording?",
-      "Would you like to proceed to the mixing screen?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Yes, Continue",
-          onPress: async () => {
-            if (recordingIntervalRef.current) {
-              clearInterval(recordingIntervalRef.current);
-              recordingIntervalRef.current = null;
-            }
+    setShowStopDialog(true);
+  };
 
-            let recordedUri: string | null = null;
-            try {
-              recordedUri = await studioAudioEngine.stopRecordingWithBackingTrack();
-            } catch (error) {
-              console.error("Failed to stop recording:", error);
-              setIsRecording(false);
-              setIsPaused(false);
-              setIsBackingTrackPlaying(false);
-              Alert.alert(
-                "Recording Not Available",
-                "No recording was captured. This may happen if recording failed to start or microphone access was denied.",
-                [{ text: "OK" }]
-              );
-              return;
-            }
+  const handleStopConfirm = async () => {
+    setShowStopDialog(false);
+    
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
 
-            setIsRecording(false);
-            setIsPaused(false);
-            setIsBackingTrackPlaying(false);
+    let recordedUri: string | null = null;
+    try {
+      recordedUri = await studioAudioEngine.stopRecordingWithBackingTrack();
+    } catch (error) {
+      console.error("Failed to stop recording:", error);
+      setIsRecording(false);
+      setIsPaused(false);
+      setIsBackingTrackPlaying(false);
+      setErrorMessage("No recording was captured. This may happen if recording failed to start or microphone access was denied.");
+      setShowErrorDialog(true);
+      return;
+    }
 
-            if (currentProject && recordedUri) {
-              try {
-                await updateProject(currentProject.id, {
-                  voiceRecordingUri: recordedUri,
-                  backgroundTrackUri: song?.audioUrl || null,
-                  backgroundTrackTitle: song?.title || null,
-                  duration: recordingTime,
-                });
-              } catch (error) {
-                console.error("Failed to update project:", error);
-              }
-            }
+    setIsRecording(false);
+    setIsPaused(false);
+    setIsBackingTrackPlaying(false);
 
-            const recordingId = `rec_${Date.now()}`;
-            navigation.navigate("Mixing", { recordingId });
-          },
-        },
-      ]
-    );
+    if (currentProject && recordedUri) {
+      try {
+        await updateProject(currentProject.id, {
+          voiceRecordingUri: recordedUri,
+          backgroundTrackUri: song?.audioUrl || null,
+          backgroundTrackTitle: song?.title || null,
+          duration: recordingTime,
+        });
+      } catch (error) {
+        console.error("Failed to update project:", error);
+      }
+    }
+
+    const recordingId = `rec_${Date.now()}`;
+    navigation.navigate("Mixing", { recordingId });
   };
 
   const handlePreviewPress = async () => {
@@ -249,7 +228,8 @@ export default function RecordingScreen() {
     }
 
     if (!isBackingTrackLoaded) {
-      Alert.alert("Cannot Preview", loadError || "Backing track not loaded");
+      setErrorMessage(loadError || "Backing track not loaded");
+      setShowErrorDialog(true);
       return;
     }
 
@@ -269,81 +249,7 @@ export default function RecordingScreen() {
     }
 
     if (isRecording || isPaused) {
-      Alert.alert(
-        "Recording in Progress",
-        "You have an unsaved recording. What would you like to do?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Discard & Exit",
-            style: "destructive",
-            onPress: async () => {
-              if (recordingIntervalRef.current) {
-                clearInterval(recordingIntervalRef.current);
-                recordingIntervalRef.current = null;
-              }
-              
-              // Force stop both recording and backing track separately
-              try {
-                await studioAudioEngine.stopRecording();
-              } catch {}
-              try {
-                await studioAudioEngine.stopBackingTrack();
-              } catch {}
-              
-              setIsRecording(false);
-              setIsPaused(false);
-              setIsBackingTrackPlaying(false);
-              navigation.goBack();
-            },
-          },
-          {
-            text: "Save & Mix",
-            onPress: async () => {
-              if (recordingIntervalRef.current) {
-                clearInterval(recordingIntervalRef.current);
-                recordingIntervalRef.current = null;
-              }
-
-              let recordedUri: string | null = null;
-              try {
-                recordedUri = await studioAudioEngine.stopRecordingWithBackingTrack();
-              } catch (error) {
-                console.error("Failed to stop recording:", error);
-                Alert.alert(
-                  "Recording Not Available",
-                  "No recording was captured.",
-                  [{ text: "OK" }]
-                );
-                return;
-              }
-
-              setIsRecording(false);
-              setIsPaused(false);
-              setIsBackingTrackPlaying(false);
-
-              if (currentProject && recordedUri) {
-                try {
-                  await updateProject(currentProject.id, {
-                    voiceRecordingUri: recordedUri,
-                    backgroundTrackUri: song?.audioUrl || null,
-                    backgroundTrackTitle: song?.title || null,
-                    duration: recordingTime,
-                  });
-                } catch (error) {
-                  console.error("Failed to update project:", error);
-                }
-              }
-
-              const recordingId = `rec_${Date.now()}`;
-              navigation.navigate("Mixing", { recordingId });
-            },
-          },
-        ]
-      );
+      setShowCloseDialog(true);
     } else {
       if (isBackingTrackPlaying) {
         await studioAudioEngine.stopBackingTrack();
@@ -351,6 +257,66 @@ export default function RecordingScreen() {
       }
       navigation.goBack();
     }
+  };
+
+  const handleDiscardAndExit = async () => {
+    setShowCloseDialog(false);
+    
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+    
+    try {
+      await studioAudioEngine.stopRecording();
+    } catch {}
+    try {
+      await studioAudioEngine.stopBackingTrack();
+    } catch {}
+    
+    setIsRecording(false);
+    setIsPaused(false);
+    setIsBackingTrackPlaying(false);
+    navigation.goBack();
+  };
+
+  const handleSaveAndMix = async () => {
+    setShowCloseDialog(false);
+    
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+
+    let recordedUri: string | null = null;
+    try {
+      recordedUri = await studioAudioEngine.stopRecordingWithBackingTrack();
+    } catch (error) {
+      console.error("Failed to stop recording:", error);
+      setErrorMessage("No recording was captured.");
+      setShowErrorDialog(true);
+      return;
+    }
+
+    setIsRecording(false);
+    setIsPaused(false);
+    setIsBackingTrackPlaying(false);
+
+    if (currentProject && recordedUri) {
+      try {
+        await updateProject(currentProject.id, {
+          voiceRecordingUri: recordedUri,
+          backgroundTrackUri: song?.audioUrl || null,
+          backgroundTrackTitle: song?.title || null,
+          duration: recordingTime,
+        });
+      } catch (error) {
+        console.error("Failed to update project:", error);
+      }
+    }
+
+    const recordingId = `rec_${Date.now()}`;
+    navigation.navigate("Mixing", { recordingId });
   };
 
   const formatTime = (seconds: number) => {
@@ -499,6 +465,50 @@ export default function RecordingScreen() {
           </View>
         </View>
       </View>
+
+      <Dialog
+        visible={showHeadphoneDialogModal}
+        onDismiss={handleHeadphonesNo}
+        title="Use Headphones for Best Results"
+        message="For the best recording quality and to avoid audio feedback, we recommend using headphones. Are you using headphones?"
+        actions={[
+          { label: "No", onPress: handleHeadphonesNo, variant: "ghost" },
+          { label: "Yes", onPress: handleHeadphonesYes, variant: "default" },
+        ]}
+      />
+
+      <Dialog
+        visible={showStopDialog}
+        onDismiss={() => setShowStopDialog(false)}
+        title="Finish Recording?"
+        message="Would you like to proceed to the mixing screen?"
+        actions={[
+          { label: "Cancel", onPress: () => setShowStopDialog(false), variant: "ghost" },
+          { label: "Yes, Continue", onPress: handleStopConfirm, variant: "default" },
+        ]}
+      />
+
+      <Dialog
+        visible={showCloseDialog}
+        onDismiss={() => setShowCloseDialog(false)}
+        title="Recording in Progress"
+        message="You have an unsaved recording. What would you like to do?"
+        actions={[
+          { label: "Cancel", onPress: () => setShowCloseDialog(false), variant: "ghost" },
+          { label: "Discard & Exit", onPress: handleDiscardAndExit, variant: "secondary" },
+          { label: "Save & Mix", onPress: handleSaveAndMix, variant: "default" },
+        ]}
+      />
+
+      <Dialog
+        visible={showErrorDialog}
+        onDismiss={() => setShowErrorDialog(false)}
+        title="Error"
+        message={errorMessage}
+        actions={[
+          { label: "OK", onPress: () => setShowErrorDialog(false), variant: "default" },
+        ]}
+      />
     </View>
   );
 }
