@@ -16,7 +16,10 @@ interface AudioEngineState {
   duration: number;
   musicVolume: number;
   voiceVolume: number;
+  voiceGain: number;  // Voice boost/gain (0-200, where 100 is normal)
   syncOffset: number;
+  headphonesConnected: boolean;
+  peakVoiceLevel: number;  // Track peak level for normalization hints
 }
 
 export class StudioAudioEngine {
@@ -36,7 +39,10 @@ export class StudioAudioEngine {
     duration: 0,
     musicVolume: 70,
     voiceVolume: 100,
+    voiceGain: 100,  // Normal gain
     syncOffset: 0,
+    headphonesConnected: false,
+    peakVoiceLevel: -160,
   };
 
   private progressCallback: ProgressCallback | null = null;
@@ -65,6 +71,29 @@ export class StudioAudioEngine {
     }
   }
 
+  /**
+   * Convert percentage volume (0-100) to linear audio volume (0-1)
+   * Uses logarithmic/exponential curve for perceptually natural volume scaling
+   * This is critical for proper mixing - linear scaling sounds unnatural
+   */
+  private volumeToPerceptual(volume: number, gain: number = 100): number {
+    const normalized = Math.max(0, Math.min(100, volume)) / 100;
+    const gainMultiplier = Math.max(0, Math.min(200, gain)) / 100;
+    
+    // Use exponential curve: volume^2 provides natural perceptual loudness
+    // This matches how human hearing perceives loudness (Weber-Fechner law)
+    const exponentialVolume = normalized * normalized;
+    
+    // Apply gain boost/cut (allows up to 2x amplification for quiet recordings)
+    const finalVolume = exponentialVolume * gainMultiplier;
+    
+    // Clamp to prevent clipping
+    return Math.max(0, Math.min(1, finalVolume));
+  }
+  
+  /**
+   * Legacy linear volume conversion for backward compatibility
+   */
   private volumeToLinear(volume: number): number {
     return Math.max(0, Math.min(1, volume / 100));
   }
@@ -199,6 +228,11 @@ export class StudioAudioEngine {
         this.recording = null;
       }
 
+      // Optimized recording settings based on Smule/professional karaoke app research:
+      // - Mono recording (voice only comes from single mic)
+      // - 44.1kHz sample rate (CD quality)
+      // - iOS bitrate capped at 64000 to prevent crashes (known expo-av issue)
+      // - High quality AAC encoding for small file size with good quality
       const recordingOptions: Audio.RecordingOptions = {
         isMeteringEnabled: true,
         android: {
@@ -206,16 +240,16 @@ export class StudioAudioEngine {
           outputFormat: Audio.AndroidOutputFormat.MPEG_4,
           audioEncoder: Audio.AndroidAudioEncoder.AAC,
           sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
+          numberOfChannels: 1,  // Mono for voice (single mic input)
+          bitRate: 128000,      // 128kbps for high quality voice
         },
         ios: {
           extension: '.m4a',
           outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
-          audioQuality: Audio.IOSAudioQuality.HIGH,
+          audioQuality: Audio.IOSAudioQuality.MAX,  // Maximum quality
           sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
+          numberOfChannels: 1,  // Mono for voice (single mic input)
+          bitRate: 64000,       // iOS AAC crashes with bitRate > 64000
           linearPCMBitDepth: 16,
           linearPCMIsBigEndian: false,
           linearPCMIsFloat: false,
@@ -231,6 +265,7 @@ export class StudioAudioEngine {
       this.state.isRecording = true;
       this.state.isRecordingPaused = false;
       this.recordedUri = null;
+      this.state.peakVoiceLevel = -160;  // Reset peak level for new recording
 
       this.recordingStartTime = Date.now();
       this.accumulatedRecordingTime = 0;
@@ -257,12 +292,17 @@ export class StudioAudioEngine {
     }
 
     this.meteringInterval = setInterval(async () => {
-      if (this.recording && this.state.isRecording) {
+      if (this.recording && this.state.isRecording && !this.state.isRecordingPaused) {
         try {
           const status = await this.recording.getStatusAsync();
           if (status.isRecording && status.metering !== undefined) {
             this.currentMeteringLevel = status.metering;
             this.meteringCallback?.(status.metering);
+            
+            // Track peak level for normalization recommendations
+            if (status.metering > this.state.peakVoiceLevel) {
+              this.state.peakVoiceLevel = status.metering;
+            }
           }
         } catch (error) {
           // Silent fail - metering is optional
@@ -469,10 +509,85 @@ export class StudioAudioEngine {
     this.state.voiceVolume = Math.max(0, Math.min(100, volume));
     
     if (this.voiceTrack) {
-      this.voiceTrack.setVolumeAsync(this.volumeToLinear(this.state.voiceVolume)).catch((error) => {
+      // Use perceptual volume scaling with voice gain for natural loudness
+      const perceptualVolume = this.volumeToPerceptual(this.state.voiceVolume, this.state.voiceGain);
+      this.voiceTrack.setVolumeAsync(perceptualVolume).catch((error) => {
         console.error('Failed to set voice volume:', error);
       });
     }
+  }
+
+  /**
+   * Set voice gain/boost (0-200, where 100 is normal, 200 is 2x amplification)
+   * Use this to boost quiet recordings so they're not drowned out by backing track
+   */
+  setVoiceGain(gain: number): void {
+    this.state.voiceGain = Math.max(0, Math.min(200, gain));
+    
+    // Re-apply voice volume with new gain
+    if (this.voiceTrack) {
+      const perceptualVolume = this.volumeToPerceptual(this.state.voiceVolume, this.state.voiceGain);
+      this.voiceTrack.setVolumeAsync(perceptualVolume).catch((error) => {
+        console.error('Failed to apply voice gain:', error);
+      });
+    }
+  }
+
+  getVoiceGain(): number {
+    return this.state.voiceGain;
+  }
+
+  /**
+   * Set headphones connected status
+   * When true, audio routes through headphones for monitoring
+   * When false, backing track plays quieter through speaker to reduce mic bleed
+   */
+  setHeadphonesConnected(connected: boolean): void {
+    this.state.headphonesConnected = connected;
+    
+    // Adjust backing track volume based on headphone state during recording
+    // Without headphones, lower the music to reduce bleed into mic
+    if (this.state.isRecording && this.backingTrack) {
+      const musicVolume = connected 
+        ? this.state.musicVolume 
+        : Math.min(40, this.state.musicVolume); // Max 40% without headphones
+      this.backingTrack.setVolumeAsync(this.volumeToLinear(musicVolume)).catch(console.error);
+    }
+  }
+
+  isHeadphonesConnected(): boolean {
+    return this.state.headphonesConnected;
+  }
+
+  /**
+   * Get peak voice level detected during recording (for normalization hints)
+   */
+  getPeakVoiceLevel(): number {
+    return this.state.peakVoiceLevel;
+  }
+
+  /**
+   * Calculate recommended voice gain based on peak level during recording
+   * Returns a gain value (100-200) to normalize quiet recordings
+   */
+  getRecommendedVoiceGain(): number {
+    const peakDb = this.state.peakVoiceLevel;
+    
+    // Ideal peak level is around -6 to -3 dB (leaving headroom)
+    // If peak is lower, calculate boost needed
+    const targetPeak = -6;
+    const boostNeeded = targetPeak - peakDb;
+    
+    if (boostNeeded <= 0) {
+      return 100; // No boost needed, already loud enough
+    }
+    
+    // Convert dB boost to linear gain multiplier
+    // +6dB ≈ 2x volume, so max boost of 6dB = gain of 200
+    const gainMultiplier = Math.pow(10, boostNeeded / 20);
+    const gain = Math.min(200, Math.round(gainMultiplier * 100));
+    
+    return gain;
   }
 
   setSyncOffset(offsetMs: number): void {
@@ -600,7 +715,10 @@ export class StudioAudioEngine {
         duration: 0,
         musicVolume: 70,
         voiceVolume: 100,
+        voiceGain: 100,
         syncOffset: 0,
+        headphonesConnected: false,
+        peakVoiceLevel: -160,
       };
 
       this.progressCallback = null;
