@@ -5,6 +5,14 @@ export type ProgressCallback = (position: number, duration: number) => void;
 export type RecordingProgressCallback = (durationMs: number) => void;
 export type MeteringCallback = (level: number) => void;
 
+export interface KaraokeAudioConfig {
+  enableAEC: boolean;
+  enableNoiseSuppression: boolean;
+  inputGain: number;
+  sampleRate: number;
+  bitRate: number;
+}
+
 interface AudioEngineState {
   backingTrackLoaded: boolean;
   voiceTrackLoaded: boolean;
@@ -17,6 +25,7 @@ interface AudioEngineState {
   musicVolume: number;
   voiceVolume: number;
   syncOffset: number;
+  inputGain: number;
 }
 
 export class StudioAudioEngine {
@@ -37,6 +46,7 @@ export class StudioAudioEngine {
     musicVolume: 70,
     voiceVolume: 100,
     syncOffset: 0,
+    inputGain: 100,
   };
 
   private progressCallback: ProgressCallback | null = null;
@@ -377,11 +387,14 @@ export class StudioAudioEngine {
         this.voiceTrack = null;
       }
 
+      const gainFactor = this.state.inputGain / 100;
+      const adjustedVolume = Math.min(1, this.volumeToLinear(this.state.voiceVolume) * gainFactor);
+
       const { sound } = await Audio.Sound.createAsync(
         { uri },
         {
           shouldPlay: false,
-          volume: this.volumeToLinear(this.state.voiceVolume),
+          volume: adjustedVolume,
           progressUpdateIntervalMillis: 100,
         },
         this.handleVoiceTrackStatus
@@ -469,7 +482,9 @@ export class StudioAudioEngine {
     this.state.voiceVolume = Math.max(0, Math.min(100, volume));
     
     if (this.voiceTrack) {
-      this.voiceTrack.setVolumeAsync(this.volumeToLinear(this.state.voiceVolume)).catch((error) => {
+      const gainFactor = this.state.inputGain / 100;
+      const adjustedVolume = Math.min(1, this.volumeToLinear(this.state.voiceVolume) * gainFactor);
+      this.voiceTrack.setVolumeAsync(adjustedVolume).catch((error) => {
         console.error('Failed to set voice volume:', error);
       });
     }
@@ -503,6 +518,25 @@ export class StudioAudioEngine {
 
   getSyncOffset(): number {
     return this.state.syncOffset;
+  }
+
+  setInputGain(gain: number): void {
+    this.state.inputGain = Math.max(0, Math.min(200, gain));
+  }
+
+  getInputGain(): number {
+    return this.state.inputGain;
+  }
+
+  applyInputGainToVoice(): void {
+    const gainFactor = this.state.inputGain / 100;
+    const adjustedVolume = Math.min(1, this.volumeToLinear(this.state.voiceVolume) * gainFactor);
+    
+    if (this.voiceTrack) {
+      this.voiceTrack.setVolumeAsync(adjustedVolume).catch((error) => {
+        console.error('Failed to apply input gain:', error);
+      });
+    }
   }
 
   isPlaying(): boolean {
@@ -601,6 +635,7 @@ export class StudioAudioEngine {
         musicVolume: 70,
         voiceVolume: 100,
         syncOffset: 0,
+        inputGain: 100,
       };
 
       this.progressCallback = null;

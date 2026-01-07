@@ -40,6 +40,13 @@ The app features a 4-tab navigation structure:
     - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Subscription Plan, and About
 
 ## Recent Changes (2026-01-07)
+- **Karaoke Audio Architecture**: Implemented comprehensive recording quality controls following Android best practices
+  - `AudioDeviceService`: Headphone/Bluetooth detection with latency estimation (Bluetooth ~180ms critical warning)
+  - `MicTestService`: Pre-recording microphone validation with 3-second audio sampling, peak/average level analysis, noise floor detection
+  - RecordingScreen UI: "Test Microphone" button with live level meter dialog, Bluetooth latency warning banner, input gain slider (0-200%)
+  - Input gain now affects voice track volume during mixing phase
+  - Separate playback (Audio.Sound) and recording (Audio.Recording) engines for clean vocal capture
+  - NOTE: Full Android device detection requires native AudioManager module for production; current implementation uses user confirmation + web API fallback
 - **LibraryScreen Navigation Fix**: Fixed song tap navigation from Library to NowPlaying screen
   - Changed from `navigation.getParent()?.navigate()` to `CommonActions.navigate()` for reliable cross-navigator navigation
   - Replaced custom song list rows with SongCard component for consistent M3 styling across the app
