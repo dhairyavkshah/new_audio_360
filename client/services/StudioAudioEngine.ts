@@ -478,6 +478,26 @@ export class StudioAudioEngine {
     }
   }
 
+  async seekMix(positionMs: number): Promise<void> {
+    try {
+      const seekPromises: Promise<AVPlaybackStatus>[] = [];
+      const clampedPosition = Math.max(0, Math.min(positionMs, this.state.duration));
+      
+      if (this.backingTrack) {
+        seekPromises.push(this.backingTrack.setPositionAsync(clampedPosition));
+      }
+      if (this.voiceTrack) {
+        const voicePosition = Math.max(0, clampedPosition + this.state.syncOffset);
+        seekPromises.push(this.voiceTrack.setPositionAsync(voicePosition));
+      }
+      
+      await Promise.all(seekPromises);
+      this.state.musicPosition = clampedPosition;
+    } catch (error) {
+      console.error('Failed to seek mix:', error);
+    }
+  }
+
   setVoiceVolume(volume: number): void {
     this.state.voiceVolume = Math.max(0, Math.min(100, volume));
     
@@ -575,25 +595,10 @@ export class StudioAudioEngine {
     return this.currentMeteringLevel;
   }
 
-  async seekMix(positionMs: number): Promise<void> {
-    const clampedPosition = Math.max(0, Math.min(positionMs, this.state.duration));
-    
-    try {
-      const seekPromises: Promise<AVPlaybackStatus>[] = [];
-      
-      if (this.backingTrack) {
-        seekPromises.push(this.backingTrack.setPositionAsync(clampedPosition));
-      }
-      
-      if (this.voiceTrack) {
-        const voicePosition = Math.max(0, clampedPosition + this.state.syncOffset);
-        seekPromises.push(this.voiceTrack.setPositionAsync(voicePosition));
-      }
-      
-      await Promise.all(seekPromises);
-      this.state.musicPosition = clampedPosition;
-    } catch (error) {
-      console.error('Failed to seek mix:', error);
+  async restartMix(): Promise<void> {
+    await this.seekMix(0);
+    if (!this.state.isPlaying) {
+      await this.playMix();
     }
   }
 

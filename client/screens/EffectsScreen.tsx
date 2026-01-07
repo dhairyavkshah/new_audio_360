@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Platform } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Platform, Dimensions } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -11,6 +11,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { AudioWaveform } from "@/components/AudioWaveform";
+import { ProgressBar } from "@/components/ProgressBar";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useStudioContext, REVERB_PRESETS, NOISE_REDUCTION_LEVELS } from "@/contexts/StudioContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -18,6 +19,8 @@ import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
 import { studioAudioEngine } from "@/services/StudioAudioEngine";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 type NavigationProp = NativeStackNavigationProp<CreateStackParamList>;
 type EffectsRouteProp = RouteProp<CreateStackParamList, "Effects">;
@@ -81,6 +84,19 @@ export default function EffectsScreen() {
       await studioAudioEngine.playMix();
       setIsPlaying(true);
     }
+  };
+
+  const handleRestart = async () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await studioAudioEngine.restartMix();
+    setIsPlaying(true);
+  };
+
+  const handleSeek = async (timeInSeconds: number) => {
+    const positionMs = timeInSeconds * 1000;
+    await studioAudioEngine.seekMix(positionMs);
   };
 
   const handleContinue = async () => {
