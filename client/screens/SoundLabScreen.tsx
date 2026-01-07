@@ -163,6 +163,29 @@ export default function SoundLabScreen() {
 
         <View style={styles.modeToggle}>
           <Pressable
+            onPress={() => handleSoundLabModeChange("off")}
+            style={[
+              styles.modeButton,
+              { backgroundColor: soundLabMode === "off" ? theme.outline : theme.backgroundSecondary },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="volume-off"
+              size={16}
+              color={soundLabMode === "off" ? "#FFFFFF" : theme.text}
+            />
+            <ThemedText
+              type="small"
+              style={{
+                marginLeft: Spacing.xs,
+                fontWeight: "600",
+                color: soundLabMode === "off" ? "#FFFFFF" : theme.text,
+              }}
+            >
+              Off
+            </ThemedText>
+          </Pressable>
+          <Pressable
             onPress={() => handleSoundLabModeChange("equalizer")}
             style={[
               styles.modeButton,
