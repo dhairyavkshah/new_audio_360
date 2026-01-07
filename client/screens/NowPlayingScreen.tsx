@@ -129,16 +129,15 @@ export default function NowPlayingScreen() {
               </View>
             ) : null}
           </Animated.View>
+          {error ? (
+            <View style={[styles.errorBadge, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)' }]}>
+              <MaterialCommunityIcons name="alert-circle" size={14} color="#FF4D67" />
+              <ThemedText type="small" style={{ color: "#FF4D67", marginLeft: Spacing.xxs, flex: 1 }} numberOfLines={1}>
+                {error}
+              </ThemedText>
+            </View>
+          ) : null}
         </View>
-        
-        {error ? (
-          <View style={styles.errorContainer}>
-            <MaterialCommunityIcons name="alert-circle" size={20} color="#FF4D67" />
-            <ThemedText type="caption" style={{ color: "#FF4D67", marginLeft: Spacing.xs }}>
-              {error}
-            </ThemedText>
-          </View>
-        ) : null}
 
         <View style={styles.songInfo}>
           <ThemedText type="h3" style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
@@ -260,11 +259,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  errorContainer: {
+  errorBadge: {
+    position: "absolute",
+    bottom: -Spacing.l,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     alignItems: "center",
-    marginTop: Spacing.contentBlock,
-    paddingHorizontal: Spacing.l,
+    justifyContent: "center",
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.xxs,
+    borderRadius: BorderRadius.sm,
   },
   songInfo: {
     alignItems: "center",
