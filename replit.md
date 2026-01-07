@@ -40,6 +40,10 @@ The app features a 4-tab navigation structure:
     - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Subscription Plan, and About
 
 ## Recent Changes (2026-01-07)
+- **LibraryScreen Navigation Fix**: Fixed song tap navigation from Library to NowPlaying screen
+  - Changed from `navigation.getParent()?.navigate()` to `CommonActions.navigate()` for reliable cross-navigator navigation
+  - Replaced custom song list rows with SongCard component for consistent M3 styling across the app
+  - Added proper bottom padding (tabBarHeight + 80 + Spacing.m) to FlatList for MiniPlayer visibility
 - **Web Dialog Compatibility**: Replaced all Alert.alert calls in RecordingScreen with Dialog component
   - Alert.alert doesn't work on React Native web - custom Dialog component provides cross-platform support
   - Separate dialog states for headphone warning, stop confirmation, close confirmation, and error messages
