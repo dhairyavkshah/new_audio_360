@@ -171,34 +171,46 @@ export default function RecordingScreen() {
         {
           text: "Yes, Continue",
           onPress: async () => {
-            try {
-              if (recordingIntervalRef.current) {
-                clearInterval(recordingIntervalRef.current);
-                recordingIntervalRef.current = null;
-              }
+            if (recordingIntervalRef.current) {
+              clearInterval(recordingIntervalRef.current);
+              recordingIntervalRef.current = null;
+            }
 
-              const recordedUri = await studioAudioEngine.stopRecordingWithBackingTrack();
+            let recordedUri: string | null = null;
+            try {
+              recordedUri = await studioAudioEngine.stopRecordingWithBackingTrack();
+            } catch (error) {
+              console.error("Failed to stop recording:", error);
               setIsRecording(false);
               setIsPaused(false);
               setIsBackingTrackPlaying(false);
+              Alert.alert(
+                "Recording Not Available",
+                "No recording was captured. This may happen if recording failed to start or microphone access was denied.",
+                [{ text: "OK" }]
+              );
+              return;
+            }
 
-              if (currentProject) {
+            setIsRecording(false);
+            setIsPaused(false);
+            setIsBackingTrackPlaying(false);
+
+            if (currentProject && recordedUri) {
+              try {
                 await updateProject(currentProject.id, {
                   voiceRecordingUri: recordedUri,
                   backgroundTrackUri: song?.audioUrl || null,
                   backgroundTrackTitle: song?.title || null,
                   duration: recordingTime,
                 });
+              } catch (error) {
+                console.error("Failed to update project:", error);
               }
-
-              const recordingId = `rec_${Date.now()}`;
-              navigation.navigate("Mixing", { recordingId });
-            } catch (error) {
-              console.error("Failed to stop recording:", error);
-              setIsRecording(false);
-              setIsPaused(false);
-              setIsBackingTrackPlaying(false);
             }
+
+            const recordingId = `rec_${Date.now()}`;
+            navigation.navigate("Mixing", { recordingId });
           },
         },
       ]
