@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Image, Pressable, ImageBackground, Platform } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, StyleSheet, Image, Pressable, ImageBackground, Platform, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
@@ -11,7 +11,9 @@ import { RecordButton } from "@/components/RecordButton";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
+import { useStudioContext } from "@/contexts/StudioContext";
 import { Spacing, BorderRadius, ModeStyles, Layout } from "@/constants/theme";
+import { studioAudioEngine } from "@/services/StudioAudioEngine";
 
 const STUDIO_BLUR_INTENSITY = 35;
 import { getSongById } from "@/lib/data";
@@ -26,11 +28,16 @@ export default function RecordingScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RecordingRouteProp>();
   const { theme, isDark } = useThemeContext();
+  const { updateProject, currentProject } = useStudioContext();
 
   const song = getSongById(route.params.songId);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [showHeadphoneReminder, setShowHeadphoneReminder] = useState(true);
+  const [isBackingTrackLoaded, setIsBackingTrackLoaded] = useState(false);
+  const [isBackingTrackPlaying, setIsBackingTrackPlaying] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const textShadowStyle = {
     textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
@@ -39,30 +46,136 @@ export default function RecordingScreen() {
   };
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isRecording) {
-      interval = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
+    const initAudio = async () => {
+      try {
+        await studioAudioEngine.configureAudioMode();
+        
+        if (song?.audioUrl) {
+          const audioUri = song.audioUrl.startsWith('http') 
+            ? song.audioUrl 
+            : `${window.location.origin}${song.audioUrl}`;
+          
+          await studioAudioEngine.loadBackingTrack(audioUri);
+          setIsBackingTrackLoaded(true);
+          setLoadError(null);
+        } else {
+          setLoadError("This song doesn't have an audio file for recording");
+        }
+      } catch (error) {
+        console.error("Failed to load backing track:", error);
+        setLoadError("Failed to load backing track");
+      }
     };
-  }, [isRecording]);
 
-  const handleRecordPress = () => {
+    initAudio();
+
+    studioAudioEngine.setRecordingProgressCallback((durationMs) => {
+      setRecordingTime(Math.floor(durationMs / 1000));
+    });
+
+    return () => {
+      studioAudioEngine.setRecordingProgressCallback(null);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    };
+  }, [song]);
+
+  const handleRecordPress = async () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
     if (!isRecording) {
-      setIsRecording(true);
-      setShowHeadphoneReminder(false);
+      if (!isBackingTrackLoaded) {
+        Alert.alert(
+          "Cannot Record",
+          loadError || "Backing track not loaded. Please try again.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      try {
+        setIsRecording(true);
+        setShowHeadphoneReminder(false);
+        setRecordingTime(0);
+        
+        await studioAudioEngine.startRecordingWithBackingTrack();
+        setIsBackingTrackPlaying(true);
+        
+        recordingIntervalRef.current = setInterval(() => {
+          setRecordingTime((prev) => prev + 1);
+        }, 1000);
+      } catch (error) {
+        console.error("Failed to start recording:", error);
+        setIsRecording(false);
+        Alert.alert(
+          "Recording Failed",
+          "Could not start recording. Please check microphone permissions.",
+          [{ text: "OK" }]
+        );
+      }
     } else {
-      setIsRecording(false);
-      const recordingId = `rec_${Date.now()}`;
-      navigation.navigate("Mixing", { recordingId });
+      try {
+        if (recordingIntervalRef.current) {
+          clearInterval(recordingIntervalRef.current);
+          recordingIntervalRef.current = null;
+        }
+
+        const recordedUri = await studioAudioEngine.stopRecordingWithBackingTrack();
+        setIsRecording(false);
+        setIsBackingTrackPlaying(false);
+
+        if (currentProject) {
+          await updateProject(currentProject.id, {
+            voiceRecordingUri: recordedUri,
+            backgroundTrackUri: song?.audioUrl || null,
+            backgroundTrackTitle: song?.title || null,
+            duration: recordingTime,
+          });
+        }
+
+        const recordingId = `rec_${Date.now()}`;
+        navigation.navigate("Mixing", { recordingId });
+      } catch (error) {
+        console.error("Failed to stop recording:", error);
+        setIsRecording(false);
+        setIsBackingTrackPlaying(false);
+      }
     }
   };
 
-  const handleClose = () => {
+  const handlePreviewPress = async () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    if (!isBackingTrackLoaded) {
+      Alert.alert("Cannot Preview", loadError || "Backing track not loaded");
+      return;
+    }
+
+    if (isBackingTrackPlaying) {
+      await studioAudioEngine.pauseBackingTrack();
+      setIsBackingTrackPlaying(false);
+    } else {
+      await studioAudioEngine.playBackingTrack();
+      setIsBackingTrackPlaying(true);
+    }
+  };
+
+  const handleClose = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    if (isRecording) {
+      try {
+        await studioAudioEngine.stopRecordingWithBackingTrack();
+      } catch {}
+    } else if (isBackingTrackPlaying) {
+      await studioAudioEngine.stopBackingTrack();
+    }
+    
     navigation.goBack();
   };
 
@@ -104,7 +217,19 @@ export default function RecordingScreen() {
               </View>
             ) : null}
           </View>
-          <View style={styles.closeButton} />
+          <Pressable 
+            onPress={handlePreviewPress} 
+            style={styles.closeButton}
+            disabled={isRecording}
+          >
+            {!isRecording && isBackingTrackLoaded ? (
+              <MaterialCommunityIcons 
+                name={isBackingTrackPlaying ? "pause" : "play"} 
+                size={24} 
+                color={theme.primary} 
+              />
+            ) : <View style={{ width: 24 }} />}
+          </Pressable>
         </View>
 
         {showHeadphoneReminder ? (
@@ -126,6 +251,22 @@ export default function RecordingScreen() {
           </GlassCard>
         ) : null}
 
+        {loadError ? (
+          <GlassCard style={styles.errorCard}>
+            <View style={styles.reminderContent}>
+              <MaterialCommunityIcons name="alert-circle" size={24} color={theme.warning} />
+              <View style={styles.reminderText}>
+                <ThemedText type="body" style={{ fontWeight: "600", color: theme.warning }}>
+                  Audio Not Available
+                </ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                  {loadError}
+                </ThemedText>
+              </View>
+            </View>
+          </GlassCard>
+        ) : null}
+
         <View style={styles.songInfo}>
           <Image source={{ uri: song.artwork }} style={styles.artwork} />
           <ThemedText type="h4" style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
@@ -134,11 +275,19 @@ export default function RecordingScreen() {
           <ThemedText type="body" style={[textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.85)' : theme.textSecondary }]}>
             {song.artist}
           </ThemedText>
+          {isBackingTrackLoaded ? (
+            <View style={[styles.statusBadge, { backgroundColor: theme.primary + "30" }]}>
+              <MaterialCommunityIcons name="check-circle" size={14} color={theme.primary} />
+              <ThemedText type="caption" style={{ color: theme.primary, marginLeft: 4 }}>
+                Ready to record
+              </ThemedText>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.waveformContainer}>
           <AudioWaveform
-            isAnimating={isRecording}
+            isAnimating={isRecording || isBackingTrackPlaying}
             barCount={60}
             barWidth={4}
             height={80}
@@ -194,6 +343,9 @@ const styles = StyleSheet.create({
   reminderCard: {
     marginBottom: Spacing.lg,
   },
+  errorCard: {
+    marginBottom: Spacing.lg,
+  },
   reminderContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -216,6 +368,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: Spacing.sm,
     textAlign: "center",
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    marginTop: Spacing.md,
   },
   waveformContainer: {
     flex: 1,

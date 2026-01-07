@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Platform } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, ScrollView, Pressable, Platform, Alert } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -12,8 +13,11 @@ import { GlassCard } from "@/components/GlassCard";
 import { VolumeSlider } from "@/components/VolumeSlider";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { useThemeContext } from "@/contexts/ThemeContext";
+import { useStudioContext } from "@/contexts/StudioContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Spacing, BorderRadius, Layout } from "@/constants/theme";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
+import { studioAudioEngine } from "@/services/StudioAudioEngine";
 
 type NavigationProp = NativeStackNavigationProp<CreateStackParamList>;
 type MixingRouteProp = RouteProp<CreateStackParamList, "Mixing">;
@@ -24,23 +28,151 @@ export default function MixingScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<MixingRouteProp>();
   const { theme } = useThemeContext();
+  const { currentProject, updateProject } = useStudioContext();
+  const { plan } = useSubscription();
 
   const [musicVolume, setMusicVolume] = useState(70);
   const [voiceVolume, setVoiceVolume] = useState(100);
+  const [syncOffset, setSyncOffset] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(100);
 
-  const handlePlayPreview = () => {
+  const isPremium = plan === 'premium';
+
+  useEffect(() => {
+    const loadTracks = async () => {
+      try {
+        await studioAudioEngine.configureAudioMode();
+
+        const recordedUri = studioAudioEngine.getRecordedUri();
+        if (recordedUri) {
+          await studioAudioEngine.loadVoiceTrack(recordedUri);
+        }
+
+        if (currentProject?.backgroundTrackUri) {
+          const audioUri = currentProject.backgroundTrackUri.startsWith('http')
+            ? currentProject.backgroundTrackUri
+            : `${window.location.origin}${currentProject.backgroundTrackUri}`;
+          await studioAudioEngine.loadBackingTrack(audioUri);
+        }
+
+        setMusicVolume(studioAudioEngine.getMusicVolume());
+        setVoiceVolume(studioAudioEngine.getVoiceVolume());
+        setSyncOffset(studioAudioEngine.getSyncOffset());
+        setDuration(studioAudioEngine.getDuration());
+        setIsLoaded(true);
+
+        studioAudioEngine.setProgressCallback((pos, dur) => {
+          setPosition(pos);
+          setDuration(dur);
+          if (pos >= dur && dur > 0) {
+            setIsPlaying(false);
+          }
+        });
+      } catch (error) {
+        console.error("Failed to load tracks:", error);
+      }
+    };
+
+    loadTracks();
+
+    return () => {
+      studioAudioEngine.setProgressCallback(null);
+    };
+  }, [currentProject]);
+
+  const handlePlayPreview = async () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setIsPlaying(!isPlaying);
+
+    if (isPlaying) {
+      await studioAudioEngine.pauseMix();
+      setIsPlaying(false);
+    } else {
+      await studioAudioEngine.playMix();
+      setIsPlaying(true);
+    }
   };
 
-  const handleContinue = () => {
+  const handleStopPreview = async () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await studioAudioEngine.stopMix();
+    setIsPlaying(false);
+    setPosition(0);
+  };
+
+  const handleMusicVolumeChange = (value: number) => {
+    setMusicVolume(value);
+    studioAudioEngine.setMusicVolume(value);
+    
+    if (currentProject) {
+      updateProject(currentProject.id, { musicVolume: value });
+    }
+  };
+
+  const handleVoiceVolumeChange = (value: number) => {
+    setVoiceVolume(value);
+    studioAudioEngine.setVoiceVolume(value);
+    
+    if (currentProject) {
+      updateProject(currentProject.id, { voiceVolume: value });
+    }
+  };
+
+  const handleSyncOffsetChange = (value: number) => {
+    const roundedValue = Math.round(value / 10) * 10;
+    setSyncOffset(roundedValue);
+    studioAudioEngine.setSyncOffset(roundedValue);
+  };
+
+  const handleSeek = async (value: number) => {
+    const seekPosition = value * duration;
+    await studioAudioEngine.seekMix(seekPosition);
+    setPosition(seekPosition);
+  };
+
+  const handleTrimPress = () => {
+    if (!isPremium) {
+      Alert.alert(
+        "Premium Feature",
+        "Upgrade to Premium to unlock audio trimming.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+  };
+
+  const handleContinue = async () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    
+    if (isPlaying) {
+      await studioAudioEngine.stopMix();
+      setIsPlaying(false);
+    }
+    
     navigation.navigate("Effects", { recordingId: route.params.recordingId });
+  };
+
+  const formatTime = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const getSyncOffsetLabel = () => {
+    if (syncOffset === 0) return "In sync";
+    if (syncOffset > 0) return `Voice ${syncOffset}ms late`;
+    return `Voice ${Math.abs(syncOffset)}ms early`;
   };
 
   return (
@@ -57,19 +189,28 @@ export default function MixingScreen() {
             <ThemedText type="body" style={{ fontWeight: "600" }}>
               Preview
             </ThemedText>
-            <Pressable
-              onPress={handlePlayPreview}
-              style={[styles.playButton, { backgroundColor: theme.primary }]}
-            >
-              <MaterialCommunityIcons name={isPlaying ? "pause" : "play"} size={20} color="#FFFFFF" />
-            </Pressable>
+            <View style={styles.playControls}>
+              <Pressable
+                onPress={handleStopPreview}
+                style={[styles.controlButton, { backgroundColor: theme.backgroundSecondary }]}
+              >
+                <MaterialCommunityIcons name="stop" size={18} color={theme.text} />
+              </Pressable>
+              <Pressable
+                onPress={handlePlayPreview}
+                style={[styles.playButton, { backgroundColor: theme.primary }]}
+              >
+                <MaterialCommunityIcons name={isPlaying ? "pause" : "play"} size={20} color="#FFFFFF" />
+              </Pressable>
+            </View>
           </View>
+          
           <View style={styles.waveformRow}>
             <View style={styles.waveformTrack}>
               <View style={styles.trackLabel}>
                 <MaterialCommunityIcons name="music" size={12} color={theme.primary} />
                 <ThemedText type="caption" style={{ marginLeft: Spacing.xs, color: theme.textSecondary }}>
-                  Music
+                  Music ({musicVolume}%)
                 </ThemedText>
               </View>
               <AudioWaveform
@@ -84,7 +225,7 @@ export default function MixingScreen() {
               <View style={styles.trackLabel}>
                 <MaterialCommunityIcons name="microphone" size={12} color={theme.secondary} />
                 <ThemedText type="caption" style={{ marginLeft: Spacing.xs, color: theme.textSecondary }}>
-                  Voice
+                  Voice ({voiceVolume}%)
                 </ThemedText>
               </View>
               <AudioWaveform
@@ -96,6 +237,26 @@ export default function MixingScreen() {
               />
             </View>
           </View>
+
+          <View style={styles.progressContainer}>
+            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+              {formatTime(position)}
+            </ThemedText>
+            <View style={styles.progressBar}>
+              <View 
+                style={[
+                  styles.progressFill, 
+                  { 
+                    backgroundColor: theme.primary,
+                    width: duration > 0 ? `${(position / duration) * 100}%` : '0%',
+                  }
+                ]} 
+              />
+            </View>
+            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+              {formatTime(duration)}
+            </ThemedText>
+          </View>
         </GlassCard>
 
         <View style={styles.section}>
@@ -103,39 +264,87 @@ export default function MixingScreen() {
             Balance
           </ThemedText>
           <ThemedText type="small" style={[styles.sectionDesc, { color: theme.textSecondary }]}>
-            Adjust the mix between music and voice
+            Adjust the mix between music and voice in real-time
           </ThemedText>
 
           <View style={styles.slidersRow}>
             <VolumeSlider
               label="Music"
               value={musicVolume}
-              onValueChange={setMusicVolume}
+              onValueChange={handleMusicVolumeChange}
               icon="music"
             />
             <VolumeSlider
               label="Voice"
               value={voiceVolume}
-              onValueChange={setVoiceVolume}
+              onValueChange={handleVoiceVolumeChange}
               icon="microphone"
             />
           </View>
         </View>
 
-        <GlassCard style={styles.trimCard}>
-          <View style={styles.trimHeader}>
-            <View style={styles.trimTitleRow}>
-              <MaterialCommunityIcons name="content-cut" size={18} color={theme.textSecondary} />
-              <ThemedText type="body" style={[styles.trimTitle, { color: theme.textSecondary }]}>
-                Trim Audio
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Sync Adjustment
+            </ThemedText>
+            <View style={[styles.syncBadge, { backgroundColor: theme.primary + "20" }]}>
+              <ThemedText type="caption" style={{ color: theme.primary, fontWeight: "600" }}>
+                {getSyncOffsetLabel()}
               </ThemedText>
             </View>
-            <View style={[styles.premiumDot, { backgroundColor: theme.accent }]} />
           </View>
-          <ThemedText type="small" style={{ color: theme.textSecondary }}>
-            Remove silence from the start and end
+          <ThemedText type="small" style={[styles.sectionDesc, { color: theme.textSecondary }]}>
+            Fine-tune the timing between music and voice (-200ms to +200ms)
           </ThemedText>
-        </GlassCard>
+
+          <View style={styles.syncSliderContainer}>
+            <View style={styles.syncLabels}>
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>Voice Early</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>Voice Late</ThemedText>
+            </View>
+            <Slider
+              style={styles.syncSlider}
+              value={syncOffset}
+              onValueChange={handleSyncOffsetChange}
+              minimumValue={-200}
+              maximumValue={200}
+              step={10}
+              minimumTrackTintColor={theme.primary}
+              maximumTrackTintColor={theme.backgroundTertiary}
+              thumbTintColor={theme.primary}
+            />
+            <View style={styles.syncMarkers}>
+              <ThemedText type="caption" style={{ color: theme.textTertiary }}>-200ms</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary, fontWeight: "600" }}>0</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textTertiary }}>+200ms</ThemedText>
+            </View>
+          </View>
+        </View>
+
+        <Pressable onPress={handleTrimPress}>
+          <GlassCard style={isPremium ? styles.trimCard : styles.trimCardLocked}>
+            <View style={styles.trimHeader}>
+              <View style={styles.trimTitleRow}>
+                <MaterialCommunityIcons name="content-cut" size={18} color={isPremium ? theme.primary : theme.textSecondary} />
+                <ThemedText type="body" style={[styles.trimTitle, { color: isPremium ? theme.text : theme.textSecondary }]}>
+                  Trim Audio
+                </ThemedText>
+              </View>
+              {!isPremium ? (
+                <View style={[styles.premiumBadge, { backgroundColor: theme.warning + "20" }]}>
+                  <MaterialCommunityIcons name="crown" size={12} color={theme.warning} />
+                  <ThemedText type="caption" style={{ color: theme.warning, marginLeft: 4 }}>Premium</ThemedText>
+                </View>
+              ) : (
+                <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
+              )}
+            </View>
+            <ThemedText type="small" style={{ color: theme.textSecondary }}>
+              Remove silence from the start and end
+            </ThemedText>
+          </GlassCard>
+        </Pressable>
       </ScrollView>
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + Spacing.lg, backgroundColor: theme.surfaceContainer }]}>
@@ -144,7 +353,7 @@ export default function MixingScreen() {
           style={[styles.continueButton, { backgroundColor: theme.primary }]}
         >
           <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-            Continue
+            Continue to Effects
           </ThemedText>
           <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
         </Pressable>
@@ -169,6 +378,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing.lg,
   },
+  playControls: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  controlButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   playButton: {
     width: 40,
     height: 40,
@@ -187,8 +407,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing.xs,
   },
+  progressContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: Spacing.md,
+    gap: Spacing.sm,
+  },
+  progressBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: "rgba(128,128,128,0.2)",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 2,
+  },
   section: {
     marginBottom: Layout.sectionGap,
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xs,
   },
   sectionTitle: {
     marginBottom: Spacing.xs,
@@ -200,7 +443,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
   },
+  syncBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+  },
+  syncSliderContainer: {
+    paddingHorizontal: Spacing.sm,
+  },
+  syncSlider: {
+    width: "100%",
+    height: 40,
+  },
+  syncLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: Spacing.xs,
+  },
+  syncMarkers: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
   trimCard: {
+    marginBottom: Spacing.xl,
+  },
+  trimCardLocked: {
     marginBottom: Spacing.xl,
     opacity: 0.7,
   },
@@ -218,10 +485,12 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.sm,
     fontWeight: "600",
   },
-  premiumDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  premiumBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
   },
   bottomBar: {
     position: "absolute",
