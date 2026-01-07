@@ -133,18 +133,30 @@ export default function SoundLabScreen() {
 
   const handleEQChange = async (preset: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedEQ(preset);
-    setSoundLabMode("equalizer");
-    await clearSoundMode();
-    await saveEQPreset(preset);
+    if (soundLabMode === "equalizer" && selectedEQ === preset) {
+      setSoundLabMode("off");
+      setSelectedEQ("");
+      await clearEQPreset();
+    } else {
+      setSelectedEQ(preset);
+      setSoundLabMode("equalizer");
+      await clearSoundMode();
+      await saveEQPreset(preset);
+    }
   };
 
   const handleImmersiveChange = async (mode: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedImmersive(mode);
-    setSoundLabMode("immersive");
-    await clearEQPreset();
-    await saveSoundMode(mode);
+    if (soundLabMode === "immersive" && selectedImmersive === mode) {
+      setSoundLabMode("off");
+      setSelectedImmersive("");
+      await clearSoundMode();
+    } else {
+      setSelectedImmersive(mode);
+      setSoundLabMode("immersive");
+      await clearEQPreset();
+      await saveSoundMode(mode);
+    }
   };
 
   return (
@@ -158,99 +170,32 @@ export default function SoundLabScreen() {
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
         <ThemedText type="caption" style={[styles.sectionDesc, { color: theme.textSecondary }]}>
-          Choose between Equalizer presets or Immersive modes (one at a time)
+          Tap a preset to apply, tap again to turn off. Only one effect can be active at a time.
         </ThemedText>
 
-        <View style={styles.modeToggle}>
-          <Pressable
-            onPress={() => handleSoundLabModeChange("off")}
-            style={[
-              styles.modeButton,
-              { backgroundColor: soundLabMode === "off" ? theme.outline : theme.backgroundSecondary },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="volume-off"
-              size={16}
-              color={soundLabMode === "off" ? "#FFFFFF" : theme.text}
-            />
-            <ThemedText
-              type="small"
-              style={{
-                marginLeft: Spacing.xs,
-                fontWeight: "600",
-                color: soundLabMode === "off" ? "#FFFFFF" : theme.text,
-              }}
-            >
-              Off
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="tune-vertical" size={18} color={theme.primary} />
+            <ThemedText type="body" style={styles.sectionTitle}>
+              Equalizer Presets
             </ThemedText>
-          </Pressable>
-          <Pressable
-            onPress={() => handleSoundLabModeChange("equalizer")}
-            style={[
-              styles.modeButton,
-              { backgroundColor: soundLabMode === "equalizer" ? theme.primary : theme.backgroundSecondary },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="tune-vertical"
-              size={16}
-              color={soundLabMode === "equalizer" ? "#FFFFFF" : theme.text}
-            />
-            <ThemedText
-              type="small"
-              style={{
-                marginLeft: Spacing.xs,
-                fontWeight: "600",
-                color: soundLabMode === "equalizer" ? "#FFFFFF" : theme.text,
-              }}
-            >
-              Equalizer
-            </ThemedText>
-          </Pressable>
-          <Pressable
-            onPress={() => handleSoundLabModeChange("immersive")}
-            style={[
-              styles.modeButton,
-              { backgroundColor: soundLabMode === "immersive" ? theme.primary : theme.backgroundSecondary },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="headphones"
-              size={16}
-              color={soundLabMode === "immersive" ? "#FFFFFF" : theme.text}
-            />
-            <ThemedText
-              type="small"
-              style={{
-                marginLeft: Spacing.xs,
-                fontWeight: "600",
-                color: soundLabMode === "immersive" ? "#FFFFFF" : theme.text,
-              }}
-            >
-              Immersive
-            </ThemedText>
-          </Pressable>
-        </View>
-
-        {soundLabMode === "equalizer" ? (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons name="tune-vertical" size={18} color={theme.primary} />
-              <ThemedText type="body" style={styles.sectionTitle}>
-                Equalizer Presets
-              </ThemedText>
-            </View>
-            <View style={styles.chipsContainer}>
-              {EQ_PRESETS.map((preset) => (
-                <EffectChip
-                  key={preset.name}
-                  label={preset.name}
-                  isSelected={selectedEQ === preset.name}
-                  onPress={() => handleEQChange(preset.name)}
-                />
-              ))}
-            </View>
+            {soundLabMode === "equalizer" && selectedEQ ? (
+              <View style={[styles.activeIndicator, { backgroundColor: theme.primary }]}>
+                <ThemedText type="caption" style={{ color: "#FFFFFF", fontWeight: "600" }}>Active</ThemedText>
+              </View>
+            ) : null}
+          </View>
+          <View style={styles.chipsContainer}>
+            {EQ_PRESETS.map((preset) => (
+              <EffectChip
+                key={preset.name}
+                label={preset.name}
+                isSelected={soundLabMode === "equalizer" && selectedEQ === preset.name}
+                onPress={() => handleEQChange(preset.name)}
+              />
+            ))}
+          </View>
+          {soundLabMode === "equalizer" && selectedEQ ? (
             <GlassCard style={styles.presetInfo}>
               <ThemedText type="body" style={{ fontWeight: "600" }}>
                 {selectedEQ}
@@ -259,79 +204,71 @@ export default function SoundLabScreen() {
                 {EQ_PRESETS.find(p => p.name === selectedEQ)?.description}
               </ThemedText>
             </GlassCard>
-          </View>
-        ) : soundLabMode === "immersive" ? (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons name="headphones" size={18} color={theme.primary} />
-              <ThemedText type="body" style={styles.sectionTitle}>
-                Immersive Modes
-              </ThemedText>
-            </View>
-            <View style={styles.modesContainer}>
-              {IMMERSIVE_MODES.map((mode) => (
-                <Pressable
-                  key={mode.name}
-                  onPress={() => handleImmersiveChange(mode.name)}
-                  style={[
-                    styles.modeCard,
-                    {
-                      backgroundColor: selectedImmersive === mode.name 
-                        ? theme.primary 
-                        : theme.backgroundSecondary,
-                    },
-                  ]}
-                >
-                  <View style={styles.modeCardContent}>
-                    <MaterialCommunityIcons
-                      name={mode.icon}
-                      size={20}
-                      color={selectedImmersive === mode.name ? "#FFFFFF" : theme.text}
-                    />
-                    <View style={styles.modeCardText}>
-                      <ThemedText
-                        type="small"
-                        style={{
-                          fontWeight: "600",
-                          color: selectedImmersive === mode.name ? "#FFFFFF" : theme.text,
-                        }}
-                      >
-                        {mode.name}
-                      </ThemedText>
-                      <ThemedText
-                        type="caption"
-                        style={{
-                          color: selectedImmersive === mode.name 
-                            ? "rgba(255,255,255,0.8)" 
-                            : theme.textSecondary,
-                        }}
-                      >
-                        {mode.description}
-                      </ThemedText>
-                    </View>
-                    {selectedImmersive === mode.name ? (
-                      <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" />
-                    ) : null}
-                  </View>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        ) : (
-          <GlassCard style={styles.infoCard}>
-            <View style={styles.infoContent}>
-              <MaterialCommunityIcons name="information-outline" size={18} color={theme.primary} />
-              <View style={styles.infoText}>
-                <ThemedText type="small" style={{ fontWeight: "600" }}>
-                  No Audio Enhancement Active
-                </ThemedText>
-                <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
-                  Select Equalizer or Immersive above to customize your sound experience.
-                </ThemedText>
+          ) : null}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="headphones" size={18} color={theme.primary} />
+            <ThemedText type="body" style={styles.sectionTitle}>
+              Immersive Modes
+            </ThemedText>
+            {soundLabMode === "immersive" && selectedImmersive ? (
+              <View style={[styles.activeIndicator, { backgroundColor: theme.primary }]}>
+                <ThemedText type="caption" style={{ color: "#FFFFFF", fontWeight: "600" }}>Active</ThemedText>
               </View>
-            </View>
-          </GlassCard>
-        )}
+            ) : null}
+          </View>
+          <View style={styles.modesContainer}>
+            {IMMERSIVE_MODES.map((mode) => (
+              <Pressable
+                key={mode.name}
+                onPress={() => handleImmersiveChange(mode.name)}
+                style={[
+                  styles.modeCard,
+                  {
+                    backgroundColor: soundLabMode === "immersive" && selectedImmersive === mode.name 
+                      ? theme.primary 
+                      : theme.backgroundSecondary,
+                  },
+                ]}
+              >
+                <View style={styles.modeCardContent}>
+                  <MaterialCommunityIcons
+                    name={mode.icon}
+                    size={20}
+                    color={soundLabMode === "immersive" && selectedImmersive === mode.name ? "#FFFFFF" : theme.text}
+                  />
+                  <View style={styles.modeCardText}>
+                    <ThemedText
+                      type="small"
+                      style={{
+                        fontWeight: "600",
+                        color: soundLabMode === "immersive" && selectedImmersive === mode.name ? "#FFFFFF" : theme.text,
+                      }}
+                    >
+                      {mode.name}
+                    </ThemedText>
+                    <ThemedText
+                      type="caption"
+                      style={{
+                        color: soundLabMode === "immersive" && selectedImmersive === mode.name 
+                          ? "rgba(255,255,255,0.8)" 
+                          : theme.textSecondary,
+                      }}
+                    >
+                      {mode.description}
+                    </ThemedText>
+                  </View>
+                  {soundLabMode === "immersive" && selectedImmersive === mode.name ? (
+                    <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" />
+                  ) : null}
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
 
         <GlassCard style={styles.infoCard}>
           <View style={styles.infoContent}>
@@ -385,6 +322,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginLeft: Spacing.xs,
     fontWeight: "600",
+    flex: 1,
+  },
+  activeIndicator: {
+    paddingHorizontal: Spacing.s,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.pill,
   },
   chipsContainer: {
     flexDirection: "row",

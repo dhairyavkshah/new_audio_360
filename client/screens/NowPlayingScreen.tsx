@@ -26,8 +26,11 @@ import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const ARTWORK_SIZE = Math.min(SCREEN_WIDTH - Spacing.xxl * 2, 320);
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const IS_COMPACT = SCREEN_WIDTH <= 375 || SCREEN_HEIGHT <= 667;
+const ARTWORK_SIZE = IS_COMPACT 
+  ? Math.min(SCREEN_WIDTH - Spacing.l * 2, 240)
+  : Math.min(SCREEN_WIDTH - Spacing.xxl * 2, 320);
 const BLUR_INTENSITY = 40;
 
 export default function NowPlayingScreen() {
@@ -115,8 +118,8 @@ export default function NowPlayingScreen() {
         <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? `rgba(0,0,0,${ModeStyles.listen.overlayOpacityDark + 0.2})` : `rgba(255,255,255,${ModeStyles.listen.overlayOpacityLight + 0.1})` }]} />
       </ImageBackground>
 
-      <View style={[styles.content, { paddingTop: headerHeight + Spacing.xl, paddingBottom: tabBarHeight + Spacing.xl }]}>
-        <View style={styles.artworkContainer}>
+      <View style={[styles.content, { paddingTop: headerHeight + (IS_COMPACT ? Spacing.m : Spacing.xl), paddingBottom: tabBarHeight + (IS_COMPACT ? Spacing.m : Spacing.xl), paddingHorizontal: IS_COMPACT ? Spacing.m : Layout.horizontalPadding }]}>
+        <View style={[styles.artworkContainer, IS_COMPACT && { marginTop: Spacing.s }]}>
           <Animated.View style={[styles.artworkWrapper, artworkStyle]}>
             <Image
               source={{ uri: currentSong.artwork }}
@@ -201,7 +204,7 @@ export default function NowPlayingScreen() {
             duration={duration || currentSong.duration}
             currentTime={currentTime}
             onSeek={seek}
-            width={SCREEN_WIDTH - Spacing.xxl * 2}
+            width={SCREEN_WIDTH - (IS_COMPACT ? Spacing.l * 2 : Spacing.xxl * 2)}
             showTextShadow={true}
           />
         </View>
@@ -270,8 +273,8 @@ const styles = StyleSheet.create({
   },
   songInfo: {
     alignItems: "center",
-    marginTop: Spacing.artworkMarginLarge,
-    marginBottom: Spacing.l,
+    marginTop: IS_COMPACT ? Spacing.m : Spacing.artworkMarginLarge,
+    marginBottom: IS_COMPACT ? Spacing.s : Spacing.l,
     width: "100%",
   },
   songTitle: {
@@ -295,13 +298,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   waveformContainer: {
-    marginVertical: Spacing.progressBarSpacing,
+    marginVertical: IS_COMPACT ? Spacing.s : Spacing.progressBarSpacing,
   },
   progressContainer: {
-    marginBottom: Spacing.progressBarSpacing,
+    marginBottom: IS_COMPACT ? Spacing.s : Spacing.progressBarSpacing,
   },
   controlsContainer: {
     width: "100%",
-    marginBottom: Spacing.l,
+    marginBottom: IS_COMPACT ? Spacing.s : Spacing.l,
   },
 });

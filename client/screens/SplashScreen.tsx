@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, StyleSheet, Animated } from "react-native";
+import { View, StyleSheet, Animated, Platform } from "react-native";
 import { Image } from "expo-image";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
@@ -8,6 +8,8 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 type SplashScreenProps = {
   onFinish: () => void;
 };
+
+const useNativeDriver = Platform.OS !== "web";
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const { theme } = useThemeContext();
@@ -19,27 +21,34 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 600,
-        useNativeDriver: true,
+        useNativeDriver,
       }),
       Animated.spring(scaleAnim, {
         toValue: 1,
         friction: 8,
         tension: 40,
-        useNativeDriver: true,
+        useNativeDriver,
       }),
     ]).start();
 
-    const timer = setTimeout(() => {
+    const fadeOutTimer = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
+        duration: 400,
+        useNativeDriver,
       }).start(() => {
         onFinish();
       });
-    }, 2000);
+    }, 1500);
 
-    return () => clearTimeout(timer);
+    const fallbackTimer = setTimeout(() => {
+      onFinish();
+    }, 2100);
+
+    return () => {
+      clearTimeout(fadeOutTimer);
+      clearTimeout(fallbackTimer);
+    };
   }, []);
 
   return (
