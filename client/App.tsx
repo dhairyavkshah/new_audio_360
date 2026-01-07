@@ -13,6 +13,7 @@ import { UiSoundProvider } from "@/contexts/UiSoundContext";
 import { PlayerProvider } from "@/contexts/PlayerContext";
 import { MediaLibraryProvider, useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { NavigationProvider } from "@/contexts/NavigationContext";
+import { SoundLabProvider } from "@/contexts/SoundLabContext";
 import SplashScreen from "@/screens/SplashScreen";
 import LoadingScreen from "@/screens/LoadingScreen";
 import PermissionOnboardingScreen from "@/screens/PermissionOnboardingScreen";
@@ -95,9 +96,11 @@ export default function App() {
             <ThemeProvider>
               <UiSoundProvider>
                 <MediaLibraryProvider>
-                  <PlayerProvider>
-                    <AppContent />
-                  </PlayerProvider>
+                  <SoundLabProvider>
+                    <PlayerProvider>
+                      <AppContent />
+                    </PlayerProvider>
+                  </SoundLabProvider>
                 </MediaLibraryProvider>
               </UiSoundProvider>
             </ThemeProvider>

@@ -4,6 +4,17 @@ import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from '
 import { mockSongs, Song } from '@/lib/data';
 import { DeviceSong } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
+import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
+
+const EQ_FREQUENCIES: Record<keyof EQBands, number> = {
+  sub: 32,
+  bass: 64,
+  lowMid: 250,
+  mid: 1000,
+  highMid: 4000,
+  treble: 8000,
+  brilliance: 16000,
+};
 
 export type PlayableSong = Song | DeviceSong;
 
@@ -45,6 +56,8 @@ interface PlayerContextType {
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
+  const { mode: soundLabMode, eqBands, immersiveEffect } = useSoundLab();
+  
   const [currentSong, setCurrentSong] = useState<PlayableSong | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -61,12 +74,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   
   const playerRef = useRef<AudioPlayer | null>(null);
-  const sleepTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const statusListenerRef = useRef<{ remove: () => void } | null>(null);
   const currentSongRef = useRef<PlayableSong | null>(null);
   const queueRef = useRef<PlayableSong[]>(mockSongs);
   const shuffleRef = useRef(false);
   const repeatRef = useRef<'off' | 'one' | 'all'>('off');
+  
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const eqFiltersRef = useRef<BiquadFilterNode[]>([]);
+  const stereoWidenerRef = useRef<StereoPannerNode | null>(null);
+  const delayNodeRef = useRef<DelayNode | null>(null);
+  const delayGainRef = useRef<GainNode | null>(null);
 
   useEffect(() => {
     currentSongRef.current = currentSong;
@@ -174,7 +196,75 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       playerRef.current = null;
     }
+    if (Platform.OS === 'web') {
+      if (audioElementRef.current) {
+        audioElementRef.current.pause();
+        audioElementRef.current.src = '';
+      }
+      if (mediaSourceRef.current) {
+        try { mediaSourceRef.current.disconnect(); } catch {}
+      }
+      eqFiltersRef.current.forEach(f => { try { f.disconnect(); } catch {} });
+      if (gainNodeRef.current) { try { gainNodeRef.current.disconnect(); } catch {} }
+      if (stereoWidenerRef.current) { try { stereoWidenerRef.current.disconnect(); } catch {} }
+      if (delayNodeRef.current) { try { delayNodeRef.current.disconnect(); } catch {} }
+      if (delayGainRef.current) { try { delayGainRef.current.disconnect(); } catch {} }
+    }
   }, []);
+  
+  const createEQChain = useCallback((ctx: AudioContext): BiquadFilterNode[] => {
+    eqFiltersRef.current.forEach(f => { try { f.disconnect(); } catch {} });
+    eqFiltersRef.current = [];
+
+    const bands = Object.keys(EQ_FREQUENCIES) as (keyof EQBands)[];
+    
+    bands.forEach((band, index) => {
+      const filter = ctx.createBiquadFilter();
+      
+      if (index === 0) {
+        filter.type = 'lowshelf';
+      } else if (index === bands.length - 1) {
+        filter.type = 'highshelf';
+      } else {
+        filter.type = 'peaking';
+        filter.Q.value = 1.5;
+      }
+      
+      filter.frequency.value = EQ_FREQUENCIES[band];
+      filter.gain.value = soundLabMode === 'equalizer' ? eqBands[band] * 2 : 0;
+      
+      eqFiltersRef.current.push(filter);
+    });
+
+    for (let i = 0; i < eqFiltersRef.current.length - 1; i++) {
+      eqFiltersRef.current[i].connect(eqFiltersRef.current[i + 1]);
+    }
+
+    return eqFiltersRef.current;
+  }, [soundLabMode, eqBands]);
+  
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    
+    const bands = Object.keys(EQ_FREQUENCIES) as (keyof EQBands)[];
+    eqFiltersRef.current.forEach((filter, index) => {
+      const band = bands[index];
+      if (band) {
+        filter.gain.value = soundLabMode === 'equalizer' ? eqBands[band] * 2 : 0;
+      }
+    });
+    
+    if (stereoWidenerRef.current) {
+      const pan = soundLabMode === 'immersive' ? (immersiveEffect.stereoWidth - 1) * 0.3 : 0;
+      stereoWidenerRef.current.pan.value = Math.max(-1, Math.min(1, pan));
+    }
+    if (delayGainRef.current) {
+      delayGainRef.current.gain.value = soundLabMode === 'immersive' ? immersiveEffect.reverb * 0.3 : 0;
+    }
+    if (delayNodeRef.current && soundLabMode === 'immersive') {
+      delayNodeRef.current.delayTime.value = immersiveEffect.delay / 1000;
+    }
+  }, [soundLabMode, eqBands, immersiveEffect]);
 
   const loadAndPlaySong = useCallback(async (song: PlayableSong) => {
     setIsLoading(true);
@@ -208,14 +298,83 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const newPlayer = createAudioPlayer(audioSource, { updateInterval: 0.1 });
-      playerRef.current = newPlayer;
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        const ctx = audioContextRef.current;
+        
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
 
-      statusListenerRef.current = newPlayer.addListener('playbackStatusUpdate', handleStatusUpdate);
+        const audio = new Audio();
+        audio.crossOrigin = 'anonymous';
+        audio.src = audioSource;
+        audioElementRef.current = audio;
 
-      newPlayer.play();
-      setIsPlaying(true);
-      setIsLoading(false);
+        await new Promise<void>((resolve, reject) => {
+          audio.onloadedmetadata = () => resolve();
+          audio.onerror = () => reject(new Error('Failed to load audio'));
+          audio.load();
+        });
+
+        mediaSourceRef.current = ctx.createMediaElementSource(audio);
+
+        gainNodeRef.current = ctx.createGain();
+        gainNodeRef.current.gain.value = 1;
+
+        const eqChain = createEQChain(ctx);
+
+        stereoWidenerRef.current = ctx.createStereoPanner();
+        delayNodeRef.current = ctx.createDelay(0.5);
+        delayGainRef.current = ctx.createGain();
+        delayGainRef.current.gain.value = soundLabMode === 'immersive' ? immersiveEffect.reverb * 0.3 : 0;
+        if (soundLabMode === 'immersive') {
+          delayNodeRef.current.delayTime.value = immersiveEffect.delay / 1000;
+          const pan = (immersiveEffect.stereoWidth - 1) * 0.3;
+          stereoWidenerRef.current.pan.value = Math.max(-1, Math.min(1, pan));
+        }
+
+        mediaSourceRef.current.connect(gainNodeRef.current);
+        
+        if (eqChain.length > 0) {
+          gainNodeRef.current.connect(eqChain[0]);
+          eqChain[eqChain.length - 1].connect(stereoWidenerRef.current);
+        } else {
+          gainNodeRef.current.connect(stereoWidenerRef.current);
+        }
+
+        stereoWidenerRef.current.connect(ctx.destination);
+        stereoWidenerRef.current.connect(delayNodeRef.current);
+        delayNodeRef.current.connect(delayGainRef.current);
+        delayGainRef.current.connect(ctx.destination);
+
+        audio.onended = () => {
+          setIsPlaying(false);
+          handleTrackEnd();
+        };
+
+        audio.ontimeupdate = () => {
+          setCurrentTime(audio.currentTime);
+          if (audio.duration && !isNaN(audio.duration)) {
+            setDuration(audio.duration);
+          }
+        };
+
+        await audio.play();
+        setIsPlaying(true);
+        setIsLoading(false);
+      } else {
+        const newPlayer = createAudioPlayer(audioSource, { updateInterval: 0.1 });
+        playerRef.current = newPlayer;
+
+        statusListenerRef.current = newPlayer.addListener('playbackStatusUpdate', handleStatusUpdate);
+
+        newPlayer.play();
+        setIsPlaying(true);
+        setIsLoading(false);
+      }
 
       addToRecentlyPlayed(song.id).then(() => {
         getRecentlyPlayed().then(setRecentlyPlayed);
@@ -229,7 +388,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setError('Failed to load audio');
       setIsLoading(false);
     }
-  }, [cleanupPlayer, handleStatusUpdate]);
+  }, [cleanupPlayer, handleStatusUpdate, createEQChain, handleTrackEnd, soundLabMode, immersiveEffect]);
 
   useEffect(() => {
     return () => {
@@ -270,6 +429,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [favorites]);
 
   const togglePlayPause = useCallback(() => {
+    if (Platform.OS === 'web' && audioElementRef.current) {
+      if (isPlaying) {
+        audioElementRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        if (audioContextRef.current?.state === 'suspended') {
+          audioContextRef.current.resume();
+        }
+        audioElementRef.current.play().catch(console.error);
+        setIsPlaying(true);
+      }
+      return;
+    }
+    
     if (!playerRef.current) {
       if (currentSong) {
         loadAndPlaySong(currentSong);
@@ -314,7 +487,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!currentSong) return;
 
     if (currentTime > 3) {
-      if (playerRef.current) {
+      if (Platform.OS === 'web' && audioElementRef.current) {
+        audioElementRef.current.currentTime = 0;
+        setCurrentTime(0);
+      } else if (playerRef.current) {
         playerRef.current.seekTo(0);
         setCurrentTime(0);
       }
@@ -332,7 +508,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const seek = useCallback((time: number) => {
     const targetTime = Math.max(0, Math.min(time, duration || currentSong?.duration || 0));
     setCurrentTime(targetTime);
-    if (playerRef.current) {
+    if (Platform.OS === 'web' && audioElementRef.current) {
+      audioElementRef.current.currentTime = targetTime;
+    } else if (playerRef.current) {
       playerRef.current.seekTo(targetTime);
     }
   }, [duration, currentSong]);
