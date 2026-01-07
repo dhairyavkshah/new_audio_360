@@ -40,6 +40,13 @@ The app features a 4-tab navigation structure:
     - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Subscription Plan, and About
 
 ## Recent Changes (2026-01-07)
+- **Studio Audio Engine**: Implemented real audio recording and playback for Studio mode
+  - Created `StudioAudioEngine` service with expo-av for simultaneous playback and recording
+  - RecordingScreen: Backing track preview, record voice while music plays, recording progress
+  - MixingScreen: Real-time dual-track playback (music + voice), live volume balance, sync offset adjustment (-200ms to +200ms in 10ms increments)
+  - EffectsScreen: Audio preview playback with effect selection
+  - Platform-aware audio loading: file:// URIs for device music, web-only demo audio with clear error messaging
+  - Warning UI when demo audio unavailable on native builds
 - **Subscription System**: Replaced donation model with two-tier subscription (one-time purchase via Google Play Billing)
   - **Free**: Basic playback, limited themes (fluent only), Equalizer only, Off/Light noise + None/Small reverb
   - **Standard** (₹100/INR, $10/USD): 5 themes, all Equalizer presets, Light noise + Small Studio reverb
