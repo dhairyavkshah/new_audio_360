@@ -40,6 +40,14 @@ The app features a 4-tab navigation structure:
     - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Subscription Plan, and About
 
 ## Recent Changes (2026-01-07)
+- **Web Dialog Compatibility**: Replaced all Alert.alert calls in RecordingScreen with Dialog component
+  - Alert.alert doesn't work on React Native web - custom Dialog component provides cross-platform support
+  - Separate dialog states for headphone warning, stop confirmation, close confirmation, and error messages
+  - Handler functions properly manage recording state and navigation
+- **LiveAudioWaveform Improvements**: Enhanced real-time waveform animation responsiveness
+  - Uses ref to track latest audio level, runs animation on continuous 60ms interval when active
+  - Lowered threshold for detecting real audio from -150 to -120 dB for better sensitivity
+  - More dynamic animation in both real audio and simulated modes with improved spring physics
 - **Recording Pause/Resume Enhancement**: StudioAudioEngine now properly tracks elapsed time with pause/resume support
   - RecordButton toggles between record/pause/resume states with appropriate icons
   - Separate Stop button with confirmation dialog before navigating to Mix screen
