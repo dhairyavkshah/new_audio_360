@@ -19,26 +19,22 @@ const ActionButton = ({ onPress, accessibilityLabel, children }: {
   accessibilityLabel: string; 
   children: React.ReactNode;
 }) => {
+  const handlePress = (e: GestureResponderEvent) => {
+    e.stopPropagation();
+    onPress(e);
+  };
+
   return (
-    <View
+    <Pressable
+      onPress={handlePress}
       style={actionButtonStyles.button}
-      onStartShouldSetResponder={() => true}
-      onResponderRelease={(e) => {
-        e.stopPropagation();
-        onPress(e);
-      }}
-      {...(Platform.OS === "web" ? {
-        onClick: (e: any) => {
-          e.stopPropagation();
-          e.preventDefault();
-          onPress(e);
-        },
-      } : {})}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       accessible={true}
       accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
     >
       {children}
-    </View>
+    </Pressable>
   );
 };
 
