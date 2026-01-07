@@ -17,6 +17,7 @@ interface RecordButtonProps {
   isRecording: boolean;
   onPress: () => void;
   size?: number;
+  isPaused?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -25,6 +26,7 @@ export function RecordButton({
   isRecording,
   onPress,
   size = Spacing.recordButtonSize,
+  isPaused = false,
 }: RecordButtonProps) {
   const { theme } = useThemeContext();
   const { icons, shapes, components } = useSkin();
@@ -127,7 +129,7 @@ export function RecordButton({
         ]}
       >
         <MaterialCommunityIcons
-          name={(isRecording ? icons.stop : icons.microphone) as keyof typeof MaterialCommunityIcons.glyphMap}
+          name={(isPaused ? icons.play || 'play' : isRecording ? 'pause' : icons.microphone) as keyof typeof MaterialCommunityIcons.glyphMap}
           size={size * 0.35}
           color="#FFFFFF"
         />

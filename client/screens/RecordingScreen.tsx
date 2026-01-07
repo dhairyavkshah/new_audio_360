@@ -32,12 +32,14 @@ export default function RecordingScreen() {
 
   const song = getSongById(route.params.songId);
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [showHeadphoneReminder, setShowHeadphoneReminder] = useState(true);
   const [isBackingTrackLoaded, setIsBackingTrackLoaded] = useState(false);
   const [isBackingTrackPlaying, setIsBackingTrackPlaying] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [audioLevel, setAudioLevel] = useState<number>(-160);
+  const [hasRecorded, setHasRecorded] = useState(false);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const textShadowStyle = {
@@ -108,7 +110,7 @@ export default function RecordingScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    if (!isRecording) {
+    if (!isRecording && !isPaused) {
       if (!isBackingTrackLoaded) {
         Alert.alert(
           "Cannot Record",
@@ -120,8 +122,10 @@ export default function RecordingScreen() {
 
       try {
         setIsRecording(true);
+        setIsPaused(false);
         setShowHeadphoneReminder(false);
         setRecordingTime(0);
+        setHasRecorded(true);
         
         await studioAudioEngine.startRecordingWithBackingTrack();
         setIsBackingTrackPlaying(true);
@@ -138,34 +142,69 @@ export default function RecordingScreen() {
           [{ text: "OK" }]
         );
       }
-    } else {
-      try {
-        if (recordingIntervalRef.current) {
-          clearInterval(recordingIntervalRef.current);
-          recordingIntervalRef.current = null;
-        }
-
-        const recordedUri = await studioAudioEngine.stopRecordingWithBackingTrack();
-        setIsRecording(false);
-        setIsBackingTrackPlaying(false);
-
-        if (currentProject) {
-          await updateProject(currentProject.id, {
-            voiceRecordingUri: recordedUri,
-            backgroundTrackUri: song?.audioUrl || null,
-            backgroundTrackTitle: song?.title || null,
-            duration: recordingTime,
-          });
-        }
-
-        const recordingId = `rec_${Date.now()}`;
-        navigation.navigate("Mixing", { recordingId });
-      } catch (error) {
-        console.error("Failed to stop recording:", error);
-        setIsRecording(false);
-        setIsBackingTrackPlaying(false);
+    } else if (isRecording && !isPaused) {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
       }
+      await studioAudioEngine.pauseRecording();
+      setIsPaused(true);
+      setIsBackingTrackPlaying(false);
+    } else if (isPaused) {
+      await studioAudioEngine.resumeRecording();
+      setIsPaused(false);
+      setIsBackingTrackPlaying(true);
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
     }
+  };
+
+  const handleStopRecording = async () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    Alert.alert(
+      "Finish Recording?",
+      "Would you like to proceed to the mixing screen?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Yes, Continue",
+          onPress: async () => {
+            try {
+              if (recordingIntervalRef.current) {
+                clearInterval(recordingIntervalRef.current);
+                recordingIntervalRef.current = null;
+              }
+
+              const recordedUri = await studioAudioEngine.stopRecordingWithBackingTrack();
+              setIsRecording(false);
+              setIsPaused(false);
+              setIsBackingTrackPlaying(false);
+
+              if (currentProject) {
+                await updateProject(currentProject.id, {
+                  voiceRecordingUri: recordedUri,
+                  backgroundTrackUri: song?.audioUrl || null,
+                  backgroundTrackTitle: song?.title || null,
+                  duration: recordingTime,
+                });
+              }
+
+              const recordingId = `rec_${Date.now()}`;
+              navigation.navigate("Mixing", { recordingId });
+            } catch (error) {
+              console.error("Failed to stop recording:", error);
+              setIsRecording(false);
+              setIsPaused(false);
+              setIsBackingTrackPlaying(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handlePreviewPress = async () => {
@@ -321,9 +360,28 @@ export default function RecordingScreen() {
 
         <View style={styles.controlsContainer}>
           <ThemedText type="body" style={[styles.instruction, textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.8)' : theme.textSecondary }]}>
-            {isRecording ? "Tap to stop recording" : "Tap to start recording"}
+            {isRecording && !isPaused 
+              ? "Tap to pause recording" 
+              : isPaused 
+                ? "Tap to resume recording" 
+                : "Tap to start recording"}
           </ThemedText>
-          <RecordButton isRecording={isRecording} onPress={handleRecordPress} size={100} />
+          <View style={styles.buttonRow}>
+            <RecordButton 
+              isRecording={isRecording && !isPaused} 
+              onPress={handleRecordPress} 
+              size={100}
+              isPaused={isPaused}
+            />
+            {(isRecording || isPaused) && (
+              <Pressable 
+                onPress={handleStopRecording} 
+                style={[styles.stopButton, { backgroundColor: theme.surfaceContainer }]}
+              >
+                <MaterialCommunityIcons name="stop" size={32} color={theme.text} />
+              </Pressable>
+            )}
+          </View>
         </View>
       </View>
     </View>
@@ -408,9 +466,22 @@ const styles = StyleSheet.create({
   },
   controlsContainer: {
     alignItems: "center",
-    paddingBottom: Spacing.lg,
+    paddingBottom: Spacing["2xl"],
   },
   instruction: {
     marginBottom: Spacing.lg,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xl,
+  },
+  stopButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

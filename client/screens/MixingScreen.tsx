@@ -176,6 +176,12 @@ export default function MixingScreen() {
       );
       return;
     }
+    
+    Alert.alert(
+      "Trim Audio",
+      "Audio trimming feature is coming soon. You'll be able to remove silence from the start and end of your recording.",
+      [{ text: "OK" }]
+    );
   };
 
   const handleContinue = async () => {
@@ -209,7 +215,7 @@ export default function MixingScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: headerHeight + Spacing.lg, paddingBottom: insets.bottom + 100 },
+          { paddingTop: headerHeight + Spacing.lg, paddingBottom: insets.bottom + 180 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -392,7 +398,7 @@ export default function MixingScreen() {
         </Pressable>
       </ScrollView>
 
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + Spacing.lg, backgroundColor: theme.surfaceContainer }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 80, backgroundColor: theme.surfaceContainer }]}>
         <Pressable
           onPress={handleContinue}
           style={[styles.continueButton, { backgroundColor: theme.primary }]}

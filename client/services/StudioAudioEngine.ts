@@ -10,6 +10,7 @@ interface AudioEngineState {
   voiceTrackLoaded: boolean;
   isPlaying: boolean;
   isRecording: boolean;
+  isRecordingPaused: boolean;
   musicPosition: number;
   voicePosition: number;
   duration: number;
@@ -29,6 +30,7 @@ export class StudioAudioEngine {
     voiceTrackLoaded: false,
     isPlaying: false,
     isRecording: false,
+    isRecordingPaused: false,
     musicPosition: 0,
     voicePosition: 0,
     duration: 0,
@@ -270,6 +272,46 @@ export class StudioAudioEngine {
       this.meteringInterval = null;
     }
     this.currentMeteringLevel = -160;
+  }
+
+  async pauseRecording(): Promise<void> {
+    if (!this.recording || !this.state.isRecording) {
+      console.warn('No active recording to pause');
+      return;
+    }
+
+    try {
+      await this.recording.pauseAsync();
+      this.state.isRecordingPaused = true;
+      
+      if (this.backingTrack) {
+        await this.backingTrack.pauseAsync();
+      }
+      
+      this.stopMeteringUpdates();
+    } catch (error) {
+      console.error('Failed to pause recording:', error);
+    }
+  }
+
+  async resumeRecording(): Promise<void> {
+    if (!this.recording || !this.state.isRecording || !this.state.isRecordingPaused) {
+      console.warn('No paused recording to resume');
+      return;
+    }
+
+    try {
+      await this.recording.startAsync();
+      this.state.isRecordingPaused = false;
+      
+      if (this.backingTrack) {
+        await this.backingTrack.playAsync();
+      }
+      
+      this.startMeteringUpdates();
+    } catch (error) {
+      console.error('Failed to resume recording:', error);
+    }
   }
 
   async stopRecording(): Promise<string> {
@@ -528,6 +570,7 @@ export class StudioAudioEngine {
         voiceTrackLoaded: false,
         isPlaying: false,
         isRecording: false,
+        isRecordingPaused: false,
         musicPosition: 0,
         voicePosition: 0,
         duration: 0,
