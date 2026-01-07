@@ -3,7 +3,7 @@ import { View, StyleSheet, Pressable, Image, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
-import { useNavigation, CommonActions } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
@@ -30,16 +30,11 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // Use CommonActions.navigate to reliably navigate to nested screen
-    navigation.dispatch(
-      CommonActions.navigate({
-        name: "ListenTab",
-        params: {
-          screen: "NowPlaying",
-          params: { songId: currentSong.id },
-        },
-      })
-    );
+    // Navigate to ListenTab first, then to NowPlaying within it
+    navigation.navigate("ListenTab", {
+      screen: "NowPlaying",
+      params: { songId: currentSong.id },
+    });
   };
 
   const handlePlayPause = (event: any) => {

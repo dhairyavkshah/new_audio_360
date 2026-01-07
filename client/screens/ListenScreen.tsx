@@ -234,6 +234,16 @@ export default function ListenScreen() {
   );
 
   const STICKY_HEADER_HEIGHT = 80;
+  const SONG_ITEM_HEIGHT = 72;
+
+  const getItemLayout = useCallback(
+    (data: ArrayLike<Song> | null | undefined, index: number) => ({
+      length: SONG_ITEM_HEIGHT,
+      offset: SONG_ITEM_HEIGHT * index,
+      index,
+    }),
+    []
+  );
 
   return (
     <ThemedView style={styles.container}>
@@ -248,6 +258,12 @@ export default function ListenScreen() {
         ]}
         ListEmptyComponent={renderEmptyList}
         showsVerticalScrollIndicator={false}
+        initialNumToRender={15}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        removeClippedSubviews={Platform.OS === 'android'}
+        updateCellsBatchingPeriod={50}
+        getItemLayout={getItemLayout}
       />
       {renderSortOverlay()}
 

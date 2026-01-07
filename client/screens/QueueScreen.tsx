@@ -72,6 +72,17 @@ export default function QueueScreen() {
   const currentIndex = currentSong ? queue.findIndex(s => s.id === currentSong.id) : -1;
   const upNext = currentIndex >= 0 ? queue.slice(currentIndex + 1) : queue;
 
+  const QUEUE_ITEM_HEIGHT = 72;
+
+  const getItemLayout = useCallback(
+    (data: ArrayLike<Song> | null | undefined, index: number) => ({
+      length: QUEUE_ITEM_HEIGHT,
+      offset: QUEUE_ITEM_HEIGHT * index,
+      index,
+    }),
+    []
+  );
+
   const renderSong = ({ item, index }: { item: Song; index: number }) => {
     const isCurrentSong = currentSong?.id === item.id;
     const isSelected = selectedSongs.includes(item.id);
@@ -207,6 +218,12 @@ export default function QueueScreen() {
           { paddingBottom: insets.bottom + Spacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
+        initialNumToRender={15}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        removeClippedSubviews={Platform.OS === 'android'}
+        updateCellsBatchingPeriod={50}
+        getItemLayout={getItemLayout}
       />
     </ThemedView>
   );
