@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
@@ -9,6 +9,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext } from "@/contexts/ThemeContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Spacing, BorderRadius, Layout } from "@/constants/theme";
 import { getEQPreset, saveEQPreset, clearEQPreset, getSoundMode, saveSoundMode, clearSoundMode } from "@/lib/storage";
 
@@ -88,6 +89,7 @@ export default function SoundLabScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
   const { theme } = useThemeContext();
+  const { isImmersiveModeUnlocked } = useSubscription();
   const [soundLabMode, setSoundLabMode] = useState<SoundLabMode>("off");
   const [selectedEQ, setSelectedEQ] = useState("Flat");
   const [selectedImmersive, setSelectedImmersive] = useState("Music");
@@ -142,6 +144,16 @@ export default function SoundLabScreen() {
 
   const handleImmersiveChange = async (mode: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    if (!isImmersiveModeUnlocked()) {
+      Alert.alert(
+        "Premium Feature",
+        "Upgrade to Premium to unlock Immersive Modes for a rich, cinematic audio experience.",
+        [{ text: "OK", style: "default" }]
+      );
+      return;
+    }
+    
     if (soundLabMode === "immersive" && selectedImmersive === mode) {
       setSoundLabMode("off");
       setSelectedImmersive("");
@@ -208,7 +220,12 @@ export default function SoundLabScreen() {
             <ThemedText type="body" style={styles.sectionTitle}>
               Immersive Modes
             </ThemedText>
-            {soundLabMode === "immersive" && selectedImmersive ? (
+            {!isImmersiveModeUnlocked() ? (
+              <View style={[styles.premiumBadge, { backgroundColor: theme.warning + "20" }]}>
+                <MaterialCommunityIcons name="crown" size={12} color={theme.warning} />
+                <ThemedText type="caption" style={{ color: theme.warning, fontWeight: "600", marginLeft: 4 }}>Premium</ThemedText>
+              </View>
+            ) : soundLabMode === "immersive" && selectedImmersive ? (
               <View style={[styles.activeIndicator, { backgroundColor: theme.primary }]}>
                 <ThemedText type="caption" style={{ color: "#FFFFFF", fontWeight: "600" }}>Active</ThemedText>
               </View>
@@ -320,6 +337,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activeIndicator: {
+    paddingHorizontal: Spacing.s,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.pill,
+  },
+  premiumBadge: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: Spacing.s,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.pill,

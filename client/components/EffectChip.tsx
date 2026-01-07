@@ -16,6 +16,7 @@ interface EffectChipProps {
   isSelected: boolean;
   onPress: () => void;
   isPremium?: boolean;
+  isLocked?: boolean;
   disabled?: boolean;
 }
 
@@ -26,6 +27,7 @@ export function EffectChip({
   isSelected,
   onPress,
   isPremium = false,
+  isLocked = false,
   disabled = false,
 }: EffectChipProps) {
   const { theme } = useThemeContext();
@@ -71,12 +73,14 @@ export function EffectChip({
         type="small"
         style={[
           styles.label,
-          { color: isSelected ? "#FFFFFF" : theme.text },
+          { color: isLocked ? theme.textSecondary : isSelected ? "#FFFFFF" : theme.text },
         ]}
       >
         {label}
       </ThemedText>
-      {isPremium ? (
+      {isLocked ? (
+        <MaterialCommunityIcons name="lock" size={12} color={theme.warning} style={styles.lockIcon} />
+      ) : isPremium ? (
         <View style={[styles.premiumIndicator, { backgroundColor: theme.accent }]} />
       ) : null}
     </AnimatedPressable>
@@ -101,5 +105,8 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     marginLeft: Spacing.sm,
+  },
+  lockIcon: {
+    marginLeft: Spacing.xs,
   },
 });

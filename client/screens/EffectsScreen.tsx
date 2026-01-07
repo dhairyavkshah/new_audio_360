@@ -13,6 +13,7 @@ import { EffectChip } from "@/components/EffectChip";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useStudioContext, REVERB_PRESETS, NOISE_REDUCTION_LEVELS } from "@/contexts/StudioContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
@@ -28,16 +29,23 @@ export default function EffectsScreen() {
   const route = useRoute<EffectsRouteProp>();
   const { theme } = useThemeContext();
   const { selectedReverb, noiseReduction, setSelectedReverb, setNoiseReduction } = useStudioContext();
+  const { isNoiseReductionUnlocked, isReverbUnlocked } = useSubscription();
 
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handleNoiseReductionSelect = (level: typeof noiseReduction) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!isNoiseReductionUnlocked(level)) {
+      return;
+    }
     setNoiseReduction(level);
   };
 
   const handleReverbSelect = (reverb: typeof selectedReverb) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!isReverbUnlocked(reverb)) {
+      return;
+    }
     setSelectedReverb(reverb);
   };
 
@@ -102,6 +110,7 @@ export default function EffectsScreen() {
                 key={level}
                 label={level}
                 isSelected={noiseReduction === level}
+                isLocked={!isNoiseReductionUnlocked(level)}
                 onPress={() => handleNoiseReductionSelect(level)}
               />
             ))}
@@ -124,6 +133,7 @@ export default function EffectsScreen() {
                 key={reverb}
                 label={reverb}
                 isSelected={selectedReverb === reverb}
+                isLocked={!isReverbUnlocked(reverb)}
                 onPress={() => handleReverbSelect(reverb)}
               />
             ))}

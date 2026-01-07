@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable, Alert } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
@@ -9,6 +9,7 @@ import Animated, {
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { ThemeName, ThemeColors, Spacing, BorderRadius, themeRegistry } from "@/constants/theme";
 import { getSkin, skinDefinitions } from "@/constants/skins";
 
@@ -24,6 +25,7 @@ function ThemeOption({
   label,
   description,
   isSelected,
+  isLocked,
   previewIsDark,
   onPress,
 }: {
@@ -31,6 +33,7 @@ function ThemeOption({
   label: string;
   description: string;
   isSelected: boolean;
+  isLocked: boolean;
   previewIsDark: boolean;
   onPress: () => void;
 }) {
@@ -54,6 +57,12 @@ function ThemeOption({
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (isLocked) {
+      Alert.alert("Premium Theme", "Upgrade to Premium to unlock all 55 themes.", [
+        { text: "OK", style: "default" }
+      ]);
+      return;
+    }
     onPress();
   };
 
@@ -112,7 +121,11 @@ function ThemeOption({
           {description}
         </ThemedText>
       </View>
-      {isSelected ? (
+      {isLocked ? (
+        <View style={[styles.lockBadge, { backgroundColor: theme.warning + "20" }]}>
+          <MaterialCommunityIcons name="lock" size={14} color={theme.warning} />
+        </View>
+      ) : isSelected ? (
         <View style={[styles.checkmark, { backgroundColor: themePreview.primary, borderRadius: skin.shapes.borderRadiusFull }]}>
           <MaterialCommunityIcons name="check" size={14} color="#FFFFFF" />
         </View>
@@ -136,6 +149,7 @@ const categories = [
 
 export function ThemeSelector({ currentTheme, onThemeChange }: ThemeSelectorProps) {
   const { theme } = useThemeContext();
+  const { isThemeUnlocked } = useSubscription();
 
   const themesByCategory = categories.map(cat => ({
     ...cat,
@@ -167,6 +181,7 @@ export function ThemeSelector({ currentTheme, onThemeChange }: ThemeSelectorProp
                 label={option.label}
                 description={option.description}
                 isSelected={currentTheme === option.name}
+                isLocked={!isThemeUnlocked(option.name)}
                 previewIsDark={option.isDark}
                 onPress={() => onThemeChange(option.name)}
               />
@@ -235,6 +250,13 @@ const styles = StyleSheet.create({
   checkmark: {
     width: 22,
     height: 22,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  lockBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     justifyContent: "center",
     alignItems: "center",
   },
