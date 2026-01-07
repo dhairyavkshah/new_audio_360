@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 export type ReverbPreset = 'None' | 'Small Studio' | 'Medium Studio' | 'Large Studio' | 'Open Theatre' | 'Auditorium';
 export type NoiseReductionLevel = 'Off' | 'Light' | 'Medium' | 'Strong';
@@ -74,6 +75,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const { isNoiseReductionUnlocked, isReverbUnlocked } = useSubscription();
 
   useEffect(() => {
     loadProjects();
@@ -89,10 +91,29 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (currentProject) {
-      setSelectedReverbState(currentProject.voiceSettings.reverb);
-      setNoiseReductionState(currentProject.voiceSettings.noiseReduction);
+      let newReverb = currentProject.voiceSettings.reverb;
+      let newNoise = currentProject.voiceSettings.noiseReduction;
+      
+      if (!isReverbUnlocked(newReverb)) {
+        newReverb = 'None';
+      }
+      if (!isNoiseReductionUnlocked(newNoise)) {
+        newNoise = 'Off';
+      }
+      
+      setSelectedReverbState(newReverb);
+      setNoiseReductionState(newNoise);
     }
-  }, [currentProject]);
+  }, [currentProject, isReverbUnlocked, isNoiseReductionUnlocked]);
+  
+  useEffect(() => {
+    if (!isReverbUnlocked(selectedReverb)) {
+      setSelectedReverbState('None');
+    }
+    if (!isNoiseReductionUnlocked(noiseReduction)) {
+      setNoiseReductionState('Off');
+    }
+  }, [isReverbUnlocked, isNoiseReductionUnlocked]);
 
   const loadProjects = async () => {
     try {

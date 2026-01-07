@@ -103,14 +103,20 @@ export default function SoundLabScreen() {
         setSelectedEQ(eqPreset);
         setSoundLabMode("equalizer");
       } else if (soundMode) {
-        setSelectedImmersive(soundMode);
-        setSoundLabMode("immersive");
+        if (isImmersiveModeUnlocked()) {
+          setSelectedImmersive(soundMode);
+          setSoundLabMode("immersive");
+        } else {
+          await clearSoundMode();
+          setSoundLabMode("off");
+          setSelectedImmersive("");
+        }
       } else {
         setSoundLabMode("off");
       }
     };
     loadSettings();
-  }, []);
+  }, [isImmersiveModeUnlocked]);
 
   const handleSoundLabModeChange = async (mode: SoundLabMode) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
