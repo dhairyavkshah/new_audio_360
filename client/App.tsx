@@ -15,12 +15,27 @@ import { MediaLibraryProvider, useMediaLibraryContext } from "@/contexts/MediaLi
 import { NavigationProvider } from "@/contexts/NavigationContext";
 import { SoundLabProvider } from "@/contexts/SoundLabContext";
 import { StudioProvider } from "@/contexts/StudioContext";
-import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
 import SplashScreen from "@/screens/SplashScreen";
 import LoadingScreen from "@/screens/LoadingScreen";
 import PermissionOnboardingScreen from "@/screens/PermissionOnboardingScreen";
+import LockoutScreen from "@/screens/LockoutScreen";
 
 type AppState = "splash" | "loading" | "checkingOnboarding" | "onboarding" | "ready";
+
+function LockoutGuard({ children }: { children: React.ReactNode }) {
+  const { isLocked, isLoading } = useSubscription();
+
+  if (isLoading) {
+    return <LoadingScreen message="Verifying app integrity..." />;
+  }
+
+  if (isLocked) {
+    return <LockoutScreen />;
+  }
+
+  return <>{children}</>;
+}
 
 function AppContent() {
   const [appState, setAppState] = useState<AppState>("splash");
@@ -98,15 +113,17 @@ export default function App() {
             <ThemeProvider>
               <UiSoundProvider>
                 <SubscriptionProvider>
-                  <MediaLibraryProvider>
-                    <SoundLabProvider>
-                      <StudioProvider>
-                        <PlayerProvider>
-                          <AppContent />
-                        </PlayerProvider>
-                      </StudioProvider>
-                    </SoundLabProvider>
-                  </MediaLibraryProvider>
+                  <LockoutGuard>
+                    <MediaLibraryProvider>
+                      <SoundLabProvider>
+                        <StudioProvider>
+                          <PlayerProvider>
+                            <AppContent />
+                          </PlayerProvider>
+                        </StudioProvider>
+                      </SoundLabProvider>
+                    </MediaLibraryProvider>
+                  </LockoutGuard>
                 </SubscriptionProvider>
               </UiSoundProvider>
             </ThemeProvider>
