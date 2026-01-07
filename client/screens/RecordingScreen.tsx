@@ -262,17 +262,93 @@ export default function RecordingScreen() {
   };
 
   const handleClose = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    if (isRecording) {
-      try {
-        await studioAudioEngine.stopRecordingWithBackingTrack();
-      } catch {}
-    } else if (isBackingTrackPlaying) {
-      await studioAudioEngine.stopBackingTrack();
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    
-    navigation.goBack();
+
+    if (isRecording || isPaused) {
+      Alert.alert(
+        "Recording in Progress",
+        "You have an unsaved recording. What would you like to do?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Discard & Exit",
+            style: "destructive",
+            onPress: async () => {
+              if (recordingIntervalRef.current) {
+                clearInterval(recordingIntervalRef.current);
+                recordingIntervalRef.current = null;
+              }
+              
+              // Force stop both recording and backing track separately
+              try {
+                await studioAudioEngine.stopRecording();
+              } catch {}
+              try {
+                await studioAudioEngine.stopBackingTrack();
+              } catch {}
+              
+              setIsRecording(false);
+              setIsPaused(false);
+              setIsBackingTrackPlaying(false);
+              navigation.goBack();
+            },
+          },
+          {
+            text: "Save & Mix",
+            onPress: async () => {
+              if (recordingIntervalRef.current) {
+                clearInterval(recordingIntervalRef.current);
+                recordingIntervalRef.current = null;
+              }
+
+              let recordedUri: string | null = null;
+              try {
+                recordedUri = await studioAudioEngine.stopRecordingWithBackingTrack();
+              } catch (error) {
+                console.error("Failed to stop recording:", error);
+                Alert.alert(
+                  "Recording Not Available",
+                  "No recording was captured.",
+                  [{ text: "OK" }]
+                );
+                return;
+              }
+
+              setIsRecording(false);
+              setIsPaused(false);
+              setIsBackingTrackPlaying(false);
+
+              if (currentProject && recordedUri) {
+                try {
+                  await updateProject(currentProject.id, {
+                    voiceRecordingUri: recordedUri,
+                    backgroundTrackUri: song?.audioUrl || null,
+                    backgroundTrackTitle: song?.title || null,
+                    duration: recordingTime,
+                  });
+                } catch (error) {
+                  console.error("Failed to update project:", error);
+                }
+              }
+
+              const recordingId = `rec_${Date.now()}`;
+              navigation.navigate("Mixing", { recordingId });
+            },
+          },
+        ]
+      );
+    } else {
+      if (isBackingTrackPlaying) {
+        await studioAudioEngine.stopBackingTrack();
+        setIsBackingTrackPlaying(false);
+      }
+      navigation.goBack();
+    }
   };
 
   const formatTime = (seconds: number) => {
