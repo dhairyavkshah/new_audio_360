@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 export type ProgressCallback = (position: number, duration: number) => void;
 export type RecordingProgressCallback = (durationMs: number) => void;
+export type MeteringCallback = (level: number) => void;
 
 interface AudioEngineState {
   backingTrackLoaded: boolean;
@@ -38,7 +39,10 @@ export class StudioAudioEngine {
 
   private progressCallback: ProgressCallback | null = null;
   private recordingProgressCallback: RecordingProgressCallback | null = null;
+  private meteringCallback: MeteringCallback | null = null;
   private recordingInterval: NodeJS.Timeout | null = null;
+  private meteringInterval: NodeJS.Timeout | null = null;
+  private currentMeteringLevel: number = -160;
 
   async configureAudioMode(): Promise<void> {
     try {
@@ -231,11 +235,41 @@ export class StudioAudioEngine {
         }, 100);
       }
 
+      this.startMeteringUpdates();
+
     } catch (error) {
       console.error('Failed to start recording:', error);
       this.state.isRecording = false;
       throw error;
     }
+  }
+
+  private async startMeteringUpdates(): Promise<void> {
+    if (this.meteringInterval) {
+      clearInterval(this.meteringInterval);
+    }
+
+    this.meteringInterval = setInterval(async () => {
+      if (this.recording && this.state.isRecording) {
+        try {
+          const status = await this.recording.getStatusAsync();
+          if (status.isRecording && status.metering !== undefined) {
+            this.currentMeteringLevel = status.metering;
+            this.meteringCallback?.(status.metering);
+          }
+        } catch (error) {
+          // Silent fail - metering is optional
+        }
+      }
+    }, 50);
+  }
+
+  private stopMeteringUpdates(): void {
+    if (this.meteringInterval) {
+      clearInterval(this.meteringInterval);
+      this.meteringInterval = null;
+    }
+    this.currentMeteringLevel = -160;
   }
 
   async stopRecording(): Promise<string> {
@@ -244,6 +278,8 @@ export class StudioAudioEngine {
     }
 
     try {
+      this.stopMeteringUpdates();
+      
       if (this.recordingInterval) {
         clearInterval(this.recordingInterval);
         this.recordingInterval = null;
@@ -431,6 +467,14 @@ export class StudioAudioEngine {
     this.recordingProgressCallback = callback;
   }
 
+  setMeteringCallback(callback: MeteringCallback | null): void {
+    this.meteringCallback = callback;
+  }
+
+  getCurrentMeteringLevel(): number {
+    return this.currentMeteringLevel;
+  }
+
   async seekMix(positionMs: number): Promise<void> {
     const clampedPosition = Math.max(0, Math.min(positionMs, this.state.duration));
     
@@ -455,6 +499,8 @@ export class StudioAudioEngine {
 
   async unloadAll(): Promise<void> {
     try {
+      this.stopMeteringUpdates();
+      
       if (this.recordingInterval) {
         clearInterval(this.recordingInterval);
         this.recordingInterval = null;

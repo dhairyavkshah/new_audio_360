@@ -8,7 +8,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { RecordButton } from "@/components/RecordButton";
-import { AudioWaveform } from "@/components/AudioWaveform";
+import { LiveAudioWaveform } from "@/components/LiveAudioWaveform";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useStudioContext } from "@/contexts/StudioContext";
@@ -37,6 +37,7 @@ export default function RecordingScreen() {
   const [isBackingTrackLoaded, setIsBackingTrackLoaded] = useState(false);
   const [isBackingTrackPlaying, setIsBackingTrackPlaying] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [audioLevel, setAudioLevel] = useState<number>(-160);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const textShadowStyle = {
@@ -89,8 +90,13 @@ export default function RecordingScreen() {
       setRecordingTime(Math.floor(durationMs / 1000));
     });
 
+    studioAudioEngine.setMeteringCallback((level) => {
+      setAudioLevel(level);
+    });
+
     return () => {
       studioAudioEngine.setRecordingProgressCallback(null);
+      studioAudioEngine.setMeteringCallback(null);
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
       }
@@ -302,12 +308,14 @@ export default function RecordingScreen() {
         </View>
 
         <View style={styles.waveformContainer}>
-          <AudioWaveform
-            isAnimating={isRecording || isBackingTrackPlaying}
+          <LiveAudioWaveform
+            audioLevel={audioLevel}
+            isActive={isRecording}
             barCount={60}
             barWidth={4}
             height={80}
             color={isRecording ? theme.recordButton : theme.primary}
+            sensitivity={1.8}
           />
         </View>
 
