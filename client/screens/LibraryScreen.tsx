@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Image, TextInput, Platform, ActivityIndicator, FlatList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -9,7 +9,9 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { TopBar } from "@/components/TopBar";
 import { SongContextMenu } from "@/components/SongContextMenu";
+import { SongCard } from "@/components/SongCard";
 import { AnimatedCard } from "@/components/AnimatedCard";
+import { usePlayer } from "@/hooks/usePlayer";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
@@ -113,6 +115,7 @@ export default function LibraryScreen() {
   const { playTapSound } = useUiSound();
   const { favorites, recentlyPlayed, mostPlayed, playSong, setQueue } = usePlayerContext();
   const { songs: deviceSongs, isLoading: isLoadingSongs, progress, usingMockData, hideSong, refreshSongs, error: mediaError } = useMediaLibraryContext();
+  const { currentSong, isPlaying } = usePlayer();
   const [activeCategory, setActiveCategory] = useState<CategoryType>("songs");
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -248,7 +251,15 @@ export default function LibraryScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setQueue(songList);
     playSong(song);
-    navigation.navigate("NowPlaying" as any, { songId: song.id });
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: "ListenTab",
+        params: {
+          screen: "NowPlaying",
+          params: { songId: song.id },
+        },
+      })
+    );
   }, [playTapSound, setQueue, playSong, navigation]);
 
   const handlePlaylistPress = (playlist: Playlist) => {
@@ -333,32 +344,13 @@ export default function LibraryScreen() {
   );
 
   const renderSongItem = ({ item: song, songs }: { item: PlayableSong; songs: PlayableSong[] }) => {
-    const webContextProps = Platform.OS === "web" ? {
-      onContextMenu: (e: any) => {
-        e.preventDefault?.();
-        handleSongContextMenu(song);
-      }
-    } : {};
     return (
-      <Pressable
-        style={[styles.songListItem, { backgroundColor: theme.surfaceContainerLow }]}
+      <SongCard
+        song={song}
         onPress={() => handleSongPress(song, songs)}
-        onLongPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          handleSongContextMenu(song);
-        }}
-        delayLongPress={400}
-        {...webContextProps}
-      >
-        <Image source={{ uri: song.artwork }} style={styles.songListArtwork} />
-        <View style={styles.songListInfo}>
-          <ThemedText type="bodyMedium" numberOfLines={1}>{song.title}</ThemedText>
-          <ThemedText type="bodySmall" numberOfLines={1} style={{ color: theme.onSurfaceVariant }}>{song.artist}</ThemedText>
-        </View>
-        <ThemedText type="labelSmall" style={{ color: theme.onSurfaceVariant }}>
-          {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
-        </ThemedText>
-      </Pressable>
+        onContextMenu={handleSongContextMenu}
+        isPlaying={currentSong?.id === song.id && isPlaying}
+      />
     );
   };
 
@@ -379,7 +371,7 @@ export default function LibraryScreen() {
         data={songs}
         renderItem={({ item }) => renderSongItem({ item, songs })}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + Spacing.m }]}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
         maxToRenderPerBatch={10}
@@ -412,7 +404,7 @@ export default function LibraryScreen() {
           </AnimatedCard>
         )}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.gridContent}
+        contentContainerStyle={[styles.gridContent, { paddingBottom: tabBarHeight + 80 + Spacing.m }]}
         columnWrapperStyle={styles.albumRow}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
@@ -446,7 +438,7 @@ export default function LibraryScreen() {
           </Pressable>
         )}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + Spacing.m }]}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
         maxToRenderPerBatch={10}
@@ -490,7 +482,7 @@ export default function LibraryScreen() {
           </Pressable>
         )}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + Spacing.m }]}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
         maxToRenderPerBatch={10}
@@ -565,7 +557,7 @@ export default function LibraryScreen() {
 
       {renderSearchBar()}
 
-      <View style={[styles.contentArea, { paddingBottom: tabBarHeight + Spacing.m }]}>
+      <View style={[styles.contentArea, { flex: 1 }]}>
         {renderContent()}
       </View>
 
