@@ -45,19 +45,35 @@ export default function RecordingScreen() {
     textShadowRadius: 4,
   };
 
+  const getAudioUri = (audioUrl: string): string | null => {
+    if (!audioUrl) return null;
+    
+    if (audioUrl.startsWith('http://') || audioUrl.startsWith('https://') || audioUrl.startsWith('file://')) {
+      return audioUrl;
+    }
+    
+    if (Platform.OS === 'web') {
+      return audioUrl.startsWith('/') ? audioUrl : `/${audioUrl}`;
+    }
+    
+    return null;
+  };
+
   useEffect(() => {
     const initAudio = async () => {
       try {
         await studioAudioEngine.configureAudioMode();
         
         if (song?.audioUrl) {
-          const audioUri = song.audioUrl.startsWith('http') 
-            ? song.audioUrl 
-            : `${window.location.origin}${song.audioUrl}`;
+          const audioUri = getAudioUri(song.audioUrl);
           
-          await studioAudioEngine.loadBackingTrack(audioUri);
-          setIsBackingTrackLoaded(true);
-          setLoadError(null);
+          if (audioUri) {
+            await studioAudioEngine.loadBackingTrack(audioUri);
+            setIsBackingTrackLoaded(true);
+            setLoadError(null);
+          } else {
+            setLoadError("Demo audio only available in web preview. Use your device's music library for recording.");
+          }
         } else {
           setLoadError("This song doesn't have an audio file for recording");
         }

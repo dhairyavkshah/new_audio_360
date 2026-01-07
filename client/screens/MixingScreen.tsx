@@ -40,8 +40,24 @@ export default function MixingScreen() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(100);
+  const [backingTrackAvailable, setBackingTrackAvailable] = useState(true);
+  const [backingTrackError, setBackingTrackError] = useState<string | null>(null);
 
   const isPremium = plan === 'premium';
+
+  const getAudioUri = (audioUrl: string): string | null => {
+    if (!audioUrl) return null;
+    
+    if (audioUrl.startsWith('http://') || audioUrl.startsWith('https://') || audioUrl.startsWith('file://')) {
+      return audioUrl;
+    }
+    
+    if (Platform.OS === 'web') {
+      return audioUrl.startsWith('/') ? audioUrl : `/${audioUrl}`;
+    }
+    
+    return null;
+  };
 
   useEffect(() => {
     const loadTracks = async () => {
@@ -54,10 +70,23 @@ export default function MixingScreen() {
         }
 
         if (currentProject?.backgroundTrackUri) {
-          const audioUri = currentProject.backgroundTrackUri.startsWith('http')
-            ? currentProject.backgroundTrackUri
-            : `${window.location.origin}${currentProject.backgroundTrackUri}`;
-          await studioAudioEngine.loadBackingTrack(audioUri);
+          const audioUri = getAudioUri(currentProject.backgroundTrackUri);
+          if (audioUri) {
+            try {
+              await studioAudioEngine.loadBackingTrack(audioUri);
+              setBackingTrackAvailable(true);
+              setBackingTrackError(null);
+            } catch (e) {
+              console.error("Failed to load backing track:", e);
+              setBackingTrackAvailable(false);
+              setBackingTrackError("Failed to load backing track");
+            }
+          } else {
+            setBackingTrackAvailable(false);
+            setBackingTrackError("Demo audio only available in web preview. Music track unavailable in mix.");
+          }
+        } else {
+          setBackingTrackAvailable(false);
         }
 
         setMusicVolume(studioAudioEngine.getMusicVolume());
@@ -184,10 +213,26 @@ export default function MixingScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        {backingTrackError ? (
+          <GlassCard style={styles.warningCard}>
+            <View style={styles.warningContent}>
+              <MaterialCommunityIcons name="alert-circle" size={20} color={theme.warning} />
+              <View style={styles.warningText}>
+                <ThemedText type="body" style={{ fontWeight: "600", color: theme.warning }}>
+                  Music Track Unavailable
+                </ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                  {backingTrackError}
+                </ThemedText>
+              </View>
+            </View>
+          </GlassCard>
+        ) : null}
+
         <GlassCard style={styles.waveformCard}>
           <View style={styles.waveformHeader}>
             <ThemedText type="body" style={{ fontWeight: "600" }}>
-              Preview
+              Preview {!backingTrackAvailable ? "(Voice Only)" : ""}
             </ThemedText>
             <View style={styles.playControls}>
               <Pressable
@@ -206,19 +251,19 @@ export default function MixingScreen() {
           </View>
           
           <View style={styles.waveformRow}>
-            <View style={styles.waveformTrack}>
+            <View style={backingTrackAvailable ? styles.waveformTrack : styles.waveformTrackDisabled}>
               <View style={styles.trackLabel}>
-                <MaterialCommunityIcons name="music" size={12} color={theme.primary} />
-                <ThemedText type="caption" style={{ marginLeft: Spacing.xs, color: theme.textSecondary }}>
-                  Music ({musicVolume}%)
+                <MaterialCommunityIcons name="music" size={12} color={backingTrackAvailable ? theme.primary : theme.textTertiary} />
+                <ThemedText type="caption" style={{ marginLeft: Spacing.xs, color: backingTrackAvailable ? theme.textSecondary : theme.textTertiary }}>
+                  Music ({backingTrackAvailable ? `${musicVolume}%` : "N/A"})
                 </ThemedText>
               </View>
               <AudioWaveform
-                isAnimating={isPlaying}
+                isAnimating={isPlaying && backingTrackAvailable}
                 barCount={40}
                 barWidth={2}
                 height={32}
-                color={theme.primary}
+                color={backingTrackAvailable ? theme.primary : theme.textTertiary}
               />
             </View>
             <View style={styles.waveformTrack}>
@@ -369,6 +414,17 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Layout.horizontalPadding,
   },
+  warningCard: {
+    marginBottom: Spacing.lg,
+  },
+  warningContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  warningText: {
+    flex: 1,
+    marginLeft: Spacing.md,
+  },
   waveformCard: {
     marginBottom: Layout.sectionGap,
   },
@@ -401,6 +457,10 @@ const styles = StyleSheet.create({
   },
   waveformTrack: {
     marginBottom: Spacing.sm,
+  },
+  waveformTrackDisabled: {
+    marginBottom: Spacing.sm,
+    opacity: 0.5,
   },
   trackLabel: {
     flexDirection: "row",
