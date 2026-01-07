@@ -37,14 +37,21 @@ The app features a 4-tab navigation structure:
     - **ListenTab**: Main music player, Now Playing, Sound Lab, and Queue management
     - **LibraryTab**: Music organization with **Quick Access Category Grid** (7 color-coded cards: Liked, Recent, Top, Songs, Albums, Artists, Playlists) - all categories visible at once without horizontal scrolling
     - **StudioTab**: Voice recording over backing tracks with voice-specific effects (Noise Reduction + Reverb presets)
-    - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Support Developer (donation), and About
+    - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Subscription Plan, and About
 
 ## Recent Changes (2026-01-07)
+- **Subscription System**: Replaced donation model with two-tier subscription (one-time purchase via Google Play Billing)
+  - **Free**: Basic playback, limited themes (fluent only), Equalizer only, Off/Light noise + None/Small reverb
+  - **Standard** (₹100/INR, $10/USD): 5 themes, all Equalizer presets, Light noise + Small Studio reverb
+  - **Premium** (₹299/INR, $30/USD): All 55 themes, Immersive modes, full Studio effects
+  - Mock IAP for development; real billing requires Play Store publication
+  - Feature gating: ThemeSelector shows locks, SoundLabScreen shows Premium badge, EffectsScreen shows lock icons
+  - Plan enforcement: locked features auto-reset when plan changes or on load
 - **Studio Mode**: Added 4th tab for voice recording over karaoke/backing tracks
   - New StudioContext for project management and voice-specific effects
   - Voice effects (separate from Sound Lab): Noise Reduction (Off/Light/Medium/Strong) + Reverb presets (Small/Medium/Large Studio, Open Theatre, Auditorium)
   - Full recording flow: Select backing track → Record voice → Mix volumes → Apply effects → Save
-  - All effects are FREE (no premium locks)
+  - Effects gated by subscription tier
 - **Real audio test songs**: Added "O Maahi" (Arijit Singh) and "Dhurandhar Title Track" with 320kbps audio
 - **Safe tab bar height hook**: Created `useSafeTabBarHeight` hook to fix "Invalid hook call" errors when useBottomTabBarHeight was called in try/catch blocks - now all screens use this safe wrapper
 - **Audio playback improvements**: Fixed audio source handling to properly load device songs (expo-media-library) and show clear error messages for demo content without audio files
