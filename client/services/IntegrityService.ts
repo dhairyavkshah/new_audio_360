@@ -1,12 +1,14 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
+import { SecureStorage } from './SecureStorage';
 
-const _0x1a2b = 'integrity_state';
-const _0x3c4d = 'app_signature';
-const _0x5e6f = 'violation_count';
-const _0x7g8h = 'last_check';
-const _0x9i0j = 'lockout_until';
+const _s1 = 'na360_is_v2';
+const _s2 = 'na360_vc_v2';
+const _s3 = 'na360_lu_v2';
+const _b1 = 'na360_is_bk';
+const _b2 = 'na360_vc_bk';
 
 const LOCKOUT_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_VIOLATIONS = 3;
@@ -34,81 +36,81 @@ class IntegrityServiceClass {
   };
 
   private initialized = false;
-  private expectedSignature: string | null = null;
+  private deviceFingerprint: string | null = null;
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
     
     try {
+      await SecureStorage.initialize();
+      this.deviceFingerprint = await SecureStorage.getDeviceFingerprint();
       await this.loadState();
-      await this.generateAppSignature();
       this.initialized = true;
     } catch (e) {
       console.warn('Integrity init error');
+      this.initialized = true;
     }
   }
 
   private async loadState(): Promise<void> {
     try {
-      const stateData = await AsyncStorage.getItem(_0x1a2b);
-      if (stateData) {
-        const parsed = JSON.parse(stateData);
-        this.state = { ...this.state, ...parsed };
-        
-        if (this.state.lockoutUntil && Date.now() > this.state.lockoutUntil) {
-          this.state.isLocked = false;
-          this.state.lockoutUntil = null;
-          this.state.violationCount = Math.max(0, this.state.violationCount - 1);
-        }
+      let stateData: string | null = null;
+      let violationCount = 0;
+      let lockoutUntil: number | null = null;
+
+      if (Platform.OS !== 'web') {
+        try {
+          const secureVc = await SecureStore.getItemAsync(_s2);
+          const secureLu = await SecureStore.getItemAsync(_s3);
+          if (secureVc) violationCount = parseInt(secureVc, 10) || 0;
+          if (secureLu) lockoutUntil = parseInt(secureLu, 10) || null;
+        } catch (e) {}
       }
-    } catch (e) {
-      // Silent fail
-    }
+
+      const backupVc = await AsyncStorage.getItem(_b2);
+      if (backupVc) {
+        const backupCount = parseInt(backupVc, 10) || 0;
+        violationCount = Math.max(violationCount, backupCount);
+      }
+
+      stateData = await AsyncStorage.getItem(_b1);
+      if (stateData) {
+        try {
+          const parsed = JSON.parse(stateData);
+          this.state = { ...this.state, ...parsed };
+        } catch (e) {}
+      }
+
+      this.state.violationCount = violationCount;
+      if (lockoutUntil) this.state.lockoutUntil = lockoutUntil;
+
+      if (this.state.lockoutUntil && Date.now() > this.state.lockoutUntil) {
+        this.state.isLocked = false;
+        this.state.lockoutUntil = null;
+        this.state.violationCount = Math.max(0, this.state.violationCount - 1);
+        await this.saveState();
+      } else if (this.state.lockoutUntil) {
+        this.state.isLocked = true;
+      }
+    } catch (e) {}
   }
 
   private async saveState(): Promise<void> {
     try {
-      await AsyncStorage.setItem(_0x1a2b, JSON.stringify(this.state));
-    } catch (e) {
-      // Silent fail
-    }
-  }
-
-  private async generateAppSignature(): Promise<void> {
-    const components = [
-      Platform.OS,
-      Platform.Version?.toString() || '',
-      'na360',
-      '1.0.0',
-    ];
-    
-    const signatureBase = components.join('|');
-    this.expectedSignature = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      signatureBase
-    );
-    
-    const storedSig = await AsyncStorage.getItem(_0x3c4d);
-    if (!storedSig) {
-      await AsyncStorage.setItem(_0x3c4d, this.expectedSignature);
-    }
-  }
-
-  private async checkAppSignature(): Promise<CheckResult> {
-    try {
-      const storedSig = await AsyncStorage.getItem(_0x3c4d);
-      if (!storedSig || !this.expectedSignature) {
-        return { passed: true, code: 'SIG_INIT' };
+      if (Platform.OS !== 'web') {
+        try {
+          await SecureStore.setItemAsync(_s2, this.state.violationCount.toString());
+          if (this.state.lockoutUntil) {
+            await SecureStore.setItemAsync(_s3, this.state.lockoutUntil.toString());
+          } else {
+            await SecureStore.deleteItemAsync(_s3);
+          }
+        } catch (e) {}
       }
-      
-      if (storedSig !== this.expectedSignature) {
-        return { passed: false, code: 'SIG_MISMATCH' };
-      }
-      
-      return { passed: true, code: 'SIG_OK' };
-    } catch (e) {
-      return { passed: true, code: 'SIG_ERR' };
-    }
+
+      await AsyncStorage.setItem(_b2, this.state.violationCount.toString());
+      await AsyncStorage.setItem(_b1, JSON.stringify(this.state));
+    } catch (e) {}
   }
 
   private checkEnvironment(): CheckResult {
@@ -117,11 +119,8 @@ class IntegrityServiceClass {
     }
 
     const suspiciousGlobals = [
-      'Frida',
-      'Cycript', 
-      'substrate',
-      'xposed',
-      'MSHookFunction',
+      'Frida', 'Cycript', 'substrate', 'xposed',
+      'MSHookFunction', '_fridaAgent', 'ObjC',
     ];
 
     for (const name of suspiciousGlobals) {
@@ -130,23 +129,33 @@ class IntegrityServiceClass {
       }
     }
 
-    if (typeof __DEV__ !== 'undefined' && __DEV__ === true) {
-      return { passed: true, code: 'ENV_DEV' };
+    const suspiciousProps = ['__frida__', '__xposed__'];
+    for (const prop of suspiciousProps) {
+      if ((global as any)[prop] !== undefined) {
+        return { passed: false, code: 'ENV_INJECT' };
+      }
     }
 
     return { passed: true, code: 'ENV_OK' };
   }
 
   private checkTimingIntegrity(): CheckResult {
+    const iterations = 50000;
     const start = Date.now();
     let counter = 0;
-    for (let i = 0; i < 10000; i++) {
-      counter += Math.random();
+    
+    for (let i = 0; i < iterations; i++) {
+      counter += Math.sin(i) * Math.cos(i);
     }
+    
     const elapsed = Date.now() - start;
     
-    if (elapsed > 5000) {
+    if (elapsed > 10000) {
       return { passed: false, code: 'TIME_SLOW' };
+    }
+    
+    if (elapsed < 0) {
+      return { passed: false, code: 'TIME_BACK' };
     }
     
     return { passed: true, code: 'TIME_OK' };
@@ -154,8 +163,8 @@ class IntegrityServiceClass {
 
   private async checkStorageIntegrity(): Promise<CheckResult> {
     try {
-      const testKey = '_ic_' + Date.now();
-      const testValue = Math.random().toString(36);
+      const testKey = '_ic_' + Date.now() + '_' + Math.random().toString(36);
+      const testValue = Crypto.getRandomBytes(16).join('');
       
       await AsyncStorage.setItem(testKey, testValue);
       const retrieved = await AsyncStorage.getItem(testKey);
@@ -177,43 +186,78 @@ class IntegrityServiceClass {
       AsyncStorage.setItem,
       JSON.parse,
       JSON.stringify,
+      Array.prototype.map,
     ];
 
     for (const fn of criticalFunctions) {
       if (!fn || typeof fn !== 'function') {
         return { passed: false, code: 'FN_MISSING' };
       }
-      
-      const fnStr = fn.toString() || '';
-      if (!fnStr.includes('[native code]') && fnStr.length < 20) {
-        return { passed: false, code: 'FN_MODIFIED' };
+    }
+
+    try {
+      const testObj = { a: 1, b: 'test' };
+      const stringified = JSON.stringify(testObj);
+      const parsed = JSON.parse(stringified);
+      if (parsed.a !== 1 || parsed.b !== 'test') {
+        return { passed: false, code: 'FN_CORRUPT' };
       }
+    } catch (e) {
+      return { passed: false, code: 'FN_ERR' };
     }
 
     return { passed: true, code: 'FN_OK' };
   }
 
+  private async checkSecureStorageIntegrity(): Promise<CheckResult> {
+    try {
+      const testKey = '_ss_test_' + Date.now();
+      const testValue = 'integrity_check_' + Math.random();
+      
+      await SecureStorage.setSecureItem(testKey, testValue);
+      const retrieved = await SecureStorage.getSecureItem(testKey);
+      await SecureStorage.removeSecureItem(testKey);
+      
+      if (retrieved !== testValue) {
+        return { passed: false, code: 'SS_CORRUPT' };
+      }
+      
+      return { passed: true, code: 'SS_OK' };
+    } catch (e) {
+      return { passed: true, code: 'SS_SKIP' };
+    }
+  }
+
   private async verifySubscriptionData(): Promise<CheckResult> {
     try {
-      const subData = await AsyncStorage.getItem('subscription_data');
+      const subData = await SecureStorage.getSecureItem('subscription_data');
       if (!subData) {
         return { passed: true, code: 'SUB_NONE' };
       }
 
-      const parsed = JSON.parse(subData);
+      let parsed;
+      try {
+        parsed = JSON.parse(subData);
+      } catch (e) {
+        return { passed: false, code: 'SUB_PARSE' };
+      }
       
-      if (!parsed.checksum || !parsed.plan || !parsed.timestamp) {
+      if (!parsed.plan || !parsed.purchaseTime) {
         return { passed: false, code: 'SUB_STRUCT' };
       }
 
-      const expectedChecksum = await this.computeChecksum(parsed.plan, parsed.timestamp);
+      if (!parsed.checksum) {
+        return { passed: false, code: 'SUB_NOSUM' };
+      }
+
+      const expectedChecksum = await this.computeChecksum(parsed.plan, parsed.purchaseTime);
       if (parsed.checksum !== expectedChecksum) {
         return { passed: false, code: 'SUB_TAMPER' };
       }
 
-      const age = Date.now() - parsed.timestamp;
-      if (age < 0 || age > 365 * 24 * 60 * 60 * 1000) {
-        return { passed: false, code: 'SUB_TIME' };
+      const age = Date.now() - parsed.purchaseTime;
+      if (age < -60000) {
+        return { passed: false, code: 'SUB_FUTURE' };
       }
 
       return { passed: true, code: 'SUB_OK' };
@@ -223,8 +267,8 @@ class IntegrityServiceClass {
   }
 
   async computeChecksum(plan: string, timestamp: number): Promise<string> {
-    const salt = 'n4360_' + Platform.OS + '_sec';
-    const data = `${plan}|${timestamp}|${salt}`;
+    const salt = this.deviceFingerprint || 'na360_default';
+    const data = `${plan}|${timestamp}|${salt}|v2`;
     return await Crypto.digestStringAsync(
       Crypto.CryptoDigestAlgorithm.SHA256,
       data
@@ -242,6 +286,8 @@ class IntegrityServiceClass {
       } else {
         this.state.isLocked = false;
         this.state.lockoutUntil = null;
+        this.state.violationCount = Math.max(0, this.state.violationCount - 1);
+        await this.saveState();
       }
     }
 
@@ -253,11 +299,11 @@ class IntegrityServiceClass {
     const checks: CheckResult[] = [];
     const reasons: string[] = [];
 
-    checks.push(await this.checkAppSignature());
     checks.push(this.checkEnvironment());
     checks.push(this.checkTimingIntegrity());
     checks.push(await this.checkStorageIntegrity());
     checks.push(this.checkFunctionIntegrity());
+    checks.push(await this.checkSecureStorageIntegrity());
     checks.push(await this.verifySubscriptionData());
 
     const failedChecks = checks.filter(c => !c.passed);
@@ -272,7 +318,7 @@ class IntegrityServiceClass {
         this.state.lockoutUntil = now + LOCKOUT_DURATION_MS;
       }
     } else {
-      if (this.state.violationCount > 0) {
+      if (this.state.violationCount > 0 && Math.random() < 0.1) {
         this.state.violationCount = Math.max(0, this.state.violationCount - 0.5);
       }
       this.state.isCompromised = false;
@@ -304,11 +350,15 @@ class IntegrityServiceClass {
     return remaining > 0 ? remaining : null;
   }
 
-  async clearLockout(): Promise<void> {
-    this.state.isLocked = false;
-    this.state.lockoutUntil = null;
-    this.state.violationCount = 0;
-    this.state.isCompromised = false;
+  async resetForTesting(): Promise<void> {
+    this.state = {
+      isCompromised: false,
+      isLocked: false,
+      lockoutUntil: null,
+      violationCount: 0,
+      lastCheck: 0,
+      reasons: [],
+    };
     await this.saveState();
   }
 }

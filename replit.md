@@ -40,6 +40,15 @@ The app features a 4-tab navigation structure:
     - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Subscription Plan, and About
 
 ## Recent Changes (2026-01-07)
+- **Client-Side Security System**: Implemented multi-layer anti-tampering protections for subscription enforcement
+  - `IntegrityService`: Runtime integrity checks including environment hook detection (Frida/Xposed), timing anomaly detection, storage integrity verification, function modification checks, subscription data checksum validation
+  - `SecureStorage`: Per-device encryption keys stored in SecureStore (native) with XOR obfuscation, dual-key HMAC integrity verification, timestamp validation
+  - Violation tracking persisted in both SecureStore and AsyncStorage for redundancy
+  - 7-day lockout mechanism after 3 integrity violations with countdown timer
+  - `LockoutScreen`: Dedicated UI when app is locked due to integrity violations
+  - Integration at app root via `LockoutGuard` component that blocks access when compromised
+  - Periodic integrity checks every 5 minutes and forced checks before purchases
+  - Checksums tied to device fingerprint to prevent cross-device subscription transfer
 - **Studio Audio Engine**: Implemented real audio recording and playback for Studio mode
   - Created `StudioAudioEngine` service with expo-av for simultaneous playback and recording
   - RecordingScreen: Backing track preview, record voice while music plays, recording progress

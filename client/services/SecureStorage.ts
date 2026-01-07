@@ -1,85 +1,146 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 
-const ENCRYPTION_PREFIX = 'enc_v1_';
-const INTEGRITY_SUFFIX = '_integrity';
+const _k1 = 'na360_dk_v2';
+const _k2 = 'na360_sk_v2';
+const PREFIX = 'ss_v2_';
+const HMAC_SUFFIX = '_h';
 
 class SecureStorageClass {
-  private encryptionKey: string | null = null;
+  private deviceKey: string | null = null;
+  private saltKey: string | null = null;
+  private initialized = false;
+
+  async initialize(): Promise<void> {
+    if (this.initialized) return;
+
+    try {
+      if (Platform.OS === 'web') {
+        this.deviceKey = await this.getOrCreateWebKey(_k1);
+        this.saltKey = await this.getOrCreateWebKey(_k2);
+      } else {
+        this.deviceKey = await this.getOrCreateSecureKey(_k1);
+        this.saltKey = await this.getOrCreateSecureKey(_k2);
+      }
+      this.initialized = true;
+    } catch (e) {
+      const fallback = await this.generateFallbackKey();
+      this.deviceKey = fallback;
+      this.saltKey = fallback.split('').reverse().join('');
+      this.initialized = true;
+    }
+  }
+
+  private async getOrCreateSecureKey(keyName: string): Promise<string> {
+    try {
+      let existing = await SecureStore.getItemAsync(keyName);
+      if (existing) return existing;
+
+      const newKey = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        `${Date.now()}_${Math.random()}_${Platform.OS}_na360`
+      );
+
+      await SecureStore.setItemAsync(keyName, newKey);
+      return newKey;
+    } catch (e) {
+      return await this.generateFallbackKey();
+    }
+  }
+
+  private async getOrCreateWebKey(keyName: string): Promise<string> {
+    let existing = await AsyncStorage.getItem(`web_${keyName}`);
+    if (existing) return existing;
+
+    const newKey = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      `${Date.now()}_${Math.random()}_web_na360_secure`
+    );
+
+    await AsyncStorage.setItem(`web_${keyName}`, newKey);
+    return newKey;
+  }
+
+  private async generateFallbackKey(): Promise<string> {
+    return await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      `${Platform.OS}_${Platform.Version}_na360_fallback_v2`
+    );
+  }
 
   private async getEncryptionKey(): Promise<string> {
-    if (this.encryptionKey) return this.encryptionKey;
-
-    const keyComponents = [
-      Platform.OS,
-      Platform.Version?.toString() || 'unknown',
-      'na360_secure',
-      '2026',
-    ];
-
-    const key = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      keyComponents.join('::')
-    );
+    if (!this.initialized) await this.initialize();
     
-    this.encryptionKey = key;
-    return key;
+    return await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      `${this.deviceKey}::${this.saltKey}::enc`
+    );
+  }
+
+  private async getHmacKey(): Promise<string> {
+    if (!this.initialized) await this.initialize();
+    
+    return await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      `${this.saltKey}::${this.deviceKey}::hmac`
+    );
   }
 
   private async computeHMAC(data: string): Promise<string> {
-    const key = await this.getEncryptionKey();
+    const hmacKey = await this.getHmacKey();
     return await Crypto.digestStringAsync(
       Crypto.CryptoDigestAlgorithm.SHA256,
-      data + key
+      hmacKey + data + hmacKey
     );
   }
 
-  private obfuscate(data: string, key: string): string {
+  private xorEncode(data: string, key: string): string {
     const keyBytes = key.split('').map(c => c.charCodeAt(0));
-    let result = '';
+    const dataBytes = data.split('').map(c => c.charCodeAt(0));
+    const encoded: number[] = [];
     
-    for (let i = 0; i < data.length; i++) {
-      const charCode = data.charCodeAt(i);
-      const keyByte = keyBytes[i % keyBytes.length];
-      result += String.fromCharCode(charCode ^ keyByte);
+    for (let i = 0; i < dataBytes.length; i++) {
+      const k1 = keyBytes[i % keyBytes.length];
+      const k2 = keyBytes[(i * 7 + 3) % keyBytes.length];
+      encoded.push(dataBytes[i] ^ k1 ^ k2);
     }
     
-    return Buffer.from(result, 'binary').toString('base64');
+    return encoded.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  private deobfuscate(encoded: string, key: string): string {
-    try {
-      const decoded = Buffer.from(encoded, 'base64').toString('binary');
-      const keyBytes = key.split('').map(c => c.charCodeAt(0));
-      let result = '';
-      
-      for (let i = 0; i < decoded.length; i++) {
-        const charCode = decoded.charCodeAt(i);
-        const keyByte = keyBytes[i % keyBytes.length];
-        result += String.fromCharCode(charCode ^ keyByte);
-      }
-      
-      return result;
-    } catch (e) {
-      throw new Error('Deobfuscation failed');
+  private xorDecode(hexData: string, key: string): string {
+    const keyBytes = key.split('').map(c => c.charCodeAt(0));
+    const decoded: string[] = [];
+    
+    for (let i = 0; i < hexData.length; i += 2) {
+      const byte = parseInt(hexData.substr(i, 2), 16);
+      const idx = i / 2;
+      const k1 = keyBytes[idx % keyBytes.length];
+      const k2 = keyBytes[(idx * 7 + 3) % keyBytes.length];
+      decoded.push(String.fromCharCode(byte ^ k1 ^ k2));
     }
+    
+    return decoded.join('');
   }
 
   async setSecureItem(key: string, value: string): Promise<void> {
+    if (!this.initialized) await this.initialize();
+
     try {
-      const encKey = await this.getEncryptionKey();
-      
       const timestamp = Date.now();
-      const payload = JSON.stringify({ v: value, t: timestamp });
+      const nonce = Math.random().toString(36).substring(2, 10);
+      const payload = JSON.stringify({ v: value, t: timestamp, n: nonce });
       
-      const obfuscated = this.obfuscate(payload, encKey);
-      const integrity = await this.computeHMAC(obfuscated);
+      const encKey = await this.getEncryptionKey();
+      const encoded = this.xorEncode(payload, encKey);
       
-      const finalData = ENCRYPTION_PREFIX + obfuscated;
+      const finalData = PREFIX + encoded;
+      const hmac = await this.computeHMAC(finalData);
       
       await AsyncStorage.setItem(key, finalData);
-      await AsyncStorage.setItem(key + INTEGRITY_SUFFIX, integrity);
+      await AsyncStorage.setItem(key + HMAC_SUFFIX, hmac);
     } catch (e) {
       console.error('SecureStorage.setSecureItem failed:', e);
       throw e;
@@ -87,33 +148,38 @@ class SecureStorageClass {
   }
 
   async getSecureItem(key: string): Promise<string | null> {
+    if (!this.initialized) await this.initialize();
+
     try {
       const stored = await AsyncStorage.getItem(key);
-      const storedIntegrity = await AsyncStorage.getItem(key + INTEGRITY_SUFFIX);
+      const storedHmac = await AsyncStorage.getItem(key + HMAC_SUFFIX);
       
-      if (!stored || !storedIntegrity) {
+      if (!stored || !storedHmac) {
         return null;
       }
 
-      if (!stored.startsWith(ENCRYPTION_PREFIX)) {
-        return null;
-      }
-
-      const obfuscated = stored.slice(ENCRYPTION_PREFIX.length);
-      
-      const expectedIntegrity = await this.computeHMAC(obfuscated);
-      if (storedIntegrity !== expectedIntegrity) {
+      if (!stored.startsWith(PREFIX)) {
         await this.removeSecureItem(key);
-        throw new Error('Integrity check failed - data may be tampered');
+        return null;
       }
 
+      const expectedHmac = await this.computeHMAC(stored);
+      if (storedHmac !== expectedHmac) {
+        await this.removeSecureItem(key);
+        console.warn('HMAC verification failed - data may be tampered');
+        return null;
+      }
+
+      const encoded = stored.slice(PREFIX.length);
       const encKey = await this.getEncryptionKey();
-      const payload = this.deobfuscate(obfuscated, encKey);
+      const payload = this.xorDecode(encoded, encKey);
+      
       const parsed = JSON.parse(payload);
 
       const age = Date.now() - parsed.t;
-      if (age < 0) {
-        throw new Error('Invalid timestamp - possible tampering');
+      if (age < -60000) {
+        console.warn('Invalid timestamp detected');
+        return null;
       }
 
       return parsed.v;
@@ -126,32 +192,36 @@ class SecureStorageClass {
   async removeSecureItem(key: string): Promise<void> {
     try {
       await AsyncStorage.removeItem(key);
-      await AsyncStorage.removeItem(key + INTEGRITY_SUFFIX);
+      await AsyncStorage.removeItem(key + HMAC_SUFFIX);
     } catch (e) {
       console.error('SecureStorage.removeSecureItem failed:', e);
     }
   }
 
   async verifyIntegrity(key: string): Promise<boolean> {
+    if (!this.initialized) await this.initialize();
+
     try {
       const stored = await AsyncStorage.getItem(key);
-      const storedIntegrity = await AsyncStorage.getItem(key + INTEGRITY_SUFFIX);
+      const storedHmac = await AsyncStorage.getItem(key + HMAC_SUFFIX);
       
-      if (!stored || !storedIntegrity) {
-        return true;
-      }
+      if (!stored || !storedHmac) return true;
+      if (!stored.startsWith(PREFIX)) return false;
 
-      if (!stored.startsWith(ENCRYPTION_PREFIX)) {
-        return false;
-      }
-
-      const obfuscated = stored.slice(ENCRYPTION_PREFIX.length);
-      const expectedIntegrity = await this.computeHMAC(obfuscated);
-      
-      return storedIntegrity === expectedIntegrity;
+      const expectedHmac = await this.computeHMAC(stored);
+      return storedHmac === expectedHmac;
     } catch (e) {
       return false;
     }
+  }
+
+  async getDeviceFingerprint(): Promise<string> {
+    if (!this.initialized) await this.initialize();
+    
+    return await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      `${this.deviceKey}_fp`
+    );
   }
 }
 
