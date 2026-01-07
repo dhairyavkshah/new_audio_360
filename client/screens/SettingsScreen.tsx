@@ -236,9 +236,9 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="heart" size={20} color={theme.error} />
+            <MaterialCommunityIcons name="crown" size={20} color={theme.warning} />
             <ThemedText type="h4" style={styles.sectionTitle}>
-              Support
+              Subscription
             </ThemedText>
           </View>
           <View style={styles.menuGroup}>
@@ -246,15 +246,8 @@ export default function SettingsScreen() {
               icon="crown-outline"
               iconColor={theme.warning}
               title="Plan"
-              subtitle="View your current plan"
+              subtitle="Manage your subscription"
               onPress={() => navigation.navigate("Plan")}
-            />
-            <MenuItem
-              icon="gift-outline"
-              iconColor={theme.primary}
-              title="Support the Developer"
-              subtitle="Help us improve the app"
-              onPress={() => navigation.navigate("SupportDeveloper")}
             />
           </View>
         </View>

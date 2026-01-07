@@ -4,7 +4,6 @@ import SettingsScreen from "@/screens/SettingsScreen";
 import SoundLabScreen from "@/screens/SoundLabScreen";
 import AppearanceScreen from "@/screens/AppearanceScreen";
 import PlanScreen from "@/screens/PlanScreen";
-import SupportDeveloperScreen from "@/screens/SupportDeveloperScreen";
 import AboutScreen from "@/screens/AboutScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
@@ -13,7 +12,6 @@ export type SettingsStackParamList = {
   SoundLab: undefined;
   Appearance: undefined;
   Plan: undefined;
-  SupportDeveloper: undefined;
   About: undefined;
 };
 
@@ -52,14 +50,6 @@ export default function SettingsStackNavigator() {
         component={PlanScreen}
         options={{
           headerTitle: "Plan",
-          headerBackTitle: "Settings",
-        }}
-      />
-      <Stack.Screen
-        name="SupportDeveloper"
-        component={SupportDeveloperScreen}
-        options={{
-          headerTitle: "Support the Developer",
           headerBackTitle: "Settings",
         }}
       />
