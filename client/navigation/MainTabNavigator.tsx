@@ -13,6 +13,7 @@ import * as Haptics from "expo-haptics";
 import ListenStackNavigator from "@/navigation/ListenStackNavigator";
 import LibraryStackNavigator from "@/navigation/LibraryStackNavigator";
 import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
+import CreateStackNavigator from "@/navigation/CreateStackNavigator";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
@@ -23,6 +24,7 @@ import { Layout, Spacing, Typography, Motion, M3Motion, M3Elevation } from "@/co
 export type MainTabParamList = {
   ListenTab: undefined;
   LibraryTab: undefined;
+  StudioTab: undefined;
   SettingsTab: undefined;
 };
 
@@ -33,7 +35,7 @@ function TabIcon({
   color,
   focused,
 }: {
-  iconKey: 'listen' | 'library' | 'settings';
+  iconKey: 'listen' | 'library' | 'studio' | 'settings';
   color: string;
   focused: boolean;
 }) {
@@ -56,6 +58,7 @@ function TabIcon({
   const iconMap = {
     listen: focused ? skin.icons.tabListenFocused : skin.icons.tabListen,
     library: focused ? skin.icons.tabLibraryFocused : skin.icons.tabLibrary,
+    studio: focused ? skin.icons.tabStudioFocused : skin.icons.tabStudio,
     settings: focused ? skin.icons.tabSettingsFocused : skin.icons.tabSettings,
   };
   
@@ -104,7 +107,7 @@ export default function MainTabNavigator() {
   const [currentTab, setCurrentTab] = useState<string>("ListenTab");
   
   const tabBarHeight = Platform.OS === "ios" ? Layout.bottomNavHeight + 20 : Layout.bottomNavHeight;
-  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && !isNowPlayingVisible;
+  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && currentTab !== "StudioTab" && !isNowPlayingVisible;
 
   return (
     <View style={{ flex: 1 }}>
@@ -178,6 +181,20 @@ export default function MainTabNavigator() {
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               iconKey="library"
+              color={color}
+              focused={focused}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="StudioTab"
+        component={CreateStackNavigator}
+        options={{
+          title: "Studio",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              iconKey="studio"
               color={color}
               focused={focused}
             />

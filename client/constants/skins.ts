@@ -71,6 +71,8 @@ export interface IconPack {
   tabLibraryFocused: string;
   tabSettings: string;
   tabSettingsFocused: string;
+  tabStudio: string;
+  tabStudioFocused: string;
 }
 
 export interface ShapeTokens {
@@ -184,6 +186,8 @@ const fluentIcons: IconPack = {
   tabLibraryFocused: 'folder-music',
   tabSettings: 'cog-outline',
   tabSettingsFocused: 'cog',
+  tabStudio: 'microphone-variant',
+  tabStudioFocused: 'microphone',
 };
 
 const winampIcons: IconPack = {
