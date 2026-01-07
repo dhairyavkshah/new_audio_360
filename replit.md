@@ -39,10 +39,11 @@ The app features a 3-tab navigation structure:
     - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Support Developer (donation), and About
 
 ## Recent Changes (2026-01-07)
-- **Expo SDK update**: Updated all Expo packages to latest compatible versions (~54.0.31) for improved stability
-- **MiniPlayer navigation fix**: Fixed navigation error when tapping MiniPlayer by using proper nested navigation pattern
-- **FlatList performance optimization**: Added virtualization props (initialNumToRender, maxToRenderPerBatch, windowSize, getItemLayout) with platform-conditional removeClippedSubviews for smooth scrolling with thousands of songs
-- **LibraryScreen redesign**: 2-row quick access grid showing all 7 categories as color-coded cards with item counts
+- **Safe tab bar height hook**: Created `useSafeTabBarHeight` hook to fix "Invalid hook call" errors when useBottomTabBarHeight was called in try/catch blocks - now all screens use this safe wrapper
+- **Audio playback improvements**: Fixed audio source handling to properly load device songs (expo-media-library) and show clear error messages for demo content without audio files
+- **AlbumDetailScreen**: Added album detail view with song list and proper navigation integration
+- **M3 Design Verification**: Verified Material Design 3 compliance - Typography (57/32/22/16/14), Shape (4/8/12/16), Touch targets (48dp), Spacing (4px grid) all correct
+- **Previous changes**: Expo SDK update, MiniPlayer navigation fix, FlatList performance optimization, LibraryScreen redesign
 
 ## Design Language
 
