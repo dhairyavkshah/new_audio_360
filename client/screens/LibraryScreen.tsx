@@ -592,21 +592,22 @@ const styles = StyleSheet.create({
   },
   categorySection: {
     paddingHorizontal: Layout.horizontalPadding,
-    paddingVertical: Spacing.m,
+    paddingTop: Spacing.s,
+    paddingBottom: Spacing.xs,
     borderBottomWidth: 1,
   },
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.s,
+    gap: Spacing.xs,
   },
   categoryCard: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
-    borderRadius: M3Shape.cornerMedium,
+    paddingHorizontal: Spacing.s,
+    paddingVertical: Spacing.xs,
+    borderRadius: M3Shape.cornerSmall,
     borderWidth: 1,
     minWidth: "30%",
     flex: 1,
@@ -615,7 +616,7 @@ const styles = StyleSheet.create({
   categoryCardContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.xs,
+    gap: 4,
   },
   categoryLabel: {
     fontWeight: "600",

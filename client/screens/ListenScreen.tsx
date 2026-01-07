@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
     paddingHorizontal: Layout.horizontalPadding,
     paddingTop: Spacing.m,
-    paddingBottom: Spacing.l,
+    paddingBottom: Spacing.xl,
   },
   searchSortRow: {
     flexDirection: "row",
