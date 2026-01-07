@@ -375,6 +375,7 @@ export default function LibraryScreen() {
     }
     return (
       <FlatList
+        key="songs-list"
         data={songs}
         renderItem={({ item }) => renderSongItem({ item, songs })}
         keyExtractor={(item) => item.id}
@@ -395,6 +396,7 @@ export default function LibraryScreen() {
     }
     return (
       <FlatList
+        key="albums-grid"
         data={filteredData.albums}
         numColumns={2}
         renderItem={({ item: album }) => (
@@ -428,6 +430,7 @@ export default function LibraryScreen() {
     }
     return (
       <FlatList
+        key="artists-list"
         data={filteredData.artists}
         renderItem={({ item: artist }) => (
           <Pressable
@@ -469,6 +472,7 @@ export default function LibraryScreen() {
     }
     return (
       <FlatList
+        key="playlists-list"
         data={filteredData.playlists}
         renderItem={({ item: playlist }) => (
           <Pressable
