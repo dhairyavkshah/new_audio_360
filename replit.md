@@ -40,6 +40,14 @@ The app features a 4-tab navigation structure:
     - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Subscription Plan, and About
 
 ## Recent Changes (2026-01-07)
+- **Recording Pause/Resume Enhancement**: StudioAudioEngine now properly tracks elapsed time with pause/resume support
+  - RecordButton toggles between record/pause/resume states with appropriate icons
+  - Separate Stop button with confirmation dialog before navigating to Mix screen
+  - Engine tracks accumulated recording time across pause/resume cycles
+  - Timer correctly freezes on pause and continues from same value on resume
+  - MixingScreen displays both Music and Voice channels with animated waveforms
+  - Trim Audio shows "coming soon" dialog for Premium users
+  - Layout fixes: proper padding to prevent content hidden behind tab bar
 - **Client-Side Security System**: Implemented multi-layer anti-tampering protections for subscription enforcement
   - `IntegrityService`: Runtime integrity checks including environment hook detection (Frida/Xposed), timing anomaly detection, storage integrity verification, function modification checks, subscription data checksum validation
   - `SecureStorage`: Per-device encryption keys stored in SecureStore (native) with XOR obfuscation, dual-key HMAC integrity verification, timestamp validation
