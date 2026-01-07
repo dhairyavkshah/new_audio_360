@@ -79,11 +79,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     loadProjects();
   }, []);
 
+  const [hasInitialized, setHasInitialized] = useState(false);
+
   useEffect(() => {
-    if (projects.length > 0) {
+    if (hasInitialized) {
       saveProjects(projects);
     }
-  }, [projects]);
+  }, [projects, hasInitialized]);
 
   useEffect(() => {
     if (currentProject) {
@@ -103,6 +105,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       console.error('Error loading studio projects:', error);
     } finally {
       setIsLoading(false);
+      setHasInitialized(true);
     }
   };
 

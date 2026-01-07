@@ -32,17 +32,23 @@ The application is built with **React Native and Expo**, ensuring cross-platform
 - **Animations**: react-native-reanimated with M3 motion curves
 
 **Navigation Structure:**
-The app features a 3-tab navigation structure:
-- **MainTabNavigator**: Hosts Listen, Library, and Settings tabs, with a persistent MiniPlayer overlay
+The app features a 4-tab navigation structure:
+- **MainTabNavigator**: Hosts Listen, Library, Studio, and Settings tabs, with a persistent MiniPlayer overlay
     - **ListenTab**: Main music player, Now Playing, Sound Lab, and Queue management
     - **LibraryTab**: Music organization with **Quick Access Category Grid** (7 color-coded cards: Liked, Recent, Top, Songs, Albums, Artists, Playlists) - all categories visible at once without horizontal scrolling
+    - **StudioTab**: Voice recording over backing tracks with voice-specific effects (Noise Reduction + Reverb presets)
     - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Support Developer (donation), and About
 
 ## Recent Changes (2026-01-07)
+- **Studio Mode**: Added 4th tab for voice recording over karaoke/backing tracks
+  - New StudioContext for project management and voice-specific effects
+  - Voice effects (separate from Sound Lab): Noise Reduction (Off/Light/Medium/Strong) + Reverb presets (Small/Medium/Large Studio, Open Theatre, Auditorium)
+  - Full recording flow: Select backing track → Record voice → Mix volumes → Apply effects → Save
+  - All effects are FREE (no premium locks)
+- **Real audio test songs**: Added "O Maahi" (Arijit Singh) and "Dhurandhar Title Track" with 320kbps audio
 - **Safe tab bar height hook**: Created `useSafeTabBarHeight` hook to fix "Invalid hook call" errors when useBottomTabBarHeight was called in try/catch blocks - now all screens use this safe wrapper
 - **Audio playback improvements**: Fixed audio source handling to properly load device songs (expo-media-library) and show clear error messages for demo content without audio files
 - **AlbumDetailScreen**: Added album detail view with song list and proper navigation integration
-- **M3 Design Verification**: Verified Material Design 3 compliance - Typography (57/32/22/16/14), Shape (4/8/12/16), Touch targets (48dp), Spacing (4px grid) all correct
 - **Previous changes**: Expo SDK update, MiniPlayer navigation fix, FlatList performance optimization, LibraryScreen redesign
 
 ## Design Language
@@ -99,6 +105,7 @@ The app uses **Material Design 3** (Material You) design language with:
 - **Media Library Integration**: Onboarding for media access, paginated loading of device audio, and "Hide Song" functionality
 - **Playlist Management**: Full CRUD operations for playlists, stored locally
 - **Playback Features**: Favorites, Recently Played, Most Played, Queue Management, and Sleep Timer
+- **Studio Mode**: Record voice over backing tracks with voice-specific effects (Noise Reduction + Reverb), separate from Sound Lab music effects
 
 ## External Dependencies
 
