@@ -278,18 +278,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     try {
       let audioSource: string | null = null;
 
-      if (isDeviceSong(song) && song.isFromDevice && song.uri) {
+      if (isDeviceSong(song) && song.uri) {
         audioSource = song.uri;
       } else if ('audioUrl' in song && song.audioUrl) {
         audioSource = song.audioUrl;
       } else {
-        if (Platform.OS === 'web') {
-          audioSource = 'https://cdn.jsdelivr.net/npm/ion-sound@3.0.7/sounds/water_droplet.mp3';
-        } else {
-          setError('No audio file available for this song');
-          setIsLoading(false);
-          return;
-        }
+        const demoMessage = Platform.OS === 'web' 
+          ? 'Demo mode - add real audio files from your device'
+          : 'No audio file available for this song';
+        setError(demoMessage);
+        setIsLoading(false);
+        setCurrentSong(song);
+        return;
       }
 
       if (!audioSource) {
