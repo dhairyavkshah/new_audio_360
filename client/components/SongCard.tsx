@@ -1,5 +1,5 @@
-import React, { useCallback, useRef } from "react";
-import { View, StyleSheet, Pressable, Image, Platform, GestureResponderEvent } from "react-native";
+import React, { useCallback, useRef, useState } from "react";
+import { View, StyleSheet, Pressable, Image, Platform, GestureResponderEvent, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
@@ -25,16 +25,16 @@ const ActionButton = ({ onPress, accessibilityLabel, children }: {
   };
 
   return (
-    <Pressable
+    <TouchableOpacity
       onPress={handlePress}
       style={actionButtonStyles.button}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      activeOpacity={0.7}
       accessible={true}
       accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
     >
       {children}
-    </Pressable>
+    </TouchableOpacity>
   );
 };
 

@@ -401,7 +401,7 @@ export default function LibraryScreen() {
           <AnimatedCard
             style={styles.albumCard}
             borderRadius={M3Shape.cornerMedium}
-            onPress={() => navigation.navigate("AlbumDetail" as any, { album })}
+            onPress={() => navigation.navigate("AlbumDetail", { album })}
             accessibilityLabel={`${album.name} by ${album.artist}`}
           >
             <Image source={{ uri: album.artwork }} style={styles.albumArtwork} />
