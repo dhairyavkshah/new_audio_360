@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { View, StyleSheet, FlatList, Pressable, Image, Platform, TextInput, ActivityIndicator, LayoutChangeEvent } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -33,7 +33,7 @@ const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
 
 export default function ListenScreen() {
   const headerHeight = useHeaderHeight();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useThemeContext();
   const { playTapSound } = useUiSound();

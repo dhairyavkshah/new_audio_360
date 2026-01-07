@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { View, StyleSheet, FlatList, TextInput, Pressable } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
@@ -18,7 +18,7 @@ type NavigationProp = NativeStackNavigationProp<CreateStackParamList>;
 
 export default function CreateScreen() {
   const headerHeight = useHeaderHeight();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useThemeContext();
   const [searchQuery, setSearchQuery] = useState("");

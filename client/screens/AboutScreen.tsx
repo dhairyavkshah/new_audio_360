@@ -1,8 +1,8 @@
 import React from "react";
 import { View, StyleSheet, ScrollView, Linking, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -12,12 +12,7 @@ import { Spacing, BorderRadius, Layout } from "@/constants/theme";
 
 export default function AboutScreen() {
   const insets = useSafeAreaInsets();
-  let tabBarHeight = 0;
-  try {
-    tabBarHeight = useBottomTabBarHeight();
-  } catch {
-    tabBarHeight = Layout.bottomNavHeight + insets.bottom;
-  }
+  const tabBarHeight = useSafeTabBarHeight();
   const { theme } = useThemeContext();
 
   const handleLinkPress = (url: string) => {

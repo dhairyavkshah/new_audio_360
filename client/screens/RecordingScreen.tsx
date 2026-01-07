@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Image, Pressable, ImageBackground, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -22,12 +22,7 @@ type RecordingRouteProp = RouteProp<CreateStackParamList, "Recording">;
 
 export default function RecordingScreen() {
   const insets = useSafeAreaInsets();
-  let tabBarHeight = 0;
-  try {
-    tabBarHeight = useBottomTabBarHeight();
-  } catch {
-    tabBarHeight = Layout.bottomNavHeight + insets.bottom;
-  }
+  const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RecordingRouteProp>();
   const { theme, isDark } = useThemeContext();

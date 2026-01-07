@@ -1,8 +1,8 @@
 import React from "react";
 import { StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemeSelector } from "@/components/ThemeSelector";
@@ -11,12 +11,7 @@ import { Spacing, ThemeName, Layout } from "@/constants/theme";
 
 export default function AppearanceScreen() {
   const insets = useSafeAreaInsets();
-  let tabBarHeight = 0;
-  try {
-    tabBarHeight = useBottomTabBarHeight();
-  } catch {
-    tabBarHeight = Layout.bottomNavHeight + insets.bottom;
-  }
+  const tabBarHeight = useSafeTabBarHeight();
   const { theme, themeName, setThemeName } = useThemeContext();
 
   const handleThemeChange = (newTheme: ThemeName) => {

@@ -11,8 +11,8 @@ import {
   AppStateStatus,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
 import Animated, {
   useAnimatedStyle,
@@ -41,12 +41,7 @@ import {
 
 export default function SupportDeveloperScreen() {
   const insets = useSafeAreaInsets();
-  let tabBarHeight = 0;
-  try {
-    tabBarHeight = useBottomTabBarHeight();
-  } catch {
-    tabBarHeight = Layout.bottomNavHeight + insets.bottom;
-  }
+  const tabBarHeight = useSafeTabBarHeight();
   const { theme } = useThemeContext();
 
   const [selectedCurrency, setSelectedCurrency] = useState<Currency | null>(null);

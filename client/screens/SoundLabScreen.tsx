@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -86,12 +86,7 @@ const IMMERSIVE_MODES = [
 
 export default function SoundLabScreen() {
   const insets = useSafeAreaInsets();
-  let tabBarHeight = 0;
-  try {
-    tabBarHeight = useBottomTabBarHeight();
-  } catch {
-    tabBarHeight = Layout.bottomNavHeight + insets.bottom;
-  }
+  const tabBarHeight = useSafeTabBarHeight();
   const { theme } = useThemeContext();
   const [soundLabMode, setSoundLabMode] = useState<SoundLabMode>("off");
   const [selectedEQ, setSelectedEQ] = useState("Flat");

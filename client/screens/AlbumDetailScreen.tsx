@@ -1,8 +1,8 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet, FlatList, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useRoute, RouteProp } from "@react-navigation/native";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { SongCard } from "@/components/SongCard";
@@ -23,13 +23,7 @@ export default function AlbumDetailScreen() {
   const { theme } = useThemeContext();
   const { playSong, currentSong, queue, setQueue } = usePlayerContext();
   const { songs: deviceSongs, isOnboardingComplete } = useMediaLibraryContext();
-
-  let tabBarHeight = 0;
-  try {
-    tabBarHeight = useBottomTabBarHeight();
-  } catch {
-    tabBarHeight = Layout.bottomNavHeight + insets.bottom;
-  }
+  const tabBarHeight = useSafeTabBarHeight();
 
   const albumSongs: PlayableSong[] = useMemo(() => {
     const allSongs: PlayableSong[] = isOnboardingComplete && deviceSongs.length > 0

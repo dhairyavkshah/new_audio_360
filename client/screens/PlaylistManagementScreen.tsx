@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, ScrollView, Pressable, TextInput, Alert, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
@@ -15,12 +15,7 @@ import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollV
 
 export default function PlaylistManagementScreen() {
   const insets = useSafeAreaInsets();
-  let tabBarHeight = 0;
-  try {
-    tabBarHeight = useBottomTabBarHeight();
-  } catch {
-    tabBarHeight = Layout.bottomNavHeight + insets.bottom;
-  }
+  const tabBarHeight = useSafeTabBarHeight();
   const { theme } = useThemeContext();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);

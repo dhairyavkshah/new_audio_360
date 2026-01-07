@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Pressable, BackHandler, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -71,12 +71,7 @@ function MenuItem({ icon, iconColor, title, subtitle, onPress }: MenuItemProps) 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
-  let tabBarHeight = 0;
-  try {
-    tabBarHeight = useBottomTabBarHeight();
-  } catch {
-    tabBarHeight = Layout.bottomNavHeight + insets.bottom;
-  }
+  const tabBarHeight = useSafeTabBarHeight();
   const { theme } = useThemeContext();
   const { uiSoundEnabled, setUiSoundEnabled, playTapSound } = useUiSound();
   const { sleepTimerMinutes, setSleepTimer } = usePlayerContext();

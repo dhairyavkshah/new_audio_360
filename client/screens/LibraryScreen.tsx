@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Image, TextInput, Platform, ActivityIndicator, FlatList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -19,6 +18,7 @@ import { mockSongs, mockAlbums, mockArtists, Song } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 import { Playlist, getPlaylists } from "@/lib/storage";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 
 type NavigationProp = NativeStackNavigationProp<LibraryStackParamList>;
 
@@ -107,7 +107,7 @@ function CategoryCard({
 
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useThemeContext();
   const { playTapSound } = useUiSound();

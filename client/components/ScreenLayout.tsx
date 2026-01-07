@@ -2,8 +2,8 @@ import React, { ReactNode } from "react";
 import { View, StyleSheet, ViewStyle, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { ThemedView } from "@/components/ThemedView";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { Layout, Spacing } from "@/constants/theme";
 
 interface ScreenLayoutProps {
@@ -34,12 +34,7 @@ export function ScreenLayout({
     headerHeight = hasHeader ? Layout.topBarHeight + insets.top : insets.top;
   }
   
-  let tabBarHeight = 0;
-  try {
-    tabBarHeight = useBottomTabBarHeight();
-  } catch {
-    tabBarHeight = hasTabBar ? Layout.bottomNavHeight + insets.bottom : insets.bottom;
-  }
+  const tabBarHeight = useSafeTabBarHeight();
 
   const topPadding = hasHeader ? headerHeight + Spacing.l : insets.top + Layout.safeAreaPadding;
   const bottomPadding = hasBottomControls

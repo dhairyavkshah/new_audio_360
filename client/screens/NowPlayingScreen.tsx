@@ -1,8 +1,8 @@
 import React, { useEffect, useCallback } from "react";
 import { View, StyleSheet, Image, Dimensions, ImageBackground, Platform, Pressable, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useHeaderHeight } from "@react-navigation/elements";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -37,12 +37,7 @@ export default function NowPlayingScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
-  let tabBarHeight = 0;
-  try {
-    tabBarHeight = useBottomTabBarHeight();
-  } catch {
-    tabBarHeight = Layout.bottomNavHeight + insets.bottom;
-  }
+  const tabBarHeight = useSafeTabBarHeight();
   const { theme, isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
   const { isFavorite, toggleFavorite } = usePlayerContext();
