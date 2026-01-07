@@ -5,6 +5,7 @@ export interface Song {
   album: string;
   duration: number;
   artwork: string;
+  audioUrl?: string;
 }
 
 export interface Recording {
@@ -30,6 +31,15 @@ export interface PlayerState {
 }
 
 export const mockSongs: Song[] = [
+  {
+    id: 'test-real',
+    title: 'Dhurandhar Title Track',
+    artist: 'Sound Lab Test',
+    album: 'Real Audio Test',
+    duration: 180,
+    artwork: 'https://picsum.photos/seed/dhurandhar/400/400',
+    audioUrl: '/audio/test_song.mp3',
+  },
   {
     id: '1',
     title: 'Midnight Dreams',

@@ -190,6 +190,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
       if (isDeviceSong(song) && song.isFromDevice && song.uri) {
         audioSource = song.uri;
+      } else if ('audioUrl' in song && song.audioUrl) {
+        audioSource = song.audioUrl;
       } else {
         if (Platform.OS === 'web') {
           audioSource = 'https://cdn.jsdelivr.net/npm/ion-sound@3.0.7/sounds/water_droplet.mp3';
