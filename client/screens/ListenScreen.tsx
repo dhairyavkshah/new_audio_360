@@ -233,7 +233,7 @@ export default function ListenScreen() {
     </View>
   );
 
-  const STICKY_HEADER_HEIGHT = 80;
+  const STICKY_HEADER_HEIGHT = 64;
   const SONG_ITEM_HEIGHT = 72;
 
   const getItemLayout = useCallback(
@@ -254,7 +254,7 @@ export default function ListenScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContent,
-          { paddingTop: headerHeight + STICKY_HEADER_HEIGHT + Spacing.l, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
+          { paddingTop: headerHeight + STICKY_HEADER_HEIGHT + Spacing.m, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
         ]}
         ListEmptyComponent={renderEmptyList}
         showsVerticalScrollIndicator={false}
@@ -300,8 +300,8 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
     paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.m,
-    paddingBottom: Spacing.xl,
+    paddingTop: Spacing.s,
+    paddingBottom: Spacing.s,
   },
   searchSortRow: {
     flexDirection: "row",
