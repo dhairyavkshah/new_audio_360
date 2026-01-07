@@ -32,13 +32,22 @@ export interface PlayerState {
 
 export const mockSongs: Song[] = [
   {
-    id: 'test-real',
+    id: 'o-maahi',
+    title: 'O Maahi',
+    artist: 'Arijit Singh',
+    album: 'Dunki (2023)',
+    duration: 270,
+    artwork: 'https://picsum.photos/seed/omaahi/400/400',
+    audioUrl: '/audio/o_maahi_dunki.mp3',
+  },
+  {
+    id: 'dhurandhar',
     title: 'Dhurandhar Title Track',
-    artist: 'Sound Lab Test',
-    album: 'Real Audio Test',
-    duration: 180,
+    artist: 'Sachin-Jigar',
+    album: 'Dhurandhar OST',
+    duration: 195,
     artwork: 'https://picsum.photos/seed/dhurandhar/400/400',
-    audioUrl: '/audio/test_song.mp3',
+    audioUrl: '/audio/dhurandhar.mp3',
   },
   {
     id: '1',
