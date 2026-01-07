@@ -45,6 +45,8 @@ export class StudioAudioEngine {
   private recordingInterval: NodeJS.Timeout | null = null;
   private meteringInterval: NodeJS.Timeout | null = null;
   private currentMeteringLevel: number = -160;
+  private recordingStartTime: number = 0;
+  private accumulatedRecordingTime: number = 0;
 
   async configureAudioMode(): Promise<void> {
     try {
@@ -227,12 +229,15 @@ export class StudioAudioEngine {
       const { recording } = await Audio.Recording.createAsync(recordingOptions);
       this.recording = recording;
       this.state.isRecording = true;
+      this.state.isRecordingPaused = false;
       this.recordedUri = null;
 
+      this.recordingStartTime = Date.now();
+      this.accumulatedRecordingTime = 0;
+      
       if (this.recordingProgressCallback) {
-        let recordingStartTime = Date.now();
         this.recordingInterval = setInterval(() => {
-          const elapsed = Date.now() - recordingStartTime;
+          const elapsed = this.accumulatedRecordingTime + (Date.now() - this.recordingStartTime);
           this.recordingProgressCallback?.(elapsed);
         }, 100);
       }
@@ -281,6 +286,13 @@ export class StudioAudioEngine {
     }
 
     try {
+      this.accumulatedRecordingTime += Date.now() - this.recordingStartTime;
+      
+      if (this.recordingInterval) {
+        clearInterval(this.recordingInterval);
+        this.recordingInterval = null;
+      }
+      
       await this.recording.pauseAsync();
       this.state.isRecordingPaused = true;
       
@@ -303,6 +315,14 @@ export class StudioAudioEngine {
     try {
       await this.recording.startAsync();
       this.state.isRecordingPaused = false;
+      this.recordingStartTime = Date.now();
+      
+      if (this.recordingProgressCallback) {
+        this.recordingInterval = setInterval(() => {
+          const elapsed = this.accumulatedRecordingTime + (Date.now() - this.recordingStartTime);
+          this.recordingProgressCallback?.(elapsed);
+        }, 100);
+      }
       
       if (this.backingTrack) {
         await this.backingTrack.playAsync();
@@ -332,6 +352,9 @@ export class StudioAudioEngine {
       
       this.recording = null;
       this.state.isRecording = false;
+      this.state.isRecordingPaused = false;
+      this.accumulatedRecordingTime = 0;
+      this.recordingStartTime = 0;
       
       if (!uri) {
         throw new Error('Recording URI is null');
@@ -342,6 +365,7 @@ export class StudioAudioEngine {
     } catch (error) {
       console.error('Failed to stop recording:', error);
       this.state.isRecording = false;
+      this.state.isRecordingPaused = false;
       throw error;
     }
   }

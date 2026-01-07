@@ -150,13 +150,11 @@ export default function RecordingScreen() {
       await studioAudioEngine.pauseRecording();
       setIsPaused(true);
       setIsBackingTrackPlaying(false);
+      setAudioLevel(-160);
     } else if (isPaused) {
       await studioAudioEngine.resumeRecording();
       setIsPaused(false);
       setIsBackingTrackPlaying(true);
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
-      }, 1000);
     }
   };
 
