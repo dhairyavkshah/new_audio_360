@@ -10,9 +10,8 @@ module.exports = function (api) {
           alias: {
             "@": "./client",
             "@shared": "./shared",
-            "@/modules": "./modules",
           },
-          extensions: [".ios.js", ".android.js", ".js", ".ts", ".tsx", ".json"],
+          extensions: [".web.ts", ".web.tsx", ".ios.js", ".android.js", ".js", ".ts", ".tsx", ".json"],
         },
       ],
       "react-native-reanimated/plugin",

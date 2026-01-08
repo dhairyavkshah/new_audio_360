@@ -74,12 +74,36 @@ The app uses **Material Design 3** (Material You) design language with M3 type s
 - **Playback Features**: Favorites, Recently Played, Most Played, Queue Management, and Sleep Timer.
 - **Studio Mode**: Enables recording voice over backing tracks with specific voice effects (Noise Reduction + Reverb), distinct from Sound Lab's music effects.
 
+## Build Configuration
+
+**Module Resolution:**
+- Native audio modules are located in `modules/audio-effects/`
+- A symlink at `client/modules/audio-effects` points to the root modules directory for Metro resolution
+- babel.config.js uses `@` alias pointing to `./client` for all imports
+- metro.config.js adds watch folders and source extensions for platform-specific resolution
+
+**Platform-Specific Files:**
+- `modules/audio-effects/index.ts` - Native Android implementation with ExoPlayer and native effects
+- `modules/audio-effects/index.web.ts` - Web fallback using expo-av stubs
+- `client/services/NativeEffectsManager.ts` - Native effects manager for Android
+- `client/services/NativeEffectsManager.web.ts` - Web fallback (no-op)
+
+**Build Requirements:**
+- This app requires an **Expo Development Build** for full native module functionality
+- Native audio effects (EQ, BassBoost, Virtualizer, Waveform) only work on Android
+- Web preview shows UI but uses expo-av fallback for audio playback
+
 ## External Dependencies
 
 - **React Native**: Cross-platform mobile framework
 - **Expo SDK**: Development and build tooling
-- **expo-av**: Audio playback
+- **expo-av**: Audio playback (web fallback, deprecated in SDK 54)
+- **expo-audio**: Recommended audio replacement (migration pending)
 - **expo-media-library**: Device media access
 - **react-native-reanimated**: Smooth animations
 - **@react-navigation**: Navigation system
 - **MaterialCommunityIcons**: Iconography
+
+## Recent Changes
+
+- **2026-01-08**: Fixed Metro bundler resolution for native modules by creating symlink at `client/modules/audio-effects`. Updated metro.config.js with platform-specific source extensions and watch folders. Web preview now loads correctly with expo-av fallback.
