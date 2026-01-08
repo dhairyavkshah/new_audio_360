@@ -2,108 +2,180 @@
 
 ## Overview
 
-New Audio 360 is a premium, 100% offline mobile music player application built with React Native and Expo. It provides audio enthusiasts with a full-featured, device-local music experience including a robust music player ("Listen Mode"), comprehensive music organization ("Library"), professional sound customization ("Sound Lab"), and extensive personalization through 55 themes. The project aims to offer a high-quality, private, and fully self-contained music experience without relying on any external servers, cloud services, or internet connectivity. This app is purely local, with all user data, settings, and media stored exclusively on the device.
+New Audio 360 is a premium, 100% offline native Android music player application built with Kotlin and Jetpack Compose. It provides audio enthusiasts with a full-featured, device-local music experience including a robust music player ("Listen Mode"), comprehensive music organization ("Library"), professional sound customization ("Sound Lab"), and extensive personalization. The application is purely native Android - no React Native, Expo, or web technologies. All user data, settings, and media are stored exclusively on the device.
+
+## Project Rules
+
+**CRITICAL: This is a pure native Android project.**
+- **NO Expo** - This project does not use Expo SDK
+- **NO React Native** - This project does not use React Native
+- **NO Metro bundler** - No JavaScript bundling
+- **NO Web support** - Android only (primary), iOS future consideration
+- **Gradle-based builds only** - APK/AAB built via Gradle
+- **GitHub Actions CI/CD** - All builds done through GitHub workflows
+- **Fully offline** - No network requests, all data stored locally
 
 ## User Preferences
 
-I prefer concise and direct communication. When making changes, prioritize core functionality and architectural integrity. I value clear explanations for complex decisions. Do not introduce external dependencies or network requests, as the application is strictly offline and device-local. All data must reside on the user's device. I prefer iterative development with clear justifications for each step.
+- Concise and direct communication
+- Prioritize core functionality and architectural integrity
+- Clear explanations for complex decisions
+- No external dependencies or network requests - strictly offline
+- All data resides on the user's device
+- Iterative development with clear justifications
 
 ## System Architecture
 
-The application is built with **React Native and Expo**, ensuring cross-platform support while maintaining a fully offline and device-local experience. There is no backend server, API calls, or cloud integration; all data persists locally via AsyncStorage. The UI/UX adheres to **Material Design 3 (Material You)** guidelines with Android 16 design patterns, emphasizing dynamic color, clarity, and adaptability, with a comprehensive theming system offering 55 unique skins.
+The application is built with **Kotlin and Jetpack Compose**, ensuring a fully native Android experience with Material Design 3 styling.
 
-**Technical Implementations:**
-- **Platform**: React Native with Expo SDK
-- **State Management**: React Context API with custom hooks
-- **Data Persistence**: AsyncStorage for local storage
-- **Styling**: Material Design 3 tokens and components
-- **Audio Playback**: expo-av for local audio file playback
-- **Media Access**: expo-media-library for accessing device audio files
-- **Animations**: react-native-reanimated with M3 motion curves
+### Technology Stack
+- **Language**: Kotlin 2.0
+- **UI Framework**: Jetpack Compose with Material 3
+- **Dependency Injection**: Hilt
+- **Database**: Room with DataStore for preferences
+- **Audio Playback**: ExoPlayer (Media3)
+- **Build System**: Gradle with version catalogs
+- **Min SDK**: 24 (Android 7.0)
+- **Target SDK**: 35 (Android 15)
 
-**Navigation Structure:**
-The app features a 4-tab navigation structure:
-- **MainTabNavigator**: Hosts Listen, Library, Studio, and Settings tabs, with a persistent MiniPlayer overlay.
-    - **ListenTab**: Main music player, Now Playing, Sound Lab, and Queue management.
-    - **LibraryTab**: Music organization with a **Quick Access Category Grid** (7 color-coded cards: Liked, Recent, Top, Songs, Albums, Artists, Playlists) – all categories visible at once without horizontal scrolling.
-    - **StudioTab**: Voice recording over backing tracks with voice-specific effects (Noise Reduction + Reverb presets) and mixing capabilities, utilizing native Android audio modules.
-    - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Subscription Plan, and About.
+### Project Structure
+```
+android/
+├── app/
+│   ├── src/main/java/com/newaudio360/app/
+│   │   ├── audio/
+│   │   │   ├── playback/      # PlaybackEngine, PlaybackService
+│   │   │   ├── effects/       # AudioEffectsManager (EQ, BassBoost, Virtualizer)
+│   │   │   ├── waveform/      # WaveformAnalyzer (Visualizer)
+│   │   │   └── recording/     # RecordingEngine (Studio mode)
+│   │   ├── data/
+│   │   │   ├── local/         # Room database, DAOs, DataStore
+│   │   │   ├── model/         # Entity classes
+│   │   │   └── repository/    # MusicRepository
+│   │   ├── di/                # Hilt modules
+│   │   ├── ui/
+│   │   │   ├── theme/         # Material 3 theming
+│   │   │   ├── screens/       # Listen, Library, Studio, Settings, NowPlaying
+│   │   │   ├── components/    # SongCard, MiniPlayer, CategoryCard, BottomNavBar
+│   │   │   └── navigation/    # NavHost configuration
+│   │   └── util/              # Utility classes
+│   └── build.gradle.kts
+├── gradle/
+│   └── libs.versions.toml     # Version catalog
+├── build.gradle.kts           # Root build config
+├── settings.gradle.kts
+└── gradle.properties
+```
 
-**Native Audio Modules (located in `modules/audio-effects/`):**
+### Native Audio Architecture
 
-*Main Playback Engine (ExoPlayer-based):*
-- **PlaybackEngineModule**: Native Android playback using `ExoPlayer` (Media3) with:
-  - Queue management with gapless playback
-  - Shuffle and repeat modes (off/one/all)
-  - Playback speed control (0.25x - 3.0x)
-  - Audio session management for effect attachment
-  - Progress events at 250ms intervals
-  - Automatic audio focus handling
+**PlaybackEngine** (ExoPlayer-based):
+- Queue management with gapless playback
+- Shuffle and repeat modes (off/one/all)
+- Playback speed control (0.25x - 3.0x)
+- Audio session management for effect attachment
+- Progress events via Kotlin Flow at 250ms intervals
+- Automatic audio focus handling
 
-*Native Audio Effects (Session-bound):*
-- **EqualizerModule**: Android `Equalizer` API with device presets and custom band levels
-- **BassBoostModule**: Android `BassBoost` API with strength control (0-1000)
-- **VirtualizerModule**: Android `Virtualizer` API for spatial audio enhancement
-- **WaveformAnalyzerModule**: Android `Visualizer` API for real-time waveform and FFT data at 60Hz
+**AudioEffectsManager**:
+- Equalizer with device presets and custom band levels
+- BassBoost with strength control (0-1000)
+- Virtualizer for spatial audio enhancement
 
-*Karaoke Recording Architecture (Real-time Processing):*
-- **LiveRecordingModule**: Uses Android `AudioRecord` with `VOICE_PERFORMANCE` audio source (optimized for singing). Applies real-time effects during capture:
-  - `AcousticEchoCanceler` - Prevents backing track bleed into voice recording
-  - `NoiseSuppressor` - Real-time noise reduction
-  - `AutomaticGainControl` - Consistent voice levels
-  - Outputs 48kHz mono WAV for maximum clarity
-- **BackingTrackModule**: Separate `MediaPlayer` session for backing track playback. Uses independent audio session with `USAGE_MEDIA`/`CONTENT_TYPE_MUSIC` attributes to prevent interference with recording.
+**WaveformAnalyzer** (Visualizer-based):
+- Real-time waveform data at 60Hz
+- FFT frequency band analysis
+- RMS and peak value calculations
 
-*Post-Processing Modules (Export):*
-- **ReverbModule**: Uses Android `EnvironmentalReverb` API with 5 presets.
-- **NoiseReductionModule**: Uses Android `NoiseSuppressor` and `AutomaticGainControl` APIs with 4 levels.
-- **AudioMixerModule**: Mixes backing track and voice recording with effects, exporting 320kbps AAC to device storage using `MediaExtractor`, `MediaCodec`, and `MediaMuxer`.
+**RecordingEngine**:
+- AudioRecord with VOICE_PERFORMANCE audio source
+- Real-time effects: AcousticEchoCanceler, NoiseSuppressor, AutomaticGainControl
+- 48kHz mono WAV output for maximum clarity
 
-*StudioAudioEngine*: TypeScript service that bridges native modules on Android with expo-av fallback for web/iOS. Uses `getAudioCapabilities()` to detect device support for AEC/NS/AGC. Manages separate audio sessions for recording and playback.
-
-**Design Language:**
-The app uses **Material Design 3** (Material You) design language with M3 type scale, color system, spacing, shape (corner radii), elevation, motion, and touch targets. Key UI components include an M3-styled search input, sort menu, empty/loading states, app header, glassmorphism MiniPlayer, M3-styled song list items, animated cards, buttons, various card types, horizontal chips, and M3-styled bottom sheet and dialog modals.
-
-**Feature Specifications:**
-- **Theming**: 55 themes with custom icons, shapes, and component variants.
-- **Sound Lab**: Offers mutually exclusive Equalizer presets or Immersive modes.
-- **Subscription System**: Two-tier subscription model (Free, Standard, Premium) for feature gating, with mock IAP for development and client-side security for anti-tampering.
-- **MiniPlayer**: A persistent, glassmorphism-effect mini-player for quick control.
-- **Media Library Integration**: Onboarding for media access, paginated loading of device audio, and "Hide Song" functionality.
-- **Playlist Management**: Full CRUD operations for locally stored playlists.
-- **Playback Features**: Favorites, Recently Played, Most Played, Queue Management, and Sleep Timer.
-- **Studio Mode**: Enables recording voice over backing tracks with specific voice effects (Noise Reduction + Reverb), distinct from Sound Lab's music effects.
+### Navigation Structure
+- **Listen**: Main music player, Now Playing, Sound Lab, Queue
+- **Library**: Quick Access Category Grid (Liked, Recent, Top, Songs, Albums, Artists, Playlists)
+- **Studio**: Voice recording over backing tracks with effects
+- **Settings**: General settings, Appearance (themes), About
 
 ## Build Configuration
 
-**Module Resolution:**
-- Native audio modules are located in `modules/audio-effects/`
-- A symlink at `client/modules/audio-effects` points to the root modules directory for Metro resolution
-- babel.config.js uses `@` alias pointing to `./client` for all imports
-- metro.config.js adds watch folders and source extensions for platform-specific resolution
+### Building the APK/AAB
 
-**Platform-Specific Files:**
-- `modules/audio-effects/index.ts` - Native Android implementation with ExoPlayer and native effects
-- `modules/audio-effects/index.web.ts` - Web fallback using expo-av stubs
-- `client/services/NativeEffectsManager.ts` - Native effects manager for Android
-- `client/services/NativeEffectsManager.web.ts` - Web fallback (no-op)
+**Debug build:**
+```bash
+cd android
+./gradlew assembleDebug
+```
+Output: `android/app/build/outputs/apk/debug/app-debug.apk`
 
-**Build Requirements:**
-- This app requires an **Expo Development Build** for full native module functionality
-- Native audio effects (EQ, BassBoost, Virtualizer, Waveform) only work on Android
-- Web preview shows UI but uses expo-av fallback for audio playback
+**Release build (requires signing):**
+```bash
+cd android
+./gradlew assembleRelease
+./gradlew bundleRelease
+```
+Outputs:
+- APK: `android/app/build/outputs/apk/release/app-release.apk`
+- AAB: `android/app/build/outputs/bundle/release/app-release.aab`
 
-## External Dependencies
+### GitHub Actions Workflow
 
-- **React Native**: Cross-platform mobile framework
-- **Expo SDK**: Development and build tooling
-- **expo-av**: Audio playback (web fallback, deprecated in SDK 54)
-- **expo-audio**: Recommended audio replacement (migration pending)
-- **expo-media-library**: Device media access
-- **react-native-reanimated**: Smooth animations
-- **@react-navigation**: Navigation system
-- **MaterialCommunityIcons**: Iconography
+The project includes a GitHub Actions workflow (`.github/workflows/android-build.yml`) that:
+1. Builds debug APK on every push/PR
+2. Builds signed release APK and AAB on version tags (v*)
+3. Creates GitHub releases with build artifacts
+
+**Required secrets for release builds:**
+- `KEYSTORE_BASE64`: Base64-encoded release keystore
+- `KEYSTORE_PASSWORD`: Keystore password
+- `KEY_ALIAS`: Key alias
+- `KEY_PASSWORD`: Key password
+
+### Signing Configuration
+
+For release builds, create a keystore:
+```bash
+keytool -genkey -v -keystore release.keystore -alias newaudio360 -keyalg RSA -keysize 2048 -validity 10000
+```
+Place in `android/app/keystore/release.keystore`
+
+## Dependencies
+
+Managed via Gradle version catalog (`gradle/libs.versions.toml`):
+
+**Core:**
+- androidx.core:core-ktx
+- androidx.lifecycle (runtime, viewmodel, compose)
+- androidx.activity:activity-compose
+
+**Compose:**
+- androidx.compose.ui
+- androidx.compose.material3
+- androidx.navigation:navigation-compose
+
+**DI:**
+- com.google.dagger:hilt-android
+- androidx.hilt:hilt-navigation-compose
+
+**Data:**
+- androidx.room
+- androidx.datastore:datastore-preferences
+
+**Media:**
+- androidx.media3:media3-exoplayer
+- androidx.media3:media3-session
+
+**Other:**
+- kotlinx.coroutines
+- io.coil-kt:coil-compose
 
 ## Recent Changes
 
-- **2026-01-08**: Fixed Metro bundler resolution for native modules by creating symlink at `client/modules/audio-effects`. Updated metro.config.js with platform-specific source extensions and watch folders. Web preview now loads correctly with expo-av fallback.
+- **2026-01-08**: Complete architecture migration from React Native/Expo to pure native Android
+  - Removed all JavaScript, React Native, Expo, and Metro bundler dependencies
+  - Created new Gradle-based Android project structure
+  - Implemented Jetpack Compose UI with Material 3 design
+  - Converted Expo audio modules to standard Kotlin with Hilt DI
+  - Added Room database and DataStore for persistence
+  - Created GitHub Actions workflow for APK/AAB builds

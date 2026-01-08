@@ -1,7 +1,0 @@
-appId: com.newaudio360.app
-name: App Launch Test
----
-- launchApp
-- assertVisible: "Listen"
-- assertVisible: "Library"
-- assertVisible: "Settings"

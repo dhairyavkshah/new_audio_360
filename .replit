@@ -38,20 +38,18 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Start App"
+args = "Android Build Info"
 
 [[workflows.workflow]]
-name = "Start App"
+name = "Android Build Info"
 author = "agent"
-mode = "parallel"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev"
-waitForPort = 5000
+args = "echo \"=== New Audio 360 - Native Android App ===\" && echo \"\" && echo \"This is a pure native Android project. Build using:\" && echo \"\" && echo \"  cd android && ./gradlew assembleDebug\" && echo \"\" && echo \"Or push to GitHub to trigger the build workflow.\" && echo \"\" && echo \"Project structure:\" && ls -la android/app/src/main/java/com/newaudio360/app/ 2>/dev/null || echo \"Run 'cd android && ./gradlew tasks' to see available build tasks\""
 
 [workflows.workflow.metadata]
-outputType = "webview"
+outputType = "console"
 
 [userenv]
 
