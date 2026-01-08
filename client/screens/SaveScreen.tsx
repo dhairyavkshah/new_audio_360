@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, StyleSheet, TextInput, Pressable, Image, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, TextInput, Pressable, Image, Platform } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -9,12 +9,15 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
+import { Dialog } from "@/components/Dialog";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useThemeContext } from "@/contexts/ThemeContext";
+import { useStudioContext } from "@/contexts/StudioContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { addRecording, Recording } from "@/lib/storage";
-import { mockSongs } from "@/lib/data";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
+import { studioAudioEngine } from "@/services/StudioAudioEngine";
+import { AudioMixerModule } from "../../modules/audio-effects";
 
 type NavigationProp = NativeStackNavigationProp<CreateStackParamList>;
 type SaveRouteProp = RouteProp<CreateStackParamList, "Save">;
@@ -25,64 +28,145 @@ export default function SaveScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SaveRouteProp>();
   const { theme } = useThemeContext();
+  const { currentProject, selectedReverb, noiseReduction } = useStudioContext();
 
-  const randomSong = mockSongs[Math.floor(Math.random() * mockSongs.length)];
-  const [title, setTitle] = useState(`My Recording - ${randomSong.title}`);
+  const [title, setTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState("");
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (currentProject) {
+      setTitle(`${currentProject.name} - Recording`);
+    }
+  }, [currentProject]);
+
+  const mapReverbToNative = (reverb: string): string => {
+    const mapping: Record<string, string> = {
+      'None': 'none',
+      'Small Studio': 'small_studio',
+      'Medium Studio': 'medium_studio',
+      'Large Studio': 'large_studio',
+      'Open Theatre': 'open_theatre',
+      'Auditorium': 'auditorium',
+    };
+    return mapping[reverb] || 'none';
+  };
+
+  const mapNoiseToNative = (noise: string): string => {
+    const mapping: Record<string, string> = {
+      'Off': 'off',
+      'Light': 'light',
+      'Medium': 'medium',
+      'Strong': 'strong',
+    };
+    return mapping[noise] || 'off';
+  };
 
   const handleSave = async () => {
     if (!title.trim()) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Error", "Please enter a title for your recording");
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+      setErrorMessage("Please enter a title for your recording");
+      setShowErrorDialog(true);
       return;
     }
 
     setIsSaving(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
 
-    const newRecording: Recording = {
-      id: route.params.recordingId,
-      title: title.trim(),
-      songId: randomSong.id,
-      songTitle: randomSong.title,
-      artist: randomSong.artist,
-      createdAt: new Date().toISOString(),
-      duration: Math.floor(Math.random() * 180) + 60,
-      voiceVolume: 100,
-      musicVolume: 70,
-      effect: "Studio Clean",
-    };
+    try {
+      const voiceUri = studioAudioEngine.getRecordedUri();
+      const backingTrackUri = currentProject?.backgroundTrackUri;
+      
+      let exportResult;
+      
+      if (Platform.OS === 'android' && AudioMixerModule.isAvailable()) {
+        setSaveProgress("Processing audio...");
+        
+        if (backingTrackUri && voiceUri) {
+          setSaveProgress("Mixing tracks with effects...");
+          exportResult = await AudioMixerModule.mixAndExport(
+            backingTrackUri,
+            voiceUri,
+            title.trim(),
+            currentProject?.musicVolume || 70,
+            currentProject?.voiceVolume || 100,
+            0,
+            mapReverbToNative(selectedReverb) as any,
+            mapNoiseToNative(noiseReduction) as any
+          );
+        } else if (voiceUri) {
+          setSaveProgress("Saving voice recording...");
+          exportResult = await AudioMixerModule.copyVoiceRecording(voiceUri, title.trim());
+        } else {
+          throw new Error("No recording available to save");
+        }
+        
+        if (!exportResult.success) {
+          throw new Error(exportResult.error || "Failed to export recording");
+        }
+        
+        setSaveProgress("Saving metadata...");
+      } else {
+        setSaveProgress("Saving recording metadata...");
+        exportResult = {
+          success: true,
+          uri: voiceUri || undefined,
+          duration: studioAudioEngine.getDuration(),
+          fileSize: 0,
+        };
+      }
 
-    await addRecording(newRecording);
+      const newRecording: Recording = {
+        id: route.params.recordingId,
+        title: title.trim(),
+        songId: currentProject?.id || "unknown",
+        songTitle: currentProject?.backgroundTrackTitle || "Unknown Track",
+        artist: "You",
+        createdAt: new Date().toISOString(),
+        duration: Math.floor((exportResult.duration || studioAudioEngine.getDuration()) / 1000),
+        voiceVolume: currentProject?.voiceVolume || 100,
+        musicVolume: currentProject?.musicVolume || 70,
+        effect: `${selectedReverb} / ${noiseReduction}`,
+        fileUri: exportResult.uri,
+        backingTrackUri: backingTrackUri || undefined,
+        voiceTrackUri: voiceUri || undefined,
+        reverbPreset: selectedReverb,
+        noiseReduction: noiseReduction,
+        fileSize: exportResult.fileSize,
+      };
 
-    setTimeout(() => {
+      await addRecording(newRecording);
+
       setIsSaving(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert(
-        "Saved!",
-        "Your recording has been saved successfully.",
-        [
-          {
-            text: "View Recordings",
-            onPress: () => {
-              navigation.reset({
-                index: 0,
-                routes: [{ name: "Create" }],
-              });
-            },
-          },
-          {
-            text: "Create Another",
-            onPress: () => {
-              navigation.reset({
-                index: 0,
-                routes: [{ name: "Create" }],
-              });
-            },
-          },
-        ]
-      );
-    }, 1000);
+      setSaveProgress("");
+      
+      if (Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      
+      setShowSuccessDialog(true);
+    } catch (error) {
+      console.error("Save error:", error);
+      setIsSaving(false);
+      setSaveProgress("");
+      setErrorMessage(error instanceof Error ? error.message : "Failed to save recording");
+      setShowErrorDialog(true);
+    }
+  };
+
+  const handleSuccessClose = () => {
+    setShowSuccessDialog(false);
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Create" }],
+    });
   };
 
   return (
@@ -94,22 +178,26 @@ export default function SaveScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <GlassCard style={styles.previewCard}>
-          <View style={styles.previewContent}>
-            <Image source={{ uri: randomSong.artwork }} style={styles.artwork} />
-            <View style={styles.previewInfo}>
-              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                Based on
-              </ThemedText>
-              <ThemedText type="body" style={{ fontWeight: "600" }} numberOfLines={1}>
-                {randomSong.title}
-              </ThemedText>
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                {randomSong.artist}
-              </ThemedText>
+        {currentProject?.backgroundTrackTitle ? (
+          <GlassCard style={styles.previewCard}>
+            <View style={styles.previewContent}>
+              <View style={[styles.artworkPlaceholder, { backgroundColor: theme.primary + "30" }]}>
+                <MaterialCommunityIcons name="music" size={32} color={theme.primary} />
+              </View>
+              <View style={styles.previewInfo}>
+                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                  Based on
+                </ThemedText>
+                <ThemedText type="body" style={{ fontWeight: "600" }} numberOfLines={1}>
+                  {currentProject.backgroundTrackTitle}
+                </ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                  Karaoke Recording
+                </ThemedText>
+              </View>
             </View>
-          </View>
-        </GlassCard>
+          </GlassCard>
+        ) : null}
 
         <View style={styles.section}>
           <ThemedText type="h4" style={styles.sectionTitle}>
@@ -135,31 +223,29 @@ export default function SaveScreen() {
         <GlassCard style={styles.infoCard}>
           <View style={styles.infoRow}>
             <View style={styles.infoItem}>
-              <MaterialCommunityIcons name="volume-high" size={18} color={theme.primary} />
+              <MaterialCommunityIcons name="waveform" size={18} color={theme.primary} />
               <ThemedText type="small" style={{ marginLeft: Spacing.sm }}>
-                Standard Quality
+                {selectedReverb}
               </ThemedText>
             </View>
             <View style={styles.infoItem}>
-              <MaterialCommunityIcons name="folder" size={18} color={theme.primary} />
+              <MaterialCommunityIcons name="volume-off" size={18} color={theme.primary} />
               <ThemedText type="small" style={{ marginLeft: Spacing.sm }}>
-                Saved Locally
+                Noise: {noiseReduction}
               </ThemedText>
             </View>
           </View>
         </GlassCard>
 
-        <GlassCard style={styles.premiumCard}>
-          <View style={styles.premiumContent}>
-            <View style={[styles.premiumBadge, { backgroundColor: theme.primary + "20" }]}>
-              <MaterialCommunityIcons name="star" size={20} color={theme.primary} />
-            </View>
-            <View style={styles.premiumText}>
+        <GlassCard style={styles.qualityCard}>
+          <View style={styles.qualityContent}>
+            <MaterialCommunityIcons name="quality-high" size={24} color={theme.primary} />
+            <View style={styles.qualityText}>
               <ThemedText type="body" style={{ fontWeight: "600" }}>
-                Upgrade to Premium
+                High Quality Export
               </ThemedText>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                Export in high quality and unlock all effects
+                320kbps AAC • Saved to device
               </ThemedText>
             </View>
           </View>
@@ -174,9 +260,12 @@ export default function SaveScreen() {
           ]}
         >
           {isSaving ? (
-            <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-              Saving...
-            </ThemedText>
+            <View style={styles.savingContent}>
+              <MaterialCommunityIcons name="loading" size={20} color="#FFFFFF" />
+              <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: Spacing.sm }}>
+                {saveProgress || "Saving..."}
+              </ThemedText>
+            </View>
           ) : (
             <>
               <MaterialCommunityIcons name="content-save" size={20} color="#FFFFFF" />
@@ -187,6 +276,26 @@ export default function SaveScreen() {
           )}
         </Pressable>
       </KeyboardAwareScrollViewCompat>
+
+      <Dialog
+        visible={showSuccessDialog}
+        title="Recording Saved!"
+        message="Your recording has been saved successfully to your device."
+        actions={[
+          { label: "Done", onPress: handleSuccessClose, variant: "secondary" }
+        ]}
+        onDismiss={handleSuccessClose}
+      />
+
+      <Dialog
+        visible={showErrorDialog}
+        title="Save Failed"
+        message={errorMessage}
+        actions={[
+          { label: "OK", onPress: () => setShowErrorDialog(false), variant: "default" }
+        ]}
+        onDismiss={() => setShowErrorDialog(false)}
+      />
     </ThemedView>
   );
 }
@@ -205,10 +314,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  artwork: {
+  artworkPlaceholder: {
     width: 72,
     height: 72,
     borderRadius: BorderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
   },
   previewInfo: {
     flex: 1,
@@ -243,21 +354,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  premiumCard: {
+  qualityCard: {
     marginBottom: Spacing.xl,
   },
-  premiumContent: {
+  qualityContent: {
     flexDirection: "row",
     alignItems: "center",
   },
-  premiumBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  premiumText: {
+  qualityText: {
     flex: 1,
     marginLeft: Spacing.lg,
   },
@@ -268,5 +372,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.lg,
     gap: Spacing.sm,
+  },
+  savingContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 });

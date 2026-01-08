@@ -55,8 +55,42 @@ interface NoiseReductionModuleInterface extends NativeModule {
   release(): Promise<NoiseReductionResult>;
 }
 
+export interface MixExportResult {
+  success: boolean;
+  uri?: string;
+  fileName?: string;
+  duration?: number;
+  fileSize?: number;
+  error?: string;
+}
+
+export interface RecordingFile {
+  name: string;
+  uri: string;
+  size: number;
+  lastModified: number;
+}
+
+interface AudioMixerModuleInterface extends NativeModule {
+  mixAndExport(
+    backingTrackUri: string,
+    voiceTrackUri: string,
+    outputFileName: string,
+    musicVolume: number,
+    voiceVolume: number,
+    syncOffsetMs: number,
+    reverbPreset: string,
+    noiseReduction: string
+  ): Promise<MixExportResult>;
+  copyVoiceRecording(sourceUri: string, outputFileName: string): Promise<MixExportResult>;
+  getRecordingsDirectory(): string | null;
+  listRecordings(): RecordingFile[];
+  deleteRecording(uri: string): Promise<{ success: boolean }>;
+}
+
 let ReverbModuleNative: ReverbModuleInterface | null = null;
 let NoiseReductionModuleNative: NoiseReductionModuleInterface | null = null;
+let AudioMixerModuleNative: AudioMixerModuleInterface | null = null;
 
 if (Platform.OS === 'android') {
   try {
@@ -69,6 +103,12 @@ if (Platform.OS === 'android') {
     NoiseReductionModuleNative = requireNativeModule<NoiseReductionModuleInterface>('NoiseReductionModule');
   } catch (e) {
     console.warn('NoiseReductionModule not available:', e);
+  }
+  
+  try {
+    AudioMixerModuleNative = requireNativeModule<AudioMixerModuleInterface>('AudioMixerModule');
+  } catch (e) {
+    console.warn('AudioMixerModule not available:', e);
   }
 }
 
@@ -253,4 +293,88 @@ export const NOISE_REDUCTION_INFO: Record<NoiseReductionLevel, { name: string; d
   light: { name: 'Light', description: 'Subtle background noise reduction' },
   medium: { name: 'Medium', description: 'Balanced noise reduction with gain control' },
   strong: { name: 'Strong', description: 'Maximum noise suppression' }
+};
+
+export const AudioMixerModule = {
+  isAvailable: (): boolean => {
+    return Platform.OS === 'android' && AudioMixerModuleNative !== null;
+  },
+
+  mixAndExport: async (
+    backingTrackUri: string,
+    voiceTrackUri: string,
+    outputFileName: string,
+    musicVolume: number,
+    voiceVolume: number,
+    syncOffsetMs: number,
+    reverbPreset: ReverbPreset,
+    noiseReduction: NoiseReductionLevel
+  ): Promise<MixExportResult> => {
+    if (!AudioMixerModuleNative) {
+      return { success: false, error: 'Audio mixer module not available on this platform' };
+    }
+    try {
+      return await AudioMixerModuleNative.mixAndExport(
+        backingTrackUri,
+        voiceTrackUri,
+        outputFileName,
+        musicVolume / 100,
+        voiceVolume / 100,
+        syncOffsetMs,
+        reverbPreset,
+        noiseReduction
+      );
+    } catch (error) {
+      console.error('AudioMixerModule.mixAndExport error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  copyVoiceRecording: async (sourceUri: string, outputFileName: string): Promise<MixExportResult> => {
+    if (!AudioMixerModuleNative) {
+      return { success: false, error: 'Audio mixer module not available on this platform' };
+    }
+    try {
+      return await AudioMixerModuleNative.copyVoiceRecording(sourceUri, outputFileName);
+    } catch (error) {
+      console.error('AudioMixerModule.copyVoiceRecording error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  getRecordingsDirectory: (): string | null => {
+    if (!AudioMixerModuleNative) {
+      return null;
+    }
+    try {
+      return AudioMixerModuleNative.getRecordingsDirectory();
+    } catch (error) {
+      console.error('AudioMixerModule.getRecordingsDirectory error:', error);
+      return null;
+    }
+  },
+
+  listRecordings: (): RecordingFile[] => {
+    if (!AudioMixerModuleNative) {
+      return [];
+    }
+    try {
+      return AudioMixerModuleNative.listRecordings();
+    } catch (error) {
+      console.error('AudioMixerModule.listRecordings error:', error);
+      return [];
+    }
+  },
+
+  deleteRecording: async (uri: string): Promise<{ success: boolean }> => {
+    if (!AudioMixerModuleNative) {
+      return { success: false };
+    }
+    try {
+      return await AudioMixerModuleNative.deleteRecording(uri);
+    } catch (error) {
+      console.error('AudioMixerModule.deleteRecording error:', error);
+      return { success: false };
+    }
+  }
 };

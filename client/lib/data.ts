@@ -19,6 +19,12 @@ export interface Recording {
   voiceVolume: number;
   musicVolume: number;
   effect: string;
+  fileUri?: string;
+  backingTrackUri?: string;
+  voiceTrackUri?: string;
+  reverbPreset?: string;
+  noiseReduction?: string;
+  fileSize?: number;
 }
 
 export interface PlayerState {
