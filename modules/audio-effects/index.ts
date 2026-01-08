@@ -314,12 +314,14 @@ export const AudioMixerModule = {
       return { success: false, error: 'Audio mixer module not available on this platform' };
     }
     try {
+      const normalizedMusicVolume = Math.max(0, Math.min(1, musicVolume / 100));
+      const normalizedVoiceVolume = Math.max(0, Math.min(1, voiceVolume / 100));
       return await AudioMixerModuleNative.mixAndExport(
         backingTrackUri,
         voiceTrackUri,
         outputFileName,
-        musicVolume / 100,
-        voiceVolume / 100,
+        normalizedMusicVolume,
+        normalizedVoiceVolume,
         syncOffsetMs,
         reverbPreset,
         noiseReduction
