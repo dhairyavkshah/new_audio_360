@@ -19,9 +19,10 @@ import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionCo
 import SplashScreen from "@/screens/SplashScreen";
 import LoadingScreen from "@/screens/LoadingScreen";
 import PermissionOnboardingScreen from "@/screens/PermissionOnboardingScreen";
+import FolderSelectionScreen from "@/screens/FolderSelectionScreen";
 import LockoutScreen from "@/screens/LockoutScreen";
 
-type AppState = "splash" | "loading" | "checkingOnboarding" | "onboarding" | "ready";
+type AppState = "splash" | "loading" | "checkingOnboarding" | "onboarding" | "folderSelection" | "ready";
 
 function LockoutGuard({ children }: { children: React.ReactNode }) {
   const { isLocked, isLoading } = useSubscription();
@@ -39,7 +40,7 @@ function LockoutGuard({ children }: { children: React.ReactNode }) {
 
 function AppContent() {
   const [appState, setAppState] = useState<AppState>("splash");
-  const { isOnboardingComplete, isLoading, completeOnboarding, skipOnboarding } = useMediaLibraryContext();
+  const { isOnboardingComplete, isLoading, completeOnboarding, skipOnboarding, musicFolderUri } = useMediaLibraryContext();
 
   const handleSplashFinish = () => {
     setAppState("loading");
@@ -50,25 +51,34 @@ function AppContent() {
 
   useEffect(() => {
     if (appState === "checkingOnboarding") {
-      if (isOnboardingComplete) {
+      if (isOnboardingComplete && musicFolderUri) {
         setAppState("ready");
+      } else if (isOnboardingComplete && !musicFolderUri) {
+        setAppState("folderSelection");
       } else {
         setAppState("onboarding");
       }
     }
-  }, [appState, isOnboardingComplete]);
+  }, [appState, isOnboardingComplete, musicFolderUri]);
 
   const handleOnboardingComplete = async () => {
     setAppState("loading");
     await completeOnboarding();
     setTimeout(() => {
-      setAppState("ready");
+      setAppState("folderSelection");
     }, 500);
   };
 
   const handleOnboardingSkip = async () => {
     setAppState("loading");
     await skipOnboarding();
+    setTimeout(() => {
+      setAppState("ready");
+    }, 500);
+  };
+
+  const handleFolderSelectionComplete = () => {
+    setAppState("loading");
     setTimeout(() => {
       setAppState("ready");
     }, 500);
@@ -88,6 +98,14 @@ function AppContent() {
       <PermissionOnboardingScreen
         onComplete={handleOnboardingComplete}
         onSkip={handleOnboardingSkip}
+      />
+    );
+  }
+
+  if (appState === "folderSelection") {
+    return (
+      <FolderSelectionScreen
+        onComplete={handleFolderSelectionComplete}
       />
     );
   }

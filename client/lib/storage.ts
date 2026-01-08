@@ -16,6 +16,7 @@ const STORAGE_KEYS = {
   FAVORITES: '@new_audio_360_favorites',
   RECENTLY_PLAYED: '@new_audio_360_recently_played',
   PLAY_COUNTS: '@new_audio_360_play_counts',
+  MUSIC_FOLDER_URI: '@new_audio_360_music_folder_uri',
 };
 
 export interface Playlist {
@@ -340,4 +341,26 @@ export async function getMostPlayed(limit: number = 10): Promise<string[]> {
     .slice(0, limit)
     .map(([id]) => id);
   return sorted;
+}
+
+export async function saveMusicFolderUri(uri: string | null): Promise<void> {
+  try {
+    if (uri === null) {
+      await AsyncStorage.removeItem(STORAGE_KEYS.MUSIC_FOLDER_URI);
+    } else {
+      await AsyncStorage.setItem(STORAGE_KEYS.MUSIC_FOLDER_URI, uri);
+    }
+  } catch (error) {
+    console.error('Error saving music folder URI:', error);
+  }
+}
+
+export async function getMusicFolderUri(): Promise<string | null> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.MUSIC_FOLDER_URI);
+    return data || null;
+  } catch (error) {
+    console.error('Error getting music folder URI:', error);
+    return null;
+  }
 }

@@ -16,6 +16,7 @@ import { Spacing, BorderRadius, Layout, M3Shape } from "@/constants/theme";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 import { getHapticEnabled, setHapticEnabled as saveHapticEnabled } from "@/lib/storage";
 import { usePlayerContext } from "@/contexts/PlayerContext";
+import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import ExitScreen from "@/screens/ExitScreen";
 
 const SLEEP_TIMER_OPTIONS = [
@@ -75,12 +76,42 @@ export default function SettingsScreen() {
   const { theme } = useThemeContext();
   const { uiSoundEnabled, setUiSoundEnabled, playTapSound } = useUiSound();
   const { sleepTimerMinutes, setSleepTimer } = usePlayerContext();
+  const { musicFolderUri, selectMusicFolder, songs, refreshSongs } = useMediaLibraryContext();
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [showExitScreen, setShowExitScreen] = useState(false);
+  const [isChangingFolder, setIsChangingFolder] = useState(false);
 
   useEffect(() => {
     getHapticEnabled().then(setHapticEnabled);
   }, []);
+
+  const getFolderDisplayName = (uri: string): string => {
+    try {
+      const decoded = decodeURIComponent(uri);
+      const parts = decoded.split('/');
+      const folderName = parts[parts.length - 1] || parts[parts.length - 2] || 'Selected Folder';
+      return folderName.replace(/%3A/g, ':').replace(/%2F/g, '/');
+    } catch {
+      return 'Selected Folder';
+    }
+  };
+
+  const handleChangeFolder = async () => {
+    playTapSound();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsChangingFolder(true);
+    
+    try {
+      const success = await selectMusicFolder();
+      if (success) {
+        await refreshSongs();
+      }
+    } catch (error) {
+      console.error('Error changing folder:', error);
+    } finally {
+      setIsChangingFolder(false);
+    }
+  };
 
   const handleHapticToggle = (value: boolean) => {
     if (value) {
@@ -122,6 +153,41 @@ export default function SettingsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="folder-music" size={20} color={theme.primary} />
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Music Source
+            </ThemedText>
+          </View>
+          <View style={[styles.musicSourceCard, { backgroundColor: theme.backgroundSecondary }]}>
+            <View style={styles.musicSourceInfo}>
+              <View style={[styles.folderIconContainer, { backgroundColor: theme.primary + '20' }]}>
+                <MaterialCommunityIcons name="folder" size={24} color={theme.primary} />
+              </View>
+              <View style={styles.musicSourceDetails}>
+                <ThemedText type="bodyLarge" style={{ fontWeight: '600' }} numberOfLines={1}>
+                  {musicFolderUri ? getFolderDisplayName(musicFolderUri) : 'No folder selected'}
+                </ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                  {songs.length} {songs.length === 1 ? 'song' : 'songs'} found
+                </ThemedText>
+              </View>
+            </View>
+            <Pressable
+              style={[styles.changeFolderButton, { backgroundColor: theme.primary }]}
+              onPress={handleChangeFolder}
+              disabled={isChangingFolder}
+            >
+              {isChangingFolder ? (
+                <ThemedText type="small" style={{ color: '#FFFFFF', fontWeight: '600' }}>...</ThemedText>
+              ) : (
+                <ThemedText type="small" style={{ color: '#FFFFFF', fontWeight: '600' }}>Change</ThemedText>
+              )}
+            </Pressable>
+          </View>
+        </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -372,6 +438,39 @@ const styles = StyleSheet.create({
     minWidth: 70,
     alignItems: "center",
     height: Layout.buttonStandard,
+    justifyContent: "center",
+  },
+  musicSourceCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: Spacing.l,
+    borderRadius: BorderRadius.card,
+    minHeight: Layout.listItemStandard,
+  },
+  musicSourceInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: Spacing.m,
+  },
+  folderIconContainer: {
+    width: Layout.touchTargetMin,
+    height: Layout.touchTargetMin,
+    borderRadius: BorderRadius.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  musicSourceDetails: {
+    flex: 1,
+    marginLeft: Spacing.contentBlock,
+    gap: Spacing.titleToSubtitle,
+  },
+  changeFolderButton: {
+    paddingVertical: Spacing.s,
+    paddingHorizontal: Spacing.l,
+    borderRadius: BorderRadius.button,
+    alignItems: "center",
     justifyContent: "center",
   },
 });
