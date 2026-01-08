@@ -325,9 +325,10 @@ export class StudioAudioEngine {
   private async startRecordingNative(): Promise<void> {
     const timestamp = Date.now();
     const cacheDir = FileSystem.cacheDirectory || '';
-    const outputPath = `${cacheDir}voice_recording_${timestamp}.wav`;
+    const outputUri = `${cacheDir}voice_recording_${timestamp}.wav`;
+    const outputPath = outputUri.replace('file://', '');
     
-    this.nativeRecordingPath = outputPath;
+    this.nativeRecordingPath = outputUri;
     
     const capabilities = this.getAudioCapabilities();
     
