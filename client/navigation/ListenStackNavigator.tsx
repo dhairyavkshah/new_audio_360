@@ -1,7 +1,6 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
-import { HeaderTitle } from "@/components/HeaderTitle";
 import ListenScreen from "@/screens/ListenScreen";
 import NowPlayingScreen from "@/screens/NowPlayingScreen";
 import SoundLabScreen from "@/screens/SoundLabScreen";
@@ -25,7 +24,7 @@ export default function ListenStackNavigator() {
         name="Listen"
         component={ListenScreen}
         options={{
-          headerTitle: () => <HeaderTitle title="New Audio 360" />,
+          headerShown: false,
         }}
       />
       <Stack.Screen

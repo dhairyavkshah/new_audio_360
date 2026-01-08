@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { View, StyleSheet, FlatList, Pressable, Image, Platform, TextInput, ActivityIndicator, LayoutChangeEvent } from "react-native";
-import { useHeaderHeight } from "@react-navigation/elements";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -14,7 +14,7 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { Spacing, BorderRadius, Layout, Typography } from "@/constants/theme";
+import { Spacing, BorderRadius, Layout, Typography, M3Shape, M3Elevation } from "@/constants/theme";
 import { mockSongs, Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import { PlayableSong } from "@/contexts/PlayerContext";
@@ -32,7 +32,7 @@ const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
 ];
 
 export default function ListenScreen() {
-  const headerHeight = useHeaderHeight();
+  const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useThemeContext();
@@ -46,14 +46,14 @@ export default function ListenScreen() {
   const [contextMenuSong, setContextMenuSong] = useState<PlayableSong | null>(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [stickyHeaderHeight, setStickyHeaderHeight] = useState(90);
+  const [headerHeight, setHeaderHeight] = useState(56);
 
-  const handleStickyHeaderLayout = useCallback((event: LayoutChangeEvent) => {
+  const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
     const { height } = event.nativeEvent.layout;
-    if (height > 0 && Math.abs(height - stickyHeaderHeight) > 2) {
-      setStickyHeaderHeight(height);
+    if (height > 0 && Math.abs(height - headerHeight) > 2) {
+      setHeaderHeight(height);
     }
-  }, [stickyHeaderHeight]);
+  }, [headerHeight]);
 
   const allSongs: PlayableSong[] = useMemo(() => {
     return deviceSongs.length > 0 ? deviceSongs : mockSongs;
@@ -120,23 +120,19 @@ export default function ListenScreen() {
     setTimeout(() => setSuccessMessage(null), 3000);
   }, []);
 
-  const renderStickyHeader = () => (
+  const renderHeader = () => (
     <View 
-      style={[styles.stickyHeader, { backgroundColor: theme.backgroundDefault, top: headerHeight, borderBottomColor: theme.outlineVariant }]}
-      onLayout={handleStickyHeaderLayout}
+      style={[styles.header, { paddingTop: insets.top, backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}
+      onLayout={handleHeaderLayout}
     >
-      <View style={styles.searchSortRow}>
-        <View style={[styles.searchContainer, { backgroundColor: theme.surfaceVariant }]}>
-          <MaterialCommunityIcons
-            name="magnify"
-            size={18}
-            color={theme.textSecondary}
-            style={styles.searchIcon}
-          />
+      <View style={styles.headerRow}>
+        <ThemedText type="titleLarge" style={styles.headerTitle}>New Audio 360</ThemedText>
+        <View style={[styles.searchContainer, { backgroundColor: theme.surfaceContainerHigh }]}>
+          <MaterialCommunityIcons name="magnify" size={16} color={theme.onSurfaceVariant} />
           <TextInput
-            style={[styles.searchInput, { color: theme.text }]}
+            style={[styles.searchInput, { color: theme.onSurface }]}
             placeholder="Search..."
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor={theme.onSurfaceVariant}
             value={searchQuery}
             onChangeText={setSearchQuery}
             returnKeyType="search"
@@ -147,14 +143,14 @@ export default function ListenScreen() {
                 playTapSound();
                 setSearchQuery("");
               }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <MaterialCommunityIcons name="close-circle" size={16} color={theme.textSecondary} />
+              <MaterialCommunityIcons name="close-circle" size={14} color={theme.onSurfaceVariant} />
             </Pressable>
           ) : null}
         </View>
         <Pressable
-          style={[styles.sortButton, { backgroundColor: theme.surfaceVariant }]}
+          style={[styles.sortButton, { backgroundColor: theme.surfaceContainerHigh }]}
           onPress={() => {
             playTapSound();
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -164,17 +160,16 @@ export default function ListenScreen() {
           <MaterialCommunityIcons
             name={SORT_OPTIONS.find((o) => o.key === sortBy)?.icon as any || "sort"}
             size={16}
-            color={theme.text}
+            color={theme.onSurface}
           />
           <MaterialCommunityIcons
             name={showSortOptions ? "chevron-up" : "chevron-down"}
-            size={14}
-            color={theme.textSecondary}
-            style={{ marginLeft: 2 }}
+            size={12}
+            color={theme.onSurfaceVariant}
           />
         </Pressable>
       </View>
-      <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
+      <ThemedText type="labelSmall" style={{ color: theme.onSurfaceVariant, marginTop: Spacing.xs }}>
         {filteredAndSortedSongs.length} {filteredAndSortedSongs.length === 1 ? "song" : "songs"}
       </ThemedText>
     </View>
@@ -187,7 +182,7 @@ export default function ListenScreen() {
           style={styles.sortOverlayBackdrop} 
           onPress={() => setShowSortOptions(false)} 
         />
-        <View style={[styles.sortOptionsOverlay, { backgroundColor: theme.surface, top: headerHeight + stickyHeaderHeight - 20 }]}>
+        <View style={[styles.sortOptionsOverlay, { backgroundColor: theme.surfaceContainerHigh, top: insets.top + headerHeight - 10 }]}>
           {SORT_OPTIONS.map((option) => (
             <Pressable
               key={option.key}
@@ -257,14 +252,14 @@ export default function ListenScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      {renderStickyHeader()}
+      {renderHeader()}
       <FlatList
         data={filteredAndSortedSongs}
         renderItem={renderSong}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContent,
-          { paddingTop: headerHeight + stickyHeaderHeight + Spacing.m, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
+          { paddingTop: Spacing.s, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
         ]}
         ListEmptyComponent={renderEmptyList}
         showsVerticalScrollIndicator={false}
@@ -304,44 +299,42 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: Layout.horizontalPadding,
   },
-  stickyHeader: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    zIndex: 10,
+  header: {
     paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.s,
-    paddingBottom: Spacing.m,
+    paddingBottom: Spacing.s,
     borderBottomWidth: 1,
   },
-  searchSortRow: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.contentBlock,
+    gap: Spacing.s,
+  },
+  headerTitle: {
+    fontWeight: "600",
+    marginRight: Spacing.xs,
   },
   searchContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: BorderRadius.input,
-    paddingHorizontal: Spacing.m,
-    height: Layout.inputFieldHeight,
-  },
-  searchIcon: {
-    marginRight: Spacing.iconGap,
+    borderRadius: M3Shape.cornerFull,
+    paddingHorizontal: Spacing.s,
+    height: 36,
+    gap: Spacing.xs,
   },
   searchInput: {
     flex: 1,
-    fontSize: Typography.body.fontSize,
+    fontSize: 14,
     height: "100%",
   },
   sortButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.m,
-    borderRadius: BorderRadius.button,
-    height: Layout.buttonStandard,
+    paddingHorizontal: Spacing.s,
+    paddingVertical: Spacing.s,
+    borderRadius: M3Shape.cornerFull,
+    height: 36,
+    gap: 2,
   },
   sortOverlayBackdrop: {
     position: "absolute",
