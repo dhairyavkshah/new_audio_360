@@ -88,9 +88,88 @@ interface AudioMixerModuleInterface extends NativeModule {
   deleteRecording(uri: string): Promise<{ success: boolean }>;
 }
 
+export interface LiveRecordingResult {
+  success: boolean;
+  error?: string;
+  audioSessionId?: number;
+  sampleRate?: number;
+  channels?: number;
+  bitDepth?: number;
+  echoCancelerEnabled?: boolean;
+  noiseSuppressorEnabled?: boolean;
+  agcEnabled?: boolean;
+  uri?: string;
+  durationMs?: number;
+  fileSize?: number;
+}
+
+export interface RecordingStatus {
+  isRecording: boolean;
+  isPaused: boolean;
+  durationMs: number;
+  bytesWritten: number;
+}
+
+export interface AudioEffectsAvailability {
+  acousticEchoCanceler: boolean;
+  noiseSuppressor: boolean;
+  automaticGainControl: boolean;
+}
+
+interface LiveRecordingModuleInterface extends NativeModule {
+  isAvailable(): boolean;
+  getAudioEffectsAvailability(): AudioEffectsAvailability;
+  startRecording(
+    outputPath: string,
+    enableEchoCanceler: boolean,
+    enableNoiseSuppressor: boolean,
+    enableAgc: boolean
+  ): Promise<LiveRecordingResult>;
+  pauseRecording(): Promise<{ success: boolean }>;
+  resumeRecording(): Promise<{ success: boolean }>;
+  stopRecording(): Promise<LiveRecordingResult>;
+  setInputGain(gain: number): { success: boolean; gain: number };
+  getRecordingStatus(): RecordingStatus;
+  cancelRecording(): Promise<{ success: boolean }>;
+}
+
+export interface BackingTrackStatus {
+  isLoaded: boolean;
+  isPlaying: boolean;
+  currentPositionMs: number;
+  durationMs: number;
+  uri: string;
+}
+
+export interface BackingTrackResult {
+  success: boolean;
+  error?: string;
+  durationMs?: number;
+  audioSessionId?: number;
+  positionMs?: number;
+  volume?: number;
+}
+
+interface BackingTrackModuleInterface extends NativeModule {
+  isAvailable(): boolean;
+  loadTrack(uri: string): Promise<BackingTrackResult>;
+  play(): Promise<{ success: boolean }>;
+  pause(): Promise<{ success: boolean }>;
+  stop(): Promise<{ success: boolean }>;
+  seekTo(positionMs: number): Promise<BackingTrackResult>;
+  setVolume(volume: number): { success: boolean; volume: number };
+  getStatus(): BackingTrackStatus;
+  release(): Promise<{ success: boolean }>;
+  getCurrentPosition(): number;
+  getDuration(): number;
+  getAudioSessionId(): number;
+}
+
 let ReverbModuleNative: ReverbModuleInterface | null = null;
 let NoiseReductionModuleNative: NoiseReductionModuleInterface | null = null;
 let AudioMixerModuleNative: AudioMixerModuleInterface | null = null;
+let LiveRecordingModuleNative: LiveRecordingModuleInterface | null = null;
+let BackingTrackModuleNative: BackingTrackModuleInterface | null = null;
 
 if (Platform.OS === 'android') {
   try {
@@ -109,6 +188,18 @@ if (Platform.OS === 'android') {
     AudioMixerModuleNative = requireNativeModule<AudioMixerModuleInterface>('AudioMixerModule');
   } catch (e) {
     console.warn('AudioMixerModule not available:', e);
+  }
+  
+  try {
+    LiveRecordingModuleNative = requireNativeModule<LiveRecordingModuleInterface>('LiveRecordingModule');
+  } catch (e) {
+    console.warn('LiveRecordingModule not available:', e);
+  }
+  
+  try {
+    BackingTrackModuleNative = requireNativeModule<BackingTrackModuleInterface>('BackingTrackModule');
+  } catch (e) {
+    console.warn('BackingTrackModule not available:', e);
   }
 }
 
@@ -377,6 +468,261 @@ export const AudioMixerModule = {
     } catch (error) {
       console.error('AudioMixerModule.deleteRecording error:', error);
       return { success: false };
+    }
+  }
+};
+
+export const LiveRecordingModule = {
+  isAvailable: (): boolean => {
+    return Platform.OS === 'android' && LiveRecordingModuleNative !== null;
+  },
+
+  getAudioEffectsAvailability: (): AudioEffectsAvailability => {
+    if (!LiveRecordingModuleNative) {
+      return { acousticEchoCanceler: false, noiseSuppressor: false, automaticGainControl: false };
+    }
+    try {
+      return LiveRecordingModuleNative.getAudioEffectsAvailability();
+    } catch (error) {
+      console.error('LiveRecordingModule.getAudioEffectsAvailability error:', error);
+      return { acousticEchoCanceler: false, noiseSuppressor: false, automaticGainControl: false };
+    }
+  },
+
+  startRecording: async (
+    outputPath: string,
+    options: {
+      enableEchoCanceler?: boolean;
+      enableNoiseSuppressor?: boolean;
+      enableAgc?: boolean;
+    } = {}
+  ): Promise<LiveRecordingResult> => {
+    if (!LiveRecordingModuleNative) {
+      return { success: false, error: 'Live recording module not available on this platform' };
+    }
+    try {
+      const { enableEchoCanceler = true, enableNoiseSuppressor = true, enableAgc = true } = options;
+      return await LiveRecordingModuleNative.startRecording(
+        outputPath,
+        enableEchoCanceler,
+        enableNoiseSuppressor,
+        enableAgc
+      );
+    } catch (error) {
+      console.error('LiveRecordingModule.startRecording error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  pauseRecording: async (): Promise<{ success: boolean }> => {
+    if (!LiveRecordingModuleNative) {
+      return { success: false };
+    }
+    try {
+      return await LiveRecordingModuleNative.pauseRecording();
+    } catch (error) {
+      console.error('LiveRecordingModule.pauseRecording error:', error);
+      return { success: false };
+    }
+  },
+
+  resumeRecording: async (): Promise<{ success: boolean }> => {
+    if (!LiveRecordingModuleNative) {
+      return { success: false };
+    }
+    try {
+      return await LiveRecordingModuleNative.resumeRecording();
+    } catch (error) {
+      console.error('LiveRecordingModule.resumeRecording error:', error);
+      return { success: false };
+    }
+  },
+
+  stopRecording: async (): Promise<LiveRecordingResult> => {
+    if (!LiveRecordingModuleNative) {
+      return { success: false, error: 'Live recording module not available' };
+    }
+    try {
+      return await LiveRecordingModuleNative.stopRecording();
+    } catch (error) {
+      console.error('LiveRecordingModule.stopRecording error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setInputGain: (gain: number): { success: boolean; gain: number } => {
+    if (!LiveRecordingModuleNative) {
+      return { success: false, gain: 1.0 };
+    }
+    try {
+      const normalizedGain = Math.max(0, Math.min(3, gain / 100));
+      return LiveRecordingModuleNative.setInputGain(normalizedGain);
+    } catch (error) {
+      console.error('LiveRecordingModule.setInputGain error:', error);
+      return { success: false, gain: 1.0 };
+    }
+  },
+
+  getRecordingStatus: (): RecordingStatus => {
+    if (!LiveRecordingModuleNative) {
+      return { isRecording: false, isPaused: false, durationMs: 0, bytesWritten: 0 };
+    }
+    try {
+      return LiveRecordingModuleNative.getRecordingStatus();
+    } catch (error) {
+      console.error('LiveRecordingModule.getRecordingStatus error:', error);
+      return { isRecording: false, isPaused: false, durationMs: 0, bytesWritten: 0 };
+    }
+  },
+
+  cancelRecording: async (): Promise<{ success: boolean }> => {
+    if (!LiveRecordingModuleNative) {
+      return { success: false };
+    }
+    try {
+      return await LiveRecordingModuleNative.cancelRecording();
+    } catch (error) {
+      console.error('LiveRecordingModule.cancelRecording error:', error);
+      return { success: false };
+    }
+  }
+};
+
+export const BackingTrackModule = {
+  isAvailable: (): boolean => {
+    return Platform.OS === 'android' && BackingTrackModuleNative !== null;
+  },
+
+  loadTrack: async (uri: string): Promise<BackingTrackResult> => {
+    if (!BackingTrackModuleNative) {
+      return { success: false, error: 'Backing track module not available on this platform' };
+    }
+    try {
+      return await BackingTrackModuleNative.loadTrack(uri);
+    } catch (error) {
+      console.error('BackingTrackModule.loadTrack error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  play: async (): Promise<{ success: boolean }> => {
+    if (!BackingTrackModuleNative) {
+      return { success: false };
+    }
+    try {
+      return await BackingTrackModuleNative.play();
+    } catch (error) {
+      console.error('BackingTrackModule.play error:', error);
+      return { success: false };
+    }
+  },
+
+  pause: async (): Promise<{ success: boolean }> => {
+    if (!BackingTrackModuleNative) {
+      return { success: false };
+    }
+    try {
+      return await BackingTrackModuleNative.pause();
+    } catch (error) {
+      console.error('BackingTrackModule.pause error:', error);
+      return { success: false };
+    }
+  },
+
+  stop: async (): Promise<{ success: boolean }> => {
+    if (!BackingTrackModuleNative) {
+      return { success: false };
+    }
+    try {
+      return await BackingTrackModuleNative.stop();
+    } catch (error) {
+      console.error('BackingTrackModule.stop error:', error);
+      return { success: false };
+    }
+  },
+
+  seekTo: async (positionMs: number): Promise<BackingTrackResult> => {
+    if (!BackingTrackModuleNative) {
+      return { success: false, error: 'Backing track module not available' };
+    }
+    try {
+      return await BackingTrackModuleNative.seekTo(positionMs);
+    } catch (error) {
+      console.error('BackingTrackModule.seekTo error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setVolume: (volume: number): { success: boolean; volume: number } => {
+    if (!BackingTrackModuleNative) {
+      return { success: false, volume: 0 };
+    }
+    try {
+      const normalizedVolume = Math.max(0, Math.min(1, volume / 100));
+      return BackingTrackModuleNative.setVolume(normalizedVolume);
+    } catch (error) {
+      console.error('BackingTrackModule.setVolume error:', error);
+      return { success: false, volume: 0 };
+    }
+  },
+
+  getStatus: (): BackingTrackStatus => {
+    if (!BackingTrackModuleNative) {
+      return { isLoaded: false, isPlaying: false, currentPositionMs: 0, durationMs: 0, uri: '' };
+    }
+    try {
+      return BackingTrackModuleNative.getStatus();
+    } catch (error) {
+      console.error('BackingTrackModule.getStatus error:', error);
+      return { isLoaded: false, isPlaying: false, currentPositionMs: 0, durationMs: 0, uri: '' };
+    }
+  },
+
+  release: async (): Promise<{ success: boolean }> => {
+    if (!BackingTrackModuleNative) {
+      return { success: false };
+    }
+    try {
+      return await BackingTrackModuleNative.release();
+    } catch (error) {
+      console.error('BackingTrackModule.release error:', error);
+      return { success: false };
+    }
+  },
+
+  getCurrentPosition: (): number => {
+    if (!BackingTrackModuleNative) {
+      return 0;
+    }
+    try {
+      return BackingTrackModuleNative.getCurrentPosition();
+    } catch (error) {
+      console.error('BackingTrackModule.getCurrentPosition error:', error);
+      return 0;
+    }
+  },
+
+  getDuration: (): number => {
+    if (!BackingTrackModuleNative) {
+      return 0;
+    }
+    try {
+      return BackingTrackModuleNative.getDuration();
+    } catch (error) {
+      console.error('BackingTrackModule.getDuration error:', error);
+      return 0;
+    }
+  },
+
+  getAudioSessionId: (): number => {
+    if (!BackingTrackModuleNative) {
+      return 0;
+    }
+    try {
+      return BackingTrackModuleNative.getAudioSessionId();
+    } catch (error) {
+      console.error('BackingTrackModule.getAudioSessionId error:', error);
+      return 0;
     }
   }
 };
