@@ -6,6 +6,7 @@ import { DeviceSong } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
 import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
 import { PlaybackEngineModule, PlaybackStatus } from '@/modules/audio-effects';
+import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 
 const EQ_FREQUENCIES: Record<keyof EQBands, number> = {
   sub: 32,
@@ -120,10 +121,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (useNativePlaybackRef.current) {
-      PlaybackEngineModule.initialize().then((initResult) => {
+      PlaybackEngineModule.initialize().then(async (initResult) => {
         if (initResult.success && initResult.audioSessionId) {
           nativeAudioSessionIdRef.current = initResult.audioSessionId;
           console.log('PlaybackEngineModule initialized with audioSessionId:', initResult.audioSessionId);
+          
+          const attached = await NativeEffectsManager.attach(initResult.audioSessionId);
+          if (attached) {
+            console.log('NativeEffectsManager attached to audio session');
+          }
         } else if (initResult.error) {
           console.warn('PlaybackEngineModule initialization failed:', initResult.error);
         }
@@ -132,6 +138,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     
     return () => {
       if (useNativePlaybackRef.current) {
+        NativeEffectsManager.release();
         PlaybackEngineModule.release();
       }
     };
@@ -339,6 +346,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     if (delayNodeRef.current && soundLabMode === 'immersive') {
       delayNodeRef.current.delayTime.value = immersiveEffect.delay / 1000;
+    }
+  }, [soundLabMode, eqBands, immersiveEffect]);
+
+  useEffect(() => {
+    if (Platform.OS === 'android' && nativeAudioSessionIdRef.current > 0) {
+      NativeEffectsManager.applySettings(soundLabMode, eqBands, immersiveEffect);
     }
   }, [soundLabMode, eqBands, immersiveEffect]);
 
