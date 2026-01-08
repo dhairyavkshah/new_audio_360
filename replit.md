@@ -31,6 +31,21 @@ The app features a 4-tab navigation structure:
 
 **Native Audio Modules (located in `modules/audio-effects/`):**
 
+*Main Playback Engine (ExoPlayer-based):*
+- **PlaybackEngineModule**: Native Android playback using `ExoPlayer` (Media3) with:
+  - Queue management with gapless playback
+  - Shuffle and repeat modes (off/one/all)
+  - Playback speed control (0.25x - 3.0x)
+  - Audio session management for effect attachment
+  - Progress events at 250ms intervals
+  - Automatic audio focus handling
+
+*Native Audio Effects (Session-bound):*
+- **EqualizerModule**: Android `Equalizer` API with device presets and custom band levels
+- **BassBoostModule**: Android `BassBoost` API with strength control (0-1000)
+- **VirtualizerModule**: Android `Virtualizer` API for spatial audio enhancement
+- **WaveformAnalyzerModule**: Android `Visualizer` API for real-time waveform and FFT data at 60Hz
+
 *Karaoke Recording Architecture (Real-time Processing):*
 - **LiveRecordingModule**: Uses Android `AudioRecord` with `VOICE_PERFORMANCE` audio source (optimized for singing). Applies real-time effects during capture:
   - `AcousticEchoCanceler` - Prevents backing track bleed into voice recording
