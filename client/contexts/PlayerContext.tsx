@@ -5,6 +5,7 @@ import { mockSongs, Song } from '@/lib/data';
 import { DeviceSong } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
 import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
+import { PlaybackEngineModule, PlaybackStatus } from '@/modules/audio-effects';
 
 const EQ_FREQUENCIES: Record<keyof EQBands, number> = {
   sub: 32,
@@ -90,6 +91,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const delayNodeRef = useRef<DelayNode | null>(null);
   const delayGainRef = useRef<GainNode | null>(null);
 
+  const useNativePlaybackRef = useRef(Platform.OS === 'android' && PlaybackEngineModule.isAvailable());
+  const nativeAudioSessionIdRef = useRef<number>(0);
+  const progressPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
     currentSongRef.current = currentSong;
   }, [currentSong]);
@@ -114,6 +119,25 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (useNativePlaybackRef.current) {
+      PlaybackEngineModule.initialize().then((initResult) => {
+        if (initResult.success && initResult.audioSessionId) {
+          nativeAudioSessionIdRef.current = initResult.audioSessionId;
+          console.log('PlaybackEngineModule initialized with audioSessionId:', initResult.audioSessionId);
+        } else if (initResult.error) {
+          console.warn('PlaybackEngineModule initialization failed:', initResult.error);
+        }
+      });
+    }
+    
+    return () => {
+      if (useNativePlaybackRef.current) {
+        PlaybackEngineModule.release();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     getPlayerState().then((state) => {
       if (state && state.currentSongId) {
         const song = mockSongs.find(s => s.id === state.currentSongId);
@@ -130,6 +154,45 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     getMostPlayed(10).then(setMostPlayed);
   }, []);
 
+  useEffect(() => {
+    if (!useNativePlaybackRef.current) return;
+
+    if (isPlaying && currentSong) {
+      progressPollingRef.current = setInterval(() => {
+        const status = PlaybackEngineModule.getStatus();
+        
+        if (status.currentPositionMs !== undefined) {
+          setCurrentTime(status.currentPositionMs / 1000);
+        }
+        if (status.durationMs !== undefined && status.durationMs > 0) {
+          setDuration(status.durationMs / 1000);
+        }
+        
+        setIsBuffering(status.playbackState === 'buffering');
+        
+        if (status.playbackState === 'ended') {
+          handleTrackEnd();
+        }
+        
+        if (!status.isPlaying && isPlaying && status.playbackState !== 'buffering') {
+          setIsPlaying(false);
+        }
+      }, 250);
+    } else {
+      if (progressPollingRef.current) {
+        clearInterval(progressPollingRef.current);
+        progressPollingRef.current = null;
+      }
+    }
+
+    return () => {
+      if (progressPollingRef.current) {
+        clearInterval(progressPollingRef.current);
+        progressPollingRef.current = null;
+      }
+    };
+  }, [isPlaying, currentSong]);
+
   const handleTrackEnd = useCallback(() => {
     const song = currentSongRef.current;
     const currentQueue = queueRef.current;
@@ -139,7 +202,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!song) return;
 
     if (currentRepeat === 'one') {
-      if (playerRef.current) {
+      if (useNativePlaybackRef.current) {
+        PlaybackEngineModule.seekTo(0).then(() => {
+          PlaybackEngineModule.play();
+        });
+      } else if (playerRef.current) {
         playerRef.current.seekTo(0);
         playerRef.current.play();
       }
@@ -184,6 +251,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [handleTrackEnd]);
 
   const cleanupPlayer = useCallback(() => {
+    if (progressPollingRef.current) {
+      clearInterval(progressPollingRef.current);
+      progressPollingRef.current = null;
+    }
+    
+    if (useNativePlaybackRef.current) {
+      PlaybackEngineModule.stop().catch(console.error);
+    }
+    
     if (statusListenerRef.current) {
       statusListenerRef.current.remove();
       statusListenerRef.current = null;
@@ -365,6 +441,34 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         await audio.play();
         setIsPlaying(true);
         setIsLoading(false);
+      } else if (useNativePlaybackRef.current) {
+        const loadResult = await PlaybackEngineModule.loadTrack(audioSource);
+        
+        if (!loadResult.success) {
+          setError(loadResult.error || 'Failed to load audio with native player');
+          setIsLoading(false);
+          return;
+        }
+
+        if (loadResult.audioSessionId) {
+          nativeAudioSessionIdRef.current = loadResult.audioSessionId;
+        }
+
+        const playResult = await PlaybackEngineModule.play();
+        
+        if (!playResult.success) {
+          setError(playResult.error || 'Failed to play audio');
+          setIsLoading(false);
+          return;
+        }
+
+        const status = PlaybackEngineModule.getStatus();
+        if (status.durationMs > 0) {
+          setDuration(status.durationMs / 1000);
+        }
+
+        setIsPlaying(true);
+        setIsLoading(false);
       } else {
         const newPlayer = createAudioPlayer(audioSource, { updateInterval: 0.1 });
         playerRef.current = newPlayer;
@@ -442,6 +546,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       return;
     }
+
+    if (useNativePlaybackRef.current) {
+      if (isPlaying) {
+        PlaybackEngineModule.pause().then((pauseResult) => {
+          if (pauseResult.success) {
+            setIsPlaying(false);
+          }
+        });
+      } else {
+        if (!currentSong) return;
+        PlaybackEngineModule.play().then((playResult) => {
+          if (playResult.success) {
+            setIsPlaying(true);
+          }
+        });
+      }
+      return;
+    }
     
     if (!playerRef.current) {
       if (currentSong) {
@@ -490,6 +612,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (Platform.OS === 'web' && audioElementRef.current) {
         audioElementRef.current.currentTime = 0;
         setCurrentTime(0);
+      } else if (useNativePlaybackRef.current) {
+        PlaybackEngineModule.seekTo(0);
+        setCurrentTime(0);
       } else if (playerRef.current) {
         playerRef.current.seekTo(0);
         setCurrentTime(0);
@@ -510,6 +635,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setCurrentTime(targetTime);
     if (Platform.OS === 'web' && audioElementRef.current) {
       audioElementRef.current.currentTime = targetTime;
+    } else if (useNativePlaybackRef.current) {
+      PlaybackEngineModule.seekTo(targetTime * 1000);
     } else if (playerRef.current) {
       playerRef.current.seekTo(targetTime);
     }
@@ -565,7 +692,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setSleepTimerMinutesState(minutes);
     
     sleepTimerRef.current = setTimeout(() => {
-      if (playerRef.current) {
+      if (useNativePlaybackRef.current) {
+        PlaybackEngineModule.pause();
+      } else if (Platform.OS === 'web' && audioElementRef.current) {
+        audioElementRef.current.pause();
+      } else if (playerRef.current) {
         playerRef.current.pause();
       }
       setIsPlaying(false);
