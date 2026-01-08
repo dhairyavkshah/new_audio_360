@@ -1,0 +1,9 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": [
+      "expo.modules.audioeffects.ReverbModule",
+      "expo.modules.audioeffects.NoiseReductionModule"
+    ]
+  }
+}

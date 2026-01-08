@@ -25,7 +25,10 @@
       "versionCode": 1,
       "permissions": [
         "android.permission.READ_MEDIA_AUDIO",
-        "android.permission.READ_EXTERNAL_STORAGE"
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -33,6 +36,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./modules/audio-effects",
       [
         "expo-splash-screen",
         {
@@ -53,7 +57,13 @@
           "isAccessMediaLocationEnabled": true
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice recording."
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true
