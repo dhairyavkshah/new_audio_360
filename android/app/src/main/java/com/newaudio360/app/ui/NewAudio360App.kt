@@ -1,10 +1,15 @@
 package com.newaudio360.app.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,8 +22,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.newaudio360.app.ui.components.AppMessageState
+import com.newaudio360.app.ui.components.AppSnackbar
 import com.newaudio360.app.ui.components.BottomNavBar
 import com.newaudio360.app.ui.components.MiniPlayer
+import com.newaudio360.app.ui.components.rememberAppMessageState
 import com.newaudio360.app.ui.screens.LibraryScreen
 import com.newaudio360.app.ui.screens.ListenScreen
 import com.newaudio360.app.ui.screens.NowPlayingScreen
@@ -33,12 +41,17 @@ sealed class Screen(val route: String) {
     object NowPlaying : Screen("now_playing")
 }
 
+val LocalAppMessageState = compositionLocalOf<AppMessageState> { 
+    error("AppMessageState not provided") 
+}
+
 @Composable
 fun NewAudio360App(
     navController: NavHostController = rememberNavController()
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val appMessageState = rememberAppMessageState()
     
     var showMiniPlayer by remember { mutableStateOf(true) }
     val showBottomBar = currentRoute in listOf(
@@ -48,72 +61,84 @@ fun NewAudio360App(
         Screen.Settings.route
     )
 
-    Scaffold(
-        bottomBar = {
-            if (showBottomBar) {
-                BottomNavBar(
-                    currentRoute = currentRoute ?: Screen.Listen.route,
-                    onNavigate = { route ->
-                        navController.navigate(route) {
-                            popUpTo(Screen.Listen.route) {
-                                saveState = true
+    CompositionLocalProvider(LocalAppMessageState provides appMessageState) {
+        Scaffold(
+            bottomBar = {
+                if (showBottomBar) {
+                    Column {
+                        if (showMiniPlayer) {
+                            MiniPlayer(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                onPlayerClick = {
+                                    navController.navigate(Screen.NowPlaying.route)
+                                },
+                                onPlayPauseClick = { }
+                            )
+                        }
+                        
+                        BottomNavBar(
+                            currentRoute = currentRoute ?: Screen.Listen.route,
+                            onNavigate = { route ->
+                                navController.navigate(route) {
+                                    popUpTo(Screen.Listen.route) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        )
                     }
-                )
+                }
+            },
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = appMessageState.snackbarHostState,
+                    modifier = Modifier.padding(bottom = if (showBottomBar && showMiniPlayer) 140.dp else if (showBottomBar) 80.dp else 16.dp)
+                ) { snackbarData ->
+                    AppSnackbar(snackbarData = snackbarData)
+                }
             }
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            NavHost(
-                navController = navController,
-                startDestination = Screen.Listen.route,
-                modifier = Modifier.fillMaxSize()
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
             ) {
-                composable(Screen.Listen.route) {
-                    ListenScreen(
-                        onSongClick = { /* TODO: Play song */ },
-                        onNowPlayingClick = {
-                            navController.navigate(Screen.NowPlaying.route)
-                        }
-                    )
+                NavHost(
+                    navController = navController,
+                    startDestination = Screen.Listen.route,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    composable(Screen.Listen.route) {
+                        ListenScreen(
+                            onSongClick = { },
+                            onNowPlayingClick = {
+                                navController.navigate(Screen.NowPlaying.route)
+                            }
+                        )
+                    }
+                    composable(Screen.Library.route) {
+                        LibraryScreen(
+                            onCategoryClick = { }
+                        )
+                    }
+                    composable(Screen.Studio.route) {
+                        StudioScreen()
+                    }
+                    composable(Screen.Settings.route) {
+                        SettingsScreen()
+                    }
+                    composable(Screen.NowPlaying.route) {
+                        NowPlayingScreen(
+                            onBackClick = { navController.popBackStack() },
+                            onQueueClick = { },
+                            onSoundLabClick = { }
+                        )
+                    }
                 }
-                composable(Screen.Library.route) {
-                    LibraryScreen(
-                        onCategoryClick = { /* TODO: Navigate to category */ }
-                    )
-                }
-                composable(Screen.Studio.route) {
-                    StudioScreen()
-                }
-                composable(Screen.Settings.route) {
-                    SettingsScreen()
-                }
-                composable(Screen.NowPlaying.route) {
-                    NowPlayingScreen(
-                        onBackClick = { navController.popBackStack() },
-                        onQueueClick = { /* TODO: Show queue */ },
-                        onSoundLabClick = { /* TODO: Open Sound Lab */ }
-                    )
-                }
-            }
-            
-            if (showMiniPlayer && showBottomBar) {
-                MiniPlayer(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    onPlayerClick = {
-                        navController.navigate(Screen.NowPlaying.route)
-                    },
-                    onPlayPauseClick = { /* TODO: Toggle playback */ }
-                )
             }
         }
     }
