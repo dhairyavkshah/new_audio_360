@@ -30,9 +30,21 @@ The app features a 4-tab navigation structure:
     - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Subscription Plan, and About.
 
 **Native Audio Modules (located in `modules/audio-effects/`):**
+
+*Karaoke Recording Architecture (Real-time Processing):*
+- **LiveRecordingModule**: Uses Android `AudioRecord` with `VOICE_PERFORMANCE` audio source (optimized for singing). Applies real-time effects during capture:
+  - `AcousticEchoCanceler` - Prevents backing track bleed into voice recording
+  - `NoiseSuppressor` - Real-time noise reduction
+  - `AutomaticGainControl` - Consistent voice levels
+  - Outputs 48kHz mono WAV for maximum clarity
+- **BackingTrackModule**: Separate `MediaPlayer` session for backing track playback. Uses independent audio session with `USAGE_MEDIA`/`CONTENT_TYPE_MUSIC` attributes to prevent interference with recording.
+
+*Post-Processing Modules (Export):*
 - **ReverbModule**: Uses Android `EnvironmentalReverb` API with 5 presets.
 - **NoiseReductionModule**: Uses Android `NoiseSuppressor` and `AutomaticGainControl` APIs with 4 levels.
 - **AudioMixerModule**: Mixes backing track and voice recording with effects, exporting 320kbps AAC to device storage using `MediaExtractor`, `MediaCodec`, and `MediaMuxer`.
+
+*StudioAudioEngine*: TypeScript service that bridges native modules on Android with expo-av fallback for web/iOS. Uses `getAudioCapabilities()` to detect device support for AEC/NS/AGC. Manages separate audio sessions for recording and playback.
 
 **Design Language:**
 The app uses **Material Design 3** (Material You) design language with M3 type scale, color system, spacing, shape (corner radii), elevation, motion, and touch targets. Key UI components include an M3-styled search input, sort menu, empty/loading states, app header, glassmorphism MiniPlayer, M3-styled song list items, animated cards, buttons, various card types, horizontal chips, and M3-styled bottom sheet and dialog modals.

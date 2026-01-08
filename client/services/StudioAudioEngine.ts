@@ -1,5 +1,12 @@
 import { Audio, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
 import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system/legacy';
+import { 
+  LiveRecordingModule, 
+  BackingTrackModule,
+  LiveRecordingResult,
+  AudioEffectsAvailability
+} from '../../modules/audio-effects';
 
 export type ProgressCallback = (position: number, duration: number) => void;
 export type RecordingProgressCallback = (durationMs: number) => void;
@@ -8,9 +15,17 @@ export type MeteringCallback = (level: number) => void;
 export interface KaraokeAudioConfig {
   enableAEC: boolean;
   enableNoiseSuppression: boolean;
+  enableAGC: boolean;
   inputGain: number;
   sampleRate: number;
   bitRate: number;
+}
+
+export interface AudioCapabilities {
+  useNativeModules: boolean;
+  echoCancelerAvailable: boolean;
+  noiseSuppressorAvailable: boolean;
+  agcAvailable: boolean;
 }
 
 interface AudioEngineState {
@@ -33,6 +48,12 @@ export class StudioAudioEngine {
   private voiceTrack: Audio.Sound | null = null;
   private recording: Audio.Recording | null = null;
   private recordedUri: string | null = null;
+
+  private useNativeModules: boolean = false;
+  private nativeBackingTrackLoaded: boolean = false;
+  private nativeRecordingActive: boolean = false;
+  private nativeRecordingPath: string | null = null;
+  private currentBackingTrackUri: string | null = null;
 
   private state: AudioEngineState = {
     backingTrackLoaded: false,
@@ -57,6 +78,37 @@ export class StudioAudioEngine {
   private currentMeteringLevel: number = -160;
   private recordingStartTime: number = 0;
   private accumulatedRecordingTime: number = 0;
+
+  constructor() {
+    this.useNativeModules = Platform.OS === 'android' && 
+      LiveRecordingModule.isAvailable() && 
+      BackingTrackModule.isAvailable();
+    
+    if (this.useNativeModules) {
+      console.log('[StudioAudioEngine] Using native audio modules for improved karaoke quality');
+    } else {
+      console.log('[StudioAudioEngine] Using expo-av fallback');
+    }
+  }
+
+  getAudioCapabilities(): AudioCapabilities {
+    if (!this.useNativeModules) {
+      return {
+        useNativeModules: false,
+        echoCancelerAvailable: false,
+        noiseSuppressorAvailable: false,
+        agcAvailable: false,
+      };
+    }
+
+    const availability = LiveRecordingModule.getAudioEffectsAvailability();
+    return {
+      useNativeModules: true,
+      echoCancelerAvailable: availability.acousticEchoCanceler,
+      noiseSuppressorAvailable: availability.noiseSuppressor,
+      agcAvailable: availability.automaticGainControl,
+    };
+  }
 
   async configureAudioMode(): Promise<void> {
     try {
@@ -105,27 +157,12 @@ export class StudioAudioEngine {
 
   async loadBackingTrack(uri: string): Promise<void> {
     try {
-      if (this.backingTrack) {
-        await this.backingTrack.unloadAsync();
-        this.backingTrack = null;
-      }
+      this.currentBackingTrackUri = uri;
 
-      const { sound } = await Audio.Sound.createAsync(
-        { uri },
-        {
-          shouldPlay: false,
-          volume: this.volumeToLinear(this.state.musicVolume),
-          progressUpdateIntervalMillis: 100,
-        },
-        this.handleBackingTrackStatus
-      );
-
-      this.backingTrack = sound;
-      this.state.backingTrackLoaded = true;
-
-      const status = await sound.getStatusAsync();
-      if (status.isLoaded) {
-        this.state.duration = status.durationMillis || 0;
+      if (this.useNativeModules) {
+        await this.loadBackingTrackNative(uri);
+      } else {
+        await this.loadBackingTrackExpoAv(uri);
       }
     } catch (error) {
       console.error('Failed to load backing track:', error);
@@ -133,14 +170,61 @@ export class StudioAudioEngine {
     }
   }
 
+  private async loadBackingTrackNative(uri: string): Promise<void> {
+    if (this.nativeBackingTrackLoaded) {
+      await BackingTrackModule.release();
+      this.nativeBackingTrackLoaded = false;
+    }
+
+    const result = await BackingTrackModule.loadTrack(uri);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to load backing track via native module');
+    }
+
+    this.nativeBackingTrackLoaded = true;
+    this.state.backingTrackLoaded = true;
+    this.state.duration = result.durationMs || 0;
+
+    BackingTrackModule.setVolume(this.state.musicVolume);
+  }
+
+  private async loadBackingTrackExpoAv(uri: string): Promise<void> {
+    if (this.backingTrack) {
+      await this.backingTrack.unloadAsync();
+      this.backingTrack = null;
+    }
+
+    const { sound } = await Audio.Sound.createAsync(
+      { uri },
+      {
+        shouldPlay: false,
+        volume: this.volumeToLinear(this.state.musicVolume),
+        progressUpdateIntervalMillis: 100,
+      },
+      this.handleBackingTrackStatus
+    );
+
+    this.backingTrack = sound;
+    this.state.backingTrackLoaded = true;
+
+    const status = await sound.getStatusAsync();
+    if (status.isLoaded) {
+      this.state.duration = status.durationMillis || 0;
+    }
+  }
+
   async playBackingTrack(): Promise<void> {
-    if (!this.backingTrack || !this.state.backingTrackLoaded) {
+    if (!this.state.backingTrackLoaded) {
       console.warn('No backing track loaded');
       return;
     }
 
     try {
-      await this.backingTrack.playAsync();
+      if (this.useNativeModules && this.nativeBackingTrackLoaded) {
+        await BackingTrackModule.play();
+      } else if (this.backingTrack) {
+        await this.backingTrack.playAsync();
+      }
       this.state.isPlaying = true;
     } catch (error) {
       console.error('Failed to play backing track:', error);
@@ -148,10 +232,12 @@ export class StudioAudioEngine {
   }
 
   async pauseBackingTrack(): Promise<void> {
-    if (!this.backingTrack) return;
-
     try {
-      await this.backingTrack.pauseAsync();
+      if (this.useNativeModules && this.nativeBackingTrackLoaded) {
+        await BackingTrackModule.pause();
+      } else if (this.backingTrack) {
+        await this.backingTrack.pauseAsync();
+      }
       this.state.isPlaying = false;
     } catch (error) {
       console.error('Failed to pause backing track:', error);
@@ -159,11 +245,13 @@ export class StudioAudioEngine {
   }
 
   async stopBackingTrack(): Promise<void> {
-    if (!this.backingTrack) return;
-
     try {
-      await this.backingTrack.stopAsync();
-      await this.backingTrack.setPositionAsync(0);
+      if (this.useNativeModules && this.nativeBackingTrackLoaded) {
+        await BackingTrackModule.stop();
+      } else if (this.backingTrack) {
+        await this.backingTrack.stopAsync();
+        await this.backingTrack.setPositionAsync(0);
+      }
       this.state.isPlaying = false;
       this.state.musicPosition = 0;
     } catch (error) {
@@ -172,11 +260,14 @@ export class StudioAudioEngine {
   }
 
   async seekBackingTrack(positionMs: number): Promise<void> {
-    if (!this.backingTrack) return;
-
     try {
       const clampedPosition = Math.max(0, Math.min(positionMs, this.state.duration));
-      await this.backingTrack.setPositionAsync(clampedPosition);
+      
+      if (this.useNativeModules && this.nativeBackingTrackLoaded) {
+        await BackingTrackModule.seekTo(clampedPosition);
+      } else if (this.backingTrack) {
+        await this.backingTrack.setPositionAsync(clampedPosition);
+      }
       this.state.musicPosition = clampedPosition;
     } catch (error) {
       console.error('Failed to seek backing track:', error);
@@ -186,7 +277,9 @@ export class StudioAudioEngine {
   setMusicVolume(volume: number): void {
     this.state.musicVolume = Math.max(0, Math.min(100, volume));
     
-    if (this.backingTrack) {
+    if (this.useNativeModules && this.nativeBackingTrackLoaded) {
+      BackingTrackModule.setVolume(this.state.musicVolume);
+    } else if (this.backingTrack) {
       this.backingTrack.setVolumeAsync(this.volumeToLinear(this.state.musicVolume)).catch((error) => {
         console.error('Failed to set music volume:', error);
       });
@@ -202,45 +295,11 @@ export class StudioAudioEngine {
         throw new Error('Microphone permission not granted');
       }
 
-      if (this.recording) {
-        try {
-          await this.recording.stopAndUnloadAsync();
-        } catch {}
-        this.recording = null;
+      if (this.useNativeModules) {
+        await this.startRecordingNative();
+      } else {
+        await this.startRecordingExpoAv();
       }
-
-      const recordingOptions: Audio.RecordingOptions = {
-        isMeteringEnabled: true,
-        android: {
-          extension: '.m4a',
-          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
-          audioEncoder: Audio.AndroidAudioEncoder.AAC,
-          sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
-        },
-        ios: {
-          extension: '.m4a',
-          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
-          audioQuality: Audio.IOSAudioQuality.HIGH,
-          sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
-          linearPCMBitDepth: 16,
-          linearPCMIsBigEndian: false,
-          linearPCMIsFloat: false,
-        },
-        web: {
-          mimeType: 'audio/webm',
-          bitsPerSecond: 128000,
-        },
-      };
-
-      const { recording } = await Audio.Recording.createAsync(recordingOptions);
-      this.recording = recording;
-      this.state.isRecording = true;
-      this.state.isRecordingPaused = false;
-      this.recordedUri = null;
 
       this.recordingStartTime = Date.now();
       this.accumulatedRecordingTime = 0;
@@ -252,13 +311,91 @@ export class StudioAudioEngine {
         }, 100);
       }
 
-      this.startMeteringUpdates();
+      if (!this.useNativeModules) {
+        this.startMeteringUpdates();
+      }
 
     } catch (error) {
       console.error('Failed to start recording:', error);
       this.state.isRecording = false;
       throw error;
     }
+  }
+
+  private async startRecordingNative(): Promise<void> {
+    const timestamp = Date.now();
+    const cacheDir = FileSystem.cacheDirectory || '';
+    const outputPath = `${cacheDir}voice_recording_${timestamp}.wav`;
+    
+    this.nativeRecordingPath = outputPath;
+    
+    const capabilities = this.getAudioCapabilities();
+    
+    const result = await LiveRecordingModule.startRecording(outputPath, {
+      enableEchoCanceler: capabilities.echoCancelerAvailable,
+      enableNoiseSuppressor: capabilities.noiseSuppressorAvailable,
+      enableAgc: capabilities.agcAvailable,
+    });
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to start native recording');
+    }
+
+    console.log('[StudioAudioEngine] Native recording started with:', {
+      echoCanceler: result.echoCancelerEnabled,
+      noiseSuppressor: result.noiseSuppressorEnabled,
+      agc: result.agcEnabled,
+      sampleRate: result.sampleRate,
+    });
+
+    this.nativeRecordingActive = true;
+    this.state.isRecording = true;
+    this.state.isRecordingPaused = false;
+    this.recordedUri = null;
+
+    LiveRecordingModule.setInputGain(this.state.inputGain);
+  }
+
+  private async startRecordingExpoAv(): Promise<void> {
+    if (this.recording) {
+      try {
+        await this.recording.stopAndUnloadAsync();
+      } catch {}
+      this.recording = null;
+    }
+
+    const recordingOptions: Audio.RecordingOptions = {
+      isMeteringEnabled: true,
+      android: {
+        extension: '.m4a',
+        outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+        audioEncoder: Audio.AndroidAudioEncoder.AAC,
+        sampleRate: 44100,
+        numberOfChannels: 1,
+        bitRate: 128000,
+      },
+      ios: {
+        extension: '.m4a',
+        outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
+        audioQuality: Audio.IOSAudioQuality.HIGH,
+        sampleRate: 44100,
+        numberOfChannels: 1,
+        bitRate: 128000,
+        linearPCMBitDepth: 16,
+        linearPCMIsBigEndian: false,
+        linearPCMIsFloat: false,
+      },
+      web: {
+        mimeType: 'audio/webm',
+        bitsPerSecond: 128000,
+      },
+    };
+
+    const { recording } = await Audio.Recording.createAsync(recordingOptions);
+    this.recording = recording;
+    this.state.isRecording = true;
+    this.state.isRecordingPaused = false;
+    this.recordedUri = null;
   }
 
   private async startMeteringUpdates(): Promise<void> {
@@ -290,7 +427,7 @@ export class StudioAudioEngine {
   }
 
   async pauseRecording(): Promise<void> {
-    if (!this.recording || !this.state.isRecording) {
+    if (!this.state.isRecording) {
       console.warn('No active recording to pause');
       return;
     }
@@ -303,13 +440,17 @@ export class StudioAudioEngine {
         this.recordingInterval = null;
       }
       
-      await this.recording.pauseAsync();
-      this.state.isRecordingPaused = true;
-      
-      if (this.backingTrack) {
-        await this.backingTrack.pauseAsync();
+      if (this.useNativeModules && this.nativeRecordingActive) {
+        await LiveRecordingModule.pauseRecording();
+        await BackingTrackModule.pause();
+      } else if (this.recording) {
+        await this.recording.pauseAsync();
+        if (this.backingTrack) {
+          await this.backingTrack.pauseAsync();
+        }
       }
       
+      this.state.isRecordingPaused = true;
       this.stopMeteringUpdates();
     } catch (error) {
       console.error('Failed to pause recording:', error);
@@ -317,13 +458,22 @@ export class StudioAudioEngine {
   }
 
   async resumeRecording(): Promise<void> {
-    if (!this.recording || !this.state.isRecording || !this.state.isRecordingPaused) {
+    if (!this.state.isRecording || !this.state.isRecordingPaused) {
       console.warn('No paused recording to resume');
       return;
     }
 
     try {
-      await this.recording.startAsync();
+      if (this.useNativeModules && this.nativeRecordingActive) {
+        await LiveRecordingModule.resumeRecording();
+        await BackingTrackModule.play();
+      } else if (this.recording) {
+        await this.recording.startAsync();
+        if (this.backingTrack) {
+          await this.backingTrack.playAsync();
+        }
+      }
+      
       this.state.isRecordingPaused = false;
       this.recordingStartTime = Date.now();
       
@@ -334,18 +484,16 @@ export class StudioAudioEngine {
         }, 100);
       }
       
-      if (this.backingTrack) {
-        await this.backingTrack.playAsync();
+      if (!this.useNativeModules) {
+        this.startMeteringUpdates();
       }
-      
-      this.startMeteringUpdates();
     } catch (error) {
       console.error('Failed to resume recording:', error);
     }
   }
 
   async stopRecording(): Promise<string> {
-    if (!this.recording) {
+    if (!this.state.isRecording) {
       throw new Error('No active recording');
     }
 
@@ -357,10 +505,27 @@ export class StudioAudioEngine {
         this.recordingInterval = null;
       }
 
-      await this.recording.stopAndUnloadAsync();
-      const uri = this.recording.getURI();
+      let uri: string | null = null;
+
+      if (this.useNativeModules && this.nativeRecordingActive) {
+        const result = await LiveRecordingModule.stopRecording();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to stop native recording');
+        }
+        uri = result.uri || null;
+        this.nativeRecordingActive = false;
+        this.nativeRecordingPath = null;
+        
+        console.log('[StudioAudioEngine] Native recording stopped:', {
+          durationMs: result.durationMs,
+          fileSize: result.fileSize,
+        });
+      } else if (this.recording) {
+        await this.recording.stopAndUnloadAsync();
+        uri = this.recording.getURI();
+        this.recording = null;
+      }
       
-      this.recording = null;
       this.state.isRecording = false;
       this.state.isRecordingPaused = false;
       this.accumulatedRecordingTime = 0;
