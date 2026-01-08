@@ -660,8 +660,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    padding: Layout.horizontalPadding,
-    gap: Spacing.s,
+    paddingHorizontal: Layout.horizontalPadding,
   },
   gridContent: {
     padding: Layout.horizontalPadding,
