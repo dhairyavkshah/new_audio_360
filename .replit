@@ -1,5 +1,5 @@
 entrypoint = "README.md"
-modules = ["nodejs-22"]
+modules = ["nodejs-20"]
 
 [nix]
 channel = "stable-24_05"
@@ -12,10 +12,6 @@ run = ["npm", "run", "server:prod"]
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 5001
-externalPort = 3001
 
 [[ports]]
 localPort = 8082
@@ -38,18 +34,19 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Android Build Info"
+args = "Start App"
 
 [[workflows.workflow]]
-name = "Android Build Info"
+name = "Start App"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "echo \"=== New Audio 360 - Native Android App ===\" && echo \"\" && echo \"This is a pure native Android project. Build using:\" && echo \"\" && echo \"  cd android && ./gradlew assembleDebug\" && echo \"\" && echo \"Or push to GitHub to trigger the build workflow.\" && echo \"\" && echo \"Project structure:\" && ls -la android/app/src/main/java/com/newaudio360/app/ 2>/dev/null || echo \"Run 'cd android && ./gradlew tasks' to see available build tasks\""
+args = "npm start"
+waitForPort = 5000
 
 [workflows.workflow.metadata]
-outputType = "console"
+outputType = "webview"
 
 [userenv]
 
