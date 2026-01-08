@@ -1,0 +1,211 @@
+import React from "react";
+import { View, StyleSheet, Platform } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { scheduleOnRN } from "react-native-worklets";
+import * as Haptics from "expo-haptics";
+import { ThemedText } from "@/components/ThemedText";
+import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
+import { Spacing, M3Motion, BorderRadius } from "@/constants/theme";
+
+interface ProgressBarProps {
+  progress: number;
+  duration: number;
+  currentTime: number;
+  onSeek: (time: number) => void;
+  width?: number;
+  height?: number;
+  showTextShadow?: boolean;
+}
+
+const THUMB_SIZE = 16;
+const TRACK_HEIGHT = 4;
+const ACTIVE_TRACK_HEIGHT = 6;
+
+export function ProgressBar({
+  progress,
+  duration,
+  currentTime,
+  onSeek,
+  width = 320,
+  height = TRACK_HEIGHT,
+  showTextShadow = false,
+}: ProgressBarProps) {
+  const { theme, isDark } = useThemeContext();
+  const { shapes, components } = useSkin();
+
+  const textShadowStyle = showTextShadow ? {
+    textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  } : {};
+  
+  const translateX = useSharedValue(progress * (width - THUMB_SIZE));
+  const isDragging = useSharedValue(false);
+  const trackHeight = useSharedValue(TRACK_HEIGHT);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const triggerHaptic = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handleSeek = (seekTime: number) => {
+    onSeek(seekTime);
+  };
+
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      isDragging.value = true;
+      trackHeight.value = withTiming(ACTIVE_TRACK_HEIGHT, { 
+        duration: M3Motion.durationShort3,
+        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+      });
+    })
+    .onUpdate((event) => {
+      const newX = Math.max(0, Math.min(event.x, width - THUMB_SIZE));
+      translateX.value = newX;
+    })
+    .onEnd(() => {
+      isDragging.value = false;
+      trackHeight.value = withTiming(TRACK_HEIGHT, { 
+        duration: M3Motion.durationShort4,
+        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+      });
+      const seekTime = (translateX.value / (width - THUMB_SIZE)) * duration;
+      scheduleOnRN(handleSeek, seekTime);
+      scheduleOnRN(triggerHaptic);
+    });
+
+  const tapGesture = Gesture.Tap()
+    .onEnd((event) => {
+      const tapX = Math.max(0, Math.min(event.x, width - THUMB_SIZE));
+      translateX.value = withTiming(tapX, { 
+        duration: M3Motion.durationShort4,
+        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+      });
+      const seekTime = (tapX / (width - THUMB_SIZE)) * duration;
+      scheduleOnRN(handleSeek, seekTime);
+      scheduleOnRN(triggerHaptic);
+    });
+
+  const composedGesture = Gesture.Race(panGesture, tapGesture);
+
+  const thumbStyle = useAnimatedStyle(() => {
+    if (!isDragging.value) {
+      translateX.value = progress * (width - THUMB_SIZE);
+    }
+    return {
+      transform: [{ translateX: translateX.value }],
+    };
+  });
+
+  const fillStyle = useAnimatedStyle(() => ({
+    width: translateX.value + THUMB_SIZE / 2,
+  }));
+
+  const trackAnimatedStyle = useAnimatedStyle(() => ({
+    height: trackHeight.value,
+  }));
+
+  return (
+    <View style={[styles.container, { width }]}>
+      <GestureDetector gesture={composedGesture}>
+        <View style={styles.trackWrapper}>
+          <Animated.View
+            style={[
+              styles.track,
+              {
+                borderRadius: BorderRadius.circular,
+                backgroundColor: theme.surfaceContainerHigh,
+              },
+              trackAnimatedStyle,
+            ]}
+          >
+            <Animated.View
+              style={[
+                styles.fill,
+                {
+                  borderRadius: BorderRadius.circular,
+                  backgroundColor: theme.primary,
+                },
+                fillStyle,
+              ]}
+            />
+          </Animated.View>
+          <Animated.View
+            style={[
+              styles.thumb,
+              {
+                width: THUMB_SIZE,
+                height: THUMB_SIZE,
+                borderRadius: THUMB_SIZE / 2,
+                backgroundColor: theme.primary,
+                ...Platform.select({
+                  ios: {
+                    shadowColor: theme.primary,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 4,
+                  },
+                  android: {
+                    elevation: 4,
+                  },
+                  default: {},
+                }),
+              },
+              thumbStyle,
+            ]}
+          />
+        </View>
+      </GestureDetector>
+      <View style={styles.timeContainer}>
+        <ThemedText type="caption" style={[{ color: theme.textSecondary }, textShadowStyle]}>
+          {formatTime(currentTime)}
+        </ThemedText>
+        <ThemedText type="caption" style={[{ color: theme.textSecondary }, textShadowStyle]}>
+          {formatTime(duration)}
+        </ThemedText>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    alignSelf: "center",
+  },
+  trackWrapper: {
+    height: 32,
+    justifyContent: "center",
+  },
+  track: {
+    height: TRACK_HEIGHT,
+    justifyContent: "center",
+  },
+  fill: {
+    position: "absolute",
+    left: 0,
+    height: "100%",
+  },
+  thumb: {
+    position: "absolute",
+    top: (32 - THUMB_SIZE) / 2,
+  },
+  timeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: Spacing.s,
+  },
+});

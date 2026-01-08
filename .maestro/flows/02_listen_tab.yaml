@@ -1,0 +1,12 @@
+appId: com.newaudio360.app
+name: Listen Tab Navigation Test
+---
+- launchApp
+- tapOn: "Listen"
+- assertVisible:
+    text: ".*"
+    index: 0
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: UP

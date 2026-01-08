@@ -1,0 +1,10 @@
+appId: com.newaudio360.app
+name: Settings Tab Navigation Test
+---
+- launchApp
+- tapOn: "Settings"
+- assertVisible:
+    text: ".*"
+    index: 0
+- scroll:
+    direction: DOWN

@@ -1,45 +1,27 @@
-# New Audio 360 - Native Android Project
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# Node.js (legacy - can be removed after migration)
+# dependencies
 node_modules/
 
-# Android
-android/app/build/
-android/build/
-android/.gradle/
-android/local.properties
-android/captures/
-android/.cxx/
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
 
-# Gradle
-*.gradle
-.gradle/
-!gradle-wrapper.jar
-
-# IDE
-.idea/
-*.iml
-.vscode/
-
-# Keystore (keep release keystore secure - not tracked)
-android/app/keystore/*.keystore
-!android/app/keystore/.gitkeep
-
-# Native build artifacts
-*.so
-*.apk
-*.aab
+# Native
+.kotlin/
+*.orig.*
 *.jks
 *.p8
 *.p12
 *.key
 *.mobileprovision
 
-# Kotlin
-.kotlin/
-*.orig.*
+# Metro
+.metro-health-check*
 
-# Debug logs
+# debug
 npm-debug.*
 yarn-debug.*
 yarn-error.*
@@ -48,19 +30,13 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# Environment files
-.env
-.env.*
+# local env files
 .env*.local
 
-# Replit
-.replit
-.config/
-.cache/
-.local/
-.upm/
-.breakpoints
-generated-icon.*
+# typescript
+*.tsbuildinfo
 
-# Test outputs
-test-results/
+app-example
+
+# generated native folders
+/ios

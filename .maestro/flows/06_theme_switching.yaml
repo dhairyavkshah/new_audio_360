@@ -1,0 +1,10 @@
+appId: com.newaudio360.app
+name: Theme Switching Test
+---
+- launchApp
+- tapOn: "Settings"
+- scroll:
+    direction: DOWN
+- tapOn:
+    text: "Theme"
+    optional: true

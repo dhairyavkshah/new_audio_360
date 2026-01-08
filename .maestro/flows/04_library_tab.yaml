@@ -1,0 +1,12 @@
+appId: com.newaudio360.app
+name: Library Tab Navigation Test
+---
+- launchApp
+- tapOn: "Library"
+- assertVisible:
+    text: ".*"
+    index: 0
+- scroll:
+    direction: DOWN
+- scroll:
+    direction: UP
