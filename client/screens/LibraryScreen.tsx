@@ -53,60 +53,6 @@ const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
   { key: "duration_desc", label: "Longest", icon: "sort-clock-descending" },
 ];
 
-function CategoryCard({ 
-  category, 
-  isActive, 
-  count, 
-  onPress,
-  theme 
-}: { 
-  category: CategoryConfig; 
-  isActive: boolean; 
-  count: number;
-  onPress: () => void;
-  theme: any;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[
-        styles.categoryCard,
-        {
-          backgroundColor: isActive ? category.color : theme.surfaceContainerHigh,
-          borderColor: isActive ? category.color : theme.outlineVariant,
-        },
-      ]}
-      accessibilityRole="button"
-      accessibilityState={{ selected: isActive }}
-      accessibilityLabel={`${category.label}, ${count} items`}
-    >
-      <View style={styles.categoryCardContent}>
-        <MaterialCommunityIcons
-          name={category.icon}
-          size={22}
-          color={isActive ? "#FFFFFF" : category.color}
-        />
-        <ThemedText
-          type="labelMedium"
-          style={[
-            styles.categoryLabel,
-            { color: isActive ? "#FFFFFF" : theme.onSurface },
-          ]}
-          numberOfLines={1}
-        >
-          {category.label}
-        </ThemedText>
-      </View>
-      <ThemedText
-        type="labelSmall"
-        style={{ color: isActive ? "rgba(255,255,255,0.8)" : theme.onSurfaceVariant }}
-      >
-        {count}
-      </ThemedText>
-    </Pressable>
-  );
-}
-
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
@@ -124,6 +70,7 @@ export default function LibraryScreen() {
   const [contextMenuSong, setContextMenuSong] = useState<PlayableSong | null>(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   const loadPlaylists = useCallback(async () => {
     const data = await getPlaylists();
@@ -291,19 +238,49 @@ export default function LibraryScreen() {
     setTimeout(() => setSuccessMessage(null), 3000);
   }, [loadPlaylists]);
 
-  const renderCategoryGrid = () => (
-    <View style={styles.categoryGrid}>
-      {categories.map((category) => (
-        <CategoryCard
-          key={category.key}
-          category={category}
-          isActive={activeCategory === category.key}
-          count={categoryCounts[category.key]}
-          onPress={() => handleCategoryChange(category.key)}
-          theme={theme}
-        />
-      ))}
-    </View>
+  const activeConfig = categories.find(c => c.key === activeCategory) || categories[0];
+
+  const handleCategorySelect = (key: CategoryType) => {
+    handleCategoryChange(key);
+    setShowCategoryDropdown(false);
+  };
+
+  const renderCategoryDropdown = () => (
+    <Pressable
+      style={[styles.categoryDropdown, { backgroundColor: theme.surfaceContainerHigh, borderColor: theme.outlineVariant }]}
+      onPress={() => {
+        playTapSound();
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setShowCategoryDropdown(!showCategoryDropdown);
+      }}
+    >
+      <MaterialCommunityIcons name={activeConfig.icon} size={20} color={activeConfig.color} />
+      <ThemedText type="labelLarge" style={{ marginLeft: Spacing.s, flex: 1 }}>{activeConfig.label}</ThemedText>
+      <ThemedText type="labelSmall" style={{ color: theme.onSurfaceVariant, marginRight: Spacing.s }}>{categoryCounts[activeCategory]}</ThemedText>
+      <MaterialCommunityIcons name={showCategoryDropdown ? "chevron-up" : "chevron-down"} size={20} color={theme.onSurfaceVariant} />
+    </Pressable>
+  );
+
+  const renderCategoryOverlay = () => (
+    showCategoryDropdown ? (
+      <>
+        <Pressable style={styles.dropdownBackdrop} onPress={() => setShowCategoryDropdown(false)} />
+        <View style={[styles.categoryOptionsOverlay, { backgroundColor: theme.surfaceContainerHigh, top: insets.top + Layout.topBarHeight + Spacing.xs }]}>
+          {categories.map((category) => (
+            <Pressable
+              key={category.key}
+              style={[styles.categoryOption, activeCategory === category.key && { backgroundColor: theme.primaryContainer }]}
+              onPress={() => handleCategorySelect(category.key)}
+            >
+              <MaterialCommunityIcons name={category.icon} size={20} color={category.color} />
+              <ThemedText type="bodyMedium" style={{ marginLeft: Spacing.m, flex: 1 }}>{category.label}</ThemedText>
+              <ThemedText type="labelSmall" style={{ color: theme.onSurfaceVariant }}>{categoryCounts[category.key]}</ThemedText>
+              {activeCategory === category.key ? <MaterialCommunityIcons name="check" size={16} color={theme.primary} style={{ marginLeft: Spacing.s }} /> : null}
+            </Pressable>
+          ))}
+        </View>
+      </>
+    ) : null
   );
 
   const renderSearchBar = () => (
@@ -549,10 +526,9 @@ export default function LibraryScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <TopBar title="Library" showBack={false} />
-      
-      <View style={[styles.categorySection, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
-        {renderCategoryGrid()}
+      <View style={[styles.headerRow, { paddingTop: insets.top, backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
+        <ThemedText type="titleLarge" style={styles.headerTitle}>Library</ThemedText>
+        {renderCategoryDropdown()}
       </View>
 
       {renderSearchBar()}
@@ -562,6 +538,7 @@ export default function LibraryScreen() {
       </View>
 
       {renderSortOverlay()}
+      {renderCategoryOverlay()}
 
       <SongContextMenu
         visible={showContextMenu}
@@ -586,36 +563,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  categorySection: {
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.s,
-    paddingBottom: Spacing.xs,
+    paddingBottom: Spacing.s,
     borderBottomWidth: 1,
+    gap: Spacing.m,
   },
-  categoryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.xs,
-  },
-  categoryCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs,
-    borderRadius: M3Shape.cornerSmall,
-    borderWidth: 1,
-    minWidth: "30%",
-    flex: 1,
-    maxWidth: "33%",
-  },
-  categoryCardContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  categoryLabel: {
+  headerTitle: {
     fontWeight: "600",
+  },
+  categoryDropdown: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.s,
+    borderRadius: M3Shape.cornerFull,
+    borderWidth: 1,
+  },
+  dropdownBackdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
+  },
+  categoryOptionsOverlay: {
+    position: "absolute",
+    left: Layout.horizontalPadding,
+    right: Layout.horizontalPadding,
+    borderRadius: M3Shape.cornerMedium,
+    paddingVertical: Spacing.xs,
+    zIndex: 101,
+    ...M3Elevation.level2,
+  },
+  categoryOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.m,
+    borderRadius: M3Shape.cornerSmall,
+    marginHorizontal: Spacing.xs,
   },
   searchRow: {
     flexDirection: "row",
