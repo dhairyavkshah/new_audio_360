@@ -244,7 +244,7 @@ export default function ListenScreen() {
     </View>
   );
 
-  const SONG_ITEM_HEIGHT = 72;
+  const SONG_ITEM_HEIGHT = 68;
 
   const getItemLayout = useCallback(
     (data: ArrayLike<Song> | null | undefined, index: number) => ({
