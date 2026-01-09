@@ -1,62 +1,119 @@
 import React, { ReactNode } from "react";
-import { View, StyleSheet, ViewStyle, Platform } from "react-native";
+import { View, StyleSheet, ViewStyle, Platform, KeyboardAvoidingView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { ThemedView } from "@/components/ThemedView";
-import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import { Layout, Spacing } from "@/constants/theme";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { useTheme } from "@/hooks/useTheme";
+import { Layout, Spacing, SafeAreaSpacing } from "@/constants/theme";
 
 interface ScreenLayoutProps {
   children: ReactNode;
   hasHeader?: boolean;
-  hasTabBar?: boolean;
-  hasBottomControls?: boolean;
+  withTabBar?: boolean;
+  withMiniPlayer?: boolean;
+  withKeyboard?: boolean;
   style?: ViewStyle;
   contentStyle?: ViewStyle;
-  mode?: "listen" | "create";
+  scrollable?: boolean;
 }
 
 export function ScreenLayout({
   children,
   hasHeader = true,
-  hasTabBar = true,
-  hasBottomControls = false,
+  withTabBar = true,
+  withMiniPlayer = true,
+  withKeyboard = false,
   style,
   contentStyle,
-  mode = "listen",
+  scrollable = false,
 }: ScreenLayoutProps) {
   const insets = useSafeAreaInsets();
-  
+  const { theme } = useTheme();
+
   let headerHeight = 0;
   try {
     headerHeight = useHeaderHeight();
   } catch {
-    headerHeight = hasHeader ? Layout.topBarHeight + insets.top : insets.top;
+    headerHeight = hasHeader ? Layout.topBarHeight + insets.top : 0;
   }
-  
-  const tabBarHeight = useSafeTabBarHeight();
 
-  const topPadding = hasHeader ? headerHeight + Spacing.l : insets.top + Layout.safeAreaPadding;
-  const bottomPadding = hasBottomControls
-    ? tabBarHeight + Spacing.xxl
-    : tabBarHeight + Spacing.l;
+  const topPadding = hasHeader
+    ? headerHeight + Spacing.l
+    : Math.max(insets.top, SafeAreaSpacing.top) + Spacing.l;
+
+  let bottomPadding = Math.max(insets.bottom, SafeAreaSpacing.bottom);
+  if (withTabBar) {
+    bottomPadding += Layout.bottomNavHeight;
+  }
+  if (withMiniPlayer) {
+    bottomPadding += Layout.miniPlayerHeight + Layout.miniPlayerGapFromNav;
+  }
+  bottomPadding += Spacing.l;
+
+  const horizontalPadding = Math.max(
+    insets.left,
+    insets.right,
+    SafeAreaSpacing.horizontal,
+    Spacing.l
+  );
+
+  const containerStyle = [
+    styles.container,
+    { backgroundColor: theme.backgroundRoot },
+    style,
+  ];
+
+  const contentContainerStyle = [
+    styles.content,
+    {
+      paddingTop: topPadding,
+      paddingBottom: bottomPadding,
+      paddingHorizontal: horizontalPadding,
+    },
+    contentStyle,
+  ];
+
+  if (withKeyboard) {
+    if (Platform.OS === "web") {
+      return (
+        <View style={containerStyle}>
+          <View style={contentContainerStyle}>{children}</View>
+        </View>
+      );
+    }
+
+    if (scrollable) {
+      return (
+        <View style={containerStyle}>
+          <KeyboardAwareScrollView
+            style={styles.keyboardAware}
+            contentContainerStyle={contentContainerStyle}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {children}
+          </KeyboardAwareScrollView>
+        </View>
+      );
+    }
+
+    return (
+      <View style={containerStyle}>
+        <KeyboardAvoidingView
+          style={styles.keyboardAware}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={headerHeight}
+        >
+          <View style={contentContainerStyle}>{children}</View>
+        </KeyboardAvoidingView>
+      </View>
+    );
+  }
 
   return (
-    <ThemedView style={[styles.container, style]}>
-      <View
-        style={[
-          styles.content,
-          {
-            paddingTop: topPadding,
-            paddingBottom: bottomPadding,
-            paddingHorizontal: Layout.horizontalPadding,
-          },
-          contentStyle,
-        ]}
-      >
-        {children}
-      </View>
-    </ThemedView>
+    <View style={containerStyle}>
+      <View style={contentContainerStyle}>{children}</View>
+    </View>
   );
 }
 
@@ -66,11 +123,7 @@ interface SectionProps {
 }
 
 export function Section({ children, style }: SectionProps) {
-  return (
-    <View style={[styles.section, style]}>
-      {children}
-    </View>
-  );
+  return <View style={[styles.section, style]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -78,6 +131,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    flex: 1,
+  },
+  keyboardAware: {
     flex: 1,
   },
   section: {

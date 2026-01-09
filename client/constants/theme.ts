@@ -1334,6 +1334,66 @@ export const Typography = {
     letterSpacing: 0,
     textDecorationLine: "underline" as const,
   },
+  display1: {
+    fontSize: 68,
+    fontWeight: "400" as const,
+    lineHeight: 92,
+    letterSpacing: 0,
+  },
+  display2: {
+    fontSize: 40,
+    fontWeight: "400" as const,
+    lineHeight: 52,
+    letterSpacing: 0,
+  },
+  display3: {
+    fontSize: 28,
+    fontWeight: "400" as const,
+    lineHeight: 36,
+    letterSpacing: 0,
+  },
+  title1: {
+    fontSize: 28,
+    fontWeight: "600" as const,
+    lineHeight: 36,
+    letterSpacing: 0,
+  },
+  title2: {
+    fontSize: 24,
+    fontWeight: "600" as const,
+    lineHeight: 32,
+    letterSpacing: 0,
+  },
+  title3: {
+    fontSize: 20,
+    fontWeight: "600" as const,
+    lineHeight: 28,
+    letterSpacing: 0,
+  },
+  body1: {
+    fontSize: 16,
+    fontWeight: "400" as const,
+    lineHeight: 22,
+    letterSpacing: 0,
+  },
+  body2: {
+    fontSize: 14,
+    fontWeight: "400" as const,
+    lineHeight: 20,
+    letterSpacing: 0,
+  },
+  caption1: {
+    fontSize: 12,
+    fontWeight: "400" as const,
+    lineHeight: 16,
+    letterSpacing: 0,
+  },
+  caption2: {
+    fontSize: 10,
+    fontWeight: "400" as const,
+    lineHeight: 12,
+    letterSpacing: 0,
+  },
 };
 
 export const Fluent2Tokens = {
