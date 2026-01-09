@@ -255,10 +255,7 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModeMusic() {
-        loudnessEnhancer?.let {
-            it.setTargetGain(-300)
-            it.enabled = true
-        }
+        loudnessEnhancer?.enabled = false
         
         equalizer?.let { eq ->
             eq.enabled = true
@@ -288,10 +285,7 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyMode360Reality() {
-        loudnessEnhancer?.let {
-            it.setTargetGain(-400)
-            it.enabled = true
-        }
+        loudnessEnhancer?.enabled = false
         
         equalizer?.let { eq ->
             eq.enabled = true
@@ -321,10 +315,7 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModeSignature360() {
-        loudnessEnhancer?.let {
-            it.setTargetGain(-500)
-            it.enabled = true
-        }
+        loudnessEnhancer?.enabled = false
         
         equalizer?.let { eq ->
             eq.enabled = true
@@ -354,10 +345,7 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModeGaming() {
-        loudnessEnhancer?.let {
-            it.setTargetGain(-400)
-            it.enabled = true
-        }
+        loudnessEnhancer?.enabled = false
         
         equalizer?.let { eq ->
             eq.enabled = true
@@ -387,10 +375,7 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModePodcast() {
-        loudnessEnhancer?.let {
-            it.setTargetGain(-200)
-            it.enabled = true
-        }
+        loudnessEnhancer?.enabled = false
         
         equalizer?.let { eq ->
             eq.enabled = true
@@ -415,10 +400,7 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModeMovie() {
-        loudnessEnhancer?.let {
-            it.setTargetGain(-600)
-            it.enabled = true
-        }
+        loudnessEnhancer?.enabled = false
         
         equalizer?.let { eq ->
             eq.enabled = true

@@ -95,5 +95,5 @@ A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Set
   - **EQ Preset Examples**: Rock [+3,+2,-2,-3,+1,+3,-4], Electronic [+4,+3,-2,-3,+1,+3,-6], Hip-Hop [+4,+3,-2,-3,+1,+1,-4]
   - **Immersive Mode EQ (mB)**: Music [60,10,-60,10,-20], Gaming [-14,-94,16,56,36], Movie [58,-12,-62,-12,28]
   - **Web Fallback**: Added immersive mode simulation with zero-sum EQ bands for web testing
-  - **Gain Staging**: Negative LoudnessEnhancer pre-gain (-200 to -600 mB) creates headroom
+  - **Gain Staging**: LoudnessEnhancer disabled for pure zero-sum sound signature testing
   - Files updated: SoundLabContext.tsx, NativeEffectsManager.ts, NativeEffectsManager.web.ts, ImmersiveModeEngineModule.kt
