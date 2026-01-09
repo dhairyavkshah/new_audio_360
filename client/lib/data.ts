@@ -38,6 +38,15 @@ export interface PlayerState {
 
 export const mockSongs: Song[] = [
   {
+    id: 'london-thumakda',
+    title: 'London Thumakda',
+    artist: 'Labh Janjua, Sonu Kakkar, Neha Kakkar',
+    album: 'Queen (2014)',
+    duration: 227,
+    artwork: 'https://picsum.photos/seed/londonthumakda/400/400',
+    audioUrl: '/attached_assets/London_Thumakda_Queen_320_Kbps_1767996329785.mp3',
+  },
+  {
     id: 'o-maahi',
     title: 'O Maahi',
     artist: 'Arijit Singh',
