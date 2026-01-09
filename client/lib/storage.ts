@@ -16,6 +16,7 @@ const STORAGE_KEYS = {
   FAVORITES: '@new_audio_360_favorites',
   RECENTLY_PLAYED: '@new_audio_360_recently_played',
   PLAY_COUNTS: '@new_audio_360_play_counts',
+  SELECTED_FOLDERS: '@new_audio_360_selected_folders',
 };
 
 export interface Playlist {
@@ -340,4 +341,36 @@ export async function getMostPlayed(limit: number = 10): Promise<string[]> {
     .slice(0, limit)
     .map(([id]) => id);
   return sorted;
+}
+
+export async function getSelectedFolders(): Promise<string[]> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.SELECTED_FOLDERS);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error getting selected folders:', error);
+    return [];
+  }
+}
+
+export async function setSelectedFolders(folders: string[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.SELECTED_FOLDERS, JSON.stringify(folders));
+  } catch (error) {
+    console.error('Error saving selected folders:', error);
+  }
+}
+
+export async function addSelectedFolder(folderPath: string): Promise<void> {
+  const folders = await getSelectedFolders();
+  if (!folders.includes(folderPath)) {
+    folders.push(folderPath);
+    await setSelectedFolders(folders);
+  }
+}
+
+export async function removeSelectedFolder(folderPath: string): Promise<void> {
+  const folders = await getSelectedFolders();
+  const filtered = folders.filter(f => f !== folderPath);
+  await setSelectedFolders(filtered);
 }

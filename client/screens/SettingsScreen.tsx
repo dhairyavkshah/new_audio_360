@@ -137,6 +137,12 @@ export default function SettingsScreen() {
               subtitle="Equalizer presets and immersive modes"
               onPress={() => navigation.navigate("SoundLab")}
             />
+            <MenuItem
+              icon="folder-music"
+              title="Music Folders"
+              subtitle="Select folders to source music from"
+              onPress={() => navigation.navigate("FolderSelection")}
+            />
           </View>
         </View>
 

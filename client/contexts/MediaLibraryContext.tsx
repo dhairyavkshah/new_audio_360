@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Song, mockSongs } from '@/lib/data';
+import { getSelectedFolders as loadSelectedFoldersFromStorage, setSelectedFolders as saveSelectedFoldersToStorage } from '@/lib/storage';
 
 const HIDDEN_SONGS_KEY = '@new_audio_360_hidden_songs';
 const ONBOARDING_COMPLETE_KEY = '@new_audio_360_onboarding_complete';
@@ -24,6 +25,7 @@ interface MediaLibraryContextValue {
   progress: { loaded: number; total: number };
   isOnboardingComplete: boolean;
   usingMockData: boolean;
+  selectedFolders: string[];
   requestPermission: () => Promise<boolean>;
   refreshSongs: () => Promise<void>;
   hideSong: (songId: string) => Promise<void>;
@@ -31,6 +33,7 @@ interface MediaLibraryContextValue {
   hiddenSongIds: string[];
   completeOnboarding: () => Promise<void>;
   skipOnboarding: () => Promise<void>;
+  setSelectedFolders: (folders: string[]) => void;
 }
 
 const MediaLibraryContext = createContext<MediaLibraryContextValue | null>(null);
@@ -59,6 +62,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
   const [usingMockData, setUsingMockData] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const [selectedFolders, setSelectedFoldersState] = useState<string[]>([]);
 
   const loadHiddenSongs = useCallback(async () => {
     try {
@@ -86,6 +90,20 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     } catch {
       setIsOnboardingComplete(false);
     }
+  }, []);
+
+  const loadSelectedFolders = useCallback(async () => {
+    try {
+      const folders = await loadSelectedFoldersFromStorage();
+      setSelectedFoldersState(folders);
+    } catch (err) {
+      console.error('Error loading selected folders:', err);
+    }
+  }, []);
+
+  const setSelectedFolders = useCallback((folders: string[]) => {
+    setSelectedFoldersState(folders);
+    saveSelectedFoldersToStorage(folders);
   }, []);
 
   const checkPermission = useCallback(async () => {
@@ -127,7 +145,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     }
   }, []);
 
-  const fetchAudioFiles = useCallback(async (hiddenIds: string[]) => {
+  const fetchAudioFiles = useCallback(async (hiddenIds: string[], folderIds: string[]) => {
     if (Platform.OS === 'web') {
       const mockDeviceSongs: DeviceSong[] = mockSongs.map(song => ({
         ...song,
@@ -149,22 +167,46 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
 
     try {
       let allAssets: MediaLibrary.Asset[] = [];
-      let hasNextPage = true;
-      let endCursor: string | undefined;
       
-      while (hasNextPage) {
-        const result = await MediaLibrary.getAssetsAsync({
-          mediaType: MediaLibrary.MediaType.audio,
-          first: 100,
-          after: endCursor,
-          sortBy: [MediaLibrary.SortBy.modificationTime],
-        });
+      if (folderIds.length > 0) {
+        for (const albumId of folderIds) {
+          let hasNextPage = true;
+          let endCursor: string | undefined;
+          
+          while (hasNextPage) {
+            const result = await MediaLibrary.getAssetsAsync({
+              album: albumId,
+              mediaType: MediaLibrary.MediaType.audio,
+              first: 100,
+              after: endCursor,
+              sortBy: [MediaLibrary.SortBy.modificationTime],
+            });
 
-        allAssets = [...allAssets, ...result.assets];
-        hasNextPage = result.hasNextPage;
-        endCursor = result.endCursor;
+            allAssets = [...allAssets, ...result.assets];
+            hasNextPage = result.hasNextPage;
+            endCursor = result.endCursor;
+            
+            setProgress({ loaded: allAssets.length, total: allAssets.length });
+          }
+        }
+      } else {
+        let hasNextPage = true;
+        let endCursor: string | undefined;
         
-        setProgress({ loaded: allAssets.length, total: result.totalCount });
+        while (hasNextPage) {
+          const result = await MediaLibrary.getAssetsAsync({
+            mediaType: MediaLibrary.MediaType.audio,
+            first: 100,
+            after: endCursor,
+            sortBy: [MediaLibrary.SortBy.modificationTime],
+          });
+
+          allAssets = [...allAssets, ...result.assets];
+          hasNextPage = result.hasNextPage;
+          endCursor = result.endCursor;
+          
+          setProgress({ loaded: allAssets.length, total: result.totalCount });
+        }
       }
 
       if (allAssets.length === 0) {
@@ -223,7 +265,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
   const refreshSongs = useCallback(async () => {
     const granted = await checkPermission();
     if (granted) {
-      await fetchAudioFiles(hiddenSongIds);
+      await fetchAudioFiles(hiddenSongIds, selectedFolders);
     } else {
       const mockDeviceSongs: DeviceSong[] = mockSongs.map(song => ({
         ...song,
@@ -237,7 +279,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
       setAllSongsIncludingHidden(mockDeviceSongs);
       setUsingMockData(true);
     }
-  }, [checkPermission, fetchAudioFiles, hiddenSongIds]);
+  }, [checkPermission, fetchAudioFiles, hiddenSongIds, selectedFolders]);
 
   const hideSong = useCallback(async (songId: string) => {
     const newHidden = [...hiddenSongIds, songId];
@@ -290,11 +332,12 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     const initialize = async () => {
       await loadHiddenSongs();
       await loadOnboardingStatus();
+      await loadSelectedFolders();
       await checkPermission();
       setInitialized(true);
     };
     initialize();
-  }, [loadHiddenSongs, loadOnboardingStatus, checkPermission]);
+  }, [loadHiddenSongs, loadOnboardingStatus, loadSelectedFolders, checkPermission]);
 
   useEffect(() => {
     if (initialized && isOnboardingComplete) {
@@ -312,6 +355,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     progress,
     isOnboardingComplete,
     usingMockData,
+    selectedFolders,
     requestPermission,
     refreshSongs,
     hideSong,
@@ -319,6 +363,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     hiddenSongIds,
     completeOnboarding,
     skipOnboarding,
+    setSelectedFolders,
   };
 
   return (

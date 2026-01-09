@@ -122,6 +122,13 @@ The app uses **Microsoft Fluent 2** design system with comprehensive token-based
 
 ## Recent Changes
 
+- **2026-01-09**: **Music Folder Selection Feature** - Users can now select specific device folders to source music from:
+  - Added FolderSelectionScreen with multi-select folder browsing
+  - Storage functions for folder persistence (getSelectedFolders, setSelectedFolders)
+  - MediaLibraryContext filters songs by selected folders
+  - Settings menu entry under "Music Folders" for easy access
+  - Web platform shows appropriate fallback messaging
+
 - **2026-01-09**: **Complete Fluent 2 Design System Migration** - Replaced Material Design 3 with Microsoft Fluent 2 throughout the app:
   - Created comprehensive Fluent 2 token system in `client/constants/fluent2/` (spacing, typography, colors, shadows, radii, motion)
   - Updated ThemeContext to expose Fluent 2 tokens via `useFluentTheme()` hook

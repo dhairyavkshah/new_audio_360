@@ -5,6 +5,7 @@ import SoundLabScreen from "@/screens/SoundLabScreen";
 import AppearanceScreen from "@/screens/AppearanceScreen";
 import PlanScreen from "@/screens/PlanScreen";
 import AboutScreen from "@/screens/AboutScreen";
+import FolderSelectionScreen from "@/screens/FolderSelectionScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
 export type SettingsStackParamList = {
@@ -13,6 +14,7 @@ export type SettingsStackParamList = {
   Appearance: undefined;
   Plan: undefined;
   About: undefined;
+  FolderSelection: undefined;
 };
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
@@ -58,6 +60,14 @@ export default function SettingsStackNavigator() {
         component={AboutScreen}
         options={{
           headerTitle: "About",
+          headerBackTitle: "Settings",
+        }}
+      />
+      <Stack.Screen
+        name="FolderSelection"
+        component={FolderSelectionScreen}
+        options={{
+          headerTitle: "Music Folders",
           headerBackTitle: "Settings",
         }}
       />
