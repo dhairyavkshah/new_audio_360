@@ -44,7 +44,7 @@ export const mockSongs: Song[] = [
     album: 'Queen (2014)',
     duration: 227,
     artwork: 'https://picsum.photos/seed/londonthumakda/400/400',
-    audioUrl: '/attached_assets/London_Thumakda_Queen_320_Kbps_1767996329785.mp3',
+    audioUrl: 'http://localhost:3001/attached_assets/London_Thumakda_Queen_320_Kbps_1767996329785.mp3',
   },
   {
     id: 'o-maahi',
