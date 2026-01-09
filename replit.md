@@ -101,6 +101,15 @@ The app features a 3-tab navigation structure:
 
 ## Recent Changes
 
+- **2026-01-09**: **Audio Engineering - Clipping Prevention & Gain Staging**:
+  - **Immersive Mode Presets Redesigned**: All 7 modes (Music, 360 Reality, Signature 360, Gaming, Podcast, Movie, Off) use proper gain staging to prevent audio clipping and distortion
+  - **Gain Staging Implementation**: Negative LoudnessEnhancer pre-gain (-300 to -600 mB) creates headroom before applying EQ boosts
+  - **Effect Parameter Safety Caps**: EQ bands capped at +150 mB (was +400 mB), BassBoost max 300 (was 900), Virtualizer max 400 (was 1000)
+  - **EqualizerModule Safety Limits**: Added `coerceIn(-1500, 150)` to `setBandLevel` and `setCustomBands` functions
+  - **Preset Headroom Values**: Music (-300 mB), 360 Reality (-400 mB), Signature 360 (-500 mB), Gaming (-400 mB), Podcast (-200 mB), Movie (-600 mB)
+  - **ErrorFallback Resilience**: Replaced ThemeContext dependency with React Native's useColorScheme to prevent errors when rendered outside ThemeProvider
+  - **Files Updated**: ImmersiveModeEngineModule.kt, EqualizerModule.kt, ErrorFallback.tsx
+
 - **2026-01-09**: **Hybrid Architecture Implementation - Backend & Authentication**:
   - **Backend Server**: Express.js + PostgreSQL + Drizzle ORM in `server/` directory
   - **Database Schema**: Users and subscriptions tables with JWT refresh tokens (`server/schema.ts`)

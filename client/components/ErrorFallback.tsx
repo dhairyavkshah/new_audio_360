@@ -7,10 +7,9 @@ import {
   ScrollView,
   Text,
   Modal,
+  useColorScheme,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { FluentText, FluentSurface } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
   FluentRadius,
@@ -25,7 +24,8 @@ export type ErrorFallbackProps = {
 };
 
 export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
-  const { isDark } = useThemeContext();
+  const systemColorScheme = useColorScheme();
+  const isDark = systemColorScheme === 'dark';
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const [isModalVisible, setIsModalVisible] = useState(false);
 
@@ -47,7 +47,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   };
 
   return (
-    <FluentSurface style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.colorNeutralBackground1 }]}>
       {__DEV__ ? (
         <Pressable
           onPress={() => setIsModalVisible(true)}
@@ -68,13 +68,13 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
       ) : null}
 
       <View style={styles.content}>
-        <FluentText variant="title1" align="center" style={styles.title}>
+        <Text style={[styles.title, { color: colors.colorNeutralForeground1 }]}>
           Something went wrong
-        </FluentText>
+        </Text>
 
-        <FluentText variant="body1" color="secondary" align="center" style={styles.message}>
+        <Text style={[styles.message, { color: colors.colorNeutralForeground2 }]}>
           Please reload the app to continue.
-        </FluentText>
+        </Text>
 
         <Pressable
           onPress={handleRestart}
@@ -87,12 +87,9 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
             },
           ]}
         >
-          <FluentText
-            variant="body1"
-            style={[styles.buttonText, { color: colors.colorNeutralForegroundOnBrand }]}
-          >
+          <Text style={[styles.buttonText, { color: colors.colorNeutralForegroundOnBrand }]}>
             Try Again
-          </FluentText>
+          </Text>
         </Pressable>
       </View>
 
@@ -104,11 +101,11 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           onRequestClose={() => setIsModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
-            <FluentSurface style={styles.modalContainer}>
+            <View style={[styles.modalContainer, { backgroundColor: colors.colorNeutralBackground1 }]}>
               <View style={[styles.modalHeader, { borderBottomColor: colors.colorNeutralStroke2 }]}>
-                <FluentText variant="title2" style={styles.modalTitle}>
+                <Text style={[styles.modalTitle, { color: colors.colorNeutralForeground1 }]}>
                   Error Details
-                </FluentText>
+                </Text>
                 <Pressable
                   onPress={() => setIsModalVisible(false)}
                   style={({ pressed }) => [
@@ -149,11 +146,11 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
                   </Text>
                 </View>
               </ScrollView>
-            </FluentSurface>
+            </View>
           </View>
         </Modal>
       ) : null}
-    </FluentSurface>
+    </View>
   );
 }
 
@@ -174,10 +171,19 @@ const styles = StyleSheet.create({
     maxWidth: 600,
   },
   title: {
+    fontSize: 28,
+    fontWeight: "600",
     lineHeight: 40,
+    textAlign: "center",
   },
   message: {
+    fontSize: 16,
     lineHeight: 24,
+    textAlign: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "600",
   },
   topButton: {
     position: "absolute",
@@ -229,9 +235,6 @@ const styles = StyleSheet.create({
     paddingTop: FluentSpacing.l,
     paddingBottom: FluentSpacing.m,
     borderBottomWidth: 1,
-  },
-  modalTitle: {
-    fontWeight: "600",
   },
   closeButton: {
     padding: FluentSpacing.xs,

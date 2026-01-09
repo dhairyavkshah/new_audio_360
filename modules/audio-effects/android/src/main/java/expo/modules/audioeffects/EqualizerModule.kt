@@ -71,8 +71,9 @@ class EqualizerModule : Module() {
         
         Function("setBandLevel") { band: Int, level: Int ->
             try {
-                equalizer?.setBandLevel(band.toShort(), level.toShort())
-                return@Function mapOf("success" to true, "band" to band, "level" to level)
+                val safeLevel = level.coerceIn(-1500, 150)
+                equalizer?.setBandLevel(band.toShort(), safeLevel.toShort())
+                return@Function mapOf("success" to true, "band" to band, "level" to safeLevel)
             } catch (e: Exception) {
                 return@Function mapOf("success" to false, "error" to e.message)
             }
@@ -101,7 +102,8 @@ class EqualizerModule : Module() {
                 
                 for ((band, level) in levels.withIndex()) {
                     if (band < eq.numberOfBands) {
-                        eq.setBandLevel(band.toShort(), level.toShort())
+                        val safeLevel = level.coerceIn(-1500, 150)
+                        eq.setBandLevel(band.toShort(), safeLevel.toShort())
                     }
                 }
                 
