@@ -154,8 +154,8 @@ class ImmersiveModeEngineModule : Module() {
                 ),
                 mapOf(
                     "id" to MODE_SIGNATURE_360,
-                    "name" to "Signature 360",
-                    "description" to "Balanced combination of Music clarity and 360 Reality immersion",
+                    "name" to "The Signature 360",
+                    "description" to "The signature sound by Dhairya Shah",
                     "icon" to "music-circle"
                 ),
                 mapOf(
