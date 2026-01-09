@@ -7,6 +7,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { TopBar } from "@/components/TopBar";
 import { SongContextMenu } from "@/components/SongContextMenu";
 import { SongCard } from "@/components/SongCard";
 import { AnimatedCard } from "@/components/AnimatedCard";
@@ -247,112 +248,64 @@ export default function LibraryScreen() {
 
   const activeConfig = categories.find(c => c.key === activeCategory) || categories[0];
 
-  const renderLibraryTopBar = () => (
-    <View style={[styles.topBarContainer, { paddingTop: insets.top, backgroundColor: theme.surface }]}>
-      <View style={styles.titleRow}>
-        <ThemedText type="title1" style={styles.pageTitle}>Library</ThemedText>
-        <Pressable
-          style={[styles.categoryDropdownTrigger, { backgroundColor: theme.surfaceContainerHigh, borderColor: theme.outline }]}
-          onPress={toggleCategoryDropdown}
-          accessibilityRole="button"
-          accessibilityLabel={`${activeConfig.label}. Tap to change category.`}
-        >
-          <MaterialCommunityIcons name={activeConfig.icon} size={18} color={activeConfig.color} />
-          <ThemedText type="bodyMedium" style={[styles.categoryTriggerLabel, { color: theme.onSurface }]}>{activeConfig.label}</ThemedText>
-          <MaterialCommunityIcons 
-            name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
-            size={18} 
-            color={theme.onSurfaceVariant} 
-          />
-        </Pressable>
-      </View>
-      
-      <View style={[styles.searchSortRow, { backgroundColor: theme.surfaceContainer }]}>
-        <View style={[styles.searchInputContainer, { backgroundColor: theme.surfaceContainerHigh }]}>
-          <MaterialCommunityIcons name="magnify" size={18} color={theme.onSurfaceVariant} />
-          <TextInput
-            style={[styles.searchTextInput, { color: theme.onSurface }]}
-            placeholder={`Search ${activeConfig.label}...`}
-            placeholderTextColor={theme.onSurfaceVariant}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery("")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <MaterialCommunityIcons name="close-circle" size={16} color={theme.onSurfaceVariant} />
-            </Pressable>
-          )}
+  const renderCategoryDropdown = () => (
+    <View style={styles.categoryDropdownContainer}>
+      <Pressable
+        style={[styles.categoryDropdownButton, { backgroundColor: theme.surfaceContainerHigh, borderColor: theme.outlineVariant }]}
+        onPress={toggleCategoryDropdown}
+        accessibilityRole="button"
+        accessibilityLabel={`Category: ${activeConfig.label}, ${categoryCounts[activeCategory]} items. Tap to change.`}
+      >
+        <View style={[styles.categoryDropdownIcon, { backgroundColor: activeConfig.color + "20" }]}>
+          <MaterialCommunityIcons name={activeConfig.icon} size={20} color={activeConfig.color} />
         </View>
-        <Pressable
-          style={[styles.sortTrigger, { backgroundColor: theme.surfaceContainerHigh }]}
-          onPress={() => {
-            playTapSound();
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setShowSortOptions(!showSortOptions);
-          }}
-        >
-          <MaterialCommunityIcons name={SORT_OPTIONS.find((o) => o.key === sortBy)?.icon as any || "sort"} size={18} color={theme.onSurface} />
-          <MaterialCommunityIcons name={showSortOptions ? "chevron-up" : "chevron-down"} size={14} color={theme.onSurfaceVariant} style={{ marginLeft: 2 }} />
-        </Pressable>
-        {activeCategory === "playlists" && (
-          <Pressable style={[styles.addPlaylistButton, { backgroundColor: theme.primary }]} onPress={handleManagePlaylists}>
-            <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
-          </Pressable>
-        )}
-      </View>
-
-      {showCategoryDropdown && (
-        <>
-          <Pressable style={styles.dropdownBackdrop} onPress={() => setShowCategoryDropdown(false)} />
-          <View style={[styles.categoryDropdownMenu, { backgroundColor: theme.surfaceContainerHigh }]}>
-            {categories.map((category) => {
-              const isActive = activeCategory === category.key;
-              return (
-                <Pressable
-                  key={category.key}
-                  style={[styles.categoryMenuItem, isActive && { backgroundColor: category.color + "15" }]}
-                  onPress={() => handleCategoryChange(category.key)}
-                >
-                  <MaterialCommunityIcons name={category.icon} size={18} color={category.color} />
-                  <ThemedText type="bodyMedium" style={[styles.categoryMenuLabel, isActive && { color: category.color, fontWeight: "600" }]}>
-                    {category.label}
-                  </ThemedText>
-                  <ThemedText type="caption" style={{ color: theme.onSurfaceVariant }}>
-                    {categoryCounts[category.key]}
-                  </ThemedText>
-                  {isActive && (
-                    <MaterialCommunityIcons name="check" size={16} color={category.color} style={{ marginLeft: Spacing.xs }} />
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
-        </>
-      )}
-      
-      {showSortOptions && (
-        <>
-          <Pressable style={styles.dropdownBackdrop} onPress={() => setShowSortOptions(false)} />
-          <View style={[styles.sortDropdownMenu, { backgroundColor: theme.surfaceContainerHigh }]}>
-            {SORT_OPTIONS.map((option) => (
-              <Pressable
-                key={option.key}
-                style={[styles.sortMenuItem, sortBy === option.key && { backgroundColor: theme.primaryContainer }]}
-                onPress={() => handleSortPress(option.key)}
-              >
-                <MaterialCommunityIcons name={option.icon as any} size={18} color={sortBy === option.key ? theme.primary : theme.onSurface} />
-                <ThemedText type="bodyMedium" style={[styles.sortMenuLabel, sortBy === option.key && { color: theme.primary }]}>{option.label}</ThemedText>
-                {sortBy === option.key && <MaterialCommunityIcons name="check" size={16} color={theme.primary} />}
-              </Pressable>
-            ))}
-          </View>
-        </>
-      )}
+        <View style={styles.categoryDropdownText}>
+          <ThemedText type="bodyLarge" style={{ fontWeight: "600" }}>{activeConfig.label}</ThemedText>
+          <ThemedText type="caption" style={{ color: theme.onSurfaceVariant }}>{categoryCounts[activeCategory]} items</ThemedText>
+        </View>
+        <MaterialCommunityIcons 
+          name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
+          size={24} 
+          color={theme.onSurfaceVariant} 
+        />
+      </Pressable>
     </View>
   );
 
-  const renderSearchBar_UNUSED = () => (
+  const renderCategoryDropdownOverlay = () => (
+    showCategoryDropdown ? (
+      <>
+        <Pressable style={styles.categoryOverlayBackdrop} onPress={() => setShowCategoryDropdown(false)} />
+        <View style={[styles.categoryOptionsOverlay, { backgroundColor: theme.surfaceContainerHigh }]}>
+          {categories.map((category) => {
+            const isActive = activeCategory === category.key;
+            return (
+              <Pressable
+                key={category.key}
+                style={[styles.categoryOption, isActive && { backgroundColor: category.color + "15" }]}
+                onPress={() => handleCategoryChange(category.key)}
+              >
+                <View style={[styles.categoryOptionIcon, { backgroundColor: category.color + "20" }]}>
+                  <MaterialCommunityIcons name={category.icon} size={18} color={category.color} />
+                </View>
+                <ThemedText type="bodyMedium" style={[styles.categoryOptionLabel, isActive && { color: category.color, fontWeight: "600" }]}>
+                  {category.label}
+                </ThemedText>
+                <ThemedText type="caption" style={{ color: theme.onSurfaceVariant }}>
+                  {categoryCounts[category.key]}
+                </ThemedText>
+                {isActive && (
+                  <MaterialCommunityIcons name="check" size={18} color={category.color} style={{ marginLeft: Spacing.s }} />
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+      </>
+    ) : null
+  );
+
+  const renderSearchBar = () => (
     <View style={[styles.searchRow, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
       <View style={[styles.searchContainer, { backgroundColor: theme.surfaceContainerHigh }]}>
         <MaterialCommunityIcons name="magnify" size={18} color={theme.onSurfaceVariant} style={styles.searchIcon} />
@@ -605,11 +558,20 @@ export default function LibraryScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={insets.top}
       >
-        {renderLibraryTopBar()}
+        <TopBar title="Library" showBack={false} />
+        
+        <View style={[styles.categorySection, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
+          {renderCategoryDropdown()}
+        </View>
+
+        {renderSearchBar()}
 
         <View style={[styles.contentArea, { flex: 1 }]}>
           {renderContent()}
         </View>
+
+        {renderSortOverlay()}
+        {renderCategoryDropdownOverlay()}
       </KeyboardAvoidingView>
 
       <SongContextMenu
@@ -635,161 +597,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  topBarContainer: {
-    position: "relative",
-    zIndex: 100,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  categorySection: {
     paddingHorizontal: Layout.horizontalPadding,
-    paddingVertical: Spacing.s,
+    paddingTop: Spacing.s,
+    paddingBottom: Spacing.s,
+    borderBottomWidth: 1,
   },
-  pageTitle: {
-    fontWeight: "600",
+  categoryDropdownContainer: {
+    width: "100%",
   },
-  categoryDropdownTrigger: {
+  categoryDropdownButton: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.xs,
-    borderRadius: M3Shape.cornerFull,
+    paddingVertical: Spacing.s,
+    borderRadius: M3Shape.cornerMedium,
     borderWidth: 1,
-    gap: Spacing.xs,
-    height: 36,
   },
-  categoryTriggerLabel: {
-    fontWeight: "600",
-  },
-  searchSortRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Layout.horizontalPadding,
-    paddingVertical: Spacing.xs,
-    gap: Spacing.xs,
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: M3Shape.cornerFull,
-    paddingHorizontal: Spacing.s,
-    height: 40,
-    gap: Spacing.xs,
-  },
-  searchTextInput: {
-    flex: 1,
-    fontSize: 14,
-    height: "100%",
-  },
-  sortTrigger: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: Spacing.s,
-    borderRadius: M3Shape.cornerFull,
-    height: 40,
-    minWidth: 40,
-  },
-  addPlaylistButton: {
+  categoryDropdownIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
   },
-  dropdownBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: -2000,
-    zIndex: 50,
-  },
-  categoryDropdownMenu: {
-    position: "absolute",
-    top: 52,
-    right: Layout.horizontalPadding,
-    zIndex: 100,
-    borderRadius: M3Shape.cornerMedium,
-    overflow: "hidden",
-    minWidth: 200,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 8,
-      },
-      default: {
-        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-      },
-    }),
-  },
-  categoryMenuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
-    gap: Spacing.s,
-  },
-  categoryMenuLabel: {
+  categoryDropdownText: {
     flex: 1,
-  },
-  sortDropdownMenu: {
-    position: "absolute",
-    top: 100,
-    right: Layout.horizontalPadding,
-    zIndex: 100,
-    borderRadius: M3Shape.cornerMedium,
-    overflow: "hidden",
-    minWidth: 160,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 8,
-      },
-      default: {
-        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-      },
-    }),
-  },
-  sortMenuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
-    gap: Spacing.s,
-  },
-  sortMenuLabel: {
-    flex: 1,
-  },
-  libraryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: Layout.horizontalPadding,
-    paddingBottom: Spacing.s,
-    borderBottomWidth: 1,
-    zIndex: 10,
-  },
-  headerDropdownButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.xs,
-    borderRadius: M3Shape.cornerFull,
-    height: 36,
-    zIndex: 11,
+    marginLeft: Spacing.m,
   },
   categoryOverlayBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -797,11 +631,12 @@ const styles = StyleSheet.create({
   },
   categoryOptionsOverlay: {
     position: "absolute",
+    top: 110,
+    left: Layout.horizontalPadding,
     right: Layout.horizontalPadding,
     zIndex: 30,
     borderRadius: M3Shape.cornerMedium,
     overflow: "hidden",
-    minWidth: 180,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -820,10 +655,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.s,
-    gap: Spacing.s,
+  },
+  categoryOptionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
   categoryOptionLabel: {
     flex: 1,
+    marginLeft: Spacing.m,
   },
   searchRow: {
     flexDirection: "row",
