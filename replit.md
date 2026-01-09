@@ -122,6 +122,15 @@ The app uses **Microsoft Fluent 2** design system with comprehensive token-based
 
 ## Recent Changes
 
+- **2026-01-09**: **Header Space Optimization** - Maximized song list space while maintaining accessibility:
+  - TopBar height reduced from 56px to 48px (8px savings)
+  - MiniPlayer height reduced from 68px to 64px (4px savings)
+  - Horizontal padding reduced from 20px to 16px throughout
+  - ListenScreen: Removed song count line, reduced stickyHeader padding
+  - LibraryScreen: Compact category chips (36px + hitSlop for 48px effective touch), reduced section padding
+  - All interactive elements maintain 44px minimum touch targets via hitSlop properties
+  - Net gain: ~40-50px more vertical space for song content display
+
 - **2026-01-09**: **Theme-Specific Icons and Fluent 2 Styling Cleanup** - Icons now change throughout the app based on selected theme:
   - Updated ThemeContext to use `getSkin(themeName)` for proper skin definition retrieval per theme
   - Theme icons now update across PlaybackControls, MainTabNavigator, MiniPlayer, and other components
