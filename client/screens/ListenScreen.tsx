@@ -1,18 +1,17 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, StyleSheet, FlatList, Platform, KeyboardAvoidingView } from "react-native";
+import { View, StyleSheet, FlatList, Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { FluentTopBar, SortOption } from "@/components/FluentTopBar";
 import { SongCard } from "@/components/SongCard";
 import { SongContextMenu } from "@/components/SongContextMenu";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { Spacing, Layout, BorderRadius } from "@/constants/theme";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { mockSongs, Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import { PlayableSong } from "@/contexts/PlayerContext";
@@ -22,9 +21,11 @@ type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 export default function ListenScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
   const { currentSong, isPlaying, playSong, setQueue } = usePlayer();
   const { songs: deviceSongs } = useMediaLibraryContext();
+
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("title_asc");
@@ -107,10 +108,10 @@ export default function ListenScreen() {
 
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
-      <MaterialCommunityIcons name="music-note-off" size={48} color={theme.textSecondary} />
-      <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.l, textAlign: "center" }}>
+      <MaterialCommunityIcons name="music-note-off" size={48} color={colors.colorNeutralForeground2} />
+      <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.l, textAlign: "center" }}>
         No songs found matching "{searchQuery}"
-      </ThemedText>
+      </FluentText>
     </View>
   );
 
@@ -126,42 +127,42 @@ export default function ListenScreen() {
   );
 
   return (
-    <ThemedView style={styles.container}>
-      <FluentTopBar
-        title="Listen"
-        showSearch
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder="Search songs..."
-        showSort
-        sortBy={sortBy}
-        onSortChange={handleSortChange}
-        showSortOverlay={showSortOptions}
-        onSortOverlayToggle={() => setShowSortOptions(!showSortOptions)}
-      />
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <FlatList
-          data={filteredAndSortedSongs}
-          renderItem={renderSong}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={[
-            styles.listContent,
-            { paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
-          ]}
-          ListEmptyComponent={renderEmptyList}
-          showsVerticalScrollIndicator={false}
-          initialNumToRender={15}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          removeClippedSubviews={Platform.OS === 'android'}
-          updateCellsBatchingPeriod={50}
-          getItemLayout={getItemLayout}
-          keyboardShouldPersistTaps="handled"
+    <FluentScreenLayout
+      header={
+        <FluentTopBar
+          title="Listen"
+          showSearch
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search songs..."
+          showSort
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
+          showSortOverlay={showSortOptions}
+          onSortOverlayToggle={() => setShowSortOptions(!showSortOptions)}
         />
-      </KeyboardAvoidingView>
+      }
+      contentPadding="l"
+      avoidKeyboard
+    >
+      <FlatList
+        data={filteredAndSortedSongs}
+        renderItem={renderSong}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + FluentSpacing.xl },
+        ]}
+        ListEmptyComponent={renderEmptyList}
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={15}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        removeClippedSubviews={Platform.OS === 'android'}
+        updateCellsBatchingPeriod={50}
+        getItemLayout={getItemLayout}
+        keyboardShouldPersistTaps="handled"
+      />
 
       <SongContextMenu
         visible={showContextMenu}
@@ -171,40 +172,36 @@ export default function ListenScreen() {
       />
 
       {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: theme.success }]}>
+        <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
           <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
-          <ThemedText type="small" style={{ color: "#FFFFFF", marginLeft: Spacing.s, flex: 1 }}>
+          <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
             {successMessage}
-          </ThemedText>
+          </FluentText>
         </View>
       ) : null}
-    </ThemedView>
+    </FluentScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   listContent: {
-    paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.m,
+    paddingTop: FluentSpacing.m,
   },
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.xxxl,
+    paddingVertical: FluentSpacing.xxxl,
   },
   successToast: {
     position: "absolute",
     bottom: 100,
-    left: Layout.horizontalPadding,
-    right: Layout.horizontalPadding,
+    left: FluentSpacing.l,
+    right: FluentSpacing.l,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.l,
-    paddingVertical: Spacing.l,
-    borderRadius: BorderRadius.card,
+    paddingHorizontal: FluentSpacing.l,
+    paddingVertical: FluentSpacing.l,
+    borderRadius: FluentRadius.large,
     elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

@@ -12,7 +12,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { PlaybackControls } from "@/components/PlaybackControls";
 import { ProgressBar } from "@/components/ProgressBar";
 import { AudioWaveform } from "@/components/AudioWaveform";
@@ -21,7 +21,7 @@ import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { Spacing, BorderRadius, ModeStyles, Layout } from "@/constants/theme";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
@@ -29,16 +29,18 @@ type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const IS_COMPACT = SCREEN_WIDTH <= 375 || SCREEN_HEIGHT <= 667;
 const ARTWORK_SIZE = IS_COMPACT 
-  ? Math.min(SCREEN_WIDTH - Spacing.l * 2, 240)
-  : Math.min(SCREEN_WIDTH - Spacing.xxl * 2, 320);
+  ? Math.min(SCREEN_WIDTH - FluentSpacing.l * 2, 240)
+  : Math.min(SCREEN_WIDTH - FluentSpacing.xxl * 2, 320);
 const BLUR_INTENSITY = 40;
+const TOUCH_TARGET_MIN = 44;
+const HORIZONTAL_PADDING = FluentSpacing.l;
 
 export default function NowPlayingScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useSafeTabBarHeight();
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
   const { isFavorite, toggleFavorite } = usePlayerContext();
   const { setNowPlayingVisible } = useNavigationContext();
@@ -61,6 +63,7 @@ export default function NowPlayingScreen() {
     toggleRepeat,
   } = usePlayer();
 
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const artworkScale = useSharedValue(1);
 
   useFocusEffect(
@@ -92,12 +95,12 @@ export default function NowPlayingScreen() {
 
   if (!currentSong) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <View style={[styles.container, { backgroundColor: colors.colorNeutralBackground1 }]}>
         <View style={styles.emptyState}>
-          <ThemedText type="h3">No song playing</ThemedText>
-          <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.m }}>
+          <FluentText variant="title1">No song playing</FluentText>
+          <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.m }}>
             Select a song from your library
-          </ThemedText>
+          </FluentText>
         </View>
       </View>
     );
@@ -110,11 +113,11 @@ export default function NowPlayingScreen() {
         style={StyleSheet.absoluteFill}
         blurRadius={Platform.OS === "ios" ? BLUR_INTENSITY : BLUR_INTENSITY / 2}
       >
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? `rgba(0,0,0,${ModeStyles.listen.overlayOpacityDark + 0.2})` : `rgba(255,255,255,${ModeStyles.listen.overlayOpacityLight + 0.1})` }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.65)' }]} />
       </ImageBackground>
 
-      <View style={[styles.content, { paddingTop: headerHeight + (IS_COMPACT ? Spacing.m : Spacing.xl), paddingBottom: tabBarHeight + (IS_COMPACT ? Spacing.m : Spacing.xl), paddingHorizontal: IS_COMPACT ? Spacing.m : Layout.horizontalPadding }]}>
-        <View style={[styles.artworkContainer, IS_COMPACT && { marginTop: Spacing.s }]}>
+      <View style={[styles.content, { paddingTop: headerHeight + (IS_COMPACT ? FluentSpacing.m : FluentSpacing.xl), paddingBottom: tabBarHeight + (IS_COMPACT ? FluentSpacing.m : FluentSpacing.xl), paddingHorizontal: IS_COMPACT ? FluentSpacing.m : HORIZONTAL_PADDING }]}>
+        <View style={[styles.artworkContainer, IS_COMPACT && { marginTop: FluentSpacing.s }]}>
           <Animated.View style={[styles.artworkWrapper, artworkStyle]}>
             <Image
               source={{ uri: currentSong.artwork }}
@@ -122,34 +125,34 @@ export default function NowPlayingScreen() {
             />
             {(isLoading || isBuffering) ? (
               <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color={theme.primary} />
-                <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.m }}>
+                <ActivityIndicator size="large" color={colors.colorBrandForeground1} />
+                <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.m }}>
                   {isLoading ? "Loading..." : "Buffering..."}
-                </ThemedText>
+                </FluentText>
               </View>
             ) : null}
           </Animated.View>
           {error ? (
             <View style={[styles.errorBadge, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)' }]}>
-              <MaterialCommunityIcons name="alert-circle" size={14} color="#FF4D67" />
-              <ThemedText type="small" style={{ color: "#FF4D67", marginLeft: Spacing.xxs, flex: 1 }} numberOfLines={1}>
+              <MaterialCommunityIcons name="alert-circle" size={14} color={colors.colorPaletteRedForeground1} />
+              <FluentText variant="caption1" style={{ color: colors.colorPaletteRedForeground1, marginLeft: FluentSpacing.xxs, flex: 1 }} numberOfLines={1}>
                 {error}
-              </ThemedText>
+              </FluentText>
             </View>
           ) : null}
         </View>
 
         <View style={styles.songInfo}>
-          <ThemedText type="h3" style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
+          <FluentText variant="title1" style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
             {currentSong.title}
-          </ThemedText>
-          <ThemedText 
-            type="body" 
-            style={[styles.artistName, textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.85)' : theme.textSecondary }]} 
+          </FluentText>
+          <FluentText 
+            variant="subtitle1" 
+            style={[styles.artistName, textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.85)' : colors.colorNeutralForeground2 }]} 
             numberOfLines={1}
           >
             {currentSong.artist}
-          </ThemedText>
+          </FluentText>
           <View style={styles.actionButtons}>
             <Pressable
               style={styles.actionButton}
@@ -162,7 +165,7 @@ export default function NowPlayingScreen() {
               <MaterialCommunityIcons
                 name={isFavorite(currentSong.id) ? "heart" : "heart-outline"}
                 size={24}
-                color={isFavorite(currentSong.id) ? "#FF4D67" : (isDark ? "rgba(255,255,255,0.85)" : theme.textSecondary)}
+                color={isFavorite(currentSong.id) ? colors.colorPaletteRedForeground1 : (isDark ? "rgba(255,255,255,0.85)" : colors.colorNeutralForeground2)}
               />
             </Pressable>
             <Pressable
@@ -176,7 +179,7 @@ export default function NowPlayingScreen() {
               <MaterialCommunityIcons
                 name="playlist-music"
                 size={24}
-                color={isDark ? "rgba(255,255,255,0.85)" : theme.textSecondary}
+                color={isDark ? "rgba(255,255,255,0.85)" : colors.colorNeutralForeground2}
               />
             </Pressable>
           </View>
@@ -188,7 +191,7 @@ export default function NowPlayingScreen() {
             barCount={50}
             barWidth={3}
             height={40}
-            color={theme.primary}
+            color={colors.colorBrandForeground1}
           />
         </View>
 
@@ -198,7 +201,7 @@ export default function NowPlayingScreen() {
             duration={duration || currentSong.duration}
             currentTime={currentTime}
             onSeek={seek}
-            width={SCREEN_WIDTH - (IS_COMPACT ? Spacing.l * 2 : Spacing.xxl * 2)}
+            width={SCREEN_WIDTH - (IS_COMPACT ? FluentSpacing.l * 2 : FluentSpacing.xxl * 2)}
             showTextShadow={true}
           />
         </View>
@@ -228,7 +231,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: HORIZONTAL_PADDING,
   },
   emptyState: {
     flex: 1,
@@ -238,10 +241,10 @@ const styles = StyleSheet.create({
   artworkContainer: {
     justifyContent: "center",
     alignItems: "center",
-    marginTop: Spacing.artworkMargin,
+    marginTop: FluentSpacing.xxxl,
   },
   artworkWrapper: {
-    borderRadius: BorderRadius.xl,
+    borderRadius: FluentRadius.xLarge,
     elevation: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
@@ -250,31 +253,31 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   artwork: {
-    borderRadius: BorderRadius.xl,
+    borderRadius: FluentRadius.xLarge,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: BorderRadius.xl,
+    borderRadius: FluentRadius.xLarge,
     justifyContent: "center",
     alignItems: "center",
   },
   errorBadge: {
     position: "absolute",
-    bottom: -Spacing.l,
+    bottom: -FluentSpacing.l,
     left: 0,
     right: 0,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.xxs,
-    borderRadius: BorderRadius.sm,
+    paddingHorizontal: FluentSpacing.m,
+    paddingVertical: FluentSpacing.xxs,
+    borderRadius: FluentRadius.small,
   },
   songInfo: {
     alignItems: "center",
-    marginTop: IS_COMPACT ? Spacing.m : Spacing.artworkMarginLarge,
-    marginBottom: IS_COMPACT ? Spacing.s : Spacing.l,
+    marginTop: IS_COMPACT ? FluentSpacing.m : FluentSpacing.xxxxl,
+    marginBottom: IS_COMPACT ? FluentSpacing.s : FluentSpacing.l,
     width: "100%",
   },
   songTitle: {
@@ -282,29 +285,29 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   artistName: {
-    marginTop: Spacing.titleToSubtitle,
+    marginTop: FluentSpacing.xs,
     textAlign: "center",
     fontWeight: "500",
   },
   actionButtons: {
     flexDirection: "row",
-    marginTop: Spacing.l,
-    gap: Spacing.controlCluster,
+    marginTop: FluentSpacing.l,
+    gap: FluentSpacing.xxl,
   },
   actionButton: {
-    width: Layout.touchTargetMin,
-    height: Layout.touchTargetMin,
+    width: TOUCH_TARGET_MIN,
+    height: TOUCH_TARGET_MIN,
     justifyContent: "center",
     alignItems: "center",
   },
   waveformContainer: {
-    marginVertical: IS_COMPACT ? Spacing.s : Spacing.progressBarSpacing,
+    marginVertical: IS_COMPACT ? FluentSpacing.s : FluentSpacing.l,
   },
   progressContainer: {
-    marginBottom: IS_COMPACT ? Spacing.s : Spacing.progressBarSpacing,
+    marginBottom: IS_COMPACT ? FluentSpacing.s : FluentSpacing.l,
   },
   controlsContainer: {
     width: "100%",
-    marginBottom: IS_COMPACT ? Spacing.s : Spacing.l,
+    marginBottom: IS_COMPACT ? FluentSpacing.s : FluentSpacing.l,
   },
 });

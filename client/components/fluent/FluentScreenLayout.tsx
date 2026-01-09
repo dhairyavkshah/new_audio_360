@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { View, StyleSheet, StatusBar, Platform, KeyboardAvoidingView, ViewStyle } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { FluentLightColors, FluentDarkColors, FluentSpacing, FluentPadding } from '@/constants/fluent2';
 import { useSafeTabBarHeight } from '@/hooks/useSafeTabBarHeight';
@@ -16,6 +16,7 @@ export interface FluentScreenLayoutProps {
   style?: ViewStyle;
   contentStyle?: ViewStyle;
   avoidKeyboard?: boolean;
+  edges?: ('top' | 'bottom' | 'left' | 'right')[];
 }
 
 const getBackgroundColor = (variant: BackgroundVariant, isDark: boolean): string => {
@@ -41,6 +42,7 @@ export function FluentScreenLayout({
   style,
   contentStyle,
   avoidKeyboard = true,
+  edges = ['top'],
 }: FluentScreenLayoutProps) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
@@ -67,7 +69,7 @@ export function FluentScreenLayout({
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }, style]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: bgColor }, style]} edges={edges}>
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={bgColor}
@@ -85,7 +87,7 @@ export function FluentScreenLayout({
       ) : (
         content
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
