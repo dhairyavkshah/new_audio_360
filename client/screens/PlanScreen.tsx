@@ -22,15 +22,13 @@ type FeatureItem = {
 
 const FEATURES: FeatureItem[] = [
   { icon: "music", text: "Music Player", standard: true, premium: true },
+  { icon: "playlist-music", text: "Playlist Management", standard: true, premium: true },
   { icon: "palette", text: "5 System Themes", standard: true, premium: true },
   { icon: "palette-outline", text: "All 55 Themes", standard: false, premium: true },
   { icon: "equalizer", text: "Equalizer Presets", standard: true, premium: true },
   { icon: "surround-sound", text: "Immersive Modes", standard: false, premium: true },
-  { icon: "microphone", text: "Studio Mode", standard: true, premium: true },
-  { icon: "volume-off", text: "Light Noise Reduction", standard: true, premium: true },
-  { icon: "volume-off", text: "All Noise Reduction", standard: false, premium: true },
-  { icon: "waveform", text: "Small Studio Reverb", standard: true, premium: true },
-  { icon: "waveform", text: "All Reverb Presets", standard: false, premium: true },
+  { icon: "heart", text: "Favorites & History", standard: true, premium: true },
+  { icon: "timer-sand", text: "Sleep Timer", standard: true, premium: true },
 ];
 
 export default function PlanScreen() {
@@ -229,7 +227,7 @@ export default function PlanScreen() {
                     Standard
                   </ThemedText>
                   <ThemedText type="small" style={{ color: "rgba(255,255,255,0.8)" }}>
-                    5 themes, Equalizer, Basic Studio
+                    5 themes, Equalizer, Playlists
                   </ThemedText>
                 </View>
               </View>
@@ -259,7 +257,7 @@ export default function PlanScreen() {
                     {plan === "standard" ? "Upgrade to Premium" : "Premium"}
                   </ThemedText>
                   <ThemedText type="small" style={{ color: "rgba(255,255,255,0.8)" }}>
-                    All 55 themes, Immersive, Full Studio
+                    All 55 themes, Immersive Audio
                   </ThemedText>
                 </View>
               </View>

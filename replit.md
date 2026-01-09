@@ -23,12 +23,12 @@ The application is built with **React Native and Expo**, ensuring cross-platform
 - **Safe Areas**: react-native-safe-area-context with useSafeAreaInsets()
 
 **Navigation Structure:**
-The app features a 4-tab navigation structure:
-- **MainTabNavigator**: Hosts Listen, Library, Studio, and Settings tabs, with a persistent MiniPlayer overlay.
+The app features a 3-tab navigation structure:
+- **MainTabNavigator**: Hosts Listen, Library, and Settings tabs, with a persistent MiniPlayer overlay.
     - **ListenTab**: Main music player, Now Playing, Sound Lab, and Queue management.
     - **LibraryTab**: Music organization with a **Quick Access Category Grid** (7 color-coded cards: Liked, Recent, Top, Songs, Albums, Artists, Playlists) – all categories visible at once without horizontal scrolling.
-    - **StudioTab**: Voice recording over backing tracks with voice-specific effects (Noise Reduction + Reverb presets) and mixing capabilities, utilizing native Android audio modules.
     - **SettingsTab**: General settings, Sound Lab, Appearance (theme selector), Subscription Plan, and About.
+    - **StudioTab**: (Currently hidden) Voice recording over backing tracks with voice-specific effects, code preserved for future re-enablement.
 
 **Native Audio Modules (located in `modules/audio-effects/`):**
 
@@ -121,6 +121,12 @@ The app uses **Microsoft Fluent 2** design system with comprehensive token-based
 - **MaterialCommunityIcons**: Iconography
 
 ## Recent Changes
+
+- **2026-01-09**: **Studio Mode Hidden** - Temporarily hidden Studio/Create tab from navigation:
+  - Removed StudioTab from MainTabNavigator (code preserved in CreateStackNavigator for future re-enablement)
+  - Updated PlanScreen to show only music player features (removed noise reduction, reverb references)
+  - App now shows 3 tabs: Listen, Library, Settings
+  - Subscription plan descriptions focus on: Music Player, Playlists, Themes, Equalizer, Immersive Audio
 
 - **2026-01-09**: **Header Space Optimization** - Maximized song list space while maintaining accessibility:
   - TopBar height reduced from 56px to 48px (8px savings)

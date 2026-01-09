@@ -14,7 +14,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ListenStackNavigator from "@/navigation/ListenStackNavigator";
 import LibraryStackNavigator from "@/navigation/LibraryStackNavigator";
 import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
-import CreateStackNavigator from "@/navigation/CreateStackNavigator";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
@@ -33,7 +32,6 @@ import {
 export type MainTabParamList = {
   ListenTab: undefined;
   LibraryTab: undefined;
-  StudioTab: undefined;
   SettingsTab: undefined;
 };
 
@@ -45,7 +43,7 @@ function TabIcon({
   focused,
   isDark,
 }: {
-  iconKey: 'listen' | 'library' | 'studio' | 'settings';
+  iconKey: 'listen' | 'library' | 'settings';
   color: string;
   focused: boolean;
   isDark: boolean;
@@ -69,7 +67,6 @@ function TabIcon({
   const iconMap = {
     listen: focused ? skin.icons.tabListenFocused : skin.icons.tabListen,
     library: focused ? skin.icons.tabLibraryFocused : skin.icons.tabLibrary,
-    studio: focused ? skin.icons.tabStudioFocused : skin.icons.tabStudio,
     settings: focused ? skin.icons.tabSettingsFocused : skin.icons.tabSettings,
   };
   
@@ -122,7 +119,7 @@ export default function MainTabNavigator() {
   const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   
   const tabBarHeight = TAB_BAR_HEIGHT + insets.bottom;
-  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && currentTab !== "StudioTab" && !isNowPlayingVisible;
+  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && !isNowPlayingVisible;
 
   return (
     <View style={{ flex: 1 }}>
@@ -185,21 +182,6 @@ export default function MainTabNavigator() {
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               iconKey="library"
-              color={color}
-              focused={focused}
-              isDark={isDark}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="StudioTab"
-        component={CreateStackNavigator}
-        options={{
-          title: "Studio",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              iconKey="studio"
               color={color}
               focused={focused}
               isDark={isDark}
