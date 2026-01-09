@@ -122,6 +122,14 @@ The app uses **Microsoft Fluent 2** design system with comprehensive token-based
 
 ## Recent Changes
 
+- **2026-01-09**: **Theme-Specific Icons and Fluent 2 Styling Cleanup** - Icons now change throughout the app based on selected theme:
+  - Updated ThemeContext to use `getSkin(themeName)` for proper skin definition retrieval per theme
+  - Theme icons now update across PlaybackControls, MainTabNavigator, MiniPlayer, and other components
+  - ThemeSelector (Appearance page) now uses consistent Fluent 2 styling with FluentControlRadius.card (8px)
+  - Replaced old Spacing imports with FluentSpacing tokens in ThemeSelector
+  - Removed unused bevel/glow styling code for cleaner implementation
+  - Design choice: Skins are defined per theme name - icons/shapes stay consistent while only colors change with dark mode
+
 - **2026-01-09**: **Multi-Step Permission Onboarding Flow** - Replaced single-screen onboarding with comprehensive step-based permission flow:
   - Created PermissionOnboardingFlow.tsx with visual step indicators (dots) and progress counter
   - Three permission steps: Music & Audio (Media Library), Microphone (for Studio/Karaoke), Notifications (for now-playing controls)
