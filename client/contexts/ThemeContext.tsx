@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeColors, ThemeName, themeRegistry } from '@/constants/theme';
-import { SkinDefinition, IconPack, ShapeTokens, ComponentStyles, getFluentDefaults } from '@/constants/skins';
+import { SkinDefinition, IconPack, ShapeTokens, ComponentStyles, getSkin } from '@/constants/skins';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 interface ThemeContextValue {
@@ -42,23 +42,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const themeColors = ThemeColors[themeName];
   const theme = themeColors[isDark ? 'dark' : 'light'];
 
-  const fluentDefaults = useMemo(() => getFluentDefaults(), []);
-  
-  const fluentSkin: SkinDefinition = useMemo(() => ({
-    id: themeName,
-    name: themeInfo?.label || 'Fluent',
-    family: 'fluent' as const,
-    icons: fluentDefaults.icons,
-    shapes: fluentDefaults.shapes,
-    components: fluentDefaults.components,
-    specialFeatures: {
-      hasLcdDisplay: false,
-      hasChromeFrame: false,
-      hasAeroGlass: false,
-      hasVisualizer: false,
-      hasMetallicTexture: false,
-    },
-  }), [themeName, themeInfo?.label, fluentDefaults]);
+  const currentSkin = useMemo(() => getSkin(themeName), [themeName]);
 
   return (
     <ThemeContext.Provider value={{ 
@@ -66,10 +50,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setThemeName, 
       theme, 
       isDark,
-      skin: fluentSkin,
-      icons: fluentDefaults.icons,
-      shapes: fluentDefaults.shapes,
-      components: fluentDefaults.components,
+      skin: currentSkin,
+      icons: currentSkin.icons,
+      shapes: currentSkin.shapes,
+      components: currentSkin.components,
     }}>
       {children}
     </ThemeContext.Provider>

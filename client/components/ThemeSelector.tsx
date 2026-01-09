@@ -10,8 +10,9 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { ThemeName, ThemeColors, Spacing, BorderRadius, themeRegistry } from "@/constants/theme";
-import { getSkin, skinDefinitions } from "@/constants/skins";
+import { ThemeName, ThemeColors, themeRegistry } from "@/constants/theme";
+import { getSkin } from "@/constants/skins";
+import { FluentSpacing, FluentControlRadius } from "@/constants/fluent2";
 
 interface ThemeSelectorProps {
   currentTheme: ThemeName;
@@ -66,21 +67,6 @@ function ThemeOption({
     onPress();
   };
 
-  const bevelStyle = skin.components.useBevel ? {
-    borderWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.15)',
-    borderLeftColor: 'rgba(255,255,255,0.1)',
-    borderBottomColor: 'rgba(0,0,0,0.2)',
-    borderRightColor: 'rgba(0,0,0,0.15)',
-  } : {};
-
-  const glowStyle = skin.components.useGlow && skin.components.glowColor ? {
-    shadowColor: skin.components.glowColor,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  } : {};
-
   return (
     <AnimatedPressable
       onPress={handlePress}
@@ -92,17 +78,15 @@ function ThemeOption({
           backgroundColor: theme.backgroundDefault,
           borderColor: isSelected ? themePreview.primary : "transparent",
           borderWidth: 2,
-          borderRadius: skin.shapes.cardBorderRadius,
+          borderRadius: FluentControlRadius.card,
         },
-        bevelStyle,
-        glowStyle,
         animatedStyle,
       ]}
     >
       <View style={styles.colorPreview}>
-        <View style={[styles.colorSwatch, { backgroundColor: themePreview.primary, borderRadius: skin.shapes.borderRadiusFull }]} />
-        <View style={[styles.colorSwatch, { backgroundColor: themePreview.secondary, borderRadius: skin.shapes.borderRadiusFull }]} />
-        <View style={[styles.colorSwatch, { backgroundColor: themePreview.backgroundDefault, borderRadius: skin.shapes.borderRadiusFull }]} />
+        <View style={[styles.colorSwatch, { backgroundColor: themePreview.primary }]} />
+        <View style={[styles.colorSwatch, { backgroundColor: themePreview.secondary }]} />
+        <View style={[styles.colorSwatch, { backgroundColor: themePreview.backgroundDefault }]} />
       </View>
       <View style={styles.themeInfo}>
         <View style={styles.themeLabelRow}>
@@ -126,7 +110,7 @@ function ThemeOption({
           <MaterialCommunityIcons name="lock" size={14} color={theme.warning} />
         </View>
       ) : isSelected ? (
-        <View style={[styles.checkmark, { backgroundColor: themePreview.primary, borderRadius: skin.shapes.borderRadiusFull }]}>
+        <View style={[styles.checkmark, { backgroundColor: themePreview.primary }]}>
           <MaterialCommunityIcons name="check" size={14} color="#FFFFFF" />
         </View>
       ) : null}
@@ -195,16 +179,16 @@ export function ThemeSelector({ currentTheme, onThemeChange }: ThemeSelectorProp
 
 const styles = StyleSheet.create({
   container: {
-    gap: Spacing.xl,
+    gap: FluentSpacing.xl,
   },
   categorySection: {
-    gap: Spacing.sm,
+    gap: FluentSpacing.s,
   },
   categoryHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.xs,
-    paddingVertical: Spacing.xs,
+    gap: FluentSpacing.xs,
+    paddingVertical: FluentSpacing.xs,
   },
   categoryLabel: {
     fontWeight: "600",
@@ -212,24 +196,25 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   categoryCount: {
-    marginLeft: Spacing.xs,
+    marginLeft: FluentSpacing.xs,
   },
   themesGrid: {
-    gap: Spacing.sm,
+    gap: FluentSpacing.s,
   },
   themeOption: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.md,
+    padding: FluentSpacing.m,
   },
   colorPreview: {
     flexDirection: "row",
     gap: 4,
-    marginRight: Spacing.md,
+    marginRight: FluentSpacing.m,
   },
   colorSwatch: {
     width: 18,
     height: 18,
+    borderRadius: 9,
   },
   themeInfo: {
     flex: 1,
@@ -250,6 +235,7 @@ const styles = StyleSheet.create({
   checkmark: {
     width: 22,
     height: 22,
+    borderRadius: 11,
     justifyContent: "center",
     alignItems: "center",
   },
