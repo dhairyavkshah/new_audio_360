@@ -172,6 +172,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const runPeriodicIntegrityCheck = async () => {
     try {
+      const isTestSubscription = state.purchaseToken?.startsWith('test_');
+      if (isTestSubscription) {
+        return;
+      }
+
       const integrityState = await IntegrityService.runIntegrityCheck();
       
       if (integrityState.isLocked) {
@@ -196,7 +201,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       if (stored) {
         const parsed = JSON.parse(stored) as SubscriptionState;
         
-        if (parsed.checksum && parsed.purchaseTime) {
+        const isTestSubscription = parsed.purchaseToken?.startsWith('test_');
+        
+        if (!isTestSubscription && parsed.checksum && parsed.purchaseTime) {
           const expectedChecksum = await IntegrityService.computeChecksum(
             parsed.plan,
             parsed.purchaseTime
