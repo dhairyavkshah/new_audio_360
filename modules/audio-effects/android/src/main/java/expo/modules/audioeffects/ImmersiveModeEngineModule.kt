@@ -269,12 +269,7 @@ class ImmersiveModeEngineModule : Module() {
             }
         }
         
-        bassBoost?.let {
-            if (it.strengthSupported) {
-                it.setStrength(200.toShort())
-                it.enabled = true
-            }
-        }
+        bassBoost?.enabled = false
         
         virtualizer?.let {
             if (it.strengthSupported) {
@@ -299,12 +294,7 @@ class ImmersiveModeEngineModule : Module() {
             }
         }
         
-        bassBoost?.let {
-            if (it.strengthSupported) {
-                it.setStrength(200.toShort())
-                it.enabled = true
-            }
-        }
+        bassBoost?.enabled = false
         
         virtualizer?.let {
             if (it.strengthSupported) {
@@ -329,12 +319,7 @@ class ImmersiveModeEngineModule : Module() {
             }
         }
         
-        bassBoost?.let {
-            if (it.strengthSupported) {
-                it.setStrength(300.toShort())
-                it.enabled = true
-            }
-        }
+        bassBoost?.enabled = false
         
         virtualizer?.let {
             if (it.strengthSupported) {
@@ -359,12 +344,7 @@ class ImmersiveModeEngineModule : Module() {
             }
         }
         
-        bassBoost?.let {
-            if (it.strengthSupported) {
-                it.setStrength(150.toShort())
-                it.enabled = true
-            }
-        }
+        bassBoost?.enabled = false
         
         virtualizer?.let {
             if (it.strengthSupported) {
@@ -414,12 +394,7 @@ class ImmersiveModeEngineModule : Module() {
             }
         }
         
-        bassBoost?.let {
-            if (it.strengthSupported) {
-                it.setStrength(300.toShort())
-                it.enabled = true
-            }
-        }
+        bassBoost?.enabled = false
         
         virtualizer?.let {
             if (it.strengthSupported) {
