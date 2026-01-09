@@ -11,7 +11,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, BorderRadius, FluentMotion, FluentShadow } from "@/constants/theme";
+import { Spacing, BorderRadius, M3Motion } from "@/constants/theme";
 
 type ButtonVariant = 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'subtle';
 type ButtonSize = 'sm' | 'default' | 'lg';
@@ -30,20 +30,17 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const sizeStyles = {
   sm: { 
     height: 36,
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
+    paddingHorizontal: Spacing.l,
     minWidth: 64,
   },
   default: { 
-    height: 40,
-    paddingHorizontal: Spacing.l,
-    paddingVertical: Spacing.mNudge,
+    height: 44,
+    paddingHorizontal: Spacing.xl,
     minWidth: 96,
   },
   lg: { 
-    height: 44,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.m,
+    height: 48,
+    paddingHorizontal: Spacing.xxl,
     minWidth: 120,
   },
 };
@@ -58,23 +55,6 @@ const adjustBrightness = (color: string, amount: number): string => {
   const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + amount));
   
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-};
-
-const getFluentShadowStyle = (shadow: typeof FluentShadow.shadow4, isPressed: boolean) => {
-  return Platform.select({
-    ios: {
-      shadowColor: '#000',
-      shadowOffset: { width: shadow.key.x, height: isPressed ? shadow.key.y / 2 : shadow.key.y },
-      shadowOpacity: isPressed ? 0.1 : 0.14,
-      shadowRadius: isPressed ? shadow.key.blur / 2 : shadow.key.blur,
-    },
-    android: {
-      elevation: isPressed ? Math.floor(shadow.elevation / 2) : shadow.elevation,
-    },
-    default: {
-      boxShadow: isPressed ? FluentShadow.shadow2.combined : shadow.combined,
-    },
-  }) || {};
 };
 
 export function Button({
@@ -108,13 +88,8 @@ export function Button({
     if (!disabled) {
       setIsPressed(true);
       scale.value = withTiming(0.98, { 
-        duration: FluentMotion.duration.fast,
-        easing: Easing.bezier(
-          FluentMotion.easing.accelerate.x1, 
-          FluentMotion.easing.accelerate.y1, 
-          FluentMotion.easing.accelerate.x2, 
-          FluentMotion.easing.accelerate.y2
-        ),
+        duration: M3Motion.durationShort3,
+        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
       });
     }
   };
@@ -123,13 +98,8 @@ export function Button({
     if (!disabled) {
       setIsPressed(false);
       scale.value = withTiming(1, { 
-        duration: FluentMotion.duration.normal,
-        easing: Easing.bezier(
-          FluentMotion.easing.decelerate.x1, 
-          FluentMotion.easing.decelerate.y1, 
-          FluentMotion.easing.decelerate.x2, 
-          FluentMotion.easing.decelerate.y2
-        ),
+        duration: M3Motion.durationShort4,
+        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
       });
     }
   };
@@ -164,7 +134,7 @@ export function Button({
           hover: theme.surfaceContainerLow,
           pressed: theme.surfaceContainer,
           text: theme.primary,
-          borderColor: theme.stroke1,
+          borderColor: theme.outline,
           borderHover: theme.primary,
           borderPressed: theme.primary,
         };
@@ -215,7 +185,7 @@ export function Button({
     if (variant !== 'outline') return 'transparent';
     if (isPressed) return colors.borderPressed || theme.primary;
     if (hoverActive) return colors.borderHover || theme.primary;
-    return colors.borderColor || theme.stroke1;
+    return colors.borderColor || theme.outline;
   };
 
   const getFocusRingColor = () => {
@@ -236,9 +206,18 @@ export function Button({
     },
   }) : {};
 
-  const shadowStyle = variant === 'default' && !disabled 
-    ? getFluentShadowStyle(FluentShadow.shadow4, isPressed) 
-    : {};
+  const shadowStyle = variant === 'default' && !disabled ? Platform.select({
+    ios: {
+      shadowColor: theme.primary,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: isPressed ? 0.1 : 0.15,
+      shadowRadius: isPressed ? 1 : 2,
+    },
+    android: {
+      elevation: isPressed ? 1 : 2,
+    },
+    default: {},
+  }) : {};
 
   return (
     <AnimatedPressable

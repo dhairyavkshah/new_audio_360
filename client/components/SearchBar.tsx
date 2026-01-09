@@ -4,15 +4,13 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, BorderRadius, Layout, Typography } from "@/constants/theme";
+import { Spacing, M3Shape, Layout, Typography, M3Elevation } from "@/constants/theme";
 
 interface SearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
 }
-
-const SEARCH_BAR_HEIGHT = 40;
 
 export function SearchBar({ value, onChangeText, placeholder = "Search..." }: SearchBarProps) {
   const { theme } = useThemeContext();
@@ -27,16 +25,8 @@ export function SearchBar({ value, onChangeText, placeholder = "Search..." }: Se
   };
 
   return (
-    <View style={[styles.wrapper, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.stroke2 }]}>
-      <View 
-        style={[
-          styles.container, 
-          { 
-            backgroundColor: theme.surface,
-            borderColor: theme.outline,
-          }
-        ]}
-      >
+    <View style={[styles.wrapper, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
+      <View style={[styles.container, { backgroundColor: theme.surfaceContainerHigh }]}>
         <MaterialCommunityIcons
           name="magnify"
           size={20}
@@ -89,17 +79,16 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    height: SEARCH_BAR_HEIGHT,
-    borderRadius: BorderRadius.medium,
-    borderWidth: 1,
-    paddingHorizontal: Spacing.m,
+    height: Layout.inputFieldHeight,
+    borderRadius: M3Shape.cornerFull,
+    paddingHorizontal: Spacing.l,
   },
   searchIcon: {
     marginRight: Spacing.s,
   },
   input: {
     flex: 1,
-    paddingVertical: Spacing.s,
+    paddingVertical: 0,
   },
   clearButton: {
     marginLeft: Spacing.s,

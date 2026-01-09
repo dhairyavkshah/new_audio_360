@@ -10,7 +10,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import { Spacing, BorderRadius, Layout, FluentSpacing, SafeAreaSpacing } from "@/constants/theme";
+import { Spacing, BorderRadius, Layout } from "@/constants/theme";
 import { Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 
@@ -106,7 +106,7 @@ export default function QueueScreen() {
               color={isSelected ? theme.primary : theme.textSecondary}
             />
           ) : (
-            <ThemedText type="caption1" style={{ color: theme.textSecondary }}>
+            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
               {index + 1}
             </ThemedText>
           )}
@@ -114,17 +114,17 @@ export default function QueueScreen() {
         <Image source={{ uri: item.artwork }} style={styles.artwork} />
         <View style={styles.songInfo}>
           <ThemedText 
-            type="body1" 
+            type="body" 
             numberOfLines={1} 
             style={[styles.songTitle, isCurrentSong && { color: theme.primary }]}
           >
             {item.title}
           </ThemedText>
-          <ThemedText type="caption1" numberOfLines={1} style={{ color: theme.textSecondary }}>
+          <ThemedText type="caption" numberOfLines={1} style={{ color: theme.textSecondary }}>
             {item.artist}
           </ThemedText>
         </View>
-        <ThemedText type="caption1" style={{ color: theme.textSecondary }}>
+        <ThemedText type="caption" style={{ color: theme.textSecondary }}>
           {formatDuration(item.duration)}
         </ThemedText>
         {isCurrentSong ? (
@@ -140,7 +140,7 @@ export default function QueueScreen() {
     <View style={styles.headerSection}>
       {currentSong ? (
         <>
-          <ThemedText type="title3" style={styles.sectionTitle}>Now Playing</ThemedText>
+          <ThemedText type="h3" style={styles.sectionTitle}>Now Playing</ThemedText>
           <Pressable
             style={[styles.currentSongCard, { backgroundColor: theme.surfaceVariant }]}
             onPress={() => {
@@ -151,10 +151,10 @@ export default function QueueScreen() {
           >
             <Image source={{ uri: currentSong.artwork }} style={styles.currentArtwork} />
             <View style={styles.currentInfo}>
-              <ThemedText type="body1" numberOfLines={1} style={{ fontWeight: "600" }}>
+              <ThemedText type="body" numberOfLines={1} style={{ fontWeight: "600" }}>
                 {currentSong.title}
               </ThemedText>
-              <ThemedText type="caption1" style={{ color: theme.textSecondary }}>
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
                 {currentSong.artist}
               </ThemedText>
             </View>
@@ -164,7 +164,7 @@ export default function QueueScreen() {
       ) : null}
       
       <View style={styles.upNextHeader}>
-        <ThemedText type="title3" style={styles.sectionTitle}>
+        <ThemedText type="h3" style={styles.sectionTitle}>
           Up Next ({upNext.length} songs)
         </ThemedText>
       </View>
@@ -174,10 +174,10 @@ export default function QueueScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <MaterialCommunityIcons name="playlist-music" size={64} color={theme.textSecondary} />
-      <ThemedText type="body1" style={[styles.emptyText, { color: theme.textSecondary }]}>
+      <ThemedText type="body" style={[styles.emptyText, { color: theme.textSecondary }]}>
         Your queue is empty
       </ThemedText>
-      <ThemedText type="caption1" style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+      <ThemedText type="caption" style={[styles.emptySubtext, { color: theme.textSecondary }]}>
         Play a song to start building your queue
       </ThemedText>
     </View>
@@ -186,14 +186,14 @@ export default function QueueScreen() {
   return (
     <ThemedView style={styles.container}>
       {selectionMode ? (
-        <View style={[styles.selectionHeader, { backgroundColor: theme.surfaceVariant, paddingTop: Math.max(insets.top, SafeAreaSpacing.top) }]}>
+        <View style={[styles.selectionHeader, { backgroundColor: theme.surfaceVariant }]}>
           <Pressable 
             style={styles.selectionButton}
             onPress={exitSelectionMode}
           >
             <MaterialCommunityIcons name="close" size={24} color={theme.text} />
           </Pressable>
-          <ThemedText type="body1" style={{ fontWeight: "600" }}>
+          <ThemedText type="body" style={{ fontWeight: "600" }}>
             {selectedSongs.length} selected
           </ThemedText>
           <View style={styles.selectionActions}>
@@ -215,7 +215,7 @@ export default function QueueScreen() {
         ListEmptyComponent={currentSong ? undefined : renderEmpty}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: Math.max(insets.bottom, SafeAreaSpacing.bottom) + FluentSpacing.xl },
+          { paddingBottom: insets.bottom + Spacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
@@ -235,22 +235,21 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: FluentSpacing.l,
+    paddingTop: Spacing.l,
   },
   headerSection: {
-    marginBottom: FluentSpacing.xl,
+    marginBottom: Spacing.xl,
   },
   sectionTitle: {
-    marginBottom: FluentSpacing.l,
+    marginBottom: Spacing.l,
     fontWeight: "600",
   },
   currentSongCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: FluentSpacing.l,
+    padding: Spacing.l,
     borderRadius: BorderRadius.large,
-    marginBottom: FluentSpacing.xl,
-    minHeight: Layout.touchTargetMin,
+    marginBottom: Spacing.xl,
   },
   currentArtwork: {
     width: 56,
@@ -259,7 +258,7 @@ const styles = StyleSheet.create({
   },
   currentInfo: {
     flex: 1,
-    marginLeft: FluentSpacing.l,
+    marginLeft: Spacing.l,
   },
   upNextHeader: {
     flexDirection: "row",
@@ -269,10 +268,9 @@ const styles = StyleSheet.create({
   songItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: FluentSpacing.m,
+    padding: Spacing.m,
     borderRadius: BorderRadius.medium,
-    marginBottom: FluentSpacing.xs,
-    minHeight: Layout.touchTargetMin,
+    marginBottom: Spacing.xs,
   },
   currentSong: {
     borderLeftWidth: 3,
@@ -286,11 +284,11 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: BorderRadius.small,
-    marginLeft: FluentSpacing.xs,
+    marginLeft: Spacing.xs,
   },
   songInfo: {
     flex: 1,
-    marginLeft: FluentSpacing.m,
+    marginLeft: Spacing.m,
   },
   songTitle: {
     fontWeight: "500",
@@ -301,19 +299,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: FluentSpacing.m,
+    marginLeft: Spacing.m,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: FluentSpacing.xxxl,
+    paddingVertical: Spacing.xxxl,
   },
   emptyText: {
-    marginTop: FluentSpacing.xl,
+    marginTop: Spacing.xl,
   },
   emptySubtext: {
-    marginTop: FluentSpacing.xs,
+    marginTop: Spacing.xs,
     textAlign: "center",
   },
   selectionHeader: {
@@ -321,7 +319,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Layout.horizontalPadding,
-    paddingVertical: FluentSpacing.m,
+    paddingVertical: Spacing.m,
   },
   selectionButton: {
     width: 48,

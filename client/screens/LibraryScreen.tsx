@@ -1,23 +1,26 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, Pressable, Image, TextInput, Platform, ActivityIndicator, FlatList } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Image, TextInput, Platform, ActivityIndicator, FlatList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { TopBar } from "@/components/TopBar";
 import { SongContextMenu } from "@/components/SongContextMenu";
 import { SongCard } from "@/components/SongCard";
 import { AnimatedCard } from "@/components/AnimatedCard";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
+import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
 import { Spacing, BorderRadius, Layout, Typography, M3Shape, M3Elevation } from "@/constants/theme";
 import { mockSongs, mockAlbums, mockArtists, Song } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 import { Playlist, getPlaylists } from "@/lib/storage";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 
 type NavigationProp = NativeStackNavigationProp<LibraryStackParamList>;
 
@@ -50,13 +53,68 @@ const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
   { key: "duration_desc", label: "Longest", icon: "sort-clock-descending" },
 ];
 
+function CategoryCard({ 
+  category, 
+  isActive, 
+  count, 
+  onPress,
+  theme 
+}: { 
+  category: CategoryConfig; 
+  isActive: boolean; 
+  count: number;
+  onPress: () => void;
+  theme: any;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.categoryCard,
+        {
+          backgroundColor: isActive ? category.color : theme.surfaceContainerHigh,
+          borderColor: isActive ? category.color : theme.outlineVariant,
+        },
+      ]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isActive }}
+      accessibilityLabel={`${category.label}, ${count} items`}
+    >
+      <View style={styles.categoryCardContent}>
+        <MaterialCommunityIcons
+          name={category.icon}
+          size={22}
+          color={isActive ? "#FFFFFF" : category.color}
+        />
+        <ThemedText
+          type="labelMedium"
+          style={[
+            styles.categoryLabel,
+            { color: isActive ? "#FFFFFF" : theme.onSurface },
+          ]}
+          numberOfLines={1}
+        >
+          {category.label}
+        </ThemedText>
+      </View>
+      <ThemedText
+        type="labelSmall"
+        style={{ color: isActive ? "rgba(255,255,255,0.8)" : theme.onSurfaceVariant }}
+      >
+        {count}
+      </ThemedText>
+    </Pressable>
+  );
+}
+
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useThemeContext();
   const { playTapSound } = useUiSound();
   const { favorites, recentlyPlayed, mostPlayed, playSong, setQueue } = usePlayerContext();
-  const { songs: deviceSongs, isLoading: isLoadingSongs, progress, usingMockData, hideSong } = useMediaLibraryContext();
+  const { songs: deviceSongs, isLoading: isLoadingSongs, progress, usingMockData, hideSong, refreshSongs, error: mediaError } = useMediaLibraryContext();
   const { currentSong, isPlaying } = usePlayer();
   const [activeCategory, setActiveCategory] = useState<CategoryType>("songs");
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -66,7 +124,6 @@ export default function LibraryScreen() {
   const [contextMenuSong, setContextMenuSong] = useState<PlayableSong | null>(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   const loadPlaylists = useCallback(async () => {
     const data = await getPlaylists();
@@ -234,51 +291,19 @@ export default function LibraryScreen() {
     setTimeout(() => setSuccessMessage(null), 3000);
   }, [loadPlaylists]);
 
-  const activeConfig = categories.find(c => c.key === activeCategory) || categories[0];
-
-  const handleCategorySelect = (key: CategoryType) => {
-    handleCategoryChange(key);
-    setShowCategoryDropdown(false);
-  };
-
-  const bottomPadding = Layout.bottomNavHeight + Layout.miniPlayerHeight + Layout.miniPlayerGapFromNav + Spacing.xl + insets.bottom;
-
-  const renderCategoryDropdown = () => (
-    <Pressable
-      style={[styles.categoryDropdown, { backgroundColor: theme.surfaceContainerHigh, borderColor: theme.outlineVariant }]}
-      onPress={() => {
-        playTapSound();
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setShowCategoryDropdown(!showCategoryDropdown);
-      }}
-    >
-      <MaterialCommunityIcons name={activeConfig.icon} size={20} color={activeConfig.color} />
-      <ThemedText type="body1" style={{ marginLeft: Spacing.s, flex: 1 }}>{activeConfig.label}</ThemedText>
-      <ThemedText type="caption1" style={{ color: theme.onSurfaceVariant, marginRight: Spacing.s }}>{categoryCounts[activeCategory]}</ThemedText>
-      <MaterialCommunityIcons name={showCategoryDropdown ? "chevron-up" : "chevron-down"} size={20} color={theme.onSurfaceVariant} />
-    </Pressable>
-  );
-
-  const renderCategoryOverlay = () => (
-    showCategoryDropdown ? (
-      <>
-        <Pressable style={styles.dropdownBackdrop} onPress={() => setShowCategoryDropdown(false)} />
-        <View style={[styles.categoryOptionsOverlay, { backgroundColor: theme.surfaceContainerHigh, top: insets.top + Layout.topBarHeight + Spacing.xs }]}>
-          {categories.map((category) => (
-            <Pressable
-              key={category.key}
-              style={[styles.categoryOption, activeCategory === category.key && { backgroundColor: theme.primaryContainer }]}
-              onPress={() => handleCategorySelect(category.key)}
-            >
-              <MaterialCommunityIcons name={category.icon} size={20} color={category.color} />
-              <ThemedText type="body1" style={{ marginLeft: Spacing.m, flex: 1 }}>{category.label}</ThemedText>
-              <ThemedText type="caption1" style={{ color: theme.onSurfaceVariant }}>{categoryCounts[category.key]}</ThemedText>
-              {activeCategory === category.key ? <MaterialCommunityIcons name="check" size={16} color={theme.primary} style={{ marginLeft: Spacing.s }} /> : null}
-            </Pressable>
-          ))}
-        </View>
-      </>
-    ) : null
+  const renderCategoryGrid = () => (
+    <View style={styles.categoryGrid}>
+      {categories.map((category) => (
+        <CategoryCard
+          key={category.key}
+          category={category}
+          isActive={activeCategory === category.key}
+          count={categoryCounts[category.key]}
+          onPress={() => handleCategoryChange(category.key)}
+          theme={theme}
+        />
+      ))}
+    </View>
   );
 
   const renderSearchBar = () => (
@@ -332,7 +357,7 @@ export default function LibraryScreen() {
   const renderEmptyState = (icon: keyof typeof MaterialCommunityIcons.glyphMap, message: string) => (
     <View style={styles.emptyState}>
       <MaterialCommunityIcons name={icon} size={64} color={theme.onSurfaceVariant} />
-      <ThemedText type="body1" style={[styles.emptyText, { color: theme.onSurfaceVariant }]}>{message}</ThemedText>
+      <ThemedText type="bodyMedium" style={[styles.emptyText, { color: theme.onSurfaceVariant }]}>{message}</ThemedText>
     </View>
   );
 
@@ -346,14 +371,13 @@ export default function LibraryScreen() {
         data={songs}
         renderItem={({ item }) => renderSongItem({ item, songs })}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, { paddingBottom: bottomPadding }]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + Spacing.m }]}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
         maxToRenderPerBatch={10}
         windowSize={10}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
-        ItemSeparatorComponent={() => <View style={{ height: Spacing.m }} />}
       />
     );
   };
@@ -370,17 +394,17 @@ export default function LibraryScreen() {
         renderItem={({ item: album }) => (
           <AnimatedCard
             style={styles.albumCard}
-            borderRadius={BorderRadius.medium}
+            borderRadius={M3Shape.cornerMedium}
             onPress={() => navigation.navigate("AlbumDetail", { album })}
             accessibilityLabel={`${album.name} by ${album.artist}`}
           >
             <Image source={{ uri: album.artwork }} style={styles.albumArtwork} />
-            <ThemedText type="body1" numberOfLines={1} style={styles.albumName}>{album.name}</ThemedText>
-            <ThemedText type="caption1" numberOfLines={1} style={{ color: theme.onSurfaceVariant }}>{album.artist}</ThemedText>
+            <ThemedText type="bodyMedium" numberOfLines={1} style={styles.albumName}>{album.name}</ThemedText>
+            <ThemedText type="bodySmall" numberOfLines={1} style={{ color: theme.onSurfaceVariant }}>{album.artist}</ThemedText>
           </AnimatedCard>
         )}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.gridContent, { paddingBottom: bottomPadding }]}
+        contentContainerStyle={[styles.gridContent, { paddingBottom: tabBarHeight + 80 + Spacing.m }]}
         columnWrapperStyle={styles.albumRow}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
@@ -407,21 +431,20 @@ export default function LibraryScreen() {
           >
             <Image source={{ uri: artist.artwork }} style={styles.artistArtwork} />
             <View style={styles.artistInfo}>
-              <ThemedText type="body1">{artist.name}</ThemedText>
-              <ThemedText type="caption1" style={{ color: theme.onSurfaceVariant }}>{artist.songCount} songs</ThemedText>
+              <ThemedText type="bodyLarge">{artist.name}</ThemedText>
+              <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>{artist.songCount} songs</ThemedText>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={24} color={theme.onSurfaceVariant} />
           </Pressable>
         )}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, { paddingBottom: bottomPadding }]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + Spacing.m }]}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
         maxToRenderPerBatch={10}
         windowSize={10}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
-        ItemSeparatorComponent={() => <View style={{ height: Spacing.m }} />}
       />
     );
   };
@@ -431,10 +454,10 @@ export default function LibraryScreen() {
       return (
         <View style={styles.emptyState}>
           <MaterialCommunityIcons name="playlist-music" size={64} color={theme.onSurfaceVariant} />
-          <ThemedText type="body1" style={[styles.emptyText, { color: theme.onSurfaceVariant }]}>No playlists yet</ThemedText>
+          <ThemedText type="bodyMedium" style={[styles.emptyText, { color: theme.onSurfaceVariant }]}>No playlists yet</ThemedText>
           <Pressable style={[styles.createButton, { backgroundColor: theme.primary }]} onPress={handleManagePlaylists}>
             <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
-            <ThemedText type="body1" style={{ color: "#FFFFFF", marginLeft: Spacing.s }}>Create Playlist</ThemedText>
+            <ThemedText type="labelLarge" style={{ color: "#FFFFFF", marginLeft: Spacing.s }}>Create Playlist</ThemedText>
           </Pressable>
         </View>
       );
@@ -452,21 +475,20 @@ export default function LibraryScreen() {
               <MaterialCommunityIcons name="playlist-music" size={24} color={theme.primary} />
             </View>
             <View style={styles.playlistInfo}>
-              <ThemedText type="body1">{playlist.name}</ThemedText>
-              <ThemedText type="caption1" style={{ color: theme.onSurfaceVariant }}>{playlist.songIds.length} songs</ThemedText>
+              <ThemedText type="bodyLarge">{playlist.name}</ThemedText>
+              <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>{playlist.songIds.length} songs</ThemedText>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={24} color={theme.onSurfaceVariant} />
           </Pressable>
         )}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, { paddingBottom: bottomPadding }]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + Spacing.m }]}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
         maxToRenderPerBatch={10}
         windowSize={10}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
-        ItemSeparatorComponent={() => <View style={{ height: Spacing.m }} />}
       />
     );
   };
@@ -476,9 +498,9 @@ export default function LibraryScreen() {
       return (
         <View style={styles.loadingState}>
           <ActivityIndicator size="large" color={theme.primary} />
-          <ThemedText type="body1" style={{ color: theme.onSurfaceVariant, marginTop: Spacing.m }}>Loading your music...</ThemedText>
+          <ThemedText type="bodyMedium" style={{ color: theme.onSurfaceVariant, marginTop: Spacing.m }}>Loading your music...</ThemedText>
           {typeof progress.total === 'number' && progress.total > 0 && (
-            <ThemedText type="caption1" style={{ color: theme.onSurfaceVariant }}>{progress.loaded || 0} of {progress.total} songs</ThemedText>
+            <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>{progress.loaded || 0} of {progress.total} songs</ThemedText>
           )}
         </View>
       );
@@ -516,7 +538,7 @@ export default function LibraryScreen() {
               onPress={() => handleSortPress(option.key)}
             >
               <MaterialCommunityIcons name={option.icon as any} size={18} color={sortBy === option.key ? theme.primary : theme.onSurface} />
-              <ThemedText type="body1" style={[{ marginLeft: Spacing.m }, sortBy === option.key && { color: theme.primary }]}>{option.label}</ThemedText>
+              <ThemedText type="bodyMedium" style={[{ marginLeft: Spacing.m }, sortBy === option.key && { color: theme.primary }]}>{option.label}</ThemedText>
               {sortBy === option.key ? <MaterialCommunityIcons name="check" size={16} color={theme.primary} style={{ marginLeft: "auto" }} /> : null}
             </Pressable>
           ))}
@@ -526,10 +548,11 @@ export default function LibraryScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <View style={[styles.headerRow, { paddingTop: insets.top + Spacing.m, backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
-        <ThemedText type="title4" style={styles.headerTitle}>Library</ThemedText>
-        {renderCategoryDropdown()}
+    <ThemedView style={styles.container}>
+      <TopBar title="Library" showBack={false} />
+      
+      <View style={[styles.categorySection, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
+        {renderCategoryGrid()}
       </View>
 
       {renderSearchBar()}
@@ -539,7 +562,6 @@ export default function LibraryScreen() {
       </View>
 
       {renderSortOverlay()}
-      {renderCategoryOverlay()}
 
       <SongContextMenu
         visible={showContextMenu}
@@ -551,12 +573,12 @@ export default function LibraryScreen() {
       />
 
       {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: theme.primary, bottom: bottomPadding - Spacing.xl + Spacing.l }]}>
+        <View style={[styles.successToast, { backgroundColor: theme.primary, bottom: tabBarHeight + 16 }]}>
           <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
-          <ThemedText type="body1" style={{ color: "#FFFFFF", marginLeft: Spacing.s, flex: 1 }}>{successMessage}</ThemedText>
+          <ThemedText type="bodyMedium" style={{ color: "#FFFFFF", marginLeft: Spacing.s, flex: 1 }}>{successMessage}</ThemedText>
         </View>
       ) : null}
-    </View>
+    </ThemedView>
   );
 }
 
@@ -564,57 +586,41 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.l,
-    paddingBottom: Spacing.m,
+  categorySection: {
+    paddingHorizontal: Layout.horizontalPadding,
+    paddingTop: Spacing.s,
+    paddingBottom: Spacing.xs,
     borderBottomWidth: 1,
-    gap: Spacing.m,
   },
-  headerTitle: {
-    fontWeight: "600",
+  categoryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.xs,
   },
-  categoryDropdown: {
-    flex: 1,
+  categoryCard: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
-    borderRadius: BorderRadius.medium,
-    borderWidth: 1,
-    minHeight: 48,
-  },
-  dropdownBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 100,
-  },
-  categoryOptionsOverlay: {
-    position: "absolute",
-    left: Spacing.l,
-    right: Spacing.l,
-    borderRadius: BorderRadius.medium,
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.s,
     paddingVertical: Spacing.xs,
-    zIndex: 101,
-    ...M3Elevation.level2,
+    borderRadius: M3Shape.cornerSmall,
+    borderWidth: 1,
+    minWidth: "30%",
+    flex: 1,
+    maxWidth: "33%",
   },
-  categoryOption: {
+  categoryCardContent: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.m,
-    borderRadius: BorderRadius.medium,
-    marginHorizontal: Spacing.xs,
-    minHeight: 48,
+    gap: 4,
+  },
+  categoryLabel: {
+    fontWeight: "600",
   },
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.l,
+    paddingHorizontal: Layout.horizontalPadding,
     paddingVertical: Spacing.s,
     gap: Spacing.s,
     borderBottomWidth: 1,
@@ -623,7 +629,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: BorderRadius.circular,
+    borderRadius: M3Shape.cornerFull,
     paddingHorizontal: Spacing.m,
     height: 40,
   },
@@ -632,7 +638,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: Typography.body1.fontSize,
+    fontSize: Typography.bodyMedium.fontSize,
     height: "100%",
   },
   sortButton: {
@@ -640,7 +646,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.s,
-    borderRadius: BorderRadius.circular,
+    borderRadius: M3Shape.cornerFull,
     height: 40,
   },
   addButton: {
@@ -654,24 +660,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: Spacing.l,
-    paddingTop: Spacing.m,
+    paddingHorizontal: Layout.horizontalPadding,
   },
   gridContent: {
-    padding: Spacing.l,
+    padding: Layout.horizontalPadding,
   },
   songListItem: {
     flexDirection: "row",
     alignItems: "center",
     padding: Spacing.m,
-    borderRadius: BorderRadius.medium,
+    borderRadius: M3Shape.cornerMedium,
     gap: Spacing.m,
-    minHeight: 48,
   },
   songListArtwork: {
     width: 48,
     height: 48,
-    borderRadius: BorderRadius.small,
+    borderRadius: M3Shape.cornerSmall,
   },
   songListInfo: {
     flex: 1,
@@ -687,7 +691,7 @@ const styles = StyleSheet.create({
   albumArtwork: {
     width: "100%",
     aspectRatio: 1,
-    borderRadius: BorderRadius.small,
+    borderRadius: M3Shape.cornerSmall,
     marginBottom: Spacing.s,
   },
   albumName: {
@@ -697,9 +701,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: Spacing.m,
-    borderRadius: BorderRadius.medium,
+    borderRadius: M3Shape.cornerMedium,
     gap: Spacing.m,
-    minHeight: 48,
   },
   artistArtwork: {
     width: 56,
@@ -713,14 +716,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: Spacing.m,
-    borderRadius: BorderRadius.medium,
+    borderRadius: M3Shape.cornerMedium,
     gap: Spacing.m,
-    minHeight: 48,
   },
   playlistIcon: {
     width: 48,
     height: 48,
-    borderRadius: BorderRadius.small,
+    borderRadius: M3Shape.cornerSmall,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -731,7 +733,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: Spacing.l,
+    padding: Layout.horizontalPadding,
   },
   emptyText: {
     textAlign: "center",
@@ -748,8 +750,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Spacing.l,
     paddingVertical: Spacing.m,
-    borderRadius: BorderRadius.circular,
-    minHeight: 48,
+    borderRadius: M3Shape.cornerFull,
   },
   sortOverlayBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -758,9 +759,9 @@ const styles = StyleSheet.create({
   sortOptionsOverlay: {
     position: "absolute",
     top: 200,
-    right: Spacing.l,
+    right: Layout.horizontalPadding,
     zIndex: 20,
-    borderRadius: BorderRadius.medium,
+    borderRadius: M3Shape.cornerMedium,
     overflow: "hidden",
     ...Platform.select({
       ios: {
@@ -781,17 +782,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Spacing.l,
     paddingVertical: Spacing.m,
-    minHeight: 48,
   },
   successToast: {
     position: "absolute",
-    left: Spacing.l,
-    right: Spacing.l,
+    left: Layout.horizontalPadding,
+    right: Layout.horizontalPadding,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Spacing.l,
     paddingVertical: Spacing.m,
-    borderRadius: BorderRadius.medium,
+    borderRadius: M3Shape.cornerMedium,
     ...Platform.select({
       ios: {
         shadowColor: "#000",

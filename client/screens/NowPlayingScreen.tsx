@@ -11,20 +11,17 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
-  Easing,
 } from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { PlaybackControls } from "@/components/PlaybackControls";
 import { ProgressBar } from "@/components/ProgressBar";
 import { AudioWaveform } from "@/components/AudioWaveform";
-import { BottomSheet } from "@/components/BottomSheet";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { Spacing, BorderRadius, ModeStyles, Layout, FluentMotion, FluentSpacing, SafeAreaSpacing } from "@/constants/theme";
+import { Spacing, BorderRadius, ModeStyles, Layout } from "@/constants/theme";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
@@ -53,7 +50,6 @@ export default function NowPlayingScreen() {
     progress,
     shuffle,
     repeat,
-    sleepTimerMinutes,
     isLoading,
     isBuffering,
     error,
@@ -63,10 +59,7 @@ export default function NowPlayingScreen() {
     seek,
     toggleShuffle,
     toggleRepeat,
-    setSleepTimer,
   } = usePlayer();
-
-  const [isSleepTimerVisible, setIsSleepTimerVisible] = React.useState(false);
 
   const artworkScale = useSharedValue(1);
 
@@ -81,25 +74,9 @@ export default function NowPlayingScreen() {
 
   useEffect(() => {
     if (isPlaying) {
-      artworkScale.value = withTiming(1.02, {
-        duration: FluentMotion.duration.normal,
-        easing: Easing.bezier(
-          FluentMotion.easing.decelerate.x1,
-          FluentMotion.easing.decelerate.y1,
-          FluentMotion.easing.decelerate.x2,
-          FluentMotion.easing.decelerate.y2
-        ),
-      });
+      artworkScale.value = withSpring(1.02, { damping: 20, stiffness: 100 });
     } else {
-      artworkScale.value = withTiming(1, {
-        duration: FluentMotion.duration.normal,
-        easing: Easing.bezier(
-          FluentMotion.easing.decelerate.x1,
-          FluentMotion.easing.decelerate.y1,
-          FluentMotion.easing.decelerate.x2,
-          FluentMotion.easing.decelerate.y2
-        ),
-      });
+      artworkScale.value = withSpring(1, { damping: 20, stiffness: 100 });
     }
   }, [isPlaying]);
 
@@ -113,24 +90,12 @@ export default function NowPlayingScreen() {
     textShadowRadius: 4,
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const formatSleepTime = (totalSeconds: number) => {
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-    return `${mins}m ${secs}s`;
-  };
-
   if (!currentSong) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.backgroundRoot, paddingTop: Math.max(insets.top, SafeAreaSpacing.top), paddingBottom: Math.max(insets.bottom, SafeAreaSpacing.bottom) }]}>
+      <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
         <View style={styles.emptyState}>
-          <ThemedText type="title3">No song playing</ThemedText>
-          <ThemedText type="body1" style={{ color: theme.textSecondary, marginTop: FluentSpacing.m }}>
+          <ThemedText type="h3">No song playing</ThemedText>
+          <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.m }}>
             Select a song from your library
           </ThemedText>
         </View>
@@ -148,7 +113,7 @@ export default function NowPlayingScreen() {
         <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? `rgba(0,0,0,${ModeStyles.listen.overlayOpacityDark + 0.2})` : `rgba(255,255,255,${ModeStyles.listen.overlayOpacityLight + 0.1})` }]} />
       </ImageBackground>
 
-      <View style={[styles.content, { paddingTop: headerHeight + (IS_COMPACT ? FluentSpacing.m : FluentSpacing.xl), paddingBottom: Math.max(insets.bottom, SafeAreaSpacing.bottom) + tabBarHeight + (IS_COMPACT ? FluentSpacing.m : FluentSpacing.xl), paddingHorizontal: IS_COMPACT ? FluentSpacing.m : Layout.horizontalPadding }]}>
+      <View style={[styles.content, { paddingTop: headerHeight + (IS_COMPACT ? Spacing.m : Spacing.xl), paddingBottom: tabBarHeight + (IS_COMPACT ? Spacing.m : Spacing.xl), paddingHorizontal: IS_COMPACT ? Spacing.m : Layout.horizontalPadding }]}>
         <View style={[styles.artworkContainer, IS_COMPACT && { marginTop: Spacing.s }]}>
           <Animated.View style={[styles.artworkWrapper, artworkStyle]}>
             <Image
@@ -158,7 +123,7 @@ export default function NowPlayingScreen() {
             {(isLoading || isBuffering) ? (
               <View style={styles.loadingOverlay}>
                 <ActivityIndicator size="large" color={theme.primary} />
-                <ThemedText type="caption1" style={{ color: theme.textSecondary, marginTop: FluentSpacing.m }}>
+                <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.m }}>
                   {isLoading ? "Loading..." : "Buffering..."}
                 </ThemedText>
               </View>
@@ -167,7 +132,7 @@ export default function NowPlayingScreen() {
           {error ? (
             <View style={[styles.errorBadge, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)' }]}>
               <MaterialCommunityIcons name="alert-circle" size={14} color="#FF4D67" />
-              <ThemedText type="caption1" style={{ color: "#FF4D67", marginLeft: FluentSpacing.xxs, flex: 1 }} numberOfLines={1}>
+              <ThemedText type="small" style={{ color: "#FF4D67", marginLeft: Spacing.xxs, flex: 1 }} numberOfLines={1}>
                 {error}
               </ThemedText>
             </View>
@@ -175,11 +140,11 @@ export default function NowPlayingScreen() {
         </View>
 
         <View style={styles.songInfo}>
-          <ThemedText type="title3" style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
+          <ThemedText type="h3" style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
             {currentSong.title}
           </ThemedText>
           <ThemedText 
-            type="body1" 
+            type="body" 
             style={[styles.artistName, textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.85)' : theme.textSecondary }]} 
             numberOfLines={1}
           >
@@ -199,27 +164,6 @@ export default function NowPlayingScreen() {
                 size={24}
                 color={isFavorite(currentSong.id) ? "#FF4D67" : (isDark ? "rgba(255,255,255,0.85)" : theme.textSecondary)}
               />
-            </Pressable>
-            <Pressable
-              style={styles.actionButton}
-              onPress={() => {
-                playTapSound();
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setIsSleepTimerVisible(true);
-              }}
-            >
-              <MaterialCommunityIcons
-                name={sleepTimerMinutes ? "moon-waning-crescent" : "sleep"}
-                size={24}
-                color={sleepTimerMinutes ? theme.primary : (isDark ? "rgba(255,255,255,0.85)" : theme.textSecondary)}
-              />
-              {sleepTimerMinutes ? (
-                <View style={[styles.timerBadge, { backgroundColor: theme.primary }]}>
-                  <ThemedText type="caption2" style={styles.timerBadgeText}>
-                    {sleepTimerMinutes}
-                  </ThemedText>
-                </View>
-              ) : null}
             </Pressable>
             <Pressable
               style={styles.actionButton}
@@ -272,65 +216,6 @@ export default function NowPlayingScreen() {
           />
         </View>
       </View>
-
-      <BottomSheet
-        visible={isSleepTimerVisible}
-        onDismiss={() => setIsSleepTimerVisible(false)}
-        title="Sleep Timer"
-      >
-        <View style={styles.sleepTimerContent}>
-          {sleepTimerMinutes ? (
-            <View style={styles.activeTimerInfo}>
-              <ThemedText type="body1" style={{ color: theme.textSecondary }}>
-                Timer active: {sleepTimerMinutes} minutes
-              </ThemedText>
-            </View>
-          ) : null}
-          
-          {[15, 30, 45, 60].map((mins) => (
-            <Pressable
-              key={mins}
-              style={[
-                styles.timerOption,
-                sleepTimerMinutes === mins && { backgroundColor: theme.primary + '20' }
-              ]}
-              onPress={() => {
-                playTapSound();
-                setSleepTimer(mins);
-                setIsSleepTimerVisible(false);
-              }}
-            >
-              <ThemedText 
-                type="body1" 
-                style={[
-                  styles.timerOptionText,
-                  sleepTimerMinutes === mins && { color: theme.primary, fontWeight: '600' }
-                ]}
-              >
-                {mins} Minutes
-              </ThemedText>
-              {sleepTimerMinutes === mins && (
-                <MaterialCommunityIcons name="check" size={20} color={theme.primary} />
-              )}
-            </Pressable>
-          ))}
-          
-          {sleepTimerMinutes !== null && (
-            <Pressable
-              style={[styles.timerOption, { marginTop: FluentSpacing.s }]}
-              onPress={() => {
-                playTapSound();
-                setSleepTimer(null);
-                setIsSleepTimerVisible(false);
-              }}
-            >
-              <ThemedText type="body1" style={[styles.timerOptionText, { color: theme.error || '#FF4D67' }]}>
-                Turn Off Timer
-              </ThemedText>
-            </Pressable>
-          )}
-        </View>
-      </BottomSheet>
     </View>
   );
 }
@@ -353,7 +238,7 @@ const styles = StyleSheet.create({
   artworkContainer: {
     justifyContent: "center",
     alignItems: "center",
-    marginTop: FluentSpacing.xxl,
+    marginTop: Spacing.artworkMargin,
   },
   artworkWrapper: {
     borderRadius: BorderRadius.xl,
@@ -376,20 +261,20 @@ const styles = StyleSheet.create({
   },
   errorBadge: {
     position: "absolute",
-    bottom: -FluentSpacing.l,
+    bottom: -Spacing.l,
     left: 0,
     right: 0,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.xxs,
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.xxs,
     borderRadius: BorderRadius.sm,
   },
   songInfo: {
     alignItems: "center",
-    marginTop: IS_COMPACT ? FluentSpacing.m : FluentSpacing.xxxl,
-    marginBottom: IS_COMPACT ? FluentSpacing.s : FluentSpacing.l,
+    marginTop: IS_COMPACT ? Spacing.m : Spacing.artworkMarginLarge,
+    marginBottom: IS_COMPACT ? Spacing.s : Spacing.l,
     width: "100%",
   },
   songTitle: {
@@ -397,14 +282,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   artistName: {
-    marginTop: FluentSpacing.xs,
+    marginTop: Spacing.titleToSubtitle,
     textAlign: "center",
     fontWeight: "500",
   },
   actionButtons: {
     flexDirection: "row",
-    marginTop: FluentSpacing.l,
-    gap: FluentSpacing.l,
+    marginTop: Spacing.l,
+    gap: Spacing.controlCluster,
   },
   actionButton: {
     width: Layout.touchTargetMin,
@@ -413,51 +298,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   waveformContainer: {
-    marginVertical: IS_COMPACT ? FluentSpacing.s : FluentSpacing.l,
+    marginVertical: IS_COMPACT ? Spacing.s : Spacing.progressBarSpacing,
   },
   progressContainer: {
-    marginBottom: IS_COMPACT ? FluentSpacing.s : FluentSpacing.l,
+    marginBottom: IS_COMPACT ? Spacing.s : Spacing.progressBarSpacing,
   },
   controlsContainer: {
     width: "100%",
-    marginBottom: IS_COMPACT ? FluentSpacing.s : FluentSpacing.l,
-  },
-  timerBadge: {
-    position: 'absolute',
-    top: 6,
-    right: 4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 2,
-  },
-  timerBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    fontWeight: '700',
-  },
-  sleepTimerContent: {
-    paddingBottom: FluentSpacing.xl,
-  },
-  activeTimerInfo: {
-    paddingVertical: FluentSpacing.m,
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(150,150,150,0.2)',
-    marginBottom: FluentSpacing.s,
-  },
-  timerOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: FluentSpacing.m,
-    paddingHorizontal: FluentSpacing.l,
-    borderRadius: BorderRadius.medium,
-    minHeight: Layout.touchTargetMin,
-  },
-  timerOptionText: {
-    fontSize: 16,
+    marginBottom: IS_COMPACT ? Spacing.s : Spacing.l,
   },
 });

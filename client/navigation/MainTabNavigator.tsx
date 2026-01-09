@@ -19,8 +19,7 @@ import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
-import { Layout, Spacing, Typography, Motion, M3Motion, M3Elevation, BorderRadius, FluentShadow } from "@/constants/theme";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Layout, Spacing, Typography, Motion, M3Motion, M3Elevation } from "@/constants/theme";
 
 export type MainTabParamList = {
   ListenTab: undefined;
@@ -106,9 +105,8 @@ export default function MainTabNavigator() {
   const { currentSong } = usePlayerContext();
   const { isNowPlayingVisible } = useNavigationContext();
   const [currentTab, setCurrentTab] = useState<string>("ListenTab");
-  const insets = useSafeAreaInsets();
   
-  const tabBarHeight = Layout.bottomNavHeight + insets.bottom;
+  const tabBarHeight = Platform.OS === "ios" ? Layout.bottomNavHeight + 20 : Layout.bottomNavHeight;
   const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && currentTab !== "StudioTab" && !isNowPlayingVisible;
 
   return (
@@ -117,37 +115,33 @@ export default function MainTabNavigator() {
       initialRouteName="ListenTab"
       screenOptions={{
         tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.textSecondary,
+        tabBarInactiveTintColor: theme.onSurfaceVariant,
         tabBarStyle: {
           position: "absolute",
           backgroundColor: theme.surfaceContainer,
           borderTopWidth: 1,
-          borderTopColor: theme.stroke2,
-          borderTopLeftRadius: BorderRadius.large,
-          borderTopRightRadius: BorderRadius.large,
-          height: tabBarHeight,
-          paddingBottom: insets.bottom,
+          borderTopColor: theme.outlineVariant,
+          height: Platform.OS === "ios" ? Layout.bottomNavHeight + 20 : Layout.bottomNavHeight,
+          paddingBottom: Platform.OS === "ios" ? Spacing.l : Spacing.s,
           paddingTop: Spacing.s,
           ...Platform.select({
             ios: {
-              shadowColor: FluentShadow.shadow8.key.color,
-              shadowOffset: { width: 0, height: -FluentShadow.shadow8.key.y },
-              shadowOpacity: 1,
-              shadowRadius: FluentShadow.shadow8.key.blur,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 4,
             },
             android: {
-              elevation: FluentShadow.shadow8.elevation,
+              elevation: M3Elevation.level2.elevation,
             },
-            default: {
-              boxShadow: `0 -${FluentShadow.shadow8.key.y}px ${FluentShadow.shadow8.key.blur}px ${FluentShadow.shadow8.key.color}`,
-            },
+            default: {},
           }),
         },
         headerShown: false,
         tabBarLabelStyle: {
-          fontSize: Typography.captionSmall.fontSize,
-          fontWeight: Typography.captionSmall.fontWeight,
-          letterSpacing: Typography.captionSmall.letterSpacing,
+          fontSize: Typography.labelMedium.fontSize,
+          fontWeight: Typography.labelMedium.fontWeight,
+          letterSpacing: Typography.labelMedium.letterSpacing,
           marginTop: Spacing.titleToSubtitle,
         },
         tabBarItemStyle: {

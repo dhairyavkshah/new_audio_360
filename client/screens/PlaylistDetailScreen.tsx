@@ -139,31 +139,6 @@ export default function PlaylistDetailScreen() {
     setIsEditMode(!isEditMode);
   };
 
-  const handleDeletePlaylist = async () => {
-    if (!playlist) return;
-    
-    const deleteAction = async () => {
-      await deletePlaylist(playlist.id);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.goBack();
-    };
-
-    if (Platform.OS === 'web') {
-      if (window.confirm(`Are you sure you want to delete "${playlist.name}"?`)) {
-        await deleteAction();
-      }
-    } else {
-      Alert.alert(
-        "Delete Playlist",
-        `Are you sure you want to delete "${playlist.name}"? This cannot be undone.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Delete", style: "destructive", onPress: deleteAction }
-        ]
-      );
-    }
-  };
-
   const handleMoveSong = async (songId: string, direction: "up" | "down") => {
     if (!playlist) return;
     playTapSound();
@@ -245,12 +220,6 @@ export default function PlaylistDetailScreen() {
                 size={20} 
                 color={isEditMode ? "#FFFFFF" : theme.text} 
               />
-            </Pressable>
-            <Pressable
-              style={[styles.shuffleButton, { backgroundColor: theme.error + '15' }]}
-              onPress={handleDeletePlaylist}
-            >
-              <MaterialCommunityIcons name="trash-can-outline" size={20} color={theme.error} />
             </Pressable>
           </View>
         </View>

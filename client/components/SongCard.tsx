@@ -251,10 +251,10 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.s,
+    paddingVertical: Spacing.m,
     paddingHorizontal: Layout.horizontalPadding,
     borderRadius: BorderRadius.card,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.s,
     minHeight: Layout.listItemRich,
   },
   artworkContainer: {
