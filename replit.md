@@ -71,6 +71,14 @@ The app features a 3-tab navigation structure:
 
 ## Recent Changes
 
+- **2026-01-09**: **Unified FluentTopBar Header Component** - Created consistent Microsoft Fluent 2 header across all main screens:
+  - New FluentTopBar component with support for title, search bar, sort dropdown, and category dropdown
+  - ListenScreen: "Listen" title with search and sort facilities
+  - LibraryScreen: "Library" title with category dropdown (7 options), search, and sort
+  - SettingsScreen: "Settings" title only
+  - All overlays use absolute positioning with backdrop dismiss
+  - Mutual exclusivity between dropdowns (opening one closes the other)
+
 - **2026-01-09**: **Library Category Dropdown** - Replaced category grid with dropdown selector:
   - Converted 7 category cards (Liked, Recent, Top, Songs, Albums, Artists, Playlists) to single dropdown
   - Dropdown shows current category with icon, label, and item count
