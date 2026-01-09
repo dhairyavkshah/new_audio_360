@@ -317,15 +317,16 @@ class ImmersiveModeEngineModule : Module() {
     private fun applyModeSignature360() {
         loudnessEnhancer?.enabled = false
         
+        // Flat EQ - all bands at 0 for testing
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 52.toShort())
-                eq.setBandLevel(1, 2.toShort())
-                eq.setBandLevel(2, (-68).toShort())
-                eq.setBandLevel(3, (-18).toShort())
-                eq.setBandLevel(4, 32.toShort())
+                eq.setBandLevel(0, 0.toShort())
+                eq.setBandLevel(1, 0.toShort())
+                eq.setBandLevel(2, 0.toShort())
+                eq.setBandLevel(3, 0.toShort())
+                eq.setBandLevel(4, 0.toShort())
             }
         }
         
