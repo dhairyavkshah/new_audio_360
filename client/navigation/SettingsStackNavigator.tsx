@@ -6,6 +6,7 @@ import AppearanceScreen from "@/screens/AppearanceScreen";
 import PlanScreen from "@/screens/PlanScreen";
 import AboutScreen from "@/screens/AboutScreen";
 import FolderSelectionScreen from "@/screens/FolderSelectionScreen";
+import PrivacyPolicyScreen from "@/screens/PrivacyPolicyScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
 export type SettingsStackParamList = {
@@ -15,6 +16,7 @@ export type SettingsStackParamList = {
   Plan: undefined;
   About: undefined;
   FolderSelection: undefined;
+  PrivacyPolicy: undefined;
 };
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
@@ -69,6 +71,14 @@ export default function SettingsStackNavigator() {
         options={{
           headerTitle: "Music Folders",
           headerBackTitle: "Settings",
+        }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{
+          headerTitle: "Privacy Policy",
+          headerBackTitle: "About",
         }}
       />
     </Stack.Navigator>

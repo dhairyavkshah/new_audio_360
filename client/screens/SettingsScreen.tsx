@@ -290,7 +290,7 @@ export default function SettingsScreen() {
             type="caption"
             style={{ color: theme.textSecondary, textAlign: "center", marginTop: Spacing.xs }}
           >
-            Your personal music experience
+            By: Dhairya Shah (The Team 360)
           </ThemedText>
         </View>
       </ScrollView>

@@ -80,6 +80,9 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       </Animated.View>
       <View style={[styles.footer, { bottom: insets.bottom + FluentSpacing.xxxl }]}>
         <ThemedText type="caption" style={{ color: theme.textTertiary }}>
+          By: Dhairya Shah (The Team 360)
+        </ThemedText>
+        <ThemedText type="caption" style={{ color: theme.textTertiary, marginTop: FluentSpacing.xs }}>
           v1.0.0
         </ThemedText>
       </View>

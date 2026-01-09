@@ -3,8 +3,8 @@ import { View, StyleSheet, Platform, Linking, Pressable, Dimensions } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Audio } from 'expo-av';
 import * as Notifications from 'expo-notifications';
+import * as MediaLibrary from 'expo-media-library';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -32,19 +32,19 @@ const PERMISSION_STEPS: PermissionStep[] = [
     id: 'media',
     icon: 'music-box-multiple',
     title: 'Music & Audio',
-    description: "Access your device's music library to play your favorite songs",
+    description: "Access your device's music library to play your favorite songs and audio files",
   },
   {
-    id: 'microphone',
-    icon: 'microphone',
-    title: 'Microphone',
-    description: 'Record your voice for Studio and Karaoke mode',
+    id: 'photos',
+    icon: 'image-multiple',
+    title: 'Photos & Videos',
+    description: 'Display album artwork and media thumbnails for your music collection',
   },
   {
     id: 'notifications',
     icon: 'bell',
     title: 'Notifications',
-    description: 'Show now-playing controls in your notification bar',
+    description: 'Show now-playing controls in your notification bar for easy playback control',
   },
 ];
 
@@ -59,7 +59,7 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
   const [currentStep, setCurrentStep] = useState(0);
   const [permissions, setPermissions] = useState<Record<string, PermissionStatus>>({
     media: 'pending',
-    microphone: 'pending',
+    photos: 'pending',
     notifications: 'pending',
   });
   const [isRequesting, setIsRequesting] = useState(false);
@@ -96,9 +96,9 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
         case 'media':
           granted = await requestMediaPermission();
           break;
-        case 'microphone':
-          const audioResult = await Audio.requestPermissionsAsync();
-          granted = audioResult.granted;
+        case 'photos':
+          const photoResult = await MediaLibrary.requestPermissionsAsync();
+          granted = photoResult.granted;
           break;
         case 'notifications':
           await setupNotificationChannel();
@@ -310,7 +310,7 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
         )}
 
         <ThemedText type="caption" style={[styles.privacyNote, { color: theme.textSecondary }]}>
-          Your data stays on your device. We never upload or share your files.
+          Your data stays on your device. We never upload or share your files. View our Privacy Policy in Settings.
         </ThemedText>
       </View>
     </ThemedView>

@@ -1,6 +1,8 @@
 import React from "react";
 import { View, StyleSheet, ScrollView, Linking, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
@@ -9,15 +11,22 @@ import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 
 export default function AboutScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
   const { theme } = useThemeContext();
+  const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
 
   const handleLinkPress = (url: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Linking.openURL(url);
+  };
+
+  const handlePrivacyPolicyPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("PrivacyPolicy");
   };
 
   return (
@@ -104,6 +113,7 @@ export default function AboutScreen() {
             </Pressable>
             <Pressable
               style={[styles.linkItem, { backgroundColor: theme.backgroundSecondary }]}
+              onPress={handlePrivacyPolicyPress}
             >
               <MaterialCommunityIcons name="shield-lock-outline" size={FluentIconSize.small} color={theme.text} />
               <ThemedText type="small" style={styles.linkText}>
@@ -125,6 +135,12 @@ export default function AboutScreen() {
 
         <View style={styles.footer}>
           <ThemedText type="caption" style={{ color: theme.textSecondary, textAlign: "center" }}>
+            By: Dhairya Shah (The Team 360)
+          </ThemedText>
+          <ThemedText
+            type="caption"
+            style={{ color: theme.textSecondary, textAlign: "center", marginTop: FluentSpacing.xs }}
+          >
             Made with love in India
           </ThemedText>
           <ThemedText
