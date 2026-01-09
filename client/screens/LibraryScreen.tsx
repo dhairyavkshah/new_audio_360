@@ -526,8 +526,8 @@ export default function LibraryScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={[styles.headerRow, { paddingTop: insets.top, backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
-        <ThemedText type="titleLarge" style={styles.headerTitle}>Library</ThemedText>
+      <View style={[styles.headerRow, { paddingTop: insets.top + Spacing.m, backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
+        <ThemedText type="titleSmall" style={styles.headerTitle}>Library</ThemedText>
         {renderCategoryDropdown()}
       </View>
 
@@ -567,12 +567,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Layout.horizontalPadding,
-    paddingBottom: Spacing.s,
+    paddingBottom: Spacing.m,
     borderBottomWidth: 1,
     gap: Spacing.m,
   },
   headerTitle: {
     fontWeight: "600",
+    fontSize: 16,
   },
   categoryDropdown: {
     flex: 1,

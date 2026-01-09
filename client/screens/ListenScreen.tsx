@@ -122,16 +122,16 @@ export default function ListenScreen() {
 
   const renderHeader = () => (
     <View 
-      style={[styles.header, { paddingTop: insets.top, backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}
+      style={[styles.header, { paddingTop: insets.top + Spacing.m, backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}
       onLayout={handleHeaderLayout}
     >
       <View style={styles.headerRow}>
-        <ThemedText type="titleLarge" style={styles.headerTitle}>New Audio 360</ThemedText>
+        <ThemedText type="titleSmall" style={[styles.headerTitle, { color: theme.onSurface }]}>Listen</ThemedText>
         <View style={[styles.searchContainer, { backgroundColor: theme.surfaceContainerHigh }]}>
-          <MaterialCommunityIcons name="magnify" size={16} color={theme.onSurfaceVariant} />
+          <MaterialCommunityIcons name="magnify" size={18} color={theme.onSurfaceVariant} />
           <TextInput
             style={[styles.searchInput, { color: theme.onSurface }]}
-            placeholder="Search..."
+            placeholder="Search songs..."
             placeholderTextColor={theme.onSurfaceVariant}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -145,7 +145,7 @@ export default function ListenScreen() {
               }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <MaterialCommunityIcons name="close-circle" size={14} color={theme.onSurfaceVariant} />
+              <MaterialCommunityIcons name="close-circle" size={16} color={theme.onSurfaceVariant} />
             </Pressable>
           ) : null}
         </View>
@@ -159,12 +159,12 @@ export default function ListenScreen() {
         >
           <MaterialCommunityIcons
             name={SORT_OPTIONS.find((o) => o.key === sortBy)?.icon as any || "sort"}
-            size={16}
+            size={18}
             color={theme.onSurface}
           />
           <MaterialCommunityIcons
             name={showSortOptions ? "chevron-up" : "chevron-down"}
-            size={12}
+            size={14}
             color={theme.onSurfaceVariant}
           />
         </Pressable>
@@ -301,40 +301,40 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Layout.horizontalPadding,
-    paddingBottom: Spacing.s,
+    paddingBottom: Spacing.m,
     borderBottomWidth: 1,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.s,
+    gap: Spacing.m,
   },
   headerTitle: {
     fontWeight: "600",
-    marginRight: Spacing.xs,
+    fontSize: 16,
   },
   searchContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     borderRadius: M3Shape.cornerFull,
-    paddingHorizontal: Spacing.s,
-    height: 36,
-    gap: Spacing.xs,
+    paddingHorizontal: Spacing.m,
+    height: 40,
+    gap: Spacing.s,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     height: "100%",
   },
   sortButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.s,
+    justifyContent: "center",
+    paddingHorizontal: Spacing.m,
     borderRadius: M3Shape.cornerFull,
-    height: 36,
-    gap: 2,
+    height: 40,
+    gap: 4,
   },
   sortOverlayBackdrop: {
     position: "absolute",
