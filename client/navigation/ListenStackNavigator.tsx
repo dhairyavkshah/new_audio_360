@@ -25,7 +25,7 @@ export default function ListenStackNavigator() {
         name="Listen"
         component={ListenScreen}
         options={{
-          headerTitle: () => <HeaderTitle title="New Audio 360" />,
+          headerShown: false,
         }}
       />
       <Stack.Screen

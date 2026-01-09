@@ -130,7 +130,7 @@ export default function ListenScreen() {
     <FluentScreenLayout
       header={
         <FluentTopBar
-          title="Listen"
+          title="New Audio 360"
           showSearch
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

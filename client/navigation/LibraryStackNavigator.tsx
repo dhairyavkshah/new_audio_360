@@ -34,7 +34,7 @@ export default function LibraryStackNavigator() {
         name="Library"
         component={LibraryScreen}
         options={{
-          headerTitle: "Library",
+          headerShown: false,
         }}
       />
       <Stack.Screen
