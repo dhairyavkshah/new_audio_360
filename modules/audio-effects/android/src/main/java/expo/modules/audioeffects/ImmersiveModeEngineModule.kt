@@ -26,7 +26,6 @@ class ImmersiveModeEngineModule : Module() {
         const val MODE_OFF = "off"
         const val MODE_MUSIC = "music"
         const val MODE_360_REALITY = "360_reality"
-        const val MODE_SIGNATURE_360 = "signature_360"
         const val MODE_GAMING = "gaming"
         const val MODE_PODCAST = "podcast"
         const val MODE_MOVIE = "movie"
@@ -100,7 +99,6 @@ class ImmersiveModeEngineModule : Module() {
                         MODE_OFF -> applyModeOff()
                         MODE_MUSIC -> applyModeMusic()
                         MODE_360_REALITY -> applyMode360Reality()
-                        MODE_SIGNATURE_360 -> applyModeSignature360()
                         MODE_GAMING -> applyModeGaming()
                         MODE_PODCAST -> applyModePodcast()
                         MODE_MOVIE -> applyModeMovie()
@@ -151,12 +149,6 @@ class ImmersiveModeEngineModule : Module() {
                     "name" to "360 Reality",
                     "description" to "Immersive 3D spatial audio experience",
                     "icon" to "surround-sound"
-                ),
-                mapOf(
-                    "id" to MODE_SIGNATURE_360,
-                    "name" to "The Signature 360",
-                    "description" to "The signature sound by Dhairya Shah",
-                    "icon" to "music-circle"
                 ),
                 mapOf(
                     "id" to MODE_GAMING,
@@ -311,34 +303,6 @@ class ImmersiveModeEngineModule : Module() {
                 it.setStrength(400.toShort())
                 it.enabled = true
             }
-        }
-    }
-    
-    private fun applyModeSignature360() {
-        loudnessEnhancer?.enabled = false
-        
-        // Flat EQ - all bands at 0 for testing
-        equalizer?.let { eq ->
-            eq.enabled = true
-            val numBands = eq.numberOfBands.toInt()
-            if (numBands >= 5) {
-                eq.setBandLevel(0, 0.toShort())
-                eq.setBandLevel(1, 0.toShort())
-                eq.setBandLevel(2, 0.toShort())
-                eq.setBandLevel(3, 0.toShort())
-                eq.setBandLevel(4, 0.toShort())
-            }
-        }
-        
-        bassBoost?.let {
-            if (it.strengthSupported) {
-                it.setStrength(200.toShort())
-                it.enabled = true
-            }
-        }
-        
-        virtualizer?.let {
-            it.enabled = false
         }
     }
     
