@@ -264,11 +264,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
       };
 
+      const purchaseTime = Date.now();
+      const subscriptionData = {
+        plan: 'premium',
+        purchaseToken: `test_${purchaseTime}`,
+        productId: 'com.newaudio360.premium',
+        purchaseTime,
+      };
+
       await secureSet(STORAGE_KEYS.ACCESS_TOKEN, 'test-access-token');
       await secureSet(STORAGE_KEYS.REFRESH_TOKEN, 'test-refresh-token');
       await secureSet(STORAGE_KEYS.USER_PROFILE, JSON.stringify(testUser));
       await secureSet(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(testSubscription));
       await secureSet(STORAGE_KEYS.LAST_AUTH_TIME, Date.now().toString());
+      await secureSet('subscription_data', JSON.stringify(subscriptionData));
 
       setState(prev => ({
         ...prev,
@@ -278,6 +287,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscription: testSubscription,
         requiresReauth: false,
       }));
+
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        setTimeout(() => window.location.reload(), 100);
+      }
 
       return true;
     } catch (error) {
