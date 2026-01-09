@@ -3,7 +3,13 @@ import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Song, mockSongs } from '@/lib/data';
-import { getSelectedFolders as loadSelectedFoldersFromStorage, setSelectedFolders as saveSelectedFoldersToStorage } from '@/lib/storage';
+import { 
+  getSelectedFolders as loadSelectedFoldersFromStorage, 
+  setSelectedFolders as saveSelectedFoldersToStorage,
+  getWebFolderData,
+  WebFolderSong
+} from '@/lib/storage';
+import { getSessionWebFolders } from '@/lib/webFolderCache';
 
 const HIDDEN_SONGS_KEY = '@new_audio_360_hidden_songs';
 const ONBOARDING_COMPLETE_KEY = '@new_audio_360_onboarding_complete';
@@ -34,6 +40,7 @@ interface MediaLibraryContextValue {
   completeOnboarding: () => Promise<void>;
   skipOnboarding: () => Promise<void>;
   setSelectedFolders: (folders: string[]) => void;
+  setWebAudioFiles: (files: WebFolderSong[]) => void;
 }
 
 const MediaLibraryContext = createContext<MediaLibraryContextValue | null>(null);
@@ -106,6 +113,29 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     saveSelectedFoldersToStorage(folders);
   }, []);
 
+  const setWebAudioFiles = useCallback((files: WebFolderSong[]) => {
+    if (Platform.OS !== 'web') return;
+    
+    const webSongs: DeviceSong[] = files.map(file => ({
+      id: file.id,
+      title: file.title,
+      artist: 'Unknown Artist',
+      album: 'Local Folder',
+      duration: 0,
+      artwork: `https://picsum.photos/seed/${file.id}/400/400`,
+      uri: file.blobUrl || file.path,
+      filename: file.filename,
+      modificationTime: Date.now(),
+      isFromDevice: true,
+    }));
+    
+    const filtered = webSongs.filter(s => !hiddenSongIds.includes(s.id));
+    setSongs(filtered);
+    setAllSongsIncludingHidden(webSongs);
+    setUsingMockData(false);
+    setProgress({ loaded: filtered.length, total: webSongs.length });
+  }, [hiddenSongIds]);
+
   const checkPermission = useCallback(async () => {
     if (Platform.OS === 'web') {
       setHasPermission(false);
@@ -147,6 +177,48 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
 
   const fetchAudioFiles = useCallback(async (hiddenIds: string[], folderIds: string[]) => {
     if (Platform.OS === 'web') {
+      const sessionFolders = getSessionWebFolders();
+      const webFolders = sessionFolders.length > 0 ? sessionFolders : await getWebFolderData();
+      
+      if (webFolders.length > 0) {
+        const allWebSongs = webFolders.flatMap(folder => folder.songs);
+        const playableSongs = allWebSongs.filter(song => song.blobUrl);
+        
+        if (playableSongs.length === 0) {
+          setUsingMockData(true);
+          const mockDeviceSongs: DeviceSong[] = mockSongs.map(song => ({
+            ...song,
+            uri: '',
+            filename: `${song.title}.mp3`,
+            modificationTime: Date.now(),
+            isFromDevice: false,
+          }));
+          const filtered = mockDeviceSongs.filter(s => !hiddenIds.includes(s.id));
+          setSongs(filtered);
+          setAllSongsIncludingHidden(mockDeviceSongs);
+          return;
+        }
+        
+        const webSongs: DeviceSong[] = playableSongs.map(song => ({
+          id: song.id,
+          title: song.title,
+          artist: 'Unknown Artist',
+          album: 'Local Folder',
+          duration: 0,
+          artwork: `https://picsum.photos/seed/${song.id}/400/400`,
+          uri: song.blobUrl!,
+          filename: song.filename,
+          modificationTime: Date.now(),
+          isFromDevice: true,
+        }));
+        const filtered = webSongs.filter(s => !hiddenIds.includes(s.id));
+        setSongs(filtered);
+        setAllSongsIncludingHidden(webSongs);
+        setUsingMockData(false);
+        setProgress({ loaded: filtered.length, total: webSongs.length });
+        return;
+      }
+      
       const mockDeviceSongs: DeviceSong[] = mockSongs.map(song => ({
         ...song,
         uri: '',
@@ -263,6 +335,11 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
   }, []);
 
   const refreshSongs = useCallback(async () => {
+    if (Platform.OS === 'web') {
+      await fetchAudioFiles(hiddenSongIds, []);
+      return;
+    }
+    
     const granted = await checkPermission();
     if (granted) {
       await fetchAudioFiles(hiddenSongIds, selectedFolders);
@@ -364,6 +441,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     completeOnboarding,
     skipOnboarding,
     setSelectedFolders,
+    setWebAudioFiles,
   };
 
   return (

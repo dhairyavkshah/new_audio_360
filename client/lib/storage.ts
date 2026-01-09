@@ -17,7 +17,24 @@ const STORAGE_KEYS = {
   RECENTLY_PLAYED: '@new_audio_360_recently_played',
   PLAY_COUNTS: '@new_audio_360_play_counts',
   SELECTED_FOLDERS: '@new_audio_360_selected_folders',
+  WEB_FOLDER_DATA: '@new_audio_360_web_folder_data',
 };
+
+export interface WebFolderSong {
+  id: string;
+  title: string;
+  filename: string;
+  path: string;
+  blobUrl?: string;
+}
+
+export interface WebFolderData {
+  id: string;
+  name: string;
+  path: string;
+  songCount: number;
+  songs: WebFolderSong[];
+}
 
 export interface Playlist {
   id: string;
@@ -373,4 +390,31 @@ export async function removeSelectedFolder(folderPath: string): Promise<void> {
   const folders = await getSelectedFolders();
   const filtered = folders.filter(f => f !== folderPath);
   await setSelectedFolders(filtered);
+}
+
+export async function getWebFolderData(): Promise<WebFolderData[]> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.WEB_FOLDER_DATA);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error getting web folder data:', error);
+    return [];
+  }
+}
+
+export async function setWebFolderData(folders: WebFolderData[]): Promise<void> {
+  try {
+    const foldersToSave = folders.map(folder => ({
+      ...folder,
+      songs: folder.songs.map(song => ({
+        id: song.id,
+        title: song.title,
+        filename: song.filename,
+        path: song.path,
+      })),
+    }));
+    await AsyncStorage.setItem(STORAGE_KEYS.WEB_FOLDER_DATA, JSON.stringify(foldersToSave));
+  } catch (error) {
+    console.error('Error saving web folder data:', error);
+  }
 }

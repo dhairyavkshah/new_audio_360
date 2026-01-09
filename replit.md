@@ -127,7 +127,12 @@ The app uses **Microsoft Fluent 2** design system with comprehensive token-based
   - Storage functions for folder persistence (getSelectedFolders, setSelectedFolders)
   - MediaLibraryContext filters songs by selected folders
   - Settings menu entry under "Music Folders" for easy access
-  - Web platform shows appropriate fallback messaging
+  - Web platform implementation:
+    - Uses File System Access API (showDirectoryPicker) for folder selection
+    - Creates blob URLs from File objects for audio playback
+    - Session cache (webFolderCache.ts) maintains blob URLs in memory across navigation
+    - Blob URLs persist within browser session but not across page refreshes
+    - Users need to re-add folders after closing/refreshing the browser tab (browser security limitation)
 
 - **2026-01-09**: **Complete Fluent 2 Design System Migration** - Replaced Material Design 3 with Microsoft Fluent 2 throughout the app:
   - Created comprehensive Fluent 2 token system in `client/constants/fluent2/` (spacing, typography, colors, shadows, radii, motion)
