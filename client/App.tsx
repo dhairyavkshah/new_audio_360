@@ -18,7 +18,7 @@ import { StudioProvider } from "@/contexts/StudioContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
 import SplashScreen from "@/screens/SplashScreen";
 import LoadingScreen from "@/screens/LoadingScreen";
-import PermissionOnboardingScreen from "@/screens/PermissionOnboardingScreen";
+import PermissionOnboardingFlow from "@/screens/PermissionOnboardingFlow";
 import LockoutScreen from "@/screens/LockoutScreen";
 
 type AppState = "splash" | "loading" | "checkingOnboarding" | "onboarding" | "ready";
@@ -85,7 +85,7 @@ function AppContent() {
 
   if (appState === "onboarding") {
     return (
-      <PermissionOnboardingScreen
+      <PermissionOnboardingFlow
         onComplete={handleOnboardingComplete}
         onSkip={handleOnboardingSkip}
       />
