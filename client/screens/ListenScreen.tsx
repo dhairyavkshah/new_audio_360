@@ -1,44 +1,30 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { View, StyleSheet, FlatList, Pressable, Image, Platform, TextInput, ActivityIndicator, LayoutChangeEvent, KeyboardAvoidingView } from "react-native";
-import { useHeaderHeight } from "@react-navigation/elements";
+import React, { useState, useMemo, useCallback } from "react";
+import { View, StyleSheet, FlatList, Platform, KeyboardAvoidingView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { FluentTopBar, SortOption } from "@/components/FluentTopBar";
 import { SongCard } from "@/components/SongCard";
 import { SongContextMenu } from "@/components/SongContextMenu";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { Spacing, BorderRadius, Layout, Typography } from "@/constants/theme";
+import { Spacing, Layout, BorderRadius } from "@/constants/theme";
 import { mockSongs, Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import { PlayableSong } from "@/contexts/PlayerContext";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 
-type SortOption = "title_asc" | "title_desc" | "artist_asc" | "duration_asc" | "duration_desc";
-
-const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
-  { key: "title_asc", label: "A-Z", icon: "sort-alphabetical-ascending" },
-  { key: "title_desc", label: "Z-A", icon: "sort-alphabetical-descending" },
-  { key: "artist_asc", label: "Artist", icon: "account-music" },
-  { key: "duration_asc", label: "Shortest", icon: "timer-outline" },
-  { key: "duration_desc", label: "Longest", icon: "timer" },
-];
-
 export default function ListenScreen() {
-  const headerHeight = useHeaderHeight();
   const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useThemeContext();
-  const { playTapSound } = useUiSound();
-  const { currentSong, isPlaying, playSong, setQueue, isLoading: isPlayerLoading, isBuffering } = usePlayer();
-  const { songs: deviceSongs, isLoading: isLoadingSongs, progress, usingMockData } = useMediaLibraryContext();
+  const { currentSong, isPlaying, playSong, setQueue } = usePlayer();
+  const { songs: deviceSongs } = useMediaLibraryContext();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("title_asc");
@@ -46,14 +32,6 @@ export default function ListenScreen() {
   const [contextMenuSong, setContextMenuSong] = useState<PlayableSong | null>(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [stickyHeaderHeight, setStickyHeaderHeight] = useState(90);
-
-  const handleStickyHeaderLayout = useCallback((event: LayoutChangeEvent) => {
-    const { height } = event.nativeEvent.layout;
-    if (height > 0 && Math.abs(height - stickyHeaderHeight) > 2) {
-      setStickyHeaderHeight(height);
-    }
-  }, [stickyHeaderHeight]);
 
   const allSongs: PlayableSong[] = useMemo(() => {
     return deviceSongs.length > 0 ? deviceSongs : mockSongs;
@@ -98,9 +76,7 @@ export default function ListenScreen() {
     navigation.navigate("NowPlaying", { songId: song.id });
   };
 
-  const handleSortPress = (option: SortOption) => {
-    playTapSound();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const handleSortChange = (option: SortOption) => {
     setSortBy(option);
     setShowSortOptions(false);
   };
@@ -119,110 +95,6 @@ export default function ListenScreen() {
     setSuccessMessage(message);
     setTimeout(() => setSuccessMessage(null), 3000);
   }, []);
-
-  const renderStickyHeader = () => (
-    <View 
-      style={[styles.stickyHeader, { backgroundColor: theme.backgroundDefault, top: headerHeight, borderBottomColor: theme.outlineVariant }]}
-      onLayout={handleStickyHeaderLayout}
-    >
-      <View style={styles.searchSortRow}>
-        <View style={[styles.searchContainer, { backgroundColor: theme.surfaceVariant }]}>
-          <MaterialCommunityIcons
-            name="magnify"
-            size={18}
-            color={theme.textSecondary}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={[styles.searchInput, { color: theme.text }]}
-            placeholder="Search..."
-            placeholderTextColor={theme.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 ? (
-            <Pressable
-              onPress={() => {
-                playTapSound();
-                setSearchQuery("");
-              }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <MaterialCommunityIcons name="close-circle" size={16} color={theme.textSecondary} />
-            </Pressable>
-          ) : null}
-        </View>
-        <Pressable
-          style={[styles.sortButton, { backgroundColor: theme.surfaceVariant }]}
-          onPress={() => {
-            playTapSound();
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setShowSortOptions(!showSortOptions);
-          }}
-          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-        >
-          <MaterialCommunityIcons
-            name={SORT_OPTIONS.find((o) => o.key === sortBy)?.icon as any || "sort"}
-            size={16}
-            color={theme.text}
-          />
-          <MaterialCommunityIcons
-            name={showSortOptions ? "chevron-up" : "chevron-down"}
-            size={14}
-            color={theme.textSecondary}
-            style={{ marginLeft: 2 }}
-          />
-        </Pressable>
-      </View>
-    </View>
-  );
-
-  const renderSortOverlay = () => (
-    showSortOptions ? (
-      <>
-        <Pressable 
-          style={styles.sortOverlayBackdrop} 
-          onPress={() => setShowSortOptions(false)} 
-        />
-        <View style={[styles.sortOptionsOverlay, { backgroundColor: theme.surface, top: headerHeight + stickyHeaderHeight - 20 }]}>
-          {SORT_OPTIONS.map((option) => (
-            <Pressable
-              key={option.key}
-              style={[
-                styles.sortOption,
-                sortBy === option.key && { backgroundColor: theme.surfaceVariant },
-              ]}
-              onPress={() => handleSortPress(option.key)}
-            >
-              <MaterialCommunityIcons
-                name={option.icon as any}
-                size={18}
-                color={sortBy === option.key ? theme.primary : theme.text}
-              />
-              <ThemedText
-                type="small"
-                style={[
-                  { marginLeft: Spacing.m },
-                  sortBy === option.key && { color: theme.primary, fontWeight: "600" },
-                ]}
-              >
-                {option.label}
-              </ThemedText>
-              {sortBy === option.key ? (
-                <MaterialCommunityIcons
-                  name="check"
-                  size={16}
-                  color={theme.primary}
-                  style={{ marginLeft: "auto" }}
-                />
-              ) : null}
-            </Pressable>
-          ))}
-        </View>
-      </>
-    ) : null
-  );
 
   const renderSong = ({ item }: { item: Song }) => (
     <SongCard
@@ -255,19 +127,29 @@ export default function ListenScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <FluentTopBar
+        title="Listen"
+        showSearch
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search songs..."
+        showSort
+        sortBy={sortBy}
+        onSortChange={handleSortChange}
+        showSortOverlay={showSortOptions}
+        onSortOverlayToggle={() => setShowSortOptions(!showSortOptions)}
+      />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={headerHeight}
       >
-        {renderStickyHeader()}
         <FlatList
           data={filteredAndSortedSongs}
           renderItem={renderSong}
           keyExtractor={(item) => item.id}
           contentContainerStyle={[
             styles.listContent,
-            { paddingTop: headerHeight + stickyHeaderHeight + Spacing.m, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
+            { paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
           ]}
           ListEmptyComponent={renderEmptyList}
           showsVerticalScrollIndicator={false}
@@ -279,7 +161,6 @@ export default function ListenScreen() {
           getItemLayout={getItemLayout}
           keyboardShouldPersistTaps="handled"
         />
-        {renderSortOverlay()}
       </KeyboardAvoidingView>
 
       <SongContextMenu
@@ -292,7 +173,7 @@ export default function ListenScreen() {
       {successMessage ? (
         <View style={[styles.successToast, { backgroundColor: theme.success }]}>
           <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
-          <ThemedText type="small" style={{ color: "#FFFFFF", marginLeft: Spacing.sm, flex: 1 }}>
+          <ThemedText type="small" style={{ color: "#FFFFFF", marginLeft: Spacing.s, flex: 1 }}>
             {successMessage}
           </ThemedText>
         </View>
@@ -301,80 +182,13 @@ export default function ListenScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   listContent: {
     paddingHorizontal: Layout.horizontalPadding,
-  },
-  stickyHeader: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.xs,
-    paddingBottom: Spacing.xs,
-    borderBottomWidth: 1,
-  },
-  searchSortRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.s,
-  },
-  searchContainer: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: BorderRadius.input,
-    paddingHorizontal: Spacing.s,
-    height: 44,
-  },
-  searchIcon: {
-    marginRight: Spacing.xs,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    height: "100%",
-  },
-  sortButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: Spacing.s,
-    borderRadius: BorderRadius.button,
-    height: 44,
-    minWidth: 44,
-  },
-  sortOverlayBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 15,
-  },
-  sortOptionsOverlay: {
-    position: "absolute",
-    right: Layout.horizontalPadding,
-    zIndex: 20,
-    borderRadius: BorderRadius.card,
-    overflow: "hidden",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    minWidth: 150,
-  },
-  sortOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.l,
-    paddingVertical: Spacing.m,
+    paddingTop: Spacing.m,
   },
   emptyContainer: {
     alignItems: "center",

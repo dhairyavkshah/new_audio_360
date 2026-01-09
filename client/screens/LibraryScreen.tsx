@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Image, TextInput, Platform, ActivityIndicator, FlatList, KeyboardAvoidingView } from "react-native";
+import { View, StyleSheet, Pressable, Image, Platform, ActivityIndicator, FlatList, KeyboardAvoidingView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -7,15 +7,15 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { TopBar } from "@/components/TopBar";
+import { FluentTopBar, SortOption, CategoryOption } from "@/components/FluentTopBar";
 import { SongContextMenu } from "@/components/SongContextMenu";
 import { SongCard } from "@/components/SongCard";
 import { AnimatedCard } from "@/components/AnimatedCard";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
-import { Spacing, BorderRadius, Layout, Typography, M3Shape, M3Elevation } from "@/constants/theme";
+import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
+import { Spacing, Layout, M3Shape, M3Elevation } from "@/constants/theme";
 import { mockSongs, mockAlbums, mockArtists, Song } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 import { Playlist, getPlaylists } from "@/lib/storage";
@@ -43,15 +43,6 @@ const categories: CategoryConfig[] = [
   { key: "playlists", label: "Playlists", icon: "playlist-music", color: "#673AB7" },
 ];
 
-type SortOption = "title_asc" | "title_desc" | "artist_asc" | "duration_asc" | "duration_desc";
-
-const SORT_OPTIONS: { key: SortOption; label: string; icon: string }[] = [
-  { key: "title_asc", label: "A-Z", icon: "sort-alphabetical-ascending" },
-  { key: "title_desc", label: "Z-A", icon: "sort-alphabetical-descending" },
-  { key: "artist_asc", label: "Artist", icon: "account-music" },
-  { key: "duration_asc", label: "Shortest", icon: "sort-clock-ascending" },
-  { key: "duration_desc", label: "Longest", icon: "sort-clock-descending" },
-];
 
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
@@ -188,13 +179,6 @@ export default function LibraryScreen() {
     setShowCategoryDropdown(false);
   };
 
-  const toggleCategoryDropdown = () => {
-    playTapSound();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setShowCategoryDropdown(!showCategoryDropdown);
-    setShowSortOptions(false);
-  };
-
   const handleManagePlaylists = () => {
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -246,101 +230,27 @@ export default function LibraryScreen() {
     setTimeout(() => setSuccessMessage(null), 3000);
   }, [loadPlaylists]);
 
-  const activeConfig = categories.find(c => c.key === activeCategory) || categories[0];
-
-  const renderCategoryDropdown = () => (
-    <View style={styles.categoryDropdownContainer}>
-      <Pressable
-        style={[styles.categoryDropdownButton, { backgroundColor: theme.surfaceContainerHigh, borderColor: theme.outlineVariant }]}
-        onPress={toggleCategoryDropdown}
-        accessibilityRole="button"
-        accessibilityLabel={`Category: ${activeConfig.label}, ${categoryCounts[activeCategory]} items. Tap to change.`}
-      >
-        <View style={[styles.categoryDropdownIcon, { backgroundColor: activeConfig.color + "20" }]}>
-          <MaterialCommunityIcons name={activeConfig.icon} size={20} color={activeConfig.color} />
-        </View>
-        <View style={styles.categoryDropdownText}>
-          <ThemedText type="bodyLarge" style={{ fontWeight: "600" }}>{activeConfig.label}</ThemedText>
-          <ThemedText type="caption" style={{ color: theme.onSurfaceVariant }}>{categoryCounts[activeCategory]} items</ThemedText>
-        </View>
-        <MaterialCommunityIcons 
-          name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
-          size={24} 
-          color={theme.onSurfaceVariant} 
-        />
-      </Pressable>
-    </View>
+  const categoryOptions: CategoryOption[] = useMemo(() => 
+    categories.map(cat => ({
+      key: cat.key,
+      label: cat.label,
+      icon: cat.icon,
+      color: cat.color,
+      count: categoryCounts[cat.key],
+    })),
+    [categoryCounts]
   );
 
-  const renderCategoryDropdownOverlay = () => (
-    showCategoryDropdown ? (
-      <>
-        <Pressable style={styles.categoryOverlayBackdrop} onPress={() => setShowCategoryDropdown(false)} />
-        <View style={[styles.categoryOptionsOverlay, { backgroundColor: theme.surfaceContainerHigh }]}>
-          {categories.map((category) => {
-            const isActive = activeCategory === category.key;
-            return (
-              <Pressable
-                key={category.key}
-                style={[styles.categoryOption, isActive && { backgroundColor: category.color + "15" }]}
-                onPress={() => handleCategoryChange(category.key)}
-              >
-                <View style={[styles.categoryOptionIcon, { backgroundColor: category.color + "20" }]}>
-                  <MaterialCommunityIcons name={category.icon} size={18} color={category.color} />
-                </View>
-                <ThemedText type="bodyMedium" style={[styles.categoryOptionLabel, isActive && { color: category.color, fontWeight: "600" }]}>
-                  {category.label}
-                </ThemedText>
-                <ThemedText type="caption" style={{ color: theme.onSurfaceVariant }}>
-                  {categoryCounts[category.key]}
-                </ThemedText>
-                {isActive && (
-                  <MaterialCommunityIcons name="check" size={18} color={category.color} style={{ marginLeft: Spacing.s }} />
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-      </>
+  const handleCategorySelect = useCallback((key: string) => {
+    handleCategoryChange(key as CategoryType);
+  }, [handleCategoryChange]);
+
+  const renderPlaylistAddButton = () => (
+    activeCategory === "playlists" ? (
+      <Pressable style={[styles.addButton, { backgroundColor: theme.primary }]} onPress={handleManagePlaylists}>
+        <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
+      </Pressable>
     ) : null
-  );
-
-  const renderSearchBar = () => (
-    <View style={[styles.searchRow, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
-      <View style={[styles.searchContainer, { backgroundColor: theme.surfaceContainerHigh }]}>
-        <MaterialCommunityIcons name="magnify" size={18} color={theme.onSurfaceVariant} style={styles.searchIcon} />
-        <TextInput
-          style={[styles.searchInput, { color: theme.onSurface }]}
-          placeholder={`Search ${categories.find(c => c.key === activeCategory)?.label || ''}...`}
-          placeholderTextColor={theme.onSurfaceVariant}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          returnKeyType="search"
-        />
-        {searchQuery.length > 0 ? (
-          <Pressable onPress={() => setSearchQuery("")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <MaterialCommunityIcons name="close-circle" size={16} color={theme.onSurfaceVariant} />
-          </Pressable>
-        ) : null}
-      </View>
-      <Pressable
-        style={[styles.sortButton, { backgroundColor: theme.surfaceContainerHigh }]}
-        onPress={() => {
-          playTapSound();
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          setShowSortOptions(!showSortOptions);
-        }}
-        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-      >
-        <MaterialCommunityIcons name={SORT_OPTIONS.find((o) => o.key === sortBy)?.icon as any || "sort"} size={16} color={theme.onSurface} />
-        <MaterialCommunityIcons name={showSortOptions ? "chevron-up" : "chevron-down"} size={14} color={theme.onSurfaceVariant} style={{ marginLeft: 2 }} />
-      </Pressable>
-      {activeCategory === "playlists" ? (
-        <Pressable style={[styles.addButton, { backgroundColor: theme.primary }]} onPress={handleManagePlaylists}>
-          <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
-        </Pressable>
-      ) : null}
-    </View>
   );
 
   const renderSongItem = ({ item: song, songs }: { item: PlayableSong; songs: PlayableSong[] }) => {
@@ -530,48 +440,40 @@ export default function LibraryScreen() {
     }
   };
 
-  const renderSortOverlay = () => (
-    showSortOptions ? (
-      <>
-        <Pressable style={styles.sortOverlayBackdrop} onPress={() => setShowSortOptions(false)} />
-        <View style={[styles.sortOptionsOverlay, { backgroundColor: theme.surfaceContainerHigh }]}>
-          {SORT_OPTIONS.map((option) => (
-            <Pressable
-              key={option.key}
-              style={[styles.sortOption, sortBy === option.key && { backgroundColor: theme.primaryContainer }]}
-              onPress={() => handleSortPress(option.key)}
-            >
-              <MaterialCommunityIcons name={option.icon as any} size={18} color={sortBy === option.key ? theme.primary : theme.onSurface} />
-              <ThemedText type="bodyMedium" style={[{ marginLeft: Spacing.m }, sortBy === option.key && { color: theme.primary }]}>{option.label}</ThemedText>
-              {sortBy === option.key ? <MaterialCommunityIcons name="check" size={16} color={theme.primary} style={{ marginLeft: "auto" }} /> : null}
-            </Pressable>
-          ))}
-        </View>
-      </>
-    ) : null
-  );
-
   return (
     <ThemedView style={styles.container}>
+      <FluentTopBar
+        title="Library"
+        categoryOptions={categoryOptions}
+        activeCategory={activeCategory}
+        onCategoryChange={handleCategorySelect}
+        showCategoryDropdown={showCategoryDropdown}
+        onCategoryDropdownToggle={() => {
+          setShowCategoryDropdown(!showCategoryDropdown);
+          setShowSortOptions(false);
+        }}
+        showSearch
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder={`Search ${categories.find(c => c.key === activeCategory)?.label || ''}...`}
+        showSort
+        sortBy={sortBy}
+        onSortChange={handleSortPress}
+        showSortOverlay={showSortOptions}
+        onSortOverlayToggle={() => {
+          setShowSortOptions(!showSortOptions);
+          setShowCategoryDropdown(false);
+        }}
+        rightAction={renderPlaylistAddButton()}
+      />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={insets.top}
       >
-        <TopBar title="Library" showBack={false} />
-        
-        <View style={[styles.categorySection, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
-          {renderCategoryDropdown()}
-        </View>
-
-        {renderSearchBar()}
-
         <View style={[styles.contentArea, { flex: 1 }]}>
           {renderContent()}
         </View>
-
-        {renderSortOverlay()}
-        {renderCategoryDropdownOverlay()}
       </KeyboardAvoidingView>
 
       <SongContextMenu

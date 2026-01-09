@@ -8,7 +8,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { TopBar } from "@/components/TopBar";
+import { FluentTopBar } from "@/components/FluentTopBar";
 import { FluentToggle } from "@/components/FluentToggle";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
@@ -114,7 +114,7 @@ export default function SettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <TopBar title="Settings" showBack={false} />
+      <FluentTopBar title="Settings" />
       <ScrollView
         contentContainerStyle={[
           styles.content,
