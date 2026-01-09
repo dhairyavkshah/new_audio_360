@@ -338,10 +338,7 @@ class ImmersiveModeEngineModule : Module() {
         }
         
         virtualizer?.let {
-            if (it.strengthSupported) {
-                it.setStrength(200.toShort())
-                it.enabled = true
-            }
+            it.enabled = false
         }
     }
     
