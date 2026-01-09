@@ -508,6 +508,7 @@ export default function RecordingScreen() {
           style={styles.scrollContent}
           contentContainerStyle={styles.scrollContentContainer}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {!usingHeadphones && !showHeadphoneDialog ? (
             <GlassCard style={styles.reminderCard}>
@@ -686,6 +687,7 @@ export default function RecordingScreen() {
           ) : null}
         </ScrollView>
 
+        <View style={styles.mainContentContainer}>
         <View style={styles.songInfoContainer}>
           <Image source={{ uri: song.artwork }} style={styles.songArtwork} />
           <View style={styles.songDetails}>
@@ -760,6 +762,7 @@ export default function RecordingScreen() {
             onPress={handleRecordPress}
             disabled={!isBackingTrackLoaded}
           />
+        </View>
         </View>
       </View>
 
@@ -869,10 +872,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.l,
   },
   scrollContent: {
-    flex: 1,
+    flexGrow: 0,
+    flexShrink: 1,
   },
   scrollContentContainer: {
-    paddingBottom: Spacing.m,
+    paddingBottom: Spacing.s,
+  },
+  mainContentContainer: {
+    flex: 1,
+    justifyContent: "center",
   },
   header: {
     flexDirection: "row",
