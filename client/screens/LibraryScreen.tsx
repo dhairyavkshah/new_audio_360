@@ -248,28 +248,21 @@ export default function LibraryScreen() {
 
   const activeConfig = categories.find(c => c.key === activeCategory) || categories[0];
 
-  const renderCategoryDropdown = () => (
-    <View style={styles.categoryDropdownContainer}>
-      <Pressable
-        style={[styles.categoryDropdownButton, { backgroundColor: theme.surfaceContainerHigh, borderColor: theme.outlineVariant }]}
-        onPress={toggleCategoryDropdown}
-        accessibilityRole="button"
-        accessibilityLabel={`Category: ${activeConfig.label}, ${categoryCounts[activeCategory]} items. Tap to change.`}
-      >
-        <View style={[styles.categoryDropdownIcon, { backgroundColor: activeConfig.color + "20" }]}>
-          <MaterialCommunityIcons name={activeConfig.icon} size={20} color={activeConfig.color} />
-        </View>
-        <View style={styles.categoryDropdownText}>
-          <ThemedText type="bodyLarge" style={{ fontWeight: "600" }}>{activeConfig.label}</ThemedText>
-          <ThemedText type="caption" style={{ color: theme.onSurfaceVariant }}>{categoryCounts[activeCategory]} items</ThemedText>
-        </View>
-        <MaterialCommunityIcons 
-          name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
-          size={24} 
-          color={theme.onSurfaceVariant} 
-        />
-      </Pressable>
-    </View>
+  const renderHeaderCategorySelector = () => (
+    <Pressable
+      style={styles.headerCategorySelector}
+      onPress={toggleCategoryDropdown}
+      accessibilityRole="button"
+      accessibilityLabel={`Category: ${activeConfig.label}. Tap to change.`}
+    >
+      <ThemedText type="title3" style={{ fontWeight: "600" }}>{activeConfig.label}</ThemedText>
+      <MaterialCommunityIcons 
+        name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
+        size={20} 
+        color={theme.onSurfaceVariant} 
+        style={{ marginLeft: 4 }}
+      />
+    </Pressable>
   );
 
   const renderCategoryDropdownOverlay = () => (
@@ -558,11 +551,11 @@ export default function LibraryScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={insets.top}
       >
-        <TopBar title="Library" showBack={false} />
-        
-        <View style={[styles.categorySection, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
-          {renderCategoryDropdown()}
-        </View>
+        <TopBar 
+          title="Library" 
+          showBack={false} 
+          titleSlot={renderHeaderCategorySelector()}
+        />
 
         {renderSearchBar()}
 
@@ -597,33 +590,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  categorySection: {
-    paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.s,
-    paddingBottom: Spacing.s,
-    borderBottomWidth: 1,
-  },
-  categoryDropdownContainer: {
-    width: "100%",
-  },
-  categoryDropdownButton: {
+  headerCategorySelector: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
-    borderRadius: M3Shape.cornerMedium,
-    borderWidth: 1,
-  },
-  categoryDropdownIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  categoryDropdownText: {
-    flex: 1,
-    marginLeft: Spacing.m,
   },
   categoryOverlayBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -631,7 +600,7 @@ const styles = StyleSheet.create({
   },
   categoryOptionsOverlay: {
     position: "absolute",
-    top: 110,
+    top: 56,
     left: Layout.horizontalPadding,
     right: Layout.horizontalPadding,
     zIndex: 30,

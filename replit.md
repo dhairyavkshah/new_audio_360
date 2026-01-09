@@ -71,11 +71,11 @@ The app features a 3-tab navigation structure:
 
 ## Recent Changes
 
-- **2026-01-09**: **Library Category Dropdown** - Replaced category grid with dropdown selector:
-  - Converted 7 category cards (Liked, Recent, Top, Songs, Albums, Artists, Playlists) to single dropdown
-  - Dropdown shows current category with icon, label, and item count
-  - Overlay dropdown menu with all categories for selection
-  - Saves vertical space for more content visibility
+- **2026-01-09**: **Minimal Header Category Dropdown** - Category selector integrated into TopBar header:
+  - TopBar now supports titleSlot prop for custom title content
+  - Category name displays inline in header with small chevron indicator
+  - Tapping reveals dropdown overlay with all 7 categories
+  - Removed separate category section, maximizing content space
 
 - **2026-01-09**: **Privacy Policy & Attribution** - Added comprehensive privacy policy and app attribution:
   - Created PrivacyPolicyScreen with 10 policy sections covering offline-first data practices

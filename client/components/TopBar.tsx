@@ -27,6 +27,7 @@ import {
 
 interface TopBarProps {
   title: string;
+  titleSlot?: React.ReactNode;
   showHome?: boolean;
   showBack?: boolean;
   actions?: React.ReactNode;
@@ -37,6 +38,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function TopBar({
   title,
+  titleSlot,
   showHome = false,
   showBack = true,
   actions,
@@ -102,19 +104,25 @@ export function TopBar({
               isDark={isDark}
             />
           ) : null}
-          <Text 
-            style={[
-              styles.title, 
-              FluentTypography.title3,
-              { 
-                color: fluentColors.colorNeutralForeground1,
-                marginLeft: shouldShowBack || showHome ? 0 : FluentSpacing.s,
-              }
-            ]}
-            numberOfLines={1}
-          >
-            {title}
-          </Text>
+          {titleSlot ? (
+            <View style={{ flex: 1, marginLeft: shouldShowBack || showHome ? 0 : FluentSpacing.s }}>
+              {titleSlot}
+            </View>
+          ) : (
+            <Text 
+              style={[
+                styles.title, 
+                FluentTypography.title3,
+                { 
+                  color: fluentColors.colorNeutralForeground1,
+                  marginLeft: shouldShowBack || showHome ? 0 : FluentSpacing.s,
+                }
+              ]}
+              numberOfLines={1}
+            >
+              {title}
+            </Text>
+          )}
         </View>
         {actions ? <View style={styles.actions}>{actions}</View> : null}
       </View>
