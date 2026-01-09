@@ -65,6 +65,15 @@ export const mockSongs: Song[] = [
     audioUrl: '/audio/dhurandhar.mp3',
   },
   {
+    id: 'yeh-hum-aa-gaye',
+    title: 'Yeh Hum Aa Gaye Hain Kahaan',
+    artist: 'Udit Narayan, Kavita Krishnamurthy',
+    album: 'Veer-Zaara (2004)',
+    duration: 338,
+    artwork: 'https://picsum.photos/seed/veerzaara/400/400',
+    audioUrl: '/audio/yeh_hum_aa_gaye_hain_kahaan.mp3',
+  },
+  {
     id: '1',
     title: 'Midnight Dreams',
     artist: 'Aurora Waves',
