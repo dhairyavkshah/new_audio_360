@@ -41,6 +41,8 @@ interface AudioEngineState {
   voiceVolume: number;
   syncOffset: number;
   inputGain: number;
+  trimStartMs: number;
+  trimEndMs: number;
 }
 
 export class StudioAudioEngine {
@@ -68,6 +70,8 @@ export class StudioAudioEngine {
     voiceVolume: 100,
     syncOffset: 0,
     inputGain: 100,
+    trimStartMs: 0,
+    trimEndMs: 0,
   };
 
   private progressCallback: ProgressCallback | null = null;
