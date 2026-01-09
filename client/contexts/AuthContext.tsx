@@ -49,6 +49,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   signInWithGoogle: () => Promise<boolean>;
+  signInAsTestUser: () => Promise<boolean>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<boolean>;
   enableBiometric: () => Promise<boolean>;
@@ -246,6 +247,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [promptAsync]);
 
+  const signInAsTestUser = useCallback(async (): Promise<boolean> => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true }));
+
+      const testUser: UserProfile = {
+        id: 'test-user-001',
+        email: 'test@newaudio360.com',
+        displayName: 'Test User',
+        photoUrl: null,
+      };
+
+      const testSubscription: SubscriptionState = {
+        plan: 'premium',
+        isActive: true,
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+
+      await secureSet(STORAGE_KEYS.ACCESS_TOKEN, 'test-access-token');
+      await secureSet(STORAGE_KEYS.REFRESH_TOKEN, 'test-refresh-token');
+      await secureSet(STORAGE_KEYS.USER_PROFILE, JSON.stringify(testUser));
+      await secureSet(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(testSubscription));
+      await secureSet(STORAGE_KEYS.LAST_AUTH_TIME, Date.now().toString());
+
+      setState(prev => ({
+        ...prev,
+        isAuthenticated: true,
+        isLoading: false,
+        user: testUser,
+        subscription: testSubscription,
+        requiresReauth: false,
+      }));
+
+      return true;
+    } catch (error) {
+      console.error('Test sign in error:', error);
+      setState(prev => ({ ...prev, isLoading: false }));
+      return false;
+    }
+  }, []);
+
   const refreshSessionInternal = async (): Promise<boolean> => {
     try {
       const refreshToken = await secureGet(STORAGE_KEYS.REFRESH_TOKEN);
@@ -429,6 +470,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         ...state,
         signInWithGoogle,
+        signInAsTestUser,
         signOut,
         refreshSession,
         enableBiometric,

@@ -8,11 +8,13 @@ import { useThemeContext } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
 
+const DEV_MODE = __DEV__ || process.env.NODE_ENV === 'development';
+
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const { signInWithGoogle, isLoading } = useAuth();
+  const { signInWithGoogle, signInAsTestUser, isLoading } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   const handleGoogleSignIn = async () => {
@@ -20,6 +22,14 @@ export default function LoginScreen() {
     const success = await signInWithGoogle();
     if (!success) {
       setError('Sign in was cancelled or failed. Please try again.');
+    }
+  };
+
+  const handleTestSignIn = async () => {
+    setError(null);
+    const success = await signInAsTestUser();
+    if (!success) {
+      setError('Test sign in failed. Please try again.');
     }
   };
 
@@ -77,6 +87,22 @@ export default function LoginScreen() {
               </>
             )}
           </Pressable>
+
+          {DEV_MODE && (
+            <Pressable
+              style={[
+                styles.testButton,
+                { borderColor: colors.colorNeutralStroke2 }
+              ]}
+              onPress={handleTestSignIn}
+              disabled={isLoading}
+            >
+              <MaterialCommunityIcons name="bug-outline" size={20} color={colors.colorNeutralForeground2} />
+              <FluentText variant="body2" color="secondary">
+                Skip for Testing
+              </FluentText>
+            </Pressable>
+          )}
         </View>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + FluentSpacing.m }]}>
@@ -151,6 +177,18 @@ const styles = StyleSheet.create({
   googleIcon: {
     width: 24,
     height: 24,
+  },
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: FluentSpacing.s,
+    paddingVertical: FluentSpacing.s,
+    paddingHorizontal: FluentSpacing.l,
+    borderRadius: FluentControlRadius.dialog,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    minWidth: 200,
   },
   footer: {
     gap: FluentSpacing.s,
