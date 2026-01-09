@@ -85,3 +85,12 @@ A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Set
 -   **Drizzle ORM**: TypeScript ORM for PostgreSQL.
 -   **expo-auth-session**: Google Sign-In.
 -   **expo-local-authentication**: Biometric/PIN authentication.
+
+## Recent Changes
+
+- **2026-01-09**: **Zero-Sum Balanced Equalizer Presets**:
+  - All 8 EQ presets redesigned so band values sum to zero - positive boosts balanced by negative cuts
+  - Auto-balancing pipeline in NativeEffectsManager subtracts mean offset from 5-band mapping to maintain zero-sum after 7→5 band conversion
+  - Preset examples: Rock [+3,+2,-2,-3,+1,+3,-4], Electronic [+4,+3,-2,-3,+1,+3,-6], Hip-Hop [+4,+3,-2,-3,+1,+1,-4]
+  - Immersive Mode presets also use proper gain staging with negative LoudnessEnhancer pre-gain (-300 to -600 mB)
+  - Files updated: SoundLabContext.tsx, NativeEffectsManager.ts, ImmersiveModeEngineModule.kt

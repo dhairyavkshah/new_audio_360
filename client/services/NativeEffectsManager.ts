@@ -76,25 +76,30 @@ class NativeEffectsManagerClass {
     EqualizerModule.setEnabled(true);
 
     const numBands = this.equalizerInfo?.numberOfBands || 5;
+    const MB_PER_UNIT = 35;
 
-    const normalize = (val: number) => {
-      const millibels = val * 35;
-      return Math.max(-300, Math.min(150, millibels));
-    };
-
-    const bandValues: number[] = [];
+    const rawBands: number[] = [];
     
     if (numBands >= 5) {
-      bandValues.push(normalize((eqBands.sub + eqBands.bass) / 2));
-      bandValues.push(normalize(eqBands.lowMid));
-      bandValues.push(normalize(eqBands.mid));
-      bandValues.push(normalize(eqBands.highMid));
-      bandValues.push(normalize((eqBands.treble + eqBands.brilliance) / 2));
+      rawBands.push((eqBands.sub + eqBands.bass) / 2);
+      rawBands.push(eqBands.lowMid);
+      rawBands.push(eqBands.mid);
+      rawBands.push(eqBands.highMid);
+      rawBands.push((eqBands.treble + eqBands.brilliance) / 2);
     }
 
     for (let i = 5; i < numBands; i++) {
-      bandValues.push(0);
+      rawBands.push(0);
     }
+
+    const sum = rawBands.reduce((acc, v) => acc + v, 0);
+    const offset = sum / rawBands.length;
+    const balancedBands = rawBands.map(v => v - offset);
+
+    const bandValues = balancedBands.map(v => {
+      const millibels = v * MB_PER_UNIT;
+      return Math.max(-300, Math.min(150, millibels));
+    });
 
     EqualizerModule.setCustomBands(bandValues);
   }
