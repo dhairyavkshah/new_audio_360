@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import { SecureStorage } from '@/services/SecureStorage';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -285,8 +286,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await secureSet(STORAGE_KEYS.USER_PROFILE, JSON.stringify(testUser));
       await secureSet(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(testSubscription));
       await secureSet(STORAGE_KEYS.LAST_AUTH_TIME, Date.now().toString());
-      await secureSet('subscription_data', JSON.stringify(subscriptionData));
-      console.log('[TEST AUTH] Auth data saved successfully');
+      await SecureStorage.setSecureItem('subscription_data', JSON.stringify(subscriptionData));
+      console.log('[TEST AUTH] Auth data saved successfully (plan: premium)');
 
       setState(prev => ({
         ...prev,
@@ -348,7 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       secureDelete(STORAGE_KEYS.SUBSCRIPTION),
       secureDelete(STORAGE_KEYS.ENTITLEMENT),
       secureDelete(STORAGE_KEYS.LAST_AUTH_TIME),
-      secureDelete('subscription_data'),
+      SecureStorage.removeSecureItem('subscription_data'),
     ]);
 
     setState({
