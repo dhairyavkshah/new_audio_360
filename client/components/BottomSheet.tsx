@@ -7,7 +7,6 @@ import {
   Platform,
   Modal,
   ScrollView,
-  Text,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -23,11 +22,11 @@ import {
   GestureDetector,
   GestureHandlerRootView,
 } from "react-native-gesture-handler";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import {
   FluentControlRadius,
   FluentSpacing,
-  FluentTypography,
   FluentDuration,
   FluentCurve,
   getShadowStyle,
@@ -53,14 +52,14 @@ export function BottomSheet({
   snapPoints = [0.5],
   title,
 }: BottomSheetProps) {
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const insets = useSafeAreaInsets();
   const [isRendered, setIsRendered] = useState(visible);
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const scrimOpacity = useSharedValue(0);
   const context = useSharedValue({ y: 0 });
 
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const maxHeight = SCREEN_HEIGHT * Math.max(...snapPoints);
   const minY = SCREEN_HEIGHT - maxHeight;
 
@@ -151,7 +150,7 @@ export function BottomSheet({
           <Animated.View
             style={[
               styles.scrim,
-              { backgroundColor: theme.scrim },
+              { backgroundColor: colors.colorNeutralBackgroundInverted },
               scrimStyle,
             ]}
           >
@@ -163,7 +162,7 @@ export function BottomSheet({
               style={[
                 styles.sheet,
                 {
-                  backgroundColor: fluentColors.colorNeutralBackground1,
+                  backgroundColor: colors.colorNeutralBackground1,
                   maxHeight: maxHeight,
                 },
                 getShadowStyle('shadow28', isDark),
@@ -172,19 +171,16 @@ export function BottomSheet({
             >
               <View style={styles.handleContainer}>
                 <View
-                  style={[styles.handle, { backgroundColor: fluentColors.colorNeutralStroke1 }]}
+                  style={[styles.handle, { backgroundColor: colors.colorNeutralStroke1 }]}
                 />
               </View>
               {title && (
-                <Text
-                  style={[
-                    styles.title,
-                    FluentTypography.subtitle1,
-                    { color: fluentColors.colorNeutralForeground1 },
-                  ]}
+                <FluentText
+                  variant="subtitle1"
+                  style={styles.title}
                 >
                   {title}
-                </Text>
+                </FluentText>
               )}
               <ScrollView
                 style={styles.content}

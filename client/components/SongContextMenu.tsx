@@ -12,11 +12,17 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from "react-native-reanimated";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, BorderRadius, Typography } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentRadius,
+  FluentTypography,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { PlayableSong } from "@/contexts/PlayerContext";
 import {
@@ -40,7 +46,8 @@ type MenuView = "main" | "selectPlaylist" | "createPlaylist";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong, showHideOption = false }: SongContextMenuProps) {
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { playTapSound } = useUiSound();
   const [menuView, setMenuView] = useState<MenuView>("main");
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -128,65 +135,65 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
       <View style={styles.songHeader}>
         <Image source={{ uri: song.artwork }} style={styles.songArtwork} />
         <View style={styles.songInfo}>
-          <ThemedText type="body" numberOfLines={1} style={{ fontWeight: "600" }}>
+          <FluentText variant="body1Strong" color="primary" numberOfLines={1}>
             {song.title}
-          </ThemedText>
-          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+          </FluentText>
+          <FluentText variant="caption1" color="secondary">
             {song.artist}
-          </ThemedText>
+          </FluentText>
         </View>
       </View>
 
-      <View style={[styles.divider, { backgroundColor: theme.surfaceVariant }]} />
+      <View style={[styles.divider, { backgroundColor: colors.colorNeutralStroke2 }]} />
 
       <Pressable
-        style={[styles.menuItem, { backgroundColor: theme.surface }]}
+        style={[styles.menuItem, { backgroundColor: colors.colorNeutralBackground2 }]}
         onPress={() => handleNavigate("selectPlaylist")}
       >
-        <View style={[styles.menuItemIcon, { backgroundColor: theme.primary + "20" }]}>
-          <MaterialCommunityIcons name="playlist-plus" size={20} color={theme.primary} />
+        <View style={[styles.menuItemIcon, { backgroundColor: colors.colorBrandBackground + "20" }]}>
+          <MaterialCommunityIcons name="playlist-plus" size={20} color={colors.colorBrandForeground1} />
         </View>
         <View style={styles.menuItemText}>
-          <ThemedText type="body">Add to Playlist</ThemedText>
-          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+          <FluentText variant="body1" color="primary">Add to Playlist</FluentText>
+          <FluentText variant="caption1" color="secondary">
             {playlists.length} {playlists.length === 1 ? "playlist" : "playlists"} available
-          </ThemedText>
+          </FluentText>
         </View>
-        <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
+        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.colorNeutralForeground2} />
       </Pressable>
 
       <Pressable
-        style={[styles.menuItem, { backgroundColor: theme.surface }]}
+        style={[styles.menuItem, { backgroundColor: colors.colorNeutralBackground2 }]}
         onPress={() => handleNavigate("createPlaylist")}
       >
-        <View style={[styles.menuItemIcon, { backgroundColor: theme.success + "20" }]}>
-          <MaterialCommunityIcons name="playlist-music" size={20} color={theme.success} />
+        <View style={[styles.menuItemIcon, { backgroundColor: colors.colorPaletteGreenBackground1 }]}>
+          <MaterialCommunityIcons name="playlist-music" size={20} color={colors.colorPaletteGreenForeground1} />
         </View>
         <View style={styles.menuItemText}>
-          <ThemedText type="body">Create New Playlist</ThemedText>
-          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+          <FluentText variant="body1" color="primary">Create New Playlist</FluentText>
+          <FluentText variant="caption1" color="secondary">
             Start a new collection with this song
-          </ThemedText>
+          </FluentText>
         </View>
-        <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
+        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.colorNeutralForeground2} />
       </Pressable>
 
       {showHideOption && onHideSong && (
         <>
-          <View style={[styles.divider, { backgroundColor: theme.surfaceVariant }]} />
+          <View style={[styles.divider, { backgroundColor: colors.colorNeutralStroke2 }]} />
           <Pressable
-            style={[styles.menuItem, { backgroundColor: theme.surface }]}
+            style={[styles.menuItem, { backgroundColor: colors.colorNeutralBackground2 }]}
             onPress={handleHideSong}
             disabled={isLoading}
           >
-            <View style={[styles.menuItemIcon, { backgroundColor: theme.error + "20" }]}>
-              <MaterialCommunityIcons name="eye-off" size={20} color={theme.error} />
+            <View style={[styles.menuItemIcon, { backgroundColor: colors.colorPaletteRedBackground1 }]}>
+              <MaterialCommunityIcons name="eye-off" size={20} color={colors.colorPaletteRedForeground1} />
             </View>
             <View style={styles.menuItemText}>
-              <ThemedText type="body">Hide from Library</ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+              <FluentText variant="body1" color="primary">Hide from Library</FluentText>
+              <FluentText variant="caption1" color="secondary">
                 Remove this song from your All Songs list
-              </ThemedText>
+              </FluentText>
             </View>
           </Pressable>
         </>
@@ -197,28 +204,28 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
   const renderPlaylistSelection = () => (
     <View style={styles.menuContent}>
       <Pressable style={styles.backHeader} onPress={() => handleNavigate("main")}>
-        <MaterialCommunityIcons name="arrow-left" size={20} color={theme.text} />
-        <ThemedText type="body" style={{ marginLeft: Spacing.sm, fontWeight: "600" }}>
+        <MaterialCommunityIcons name="arrow-left" size={20} color={colors.colorNeutralForeground1} />
+        <FluentText variant="body1Strong" color="primary" style={{ marginLeft: FluentSpacing.s }}>
           Select Playlist
-        </ThemedText>
+        </FluentText>
       </Pressable>
 
-      <View style={[styles.divider, { backgroundColor: theme.surfaceVariant }]} />
+      <View style={[styles.divider, { backgroundColor: colors.colorNeutralStroke2 }]} />
 
       {playlists.length === 0 ? (
         <View style={styles.emptyState}>
-          <MaterialCommunityIcons name="playlist-music" size={48} color={theme.textSecondary} />
-          <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
+          <MaterialCommunityIcons name="playlist-music" size={48} color={colors.colorNeutralForeground2} />
+          <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.m }}>
             No playlists yet
-          </ThemedText>
+          </FluentText>
           <Pressable
-            style={[styles.createButton, { backgroundColor: theme.primary }]}
+            style={[styles.createButton, { backgroundColor: colors.colorBrandBackground }]}
             onPress={() => handleNavigate("createPlaylist")}
           >
-            <MaterialCommunityIcons name="plus" size={18} color="#FFFFFF" />
-            <ThemedText type="body" style={{ color: "#FFFFFF", marginLeft: Spacing.xs }}>
+            <MaterialCommunityIcons name="plus" size={18} color={colors.colorNeutralForegroundOnBrand} />
+            <FluentText variant="body1" color="onBrand" style={{ marginLeft: FluentSpacing.xs }}>
               Create Playlist
-            </ThemedText>
+            </FluentText>
           </Pressable>
         </View>
       ) : (
@@ -230,28 +237,28 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
                 key={playlist.id}
                 style={[
                   styles.playlistItem,
-                  { backgroundColor: theme.surface },
+                  { backgroundColor: colors.colorNeutralBackground2 },
                   isAlreadyAdded && { opacity: 0.5 },
                 ]}
                 onPress={() => !isAlreadyAdded && handleAddToPlaylist(playlist)}
                 disabled={isAlreadyAdded || isLoading}
               >
-                <View style={[styles.playlistIcon, { backgroundColor: theme.primary + "15" }]}>
-                  <MaterialCommunityIcons name="playlist-music" size={24} color={theme.primary} />
+                <View style={[styles.playlistIcon, { backgroundColor: colors.colorBrandBackground + "15" }]}>
+                  <MaterialCommunityIcons name="playlist-music" size={24} color={colors.colorBrandForeground1} />
                 </View>
                 <View style={styles.playlistInfo}>
-                  <ThemedText type="body" numberOfLines={1}>
+                  <FluentText variant="body1" color="primary" numberOfLines={1}>
                     {playlist.name}
-                  </ThemedText>
-                  <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                  </FluentText>
+                  <FluentText variant="caption1" color="secondary">
                     {playlist.songIds.length} {playlist.songIds.length === 1 ? "song" : "songs"}
                     {isAlreadyAdded ? " • Already added" : ""}
-                  </ThemedText>
+                  </FluentText>
                 </View>
                 {isAlreadyAdded ? (
-                  <MaterialCommunityIcons name="check-circle" size={20} color={theme.success} />
+                  <MaterialCommunityIcons name="check-circle" size={20} color={colors.colorPaletteGreenForeground1} />
                 ) : (
-                  <MaterialCommunityIcons name="plus-circle-outline" size={20} color={theme.primary} />
+                  <MaterialCommunityIcons name="plus-circle-outline" size={20} color={colors.colorBrandForeground1} />
                 )}
               </Pressable>
             );
@@ -265,36 +272,36 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
     <KeyboardAwareScrollViewCompat>
       <View style={styles.menuContent}>
         <Pressable style={styles.backHeader} onPress={() => handleNavigate("main")}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color={theme.text} />
-          <ThemedText type="body" style={{ marginLeft: Spacing.sm, fontWeight: "600" }}>
+          <MaterialCommunityIcons name="arrow-left" size={20} color={colors.colorNeutralForeground1} />
+          <FluentText variant="body1Strong" color="primary" style={{ marginLeft: FluentSpacing.s }}>
             Create New Playlist
-          </ThemedText>
+          </FluentText>
         </Pressable>
 
-        <View style={[styles.divider, { backgroundColor: theme.surfaceVariant }]} />
+        <View style={[styles.divider, { backgroundColor: colors.colorNeutralStroke2 }]} />
 
         <View style={styles.createForm}>
           <View style={styles.songPreview}>
             <Image source={{ uri: song.artwork }} style={styles.previewArtwork} />
-            <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
+            <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
               First song: {song.title}
-            </ThemedText>
+            </FluentText>
           </View>
 
-          <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.xs }}>
+          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.xs }}>
             Playlist Name
-          </ThemedText>
+          </FluentText>
           <TextInput
             style={[
               styles.textInput,
               {
-                backgroundColor: theme.surfaceVariant,
-                color: theme.text,
-                borderColor: theme.surfaceVariant,
+                backgroundColor: colors.colorNeutralBackground3,
+                color: colors.colorNeutralForeground1,
+                borderColor: colors.colorNeutralStroke2,
               },
             ]}
             placeholder="Enter playlist name..."
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor={colors.colorNeutralForeground3}
             value={newPlaylistName}
             onChangeText={setNewPlaylistName}
             autoFocus
@@ -305,7 +312,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
           <Pressable
             style={[
               styles.createSubmitButton,
-              { backgroundColor: newPlaylistName.trim() ? theme.primary : theme.surfaceVariant },
+              { backgroundColor: newPlaylistName.trim() ? colors.colorBrandBackground : colors.colorNeutralBackground3 },
             ]}
             onPress={handleCreatePlaylist}
             disabled={!newPlaylistName.trim() || isLoading}
@@ -313,18 +320,17 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
             <MaterialCommunityIcons
               name="playlist-plus"
               size={20}
-              color={newPlaylistName.trim() ? "#FFFFFF" : theme.textSecondary}
+              color={newPlaylistName.trim() ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground3}
             />
-            <ThemedText
-              type="body"
+            <FluentText
+              variant="body1Strong"
               style={{
-                color: newPlaylistName.trim() ? "#FFFFFF" : theme.textSecondary,
-                marginLeft: Spacing.sm,
-                fontWeight: "600",
+                color: newPlaylistName.trim() ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground3,
+                marginLeft: FluentSpacing.s,
               }}
             >
               {isLoading ? "Creating..." : "Create Playlist"}
-            </ThemedText>
+            </FluentText>
           </Pressable>
         </View>
       </View>
@@ -344,20 +350,20 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
       <Animated.View
         entering={SlideInDown.springify().damping(20).stiffness(200)}
         exiting={SlideOutDown.duration(200)}
-        style={[styles.menuContainer, { backgroundColor: theme.backgroundDefault }]}
+        style={[styles.menuContainer, { backgroundColor: colors.colorNeutralBackground1 }]}
       >
-        <View style={[styles.handle, { backgroundColor: theme.textSecondary + "40" }]} />
+        <View style={[styles.handle, { backgroundColor: colors.colorNeutralForeground3 + "40" }]} />
         {menuView === "main" && renderMainMenu()}
         {menuView === "selectPlaylist" && renderPlaylistSelection()}
         {menuView === "createPlaylist" && renderCreatePlaylist()}
 
         <Pressable
-          style={[styles.cancelButton, { backgroundColor: theme.surfaceVariant }]}
+          style={[styles.cancelButton, { backgroundColor: colors.colorNeutralBackground3 }]}
           onPress={handleClose}
         >
-          <ThemedText type="body" style={{ fontWeight: "500" }}>
+          <FluentText variant="body1Strong" color="primary">
             Cancel
-          </ThemedText>
+          </FluentText>
         </Pressable>
       </Animated.View>
     </Modal>
@@ -376,9 +382,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    borderTopLeftRadius: BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
-    paddingBottom: Spacing.xl + 20,
+    borderTopLeftRadius: FluentRadius.xLarge,
+    borderTopRightRadius: FluentRadius.xLarge,
+    paddingBottom: FluentSpacing.xl + 20,
     maxHeight: SCREEN_HEIGHT * 0.75,
   },
   handle: {
@@ -386,64 +392,64 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     alignSelf: "center",
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.md,
+    marginTop: FluentSpacing.s,
+    marginBottom: FluentSpacing.m,
   },
   menuContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: FluentSpacing.l,
   },
   songHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.sm,
+    paddingVertical: FluentSpacing.s,
   },
   songArtwork: {
     width: 56,
     height: 56,
-    borderRadius: BorderRadius.md,
+    borderRadius: FluentRadius.medium,
   },
   songInfo: {
     flex: 1,
-    marginLeft: Spacing.md,
+    marginLeft: FluentSpacing.m,
   },
   divider: {
     height: 1,
-    marginVertical: Spacing.md,
+    marginVertical: FluentSpacing.m,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.sm,
+    padding: FluentSpacing.m,
+    borderRadius: FluentRadius.medium,
+    marginBottom: FluentSpacing.s,
   },
   menuItemIcon: {
     width: 40,
     height: 40,
-    borderRadius: BorderRadius.md,
+    borderRadius: FluentRadius.medium,
     justifyContent: "center",
     alignItems: "center",
   },
   menuItemText: {
     flex: 1,
-    marginLeft: Spacing.md,
+    marginLeft: FluentSpacing.m,
   },
   backHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.sm,
+    paddingVertical: FluentSpacing.s,
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: Spacing.xl,
+    paddingVertical: FluentSpacing.xl,
   },
   createButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginTop: Spacing.lg,
+    paddingHorizontal: FluentSpacing.l,
+    paddingVertical: FluentSpacing.m,
+    borderRadius: FluentRadius.medium,
+    marginTop: FluentSpacing.l,
   },
   playlistList: {
     maxHeight: SCREEN_HEIGHT * 0.4,
@@ -451,53 +457,53 @@ const styles = StyleSheet.create({
   playlistItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.sm,
+    padding: FluentSpacing.m,
+    borderRadius: FluentRadius.medium,
+    marginBottom: FluentSpacing.s,
   },
   playlistIcon: {
     width: 48,
     height: 48,
-    borderRadius: BorderRadius.md,
+    borderRadius: FluentRadius.medium,
     justifyContent: "center",
     alignItems: "center",
   },
   playlistInfo: {
     flex: 1,
-    marginLeft: Spacing.md,
+    marginLeft: FluentSpacing.m,
   },
   createForm: {
-    paddingVertical: Spacing.sm,
+    paddingVertical: FluentSpacing.s,
   },
   songPreview: {
     alignItems: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   previewArtwork: {
     width: 80,
     height: 80,
-    borderRadius: BorderRadius.lg,
+    borderRadius: FluentRadius.large,
   },
   textInput: {
     height: 48,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    fontSize: Typography.body.fontSize,
+    borderRadius: FluentRadius.medium,
+    paddingHorizontal: FluentSpacing.m,
+    fontSize: FluentTypography.body1.fontSize,
     borderWidth: 1,
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   createSubmitButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     height: 48,
-    borderRadius: BorderRadius.md,
+    borderRadius: FluentRadius.medium,
   },
   cancelButton: {
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.md,
+    marginHorizontal: FluentSpacing.l,
+    marginTop: FluentSpacing.m,
     height: 48,
-    borderRadius: BorderRadius.md,
+    borderRadius: FluentRadius.medium,
     justifyContent: "center",
     alignItems: "center",
   },

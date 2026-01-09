@@ -7,7 +7,6 @@ import {
   Modal,
   ScrollView,
   Dimensions,
-  Text,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,12 +17,12 @@ import Animated, {
   withTiming,
   runOnJS,
 } from "react-native-reanimated";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import {
   FluentControlRadius,
   FluentSpacing,
-  FluentTypography,
   FluentIconSize,
   FluentDuration,
   FluentCurve,
@@ -60,7 +59,7 @@ export function ContextMenu({
   onSelect,
   anchorPosition,
 }: ContextMenuProps) {
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
   const insets = useSafeAreaInsets();
   const [isRendered, setIsRendered] = useState(visible);
@@ -68,7 +67,7 @@ export function ContextMenu({
   const opacity = useSharedValue(0);
   const scrimOpacity = useSharedValue(0);
 
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const handleAnimationComplete = useCallback((toVisible: boolean) => {
     if (!toVisible) {
@@ -175,7 +174,7 @@ export function ContextMenu({
     >
       <View style={styles.overlay}>
         <Animated.View
-          style={[styles.scrim, { backgroundColor: theme.scrim }, scrimStyle]}
+          style={[styles.scrim, { backgroundColor: colors.colorNeutralBackgroundInverted }, scrimStyle]}
         >
           <Pressable style={styles.scrimPressable} onPress={handleDismiss} />
         </Animated.View>
@@ -184,7 +183,7 @@ export function ContextMenu({
           style={[
             styles.menu,
             {
-              backgroundColor: fluentColors.colorNeutralBackground1,
+              backgroundColor: colors.colorNeutralBackground1,
               width: MENU_WIDTH,
             },
             getShadowStyle('shadow16', isDark),
@@ -210,7 +209,7 @@ export function ContextMenu({
                   styles.menuItem,
                   {
                     backgroundColor: pressed
-                      ? fluentColors.colorNeutralBackground1Hover
+                      ? colors.colorNeutralBackground1Hover
                       : "transparent",
                   },
                   index === 0 && styles.firstItem,
@@ -223,29 +222,29 @@ export function ContextMenu({
                     size={FluentIconSize.regular}
                     color={
                       item.disabled
-                        ? fluentColors.colorNeutralForegroundDisabled
+                        ? colors.colorNeutralForegroundDisabled
                         : item.destructive
-                          ? fluentColors.colorPaletteRedForeground1
-                          : fluentColors.colorNeutralForeground1
+                          ? colors.colorPaletteRedForeground1
+                          : colors.colorNeutralForeground1
                     }
                     style={styles.menuIcon}
                   />
                 ) : null}
-                <Text
+                <FluentText
+                  variant="body1"
                   style={[
                     styles.menuLabel,
-                    FluentTypography.body1,
                     {
                       color: item.disabled
-                        ? fluentColors.colorNeutralForegroundDisabled
+                        ? colors.colorNeutralForegroundDisabled
                         : item.destructive
-                          ? fluentColors.colorPaletteRedForeground1
-                          : fluentColors.colorNeutralForeground1,
+                          ? colors.colorPaletteRedForeground1
+                          : colors.colorNeutralForeground1,
                     },
                   ]}
                 >
                   {item.label}
-                </Text>
+                </FluentText>
               </Pressable>
             ))}
           </ScrollView>

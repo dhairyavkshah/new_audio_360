@@ -6,8 +6,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentText, FluentSurface } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { AudioWaveform } from "@/components/AudioWaveform";
@@ -16,7 +15,7 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { useStudioContext, REVERB_PRESETS, NOISE_REDUCTION_LEVELS } from "@/contexts/StudioContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
 import { studioAudioEngine } from "@/services/StudioAudioEngine";
 
@@ -31,7 +30,8 @@ export default function EffectsScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<EffectsRouteProp>();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { selectedReverb, noiseReduction, setSelectedReverb, setNoiseReduction } = useStudioContext();
   const { isNoiseReductionUnlocked, isReverbUnlocked } = useSubscription();
 
@@ -120,7 +120,7 @@ export default function EffectsScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentSurface style={styles.container} background="neutral1">
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -131,16 +131,16 @@ export default function EffectsScreen() {
         <GlassCard style={styles.previewCard}>
           <View style={styles.previewHeader}>
             <View>
-              <ThemedText type="body" style={{ fontWeight: "600" }}>
+              <FluentText variant="body1" style={{ fontWeight: "600" }}>
                 Effect Preview
-              </ThemedText>
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>
+              </FluentText>
+              <FluentText variant="body2" color="secondary">
                 Reverb: {selectedReverb} • Noise: {noiseReduction}
-              </ThemedText>
+              </FluentText>
             </View>
             <Pressable
               onPress={handlePlayPreview}
-              style={[styles.playButton, { backgroundColor: theme.primary }]}
+              style={[styles.playButton, { backgroundColor: colors.colorBrandBackground }]}
             >
               <MaterialCommunityIcons name={isPlaying ? "pause" : "play"} size={FluentIconSize.regular} color="#FFFFFF" />
             </Pressable>
@@ -150,20 +150,20 @@ export default function EffectsScreen() {
             barCount={50}
             barWidth={3}
             height={60}
-            color={theme.secondary}
+            color={colors.colorBrandForeground2}
           />
         </GlassCard>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="volume-off" size={FluentIconSize.regular} color={theme.primary} />
-            <ThemedText type="h4" style={styles.sectionTitle}>
+            <MaterialCommunityIcons name="volume-off" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+            <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Noise Reduction
-            </ThemedText>
+            </FluentText>
           </View>
-          <ThemedText type="small" style={[styles.sectionDesc, { color: theme.textSecondary }]}>
+          <FluentText variant="body2" color="secondary" style={styles.sectionDesc}>
             Reduce background noise from your recording
-          </ThemedText>
+          </FluentText>
           <View style={styles.effectsContainer}>
             {NOISE_REDUCTION_LEVELS.map((level) => (
               <EffectChip
@@ -179,14 +179,14 @@ export default function EffectsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="waveform" size={FluentIconSize.regular} color={theme.primary} />
-            <ThemedText type="h4" style={styles.sectionTitle}>
+            <MaterialCommunityIcons name="waveform" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+            <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Reverb
-            </ThemedText>
+            </FluentText>
           </View>
-          <ThemedText type="small" style={[styles.sectionDesc, { color: theme.textSecondary }]}>
+          <FluentText variant="body2" color="secondary" style={styles.sectionDesc}>
             Add space and depth to your voice
-          </ThemedText>
+          </FluentText>
           <View style={styles.effectsContainer}>
             {REVERB_PRESETS.map((reverb) => (
               <EffectChip
@@ -202,15 +202,15 @@ export default function EffectsScreen() {
 
         <Pressable
           onPress={handleContinue}
-          style={[styles.continueButton, { backgroundColor: theme.primary }]}
+          style={[styles.continueButton, { backgroundColor: colors.colorBrandBackground }]}
         >
-          <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+          <FluentText variant="body1" color="onBrand" style={{ fontWeight: "600" }}>
             Save Recording
-          </ThemedText>
+          </FluentText>
           <MaterialCommunityIcons name="arrow-right" size={FluentIconSize.regular} color="#FFFFFF" />
         </Pressable>
       </ScrollView>
-    </ThemedView>
+    </FluentSurface>
   );
 }
 

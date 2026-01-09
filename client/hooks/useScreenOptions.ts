@@ -2,7 +2,8 @@ import { Platform } from "react-native";
 import { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { isLiquidGlassAvailable } from "expo-glass-effect";
 
-import { useTheme } from "@/hooks/useTheme";
+import { useThemeContext } from "@/contexts/ThemeContext";
+import { FluentLightColors, FluentDarkColors, FluentTypography } from "@/constants/fluent2";
 
 interface UseScreenOptionsParams {
   transparent?: boolean;
@@ -11,29 +12,30 @@ interface UseScreenOptionsParams {
 export function useScreenOptions({
   transparent = true,
 }: UseScreenOptionsParams = {}): NativeStackNavigationOptions {
-  const { theme, isDark } = useTheme();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   return {
     headerTitleAlign: "left",
     headerTransparent: transparent,
     headerBlurEffect: isDark ? "dark" : "light",
-    headerTintColor: theme.text,
+    headerTintColor: colors.colorNeutralForeground1,
     headerStyle: {
       backgroundColor: Platform.select({
         ios: undefined,
-        android: theme.surfaceContainer,
-        web: theme.surfaceContainer,
+        android: colors.colorNeutralBackground2,
+        web: colors.colorNeutralBackground2,
       }),
     },
     headerTitleStyle: {
-      fontWeight: "500" as const,
-      fontSize: 20,
+      fontWeight: FluentTypography.subtitle1.fontWeight,
+      fontSize: FluentTypography.subtitle1.fontSize,
     },
     gestureEnabled: true,
     gestureDirection: "horizontal",
     fullScreenGestureEnabled: isLiquidGlassAvailable() ? false : true,
     contentStyle: {
-      backgroundColor: theme.backgroundRoot,
+      backgroundColor: colors.colorNeutralBackground1,
     },
   };
 }

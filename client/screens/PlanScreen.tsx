@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useSubscription, PRICING, SupportedCurrency } from "@/contexts/SubscriptionContext";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import { FluentSpacing, FluentControlRadius } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { detectUserRegion } from "@/lib/payment";
 
@@ -32,9 +30,9 @@ const FEATURES: FeatureItem[] = [
 ];
 
 export default function PlanScreen() {
-  const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { plan, isLoading, purchaseStandard, purchasePremium, upgradeToPremiun, restorePurchases } = useSubscription();
 
   const [currency, setCurrency] = useState<SupportedCurrency>("USD");
@@ -101,11 +99,11 @@ export default function PlanScreen() {
   const getPlanBadge = () => {
     switch (plan) {
       case "premium":
-        return { label: "Premium", color: theme.warning, icon: "crown" as const };
+        return { label: "Premium", color: colors.colorPaletteYellowForeground1, icon: "crown" as const };
       case "standard":
-        return { label: "Standard", color: theme.primary, icon: "check-circle" as const };
+        return { label: "Standard", color: colors.colorBrandForeground1, icon: "check-circle" as const };
       default:
-        return { label: "Free Trial", color: theme.textSecondary, icon: "account-outline" as const };
+        return { label: "Free Trial", color: colors.colorNeutralForeground2, icon: "account-outline" as const };
     }
   };
 
@@ -118,25 +116,25 @@ export default function PlanScreen() {
           <MaterialCommunityIcons 
             name={feature.icon} 
             size={20} 
-            color={theme.textSecondary} 
+            color={colors.colorNeutralForeground2} 
           />
-          <ThemedText type="body" style={styles.featureText}>
+          <FluentText variant="body1" style={styles.featureText}>
             {feature.text}
-          </ThemedText>
+          </FluentText>
         </View>
         <View style={styles.featureChecks}>
           <View style={[styles.checkBox, { width: 60 }]}>
             {feature.standard ? (
-              <MaterialCommunityIcons name="check" size={18} color={theme.success} />
+              <MaterialCommunityIcons name="check" size={18} color={colors.colorPaletteGreenForeground1} />
             ) : (
-              <MaterialCommunityIcons name="close" size={18} color={theme.error} />
+              <MaterialCommunityIcons name="close" size={18} color={colors.colorPaletteRedForeground1} />
             )}
           </View>
           <View style={[styles.checkBox, { width: 60 }]}>
             {feature.premium ? (
-              <MaterialCommunityIcons name="check" size={18} color={theme.success} />
+              <MaterialCommunityIcons name="check" size={18} color={colors.colorPaletteGreenForeground1} />
             ) : (
-              <MaterialCommunityIcons name="close" size={18} color={theme.error} />
+              <MaterialCommunityIcons name="close" size={18} color={colors.colorPaletteRedForeground1} />
             )}
           </View>
         </View>
@@ -145,7 +143,7 @@ export default function PlanScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -157,56 +155,56 @@ export default function PlanScreen() {
           <View style={[styles.planBadge, { backgroundColor: badge.color + "20" }]}>
             <MaterialCommunityIcons name={badge.icon} size={24} color={badge.color} />
           </View>
-          <ThemedText type="h4" style={styles.currentPlanTitle}>
+          <FluentText variant="title3" style={styles.currentPlanTitle}>
             Current Plan
-          </ThemedText>
-          <ThemedText type="h3" style={[styles.planName, { color: badge.color }]}>
+          </FluentText>
+          <FluentText variant="title1" style={[styles.planName, { color: badge.color }]}>
             {badge.label}
-          </ThemedText>
+          </FluentText>
           {plan === "premium" && (
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: FluentSpacing.xs }}>
+            <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
               All features unlocked
-            </ThemedText>
+            </FluentText>
           )}
         </GlassCard>
 
         <View style={styles.comparisonSection}>
-          <ThemedText type="h4" style={styles.sectionTitle}>
+          <FluentText variant="title3" style={styles.sectionTitle}>
             Compare Plans
-          </ThemedText>
+          </FluentText>
           
-          <View style={[styles.comparisonHeader, { backgroundColor: theme.backgroundSecondary }]}>
+          <View style={[styles.comparisonHeader, { backgroundColor: colors.colorNeutralBackground2 }]}>
             <View style={styles.featureLeft}>
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>
+              <FluentText variant="caption1" color="secondary">
                 Features
-              </ThemedText>
+              </FluentText>
             </View>
             <View style={styles.featureChecks}>
               <View style={[styles.checkBox, { width: 60 }]}>
-                <ThemedText type="small" style={{ color: theme.primary, fontWeight: "600" }}>
+                <FluentText variant="caption1" color="brand" style={{ fontWeight: "600" }}>
                   Standard
-                </ThemedText>
+                </FluentText>
               </View>
               <View style={[styles.checkBox, { width: 60 }]}>
-                <ThemedText type="small" style={{ color: theme.warning, fontWeight: "600" }}>
+                <FluentText variant="caption1" style={{ color: colors.colorPaletteYellowForeground1, fontWeight: "600" }}>
                   Premium
-                </ThemedText>
+                </FluentText>
               </View>
             </View>
           </View>
 
-          <View style={[styles.featuresList, { backgroundColor: theme.backgroundSecondary }]}>
+          <View style={[styles.featuresList, { backgroundColor: colors.colorNeutralBackground2 }]}>
             {FEATURES.map(renderFeatureRow)}
           </View>
         </View>
 
         <View style={styles.pricingSection}>
-          <ThemedText type="h4" style={styles.sectionTitle}>
+          <FluentText variant="title3" style={styles.sectionTitle}>
             One-Time Purchase
-          </ThemedText>
-          <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: FluentSpacing.l }}>
+          </FluentText>
+          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.l }}>
             Pay once, own forever. No subscriptions.
-          </ThemedText>
+          </FluentText>
 
           {plan === "free" && (
             <Pressable
@@ -215,7 +213,7 @@ export default function PlanScreen() {
               style={[
                 styles.planButton,
                 { 
-                  backgroundColor: theme.primary,
+                  backgroundColor: colors.colorBrandBackground,
                   opacity: isProcessing ? 0.6 : 1,
                 },
               ]}
@@ -223,17 +221,17 @@ export default function PlanScreen() {
               <View style={styles.planButtonContent}>
                 <MaterialCommunityIcons name="check-circle" size={24} color="#FFFFFF" />
                 <View style={styles.planButtonText}>
-                  <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                  <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
                     Standard
-                  </ThemedText>
-                  <ThemedText type="small" style={{ color: "rgba(255,255,255,0.8)" }}>
+                  </FluentText>
+                  <FluentText variant="caption1" style={{ color: "rgba(255,255,255,0.8)" }}>
                     5 themes, Equalizer, Playlists
-                  </ThemedText>
+                  </FluentText>
                 </View>
               </View>
-              <ThemedText type="h4" style={{ color: "#FFFFFF" }}>
+              <FluentText variant="title3" style={{ color: "#FFFFFF" }}>
                 {pricing.symbol}{pricing.standard}
-              </ThemedText>
+              </FluentText>
             </Pressable>
           )}
 
@@ -244,7 +242,7 @@ export default function PlanScreen() {
               style={[
                 styles.planButton,
                 { 
-                  backgroundColor: theme.warning,
+                  backgroundColor: colors.colorPaletteYellowForeground1,
                   opacity: isProcessing ? 0.6 : 1,
                   marginTop: plan === "free" ? FluentSpacing.m : 0,
                 },
@@ -253,26 +251,26 @@ export default function PlanScreen() {
               <View style={styles.planButtonContent}>
                 <MaterialCommunityIcons name="crown" size={24} color="#FFFFFF" />
                 <View style={styles.planButtonText}>
-                  <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                  <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
                     {plan === "standard" ? "Upgrade to Premium" : "Premium"}
-                  </ThemedText>
-                  <ThemedText type="small" style={{ color: "rgba(255,255,255,0.8)" }}>
+                  </FluentText>
+                  <FluentText variant="caption1" style={{ color: "rgba(255,255,255,0.8)" }}>
                     All 55 themes, Immersive Audio
-                  </ThemedText>
+                  </FluentText>
                 </View>
               </View>
-              <ThemedText type="h4" style={{ color: "#FFFFFF" }}>
+              <FluentText variant="title3" style={{ color: "#FFFFFF" }}>
                 {pricing.symbol}{plan === "standard" ? pricing.upgrade : pricing.premium}
-              </ThemedText>
+              </FluentText>
             </Pressable>
           )}
 
           {plan === "premium" && (
-            <View style={[styles.allUnlockedCard, { backgroundColor: theme.success + "15" }]}>
-              <MaterialCommunityIcons name="check-decagram" size={32} color={theme.success} />
-              <ThemedText type="body" style={{ color: theme.success, marginTop: FluentSpacing.s }}>
+            <View style={[styles.allUnlockedCard, { backgroundColor: colors.colorPaletteGreenForeground1 + "15" }]}>
+              <MaterialCommunityIcons name="check-decagram" size={32} color={colors.colorPaletteGreenForeground1} />
+              <FluentText variant="body1" style={{ color: colors.colorPaletteGreenForeground1, marginTop: FluentSpacing.s }}>
                 You have access to all features!
-              </ThemedText>
+              </FluentText>
             </View>
           )}
         </View>
@@ -280,43 +278,40 @@ export default function PlanScreen() {
         <Pressable
           onPress={handleRestore}
           disabled={isProcessing}
-          style={[styles.restoreButton, { backgroundColor: theme.backgroundSecondary }]}
+          style={[styles.restoreButton, { backgroundColor: colors.colorNeutralBackground2 }]}
         >
-          <MaterialCommunityIcons name="refresh" size={20} color={theme.textSecondary} />
-          <ThemedText type="body" style={{ color: theme.textSecondary, marginLeft: FluentSpacing.s }}>
+          <MaterialCommunityIcons name="refresh" size={20} color={colors.colorNeutralForeground2} />
+          <FluentText variant="body1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
             Restore Purchases
-          </ThemedText>
+          </FluentText>
         </Pressable>
 
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="shield-check" size={16} color={theme.success} />
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: FluentSpacing.s }}>
+            <MaterialCommunityIcons name="shield-check" size={16} color={colors.colorPaletteGreenForeground1} />
+            <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
               Secure payment via Google Play
-            </ThemedText>
+            </FluentText>
           </View>
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="infinity" size={16} color={theme.primary} />
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: FluentSpacing.s }}>
+            <MaterialCommunityIcons name="infinity" size={16} color={colors.colorBrandForeground1} />
+            <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
               Lifetime access - no recurring fees
-            </ThemedText>
+            </FluentText>
           </View>
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="cellphone" size={16} color={theme.secondary} />
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: FluentSpacing.s }}>
+            <MaterialCommunityIcons name="cellphone" size={16} color={colors.colorBrandForeground2} />
+            <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
               100% offline - works without internet
-            </ThemedText>
+            </FluentText>
           </View>
         </View>
       </ScrollView>
-    </ThemedView>
+    </FluentScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
     paddingHorizontal: Layout.horizontalPadding,
   },

@@ -5,12 +5,12 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import { Spacing, BorderRadius, Layout } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { Layout } from "@/constants/theme";
 import { Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 
@@ -19,7 +19,8 @@ type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 export default function QueueScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { playTapSound } = useUiSound();
   const { queue, currentSong, playSong, removeFromQueue } = usePlayerContext();
   const [selectedSongs, setSelectedSongs] = useState<string[]>([]);
@@ -91,7 +92,7 @@ export default function QueueScreen() {
       <Pressable
         style={[
           styles.songItem,
-          { backgroundColor: isSelected ? theme.primary + "20" : theme.backgroundDefault },
+          { backgroundColor: isSelected ? colors.colorBrandBackground + "20" : colors.colorNeutralBackground1 },
           isCurrentSong && styles.currentSong,
         ]}
         onPress={() => handleSongPress(item)}
@@ -103,32 +104,32 @@ export default function QueueScreen() {
             <MaterialCommunityIcons
               name={isSelected ? "checkbox-marked-circle" : "checkbox-blank-circle-outline"}
               size={24}
-              color={isSelected ? theme.primary : theme.textSecondary}
+              color={isSelected ? colors.colorBrandForeground1 : colors.colorNeutralForeground2}
             />
           ) : (
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+            <FluentText variant="caption1" color="secondary">
               {index + 1}
-            </ThemedText>
+            </FluentText>
           )}
         </View>
         <Image source={{ uri: item.artwork }} style={styles.artwork} />
         <View style={styles.songInfo}>
-          <ThemedText 
-            type="body" 
+          <FluentText 
+            variant="body1" 
             numberOfLines={1} 
-            style={[styles.songTitle, isCurrentSong && { color: theme.primary }]}
+            style={[styles.songTitle, isCurrentSong && { color: colors.colorBrandForeground1 }]}
           >
             {item.title}
-          </ThemedText>
-          <ThemedText type="caption" numberOfLines={1} style={{ color: theme.textSecondary }}>
+          </FluentText>
+          <FluentText variant="caption1" color="secondary" numberOfLines={1}>
             {item.artist}
-          </ThemedText>
+          </FluentText>
         </View>
-        <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+        <FluentText variant="caption1" color="secondary">
           {formatDuration(item.duration)}
-        </ThemedText>
+        </FluentText>
         {isCurrentSong ? (
-          <View style={[styles.playingBadge, { backgroundColor: theme.primary }]}>
+          <View style={[styles.playingBadge, { backgroundColor: colors.colorBrandBackground }]}>
             <MaterialCommunityIcons name="volume-high" size={12} color="#FFFFFF" />
           </View>
         ) : null}
@@ -140,9 +141,9 @@ export default function QueueScreen() {
     <View style={styles.headerSection}>
       {currentSong ? (
         <>
-          <ThemedText type="h3" style={styles.sectionTitle}>Now Playing</ThemedText>
+          <FluentText variant="title3" style={styles.sectionTitle}>Now Playing</FluentText>
           <Pressable
-            style={[styles.currentSongCard, { backgroundColor: theme.surfaceVariant }]}
+            style={[styles.currentSongCard, { backgroundColor: colors.colorNeutralBackground3 }]}
             onPress={() => {
               playTapSound();
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -151,57 +152,57 @@ export default function QueueScreen() {
           >
             <Image source={{ uri: currentSong.artwork }} style={styles.currentArtwork} />
             <View style={styles.currentInfo}>
-              <ThemedText type="body" numberOfLines={1} style={{ fontWeight: "600" }}>
+              <FluentText variant="body1Strong" numberOfLines={1}>
                 {currentSong.title}
-              </ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+              </FluentText>
+              <FluentText variant="caption1" color="secondary">
                 {currentSong.artist}
-              </ThemedText>
+              </FluentText>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={24} color={theme.textSecondary} />
+            <MaterialCommunityIcons name="chevron-right" size={24} color={colors.colorNeutralForeground2} />
           </Pressable>
         </>
       ) : null}
       
       <View style={styles.upNextHeader}>
-        <ThemedText type="h3" style={styles.sectionTitle}>
+        <FluentText variant="title3" style={styles.sectionTitle}>
           Up Next ({upNext.length} songs)
-        </ThemedText>
+        </FluentText>
       </View>
     </View>
   );
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <MaterialCommunityIcons name="playlist-music" size={64} color={theme.textSecondary} />
-      <ThemedText type="body" style={[styles.emptyText, { color: theme.textSecondary }]}>
+      <MaterialCommunityIcons name="playlist-music" size={64} color={colors.colorNeutralForeground2} />
+      <FluentText variant="body1" color="secondary" style={styles.emptyText}>
         Your queue is empty
-      </ThemedText>
-      <ThemedText type="caption" style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+      </FluentText>
+      <FluentText variant="caption1" color="secondary" style={styles.emptySubtext}>
         Play a song to start building your queue
-      </ThemedText>
+      </FluentText>
     </View>
   );
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={false}>
       {selectionMode ? (
-        <View style={[styles.selectionHeader, { backgroundColor: theme.surfaceVariant }]}>
+        <View style={[styles.selectionHeader, { backgroundColor: colors.colorNeutralBackground3 }]}>
           <Pressable 
             style={styles.selectionButton}
             onPress={exitSelectionMode}
           >
-            <MaterialCommunityIcons name="close" size={24} color={theme.text} />
+            <MaterialCommunityIcons name="close" size={24} color={colors.colorNeutralForeground1} />
           </Pressable>
-          <ThemedText type="body" style={{ fontWeight: "600" }}>
+          <FluentText variant="body1Strong">
             {selectedSongs.length} selected
-          </ThemedText>
+          </FluentText>
           <View style={styles.selectionActions}>
             <Pressable 
               style={styles.selectionButton}
               onPress={handleRemoveSelected}
             >
-              <MaterialCommunityIcons name="delete-outline" size={24} color={theme.error || "#FF4D67"} />
+              <MaterialCommunityIcons name="delete-outline" size={24} color={colors.colorPaletteRedForeground1} />
             </Pressable>
           </View>
         </View>
@@ -215,7 +216,7 @@ export default function QueueScreen() {
         ListEmptyComponent={currentSong ? undefined : renderEmpty}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: insets.bottom + Spacing.xl },
+          { paddingBottom: insets.bottom + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
@@ -225,40 +226,37 @@ export default function QueueScreen() {
         updateCellsBatchingPeriod={50}
         getItemLayout={getItemLayout}
       />
-    </ThemedView>
+    </FluentScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   listContent: {
     paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.l,
+    paddingTop: FluentSpacing.l,
   },
   headerSection: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   sectionTitle: {
-    marginBottom: Spacing.l,
+    marginBottom: FluentSpacing.l,
     fontWeight: "600",
   },
   currentSongCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.l,
-    borderRadius: BorderRadius.large,
-    marginBottom: Spacing.xl,
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
+    marginBottom: FluentSpacing.xl,
   },
   currentArtwork: {
     width: 56,
     height: 56,
-    borderRadius: BorderRadius.medium,
+    borderRadius: FluentControlRadius.card,
   },
   currentInfo: {
     flex: 1,
-    marginLeft: Spacing.l,
+    marginLeft: FluentSpacing.l,
   },
   upNextHeader: {
     flexDirection: "row",
@@ -268,9 +266,9 @@ const styles = StyleSheet.create({
   songItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.m,
-    borderRadius: BorderRadius.medium,
-    marginBottom: Spacing.xs,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
+    marginBottom: FluentSpacing.xs,
   },
   currentSong: {
     borderLeftWidth: 3,
@@ -283,12 +281,12 @@ const styles = StyleSheet.create({
   artwork: {
     width: 48,
     height: 48,
-    borderRadius: BorderRadius.small,
-    marginLeft: Spacing.xs,
+    borderRadius: FluentControlRadius.chip,
+    marginLeft: FluentSpacing.xs,
   },
   songInfo: {
     flex: 1,
-    marginLeft: Spacing.m,
+    marginLeft: FluentSpacing.m,
   },
   songTitle: {
     fontWeight: "500",
@@ -299,19 +297,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: Spacing.m,
+    marginLeft: FluentSpacing.m,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: Spacing.xxxl,
+    paddingVertical: FluentSpacing.xxxl,
   },
   emptyText: {
-    marginTop: Spacing.xl,
+    marginTop: FluentSpacing.xl,
   },
   emptySubtext: {
-    marginTop: Spacing.xs,
+    marginTop: FluentSpacing.xs,
     textAlign: "center",
   },
   selectionHeader: {
@@ -319,7 +317,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Layout.horizontalPadding,
-    paddingVertical: Spacing.m,
+    paddingVertical: FluentSpacing.m,
   },
   selectionButton: {
     width: 48,

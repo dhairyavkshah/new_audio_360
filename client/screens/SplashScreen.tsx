@@ -2,9 +2,9 @@ import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated, Platform } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 
 type SplashScreenProps = {
   onFinish: () => void;
@@ -13,7 +13,8 @@ type SplashScreenProps = {
 const useNativeDriver = Platform.OS !== "web";
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -54,7 +55,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+    <View style={[styles.container, { backgroundColor: colors.colorNeutralBackground1 }]}>
       <Animated.View
         style={[
           styles.content,
@@ -64,27 +65,27 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           },
         ]}
       >
-        <View style={[styles.iconContainer, { backgroundColor: theme.primary }]}>
+        <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground }]}>
           <Image
             source={require("../../assets/images/icon.png")}
             style={styles.icon}
             contentFit="contain"
           />
         </View>
-        <ThemedText type="h1" style={styles.title}>
+        <FluentText variant="title1" align="center" style={styles.title}>
           New Audio 360
-        </ThemedText>
-        <ThemedText type="body" style={[styles.tagline, { color: theme.textSecondary }]}>
+        </FluentText>
+        <FluentText variant="body1" color="secondary" align="center">
           Your personal music experience
-        </ThemedText>
+        </FluentText>
       </Animated.View>
       <View style={[styles.footer, { bottom: insets.bottom + FluentSpacing.xxxl }]}>
-        <ThemedText type="caption" style={{ color: theme.textTertiary }}>
+        <FluentText variant="caption1" color="tertiary" align="center">
           By: Dhairya Shah (The Team 360)
-        </ThemedText>
-        <ThemedText type="caption" style={{ color: theme.textTertiary, marginTop: FluentSpacing.xs }}>
+        </FluentText>
+        <FluentText variant="caption1" color="tertiary" align="center" style={{ marginTop: FluentSpacing.xs }}>
           v1.0.0
-        </ThemedText>
+        </FluentText>
       </View>
     </View>
   );
@@ -114,10 +115,6 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: FluentSpacing.s,
-    textAlign: "center",
-  },
-  tagline: {
-    textAlign: "center",
   },
   footer: {
     position: "absolute",

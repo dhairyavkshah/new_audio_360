@@ -6,14 +6,13 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentText, FluentSurface } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { Dialog } from "@/components/Dialog";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useStudioContext } from "@/contexts/StudioContext";
-import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { addRecording, Recording } from "@/lib/storage";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
 import { studioAudioEngine } from "@/services/StudioAudioEngine";
@@ -27,7 +26,8 @@ export default function SaveScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SaveRouteProp>();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { currentProject, selectedReverb, noiseReduction } = useStudioContext();
 
   const [title, setTitle] = useState("");
@@ -170,7 +170,7 @@ export default function SaveScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentSurface style={styles.container} background="neutral1">
       <KeyboardAwareScrollViewCompat
         contentContainerStyle={[
           styles.content,
@@ -181,40 +181,40 @@ export default function SaveScreen() {
         {currentProject?.backgroundTrackTitle ? (
           <GlassCard style={styles.previewCard}>
             <View style={styles.previewContent}>
-              <View style={[styles.artworkPlaceholder, { backgroundColor: theme.primary + "30" }]}>
-                <MaterialCommunityIcons name="music" size={FluentIconSize.xlarge} color={theme.primary} />
+              <View style={[styles.artworkPlaceholder, { backgroundColor: colors.colorBrandForeground1 + "30" }]}>
+                <MaterialCommunityIcons name="music" size={FluentIconSize.xlarge} color={colors.colorBrandForeground1} />
               </View>
               <View style={styles.previewInfo}>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                <FluentText variant="caption" color="secondary">
                   Based on
-                </ThemedText>
-                <ThemedText type="body" style={{ fontWeight: "600" }} numberOfLines={1}>
+                </FluentText>
+                <FluentText variant="body1" style={{ fontWeight: "600" }} numberOfLines={1}>
                   {currentProject.backgroundTrackTitle}
-                </ThemedText>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                </FluentText>
+                <FluentText variant="body2" color="secondary">
                   Karaoke Recording
-                </ThemedText>
+                </FluentText>
               </View>
             </View>
           </GlassCard>
         ) : null}
 
         <View style={styles.section}>
-          <ThemedText type="h4" style={styles.sectionTitle}>
+          <FluentText variant="subtitle1" style={styles.sectionTitle}>
             Recording Title
-          </ThemedText>
-          <View style={[styles.inputContainer, { backgroundColor: theme.backgroundSecondary }]}>
+          </FluentText>
+          <View style={[styles.inputContainer, { backgroundColor: colors.colorNeutralBackground2 }]}>
             <TextInput
-              style={[styles.input, { color: theme.text }]}
+              style={[styles.input, { color: colors.colorNeutralForeground1 }]}
               value={title}
               onChangeText={setTitle}
               placeholder="Enter a title..."
-              placeholderTextColor={theme.textSecondary}
+              placeholderTextColor={colors.colorNeutralForeground2}
               maxLength={100}
             />
             {title.length > 0 ? (
               <Pressable onPress={() => setTitle("")}>
-                <MaterialCommunityIcons name="close" size={FluentIconSize.regular} color={theme.textSecondary} />
+                <MaterialCommunityIcons name="close" size={FluentIconSize.regular} color={colors.colorNeutralForeground2} />
               </Pressable>
             ) : null}
           </View>
@@ -223,30 +223,30 @@ export default function SaveScreen() {
         <GlassCard style={styles.infoCard}>
           <View style={styles.infoRow}>
             <View style={styles.infoItem}>
-              <MaterialCommunityIcons name="waveform" size={FluentIconSize.regular} color={theme.primary} />
-              <ThemedText type="small" style={{ marginLeft: FluentSpacing.s }}>
+              <MaterialCommunityIcons name="waveform" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+              <FluentText variant="body2" style={{ marginLeft: FluentSpacing.s }}>
                 {selectedReverb}
-              </ThemedText>
+              </FluentText>
             </View>
             <View style={styles.infoItem}>
-              <MaterialCommunityIcons name="volume-off" size={FluentIconSize.regular} color={theme.primary} />
-              <ThemedText type="small" style={{ marginLeft: FluentSpacing.s }}>
+              <MaterialCommunityIcons name="volume-off" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+              <FluentText variant="body2" style={{ marginLeft: FluentSpacing.s }}>
                 Noise: {noiseReduction}
-              </ThemedText>
+              </FluentText>
             </View>
           </View>
         </GlassCard>
 
         <GlassCard style={styles.qualityCard}>
           <View style={styles.qualityContent}>
-            <MaterialCommunityIcons name="quality-high" size={FluentIconSize.medium} color={theme.primary} />
+            <MaterialCommunityIcons name="quality-high" size={FluentIconSize.medium} color={colors.colorBrandForeground1} />
             <View style={styles.qualityText}>
-              <ThemedText type="body" style={{ fontWeight: "600" }}>
+              <FluentText variant="body1" style={{ fontWeight: "600" }}>
                 High Quality Export
-              </ThemedText>
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>
+              </FluentText>
+              <FluentText variant="body2" color="secondary">
                 320kbps AAC • Saved to device
-              </ThemedText>
+              </FluentText>
             </View>
           </View>
         </GlassCard>
@@ -256,22 +256,22 @@ export default function SaveScreen() {
           disabled={isSaving}
           style={[
             styles.saveButton,
-            { backgroundColor: theme.primary, opacity: isSaving ? 0.7 : 1 },
+            { backgroundColor: colors.colorBrandBackground, opacity: isSaving ? 0.7 : 1 },
           ]}
         >
           {isSaving ? (
             <View style={styles.savingContent}>
               <MaterialCommunityIcons name="loading" size={FluentIconSize.regular} color="#FFFFFF" />
-              <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.s }}>
+              <FluentText variant="body1" color="onBrand" style={{ fontWeight: "600", marginLeft: FluentSpacing.s }}>
                 {saveProgress || "Saving..."}
-              </ThemedText>
+              </FluentText>
             </View>
           ) : (
             <>
               <MaterialCommunityIcons name="content-save" size={FluentIconSize.regular} color="#FFFFFF" />
-              <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+              <FluentText variant="body1" color="onBrand" style={{ fontWeight: "600" }}>
                 Save Recording
-              </ThemedText>
+              </FluentText>
             </>
           )}
         </Pressable>
@@ -296,7 +296,7 @@ export default function SaveScreen() {
         ]}
         onDismiss={() => setShowErrorDialog(false)}
       />
-    </ThemedView>
+    </FluentSurface>
   );
 }
 

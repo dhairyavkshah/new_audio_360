@@ -6,12 +6,11 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import * as MediaLibrary from 'expo-media-library';
 
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { FluentText, FluentSurface } from '@/components/fluent';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useUiSound } from '@/contexts/UiSoundContext';
 import { useMediaLibraryContext } from '@/contexts/MediaLibraryContext';
-import { FluentSpacing, FluentControlRadius, FluentTypography } from '@/constants/fluent2';
+import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
 
 interface PermissionOnboardingFlowProps {
   onComplete: () => void;
@@ -52,7 +51,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function PermissionOnboardingFlow({ onComplete, onSkip }: PermissionOnboardingFlowProps) {
   const insets = useSafeAreaInsets();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { playTapSound } = useUiSound();
   const { requestPermission: requestMediaPermission } = useMediaLibraryContext();
   
@@ -159,33 +159,33 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
 
   if (Platform.OS === 'web') {
     return (
-      <ThemedView style={[styles.container, { paddingTop: insets.top + FluentSpacing.xl, paddingBottom: insets.bottom + FluentSpacing.xl }]}>
+      <FluentSurface background="neutral1" style={[styles.container, { paddingTop: insets.top + FluentSpacing.xl, paddingBottom: insets.bottom + FluentSpacing.xl }]}>
         <View style={styles.webContent}>
-          <View style={[styles.iconContainer, { backgroundColor: theme.primary + '15' }]}>
-            <MaterialCommunityIcons name="web" size={64} color={theme.primary} />
+          <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground + '15' }]}>
+            <MaterialCommunityIcons name="web" size={64} color={colors.colorBrandForeground1} />
           </View>
-          <ThemedText type="h1" style={styles.title}>Welcome to New Audio 360</ThemedText>
-          <ThemedText type="body" style={[styles.webDescription, { color: theme.textSecondary }]}>
+          <FluentText variant="title1" align="center">Welcome to New Audio 360</FluentText>
+          <FluentText variant="body1" color="secondary" align="center" style={styles.webDescription}>
             On the web, permissions are handled differently. You can use sample music or select folders when prompted.
-          </ThemedText>
-          <ThemedText type="small" style={[styles.webNote, { color: theme.textSecondary }]}>
+          </FluentText>
+          <FluentText variant="caption1" color="secondary" align="center" style={styles.webNote}>
             For the full experience with all features, use the app on your Android device.
-          </ThemedText>
+          </FluentText>
           <View style={styles.webButtons}>
             <Pressable
-              style={[styles.button, { backgroundColor: theme.primary }]}
+              style={[styles.button, { backgroundColor: colors.colorBrandBackground }]}
               onPress={onComplete}
             >
-              <ThemedText type="h4" style={styles.buttonText}>Get Started</ThemedText>
+              <FluentText variant="subtitle1" color="onBrand">Get Started</FluentText>
             </Pressable>
           </View>
         </View>
-      </ThemedView>
+      </FluentSurface>
     );
   }
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top + FluentSpacing.xl, paddingBottom: insets.bottom + FluentSpacing.xl }]}>
+    <FluentSurface background="neutral1" style={[styles.container, { paddingTop: insets.top + FluentSpacing.xl, paddingBottom: insets.bottom + FluentSpacing.xl }]}>
       <View style={styles.header}>
         <View style={styles.stepIndicator}>
           {PERMISSION_STEPS.map((_, index) => (
@@ -195,55 +195,55 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
                 styles.dot,
                 {
                   backgroundColor: index === currentStep 
-                    ? theme.primary 
+                    ? colors.colorBrandBackground 
                     : index < currentStep 
-                      ? theme.success 
-                      : theme.outline,
+                      ? colors.colorPaletteGreenForeground1 
+                      : colors.colorNeutralStroke1,
                 },
               ]}
             />
           ))}
         </View>
-        <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+        <FluentText variant="caption1" color="secondary">
           Step {currentStep + 1} of {PERMISSION_STEPS.length}
-        </ThemedText>
+        </FluentText>
       </View>
 
       <View style={styles.content}>
-        <View style={[styles.iconContainer, { backgroundColor: theme.primary + '15' }]}>
+        <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground + '15' }]}>
           <MaterialCommunityIcons 
             name={currentPermission.icon} 
             size={64} 
-            color={theme.primary} 
+            color={colors.colorBrandForeground1} 
           />
         </View>
         
-        <ThemedText type="h1" style={styles.title}>{currentPermission.title}</ThemedText>
-        <ThemedText type="body" style={[styles.description, { color: theme.textSecondary }]}>
+        <FluentText variant="title1" align="center">{currentPermission.title}</FluentText>
+        <FluentText variant="body1" color="secondary" align="center" style={styles.description}>
           {currentPermission.description}
-        </ThemedText>
+        </FluentText>
 
-        <View style={[styles.statusContainer, { backgroundColor: theme.backgroundSecondary }]}>
+        <View style={[styles.statusContainer, { backgroundColor: colors.colorNeutralBackground3 }]}>
           {currentStatus === 'granted' ? (
             <>
-              <MaterialCommunityIcons name="check-circle" size={24} color={theme.success} />
-              <ThemedText type="body1Strong" style={{ color: theme.success }}>
+              <MaterialCommunityIcons name="check-circle" size={24} color={colors.colorPaletteGreenForeground1} />
+              <FluentText variant="body1Strong" color="success">
                 Permission Granted
-              </ThemedText>
+              </FluentText>
             </>
           ) : currentStatus === 'denied' ? (
             <>
-              <MaterialCommunityIcons name="close-circle" size={24} color={theme.error} />
-              <ThemedText type="body1Strong" style={{ color: theme.error }}>
+              <MaterialCommunityIcons name="close-circle" size={24} color={colors.colorPaletteRedForeground1} />
+              <FluentText variant="body1Strong" color="error">
                 Permission Denied
-              </ThemedText>
+              </FluentText>
             </>
           ) : (
             <>
-              <MaterialCommunityIcons name="circle-outline" size={24} color={theme.textSecondary} />
-              <ThemedText type="body" style={{ color: theme.textSecondary }}>
+              <MaterialCommunityIcons name="circle-outline" size={24} color={colors.colorNeutralForeground2} />
+              <FluentText variant="body1" color="secondary">
                 Waiting for permission
-              </ThemedText>
+              </FluentText>
             </>
           )}
         </View>
@@ -255,65 +255,65 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
             <Pressable
               style={[
                 styles.button,
-                { backgroundColor: theme.primary },
+                { backgroundColor: colors.colorBrandBackground },
                 isRequesting && styles.buttonDisabled
               ]}
               onPress={requestCurrentPermission}
               disabled={isRequesting}
             >
               {isRequesting ? (
-                <ThemedText type="h4" style={styles.buttonText}>Requesting...</ThemedText>
+                <FluentText variant="subtitle1" color="onBrand">Requesting...</FluentText>
               ) : (
                 <>
-                  <MaterialCommunityIcons name="shield-check" size={20} color="#FFFFFF" />
-                  <ThemedText type="h4" style={styles.buttonText}>Allow</ThemedText>
+                  <MaterialCommunityIcons name="shield-check" size={20} color={colors.colorNeutralForegroundOnBrand} />
+                  <FluentText variant="subtitle1" color="onBrand">Allow</FluentText>
                 </>
               )}
             </Pressable>
             <Pressable
-              style={[styles.secondaryButton, { borderColor: theme.outline }]}
+              style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
               onPress={handleSkip}
             >
-              <ThemedText type="body" style={{ color: theme.textSecondary }}>Skip</ThemedText>
+              <FluentText variant="body1" color="secondary">Skip</FluentText>
             </Pressable>
           </>
         ) : currentStatus === 'denied' ? (
           <>
             <Pressable
-              style={[styles.button, { backgroundColor: theme.primary }]}
+              style={[styles.button, { backgroundColor: colors.colorBrandBackground }]}
               onPress={handleOpenSettings}
             >
-              <MaterialCommunityIcons name="cog" size={20} color="#FFFFFF" />
-              <ThemedText type="h4" style={styles.buttonText}>Open Settings</ThemedText>
+              <MaterialCommunityIcons name="cog" size={20} color={colors.colorNeutralForegroundOnBrand} />
+              <FluentText variant="subtitle1" color="onBrand">Open Settings</FluentText>
             </Pressable>
             <Pressable
-              style={[styles.secondaryButton, { borderColor: theme.outline }]}
+              style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
               onPress={handleNext}
             >
-              <ThemedText type="body" style={{ color: theme.textSecondary }}>
+              <FluentText variant="body1" color="secondary">
                 {isLastStep ? 'Get Started' : 'Next'}
-              </ThemedText>
+              </FluentText>
             </Pressable>
           </>
         ) : (
           <Pressable
-            style={[styles.button, { backgroundColor: theme.primary }]}
+            style={[styles.button, { backgroundColor: colors.colorBrandBackground }]}
             onPress={handleNext}
           >
-            <ThemedText type="h4" style={styles.buttonText}>
+            <FluentText variant="subtitle1" color="onBrand">
               {isLastStep ? 'Get Started' : 'Next'}
-            </ThemedText>
+            </FluentText>
             {!isLastStep && (
-              <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
+              <MaterialCommunityIcons name="arrow-right" size={20} color={colors.colorNeutralForegroundOnBrand} />
             )}
           </Pressable>
         )}
 
-        <ThemedText type="caption" style={[styles.privacyNote, { color: theme.textSecondary }]}>
+        <FluentText variant="caption1" color="secondary" align="center" style={styles.privacyNote}>
           Your data stays on your device. We never upload or share your files. View our Privacy Policy in Settings.
-        </ThemedText>
+        </FluentText>
       </View>
-    </ThemedView>
+    </FluentSurface>
   );
 }
 
@@ -350,11 +350,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: FluentSpacing.m,
   },
-  title: {
-    textAlign: 'center',
-  },
   description: {
-    textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: FluentSpacing.xl,
   },
@@ -383,10 +379,6 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.7,
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
   secondaryButton: {
     height: 48,
     width: '100%',
@@ -396,7 +388,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   privacyNote: {
-    textAlign: 'center',
     marginTop: FluentSpacing.m,
   },
   webContent: {
@@ -406,12 +397,10 @@ const styles = StyleSheet.create({
     gap: FluentSpacing.l,
   },
   webDescription: {
-    textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: FluentSpacing.xl,
   },
   webNote: {
-    textAlign: 'center',
     marginTop: FluentSpacing.s,
   },
   webButtons: {

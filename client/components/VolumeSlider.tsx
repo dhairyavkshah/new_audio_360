@@ -9,9 +9,13 @@ import Animated, {
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
-import { Spacing } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface VolumeSliderProps {
   label: string;
@@ -35,8 +39,9 @@ export function VolumeSlider({
   showValue = false,
   vertical = true,
 }: VolumeSliderProps) {
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
   const { icons, shapes, components } = useSkin();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const thumbPosition = useSharedValue(TRACK_HEIGHT - (value / 100) * TRACK_HEIGHT);
 
   const volumeIcon = icon || icons.volumeHigh;
@@ -110,7 +115,7 @@ export function VolumeSlider({
       <View style={[
         styles.labelContainer, 
         { 
-          backgroundColor: theme.backgroundSecondary,
+          backgroundColor: colors.colorNeutralBackground3,
           borderRadius: shapes.controlSize / 2,
           width: shapes.controlSize,
           height: shapes.controlSize,
@@ -119,7 +124,7 @@ export function VolumeSlider({
         <MaterialCommunityIcons 
           name={volumeIcon as keyof typeof MaterialCommunityIcons.glyphMap} 
           size={20} 
-          color={theme.primary} 
+          color={colors.colorBrandForeground1} 
         />
       </View>
       <GestureDetector gesture={composedGesture}>
@@ -127,7 +132,7 @@ export function VolumeSlider({
           style={[
             styles.sliderTrack,
             {
-              backgroundColor: theme.backgroundSecondary,
+              backgroundColor: colors.colorNeutralBackground3,
               height: SLIDER_HEIGHT,
               borderRadius: shapes.sliderTrackRadius,
             },
@@ -138,7 +143,7 @@ export function VolumeSlider({
             style={[
               styles.sliderFill,
               { 
-                backgroundColor: theme.primary,
+                backgroundColor: colors.colorCompoundBrandBackground,
                 borderRadius: shapes.sliderTrackRadius,
               },
               glowStyle,
@@ -150,7 +155,7 @@ export function VolumeSlider({
               styles.sliderThumb,
               { 
                 backgroundColor: "#FFFFFF", 
-                borderColor: theme.primary,
+                borderColor: colors.colorCompoundBrandBackground,
                 borderRadius: shapes.sliderThumbRadius,
                 width: THUMB_SIZE,
                 height: THUMB_SIZE,
@@ -160,9 +165,9 @@ export function VolumeSlider({
           />
         </Animated.View>
       </GestureDetector>
-      <ThemedText type="caption" style={[styles.label, { color: theme.textSecondary }]}>
+      <FluentText variant="caption1" color="secondary" style={styles.label}>
         {label}
-      </ThemedText>
+      </FluentText>
     </View>
   );
 }
@@ -170,12 +175,12 @@ export function VolumeSlider({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    marginHorizontal: Spacing["2xl"],
+    marginHorizontal: FluentSpacing.xxl,
   },
   labelContainer: {
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   sliderTrack: {
     width: SLIDER_WIDTH,
@@ -199,8 +204,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   label: {
-    marginTop: Spacing.md,
-    fontWeight: "500",
+    marginTop: FluentSpacing.m,
     textAlign: "center",
   },
 });

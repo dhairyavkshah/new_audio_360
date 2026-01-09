@@ -1,22 +1,22 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { View, StyleSheet, FlatList, Pressable, Image, Alert } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { getRecordings, deleteRecording, Recording } from "@/lib/storage";
 import { mockSongs } from "@/lib/data";
 
 export default function RecordingsScreen() {
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -87,34 +87,34 @@ export default function RecordingsScreen() {
       <View style={styles.recordingContent}>
         <Image source={{ uri: getArtwork(item.songId) }} style={styles.artwork} />
         <View style={styles.recordingInfo}>
-          <ThemedText type="body" numberOfLines={1} style={{ fontWeight: "600" }}>
+          <FluentText variant="body1Strong" numberOfLines={1}>
             {item.title}
-          </ThemedText>
-          <ThemedText type="small" style={{ color: theme.textSecondary }} numberOfLines={1}>
+          </FluentText>
+          <FluentText variant="body1" color="secondary" numberOfLines={1}>
             {item.songTitle} - {item.artist}
-          </ThemedText>
+          </FluentText>
           <View style={styles.recordingMeta}>
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+            <FluentText variant="caption1" color="secondary">
               {formatDate(item.createdAt)}
-            </ThemedText>
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+            </FluentText>
+            <FluentText variant="caption1" color="secondary">
               {formatDuration(item.duration)}
-            </ThemedText>
+            </FluentText>
           </View>
         </View>
       </View>
       <View style={styles.recordingActions}>
         <Pressable
           onPress={() => handleShare(item)}
-          style={[styles.actionButton, { backgroundColor: theme.primary + "20" }]}
+          style={[styles.actionButton, { backgroundColor: colors.colorBrandBackground + "20" }]}
         >
-          <MaterialCommunityIcons name="share-variant" size={FluentIconSize.regular} color={theme.primary} />
+          <MaterialCommunityIcons name="share-variant" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
         </Pressable>
         <Pressable
           onPress={() => handleDelete(item)}
-          style={[styles.actionButton, { backgroundColor: theme.error + "20" }]}
+          style={[styles.actionButton, { backgroundColor: colors.colorPaletteRedBackground1 }]}
         >
-          <MaterialCommunityIcons name="delete-outline" size={FluentIconSize.regular} color={theme.error} />
+          <MaterialCommunityIcons name="delete-outline" size={FluentIconSize.regular} color={colors.colorPaletteRedForeground1} />
         </Pressable>
       </View>
     </GlassCard>
@@ -122,20 +122,20 @@ export default function RecordingsScreen() {
 
   const renderEmpty = () => (
     <View style={styles.emptyState}>
-      <View style={[styles.emptyIcon, { backgroundColor: theme.primary + "20" }]}>
-        <MaterialCommunityIcons name="microphone-off" size={FluentIconSize.xxlarge} color={theme.primary} />
+      <View style={[styles.emptyIcon, { backgroundColor: colors.colorBrandBackground + "20" }]}>
+        <MaterialCommunityIcons name="microphone-off" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} />
       </View>
-      <ThemedText type="h4" style={styles.emptyTitle}>
+      <FluentText variant="subtitle1" style={styles.emptyTitle}>
         No Recordings Yet
-      </ThemedText>
-      <ThemedText type="body" style={[styles.emptyDesc, { color: theme.textSecondary }]}>
+      </FluentText>
+      <FluentText variant="body1" color="secondary" style={styles.emptyDesc}>
         Create your first recording by selecting a song in the Create tab
-      </ThemedText>
+      </FluentText>
     </View>
   );
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={false}>
       <FlatList
         data={recordings}
         renderItem={renderRecording}
@@ -147,14 +147,11 @@ export default function RecordingsScreen() {
         ListEmptyComponent={isLoading ? null : renderEmpty}
         showsVerticalScrollIndicator={false}
       />
-    </ThemedView>
+    </FluentScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   listContent: {
     paddingHorizontal: FluentSpacing.l,
     flexGrow: 1,

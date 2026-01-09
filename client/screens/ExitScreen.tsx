@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated, BackHandler, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { Button } from "@/components/Button";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 
 type ExitScreenProps = {
   onCancel: () => void;
@@ -12,7 +12,8 @@ type ExitScreenProps = {
 };
 
 export default function ExitScreen({ onCancel, onConfirm }: ExitScreenProps) {
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
@@ -48,25 +49,25 @@ export default function ExitScreen({ onCancel, onConfirm }: ExitScreenProps) {
 
   return (
     <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
-      <View style={[styles.backdrop, { backgroundColor: theme.scrim }]} />
+      <View style={[styles.backdrop, { backgroundColor: colors.colorNeutralBackgroundInverted + '80' }]} />
       <Animated.View
         style={[
           styles.dialog,
           {
-            backgroundColor: theme.backgroundDefault,
+            backgroundColor: colors.colorNeutralBackground1,
             transform: [{ scale: scaleAnim }],
           },
         ]}
       >
-        <View style={[styles.iconContainer, { backgroundColor: theme.error + "15" }]}>
-          <MaterialCommunityIcons name="power" size={FluentIconSize.xlarge} color={theme.error} />
+        <View style={[styles.iconContainer, { backgroundColor: colors.colorPaletteRedBackground1 }]}>
+          <MaterialCommunityIcons name="power" size={FluentIconSize.xlarge} color={colors.colorPaletteRedForeground1} />
         </View>
-        <ThemedText type="h4" style={styles.title}>
+        <FluentText variant="subtitle1" align="center" style={styles.title}>
           Close New Audio 360?
-        </ThemedText>
-        <ThemedText type="body" style={[styles.message, { color: theme.textSecondary }]}>
+        </FluentText>
+        <FluentText variant="body1" color="secondary" align="center" style={styles.message}>
           Are you sure you want to close the app? Your playback will stop.
-        </ThemedText>
+        </FluentText>
         <View style={styles.buttonContainer}>
           <Button
             variant="secondary"
@@ -115,10 +116,8 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: FluentSpacing.xs,
-    textAlign: "center",
   },
   message: {
-    textAlign: "center",
     marginBottom: FluentSpacing.l,
   },
   buttonContainer: {

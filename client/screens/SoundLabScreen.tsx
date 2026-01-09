@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { Spacing, BorderRadius, Layout } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { Layout } from "@/constants/theme";
 import { getEQPreset, saveEQPreset, clearEQPreset, getSoundMode, saveSoundMode, clearSoundMode } from "@/lib/storage";
 
 type SoundLabMode = "equalizer" | "immersive" | "off";
@@ -86,9 +85,9 @@ const IMMERSIVE_MODES = [
 ];
 
 export default function SoundLabScreen() {
-  const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { isImmersiveModeUnlocked } = useSubscription();
   const [soundLabMode, setSoundLabMode] = useState<SoundLabMode>("off");
   const [selectedEQ, setSelectedEQ] = useState("Flat");
@@ -173,28 +172,28 @@ export default function SoundLabScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Spacing.m, paddingBottom: tabBarHeight + Spacing.xl },
+          { paddingTop: FluentSpacing.m, paddingBottom: tabBarHeight + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
-        <ThemedText type="caption" style={[styles.sectionDesc, { color: theme.textSecondary }]}>
+        <FluentText variant="caption1" color="secondary" style={styles.sectionDesc}>
           Tap a preset to apply, tap again to turn off. Only one effect can be active at a time.
-        </ThemedText>
+        </FluentText>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="tune-vertical" size={18} color={theme.primary} />
-            <ThemedText type="body" style={styles.sectionTitle}>
+            <MaterialCommunityIcons name="tune-vertical" size={18} color={colors.colorBrandForeground1} />
+            <FluentText variant="body1Strong" style={styles.sectionTitle}>
               Equalizer Presets
-            </ThemedText>
+            </FluentText>
             {soundLabMode === "equalizer" && selectedEQ ? (
-              <View style={[styles.activeIndicator, { backgroundColor: theme.primary }]}>
-                <ThemedText type="caption" style={{ color: "#FFFFFF", fontWeight: "600" }}>Active</ThemedText>
+              <View style={[styles.activeIndicator, { backgroundColor: colors.colorBrandBackground }]}>
+                <FluentText variant="caption1" color="onBrand" style={{ fontWeight: "600" }}>Active</FluentText>
               </View>
             ) : null}
           </View>
@@ -210,30 +209,30 @@ export default function SoundLabScreen() {
           </View>
           {soundLabMode === "equalizer" && selectedEQ ? (
             <GlassCard style={styles.presetInfo}>
-              <ThemedText type="body" style={{ fontWeight: "600" }}>
+              <FluentText variant="body1Strong">
                 {selectedEQ}
-              </ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
+              </FluentText>
+              <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
                 {EQ_PRESETS.find(p => p.name === selectedEQ)?.description}
-              </ThemedText>
+              </FluentText>
             </GlassCard>
           ) : null}
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="headphones" size={18} color={theme.primary} />
-            <ThemedText type="body" style={styles.sectionTitle}>
+            <MaterialCommunityIcons name="headphones" size={18} color={colors.colorBrandForeground1} />
+            <FluentText variant="body1Strong" style={styles.sectionTitle}>
               Immersive Modes
-            </ThemedText>
+            </FluentText>
             {!isImmersiveModeUnlocked() ? (
-              <View style={[styles.premiumBadge, { backgroundColor: theme.warning + "20" }]}>
-                <MaterialCommunityIcons name="crown" size={12} color={theme.warning} />
-                <ThemedText type="caption" style={{ color: theme.warning, fontWeight: "600", marginLeft: 4 }}>Premium</ThemedText>
+              <View style={[styles.premiumBadge, { backgroundColor: colors.colorPaletteYellowBackground1 }]}>
+                <MaterialCommunityIcons name="crown" size={12} color={colors.colorPaletteYellowForeground1} />
+                <FluentText variant="caption1" style={{ color: colors.colorPaletteYellowForeground1, fontWeight: "600", marginLeft: 4 }}>Premium</FluentText>
               </View>
             ) : soundLabMode === "immersive" && selectedImmersive ? (
-              <View style={[styles.activeIndicator, { backgroundColor: theme.primary }]}>
-                <ThemedText type="caption" style={{ color: "#FFFFFF", fontWeight: "600" }}>Active</ThemedText>
+              <View style={[styles.activeIndicator, { backgroundColor: colors.colorBrandBackground }]}>
+                <FluentText variant="caption1" color="onBrand" style={{ fontWeight: "600" }}>Active</FluentText>
               </View>
             ) : null}
           </View>
@@ -246,8 +245,8 @@ export default function SoundLabScreen() {
                   styles.modeCard,
                   {
                     backgroundColor: soundLabMode === "immersive" && selectedImmersive === mode.name 
-                      ? theme.primary 
-                      : theme.backgroundSecondary,
+                      ? colors.colorBrandBackground 
+                      : colors.colorNeutralBackground2,
                   },
                 ]}
               >
@@ -255,28 +254,28 @@ export default function SoundLabScreen() {
                   <MaterialCommunityIcons
                     name={mode.icon}
                     size={20}
-                    color={soundLabMode === "immersive" && selectedImmersive === mode.name ? "#FFFFFF" : theme.text}
+                    color={soundLabMode === "immersive" && selectedImmersive === mode.name ? "#FFFFFF" : colors.colorNeutralForeground1}
                   />
                   <View style={styles.modeCardText}>
-                    <ThemedText
-                      type="small"
+                    <FluentText
+                      variant="body1"
                       style={{
                         fontWeight: "600",
-                        color: soundLabMode === "immersive" && selectedImmersive === mode.name ? "#FFFFFF" : theme.text,
+                        color: soundLabMode === "immersive" && selectedImmersive === mode.name ? "#FFFFFF" : colors.colorNeutralForeground1,
                       }}
                     >
                       {mode.name}
-                    </ThemedText>
-                    <ThemedText
-                      type="caption"
+                    </FluentText>
+                    <FluentText
+                      variant="caption1"
                       style={{
                         color: soundLabMode === "immersive" && selectedImmersive === mode.name 
                           ? "rgba(255,255,255,0.8)" 
-                          : theme.textSecondary,
+                          : colors.colorNeutralForeground2,
                       }}
                     >
                       {mode.description}
-                    </ThemedText>
+                    </FluentText>
                   </View>
                   {soundLabMode === "immersive" && selectedImmersive === mode.name ? (
                     <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" />
@@ -290,84 +289,80 @@ export default function SoundLabScreen() {
 
         <GlassCard style={styles.infoCard}>
           <View style={styles.infoContent}>
-            <MaterialCommunityIcons name="information-outline" size={18} color={theme.primary} />
+            <MaterialCommunityIcons name="information-outline" size={18} color={colors.colorBrandForeground1} />
             <View style={styles.infoText}>
-              <ThemedText type="small" style={{ fontWeight: "600" }}>
+              <FluentText variant="body1Strong">
                 Sound Experience
-              </ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
+              </FluentText>
+              <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
                 Your audio settings are saved automatically and applied to all playback.
-              </ThemedText>
+              </FluentText>
             </View>
           </View>
         </GlassCard>
       </ScrollView>
-    </ThemedView>
+    </FluentScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
     paddingHorizontal: Layout.horizontalPadding,
   },
   sectionDesc: {
-    marginBottom: Spacing.m,
+    marginBottom: FluentSpacing.m,
   },
   modeToggle: {
     flexDirection: "row",
-    gap: Spacing.s,
-    marginBottom: Spacing.l,
+    gap: FluentSpacing.s,
+    marginBottom: FluentSpacing.l,
   },
   modeButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.m,
-    borderRadius: BorderRadius.medium,
+    paddingVertical: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
   },
   section: {
-    marginBottom: Spacing.l,
+    marginBottom: FluentSpacing.l,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
   sectionTitle: {
-    marginLeft: Spacing.xs,
-    fontWeight: "600",
+    marginLeft: FluentSpacing.xs,
     flex: 1,
   },
   activeIndicator: {
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.pill,
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xs,
+    borderRadius: FluentRadius.circular,
   },
   premiumBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.pill,
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xs,
+    borderRadius: FluentRadius.circular,
   },
   chipsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.xs,
+    gap: FluentSpacing.xs,
   },
   presetInfo: {
-    marginTop: Spacing.m,
+    marginTop: FluentSpacing.m,
   },
   modesContainer: {
-    gap: Spacing.s,
+    gap: FluentSpacing.s,
   },
   modeCard: {
-    padding: Spacing.m,
-    borderRadius: BorderRadius.medium,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
   },
   modeCardContent: {
     flexDirection: "row",
@@ -375,10 +370,10 @@ const styles = StyleSheet.create({
   },
   modeCardText: {
     flex: 1,
-    marginLeft: Spacing.m,
+    marginLeft: FluentSpacing.m,
   },
   infoCard: {
-    marginTop: Spacing.m,
+    marginTop: FluentSpacing.m,
   },
   infoContent: {
     flexDirection: "row",
@@ -386,6 +381,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     flex: 1,
-    marginLeft: Spacing.m,
+    marginLeft: FluentSpacing.m,
   },
 });

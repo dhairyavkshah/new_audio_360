@@ -1,16 +1,14 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet, FlatList, Image } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import { ThemedView } from "@/components/ThemedView";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { SongCard } from "@/components/SongCard";
 import { EmptyState } from "@/components/EmptyState";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
-import { FluentSpacing, FluentControlRadius } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { mockSongs } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 
@@ -19,8 +17,8 @@ type AlbumDetailRouteProp = RouteProp<LibraryStackParamList, "AlbumDetail">;
 export default function AlbumDetailScreen() {
   const route = useRoute<AlbumDetailRouteProp>();
   const { album } = route.params;
-  const insets = useSafeAreaInsets();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { playSong, currentSong, queue, setQueue } = usePlayerContext();
   const { songs: deviceSongs, isOnboardingComplete } = useMediaLibraryContext();
   const tabBarHeight = useSafeTabBarHeight();
@@ -61,15 +59,15 @@ export default function AlbumDetailScreen() {
     <View style={styles.header}>
       <Image source={{ uri: album.artwork }} style={styles.artwork} />
       <View style={styles.headerInfo}>
-        <ThemedText type="h2" style={styles.albumTitle}>
+        <FluentText variant="title2" style={styles.albumTitle}>
           {album.name}
-        </ThemedText>
-        <ThemedText type="bodyLarge" style={{ color: theme.onSurfaceVariant }}>
+        </FluentText>
+        <FluentText variant="body2" color="secondary">
           {album.artist}
-        </ThemedText>
-        <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant, marginTop: FluentSpacing.xs }}>
+        </FluentText>
+        <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
           {albumSongs.length} {albumSongs.length === 1 ? "song" : "songs"}
-        </ThemedText>
+        </FluentText>
       </View>
     </View>
   );
@@ -84,7 +82,7 @@ export default function AlbumDetailScreen() {
   );
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
       <FlatList
         data={albumSongs}
         renderItem={renderSong}
@@ -106,14 +104,11 @@ export default function AlbumDetailScreen() {
         maxToRenderPerBatch={10}
         windowSize={5}
       />
-    </ThemedView>
+    </FluentScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
     paddingHorizontal: FluentSpacing.l,
     paddingTop: FluentSpacing.m,

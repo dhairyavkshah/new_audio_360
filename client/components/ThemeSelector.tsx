@@ -7,12 +7,18 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { ThemeName, ThemeColors, themeRegistry } from "@/constants/theme";
 import { getSkin } from "@/constants/skins";
-import { FluentSpacing, FluentControlRadius } from "@/constants/fluent2";
+import {
+  FluentSpacing,
+  FluentControlRadius,
+  FluentLightColors,
+  FluentDarkColors,
+  FluentIconSize,
+} from "@/constants/fluent2";
 
 interface ThemeSelectorProps {
   currentTheme: ThemeName;
@@ -29,6 +35,7 @@ function ThemeOption({
   isLocked,
   previewIsDark,
   onPress,
+  colors,
 }: {
   themeName: ThemeName;
   label: string;
@@ -37,8 +44,8 @@ function ThemeOption({
   isLocked: boolean;
   previewIsDark: boolean;
   onPress: () => void;
+  colors: typeof FluentLightColors;
 }) {
-  const { theme } = useThemeContext();
   const scale = useSharedValue(1);
 
   const themePreview = ThemeColors[themeName][previewIsDark ? "dark" : "light"];
@@ -75,7 +82,7 @@ function ThemeOption({
       style={[
         styles.themeOption,
         {
-          backgroundColor: theme.backgroundDefault,
+          backgroundColor: colors.colorNeutralBackground2,
           borderColor: isSelected ? themePreview.primary : "transparent",
           borderWidth: 2,
           borderRadius: FluentControlRadius.card,
@@ -90,24 +97,24 @@ function ThemeOption({
       </View>
       <View style={styles.themeInfo}>
         <View style={styles.themeLabelRow}>
-          <ThemedText type="body" style={styles.themeLabel}>
+          <FluentText variant="body1" style={styles.themeLabel}>
             {label}
-          </ThemedText>
+          </FluentText>
           <View style={styles.skinIcons}>
             <MaterialCommunityIcons 
               name={skin.icons.play as keyof typeof MaterialCommunityIcons.glyphMap} 
-              size={12} 
+              size={FluentIconSize.tiny} 
               color={themePreview.primary} 
             />
           </View>
         </View>
-        <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+        <FluentText variant="caption1" color="secondary">
           {description}
-        </ThemedText>
+        </FluentText>
       </View>
       {isLocked ? (
-        <View style={[styles.lockBadge, { backgroundColor: theme.warning + "20" }]}>
-          <MaterialCommunityIcons name="lock" size={14} color={theme.warning} />
+        <View style={[styles.lockBadge, { backgroundColor: colors.colorPaletteYellowBackground1 }]}>
+          <MaterialCommunityIcons name="lock" size={14} color={colors.colorPaletteYellowForeground1} />
         </View>
       ) : isSelected ? (
         <View style={[styles.checkmark, { backgroundColor: themePreview.primary }]}>
@@ -132,7 +139,8 @@ const categories = [
 ];
 
 export function ThemeSelector({ currentTheme, onThemeChange }: ThemeSelectorProps) {
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { isThemeUnlocked } = useSubscription();
 
   const themesByCategory = categories.map(cat => ({
@@ -147,15 +155,15 @@ export function ThemeSelector({ currentTheme, onThemeChange }: ThemeSelectorProp
           <View style={styles.categoryHeader}>
             <MaterialCommunityIcons
               name={category.icon}
-              size={18}
-              color={theme.textSecondary}
+              size={FluentIconSize.regular}
+              color={colors.colorNeutralForeground2}
             />
-            <ThemedText type="small" style={[styles.categoryLabel, { color: theme.textSecondary }]}>
+            <FluentText variant="caption1Strong" style={styles.categoryLabel} color="secondary">
               {category.label}
-            </ThemedText>
-            <ThemedText type="caption" style={[styles.categoryCount, { color: theme.textTertiary }]}>
+            </FluentText>
+            <FluentText variant="caption1" color="tertiary" style={styles.categoryCount}>
               ({category.themes.length})
-            </ThemedText>
+            </FluentText>
           </View>
           <View style={styles.themesGrid}>
             {category.themes.map((option) => (
@@ -168,6 +176,7 @@ export function ThemeSelector({ currentTheme, onThemeChange }: ThemeSelectorProp
                 isLocked={!isThemeUnlocked(option.name)}
                 previewIsDark={option.isDark}
                 onPress={() => onThemeChange(option.name)}
+                colors={colors}
               />
             ))}
           </View>

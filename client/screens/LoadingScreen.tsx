@@ -2,9 +2,9 @@ import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated, Easing } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 
 type LoadingScreenProps = {
   message?: string;
@@ -12,7 +12,8 @@ type LoadingScreenProps = {
 
 export default function LoadingScreen({ message = "Loading..." }: LoadingScreenProps) {
   const insets = useSafeAreaInsets();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const spinAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -58,7 +59,7 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { backgroundColor: colors.colorNeutralBackground1, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <Animated.View
         style={[
           styles.iconContainer,
@@ -67,11 +68,11 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
           },
         ]}
       >
-        <MaterialCommunityIcons name="music-circle" size={FluentIconSize.xxlarge + 16} color={theme.primary} />
+        <MaterialCommunityIcons name="music-circle" size={FluentIconSize.xxlarge + 16} color={colors.colorBrandForeground1} />
       </Animated.View>
-      <ThemedText type="body" style={[styles.message, { color: theme.textSecondary }]}>
+      <FluentText variant="body1" color="secondary" align="center">
         {message}
-      </ThemedText>
+      </FluentText>
     </View>
   );
 }
@@ -84,8 +85,5 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginBottom: FluentSpacing.l,
-  },
-  message: {
-    textAlign: "center",
   },
 });

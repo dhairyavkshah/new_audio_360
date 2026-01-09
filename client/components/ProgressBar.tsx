@@ -8,7 +8,7 @@ import Animated, {
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
@@ -42,7 +42,7 @@ export function ProgressBar({
   height = TRACK_HEIGHT,
   showTextShadow = false,
 }: ProgressBarProps) {
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const { shapes, components } = useSkin();
   const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 
@@ -178,12 +178,12 @@ export function ProgressBar({
         </View>
       </GestureDetector>
       <View style={styles.timeContainer}>
-        <ThemedText type="caption" style={[{ color: fluentColors.colorNeutralForeground3 }, textShadowStyle]}>
+        <FluentText variant="caption1" color="tertiary" style={textShadowStyle}>
           {formatTime(currentTime)}
-        </ThemedText>
-        <ThemedText type="caption" style={[{ color: fluentColors.colorNeutralForeground3 }, textShadowStyle]}>
+        </FluentText>
+        <FluentText variant="caption1" color="tertiary" style={textShadowStyle}>
           {formatTime(duration)}
-        </ThemedText>
+        </FluentText>
       </View>
     </View>
   );

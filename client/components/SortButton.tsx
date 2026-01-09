@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, Pressable, Modal, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { Layout } from "@/constants/theme";
@@ -31,9 +31,9 @@ interface SortButtonProps {
 }
 
 export function SortButton({ options, selectedKey, onSelect, isOpen, onToggle }: SortButtonProps) {
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const selectedOption = options.find((o) => o.key === selectedKey);
 
@@ -58,7 +58,7 @@ export function SortButton({ options, selectedKey, onSelect, isOpen, onToggle }:
   return (
     <>
       <Pressable
-        style={[styles.button, { backgroundColor: fluentColors.colorNeutralBackground3 }]}
+        style={[styles.button, { backgroundColor: colors.colorNeutralBackground3 }]}
         onPress={handleToggle}
         accessibilityLabel={`Sort by ${selectedOption?.label || "default"}`}
         accessibilityRole="button"
@@ -67,12 +67,12 @@ export function SortButton({ options, selectedKey, onSelect, isOpen, onToggle }:
         <MaterialCommunityIcons
           name={selectedOption?.icon || "sort"}
           size={FluentIconSize.small}
-          color={fluentColors.colorNeutralForeground1}
+          color={colors.colorNeutralForeground1}
         />
         <MaterialCommunityIcons
           name={isOpen ? "chevron-up" : "chevron-down"}
           size={FluentIconSize.small}
-          color={fluentColors.colorNeutralForeground2}
+          color={colors.colorNeutralForeground2}
           style={{ marginLeft: 2 }}
         />
       </Pressable>
@@ -86,7 +86,7 @@ export function SortButton({ options, selectedKey, onSelect, isOpen, onToggle }:
         <Pressable style={styles.backdrop} onPress={onToggle}>
           <View style={[
             styles.menu, 
-            { backgroundColor: fluentColors.colorNeutralBackground1 },
+            { backgroundColor: colors.colorNeutralBackground1 },
             shadowStyle,
           ]}>
             {options.map((option) => (
@@ -94,7 +94,7 @@ export function SortButton({ options, selectedKey, onSelect, isOpen, onToggle }:
                 key={option.key}
                 style={[
                   styles.menuItem,
-                  selectedKey === option.key && { backgroundColor: fluentColors.colorSubtleBackgroundHover },
+                  selectedKey === option.key && { backgroundColor: colors.colorSubtleBackgroundHover },
                 ]}
                 onPress={() => handleSelect(option.key)}
                 accessibilityRole="menuitem"
@@ -103,26 +103,24 @@ export function SortButton({ options, selectedKey, onSelect, isOpen, onToggle }:
                 <MaterialCommunityIcons
                   name={option.icon}
                   size={FluentIconSize.regular}
-                  color={selectedKey === option.key ? fluentColors.colorBrandForeground1 : fluentColors.colorNeutralForeground1}
+                  color={selectedKey === option.key ? colors.colorBrandForeground1 : colors.colorNeutralForeground1}
                 />
-                <ThemedText
+                <FluentText
+                  variant="body1"
                   style={[
                     styles.menuItemLabel,
                     { 
-                      color: selectedKey === option.key ? fluentColors.colorBrandForeground1 : fluentColors.colorNeutralForeground1,
-                      fontSize: FluentTypography.body1.fontSize,
-                      fontWeight: FluentTypography.body1.fontWeight,
-                      lineHeight: FluentTypography.body1.lineHeight,
+                      color: selectedKey === option.key ? colors.colorBrandForeground1 : colors.colorNeutralForeground1,
                     },
                   ]}
                 >
                   {option.label}
-                </ThemedText>
+                </FluentText>
                 {selectedKey === option.key ? (
                   <MaterialCommunityIcons
                     name="check"
                     size={FluentIconSize.small}
-                    color={fluentColors.colorBrandForeground1}
+                    color={colors.colorBrandForeground1}
                   />
                 ) : null}
               </Pressable>

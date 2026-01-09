@@ -23,13 +23,11 @@ import Animated, {
   withDelay,
   withTiming,
   Easing,
-  runOnJS,
 } from "react-native-reanimated";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import {
   PaymentHandler,
@@ -44,7 +42,8 @@ import {
 export default function SupportDeveloperScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const [selectedCurrency, setSelectedCurrency] = useState<Currency | null>(null);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
@@ -239,8 +238,8 @@ export default function SupportDeveloperScreen() {
         style={[
           styles.tierCard,
           {
-            backgroundColor: isSelected ? theme.primary : theme.backgroundSecondary,
-            borderColor: isSelected ? theme.primary : theme.outline,
+            backgroundColor: isSelected ? colors.colorBrandBackground : colors.colorNeutralBackground2,
+            borderColor: isSelected ? colors.colorBrandForeground1 : colors.colorNeutralStroke1,
           },
         ]}
       >
@@ -248,39 +247,39 @@ export default function SupportDeveloperScreen() {
           style={[
             styles.tierIconHalo,
             {
-              backgroundColor: isSelected ? "rgba(255,255,255,0.2)" : theme.primary + "15",
+              backgroundColor: isSelected ? "rgba(255,255,255,0.2)" : colors.colorBrandForeground1 + "15",
             },
           ]}
         >
           <MaterialCommunityIcons
             name={tier.icon as keyof typeof MaterialCommunityIcons.glyphMap}
             size={FluentIconSize.medium}
-            color={isSelected ? "#FFFFFF" : theme.primary}
+            color={isSelected ? "#FFFFFF" : colors.colorBrandForeground1}
           />
         </View>
-        <ThemedText
-          type="body"
+        <FluentText
+          variant="body1"
           style={[
             styles.tierAmount,
-            { color: isSelected ? "#FFFFFF" : theme.text },
+            { color: isSelected ? "#FFFFFF" : colors.colorNeutralForeground1 },
           ]}
         >
           {getCurrencySymbol()} {tier.amount}
-        </ThemedText>
-        <ThemedText
-          type="caption"
+        </FluentText>
+        <FluentText
+          variant="caption2"
           style={{
-            color: isSelected ? "rgba(255,255,255,0.8)" : theme.textSecondary,
+            color: isSelected ? "rgba(255,255,255,0.8)" : colors.colorNeutralForeground2,
           }}
         >
           {tier.label}
-        </ThemedText>
+        </FluentText>
       </Pressable>
     );
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -295,55 +294,55 @@ export default function SupportDeveloperScreen() {
           scrollIndicatorInsets={{ bottom: tabBarHeight }}
         >
         <GlassCard style={styles.developerCard}>
-          <View style={[styles.avatar, { backgroundColor: theme.primary + "20" }]}>
-            <MaterialCommunityIcons name="account" size={FluentIconSize.xxlarge} color={theme.primary} />
+          <View style={[styles.avatar, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
+            <MaterialCommunityIcons name="account" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} />
           </View>
-          <ThemedText type="h4" style={styles.developerName}>
+          <FluentText variant="title3" style={styles.developerName}>
             Dhairya Shah (The Team 360)
-          </ThemedText>
-          <ThemedText type="small" style={[styles.developerBio, { color: theme.textSecondary }]}>
+          </FluentText>
+          <FluentText variant="caption1" color="secondary" style={styles.developerBio}>
             Hi! I'm the solo developer behind New Audio 360. Your support helps me continue
             developing new features and keeping the app free of ads.
-          </ThemedText>
+          </FluentText>
           {isDonor ? (
-            <View style={[styles.donorBadge, { backgroundColor: theme.success + "20" }]}>
-              <MaterialCommunityIcons name="heart" size={FluentIconSize.tiny} color={theme.success} />
-              <ThemedText type="caption" style={{ color: theme.success, marginLeft: 4 }}>
+            <View style={[styles.donorBadge, { backgroundColor: colors.colorPaletteGreenForeground1 + "20" }]}>
+              <MaterialCommunityIcons name="heart" size={FluentIconSize.tiny} color={colors.colorPaletteGreenForeground1} />
+              <FluentText variant="caption2" style={{ color: colors.colorPaletteGreenForeground1, marginLeft: 4 }}>
                 Supporter
-              </ThemedText>
+              </FluentText>
             </View>
           ) : null}
         </GlassCard>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="currency-usd" size={FluentIconSize.regular} color={theme.primary} />
-            <ThemedText type="body" style={styles.sectionTitle}>
+            <MaterialCommunityIcons name="currency-usd" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+            <FluentText variant="body1" style={styles.sectionTitle}>
               Select Currency
-            </ThemedText>
+            </FluentText>
           </View>
 
           <Pressable
             onPress={() => setShowCurrencyPicker(!showCurrencyPicker)}
-            style={[styles.currencySelector, { backgroundColor: theme.backgroundSecondary }]}
+            style={[styles.currencySelector, { backgroundColor: colors.colorNeutralBackground2 }]}
           >
-            <ThemedText
-              type="body"
-              style={{ color: selectedCurrency ? theme.text : theme.textSecondary }}
+            <FluentText
+              variant="body1"
+              style={{ color: selectedCurrency ? colors.colorNeutralForeground1 : colors.colorNeutralForeground2 }}
             >
               {selectedCurrency
                 ? CURRENCIES.find((c) => c.value === selectedCurrency)?.label
                 : "Choose your currency"}
-            </ThemedText>
+            </FluentText>
             <MaterialCommunityIcons
               name={showCurrencyPicker ? "chevron-up" : "chevron-down"}
               size={FluentIconSize.regular}
-              color={theme.textSecondary}
+              color={colors.colorNeutralForeground2}
             />
           </Pressable>
 
           {showCurrencyPicker ? (
-            <View style={[styles.currencyList, { backgroundColor: theme.backgroundSecondary }]}>
+            <View style={[styles.currencyList, { backgroundColor: colors.colorNeutralBackground2 }]}>
               {CURRENCIES.filter((c) => {
                 if (c.value === "INR") {
                   return geoInfo?.isIndian === true;
@@ -356,19 +355,19 @@ export default function SupportDeveloperScreen() {
                   style={[
                     styles.currencyOption,
                     selectedCurrency === currency.value && {
-                      backgroundColor: theme.primary + "20",
+                      backgroundColor: colors.colorBrandForeground1 + "20",
                     },
                   ]}
                 >
                   <View style={styles.currencyInfo}>
-                    <ThemedText type="body">{currency.label}</ThemedText>
-                    <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                    <FluentText variant="body1">{currency.label}</FluentText>
+                    <FluentText variant="caption2" color="secondary">
                       {currency.value === "INR" ? "UPI Available" : "PayPal"}
-                    </ThemedText>
+                    </FluentText>
                   </View>
-                  <ThemedText type="body" style={{ color: theme.primary }}>
+                  <FluentText variant="body1" color="brand">
                     {currency.symbol}
-                  </ThemedText>
+                  </FluentText>
                 </Pressable>
               ))}
             </View>
@@ -379,14 +378,14 @@ export default function SupportDeveloperScreen() {
           <>
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons name="heart" size={FluentIconSize.regular} color={theme.primary} />
-                <ThemedText type="body" style={styles.sectionTitle}>
+                <MaterialCommunityIcons name="heart" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+                <FluentText variant="body1" style={styles.sectionTitle}>
                   Choose an Amount
-                </ThemedText>
+                </FluentText>
               </View>
-              <ThemedText type="caption" style={[styles.sectionDesc, { color: theme.textSecondary }]}>
+              <FluentText variant="caption2" color="secondary" style={styles.sectionDesc}>
                 Every contribution helps, no matter the size
-              </ThemedText>
+              </FluentText>
 
               <View style={styles.tiersGrid}>
                 {DONATION_TIERS[selectedCurrency].map(renderTierCard)}
@@ -395,23 +394,23 @@ export default function SupportDeveloperScreen() {
 
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons name="pencil" size={FluentIconSize.regular} color={theme.primary} />
-                <ThemedText type="body" style={styles.sectionTitle}>
+                <MaterialCommunityIcons name="pencil" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+                <FluentText variant="body1" style={styles.sectionTitle}>
                   Custom Amount
-                </ThemedText>
+                </FluentText>
               </View>
               <View
-                style={[styles.customInputContainer, { backgroundColor: theme.backgroundSecondary }]}
+                style={[styles.customInputContainer, { backgroundColor: colors.colorNeutralBackground2 }]}
               >
-                <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                <FluentText variant="body1" color="secondary">
                   {getCurrencySymbol()}
-                </ThemedText>
+                </FluentText>
                 <TextInput
-                  style={[styles.customInput, { color: theme.text }]}
+                  style={[styles.customInput, { color: colors.colorNeutralForeground1 }]}
                   value={customAmount}
                   onChangeText={handleCustomAmountChange}
                   placeholder="Enter amount"
-                  placeholderTextColor={theme.textSecondary}
+                  placeholderTextColor={colors.colorNeutralForeground2}
                   keyboardType="numeric"
                 />
               </View>
@@ -424,7 +423,7 @@ export default function SupportDeveloperScreen() {
                   style={[
                     styles.payButton,
                     {
-                      backgroundColor: finalAmount > 0 ? "#5C2D91" : theme.backgroundSecondary,
+                      backgroundColor: finalAmount > 0 ? "#5C2D91" : colors.colorNeutralBackground2,
                       opacity: finalAmount > 0 ? 1 : 0.5,
                     },
                   ]}
@@ -432,22 +431,22 @@ export default function SupportDeveloperScreen() {
                   <MaterialCommunityIcons
                     name="bank"
                     size={FluentIconSize.medium}
-                    color={finalAmount > 0 ? "#FFFFFF" : theme.textSecondary}
+                    color={finalAmount > 0 ? "#FFFFFF" : colors.colorNeutralForeground2}
                   />
-                  <ThemedText
-                    type="body"
+                  <FluentText
+                    variant="body1"
                     style={[
                       styles.payButtonText,
-                      { color: finalAmount > 0 ? "#FFFFFF" : theme.textSecondary },
+                      { color: finalAmount > 0 ? "#FFFFFF" : colors.colorNeutralForeground2 },
                     ]}
                   >
                     {finalAmount > 0 ? `Pay ₹${finalAmount} with UPI` : "Select an Amount"}
-                  </ThemedText>
+                  </FluentText>
                 </Pressable>
 
-                <ThemedText type="caption" style={[styles.payHint, { color: theme.textSecondary }]}>
+                <FluentText variant="caption2" color="secondary" style={styles.payHint}>
                   Opens your preferred UPI app (GPay, PhonePe, Paytm, etc.)
-                </ThemedText>
+                </FluentText>
               </View>
             ) : (
               <View style={styles.section}>
@@ -456,7 +455,7 @@ export default function SupportDeveloperScreen() {
                   style={[
                     styles.payButton,
                     {
-                      backgroundColor: finalAmount > 0 ? "#0070BA" : theme.backgroundSecondary,
+                      backgroundColor: finalAmount > 0 ? "#0070BA" : colors.colorNeutralBackground2,
                       opacity: finalAmount > 0 ? 1 : 0.5,
                     },
                   ]}
@@ -464,19 +463,19 @@ export default function SupportDeveloperScreen() {
                   <MaterialCommunityIcons
                     name="credit-card-outline"
                     size={FluentIconSize.medium}
-                    color={finalAmount > 0 ? "#FFFFFF" : theme.textSecondary}
+                    color={finalAmount > 0 ? "#FFFFFF" : colors.colorNeutralForeground2}
                   />
-                  <ThemedText
-                    type="body"
+                  <FluentText
+                    variant="body1"
                     style={[
                       styles.payButtonText,
-                      { color: finalAmount > 0 ? "#FFFFFF" : theme.textSecondary },
+                      { color: finalAmount > 0 ? "#FFFFFF" : colors.colorNeutralForeground2 },
                     ]}
                   >
                     {finalAmount > 0
                       ? `Pay ${getCurrencySymbol()} ${finalAmount} with PayPal`
                       : "Select an Amount"}
-                  </ThemedText>
+                  </FluentText>
                 </Pressable>
               </View>
             )}
@@ -485,22 +484,22 @@ export default function SupportDeveloperScreen() {
 
         <GlassCard style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="shield-check" size={FluentIconSize.regular} color={theme.success} />
-            <ThemedText type="small" style={[styles.infoText, { color: theme.textSecondary }]}>
+            <MaterialCommunityIcons name="shield-check" size={FluentIconSize.regular} color={colors.colorPaletteGreenForeground1} />
+            <FluentText variant="caption1" color="secondary" style={styles.infoText}>
               Secure payment processing
-            </ThemedText>
+            </FluentText>
           </View>
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="gift" size={FluentIconSize.regular} color={theme.primary} />
-            <ThemedText type="small" style={[styles.infoText, { color: theme.textSecondary }]}>
+            <MaterialCommunityIcons name="gift" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+            <FluentText variant="caption1" color="secondary" style={styles.infoText}>
               All donations unlock premium features as a thank you
-            </ThemedText>
+            </FluentText>
           </View>
           <View style={[styles.infoRow, { marginBottom: 0 }]}>
-            <MaterialCommunityIcons name="heart-outline" size={FluentIconSize.regular} color={theme.error} />
-            <ThemedText type="small" style={[styles.infoText, { color: theme.textSecondary }]}>
+            <MaterialCommunityIcons name="heart-outline" size={FluentIconSize.regular} color={colors.colorPaletteRedForeground1} />
+            <FluentText variant="caption1" color="secondary" style={styles.infoText}>
               Your support keeps this app ad-free
-            </ThemedText>
+            </FluentText>
           </View>
         </GlassCard>
         </KeyboardAwareScrollViewCompat>
@@ -513,36 +512,37 @@ export default function SupportDeveloperScreen() {
         onRequestClose={handleDenyPayment}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.confirmationSheet, { backgroundColor: theme.backgroundDefault }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: theme.outline }]} />
-            <ThemedText type="h4" style={styles.confirmationTitle}>
+          <View style={[styles.confirmationSheet, { backgroundColor: colors.colorNeutralBackground1 }]}>
+            <View style={[styles.sheetHandle, { backgroundColor: colors.colorNeutralStroke1 }]} />
+            <FluentText variant="title3" style={styles.confirmationTitle}>
               Did your support transaction go through?
-            </ThemedText>
-            <ThemedText
-              type="small"
-              style={[styles.confirmationDesc, { color: theme.textSecondary }]}
+            </FluentText>
+            <FluentText
+              variant="caption1"
+              color="secondary"
+              style={styles.confirmationDesc}
             >
               We can't verify UPI payments automatically. Please confirm if your payment was
               successful.
-            </ThemedText>
+            </FluentText>
 
             <Pressable
               onPress={handleConfirmPayment}
-              style={[styles.confirmButton, { backgroundColor: theme.success }]}
+              style={[styles.confirmButton, { backgroundColor: colors.colorPaletteGreenForeground1 }]}
             >
               <MaterialCommunityIcons name="check" size={FluentIconSize.regular} color="#FFFFFF" />
-              <ThemedText type="body" style={styles.confirmButtonText}>
+              <FluentText variant="body1" style={styles.confirmButtonText}>
                 Yes, I contributed
-              </ThemedText>
+              </FluentText>
             </Pressable>
 
             <Pressable
               onPress={handleDenyPayment}
-              style={[styles.denyButton, { backgroundColor: theme.backgroundSecondary }]}
+              style={[styles.denyButton, { backgroundColor: colors.colorNeutralBackground2 }]}
             >
-              <ThemedText type="body" style={{ color: theme.textSecondary }}>
+              <FluentText variant="body1" color="secondary">
                 No / Not yet
-              </ThemedText>
+              </FluentText>
             </Pressable>
           </View>
         </View>
@@ -556,7 +556,7 @@ export default function SupportDeveloperScreen() {
       >
         <View style={[styles.modalOverlay, { justifyContent: "center" }]}>
           <Animated.View
-            style={[styles.thankYouCard, { backgroundColor: theme.backgroundDefault }, confettiStyle]}
+            style={[styles.thankYouCard, { backgroundColor: colors.colorNeutralBackground1 }, confettiStyle]}
           >
             <View style={styles.confettiContainer}>
               <Animated.View style={[styles.confettiParticle, confetti1Style]}>
@@ -579,36 +579,34 @@ export default function SupportDeveloperScreen() {
               </Animated.View>
             </View>
             <Animated.View style={heartStyle}>
-              <MaterialCommunityIcons name="heart" size={64} color={theme.error} />
+              <MaterialCommunityIcons name="heart" size={64} color={colors.colorPaletteRedForeground1} />
             </Animated.View>
-            <ThemedText type="h3" style={styles.thankYouTitle}>
+            <FluentText variant="title1" style={styles.thankYouTitle}>
               Thank You!
-            </ThemedText>
-            <ThemedText
-              type="body"
-              style={[styles.thankYouDesc, { color: theme.textSecondary }]}
+            </FluentText>
+            <FluentText
+              variant="body1"
+              color="secondary"
+              style={styles.thankYouDesc}
             >
               Your support means the world to me. You've unlocked all premium features!
-            </ThemedText>
+            </FluentText>
             <Pressable
               onPress={() => setShowThankYouModal(false)}
-              style={[styles.thankYouButton, { backgroundColor: theme.primary }]}
+              style={[styles.thankYouButton, { backgroundColor: colors.colorBrandBackground }]}
             >
-              <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+              <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
                 Continue
-              </ThemedText>
+              </FluentText>
             </Pressable>
           </Animated.View>
         </View>
       </Modal>
-    </ThemedView>
+    </FluentScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
     paddingHorizontal: FluentSpacing.l,
   },
@@ -617,16 +615,16 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.l,
   },
   avatar: {
-    width: 64,
-    height: 64,
+    width: 80,
+    height: 80,
     borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: FluentSpacing.s,
+    marginBottom: FluentSpacing.m,
   },
   developerName: {
-    fontWeight: "700",
-    marginBottom: FluentSpacing.xxs,
+    marginBottom: FluentSpacing.xs,
+    textAlign: "center",
   },
   developerBio: {
     textAlign: "center",
@@ -635,10 +633,10 @@ const styles = StyleSheet.create({
   donorBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: FluentSpacing.s,
-    paddingVertical: FluentSpacing.xxs,
-    borderRadius: FluentControlRadius.avatar,
-    marginTop: FluentSpacing.s,
+    paddingHorizontal: FluentSpacing.m,
+    paddingVertical: FluentSpacing.xs,
+    borderRadius: FluentControlRadius.chip,
+    marginTop: FluentSpacing.m,
   },
   section: {
     marginBottom: FluentSpacing.l,
@@ -646,14 +644,14 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: FluentSpacing.xxs,
+    marginBottom: FluentSpacing.s,
   },
   sectionTitle: {
-    marginLeft: FluentSpacing.xs,
+    marginLeft: FluentSpacing.s,
     fontWeight: "600",
   },
   sectionDesc: {
-    marginBottom: FluentSpacing.s,
+    marginBottom: FluentSpacing.m,
   },
   currencySelector: {
     flexDirection: "row",
@@ -663,7 +661,7 @@ const styles = StyleSheet.create({
     borderRadius: FluentControlRadius.card,
   },
   currencyList: {
-    marginTop: FluentSpacing.xs,
+    marginTop: FluentSpacing.s,
     borderRadius: FluentControlRadius.card,
     overflow: "hidden",
   },
@@ -683,22 +681,22 @@ const styles = StyleSheet.create({
   },
   tierCard: {
     width: "31%",
-    padding: FluentSpacing.s,
-    borderRadius: FluentControlRadius.dialog,
     alignItems: "center",
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
     borderWidth: 1,
   },
   tierIconHalo: {
-    width: 48,
-    height: 48,
-    borderRadius: FluentControlRadius.avatar,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: FluentSpacing.xs,
+    marginBottom: FluentSpacing.s,
   },
   tierAmount: {
     fontWeight: "600",
-    marginBottom: 2,
+    marginBottom: FluentSpacing.xxs,
   },
   customInputContainer: {
     flexDirection: "row",
@@ -708,65 +706,35 @@ const styles = StyleSheet.create({
   },
   customInput: {
     flex: 1,
-    marginLeft: FluentSpacing.xs,
+    marginLeft: FluentSpacing.s,
     fontSize: 16,
-    minHeight: 24,
   },
   payButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: FluentSpacing.m,
-    borderRadius: FluentControlRadius.avatar,
-    minHeight: 52,
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
   },
   payButtonText: {
-    fontWeight: "700",
-    marginLeft: FluentSpacing.xs,
+    fontWeight: "600",
+    marginLeft: FluentSpacing.s,
   },
   payHint: {
     textAlign: "center",
     marginTop: FluentSpacing.s,
-    marginBottom: FluentSpacing.s,
-  },
-  manualCard: {
-    marginTop: FluentSpacing.m,
-  },
-  manualTitle: {
-    fontWeight: "600",
-    marginBottom: FluentSpacing.s,
-  },
-  manualRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: FluentSpacing.s,
-  },
-  manualInfo: {
-    flex: 1,
-  },
-  copyButton: {
-    width: 48,
-    height: 48,
-    borderRadius: FluentControlRadius.button,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  showManualLink: {
-    marginTop: FluentSpacing.s,
-    alignItems: "center",
   },
   infoCard: {
-    marginBottom: FluentSpacing.m,
+    marginTop: FluentSpacing.m,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: FluentSpacing.xs,
+    marginBottom: FluentSpacing.m,
   },
   infoText: {
-    marginLeft: FluentSpacing.s,
     flex: 1,
+    marginLeft: FluentSpacing.m,
   },
   modalOverlay: {
     flex: 1,
@@ -774,75 +742,77 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   confirmationSheet: {
+    padding: FluentSpacing.xl,
     borderTopLeftRadius: FluentControlRadius.bottomSheet,
     borderTopRightRadius: FluentControlRadius.bottomSheet,
-    padding: FluentSpacing.l,
-    paddingBottom: FluentSpacing.xxl,
+    alignItems: "center",
   },
   sheetHandle: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: FluentSpacing.l,
+    marginBottom: FluentSpacing.xl,
   },
   confirmationTitle: {
     textAlign: "center",
-    marginBottom: FluentSpacing.s,
+    marginBottom: FluentSpacing.m,
   },
   confirmationDesc: {
     textAlign: "center",
-    marginBottom: FluentSpacing.l,
+    marginBottom: FluentSpacing.xl,
   },
   confirmButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: FluentSpacing.m,
-    borderRadius: FluentControlRadius.avatar,
-    marginBottom: FluentSpacing.s,
+    width: "100%",
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.button,
+    marginBottom: FluentSpacing.m,
   },
   confirmButtonText: {
     color: "#FFFFFF",
     fontWeight: "600",
-    marginLeft: FluentSpacing.xs,
+    marginLeft: FluentSpacing.s,
   },
   denyButton: {
+    width: "100%",
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.button,
     alignItems: "center",
-    justifyContent: "center",
-    padding: FluentSpacing.m,
-    borderRadius: FluentControlRadius.avatar,
   },
   thankYouCard: {
-    margin: FluentSpacing.l,
-    padding: FluentSpacing.xxl,
-    borderRadius: FluentControlRadius.bottomSheet,
+    marginHorizontal: FluentSpacing.xl,
+    padding: FluentSpacing.xl,
+    borderRadius: FluentControlRadius.dialog,
     alignItems: "center",
-    alignSelf: "center",
-    maxWidth: 320,
-  },
-  thankYouTitle: {
-    marginTop: FluentSpacing.m,
-    marginBottom: FluentSpacing.s,
-  },
-  thankYouDesc: {
-    textAlign: "center",
-    marginBottom: FluentSpacing.l,
-  },
-  thankYouButton: {
-    paddingHorizontal: FluentSpacing.xxl,
-    paddingVertical: FluentSpacing.m,
-    borderRadius: FluentControlRadius.avatar,
+    overflow: "visible",
   },
   confettiContainer: {
     position: "absolute",
-    top: 60,
+    top: 0,
     left: 0,
     right: 0,
+    bottom: 0,
     alignItems: "center",
-    zIndex: 10,
+    justifyContent: "center",
+    overflow: "visible",
   },
   confettiParticle: {
     position: "absolute",
+  },
+  thankYouTitle: {
+    marginTop: FluentSpacing.l,
+    marginBottom: FluentSpacing.m,
+  },
+  thankYouDesc: {
+    textAlign: "center",
+    marginBottom: FluentSpacing.xl,
+  },
+  thankYouButton: {
+    width: "100%",
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.button,
+    alignItems: "center",
   },
 });

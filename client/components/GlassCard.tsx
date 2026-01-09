@@ -8,7 +8,15 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius, M3Motion } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentControlRadius,
+  FluentDuration,
+  FluentEasingValues,
+  getShadowStyle,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface GlassCardProps {
   children?: React.ReactNode;
@@ -29,9 +37,11 @@ export function GlassCard({
   disabled = false,
   selected = false,
 }: GlassCardProps) {
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const scale = useSharedValue(1);
   const bgOpacity = useSharedValue(0);
+
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -44,30 +54,32 @@ export function GlassCard({
   const handlePressIn = () => {
     if (!disabled && onPress) {
       scale.value = withTiming(0.98, { 
-        duration: M3Motion.durationShort3,
-        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+        duration: FluentDuration.fast,
+        easing: Easing.bezier(
+          FluentEasingValues.decelerateMid.x1,
+          FluentEasingValues.decelerateMid.y1,
+          FluentEasingValues.decelerateMid.x2,
+          FluentEasingValues.decelerateMid.y2
+        ),
       });
-      bgOpacity.value = withTiming(1, { duration: M3Motion.durationShort3 });
+      bgOpacity.value = withTiming(1, { duration: FluentDuration.fast });
     }
   };
 
   const handlePressOut = () => {
     scale.value = withTiming(1, { 
-      duration: M3Motion.durationShort4,
-      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+      duration: FluentDuration.normal,
+      easing: Easing.bezier(
+        FluentEasingValues.decelerateMid.x1,
+        FluentEasingValues.decelerateMid.y1,
+        FluentEasingValues.decelerateMid.x2,
+        FluentEasingValues.decelerateMid.y2
+      ),
     });
-    bgOpacity.value = withTiming(0, { duration: M3Motion.durationShort4 });
+    bgOpacity.value = withTiming(0, { duration: FluentDuration.normal });
   };
 
-  const shadowStyle = Platform.OS === "web" ? {
-    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.14)",
-  } : {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 1,
-  };
+  const shadowStyle = getShadowStyle('shadow2', isDark);
 
   return (
     <AnimatedPressable
@@ -84,7 +96,7 @@ export function GlassCard({
           style={[
             styles.blur, 
             { 
-              borderColor: selected ? theme.primary : theme.outlineVariant,
+              borderColor: selected ? colors.colorBrandForeground1 : colors.colorNeutralStroke2,
               borderWidth: 1,
             }
           ]}
@@ -92,7 +104,7 @@ export function GlassCard({
           <Animated.View 
             style={[
               StyleSheet.absoluteFill, 
-              { backgroundColor: theme.surfaceContainerHigh, borderRadius: BorderRadius.card - 1 },
+              { backgroundColor: colors.colorNeutralBackground3, borderRadius: FluentControlRadius.card - 1 },
               bgAnimatedStyle,
             ]} 
           />
@@ -103,8 +115,8 @@ export function GlassCard({
           style={[
             styles.blur,
             {
-              backgroundColor: theme.surfaceContainerLow,
-              borderColor: selected ? theme.primary : theme.outlineVariant,
+              backgroundColor: colors.colorNeutralBackground2,
+              borderColor: selected ? colors.colorBrandForeground1 : colors.colorNeutralStroke2,
               borderWidth: 1,
             },
           ]}
@@ -112,7 +124,7 @@ export function GlassCard({
           <Animated.View 
             style={[
               StyleSheet.absoluteFill, 
-              { backgroundColor: theme.surfaceContainerHigh, borderRadius: BorderRadius.card - 1 },
+              { backgroundColor: colors.colorNeutralBackground3, borderRadius: FluentControlRadius.card - 1 },
               bgAnimatedStyle,
             ]} 
           />
@@ -125,11 +137,11 @@ export function GlassCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: BorderRadius.card,
+    borderRadius: FluentControlRadius.card,
     overflow: "hidden",
   },
   blur: {
-    padding: Spacing.size4,
-    borderRadius: BorderRadius.card,
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
   },
 });

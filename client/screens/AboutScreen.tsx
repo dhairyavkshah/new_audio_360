@@ -1,22 +1,20 @@
 import React from "react";
 import { View, StyleSheet, ScrollView, Linking, Pressable } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 
 export default function AboutScreen() {
-  const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
 
   const handleLinkPress = (url: string) => {
@@ -30,7 +28,7 @@ export default function AboutScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -40,118 +38,122 @@ export default function AboutScreen() {
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
         <View style={styles.logoContainer}>
-          <View style={[styles.logoCircle, { backgroundColor: theme.primary + "20" }]}>
-            <MaterialCommunityIcons name="music-circle" size={FluentIconSize.xxlarge} color={theme.primary} />
+          <View style={[styles.logoCircle, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
+            <MaterialCommunityIcons name="music-circle" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} />
           </View>
-          <ThemedText type="h3" style={styles.appName}>
+          <FluentText variant="title1" style={styles.appName}>
             New Audio 360
-          </ThemedText>
-          <ThemedText type="small" style={[styles.version, { color: theme.textSecondary }]}>
+          </FluentText>
+          <FluentText variant="caption1" color="secondary" style={styles.version}>
             Version 1.0.0
-          </ThemedText>
+          </FluentText>
         </View>
 
         <GlassCard style={styles.descriptionCard}>
-          <ThemedText type="small" style={[styles.description, { color: theme.textSecondary }]}>
+          <FluentText variant="caption1" color="secondary" style={styles.description}>
             A beautiful music player designed with love for audio enthusiasts. 
             Experience your music collection like never before with our carefully 
             crafted equalizer presets and immersive sound modes.
-          </ThemedText>
+          </FluentText>
         </GlassCard>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="star" size={FluentIconSize.small} color={theme.primary} />
-            <ThemedText type="body" style={styles.sectionTitle}>
+            <MaterialCommunityIcons name="star" size={FluentIconSize.small} color={colors.colorBrandForeground1} />
+            <FluentText variant="body1" style={styles.sectionTitle}>
               Features
-            </ThemedText>
+            </FluentText>
           </View>
           <View style={styles.featuresList}>
             <FeatureItem
               icon="music"
               title="Music Library"
               description="Organize and browse your music collection"
-              theme={theme}
+              colors={colors}
             />
             <FeatureItem
               icon="tune-vertical"
               title="Sound Lab"
               description="Professional equalizer presets and sound modes"
-              theme={theme}
+              colors={colors}
             />
             <FeatureItem
               icon="palette"
               title="55 Themes"
               description="Beautiful skins from iconic music players"
-              theme={theme}
+              colors={colors}
             />
             <FeatureItem
               icon="headphones"
               title="Immersive Audio"
               description="Cinema, Music, Sports, and 360 Reality modes"
-              theme={theme}
+              colors={colors}
             />
           </View>
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="scale-balance" size={FluentIconSize.small} color={theme.primary} />
-            <ThemedText type="body" style={styles.sectionTitle}>
+            <MaterialCommunityIcons name="scale-balance" size={FluentIconSize.small} color={colors.colorBrandForeground1} />
+            <FluentText variant="body1" style={styles.sectionTitle}>
               Legal
-            </ThemedText>
+            </FluentText>
           </View>
           <View style={styles.legalLinks}>
             <Pressable
-              style={[styles.linkItem, { backgroundColor: theme.backgroundSecondary }]}
+              style={[styles.linkItem, { backgroundColor: colors.colorNeutralBackground2 }]}
             >
-              <MaterialCommunityIcons name="file-document-outline" size={FluentIconSize.small} color={theme.text} />
-              <ThemedText type="small" style={styles.linkText}>
+              <MaterialCommunityIcons name="file-document-outline" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
+              <FluentText variant="caption1" style={styles.linkText}>
                 Terms of Service
-              </ThemedText>
-              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={theme.textSecondary} />
+              </FluentText>
+              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
             </Pressable>
             <Pressable
-              style={[styles.linkItem, { backgroundColor: theme.backgroundSecondary }]}
+              style={[styles.linkItem, { backgroundColor: colors.colorNeutralBackground2 }]}
               onPress={handlePrivacyPolicyPress}
             >
-              <MaterialCommunityIcons name="shield-lock-outline" size={FluentIconSize.small} color={theme.text} />
-              <ThemedText type="small" style={styles.linkText}>
+              <MaterialCommunityIcons name="shield-lock-outline" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
+              <FluentText variant="caption1" style={styles.linkText}>
                 Privacy Policy
-              </ThemedText>
-              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={theme.textSecondary} />
+              </FluentText>
+              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
             </Pressable>
             <Pressable
-              style={[styles.linkItem, { backgroundColor: theme.backgroundSecondary }]}
+              style={[styles.linkItem, { backgroundColor: colors.colorNeutralBackground2 }]}
             >
-              <MaterialCommunityIcons name="license" size={FluentIconSize.small} color={theme.text} />
-              <ThemedText type="small" style={styles.linkText}>
+              <MaterialCommunityIcons name="license" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
+              <FluentText variant="caption1" style={styles.linkText}>
                 Open Source Licenses
-              </ThemedText>
-              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={theme.textSecondary} />
+              </FluentText>
+              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
             </Pressable>
           </View>
         </View>
 
         <View style={styles.footer}>
-          <ThemedText type="caption" style={{ color: theme.textSecondary, textAlign: "center" }}>
+          <FluentText variant="caption2" color="secondary" align="center">
             By: Dhairya Shah (The Team 360)
-          </ThemedText>
-          <ThemedText
-            type="caption"
-            style={{ color: theme.textSecondary, textAlign: "center", marginTop: FluentSpacing.xs }}
+          </FluentText>
+          <FluentText
+            variant="caption2"
+            color="secondary"
+            align="center"
+            style={{ marginTop: FluentSpacing.xs }}
           >
             Made with love in India
-          </ThemedText>
-          <ThemedText
-            type="caption"
-            style={{ color: theme.textSecondary, textAlign: "center", marginTop: FluentSpacing.xs }}
+          </FluentText>
+          <FluentText
+            variant="caption2"
+            color="secondary"
+            align="center"
+            style={{ marginTop: FluentSpacing.xs }}
           >
             2024-2026 New Audio 360. All rights reserved.
-          </ThemedText>
+          </FluentText>
         </View>
       </ScrollView>
-    </ThemedView>
+    </FluentScreenLayout>
   );
 }
 
@@ -159,34 +161,31 @@ function FeatureItem({
   icon,
   title,
   description,
-  theme,
+  colors,
 }: {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   title: string;
   description: string;
-  theme: any;
+  colors: typeof FluentLightColors;
 }) {
   return (
-    <View style={[styles.featureItem, { backgroundColor: theme.backgroundSecondary }]}>
-      <View style={[styles.featureIcon, { backgroundColor: theme.primary + "20" }]}>
-        <MaterialCommunityIcons name={icon} size={FluentIconSize.small} color={theme.primary} />
+    <View style={[styles.featureItem, { backgroundColor: colors.colorNeutralBackground2 }]}>
+      <View style={[styles.featureIcon, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
+        <MaterialCommunityIcons name={icon} size={FluentIconSize.small} color={colors.colorBrandForeground1} />
       </View>
       <View style={styles.featureText}>
-        <ThemedText type="small" style={{ fontWeight: "600" }}>
+        <FluentText variant="caption1" style={{ fontWeight: "600" }}>
           {title}
-        </ThemedText>
-        <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+        </FluentText>
+        <FluentText variant="caption2" color="secondary">
           {description}
-        </ThemedText>
+        </FluentText>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
     paddingHorizontal: FluentSpacing.l,
   },

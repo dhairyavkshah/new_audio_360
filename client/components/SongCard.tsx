@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
@@ -79,7 +79,7 @@ export function SongCard({
   showFavoriteButton = true, 
   showAddToPlaylist = false 
 }: SongCardProps) {
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
   const { isFavorite, toggleFavorite } = usePlayerContext();
   const scale = useSharedValue(1);
@@ -221,41 +221,29 @@ export function SongCard({
         ) : null}
       </View>
       <View style={styles.info}>
-        <ThemedText 
-          style={{ 
-            color: fluentColors.colorNeutralForeground1,
-            fontSize: FluentTypography.body1Strong.fontSize,
-            fontWeight: FluentTypography.body1Strong.fontWeight,
-            lineHeight: FluentTypography.body1Strong.lineHeight,
-          }} 
+        <FluentText 
+          variant="body1Strong"
+          color="primary"
           numberOfLines={1}
         >
           {song.title}
-        </ThemedText>
-        <ThemedText
-          style={{ 
-            color: fluentColors.colorNeutralForeground2,
-            fontSize: FluentTypography.caption1.fontSize,
-            fontWeight: FluentTypography.caption1.fontWeight,
-            lineHeight: FluentTypography.caption1.lineHeight,
-          }}
+        </FluentText>
+        <FluentText
+          variant="caption1"
+          color="secondary"
           numberOfLines={1}
         >
           {song.artist}
-        </ThemedText>
+        </FluentText>
       </View>
       {showDuration ? (
-        <ThemedText 
-          style={[
-            styles.duration, 
-            { 
-              color: fluentColors.colorNeutralForeground3,
-              fontSize: FluentTypography.caption1.fontSize,
-            }
-          ]}
+        <FluentText 
+          variant="caption1"
+          color="tertiary"
+          style={styles.duration}
         >
           {formatDuration(song.duration)}
-        </ThemedText>
+        </FluentText>
       ) : null}
       {showAddToPlaylist ? (
         <ActionButton onPress={handleAddToPlaylistPress} accessibilityLabel="Add to playlist">

@@ -55,7 +55,6 @@ function ControlButton({
   useGlow?: boolean;
   fluentColors: typeof FluentLightColors;
 }) {
-  const { theme } = useThemeContext();
   const { shapes, components } = useSkin();
   const { playTapSound } = useUiSound();
   const scale = useSharedValue(1);
@@ -139,7 +138,7 @@ export function PlaybackControls({
   shuffleEnabled = false,
   repeatMode = "off",
 }: PlaybackControlsProps) {
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const { icons, shapes, components } = useSkin();
   const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 

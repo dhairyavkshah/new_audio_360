@@ -7,8 +7,8 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 
-import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
+import { FluentText } from "@/components/fluent";
+import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import {
   FluentSpacing,
@@ -60,14 +60,14 @@ export function Button({
   variant = 'default',
   size = 'default',
 }: ButtonProps) {
-  const { isDark } = useTheme();
+  const { isDark } = useThemeContext();
   const { playKeypressSound } = useUiSound();
   const scale = useSharedValue(1);
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [hoverActive, setHoverActive] = useState(false);
 
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -126,69 +126,69 @@ export function Button({
     switch (variant) {
       case 'secondary':
         return {
-          rest: fluentColors.colorNeutralBackground3,
-          hover: fluentColors.colorNeutralBackground1Hover,
-          pressed: fluentColors.colorNeutralBackground1Pressed,
-          text: fluentColors.colorNeutralForeground1,
+          rest: colors.colorNeutralBackground3,
+          hover: colors.colorNeutralBackground1Hover,
+          pressed: colors.colorNeutralBackground1Pressed,
+          text: colors.colorNeutralForeground1,
         };
       case 'outline':
         return {
-          rest: fluentColors.colorTransparentBackground,
-          hover: fluentColors.colorSubtleBackgroundHover,
-          pressed: fluentColors.colorSubtleBackgroundPressed,
-          text: fluentColors.colorBrandForeground1,
-          borderColor: fluentColors.colorNeutralStroke1,
-          borderHover: fluentColors.colorBrandStroke1,
-          borderPressed: fluentColors.colorBrandStroke1,
+          rest: colors.colorTransparentBackground,
+          hover: colors.colorSubtleBackgroundHover,
+          pressed: colors.colorSubtleBackgroundPressed,
+          text: colors.colorBrandForeground1,
+          borderColor: colors.colorNeutralStroke1,
+          borderHover: colors.colorBrandStroke1,
+          borderPressed: colors.colorBrandStroke1,
         };
       case 'ghost':
         return {
-          rest: fluentColors.colorSubtleBackground,
-          hover: fluentColors.colorSubtleBackgroundHover,
-          pressed: fluentColors.colorSubtleBackgroundPressed,
-          text: fluentColors.colorNeutralForeground1,
+          rest: colors.colorSubtleBackground,
+          hover: colors.colorSubtleBackgroundHover,
+          pressed: colors.colorSubtleBackgroundPressed,
+          text: colors.colorNeutralForeground1,
         };
       case 'subtle':
         return {
-          rest: fluentColors.colorSubtleBackground,
-          hover: fluentColors.colorSubtleBackgroundHover,
-          pressed: fluentColors.colorSubtleBackgroundPressed,
-          text: fluentColors.colorBrandForeground1,
+          rest: colors.colorSubtleBackground,
+          hover: colors.colorSubtleBackgroundHover,
+          pressed: colors.colorSubtleBackgroundPressed,
+          text: colors.colorBrandForeground1,
         };
       case 'destructive':
         return {
-          rest: fluentColors.colorPaletteRedForeground2,
-          hover: fluentColors.colorPaletteRedForeground1,
-          pressed: fluentColors.colorPaletteRedBorderActive,
-          text: fluentColors.colorNeutralForegroundOnBrand,
+          rest: colors.colorPaletteRedForeground2,
+          hover: colors.colorPaletteRedForeground1,
+          pressed: colors.colorPaletteRedBorderActive,
+          text: colors.colorNeutralForegroundOnBrand,
         };
       default:
         return {
-          rest: fluentColors.colorBrandBackground,
-          hover: fluentColors.colorBrandBackgroundHover,
-          pressed: fluentColors.colorBrandBackgroundPressed,
-          text: fluentColors.colorNeutralForegroundOnBrand,
+          rest: colors.colorBrandBackground,
+          hover: colors.colorBrandBackgroundHover,
+          pressed: colors.colorBrandBackgroundPressed,
+          text: colors.colorNeutralForegroundOnBrand,
         };
     }
   };
 
-  const colors = getVariantColors();
+  const variantColors = getVariantColors();
 
   const getBackgroundColor = () => {
-    if (isPressed) return colors.pressed;
-    if (hoverActive) return colors.hover;
-    return colors.rest;
+    if (isPressed) return variantColors.pressed;
+    if (hoverActive) return variantColors.hover;
+    return variantColors.rest;
   };
 
   const getBorderColor = () => {
     if (variant !== 'outline') return 'transparent';
-    if (isPressed) return colors.borderPressed || fluentColors.colorBrandStroke1;
-    if (hoverActive) return colors.borderHover || fluentColors.colorBrandStroke1;
-    return colors.borderColor || fluentColors.colorNeutralStroke1;
+    if (isPressed) return variantColors.borderPressed || colors.colorBrandStroke1;
+    if (hoverActive) return variantColors.borderHover || colors.colorBrandStroke1;
+    return variantColors.borderColor || colors.colorNeutralStroke1;
   };
 
   const getFocusRingColor = () => {
-    return fluentColors.colorStrokeFocus2;
+    return colors.colorStrokeFocus2;
   };
 
   const focusRingStyle = isFocused ? Platform.select({
@@ -234,12 +234,12 @@ export function Button({
         animatedStyle,
       ]}
     >
-      <ThemedText
-        type="labelMedium"
-        style={[styles.buttonText, { color: colors.text }]}
+      <FluentText
+        variant="body1Strong"
+        style={[styles.buttonText, { color: variantColors.text }]}
       >
         {children}
-      </ThemedText>
+      </FluentText>
     </AnimatedPressable>
   );
 }

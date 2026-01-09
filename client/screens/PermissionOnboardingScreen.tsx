@@ -4,12 +4,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { FluentText, FluentSurface } from '@/components/fluent';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useUiSound } from '@/contexts/UiSoundContext';
 import { useMediaLibraryContext } from '@/contexts/MediaLibraryContext';
-import { FluentSpacing, FluentControlRadius } from '@/constants/fluent2';
+import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
 
 interface PermissionOnboardingScreenProps {
   onComplete: () => void;
@@ -21,11 +20,13 @@ interface PermissionItemProps {
   title: string;
   description: string;
   status: 'pending' | 'granted' | 'denied';
+  colors: typeof FluentLightColors;
 }
 
 export default function PermissionOnboardingScreen({ onComplete, onSkip }: PermissionOnboardingScreenProps) {
   const insets = useSafeAreaInsets();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { playTapSound } = useUiSound();
   const { requestPermission } = useMediaLibraryContext();
   const [mediaPermission, setMediaPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
@@ -79,37 +80,37 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
     onSkip();
   };
 
-  const PermissionItem = ({ icon, title, description, status }: PermissionItemProps) => (
-    <View style={[styles.permissionItem, { backgroundColor: theme.backgroundSecondary }]}>
-      <View style={[styles.permissionIcon, { backgroundColor: theme.primary + '20' }]}>
-        <MaterialCommunityIcons name={icon} size={28} color={theme.primary} />
+  const PermissionItem = ({ icon, title, description, status, colors }: PermissionItemProps) => (
+    <View style={[styles.permissionItem, { backgroundColor: colors.colorNeutralBackground3 }]}>
+      <View style={[styles.permissionIcon, { backgroundColor: colors.colorBrandBackground + '20' }]}>
+        <MaterialCommunityIcons name={icon} size={28} color={colors.colorBrandForeground1} />
       </View>
       <View style={styles.permissionContent}>
-        <ThemedText type="h4" style={styles.permissionTitle}>{title}</ThemedText>
-        <ThemedText type="small" style={{ color: theme.textSecondary }}>{description}</ThemedText>
+        <FluentText variant="subtitle1">{title}</FluentText>
+        <FluentText variant="caption1" color="secondary">{description}</FluentText>
       </View>
       <View style={styles.permissionStatus}>
         {status === 'granted' ? (
-          <MaterialCommunityIcons name="check-circle" size={24} color={theme.success} />
+          <MaterialCommunityIcons name="check-circle" size={24} color={colors.colorPaletteGreenForeground1} />
         ) : status === 'denied' ? (
-          <MaterialCommunityIcons name="close-circle" size={24} color={theme.error} />
+          <MaterialCommunityIcons name="close-circle" size={24} color={colors.colorPaletteRedForeground1} />
         ) : (
-          <MaterialCommunityIcons name="circle-outline" size={24} color={theme.textSecondary} />
+          <MaterialCommunityIcons name="circle-outline" size={24} color={colors.colorNeutralForeground2} />
         )}
       </View>
     </View>
   );
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top + FluentSpacing.xl, paddingBottom: insets.bottom + FluentSpacing.xl }]}>
+    <FluentSurface background="neutral1" style={[styles.container, { paddingTop: insets.top + FluentSpacing.xl, paddingBottom: insets.bottom + FluentSpacing.xl }]}>
       <View style={styles.header}>
-        <View style={[styles.iconContainer, { backgroundColor: theme.primary + '15' }]}>
-          <MaterialCommunityIcons name="music-box-multiple" size={64} color={theme.primary} />
+        <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground + '15' }]}>
+          <MaterialCommunityIcons name="music-box-multiple" size={64} color={colors.colorBrandForeground1} />
         </View>
-        <ThemedText type="h1" style={styles.title}>Welcome to New Audio 360</ThemedText>
-        <ThemedText type="body" style={[styles.subtitle, { color: theme.textSecondary }]}>
+        <FluentText variant="title1" align="center">Welcome to New Audio 360</FluentText>
+        <FluentText variant="body1" color="secondary" align="center" style={styles.subtitle}>
           To play music from your device, we need access to your media library.
-        </ThemedText>
+        </FluentText>
       </View>
 
       <View style={styles.permissionsList}>
@@ -118,35 +119,37 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
           title="Media Library"
           description="Access audio files on your device to play your music"
           status={mediaPermission}
+          colors={colors}
         />
         <PermissionItem
           icon="image-multiple"
           title="Album Artwork"
           description="Display album covers for a better experience"
           status={mediaPermission}
+          colors={colors}
         />
       </View>
 
       <View style={styles.footer}>
         {mediaPermission === 'denied' ? (
           <>
-            <ThemedText type="small" style={[styles.deniedText, { color: theme.textSecondary }]}>
+            <FluentText variant="caption1" color="secondary" align="center" style={styles.deniedText}>
               Permission was denied. Please enable it in Settings to access your music.
-            </ThemedText>
+            </FluentText>
             {Platform.OS !== 'web' && (
               <Pressable
-                style={[styles.button, { backgroundColor: theme.primary }]}
+                style={[styles.button, { backgroundColor: colors.colorBrandBackground }]}
                 onPress={handleOpenSettings}
               >
-                <MaterialCommunityIcons name="cog" size={20} color="#FFFFFF" />
-                <ThemedText type="h4" style={styles.buttonText}>Open Settings</ThemedText>
+                <MaterialCommunityIcons name="cog" size={20} color={colors.colorNeutralForegroundOnBrand} />
+                <FluentText variant="subtitle1" color="onBrand">Open Settings</FluentText>
               </Pressable>
             )}
             <Pressable
-              style={[styles.secondaryButton, { borderColor: theme.outline }]}
+              style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
               onPress={handleSkip}
             >
-              <ThemedText type="body" style={{ color: theme.textSecondary }}>Continue with Sample Music</ThemedText>
+              <FluentText variant="body1" color="secondary">Continue with Sample Music</FluentText>
             </Pressable>
           </>
         ) : (
@@ -154,35 +157,35 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
             <Pressable
               style={[
                 styles.button,
-                { backgroundColor: theme.primary },
+                { backgroundColor: colors.colorBrandBackground },
                 isRequesting && styles.buttonDisabled
               ]}
               onPress={handleRequestPermissions}
               disabled={isRequesting}
             >
               {isRequesting ? (
-                <ThemedText type="h4" style={styles.buttonText}>Requesting...</ThemedText>
+                <FluentText variant="subtitle1" color="onBrand">Requesting...</FluentText>
               ) : (
                 <>
-                  <MaterialCommunityIcons name="shield-check" size={20} color="#FFFFFF" />
-                  <ThemedText type="h4" style={styles.buttonText}>Grant Access</ThemedText>
+                  <MaterialCommunityIcons name="shield-check" size={20} color={colors.colorNeutralForegroundOnBrand} />
+                  <FluentText variant="subtitle1" color="onBrand">Grant Access</FluentText>
                 </>
               )}
             </Pressable>
             <Pressable
-              style={[styles.secondaryButton, { borderColor: theme.outline }]}
+              style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
               onPress={handleSkip}
             >
-              <ThemedText type="body" style={{ color: theme.textSecondary }}>Skip for Now</ThemedText>
+              <FluentText variant="body1" color="secondary">Skip for Now</FluentText>
             </Pressable>
           </>
         )}
 
-        <ThemedText type="caption" style={[styles.privacyNote, { color: theme.textSecondary }]}>
+        <FluentText variant="caption1" color="secondary" align="center" style={styles.privacyNote}>
           Your music stays on your device. We never upload or share your files.
-        </ThemedText>
+        </FluentText>
       </View>
-    </ThemedView>
+    </FluentSurface>
   );
 }
 
@@ -203,12 +206,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: FluentSpacing.l,
   },
-  title: {
-    textAlign: 'center',
-    marginBottom: FluentSpacing.m,
-  },
   subtitle: {
-    textAlign: 'center',
     lineHeight: 22,
   },
   permissionsList: {
@@ -233,9 +231,6 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: FluentSpacing.xs,
   },
-  permissionTitle: {
-    fontWeight: '600',
-  },
   permissionStatus: {
     width: 32,
     alignItems: 'center',
@@ -256,10 +251,6 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.7,
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
   secondaryButton: {
     height: 48,
     width: '100%',
@@ -269,11 +260,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   deniedText: {
-    textAlign: 'center',
     marginBottom: FluentSpacing.s,
   },
   privacyNote: {
-    textAlign: 'center',
     marginTop: FluentSpacing.m,
   },
 });

@@ -5,7 +5,6 @@ import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
@@ -27,7 +26,7 @@ interface MiniPlayerProps {
 
 export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
   const navigation = useNavigation<any>();
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const { icons } = useSkin();
   const { playTapSound } = useUiSound();
   const { currentSong, isPlaying, togglePlayPause, progress } = usePlayerContext();

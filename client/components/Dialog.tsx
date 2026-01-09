@@ -6,7 +6,6 @@ import {
   Dimensions,
   Platform,
   Modal,
-  Text,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import Animated, {
@@ -16,11 +15,11 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import { Button } from "@/components/Button";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import {
   FluentControlRadius,
   FluentSpacing,
-  FluentTypography,
   FluentDuration,
   FluentCurve,
   getShadowStyle,
@@ -54,13 +53,13 @@ export function Dialog({
   actions = [],
   children,
 }: DialogProps) {
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const [isRendered, setIsRendered] = useState(visible);
   const scale = useSharedValue(0.9);
   const opacity = useSharedValue(0);
   const scrimOpacity = useSharedValue(0);
 
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const handleAnimationComplete = useCallback((toVisible: boolean) => {
     if (!toVisible) {
@@ -125,7 +124,7 @@ export function Dialog({
     >
       <View style={styles.overlay}>
         <Animated.View
-          style={[styles.scrim, { backgroundColor: theme.scrim }, scrimStyle]}
+          style={[styles.scrim, { backgroundColor: colors.colorNeutralBackgroundInverted }, scrimStyle]}
         >
           <Pressable style={styles.scrimPressable} onPress={handleDismiss} />
         </Animated.View>
@@ -134,7 +133,7 @@ export function Dialog({
           style={[
             styles.dialog,
             {
-              backgroundColor: fluentColors.colorNeutralBackground1,
+              backgroundColor: colors.colorNeutralBackground1,
               width: DIALOG_WIDTH,
             },
             getShadowStyle('shadow64', isDark),
@@ -143,26 +142,21 @@ export function Dialog({
           accessibilityRole="alert"
           accessibilityLiveRegion="polite"
         >
-          <Text
-            style={[
-              styles.title,
-              FluentTypography.subtitle1,
-              { color: fluentColors.colorNeutralForeground1 },
-            ]}
+          <FluentText
+            variant="subtitle1"
+            style={styles.title}
           >
             {title}
-          </Text>
+          </FluentText>
 
           {message ? (
-            <Text
-              style={[
-                styles.message,
-                FluentTypography.body1,
-                { color: fluentColors.colorNeutralForeground2 },
-              ]}
+            <FluentText
+              variant="body1"
+              color="secondary"
+              style={styles.message}
             >
               {message}
-            </Text>
+            </FluentText>
           ) : null}
 
           {children ? <View style={styles.content}>{children}</View> : null}

@@ -7,14 +7,15 @@ import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { RecordButton } from "@/components/RecordButton";
 import { LiveAudioWaveform } from "@/components/LiveAudioWaveform";
 import { GlassCard } from "@/components/GlassCard";
 import { Dialog } from "@/components/Dialog";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useStudioContext } from "@/contexts/StudioContext";
-import { Spacing, BorderRadius, ModeStyles, Layout } from "@/constants/theme";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { ModeStyles } from "@/constants/theme";
 import { studioAudioEngine } from "@/services/StudioAudioEngine";
 import { audioDeviceService, LatencyWarning } from "@/services/AudioDeviceService";
 import { micTestService, MicTestResult, MicTestStatus } from "@/services/MicTestService";
@@ -32,6 +33,7 @@ export default function RecordingScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RecordingRouteProp>();
   const { theme, isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { updateProject, currentProject } = useStudioContext();
 
   const song = getSongById(route.params.songId);
@@ -401,25 +403,25 @@ export default function RecordingScreen() {
         <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? `rgba(0,0,0,${ModeStyles.studio.overlayOpacityDark + 0.15})` : `rgba(255,255,255,${ModeStyles.studio.overlayOpacityLight + 0.1})` }]} />
       </ImageBackground>
 
-      <View style={[styles.content, { paddingTop: insets.top + Spacing.lg, paddingBottom: tabBarHeight + Spacing.xl }]}>
+      <View style={[styles.content, { paddingTop: insets.top + FluentSpacing.l, paddingBottom: tabBarHeight + FluentSpacing.xl }]}>
         <View style={styles.header}>
           <Pressable 
             onPress={handleClose} 
             style={styles.closeButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <MaterialCommunityIcons name="close" size={24} color={theme.text} />
+            <MaterialCommunityIcons name="close" size={24} color={colors.colorNeutralForeground1} />
           </Pressable>
           <View style={styles.headerCenter}>
-            <ThemedText type="body" style={[{ fontWeight: "600" }, textShadowStyle]}>
+            <FluentText variant="body1" style={[{ fontWeight: "600" }, textShadowStyle]}>
               Recording
-            </ThemedText>
+            </FluentText>
             {isRecording ? (
               <View style={styles.recordingIndicator}>
                 <View style={[styles.recordingDot, { backgroundColor: theme.recordButton }]} />
-                <ThemedText type="small" style={{ color: theme.recordButton }}>
+                <FluentText variant="body2" style={{ color: theme.recordButton }}>
                   {formatTime(recordingTime)}
-                </ThemedText>
+                </FluentText>
               </View>
             ) : null}
           </View>
@@ -432,7 +434,7 @@ export default function RecordingScreen() {
               <MaterialCommunityIcons 
                 name={isBackingTrackPlaying ? "pause" : "play"} 
                 size={24} 
-                color={theme.primary} 
+                color={colors.colorBrandForeground1} 
               />
             ) : <View style={{ width: 24 }} />}
           </Pressable>
@@ -441,14 +443,14 @@ export default function RecordingScreen() {
         {!usingHeadphones && !showHeadphoneDialog ? (
           <GlassCard style={styles.reminderCard}>
             <View style={styles.reminderContent}>
-              <MaterialCommunityIcons name="headphones-off" size={24} color={theme.warning} />
+              <MaterialCommunityIcons name="headphones-off" size={24} color={colors.colorPaletteYellowForeground1} />
               <View style={styles.reminderText}>
-                <ThemedText type="body" style={{ fontWeight: "600", color: theme.warning }}>
+                <FluentText variant="body1" color="warning" style={{ fontWeight: "600" }}>
                   No Headphones Detected
-                </ThemedText>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                </FluentText>
+                <FluentText variant="body2" color="secondary">
                   Recording quality may be affected. Use headphones for cleaner vocals.
-                </ThemedText>
+                </FluentText>
               </View>
             </View>
           </GlassCard>
@@ -460,15 +462,15 @@ export default function RecordingScreen() {
               <MaterialCommunityIcons 
                 name={latencyWarning.level === 'critical' ? "bluetooth-off" : "clock-alert-outline"} 
                 size={24} 
-                color={latencyWarning.level === 'critical' ? theme.error : theme.warning} 
+                color={latencyWarning.level === 'critical' ? colors.colorPaletteRedForeground1 : colors.colorPaletteYellowForeground1} 
               />
               <View style={styles.reminderText}>
-                <ThemedText type="body" style={{ fontWeight: "600", color: latencyWarning.level === 'critical' ? theme.error : theme.warning }}>
+                <FluentText variant="body1" color={latencyWarning.level === 'critical' ? "error" : "warning"} style={{ fontWeight: "600" }}>
                   {latencyWarning.message}
-                </ThemedText>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                </FluentText>
+                <FluentText variant="body2" color="secondary">
                   {latencyWarning.recommendation}
-                </ThemedText>
+                </FluentText>
               </View>
             </View>
           </GlassCard>
@@ -477,14 +479,14 @@ export default function RecordingScreen() {
         {loadError ? (
           <GlassCard style={styles.errorCard}>
             <View style={styles.reminderContent}>
-              <MaterialCommunityIcons name="alert-circle" size={24} color={theme.warning} />
+              <MaterialCommunityIcons name="alert-circle" size={24} color={colors.colorPaletteYellowForeground1} />
               <View style={styles.reminderText}>
-                <ThemedText type="body" style={{ fontWeight: "600", color: theme.warning }}>
+                <FluentText variant="body1" color="warning" style={{ fontWeight: "600" }}>
                   Audio Not Available
-                </ThemedText>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                </FluentText>
+                <FluentText variant="body2" color="secondary">
                   {loadError}
-                </ThemedText>
+                </FluentText>
               </View>
             </View>
           </GlassCard>
@@ -492,18 +494,18 @@ export default function RecordingScreen() {
 
         <View style={styles.songInfo}>
           <Image source={{ uri: song.artwork }} style={styles.artwork} />
-          <ThemedText type="h4" style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
+          <FluentText variant="subtitle1" style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
             {song.title}
-          </ThemedText>
-          <ThemedText type="body" style={[textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.85)' : theme.textSecondary }]}>
+          </FluentText>
+          <FluentText variant="body1" style={[textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.85)' : colors.colorNeutralForeground2 }]}>
             {song.artist}
-          </ThemedText>
+          </FluentText>
           {isBackingTrackLoaded ? (
-            <View style={[styles.statusBadge, { backgroundColor: theme.primary + "30" }]}>
-              <MaterialCommunityIcons name="check-circle" size={14} color={theme.primary} />
-              <ThemedText type="caption" style={{ color: theme.primary, marginLeft: 4 }}>
+            <View style={[styles.statusBadge, { backgroundColor: colors.colorBrandForeground1 + "30" }]}>
+              <MaterialCommunityIcons name="check-circle" size={14} color={colors.colorBrandForeground1} />
+              <FluentText variant="caption" color="brand" style={{ marginLeft: 4 }}>
                 Ready to record
-              </ThemedText>
+              </FluentText>
             </View>
           ) : null}
         </View>
@@ -515,7 +517,7 @@ export default function RecordingScreen() {
             barCount={60}
             barWidth={4}
             height={80}
-            color={isRecording ? theme.recordButton : theme.primary}
+            color={isRecording ? theme.recordButton : colors.colorBrandForeground1}
             sensitivity={1.8}
           />
         </View>
@@ -533,29 +535,29 @@ export default function RecordingScreen() {
                 ) : (
                   <MaterialCommunityIcons name="microphone-outline" size={20} color={theme.onPrimaryContainer} />
                 )}
-                <ThemedText type="body" style={{ marginLeft: Spacing.xs, color: theme.onPrimaryContainer }}>
+                <FluentText variant="body1" style={{ marginLeft: FluentSpacing.xs, color: theme.onPrimaryContainer }}>
                   {micTestStatus === 'testing' ? 'Testing...' : 'Test Microphone'}
-                </ThemedText>
+                </FluentText>
               </Pressable>
 
               {micTestResult && micTestResult.status === 'success' && (
                 <View style={[styles.micTestButton, { backgroundColor: theme.primaryContainer + '40' }]}>
-                  <MaterialCommunityIcons name="check-circle" size={20} color={theme.primary} />
-                  <ThemedText type="body" style={{ marginLeft: Spacing.xs, color: theme.primary }}>
+                  <MaterialCommunityIcons name="check-circle" size={20} color={colors.colorBrandForeground1} />
+                  <FluentText variant="body1" color="brand" style={{ marginLeft: FluentSpacing.xs }}>
                     Mic Ready
-                  </ThemedText>
+                  </FluentText>
                 </View>
               )}
             </View>
           ) : null}
 
-          <ThemedText type="body" style={[styles.instruction, textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.8)' : theme.textSecondary }]}>
+          <FluentText variant="body1" color="secondary" style={[styles.instruction, textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.8)' : colors.colorNeutralForeground2 }]}>
             {isRecording && !isPaused 
               ? "Tap to pause recording" 
               : isPaused 
                 ? "Tap to resume recording" 
                 : "Tap to start recording"}
-          </ThemedText>
+          </FluentText>
           <View style={styles.buttonRow}>
             <RecordButton 
               isRecording={isRecording && !isPaused} 
@@ -566,10 +568,10 @@ export default function RecordingScreen() {
             {(isRecording || isPaused) && (
               <Pressable 
                 onPress={handleStopRecording} 
-                style={[styles.stopButton, { backgroundColor: theme.surfaceContainer }]}
+                style={[styles.stopButton, { backgroundColor: colors.colorNeutralBackground2 }]}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <MaterialCommunityIcons name="stop" size={32} color={theme.text} />
+                <MaterialCommunityIcons name="stop" size={32} color={colors.colorNeutralForeground1} />
               </Pressable>
             )}
           </View>
@@ -578,35 +580,35 @@ export default function RecordingScreen() {
             <View style={styles.gainControlContainer}>
               <Pressable 
                 onPress={() => setShowGainControl(!showGainControl)}
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm }}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: FluentSpacing.s }}
               >
-                <MaterialCommunityIcons name="tune-vertical" size={18} color={theme.textSecondary} />
-                <ThemedText type="small" style={{ marginLeft: Spacing.xs, color: theme.textSecondary }}>
+                <MaterialCommunityIcons name="tune-vertical" size={18} color={colors.colorNeutralForeground2} />
+                <FluentText variant="body2" color="secondary" style={{ marginLeft: FluentSpacing.xs }}>
                   {showGainControl ? 'Hide Gain Control' : 'Adjust Input Gain'}
-                </ThemedText>
+                </FluentText>
                 <MaterialCommunityIcons 
                   name={showGainControl ? "chevron-up" : "chevron-down"} 
                   size={18} 
-                  color={theme.textSecondary} 
+                  color={colors.colorNeutralForeground2} 
                 />
               </Pressable>
               {showGainControl && (
                 <View style={styles.gainRow}>
-                  <MaterialCommunityIcons name="volume-low" size={20} color={theme.textSecondary} />
+                  <MaterialCommunityIcons name="volume-low" size={20} color={colors.colorNeutralForeground2} />
                   <Slider
                     style={styles.gainSlider}
                     minimumValue={0}
                     maximumValue={200}
                     value={inputGain}
                     onValueChange={handleInputGainChange}
-                    minimumTrackTintColor={theme.primary}
-                    maximumTrackTintColor={theme.surfaceContainerHighest}
-                    thumbTintColor={theme.primary}
+                    minimumTrackTintColor={colors.colorBrandForeground1}
+                    maximumTrackTintColor={colors.colorNeutralBackground4}
+                    thumbTintColor={colors.colorBrandForeground1}
                   />
-                  <MaterialCommunityIcons name="volume-high" size={20} color={theme.textSecondary} />
-                  <ThemedText type="small" style={[styles.gainLabel, { color: theme.text }]}>
+                  <MaterialCommunityIcons name="volume-high" size={20} color={colors.colorNeutralForeground2} />
+                  <FluentText variant="body2" style={[styles.gainLabel, { color: colors.colorNeutralForeground1 }]}>
                     {inputGain}%
-                  </ThemedText>
+                  </FluentText>
                 </View>
               )}
             </View>
@@ -616,101 +618,70 @@ export default function RecordingScreen() {
 
       <Dialog
         visible={showHeadphoneDialogModal}
-        onDismiss={handleHeadphonesNo}
-        title="Use Headphones for Best Results"
-        message="For the best recording quality and to avoid audio feedback, we recommend using headphones. Are you using headphones?"
+        title="Are you using headphones?"
+        message="For best results, use wired headphones to prevent audio feedback while recording."
         actions={[
-          { label: "No", onPress: handleHeadphonesNo, variant: "ghost" },
+          { label: "No", onPress: handleHeadphonesNo, variant: "secondary" },
           { label: "Yes", onPress: handleHeadphonesYes, variant: "default" },
         ]}
-      />
-
-      <Dialog
-        visible={showStopDialog}
-        onDismiss={() => setShowStopDialog(false)}
-        title="Finish Recording?"
-        message="Would you like to proceed to the mixing screen?"
-        actions={[
-          { label: "Cancel", onPress: () => setShowStopDialog(false), variant: "ghost" },
-          { label: "Yes, Continue", onPress: handleStopConfirm, variant: "default" },
-        ]}
-      />
-
-      <Dialog
-        visible={showCloseDialog}
-        onDismiss={() => setShowCloseDialog(false)}
-        title="Recording in Progress"
-        message="You have an unsaved recording. What would you like to do?"
-        actions={[
-          { label: "Cancel", onPress: () => setShowCloseDialog(false), variant: "ghost" },
-          { label: "Discard & Exit", onPress: handleDiscardAndExit, variant: "secondary" },
-          { label: "Save & Mix", onPress: handleSaveAndMix, variant: "default" },
-        ]}
+        onDismiss={() => setShowHeadphoneDialogModal(false)}
       />
 
       <Dialog
         visible={showErrorDialog}
-        onDismiss={() => setShowErrorDialog(false)}
         title="Error"
         message={errorMessage}
         actions={[
           { label: "OK", onPress: () => setShowErrorDialog(false), variant: "default" },
         ]}
+        onDismiss={() => setShowErrorDialog(false)}
+      />
+
+      <Dialog
+        visible={showStopDialog}
+        title="Finish Recording?"
+        message="Your recording will be saved and you can mix and apply effects in the next step."
+        actions={[
+          { label: "Cancel", onPress: () => setShowStopDialog(false), variant: "secondary" },
+          { label: "Yes, Continue", onPress: handleStopConfirm, variant: "default" },
+        ]}
+        onDismiss={() => setShowStopDialog(false)}
+      />
+
+      <Dialog
+        visible={showCloseDialog}
+        title="Recording in Progress"
+        message="What would you like to do with your current recording?"
+        actions={[
+          { label: "Discard & Exit", onPress: handleDiscardAndExit, variant: "secondary" },
+          { label: "Save & Mix", onPress: handleSaveAndMix, variant: "default" },
+        ]}
+        onDismiss={() => setShowCloseDialog(false)}
       />
 
       <Dialog
         visible={showMicTestDialog}
-        onDismiss={() => setShowMicTestDialog(false)}
-        title={micTestStatus === 'testing' ? 'Testing Microphone...' : 'Microphone Test Complete'}
+        title={micTestStatus === 'testing' ? "Testing Microphone..." : micTestResult?.status === 'success' ? "Microphone Ready" : "Microphone Issue"}
         message={
           micTestStatus === 'testing' 
-            ? 'Speak into the microphone to test audio input levels.' 
-            : micTestResult?.recommendations?.[0] || 'Test completed'
+            ? "Please speak or make a sound to test your microphone."
+            : micTestResult?.status === 'success'
+              ? "Your microphone is working correctly and ready for recording."
+              : micTestResult?.errorMessage || "There was an issue with your microphone."
         }
         actions={
           micTestStatus === 'testing'
-            ? [{ label: "Cancel", onPress: () => { micTestService.cancelTest(); setShowMicTestDialog(false); }, variant: "ghost" }]
-            : [{ label: "Done", onPress: () => setShowMicTestDialog(false), variant: "default" }]
+            ? []
+            : [
+                { label: "Close", onPress: () => setShowMicTestDialog(false), variant: "default" },
+              ]
         }
-      >
-        <View style={styles.micTestDialogContent}>
-          {micTestStatus === 'testing' ? (
-            <>
-              <ActivityIndicator size="large" color={theme.primary} />
-              <ThemedText type="body" style={{ marginTop: Spacing.md, color: theme.textSecondary }}>
-                Level: {micTestService.getLevelDescription(micTestLevel)}
-              </ThemedText>
-              <View style={[styles.micLevelBar, { backgroundColor: theme.surfaceContainerHighest }]}>
-                <View 
-                  style={[
-                    styles.micLevelFill, 
-                    { 
-                      width: `${Math.max(0, Math.min(100, (micTestLevel + 60) * 1.67))}%`,
-                      backgroundColor: micTestLevel > -10 ? theme.error : micTestLevel > -30 ? theme.primary : theme.textSecondary 
-                    }
-                  ]} 
-                />
-              </View>
-            </>
-          ) : micTestResult ? (
-            <>
-              <MaterialCommunityIcons 
-                name={micTestResult.isInputDetected ? "microphone-outline" : "microphone-off"} 
-                size={48} 
-                color={micTestResult.isInputDetected ? theme.primary : theme.error} 
-              />
-              <ThemedText type="body" style={{ marginTop: Spacing.md, textAlign: 'center', color: theme.text }}>
-                Peak Level: {micTestResult.peakLevel.toFixed(1)} dB
-              </ThemedText>
-              {micTestResult.recommendations.map((rec, i) => (
-                <ThemedText key={i} type="small" style={{ marginTop: Spacing.xs, textAlign: 'center', color: theme.textSecondary }}>
-                  {rec}
-                </ThemedText>
-              ))}
-            </>
-          ) : null}
-        </View>
-      </Dialog>
+        onDismiss={() => {
+          if (micTestStatus !== 'testing') {
+            setShowMicTestDialog(false);
+          }
+        }}
+      />
     </View>
   );
 }
@@ -721,17 +692,17 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: FluentSpacing.l,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   closeButton: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -741,19 +712,19 @@ const styles = StyleSheet.create({
   recordingIndicator: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: Spacing.xs,
+    marginTop: FluentSpacing.xs,
   },
   recordingDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginRight: Spacing.xs,
+    marginRight: FluentSpacing.xs,
   },
   reminderCard: {
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.m,
   },
   errorCard: {
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.m,
   },
   reminderContent: {
     flexDirection: "row",
@@ -761,99 +732,79 @@ const styles = StyleSheet.create({
   },
   reminderText: {
     flex: 1,
-    marginLeft: Spacing.md,
+    marginLeft: FluentSpacing.m,
   },
   songInfo: {
     alignItems: "center",
-    marginBottom: Spacing["2xl"],
+    marginBottom: FluentSpacing.xl,
   },
   artwork: {
-    width: 140,
-    height: 140,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.lg,
+    width: 160,
+    height: 160,
+    borderRadius: FluentRadius.large,
+    marginBottom: FluentSpacing.l,
   },
   songTitle: {
-    fontWeight: "700",
-    marginBottom: Spacing.sm,
-    textAlign: "center",
+    marginBottom: FluentSpacing.xs,
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
-    marginTop: Spacing.md,
+    paddingHorizontal: FluentSpacing.m,
+    paddingVertical: FluentSpacing.xs,
+    borderRadius: FluentRadius.circular,
+    marginTop: FluentSpacing.m,
   },
   waveformContainer: {
+    marginBottom: FluentSpacing.xl,
+  },
+  controlsContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  controlsContainer: {
-    alignItems: "center",
-    paddingBottom: Spacing["2xl"],
-  },
-  instruction: {
-    marginBottom: Spacing.lg,
-  },
-  buttonRow: {
+  preRecordControls: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.xl,
-  },
-  stopButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: "center",
-    alignItems: "center",
+    gap: FluentSpacing.m,
+    marginBottom: FluentSpacing.l,
   },
   micTestButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    marginTop: Spacing.sm,
+    paddingHorizontal: FluentSpacing.l,
+    paddingVertical: FluentSpacing.m,
+    borderRadius: FluentRadius.large,
+  },
+  instruction: {
+    marginBottom: FluentSpacing.l,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: FluentSpacing.xl,
+  },
+  stopButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
   },
   gainControlContainer: {
+    marginTop: FluentSpacing.xl,
     width: "100%",
-    marginTop: Spacing.md,
-    paddingHorizontal: Spacing.md,
   },
   gainRow: {
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: FluentSpacing.l,
   },
   gainSlider: {
     flex: 1,
-    marginHorizontal: Spacing.sm,
+    marginHorizontal: FluentSpacing.m,
   },
   gainLabel: {
-    width: 40,
-    textAlign: "center",
-  },
-  preRecordControls: {
-    alignItems: "center",
-    marginBottom: Spacing.md,
-    gap: Spacing.sm,
-  },
-  micTestDialogContent: {
-    alignItems: "center",
-    paddingVertical: Spacing.md,
-  },
-  micLevelBar: {
-    width: "100%",
-    height: 8,
-    borderRadius: 4,
-    marginTop: Spacing.md,
-    overflow: "hidden",
-  },
-  micLevelFill: {
-    height: "100%",
-    borderRadius: 4,
+    width: 45,
+    textAlign: "right",
   },
 });

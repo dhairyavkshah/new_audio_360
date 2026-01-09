@@ -1,9 +1,14 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, M3Shape } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentRadius,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface EmptyStateProps {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
@@ -13,20 +18,21 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   return (
     <View style={styles.container}>
-      <View style={[styles.iconContainer, { backgroundColor: theme.surfaceContainerHigh }]}>
-        <MaterialCommunityIcons name={icon} size={48} color={theme.onSurfaceVariant} />
+      <View style={[styles.iconContainer, { backgroundColor: colors.colorNeutralBackground3 }]}>
+        <MaterialCommunityIcons name={icon} size={48} color={colors.colorNeutralForeground2} />
       </View>
-      <ThemedText type="titleMedium" style={[styles.title, { color: theme.onSurface }]}>
+      <FluentText variant="subtitle1" align="center" style={styles.title}>
         {title}
-      </ThemedText>
+      </FluentText>
       {description ? (
-        <ThemedText type="bodyMedium" style={[styles.description, { color: theme.onSurfaceVariant }]}>
+        <FluentText variant="body1" color="secondary" align="center" style={styles.description}>
           {description}
-        </ThemedText>
+        </FluentText>
       ) : null}
       {action ? <View style={styles.actionContainer}>{action}</View> : null}
     </View>
@@ -38,26 +44,24 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing.xxxl,
-    paddingVertical: Spacing.xxxl,
+    paddingHorizontal: FluentSpacing.xxxl,
+    paddingVertical: FluentSpacing.xxxl,
   },
   iconContainer: {
     width: 96,
     height: 96,
-    borderRadius: M3Shape.cornerFull,
+    borderRadius: FluentRadius.circular,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   title: {
-    textAlign: "center",
-    marginBottom: Spacing.s,
+    marginBottom: FluentSpacing.s,
   },
   description: {
-    textAlign: "center",
-    marginBottom: Spacing.l,
+    marginBottom: FluentSpacing.l,
   },
   actionContainer: {
-    marginTop: Spacing.m,
+    marginTop: FluentSpacing.m,
   },
 });

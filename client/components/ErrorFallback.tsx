@@ -9,10 +9,15 @@ import {
   Modal,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ThemedView } from "@/components/ThemedView";
-import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Fonts } from "@/constants/theme";
+import { FluentText, FluentSurface } from "@/components/fluent";
+import { useThemeContext } from "@/contexts/ThemeContext";
+import {
+  FluentSpacing,
+  FluentRadius,
+  FluentLightColors,
+  FluentDarkColors,
+  FluentIconSize,
+} from "@/constants/fluent2";
 
 export type ErrorFallbackProps = {
   error: Error;
@@ -20,7 +25,8 @@ export type ErrorFallbackProps = {
 };
 
 export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
-  const { theme } = useTheme();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const handleRestart = async () => {
@@ -41,48 +47,52 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentSurface style={styles.container}>
       {__DEV__ ? (
         <Pressable
           onPress={() => setIsModalVisible(true)}
           style={({ pressed }) => [
             styles.topButton,
             {
-              backgroundColor: theme.backgroundDefault,
+              backgroundColor: colors.colorNeutralBackground2,
               opacity: pressed ? 0.8 : 1,
             },
           ]}
         >
-          <MaterialCommunityIcons name="alert-circle-outline" size={20} color={theme.text} />
+          <MaterialCommunityIcons 
+            name="alert-circle-outline" 
+            size={FluentIconSize.regular} 
+            color={colors.colorNeutralForeground1} 
+          />
         </Pressable>
       ) : null}
 
       <View style={styles.content}>
-        <ThemedText type="h1" style={styles.title}>
+        <FluentText variant="title1" align="center" style={styles.title}>
           Something went wrong
-        </ThemedText>
+        </FluentText>
 
-        <ThemedText type="body" style={styles.message}>
+        <FluentText variant="body1" color="secondary" align="center" style={styles.message}>
           Please reload the app to continue.
-        </ThemedText>
+        </FluentText>
 
         <Pressable
           onPress={handleRestart}
           style={({ pressed }) => [
             styles.button,
             {
-              backgroundColor: theme.link,
+              backgroundColor: colors.colorBrandBackground,
               opacity: pressed ? 0.9 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
             },
           ]}
         >
-          <ThemedText
-            type="body"
-            style={[styles.buttonText, { color: theme.buttonText }]}
+          <FluentText
+            variant="body1"
+            style={[styles.buttonText, { color: colors.colorNeutralForegroundOnBrand }]}
           >
             Try Again
-          </ThemedText>
+          </FluentText>
         </Pressable>
       </View>
 
@@ -94,11 +104,11 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           onRequestClose={() => setIsModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
-            <ThemedView style={styles.modalContainer}>
-              <View style={styles.modalHeader}>
-                <ThemedText type="h2" style={styles.modalTitle}>
+            <FluentSurface style={styles.modalContainer}>
+              <View style={[styles.modalHeader, { borderBottomColor: colors.colorNeutralStroke2 }]}>
+                <FluentText variant="title2" style={styles.modalTitle}>
                   Error Details
-                </ThemedText>
+                </FluentText>
                 <Pressable
                   onPress={() => setIsModalVisible(false)}
                   style={({ pressed }) => [
@@ -106,7 +116,11 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
                     { opacity: pressed ? 0.6 : 1 },
                   ]}
                 >
-                  <MaterialCommunityIcons name="close" size={24} color={theme.text} />
+                  <MaterialCommunityIcons 
+                    name="close" 
+                    size={FluentIconSize.medium} 
+                    color={colors.colorNeutralForeground1} 
+                  />
                 </Pressable>
               </View>
 
@@ -118,15 +132,15 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
                 <View
                   style={[
                     styles.errorContainer,
-                    { backgroundColor: theme.backgroundDefault },
+                    { backgroundColor: colors.colorNeutralBackground2 },
                   ]}
                 >
                   <Text
                     style={[
                       styles.errorText,
                       {
-                        color: theme.text,
-                        fontFamily: Fonts?.mono || "monospace",
+                        color: colors.colorNeutralForeground1,
+                        fontFamily: "monospace",
                       },
                     ]}
                     selectable
@@ -135,11 +149,11 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
                   </Text>
                 </View>
               </ScrollView>
-            </ThemedView>
+            </FluentSurface>
           </View>
         </Modal>
       ) : null}
-    </ThemedView>
+    </FluentSurface>
   );
 }
 
@@ -150,40 +164,37 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    padding: Spacing["2xl"],
+    padding: FluentSpacing.xxl,
   },
   content: {
     alignItems: "center",
     justifyContent: "center",
-    gap: Spacing.lg,
+    gap: FluentSpacing.l,
     width: "100%",
     maxWidth: 600,
   },
   title: {
-    textAlign: "center",
     lineHeight: 40,
   },
   message: {
-    textAlign: "center",
-    opacity: 0.7,
     lineHeight: 24,
   },
   topButton: {
     position: "absolute",
-    top: Spacing["2xl"] + Spacing.lg,
-    right: Spacing.lg,
+    top: FluentSpacing.xxl + FluentSpacing.l,
+    right: FluentSpacing.l,
     width: 44,
     height: 44,
-    borderRadius: BorderRadius.md,
+    borderRadius: FluentRadius.medium,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
   },
   button: {
-    paddingVertical: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing["2xl"],
+    paddingVertical: FluentSpacing.l,
+    borderRadius: FluentRadius.medium,
+    paddingHorizontal: FluentSpacing.xxl,
     minWidth: 200,
     shadowColor: "#000",
     shadowOffset: {
@@ -207,36 +218,35 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: "100%",
     height: "90%",
-    borderTopLeftRadius: BorderRadius.lg,
-    borderTopRightRadius: BorderRadius.lg,
+    borderTopLeftRadius: FluentRadius.large,
+    borderTopRightRadius: FluentRadius.large,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
+    paddingHorizontal: FluentSpacing.l,
+    paddingTop: FluentSpacing.l,
+    paddingBottom: FluentSpacing.m,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(128, 128, 128, 0.2)",
   },
   modalTitle: {
     fontWeight: "600",
   },
   closeButton: {
-    padding: Spacing.xs,
+    padding: FluentSpacing.xs,
   },
   modalScrollView: {
     flex: 1,
   },
   modalScrollContent: {
-    padding: Spacing.lg,
+    padding: FluentSpacing.l,
   },
   errorContainer: {
     width: "100%",
-    borderRadius: BorderRadius.md,
+    borderRadius: FluentRadius.medium,
     overflow: "hidden",
-    padding: Spacing.lg,
+    padding: FluentSpacing.l,
   },
   errorText: {
     fontSize: 12,

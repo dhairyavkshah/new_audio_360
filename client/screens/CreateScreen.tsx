@@ -6,12 +6,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentText, FluentSurface } from "@/components/fluent";
 import { SongCard } from "@/components/SongCard";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentTypography } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentTypography, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { mockSongs, Song } from "@/lib/data";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
 
@@ -22,7 +21,8 @@ export default function CreateScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredSongs = mockSongs.filter(
@@ -39,37 +39,37 @@ export default function CreateScreen() {
     <View style={styles.header}>
       <GlassCard style={styles.introCard}>
         <View style={styles.introContent}>
-          <View style={[styles.iconCircle, { backgroundColor: theme.primary + "20" }]}>
-            <MaterialCommunityIcons name="microphone" size={FluentIconSize.medium} color={theme.primary} />
+          <View style={[styles.iconCircle, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
+            <MaterialCommunityIcons name="microphone" size={FluentIconSize.medium} color={colors.colorBrandForeground1} />
           </View>
           <View style={styles.introText}>
-            <ThemedText type="h4">Create Your Recording</ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: FluentSpacing.xs }}>
+            <FluentText variant="subtitle1">Create Your Recording</FluentText>
+            <FluentText variant="body2" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
               Select a song as your backing track and start singing
-            </ThemedText>
+            </FluentText>
           </View>
         </View>
       </GlassCard>
 
-      <View style={[styles.searchContainer, { backgroundColor: theme.backgroundSecondary }]}>
-        <MaterialCommunityIcons name="magnify" size={FluentIconSize.small} color={theme.textSecondary} />
+      <View style={[styles.searchContainer, { backgroundColor: colors.colorNeutralBackground2 }]}>
+        <MaterialCommunityIcons name="magnify" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
         <TextInput
-          style={[styles.searchInput, { color: theme.text }]}
+          style={[styles.searchInput, { color: colors.colorNeutralForeground1 }]}
           placeholder="Search songs..."
-          placeholderTextColor={theme.textSecondary}
+          placeholderTextColor={colors.colorNeutralForeground2}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
         {searchQuery.length > 0 ? (
           <Pressable onPress={() => setSearchQuery("")}>
-            <MaterialCommunityIcons name="close" size={FluentIconSize.small} color={theme.textSecondary} />
+            <MaterialCommunityIcons name="close" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
           </Pressable>
         ) : null}
       </View>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
+      <FluentText variant="subtitle1" style={styles.sectionTitle}>
         Choose a Song
-      </ThemedText>
+      </FluentText>
     </View>
   );
 
@@ -82,7 +82,7 @@ export default function CreateScreen() {
   );
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentSurface style={styles.container} background="neutral1">
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -99,17 +99,17 @@ export default function CreateScreen() {
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="music" size={FluentIconSize.xxlarge} color={theme.textSecondary} />
-              <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: FluentSpacing.m }}>
+              <MaterialCommunityIcons name="music" size={FluentIconSize.xxlarge} color={colors.colorNeutralForeground2} />
+              <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.m }}>
                 No songs found
-              </ThemedText>
+              </FluentText>
             </View>
           }
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         />
       </KeyboardAvoidingView>
-    </ThemedView>
+    </FluentSurface>
   );
 }
 

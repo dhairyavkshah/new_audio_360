@@ -2,15 +2,15 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { FluentText, FluentSurface } from '@/components/fluent';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { FluentSpacing, FluentControlRadius, FluentIconSize } from '@/constants/fluent2';
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
 
 export default function LockoutScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { lockoutRemaining, restorePurchases } = useSubscription();
 
   const formatTimeRemaining = (ms: number | null): string => {
@@ -38,64 +38,64 @@ export default function LockoutScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentSurface background="neutral1" style={styles.container}>
       <View style={[styles.content, { paddingTop: insets.top + FluentSpacing.xxxxxxl, paddingBottom: insets.bottom + FluentSpacing.xxxxl }]}>
         <View style={styles.iconContainer}>
-          <View style={[styles.iconCircle, { backgroundColor: theme.error + '20' }]}>
-            <MaterialCommunityIcons name="shield-alert" size={FluentIconSize.xxlarge + 16} color={theme.error} />
+          <View style={[styles.iconCircle, { backgroundColor: colors.colorPaletteRedBackground1 }]}>
+            <MaterialCommunityIcons name="shield-alert" size={FluentIconSize.xxlarge + 16} color={colors.colorPaletteRedForeground1} />
           </View>
         </View>
 
-        <ThemedText type="h2" style={styles.title}>
+        <FluentText variant="title2" align="center" style={styles.title}>
           App Temporarily Unavailable
-        </ThemedText>
+        </FluentText>
 
-        <ThemedText type="body" style={[styles.description, { color: theme.textSecondary }]}>
+        <FluentText variant="body1" color="secondary" align="center" style={styles.description}>
           We detected unusual activity that suggests this app may have been modified. 
           For your security and to protect premium features, the app is temporarily locked.
-        </ThemedText>
+        </FluentText>
 
-        <View style={[styles.infoCard, { backgroundColor: theme.surfaceContainer }]}>
+        <View style={[styles.infoCard, { backgroundColor: colors.colorNeutralBackground3 }]}>
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="clock-outline" size={FluentIconSize.regular} color={theme.primary} />
+            <MaterialCommunityIcons name="clock-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
             <View style={styles.infoText}>
-              <ThemedText type="body" style={{ fontWeight: '600' }}>
+              <FluentText variant="body1Strong">
                 Access Restored In
-              </ThemedText>
-              <ThemedText type="h4" style={{ color: theme.primary }}>
+              </FluentText>
+              <FluentText variant="subtitle1" color="brand">
                 {formatTimeRemaining(lockoutRemaining)}
-              </ThemedText>
+              </FluentText>
             </View>
           </View>
         </View>
 
         <View style={styles.messageContainer}>
-          <ThemedText type="small" style={[styles.messageText, { color: theme.textSecondary }]}>
+          <FluentText variant="caption1" color="secondary" align="center" style={styles.messageText}>
             If you believe this is an error, please ensure you're using an official version 
             of the app from Google Play Store.
-          </ThemedText>
+          </FluentText>
         </View>
 
         <View style={styles.buttonsContainer}>
           <Pressable
             onPress={handleRetry}
-            style={[styles.retryButton, { backgroundColor: theme.primary }]}
+            style={[styles.retryButton, { backgroundColor: colors.colorBrandBackground }]}
           >
-            <MaterialCommunityIcons name="refresh" size={FluentIconSize.regular} color="#FFFFFF" />
-            <ThemedText type="body" style={{ color: '#FFFFFF', fontWeight: '600', marginLeft: FluentSpacing.s }}>
+            <MaterialCommunityIcons name="refresh" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
+            <FluentText variant="body1Strong" color="onBrand" style={{ marginLeft: FluentSpacing.s }}>
               Retry Verification
-            </ThemedText>
+            </FluentText>
           </Pressable>
         </View>
 
         <View style={styles.footer}>
-          <MaterialCommunityIcons name="shield-check" size={FluentIconSize.small} color={theme.textTertiary} />
-          <ThemedText type="caption" style={{ color: theme.textTertiary, marginLeft: FluentSpacing.xs }}>
+          <MaterialCommunityIcons name="shield-check" size={FluentIconSize.small} color={colors.colorNeutralForeground3} />
+          <FluentText variant="caption1" color="tertiary" style={{ marginLeft: FluentSpacing.xs }}>
             Protected by New Audio 360 Security
-          </ThemedText>
+          </FluentText>
         </View>
       </View>
-    </ThemedView>
+    </FluentSurface>
   );
 }
 
@@ -120,11 +120,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    textAlign: 'center',
     marginBottom: FluentSpacing.l,
   },
   description: {
-    textAlign: 'center',
     marginBottom: FluentSpacing.xxl,
     lineHeight: 24,
   },
@@ -145,7 +143,6 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.xxl,
   },
   messageText: {
-    textAlign: 'center',
     lineHeight: 20,
   },
   buttonsContainer: {

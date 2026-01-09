@@ -6,7 +6,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { Layout } from "@/constants/theme";
@@ -39,12 +39,12 @@ function Chip({
   item,
   isSelected,
   onPress,
-  fluentColors,
+  colors,
 }: {
   item: ChipItem;
   isSelected: boolean;
   onPress: () => void;
-  fluentColors: typeof FluentLightColors;
+  colors: typeof FluentLightColors;
 }) {
   const scale = useSharedValue(1);
 
@@ -67,12 +67,12 @@ function Chip({
   };
 
   const backgroundColor = isSelected
-    ? fluentColors.colorBrandBackground
-    : fluentColors.colorSubtleBackgroundHover;
+    ? colors.colorBrandBackground
+    : colors.colorSubtleBackgroundHover;
   const textColor = isSelected 
-    ? fluentColors.colorNeutralForegroundOnBrand 
-    : fluentColors.colorNeutralForeground2;
-  const borderColor = isSelected ? fluentColors.colorBrandStroke1 : "transparent";
+    ? colors.colorNeutralForegroundOnBrand 
+    : colors.colorNeutralForeground2;
+  const borderColor = isSelected ? colors.colorBrandStroke1 : "transparent";
 
   return (
     <AnimatedPressable
@@ -91,19 +91,12 @@ function Chip({
         animatedStyle,
       ]}
     >
-      <ThemedText
-        style={[
-          styles.chipText, 
-          { 
-            color: textColor,
-            fontSize: FluentTypography.caption1Strong.fontSize,
-            fontWeight: FluentTypography.caption1Strong.fontWeight,
-            lineHeight: FluentTypography.caption1Strong.lineHeight,
-          }
-        ]}
+      <FluentText
+        variant="caption1Strong"
+        style={[styles.chipText, { color: textColor }]}
       >
         {item.label}
-      </ThemedText>
+      </FluentText>
     </AnimatedPressable>
   );
 }
@@ -113,9 +106,9 @@ export function HorizontalChips({
   selectedId,
   onSelect,
 }: HorizontalChipsProps) {
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const handleSelect = (id: string) => {
     playTapSound();
@@ -130,7 +123,7 @@ export function HorizontalChips({
       item={item}
       isSelected={selectedId === item.id}
       onPress={() => handleSelect(item.id)}
-      fluentColors={fluentColors}
+      colors={colors}
     />
   );
 
@@ -140,8 +133,8 @@ export function HorizontalChips({
     <View style={[
       styles.container, 
       { 
-        backgroundColor: fluentColors.colorNeutralBackground3,
-        borderBottomColor: fluentColors.colorNeutralStroke2,
+        backgroundColor: colors.colorNeutralBackground3,
+        borderBottomColor: colors.colorNeutralStroke2,
       },
       shadowStyle,
     ]}>

@@ -7,16 +7,14 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentText, FluentSurface } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { VolumeSlider } from "@/components/VolumeSlider";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useStudioContext } from "@/contexts/StudioContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { FluentSpacing, FluentControlRadius, FluentRadius } from "@/constants/fluent2";
-import { Layout } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
 import { studioAudioEngine } from "@/services/StudioAudioEngine";
 
@@ -28,7 +26,8 @@ export default function MixingScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<MixingRouteProp>();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { currentProject, updateProject } = useStudioContext();
   const { plan } = useSubscription();
 
@@ -212,7 +211,7 @@ export default function MixingScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentSurface style={styles.container} background="neutral1">
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -223,14 +222,14 @@ export default function MixingScreen() {
         {backingTrackError ? (
           <GlassCard style={styles.warningCard}>
             <View style={styles.warningContent}>
-              <MaterialCommunityIcons name="alert-circle" size={20} color={theme.warning} />
+              <MaterialCommunityIcons name="alert-circle" size={20} color={colors.colorPaletteYellowForeground1} />
               <View style={styles.warningText}>
-                <ThemedText type="body" style={{ fontWeight: "600", color: theme.warning }}>
+                <FluentText variant="body1" color="warning" style={{ fontWeight: "600" }}>
                   Music Track Unavailable
-                </ThemedText>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                </FluentText>
+                <FluentText variant="body2" color="secondary">
                   {backingTrackError}
-                </ThemedText>
+                </FluentText>
               </View>
             </View>
           </GlassCard>
@@ -238,19 +237,19 @@ export default function MixingScreen() {
 
         <GlassCard style={styles.waveformCard}>
           <View style={styles.waveformHeader}>
-            <ThemedText type="body" style={{ fontWeight: "600" }}>
+            <FluentText variant="body1" style={{ fontWeight: "600" }}>
               Preview {!backingTrackAvailable ? "(Voice Only)" : ""}
-            </ThemedText>
+            </FluentText>
             <View style={styles.playControls}>
               <Pressable
                 onPress={handleStopPreview}
-                style={[styles.controlButton, { backgroundColor: theme.backgroundSecondary }]}
+                style={[styles.controlButton, { backgroundColor: colors.colorNeutralBackground2 }]}
               >
-                <MaterialCommunityIcons name="stop" size={18} color={theme.text} />
+                <MaterialCommunityIcons name="stop" size={18} color={colors.colorNeutralForeground1} />
               </Pressable>
               <Pressable
                 onPress={handlePlayPreview}
-                style={[styles.playButton, { backgroundColor: theme.primary }]}
+                style={[styles.playButton, { backgroundColor: colors.colorBrandBackground }]}
               >
                 <MaterialCommunityIcons name={isPlaying ? "pause" : "play"} size={20} color="#FFFFFF" />
               </Pressable>
@@ -260,64 +259,64 @@ export default function MixingScreen() {
           <View style={styles.waveformRow}>
             <View style={backingTrackAvailable ? styles.waveformTrack : styles.waveformTrackDisabled}>
               <View style={styles.trackLabel}>
-                <MaterialCommunityIcons name="music" size={12} color={backingTrackAvailable ? theme.primary : theme.textTertiary} />
-                <ThemedText type="caption" style={{ marginLeft: FluentSpacing.xs, color: backingTrackAvailable ? theme.textSecondary : theme.textTertiary }}>
+                <MaterialCommunityIcons name="music" size={12} color={backingTrackAvailable ? colors.colorBrandForeground1 : colors.colorNeutralForeground3} />
+                <FluentText variant="caption" color={backingTrackAvailable ? "secondary" : "tertiary"} style={{ marginLeft: FluentSpacing.xs }}>
                   Music ({backingTrackAvailable ? `${musicVolume}%` : "N/A"})
-                </ThemedText>
+                </FluentText>
               </View>
               <AudioWaveform
                 isAnimating={isPlaying && backingTrackAvailable}
                 barCount={40}
                 barWidth={2}
                 height={32}
-                color={backingTrackAvailable ? theme.primary : theme.textTertiary}
+                color={backingTrackAvailable ? colors.colorBrandForeground1 : colors.colorNeutralForeground3}
               />
             </View>
             <View style={styles.waveformTrack}>
               <View style={styles.trackLabel}>
-                <MaterialCommunityIcons name="microphone" size={12} color={theme.secondary} />
-                <ThemedText type="caption" style={{ marginLeft: FluentSpacing.xs, color: theme.textSecondary }}>
+                <MaterialCommunityIcons name="microphone" size={12} color={colors.colorBrandForeground2} />
+                <FluentText variant="caption" color="secondary" style={{ marginLeft: FluentSpacing.xs }}>
                   Voice ({voiceVolume}%)
-                </ThemedText>
+                </FluentText>
               </View>
               <AudioWaveform
                 isAnimating={isPlaying}
                 barCount={40}
                 barWidth={2}
                 height={32}
-                color={theme.secondary}
+                color={colors.colorBrandForeground2}
               />
             </View>
           </View>
 
           <View style={styles.progressContainer}>
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+            <FluentText variant="caption" color="secondary">
               {formatTime(position)}
-            </ThemedText>
+            </FluentText>
             <View style={styles.progressBar}>
               <View 
                 style={[
                   styles.progressFill, 
                   { 
-                    backgroundColor: theme.primary,
+                    backgroundColor: colors.colorBrandForeground1,
                     width: duration > 0 ? `${(position / duration) * 100}%` : '0%',
                   }
                 ]} 
               />
             </View>
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+            <FluentText variant="caption" color="secondary">
               {formatTime(duration)}
-            </ThemedText>
+            </FluentText>
           </View>
         </GlassCard>
 
         <View style={styles.section}>
-          <ThemedText type="h4" style={styles.sectionTitle}>
+          <FluentText variant="subtitle1" style={styles.sectionTitle}>
             Balance
-          </ThemedText>
-          <ThemedText type="small" style={[styles.sectionDesc, { color: theme.textSecondary }]}>
+          </FluentText>
+          <FluentText variant="body2" color="secondary" style={styles.sectionDesc}>
             Adjust the mix between music and voice in real-time
-          </ThemedText>
+          </FluentText>
 
           <View style={styles.slidersRow}>
             <VolumeSlider
@@ -337,23 +336,23 @@ export default function MixingScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <ThemedText type="h4" style={styles.sectionTitle}>
+            <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Sync Adjustment
-            </ThemedText>
-            <View style={[styles.syncBadge, { backgroundColor: theme.primary + "20" }]}>
-              <ThemedText type="caption" style={{ color: theme.primary, fontWeight: "600" }}>
+            </FluentText>
+            <View style={[styles.syncBadge, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
+              <FluentText variant="caption" color="brand" style={{ fontWeight: "600" }}>
                 {getSyncOffsetLabel()}
-              </ThemedText>
+              </FluentText>
             </View>
           </View>
-          <ThemedText type="small" style={[styles.sectionDesc, { color: theme.textSecondary }]}>
+          <FluentText variant="body2" color="secondary" style={styles.sectionDesc}>
             Fine-tune the timing between music and voice (-200ms to +200ms)
-          </ThemedText>
+          </FluentText>
 
           <View style={styles.syncSliderContainer}>
             <View style={styles.syncLabels}>
-              <ThemedText type="caption" style={{ color: theme.textSecondary }}>Voice Early</ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary }}>Voice Late</ThemedText>
+              <FluentText variant="caption" color="secondary">Voice Early</FluentText>
+              <FluentText variant="caption" color="secondary">Voice Late</FluentText>
             </View>
             <Slider
               style={styles.syncSlider}
@@ -362,14 +361,14 @@ export default function MixingScreen() {
               minimumValue={-200}
               maximumValue={200}
               step={10}
-              minimumTrackTintColor={theme.primary}
-              maximumTrackTintColor={theme.backgroundTertiary}
-              thumbTintColor={theme.primary}
+              minimumTrackTintColor={colors.colorBrandForeground1}
+              maximumTrackTintColor={colors.colorNeutralBackground4}
+              thumbTintColor={colors.colorBrandForeground1}
             />
             <View style={styles.syncMarkers}>
-              <ThemedText type="caption" style={{ color: theme.textTertiary }}>-200ms</ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary, fontWeight: "600" }}>0</ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textTertiary }}>+200ms</ThemedText>
+              <FluentText variant="caption" color="tertiary">-200ms</FluentText>
+              <FluentText variant="caption" color="secondary" style={{ fontWeight: "600" }}>0</FluentText>
+              <FluentText variant="caption" color="tertiary">+200ms</FluentText>
             </View>
           </View>
         </View>
@@ -378,39 +377,39 @@ export default function MixingScreen() {
           <GlassCard style={isPremium ? styles.trimCard : styles.trimCardLocked}>
             <View style={styles.trimHeader}>
               <View style={styles.trimTitleRow}>
-                <MaterialCommunityIcons name="content-cut" size={18} color={isPremium ? theme.primary : theme.textSecondary} />
-                <ThemedText type="body" style={[styles.trimTitle, { color: isPremium ? theme.text : theme.textSecondary }]}>
+                <MaterialCommunityIcons name="content-cut" size={18} color={isPremium ? colors.colorBrandForeground1 : colors.colorNeutralForeground2} />
+                <FluentText variant="body1" color={isPremium ? "primary" : "secondary"} style={styles.trimTitle}>
                   Trim Audio
-                </ThemedText>
+                </FluentText>
               </View>
               {!isPremium ? (
-                <View style={[styles.premiumBadge, { backgroundColor: theme.warning + "20" }]}>
-                  <MaterialCommunityIcons name="crown" size={12} color={theme.warning} />
-                  <ThemedText type="caption" style={{ color: theme.warning, marginLeft: 4 }}>Premium</ThemedText>
+                <View style={[styles.premiumBadge, { backgroundColor: colors.colorPaletteYellowForeground1 + "20" }]}>
+                  <MaterialCommunityIcons name="crown" size={12} color={colors.colorPaletteYellowForeground1} />
+                  <FluentText variant="caption" color="warning" style={{ marginLeft: 4 }}>Premium</FluentText>
                 </View>
               ) : (
-                <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
+                <MaterialCommunityIcons name="chevron-right" size={20} color={colors.colorNeutralForeground2} />
               )}
             </View>
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
+            <FluentText variant="body2" color="secondary">
               Remove silence from the start and end
-            </ThemedText>
+            </FluentText>
           </GlassCard>
         </Pressable>
       </ScrollView>
 
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 80, backgroundColor: theme.surfaceContainer }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 80, backgroundColor: colors.colorNeutralBackground2 }]}>
         <Pressable
           onPress={handleContinue}
-          style={[styles.continueButton, { backgroundColor: theme.primary }]}
+          style={[styles.continueButton, { backgroundColor: colors.colorBrandBackground }]}
         >
-          <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+          <FluentText variant="body1" color="onBrand" style={{ fontWeight: "600" }}>
             Continue to Effects
-          </ThemedText>
+          </FluentText>
           <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
         </Pressable>
       </View>
-    </ThemedView>
+    </FluentSurface>
   );
 }
 
@@ -419,7 +418,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: FluentSpacing.l,
   },
   warningCard: {
     marginBottom: FluentSpacing.l,
@@ -433,7 +432,7 @@ const styles = StyleSheet.create({
     marginLeft: FluentSpacing.m,
   },
   waveformCard: {
-    marginBottom: Layout.sectionGap,
+    marginBottom: FluentSpacing.xxl,
   },
   waveformHeader: {
     flexDirection: "row",
@@ -492,7 +491,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   section: {
-    marginBottom: Layout.sectionGap,
+    marginBottom: FluentSpacing.xxl,
   },
   sectionHeaderRow: {
     flexDirection: "row",
@@ -564,7 +563,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: FluentSpacing.l,
     paddingTop: FluentSpacing.l,
   },
   continueButton: {

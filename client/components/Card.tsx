@@ -7,8 +7,8 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 
-import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
+import { FluentText } from "@/components/fluent";
+import { useThemeContext } from "@/contexts/ThemeContext";
 import { useSkin } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
@@ -67,13 +67,13 @@ export function Card({
   onPress,
   style,
 }: CardProps) {
-  const { isDark, theme } = useTheme();
+  const { isDark } = useThemeContext();
   const { components } = useSkin();
   const scale = useSharedValue(1);
   const bgOpacity = useSharedValue(1);
 
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
-  const cardBackgroundColor = getBackgroundColorForElevation(elevation, fluentColors);
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const cardBackgroundColor = getBackgroundColorForElevation(elevation, colors);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -131,7 +131,7 @@ export function Card({
         {
           backgroundColor: cardBackgroundColor,
           borderRadius: FluentControlRadius.card,
-          borderColor: fluentColors.colorNeutralStroke2,
+          borderColor: colors.colorNeutralStroke2,
         },
         getCardShadowStyle(),
         animatedStyle,
@@ -139,14 +139,14 @@ export function Card({
       ]}
     >
       {title ? (
-        <ThemedText type="titleSmall" style={styles.cardTitle}>
+        <FluentText variant="subtitle2" style={styles.cardTitle}>
           {title}
-        </ThemedText>
+        </FluentText>
       ) : null}
       {description ? (
-        <ThemedText type="bodySmall" style={[styles.cardDescription, { color: fluentColors.colorNeutralForeground2 }]}>
+        <FluentText variant="body2" color="secondary" style={styles.cardDescription}>
           {description}
-        </ThemedText>
+        </FluentText>
       ) : null}
       {children}
     </AnimatedPressable>
@@ -174,12 +174,12 @@ interface OutlinedCardProps {
 }
 
 export function OutlinedCard({ children, onPress, style }: OutlinedCardProps) {
-  const { isDark } = useTheme();
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   
   const outlinedStyle: ViewStyle = {
     borderWidth: 1, 
-    borderColor: fluentColors.colorNeutralStroke1,
+    borderColor: colors.colorNeutralStroke1,
   };
   
   const mergedStyle: ViewStyle = style 

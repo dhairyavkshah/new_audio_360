@@ -6,14 +6,14 @@ import { useRoute, useFocusEffect, RouteProp, useNavigation } from "@react-navig
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { PlayableSong } from "@/contexts/PlayerContext";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
-import { Spacing, BorderRadius, Layout } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { Layout } from "@/constants/theme";
 import { mockSongs, Song } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 import { Playlist, getPlaylists, removeSongFromPlaylist, reorderPlaylistSongs } from "@/lib/storage";
@@ -23,7 +23,8 @@ export default function PlaylistDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<LibraryStackParamList>>();
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { playTapSound } = useUiSound();
   const { playSong, setQueue, shuffle, toggleShuffle } = usePlayer();
   const { songs: deviceSongs } = useMediaLibraryContext();
@@ -159,66 +160,66 @@ export default function PlaylistDetailScreen() {
 
   if (!playlist) {
     return (
-      <ThemedView style={styles.container}>
+      <FluentScreenLayout edges={[]} hasBottomNavigation={false}>
         <View style={[styles.loadingContainer, { paddingTop: headerHeight }]}>
-          <MaterialCommunityIcons name="playlist-music" size={48} color={theme.textSecondary} />
-          <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.l }}>
+          <MaterialCommunityIcons name="playlist-music" size={48} color={colors.colorNeutralForeground2} />
+          <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.l }}>
             Playlist not found
-          </ThemedText>
+          </FluentText>
         </View>
-      </ThemedView>
+      </FluentScreenLayout>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={false}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: headerHeight + Spacing.md, paddingBottom: insets.bottom + Spacing.xl },
+          { paddingTop: headerHeight + FluentSpacing.m, paddingBottom: insets.bottom + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.header, { backgroundColor: theme.surfaceVariant }]}>
-          <View style={[styles.coverArt, { backgroundColor: theme.primary + "30" }]}>
-            <MaterialCommunityIcons name="playlist-music" size={56} color={theme.primary} />
+        <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground3 }]}>
+          <View style={[styles.coverArt, { backgroundColor: colors.colorBrandBackground + "30" }]}>
+            <MaterialCommunityIcons name="playlist-music" size={56} color={colors.colorBrandForeground1} />
           </View>
-          <ThemedText type="h2" style={styles.playlistTitle}>
+          <FluentText variant="title2" style={styles.playlistTitle}>
             {playlist.name}
-          </ThemedText>
+          </FluentText>
           {playlist.description ? (
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
+            <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
               {playlist.description}
-            </ThemedText>
+            </FluentText>
           ) : null}
-          <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+          <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.s }}>
             {songs.length} songs · {totalDuration}
-          </ThemedText>
+          </FluentText>
 
           <View style={styles.actionButtons}>
             <Pressable
-              style={[styles.playButton, { backgroundColor: theme.primary }]}
+              style={[styles.playButton, { backgroundColor: colors.colorBrandBackground }]}
               onPress={handlePlayPlaylist}
             >
               <MaterialCommunityIcons name="play" size={22} color="#FFFFFF" />
-              <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: Spacing.xs }}>
+              <FluentText variant="body1Strong" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.xs }}>
                 Play All
-              </ThemedText>
+              </FluentText>
             </Pressable>
             <Pressable
-              style={[styles.shuffleButton, { backgroundColor: theme.surfaceContainer }]}
+              style={[styles.shuffleButton, { backgroundColor: colors.colorNeutralBackground4 }]}
               onPress={handleShufflePlay}
             >
-              <MaterialCommunityIcons name="shuffle" size={20} color={theme.text} />
+              <MaterialCommunityIcons name="shuffle" size={20} color={colors.colorNeutralForeground1} />
             </Pressable>
             <Pressable
-              style={[styles.shuffleButton, { backgroundColor: isEditMode ? theme.primary : theme.surfaceContainer }]}
+              style={[styles.shuffleButton, { backgroundColor: isEditMode ? colors.colorBrandBackground : colors.colorNeutralBackground4 }]}
               onPress={handleToggleEditMode}
             >
               <MaterialCommunityIcons 
                 name={isEditMode ? "check" : "playlist-edit"} 
                 size={20} 
-                color={isEditMode ? "#FFFFFF" : theme.text} 
+                color={isEditMode ? "#FFFFFF" : colors.colorNeutralForeground1} 
               />
             </Pressable>
           </View>
@@ -226,23 +227,23 @@ export default function PlaylistDetailScreen() {
 
         {songs.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="music-off" size={40} color={theme.textSecondary} />
-            <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.l }}>
+            <MaterialCommunityIcons name="music-off" size={40} color={colors.colorNeutralForeground2} />
+            <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.l }}>
               No songs in this playlist
-            </ThemedText>
-            <ThemedText type="caption" style={{ color: theme.textSecondary, textAlign: "center", marginTop: Spacing.xs }}>
+            </FluentText>
+            <FluentText variant="caption1" color="secondary" style={{ textAlign: "center", marginTop: FluentSpacing.xs }}>
               Add songs by long-pressing on any song in the Library
-            </ThemedText>
+            </FluentText>
           </View>
         ) : (
           <View style={styles.songsList}>
-            <ThemedText type="h4" style={styles.sectionTitle}>
+            <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Songs
-            </ThemedText>
+            </FluentText>
             {songs.map((song, index) => (
               <Pressable
                 key={song.id}
-                style={[styles.songItem, { backgroundColor: theme.backgroundDefault }]}
+                style={[styles.songItem, { backgroundColor: colors.colorNeutralBackground1 }]}
                 onPress={() => handleSongPress(song)}
               >
                 {isEditMode ? (
@@ -252,41 +253,41 @@ export default function PlaylistDetailScreen() {
                       onPress={() => handleMoveSong(song.id, "up")}
                       disabled={index === 0}
                     >
-                      <MaterialCommunityIcons name="chevron-up" size={22} color={theme.text} />
+                      <MaterialCommunityIcons name="chevron-up" size={22} color={colors.colorNeutralForeground1} />
                     </Pressable>
                     <Pressable
                       style={[styles.reorderButton, { opacity: index === songs.length - 1 ? 0.3 : 1 }]}
                       onPress={() => handleMoveSong(song.id, "down")}
                       disabled={index === songs.length - 1}
                     >
-                      <MaterialCommunityIcons name="chevron-down" size={22} color={theme.text} />
+                      <MaterialCommunityIcons name="chevron-down" size={22} color={colors.colorNeutralForeground1} />
                     </Pressable>
                   </View>
                 ) : (
-                  <ThemedText type="caption" style={[styles.songIndex, { color: theme.textSecondary }]}>
+                  <FluentText variant="caption1" color="secondary" style={styles.songIndex}>
                     {index + 1}
-                  </ThemedText>
+                  </FluentText>
                 )}
                 <Image source={{ uri: song.artwork }} style={styles.songArtwork} />
                 <View style={styles.songInfo}>
-                  <ThemedText type="body" numberOfLines={1} style={{ fontWeight: "500" }}>
+                  <FluentText variant="body1" numberOfLines={1} style={{ fontWeight: "500" }}>
                     {song.title}
-                  </ThemedText>
-                  <ThemedText type="caption" numberOfLines={1} style={{ color: theme.textSecondary }}>
+                  </FluentText>
+                  <FluentText variant="caption1" color="secondary" numberOfLines={1}>
                     {song.artist}
-                  </ThemedText>
+                  </FluentText>
                 </View>
                 {isEditMode ? null : (
-                  <ThemedText type="caption" style={{ color: theme.textSecondary, marginRight: Spacing.sm }}>
+                  <FluentText variant="caption1" color="secondary" style={{ marginRight: FluentSpacing.s }}>
                     {formatDuration(song.duration)}
-                  </ThemedText>
+                  </FluentText>
                 )}
                 <Pressable
                   style={styles.removeButton}
                   onPress={() => handleRemoveSong(song.id, song.title)}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <MaterialCommunityIcons name="minus-circle-outline" size={20} color={theme.error} />
+                  <MaterialCommunityIcons name="minus-circle-outline" size={20} color={colors.colorPaletteRedForeground1} />
                 </Pressable>
               </Pressable>
             ))}
@@ -295,42 +296,39 @@ export default function PlaylistDetailScreen() {
       </ScrollView>
 
       {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: theme.success, bottom: insets.bottom + Spacing.lg }]}>
+        <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1, bottom: insets.bottom + FluentSpacing.l }]}>
           <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
-          <ThemedText type="small" style={{ color: "#FFFFFF", marginLeft: Spacing.sm, flex: 1 }}>
+          <FluentText variant="body1" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
             {successMessage}
-          </ThemedText>
+          </FluentText>
         </View>
       ) : null}
-    </ThemedView>
+    </FluentScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
   content: {
-    paddingHorizontal: Spacing.l,
+    paddingHorizontal: FluentSpacing.l,
   },
   header: {
     alignItems: "center",
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.large,
-    marginBottom: Spacing.xl,
+    padding: FluentSpacing.xl,
+    borderRadius: FluentControlRadius.card,
+    marginBottom: FluentSpacing.xl,
   },
   coverArt: {
     width: 120,
     height: 120,
-    borderRadius: BorderRadius.large,
+    borderRadius: FluentControlRadius.card,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.l,
+    marginBottom: FluentSpacing.l,
   },
   playlistTitle: {
     fontSize: 20,
@@ -340,15 +338,15 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: Spacing.xl,
-    gap: Spacing.m,
+    marginTop: FluentSpacing.xl,
+    gap: FluentSpacing.m,
   },
   playButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.m,
-    paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.circular,
+    paddingVertical: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.xl,
+    borderRadius: FluentRadius.circular,
     minHeight: Layout.buttonStandard,
   },
   shuffleButton: {
@@ -360,20 +358,20 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: Spacing.xxl,
+    paddingVertical: FluentSpacing.xxl,
   },
   songsList: {
-    gap: Spacing.xs,
+    gap: FluentSpacing.xs,
   },
   sectionTitle: {
-    marginBottom: Spacing.m,
+    marginBottom: FluentSpacing.m,
     fontWeight: "600",
   },
   songItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.m,
-    borderRadius: BorderRadius.medium,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
     minHeight: Layout.listItemStandard,
   },
   songIndex: {
@@ -383,33 +381,33 @@ const styles = StyleSheet.create({
   songArtwork: {
     width: 48,
     height: 48,
-    borderRadius: BorderRadius.small,
-    marginLeft: Spacing.m,
+    borderRadius: FluentControlRadius.chip,
+    marginLeft: FluentSpacing.m,
   },
   songInfo: {
     flex: 1,
-    marginLeft: Spacing.m,
+    marginLeft: FluentSpacing.m,
   },
   removeButton: {
-    padding: Spacing.xs,
+    padding: FluentSpacing.xs,
   },
   reorderControls: {
     flexDirection: "column",
     alignItems: "center",
     width: 32,
-    marginRight: Spacing.xs,
+    marginRight: FluentSpacing.xs,
   },
   reorderButton: {
     padding: 2,
   },
   successToast: {
     position: "absolute",
-    left: Spacing.l,
-    right: Spacing.l,
+    left: FluentSpacing.l,
+    right: FluentSpacing.l,
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.l,
-    borderRadius: BorderRadius.medium,
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
     elevation: 4,
   },
 });

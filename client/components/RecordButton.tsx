@@ -11,7 +11,11 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
-import { Spacing } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface RecordButtonProps {
   isRecording: boolean;
@@ -22,13 +26,16 @@ interface RecordButtonProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+const RECORD_BUTTON_SIZE = 72;
+
 export function RecordButton({
   isRecording,
   onPress,
-  size = Spacing.recordButtonSize,
+  size = RECORD_BUTTON_SIZE,
   isPaused = false,
 }: RecordButtonProps) {
-  const { theme } = useThemeContext();
+  const { theme, isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { icons, shapes, components } = useSkin();
   const scale = useSharedValue(1);
   const pulseScale = useSharedValue(1);
@@ -76,6 +83,8 @@ export function RecordButton({
     onPress();
   };
 
+  const recordButtonColor = theme.recordButton || colors.colorPaletteRedForeground1;
+
   const bevelStyle = components.useBevel ? {
     borderWidth: shapes.borderWidthThick,
     borderTopColor: 'rgba(255,255,255,0.4)',
@@ -85,7 +94,7 @@ export function RecordButton({
   } : {};
 
   const glowStyle = components.useGlow ? {
-    shadowColor: theme.recordButton,
+    shadowColor: recordButtonColor,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: components.glowIntensity,
     shadowRadius: 15,
@@ -102,11 +111,11 @@ export function RecordButton({
         style={[
           styles.pulse,
           {
-            width: size + 24,
-            height: size + 24,
-            borderRadius: (size + 24) / 2,
+            width: size + FluentSpacing.xxl,
+            height: size + FluentSpacing.xxl,
+            borderRadius: (size + FluentSpacing.xxl) / 2,
             borderWidth: 3,
-            borderColor: theme.recordButton,
+            borderColor: recordButtonColor,
           },
           pulseStyle,
         ]}
@@ -121,7 +130,7 @@ export function RecordButton({
             width: size,
             height: size,
             borderRadius: size / 2,
-            backgroundColor: theme.recordButton,
+            backgroundColor: recordButtonColor,
           },
           bevelStyle,
           glowStyle,

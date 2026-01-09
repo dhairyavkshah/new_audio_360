@@ -1,23 +1,21 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { View, StyleSheet, ScrollView, Pressable, TextInput, Alert, Modal } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { Playlist, getPlaylists, addPlaylist, updatePlaylist, deletePlaylist } from "@/lib/storage";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 
 export default function PlaylistManagementScreen() {
-  const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
@@ -109,7 +107,7 @@ export default function PlaylistManagementScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -120,72 +118,72 @@ export default function PlaylistManagementScreen() {
       >
         <Pressable
           onPress={handleCreateNew}
-          style={[styles.createButton, { backgroundColor: theme.primary }]}
+          style={[styles.createButton, { backgroundColor: colors.colorBrandBackground }]}
         >
           <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
-          <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.xs }}>
+          <FluentText variant="body1Strong" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.xs }}>
             Create New Playlist
-          </ThemedText>
+          </FluentText>
         </Pressable>
 
         {playlists.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="playlist-music" size={48} color={theme.textSecondary} />
-            <ThemedText type="body" style={[styles.emptyTitle, { color: theme.textSecondary }]}>
+            <MaterialCommunityIcons name="playlist-music" size={48} color={colors.colorNeutralForeground2} />
+            <FluentText variant="body1" color="secondary" style={styles.emptyTitle}>
               No Playlists Yet
-            </ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: "center" }}>
+            </FluentText>
+            <FluentText variant="body1" color="secondary" style={{ textAlign: "center" }}>
               Create your first playlist to organize your favorite songs
-            </ThemedText>
+            </FluentText>
           </View>
         ) : (
           <View style={styles.playlistsList}>
             {playlists.map((playlist) => (
               <GlassCard key={playlist.id} style={styles.playlistCard}>
                 <View style={styles.playlistHeader}>
-                  <View style={[styles.playlistIcon, { backgroundColor: theme.primary + "20" }]}>
-                    <MaterialCommunityIcons name="playlist-music" size={24} color={theme.primary} />
+                  <View style={[styles.playlistIcon, { backgroundColor: colors.colorBrandBackground + "20" }]}>
+                    <MaterialCommunityIcons name="playlist-music" size={24} color={colors.colorBrandForeground1} />
                   </View>
                   <View style={styles.playlistInfo}>
-                    <ThemedText type="body" style={{ fontWeight: "600" }}>
+                    <FluentText variant="body1Strong">
                       {playlist.name}
-                    </ThemedText>
-                    <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                    </FluentText>
+                    <FluentText variant="caption1" color="secondary">
                       {playlist.songIds.length} songs
-                    </ThemedText>
+                    </FluentText>
                   </View>
                 </View>
 
                 {playlist.description ? (
-                  <ThemedText type="small" style={[styles.playlistDesc, { color: theme.textSecondary }]}>
+                  <FluentText variant="body1" color="secondary" style={styles.playlistDesc}>
                     {playlist.description}
-                  </ThemedText>
+                  </FluentText>
                 ) : null}
 
                 <View style={styles.playlistMeta}>
-                  <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                  <FluentText variant="caption1" color="secondary">
                     Created {formatDate(playlist.createdAt)}
-                  </ThemedText>
+                  </FluentText>
                 </View>
 
                 <View style={styles.playlistActions}>
                   <Pressable
                     onPress={() => handleEdit(playlist)}
-                    style={[styles.actionButton, { backgroundColor: theme.backgroundSecondary }]}
+                    style={[styles.actionButton, { backgroundColor: colors.colorNeutralBackground2 }]}
                   >
-                    <MaterialCommunityIcons name="pencil-outline" size={18} color={theme.text} />
-                    <ThemedText type="small" style={{ marginLeft: FluentSpacing.xxs }}>
+                    <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.colorNeutralForeground1} />
+                    <FluentText variant="body1" style={{ marginLeft: FluentSpacing.xxs }}>
                       Edit
-                    </ThemedText>
+                    </FluentText>
                   </Pressable>
                   <Pressable
                     onPress={() => handleDelete(playlist)}
-                    style={[styles.actionButton, { backgroundColor: theme.error + "15" }]}
+                    style={[styles.actionButton, { backgroundColor: colors.colorPaletteRedBackground1 }]}
                   >
-                    <MaterialCommunityIcons name="trash-can-outline" size={18} color={theme.error} />
-                    <ThemedText type="small" style={{ marginLeft: FluentSpacing.xxs, color: theme.error }}>
+                    <MaterialCommunityIcons name="trash-can-outline" size={18} color={colors.colorPaletteRedForeground1} />
+                    <FluentText variant="body1" style={{ marginLeft: FluentSpacing.xxs, color: colors.colorPaletteRedForeground1 }}>
                       Delete
-                    </ThemedText>
+                    </FluentText>
                   </Pressable>
                 </View>
               </GlassCard>
@@ -195,14 +193,14 @@ export default function PlaylistManagementScreen() {
 
         <GlassCard style={styles.infoCard}>
           <View style={styles.infoContent}>
-            <MaterialCommunityIcons name="lightbulb-outline" size={18} color={theme.primary} />
+            <MaterialCommunityIcons name="lightbulb-outline" size={18} color={colors.colorBrandForeground1} />
             <View style={styles.infoText}>
-              <ThemedText type="small" style={{ fontWeight: "600" }}>
+              <FluentText variant="body1Strong">
                 Smart Playlist Tips
-              </ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: FluentSpacing.xxs }}>
+              </FluentText>
+              <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xxs }}>
                 Long-press songs in your library to quickly add them to playlists. You can also create genre-based or mood-based playlists for a better listening experience.
-              </ThemedText>
+              </FluentText>
             </View>
           </View>
         </GlassCard>
@@ -219,44 +217,44 @@ export default function PlaylistManagementScreen() {
             contentContainerStyle={styles.modalScrollContent}
             keyboardShouldPersistTaps="handled"
           >
-            <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={[styles.modalContent, { backgroundColor: colors.colorNeutralBackground1 }]}>
               <View style={styles.modalHeader}>
-                <ThemedText type="h4" style={{ fontWeight: "700" }}>
+                <FluentText variant="subtitle1" style={{ fontWeight: "700" }}>
                   {editingPlaylist ? "Edit Playlist" : "Create Playlist"}
-                </ThemedText>
+                </FluentText>
                 <Pressable onPress={() => setIsModalVisible(false)}>
-                  <MaterialCommunityIcons name="close" size={24} color={theme.text} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.colorNeutralForeground1} />
                 </Pressable>
               </View>
 
               <View style={styles.inputGroup}>
-                <ThemedText type="small" style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                <FluentText variant="body1" color="secondary" style={styles.inputLabel}>
                   Playlist Name
-                </ThemedText>
+                </FluentText>
                 <TextInput
-                  style={[styles.textInput, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
+                  style={[styles.textInput, { backgroundColor: colors.colorNeutralBackground2, color: colors.colorNeutralForeground1 }]}
                   value={playlistName}
                   onChangeText={setPlaylistName}
                   placeholder="My Awesome Playlist"
-                  placeholderTextColor={theme.textSecondary}
+                  placeholderTextColor={colors.colorNeutralForeground2}
                   autoFocus
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <ThemedText type="small" style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                <FluentText variant="body1" color="secondary" style={styles.inputLabel}>
                   Description (optional)
-                </ThemedText>
+                </FluentText>
                 <TextInput
                   style={[
                     styles.textInput,
                     styles.textArea,
-                    { backgroundColor: theme.backgroundSecondary, color: theme.text },
+                    { backgroundColor: colors.colorNeutralBackground2, color: colors.colorNeutralForeground1 },
                   ]}
                   value={playlistDescription}
                   onChangeText={setPlaylistDescription}
                   placeholder="Add a description for your playlist..."
-                  placeholderTextColor={theme.textSecondary}
+                  placeholderTextColor={colors.colorNeutralForeground2}
                   multiline
                   numberOfLines={3}
                   textAlignVertical="top"
@@ -266,33 +264,30 @@ export default function PlaylistManagementScreen() {
               <View style={styles.modalActions}>
                 <Pressable
                   onPress={() => setIsModalVisible(false)}
-                  style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]}
+                  style={[styles.modalButton, { backgroundColor: colors.colorNeutralBackground2 }]}
                 >
-                  <ThemedText type="body" style={{ fontWeight: "600" }}>
+                  <FluentText variant="body1Strong">
                     Cancel
-                  </ThemedText>
+                  </FluentText>
                 </Pressable>
                 <Pressable
                   onPress={handleSave}
-                  style={[styles.modalButton, { backgroundColor: theme.primary }]}
+                  style={[styles.modalButton, { backgroundColor: colors.colorBrandBackground }]}
                 >
-                  <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                  <FluentText variant="body1Strong" style={{ color: "#FFFFFF" }}>
                     {editingPlaylist ? "Save Changes" : "Create"}
-                  </ThemedText>
+                  </FluentText>
                 </Pressable>
               </View>
             </View>
           </KeyboardAwareScrollViewCompat>
         </View>
       </Modal>
-    </ThemedView>
+    </FluentScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
     paddingHorizontal: Layout.horizontalPadding,
   },

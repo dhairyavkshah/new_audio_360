@@ -1,8 +1,13 @@
 import React from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentRadius,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface LoadingStateProps {
   message?: string;
@@ -10,27 +15,32 @@ interface LoadingStateProps {
 }
 
 export function LoadingState({ message = "Loading...", progress }: LoadingStateProps) {
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={theme.primary} />
-      <ThemedText type="bodyMedium" style={[styles.message, { color: theme.onSurfaceVariant }]}>
+      <ActivityIndicator size="large" color={colors.colorBrandForeground1} />
+      <FluentText 
+        variant="body1" 
+        color="secondary" 
+        style={styles.message}
+      >
         {message}
-      </ThemedText>
+      </FluentText>
       {progress !== undefined && progress >= 0 && progress <= 1 ? (
         <View style={styles.progressContainer}>
-          <View style={[styles.progressTrack, { backgroundColor: theme.surfaceContainerHigh }]}>
+          <View style={[styles.progressTrack, { backgroundColor: colors.colorNeutralBackground4 }]}>
             <View
               style={[
                 styles.progressFill,
-                { backgroundColor: theme.primary, width: `${progress * 100}%` },
+                { backgroundColor: colors.colorBrandForeground1, width: `${progress * 100}%` },
               ]}
             />
           </View>
-          <ThemedText type="labelSmall" style={{ color: theme.onSurfaceVariant }}>
+          <FluentText variant="caption1" color="secondary">
             {Math.round(progress * 100)}%
-          </ThemedText>
+          </FluentText>
         </View>
       ) : null}
     </View>
@@ -42,15 +52,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing.xxxl,
-    paddingVertical: Spacing.xxxl,
+    paddingHorizontal: FluentSpacing.xxxl,
+    paddingVertical: FluentSpacing.xxxl,
   },
   message: {
-    marginTop: Spacing.l,
+    marginTop: FluentSpacing.l,
     textAlign: "center",
   },
   progressContainer: {
-    marginTop: Spacing.l,
+    marginTop: FluentSpacing.l,
     alignItems: "center",
     width: "100%",
     maxWidth: 200,
@@ -58,12 +68,12 @@ const styles = StyleSheet.create({
   progressTrack: {
     width: "100%",
     height: 4,
-    borderRadius: 2,
+    borderRadius: FluentRadius.small,
     overflow: "hidden",
-    marginBottom: Spacing.s,
+    marginBottom: FluentSpacing.s,
   },
   progressFill: {
     height: "100%",
-    borderRadius: 2,
+    borderRadius: FluentRadius.small,
   },
 });

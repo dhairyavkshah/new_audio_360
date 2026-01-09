@@ -7,9 +7,15 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { ThemedText } from "@/components/ThemedText";
+import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentRadius,
+  FluentLightColors,
+  FluentDarkColors,
+  FluentIconSize,
+} from "@/constants/fluent2";
 
 interface EffectChipProps {
   label: string;
@@ -30,7 +36,8 @@ export function EffectChip({
   isLocked = false,
   disabled = false,
 }: EffectChipProps) {
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -52,6 +59,18 @@ export function EffectChip({
     onPress();
   };
 
+  const backgroundColor = isSelected 
+    ? colors.colorBrandBackground 
+    : colors.colorNeutralBackground3;
+  const borderColor = isSelected 
+    ? colors.colorBrandStroke1 
+    : colors.colorNeutralStroke2;
+  const textColor = isLocked 
+    ? colors.colorNeutralForeground2 
+    : isSelected 
+      ? colors.colorNeutralForegroundOnBrand 
+      : colors.colorNeutralForeground1;
+
   return (
     <AnimatedPressable
       onPress={handlePress}
@@ -61,27 +80,29 @@ export function EffectChip({
       style={[
         styles.container,
         {
-          backgroundColor: isSelected ? theme.primary : theme.backgroundSecondary,
-          borderColor: isSelected ? theme.primary : theme.backgroundTertiary,
+          backgroundColor,
+          borderColor,
           borderWidth: 1.5,
           opacity: disabled ? 0.5 : 1,
         },
         animatedStyle,
       ]}
     >
-      <ThemedText
-        type="small"
-        style={[
-          styles.label,
-          { color: isLocked ? theme.textSecondary : isSelected ? "#FFFFFF" : theme.text },
-        ]}
+      <FluentText
+        variant="body2"
+        style={[styles.label, { color: textColor }]}
       >
         {label}
-      </ThemedText>
+      </FluentText>
       {isLocked ? (
-        <MaterialCommunityIcons name="lock" size={12} color={theme.warning} style={styles.lockIcon} />
+        <MaterialCommunityIcons 
+          name="lock" 
+          size={FluentIconSize.tiny} 
+          color={colors.colorPaletteYellowForeground1} 
+          style={styles.lockIcon} 
+        />
       ) : isPremium ? (
-        <View style={[styles.premiumIndicator, { backgroundColor: theme.accent }]} />
+        <View style={[styles.premiumIndicator, { backgroundColor: colors.colorBrandForeground1 }]} />
       ) : null}
     </AnimatedPressable>
   );
@@ -91,11 +112,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.full,
-    marginRight: Spacing.sm,
-    marginBottom: Spacing.sm,
+    paddingHorizontal: FluentSpacing.l,
+    paddingVertical: FluentSpacing.m,
+    borderRadius: FluentRadius.circular,
+    marginRight: FluentSpacing.s,
+    marginBottom: FluentSpacing.s,
   },
   label: {
     fontWeight: "500",
@@ -104,9 +125,9 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    marginLeft: Spacing.sm,
+    marginLeft: FluentSpacing.s,
   },
   lockIcon: {
-    marginLeft: Spacing.xs,
+    marginLeft: FluentSpacing.xs,
   },
 });

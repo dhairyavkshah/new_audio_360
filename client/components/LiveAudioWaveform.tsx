@@ -9,6 +9,11 @@ import Animated, {
   Extrapolation,
 } from "react-native-reanimated";
 import { useThemeContext } from "@/contexts/ThemeContext";
+import {
+  FluentSpacing,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface LiveAudioWaveformProps {
   audioLevel: number;
@@ -138,8 +143,9 @@ export function LiveAudioWaveform({
   color,
   sensitivity = 1.5,
 }: LiveAudioWaveformProps) {
-  const { theme } = useThemeContext();
-  const barColor = color || theme.primary;
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const barColor = color || colors.colorBrandForeground1;
 
   const barIndices = Array.from({ length: barCount }, (_, i) => i);
 
@@ -167,9 +173,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 3,
+    gap: FluentSpacing.xxs,
   },
   bar: {
-    minHeight: 8,
+    minHeight: FluentSpacing.s,
   },
 });
