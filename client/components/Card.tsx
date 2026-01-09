@@ -10,7 +10,7 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useSkin } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius, M3Motion, M3Elevation } from "@/constants/theme";
+import { Spacing, BorderRadius, FluentMotion, FluentShadow } from "@/constants/theme";
 
 interface CardProps {
   elevation?: number;
@@ -21,27 +21,14 @@ interface CardProps {
   style?: ViewStyle;
 }
 
-const getBackgroundColorForElevation = (
-  elevation: number,
-  theme: any,
-): string => {
-  switch (elevation) {
-    case 0:
-      return theme.surfaceContainerLowest;
-    case 1:
-      return theme.surfaceContainerLow;
-    case 2:
-      return theme.surfaceContainer;
-    case 3:
-      return theme.surfaceContainerHigh;
-    case 4:
-      return theme.surfaceContainerHighest;
-    default:
-      return theme.surface;
-  }
-};
-
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const getFluentShadowForElevation = (elevation: number) => {
+  if (elevation <= 1) return FluentShadow.shadow2;
+  if (elevation === 2) return FluentShadow.shadow4;
+  if (elevation === 3) return FluentShadow.shadow8;
+  return FluentShadow.shadow8;
+};
 
 export function Card({
   elevation = 1,
@@ -56,8 +43,6 @@ export function Card({
   const scale = useSharedValue(1);
   const bgOpacity = useSharedValue(1);
 
-  const cardBackgroundColor = getBackgroundColorForElevation(elevation, theme);
-
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: bgOpacity.value,
@@ -66,11 +51,16 @@ export function Card({
   const handlePressIn = () => {
     if (onPress) {
       scale.value = withTiming(0.98, { 
-        duration: M3Motion.durationShort3,
-        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+        duration: FluentMotion.duration.fast,
+        easing: Easing.bezier(
+          FluentMotion.easing.accelerate.x1, 
+          FluentMotion.easing.accelerate.y1, 
+          FluentMotion.easing.accelerate.x2, 
+          FluentMotion.easing.accelerate.y2
+        ),
       });
       bgOpacity.value = withTiming(0.95, { 
-        duration: M3Motion.durationShort3,
+        duration: FluentMotion.duration.fast,
       });
     }
   };
@@ -78,30 +68,37 @@ export function Card({
   const handlePressOut = () => {
     if (onPress) {
       scale.value = withTiming(1, { 
-        duration: M3Motion.durationShort4,
-        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+        duration: FluentMotion.duration.normal,
+        easing: Easing.bezier(
+          FluentMotion.easing.decelerate.x1, 
+          FluentMotion.easing.decelerate.y1, 
+          FluentMotion.easing.decelerate.x2, 
+          FluentMotion.easing.decelerate.y2
+        ),
       });
       bgOpacity.value = withTiming(1, { 
-        duration: M3Motion.durationShort4,
+        duration: FluentMotion.duration.normal,
       });
     }
   };
 
   const getShadowStyle = () => {
-    if (!components.useShadow) return {};
+    if (!components.useShadow || elevation === 0) return {};
+    
+    const shadow = getFluentShadowForElevation(elevation);
     
     return Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: elevation },
-        shadowOpacity: 0.08 + (elevation * 0.02),
-        shadowRadius: elevation * 2,
+        shadowOffset: { width: shadow.key.x, height: shadow.key.y },
+        shadowOpacity: 0.14,
+        shadowRadius: shadow.key.blur,
       },
       android: {
-        elevation: elevation,
+        elevation: shadow.elevation,
       },
       default: {
-        boxShadow: elevation >= 2 ? "0 2px 4px rgba(0, 0, 0, 0.14)" : "0 1px 2px rgba(0, 0, 0, 0.14)",
+        boxShadow: shadow.combined,
       },
     }) || {};
   };
@@ -116,9 +113,9 @@ export function Card({
       style={[
         styles.card,
         {
-          backgroundColor: cardBackgroundColor,
+          backgroundColor: theme.surface,
           borderRadius: shapes.cardBorderRadius || BorderRadius.large,
-          borderColor: theme.outlineVariant,
+          borderColor: theme.stroke1,
         },
         getShadowStyle(),
         animatedStyle,
@@ -165,7 +162,7 @@ export function OutlinedCard({ children, onPress, style }: OutlinedCardProps) {
   
   const outlinedStyle: ViewStyle = {
     borderWidth: 1, 
-    borderColor: theme.outline,
+    borderColor: theme.stroke1,
   };
   
   const mergedStyle: ViewStyle = style 
@@ -195,7 +192,7 @@ export function FilledCard({ children, onPress, style }: FilledCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    padding: Spacing.l,
+    padding: Spacing.m,
     borderWidth: 1,
   },
   cardTitle: {

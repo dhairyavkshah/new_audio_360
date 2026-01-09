@@ -12,7 +12,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Layout, Spacing, BorderRadius, M3Motion, M3Shape, M3Elevation } from "@/constants/theme";
+import { Layout, Spacing, BorderRadius, M3Motion, M3Shape, M3Elevation, FluentShadow, Typography } from "@/constants/theme";
 
 interface TopBarProps {
   title: string;
@@ -57,15 +57,17 @@ export function TopBar({
 
   const shadowStyle = !transparent ? Platform.select({
     ios: {
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 4,
+      shadowColor: FluentShadow.shadow2.key.color,
+      shadowOffset: { width: FluentShadow.shadow2.key.x, height: FluentShadow.shadow2.key.y },
+      shadowOpacity: 1,
+      shadowRadius: FluentShadow.shadow2.key.blur,
     },
     android: {
-      elevation: M3Elevation.level2.elevation,
+      elevation: FluentShadow.shadow2.elevation,
     },
-    default: {},
+    default: {
+      boxShadow: FluentShadow.shadow2.combined,
+    },
   }) : {};
 
   return (
@@ -74,7 +76,7 @@ export function TopBar({
         styles.container,
         {
           paddingTop: insets.top,
-          backgroundColor: transparent ? "transparent" : theme.surfaceContainer,
+          backgroundColor: transparent ? "transparent" : theme.surface,
           borderBottomColor: transparent ? "transparent" : theme.outlineVariant,
         },
         shadowStyle,
@@ -99,7 +101,7 @@ export function TopBar({
             />
           ) : null}
           <ThemedText 
-            type="titleLarge" 
+            type="title4" 
             style={[styles.title, { marginLeft: shouldShowBack || showHome ? 0 : Spacing.s }]}
           >
             {title}
@@ -307,7 +309,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Layout.horizontalPaddingMin,
+    paddingHorizontal: Spacing.l,
   },
   leftSection: {
     flexDirection: "row",
@@ -319,8 +321,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconButton: {
-    width: Layout.touchTargetMin,
-    height: Layout.touchTargetMin,
+    width: 48,
+    height: 48,
     borderRadius: BorderRadius.button,
     alignItems: "center",
     justifyContent: "center",

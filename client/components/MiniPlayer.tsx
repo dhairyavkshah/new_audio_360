@@ -8,7 +8,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import { Spacing, BorderRadius, Layout, M3Shape, M3Elevation } from "@/constants/theme";
+import { Spacing, BorderRadius, Layout, M3Shape, M3Elevation, FluentShadow } from "@/constants/theme";
 
 interface MiniPlayerProps {
   bottomOffset?: number;
@@ -50,7 +50,14 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
   };
 
   return (
-    <View style={[styles.container, { bottom: bottomOffset + Spacing.s }]}>
+    <View style={[
+      styles.container, 
+      { 
+        bottom: bottomOffset + Layout.miniPlayerGapFromNav,
+        backgroundColor: theme.surface,
+        borderColor: theme.stroke2,
+      }
+    ]}>
       <View style={styles.progressTrack}>
         <View 
           style={[
@@ -113,20 +120,22 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: Layout.horizontalPadding,
     right: Layout.horizontalPadding,
-    borderRadius: BorderRadius.miniPlayer,
+    height: Layout.miniPlayerHeight,
+    borderRadius: BorderRadius.large,
+    borderWidth: 1,
     overflow: "hidden",
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
+        shadowColor: FluentShadow.shadow8.key.color,
+        shadowOffset: { width: FluentShadow.shadow8.key.x, height: FluentShadow.shadow8.key.y },
+        shadowOpacity: 1,
+        shadowRadius: FluentShadow.shadow8.key.blur,
       },
       android: {
-        elevation: 8,
+        elevation: FluentShadow.shadow8.elevation,
       },
       default: {
-        boxShadow: "0 8px 16px rgba(0, 0, 0, 0.14)",
+        boxShadow: FluentShadow.shadow8.combined,
       },
     }),
   },
@@ -143,7 +152,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   background: {
-    borderRadius: BorderRadius.miniPlayer,
+    borderRadius: BorderRadius.large,
     overflow: "hidden",
   },
   content: {
