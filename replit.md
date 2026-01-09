@@ -71,6 +71,29 @@ The app features a 3-tab navigation structure:
 
 ## Recent Changes
 
+- **2026-01-09**: **Comprehensive Fluent 2 UI Component Library & Screen Migration**:
+  - **New Fluent 2 Primitive Components** (in `client/components/fluent/`):
+    - FluentText: 14 typography variants with 10 color options
+    - FluentSurface: Container with elevation levels and background variants
+    - FluentStack: Flexible layout with gap/padding tokens
+    - FluentButton: 5 variants (primary, secondary, outline, subtle, transparent)
+    - FluentCard: Card with header/content/footer slots
+    - FluentIconButton: Icon-only button with variants
+    - FluentDivider: Horizontal/vertical separators
+    - FluentChip: Selectable/dismissible chips
+    - FluentScreenLayout: SafeAreaView wrapper with KeyboardAvoidingView
+  - **Screen Migrations to Fluent 2**:
+    - ListenScreen: Uses FluentScreenLayout, FluentText, Fluent 2 tokens
+    - LibraryScreen: Full Fluent 2 colors, spacing, radii
+    - SettingsScreen: MenuItem uses Fluent 2 patterns
+    - NowPlayingScreen: Fluent 2 typography and color tokens
+  - **Design Token System** (`client/constants/fluent2/`):
+    - FluentLightColors/FluentDarkColors: Complete semantic color tokens
+    - FluentSpacing: 4px grid system (none, xxs, xs, s, m, l, xl, xxl, xxxl)
+    - FluentTypography: 14 type scale variants
+    - FluentRadius: Border radius tokens
+    - FluentShadows: Elevation shadows for light/dark
+
 - **2026-01-09**: **Unified FluentTopBar Header Component** - Created consistent Microsoft Fluent 2 header across all main screens:
   - New FluentTopBar component with support for title, search bar, sort dropdown, and category dropdown
   - ListenScreen: "Listen" title with search and sort facilities
