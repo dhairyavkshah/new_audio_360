@@ -8,15 +8,24 @@ import {
   Image,
   ScrollView,
   Dimensions,
+  Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from "react-native-reanimated";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  runOnJS,
+  Easing,
+} from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
+import { Button } from "@/components/Button";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, BorderRadius, Typography } from "@/constants/theme";
+import { Spacing, BorderRadius, FluentMotion, FluentShadow, Typography } from "@/constants/theme";
 import { Song } from "@/lib/data";
 import { PlayableSong } from "@/contexts/PlayerContext";
 import {
@@ -37,20 +46,94 @@ interface SongContextMenuProps {
 
 type MenuView = "main" | "selectPlaylist" | "createPlaylist";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
+const MENU_ITEM_HEIGHT = 44;
+const ICON_SIZE = 20;
+const ICON_GAP = 12;
+
+const getFluentShadowStyle = (shadow: typeof FluentShadow.shadow8) => {
+  return Platform.select({
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: shadow.key.x, height: shadow.key.y },
+      shadowOpacity: 0.14,
+      shadowRadius: shadow.key.blur,
+    },
+    android: {
+      elevation: shadow.elevation,
+    },
+    default: {
+      boxShadow: shadow.combined,
+    },
+  }) || {};
+};
 
 export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong, showHideOption = false }: SongContextMenuProps) {
   const { theme } = useThemeContext();
   const { playTapSound } = useUiSound();
+  const insets = useSafeAreaInsets();
   const [menuView, setMenuView] = useState<MenuView>("main");
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const translateY = useSharedValue(300);
+  const backdropOpacity = useSharedValue(0);
+  const [isRendered, setIsRendered] = useState(visible);
+
+  const handleAnimationComplete = useCallback((toVisible: boolean) => {
+    if (!toVisible) {
+      setIsRendered(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (visible) {
+      setIsRendered(true);
+      translateY.value = withTiming(0, {
+        duration: FluentMotion.duration.normal,
+        easing: Easing.bezier(
+          FluentMotion.easing.decelerateMax.x1,
+          FluentMotion.easing.decelerateMax.y1,
+          FluentMotion.easing.decelerateMax.x2,
+          FluentMotion.easing.decelerateMax.y2
+        ),
+      });
+      backdropOpacity.value = withTiming(1, {
+        duration: FluentMotion.duration.fast,
+      });
+    } else if (isRendered) {
+      translateY.value = withTiming(300, {
+        duration: FluentMotion.duration.fast,
+        easing: Easing.bezier(
+          FluentMotion.easing.accelerate.x1,
+          FluentMotion.easing.accelerate.y1,
+          FluentMotion.easing.accelerate.x2,
+          FluentMotion.easing.accelerate.y2
+        ),
+      }, () => {
+        runOnJS(handleAnimationComplete)(false);
+      });
+      backdropOpacity.value = withTiming(0, {
+        duration: FluentMotion.duration.fast,
+      });
+    }
+  }, [visible]);
+
+  const menuAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const backdropAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
+
   const handleHideSong = async () => {
     if (!song || !onHideSong) return;
     playTapSound();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     setIsLoading(true);
     try {
       await onHideSong(song.id);
@@ -76,14 +159,18 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
 
   const handleClose = () => {
     playTapSound();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     onClose();
   };
 
   const handleAddToPlaylist = async (playlist: Playlist) => {
     if (!song) return;
     playTapSound();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     setIsLoading(true);
     try {
       await addSongToPlaylist(playlist.id, song.id);
@@ -97,7 +184,9 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
   const handleCreatePlaylist = async () => {
     if (!song || !newPlaylistName.trim()) return;
     playTapSound();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     setIsLoading(true);
     try {
       const newPlaylist: Playlist = {
@@ -117,74 +206,87 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
 
   const handleNavigate = (view: MenuView) => {
     playTapSound();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setMenuView(view);
   };
 
-  if (!visible || !song) return null;
+  if (!isRendered || !song) return null;
+
+  const safeBottomPadding = Math.max(insets.bottom, Spacing.xl);
 
   const renderMainMenu = () => (
     <View style={styles.menuContent}>
       <View style={styles.songHeader}>
         <Image source={{ uri: song.artwork }} style={styles.songArtwork} />
         <View style={styles.songInfo}>
-          <ThemedText type="body" numberOfLines={1} style={{ fontWeight: "600" }}>
+          <ThemedText type="title4" numberOfLines={1}>
             {song.title}
           </ThemedText>
-          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+          <ThemedText type="bodyMedium" style={{ color: theme.onSurfaceVariant }}>
             {song.artist}
           </ThemedText>
         </View>
       </View>
 
-      <View style={[styles.divider, { backgroundColor: theme.surfaceVariant }]} />
+      <View style={[styles.divider, { backgroundColor: theme.divider }]} />
 
       <Pressable
-        style={[styles.menuItem, { backgroundColor: theme.surface }]}
+        style={({ pressed }) => [
+          styles.menuItem,
+          { backgroundColor: pressed ? theme.surfaceContainerHighest : "transparent" },
+        ]}
         onPress={() => handleNavigate("selectPlaylist")}
       >
         <View style={[styles.menuItemIcon, { backgroundColor: theme.primary + "20" }]}>
-          <MaterialCommunityIcons name="playlist-plus" size={20} color={theme.primary} />
+          <MaterialCommunityIcons name="playlist-plus" size={ICON_SIZE} color={theme.primary} />
         </View>
         <View style={styles.menuItemText}>
-          <ThemedText type="body">Add to Playlist</ThemedText>
-          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+          <ThemedText type="bodyMedium">Add to Playlist</ThemedText>
+          <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>
             {playlists.length} {playlists.length === 1 ? "playlist" : "playlists"} available
           </ThemedText>
         </View>
-        <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
+        <MaterialCommunityIcons name="chevron-right" size={ICON_SIZE} color={theme.onSurfaceVariant} />
       </Pressable>
 
       <Pressable
-        style={[styles.menuItem, { backgroundColor: theme.surface }]}
+        style={({ pressed }) => [
+          styles.menuItem,
+          { backgroundColor: pressed ? theme.surfaceContainerHighest : "transparent" },
+        ]}
         onPress={() => handleNavigate("createPlaylist")}
       >
         <View style={[styles.menuItemIcon, { backgroundColor: theme.success + "20" }]}>
-          <MaterialCommunityIcons name="playlist-music" size={20} color={theme.success} />
+          <MaterialCommunityIcons name="playlist-music" size={ICON_SIZE} color={theme.success} />
         </View>
         <View style={styles.menuItemText}>
-          <ThemedText type="body">Create New Playlist</ThemedText>
-          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+          <ThemedText type="bodyMedium">Create New Playlist</ThemedText>
+          <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>
             Start a new collection with this song
           </ThemedText>
         </View>
-        <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
+        <MaterialCommunityIcons name="chevron-right" size={ICON_SIZE} color={theme.onSurfaceVariant} />
       </Pressable>
 
       {showHideOption && onHideSong && (
         <>
-          <View style={[styles.divider, { backgroundColor: theme.surfaceVariant }]} />
+          <View style={[styles.divider, { backgroundColor: theme.divider }]} />
           <Pressable
-            style={[styles.menuItem, { backgroundColor: theme.surface }]}
+            style={({ pressed }) => [
+              styles.menuItem,
+              { backgroundColor: pressed ? theme.surfaceContainerHighest : "transparent" },
+            ]}
             onPress={handleHideSong}
             disabled={isLoading}
           >
             <View style={[styles.menuItemIcon, { backgroundColor: theme.error + "20" }]}>
-              <MaterialCommunityIcons name="eye-off" size={20} color={theme.error} />
+              <MaterialCommunityIcons name="eye-off" size={ICON_SIZE} color={theme.error} />
             </View>
             <View style={styles.menuItemText}>
-              <ThemedText type="body">Hide from Library</ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+              <ThemedText type="bodyMedium">Hide from Library</ThemedText>
+              <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>
                 Remove this song from your All Songs list
               </ThemedText>
             </View>
@@ -197,29 +299,28 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
   const renderPlaylistSelection = () => (
     <View style={styles.menuContent}>
       <Pressable style={styles.backHeader} onPress={() => handleNavigate("main")}>
-        <MaterialCommunityIcons name="arrow-left" size={20} color={theme.text} />
-        <ThemedText type="body" style={{ marginLeft: Spacing.sm, fontWeight: "600" }}>
+        <MaterialCommunityIcons name="arrow-left" size={ICON_SIZE} color={theme.onSurface} />
+        <ThemedText type="title4" style={{ marginLeft: ICON_GAP }}>
           Select Playlist
         </ThemedText>
       </Pressable>
 
-      <View style={[styles.divider, { backgroundColor: theme.surfaceVariant }]} />
+      <View style={[styles.divider, { backgroundColor: theme.divider }]} />
 
       {playlists.length === 0 ? (
         <View style={styles.emptyState}>
-          <MaterialCommunityIcons name="playlist-music" size={48} color={theme.textSecondary} />
-          <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
+          <MaterialCommunityIcons name="playlist-music" size={48} color={theme.onSurfaceVariant} />
+          <ThemedText type="bodyMedium" style={{ color: theme.onSurfaceVariant, marginTop: Spacing.m }}>
             No playlists yet
           </ThemedText>
-          <Pressable
-            style={[styles.createButton, { backgroundColor: theme.primary }]}
+          <Button
+            variant="default"
+            size="default"
             onPress={() => handleNavigate("createPlaylist")}
+            style={{ marginTop: Spacing.l }}
           >
-            <MaterialCommunityIcons name="plus" size={18} color="#FFFFFF" />
-            <ThemedText type="body" style={{ color: "#FFFFFF", marginLeft: Spacing.xs }}>
-              Create Playlist
-            </ThemedText>
-          </Pressable>
+            Create Playlist
+          </Button>
         </View>
       ) : (
         <ScrollView style={styles.playlistList} showsVerticalScrollIndicator={false}>
@@ -228,9 +329,9 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
             return (
               <Pressable
                 key={playlist.id}
-                style={[
+                style={({ pressed }) => [
                   styles.playlistItem,
-                  { backgroundColor: theme.surface },
+                  { backgroundColor: pressed ? theme.surfaceContainerHighest : "transparent" },
                   isAlreadyAdded && { opacity: 0.5 },
                 ]}
                 onPress={() => !isAlreadyAdded && handleAddToPlaylist(playlist)}
@@ -240,18 +341,18 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
                   <MaterialCommunityIcons name="playlist-music" size={24} color={theme.primary} />
                 </View>
                 <View style={styles.playlistInfo}>
-                  <ThemedText type="body" numberOfLines={1}>
+                  <ThemedText type="bodyMedium" numberOfLines={1}>
                     {playlist.name}
                   </ThemedText>
-                  <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                  <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>
                     {playlist.songIds.length} {playlist.songIds.length === 1 ? "song" : "songs"}
                     {isAlreadyAdded ? " • Already added" : ""}
                   </ThemedText>
                 </View>
                 {isAlreadyAdded ? (
-                  <MaterialCommunityIcons name="check-circle" size={20} color={theme.success} />
+                  <MaterialCommunityIcons name="check-circle" size={ICON_SIZE} color={theme.success} />
                 ) : (
-                  <MaterialCommunityIcons name="plus-circle-outline" size={20} color={theme.primary} />
+                  <MaterialCommunityIcons name="plus-circle-outline" size={ICON_SIZE} color={theme.primary} />
                 )}
               </Pressable>
             );
@@ -265,36 +366,36 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
     <KeyboardAwareScrollViewCompat>
       <View style={styles.menuContent}>
         <Pressable style={styles.backHeader} onPress={() => handleNavigate("main")}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color={theme.text} />
-          <ThemedText type="body" style={{ marginLeft: Spacing.sm, fontWeight: "600" }}>
+          <MaterialCommunityIcons name="arrow-left" size={ICON_SIZE} color={theme.onSurface} />
+          <ThemedText type="title4" style={{ marginLeft: ICON_GAP }}>
             Create New Playlist
           </ThemedText>
         </Pressable>
 
-        <View style={[styles.divider, { backgroundColor: theme.surfaceVariant }]} />
+        <View style={[styles.divider, { backgroundColor: theme.divider }]} />
 
         <View style={styles.createForm}>
           <View style={styles.songPreview}>
             <Image source={{ uri: song.artwork }} style={styles.previewArtwork} />
-            <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
+            <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant, marginTop: Spacing.s }}>
               First song: {song.title}
             </ThemedText>
           </View>
 
-          <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.xs }}>
+          <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant, marginBottom: Spacing.xs }}>
             Playlist Name
           </ThemedText>
           <TextInput
             style={[
               styles.textInput,
               {
-                backgroundColor: theme.surfaceVariant,
-                color: theme.text,
-                borderColor: theme.surfaceVariant,
+                backgroundColor: theme.surfaceContainer,
+                color: theme.onSurface,
+                borderColor: theme.outline,
               },
             ]}
             placeholder="Enter playlist name..."
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor={theme.onSurfaceVariant}
             value={newPlaylistName}
             onChangeText={setNewPlaylistName}
             autoFocus
@@ -302,69 +403,65 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
             onSubmitEditing={handleCreatePlaylist}
           />
 
-          <Pressable
-            style={[
-              styles.createSubmitButton,
-              { backgroundColor: newPlaylistName.trim() ? theme.primary : theme.surfaceVariant },
-            ]}
+          <Button
+            variant={newPlaylistName.trim() ? "default" : "secondary"}
+            size="lg"
             onPress={handleCreatePlaylist}
             disabled={!newPlaylistName.trim() || isLoading}
+            style={styles.createSubmitButton}
           >
-            <MaterialCommunityIcons
-              name="playlist-plus"
-              size={20}
-              color={newPlaylistName.trim() ? "#FFFFFF" : theme.textSecondary}
-            />
-            <ThemedText
-              type="body"
-              style={{
-                color: newPlaylistName.trim() ? "#FFFFFF" : theme.textSecondary,
-                marginLeft: Spacing.sm,
-                fontWeight: "600",
-              }}
-            >
-              {isLoading ? "Creating..." : "Create Playlist"}
-            </ThemedText>
-          </Pressable>
+            {isLoading ? "Creating..." : "Create Playlist"}
+          </Button>
         </View>
       </View>
     </KeyboardAwareScrollViewCompat>
   );
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
-      <Animated.View
-        entering={FadeIn.duration(200)}
-        exiting={FadeOut.duration(150)}
-        style={[styles.backdrop, { backgroundColor: "rgba(0,0,0,0.5)" }]}
-      >
-        <Pressable style={styles.backdropPressable} onPress={handleClose} />
-      </Animated.View>
-
-      <Animated.View
-        entering={SlideInDown.springify().damping(20).stiffness(200)}
-        exiting={SlideOutDown.duration(200)}
-        style={[styles.menuContainer, { backgroundColor: theme.backgroundDefault }]}
-      >
-        <View style={[styles.handle, { backgroundColor: theme.textSecondary + "40" }]} />
-        {menuView === "main" && renderMainMenu()}
-        {menuView === "selectPlaylist" && renderPlaylistSelection()}
-        {menuView === "createPlaylist" && renderCreatePlaylist()}
-
-        <Pressable
-          style={[styles.cancelButton, { backgroundColor: theme.surfaceVariant }]}
-          onPress={handleClose}
+    <Modal visible={isRendered} transparent animationType="none" onRequestClose={handleClose}>
+      <View style={styles.modalContainer}>
+        <Animated.View
+          style={[styles.backdrop, { backgroundColor: theme.scrim }, backdropAnimatedStyle]}
         >
-          <ThemedText type="body" style={{ fontWeight: "500" }}>
+          <Pressable style={styles.backdropPressable} onPress={handleClose} />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            styles.menuContainer,
+            {
+              backgroundColor: theme.surface,
+              paddingBottom: safeBottomPadding,
+              maxHeight: SCREEN_HEIGHT * 0.75 - safeBottomPadding,
+            },
+            getFluentShadowStyle(FluentShadow.shadow8),
+            menuAnimatedStyle,
+          ]}
+        >
+          <View style={[styles.handle, { backgroundColor: theme.onSurfaceVariant + "40" }]} />
+          {menuView === "main" && renderMainMenu()}
+          {menuView === "selectPlaylist" && renderPlaylistSelection()}
+          {menuView === "createPlaylist" && renderCreatePlaylist()}
+
+          <Button
+            variant="secondary"
+            size="lg"
+            onPress={handleClose}
+            style={styles.cancelButton}
+          >
             Cancel
-          </ThemedText>
-        </Pressable>
-      </Animated.View>
+          </Button>
+        </Animated.View>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
   },
@@ -372,78 +469,65 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopLeftRadius: BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
-    paddingBottom: Spacing.xl + 20,
-    maxHeight: SCREEN_HEIGHT * 0.75,
+    borderTopLeftRadius: BorderRadius.xLarge,
+    borderTopRightRadius: BorderRadius.xLarge,
   },
   handle: {
     width: 36,
     height: 4,
     borderRadius: 2,
     alignSelf: "center",
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.md,
+    marginTop: Spacing.s,
+    marginBottom: Spacing.m,
   },
   menuContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.l,
   },
   songHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.s,
   },
   songArtwork: {
     width: 56,
     height: 56,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.large,
   },
   songInfo: {
     flex: 1,
-    marginLeft: Spacing.md,
+    marginLeft: Spacing.m,
   },
   divider: {
     height: 1,
-    marginVertical: Spacing.md,
+    marginVertical: Spacing.m,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.sm,
+    height: MENU_ITEM_HEIGHT + Spacing.m,
+    paddingHorizontal: Spacing.s,
+    borderRadius: BorderRadius.large,
+    marginBottom: Spacing.xs,
   },
   menuItemIcon: {
     width: 40,
     height: 40,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.large,
     justifyContent: "center",
     alignItems: "center",
   },
   menuItemText: {
     flex: 1,
-    marginLeft: Spacing.md,
+    marginLeft: ICON_GAP,
   },
   backHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.s,
   },
   emptyState: {
     alignItems: "center",
     paddingVertical: Spacing.xl,
-  },
-  createButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginTop: Spacing.lg,
   },
   playlistList: {
     maxHeight: SCREEN_HEIGHT * 0.4,
@@ -451,54 +535,47 @@ const styles = StyleSheet.create({
   playlistItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.sm,
+    height: MENU_ITEM_HEIGHT + Spacing.m,
+    paddingHorizontal: Spacing.s,
+    borderRadius: BorderRadius.large,
+    marginBottom: Spacing.xs,
   },
   playlistIcon: {
     width: 48,
     height: 48,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.large,
     justifyContent: "center",
     alignItems: "center",
   },
   playlistInfo: {
     flex: 1,
-    marginLeft: Spacing.md,
+    marginLeft: ICON_GAP,
   },
   createForm: {
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.s,
   },
   songPreview: {
     alignItems: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.l,
   },
   previewArtwork: {
     width: 80,
     height: 80,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.large,
   },
   textInput: {
     height: 48,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    fontSize: Typography.body.fontSize,
+    borderRadius: BorderRadius.medium,
+    paddingHorizontal: Spacing.m,
+    fontSize: Typography.bodyMedium.fontSize,
     borderWidth: 1,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.l,
   },
   createSubmitButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 48,
-    borderRadius: BorderRadius.md,
+    width: "100%",
   },
   cancelButton: {
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.md,
-    height: 48,
-    borderRadius: BorderRadius.md,
-    justifyContent: "center",
-    alignItems: "center",
+    marginHorizontal: Spacing.l,
+    marginTop: Spacing.m,
   },
 });

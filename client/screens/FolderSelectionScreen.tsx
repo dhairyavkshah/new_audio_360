@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Platform, Pressable } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Button } from '@/components/Button';
+import { ScreenLayout } from '@/components/ScreenLayout';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useUiSound } from '@/contexts/UiSoundContext';
 import { useMediaLibraryContext } from '@/contexts/MediaLibraryContext';
@@ -71,108 +73,90 @@ export default function FolderSelectionScreen({ onComplete }: FolderSelectionScr
   };
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing.xl }]}>
-      <View style={styles.header}>
-        <View style={[styles.iconContainer, { backgroundColor: theme.primary + '15' }]}>
-          <MaterialCommunityIcons name="folder-music" size={64} color={theme.primary} />
-        </View>
-        <ThemedText type="h1" style={styles.title}>
-          {showDemoOption ? 'Get Started' : 'Choose Music Folder'}
-        </ThemedText>
-        <ThemedText type="body" style={[styles.subtitle, { color: theme.textSecondary }]}>
-          {showDemoOption
-            ? Platform.OS === 'web'
-              ? 'Folder selection requires Android. Use demo songs to explore the app, or run on an Android device for full access.'
-              : 'Folder selection is only available on Android. Use demo songs to explore the app.'
-            : 'Select a folder on your device that contains your music files. We\'ll scan it for audio files.'}
-        </ThemedText>
-      </View>
-
-      <View style={styles.infoSection}>
-        <View style={[styles.infoItem, { backgroundColor: theme.backgroundSecondary }]}>
-          <View style={[styles.infoIcon, { backgroundColor: theme.primary + '20' }]}>
-            <MaterialCommunityIcons name="folder-search" size={24} color={theme.primary} />
+    <ThemedView style={styles.container}>
+      <View style={[styles.content, { paddingTop: insets.top + Spacing.xxl, paddingBottom: insets.bottom + Spacing.xxl }]}>
+        <View style={styles.header}>
+          <View style={[styles.iconContainer, { backgroundColor: theme.primary + '15' }]}>
+            <MaterialCommunityIcons name="folder-music" size={64} color={theme.primary} />
           </View>
-          <View style={styles.infoContent}>
-            <ThemedText type="bodyLarge" style={{ fontWeight: '600' }}>Supported Formats</ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
-              MP3, WAV, FLAC, M4A, AAC, OGG
-            </ThemedText>
-          </View>
+          <ThemedText type="titleLarge" style={styles.title}>
+            {showDemoOption ? 'Get Started' : 'Choose Music Folder'}
+          </ThemedText>
+          <ThemedText type="bodyMedium" style={[styles.subtitle, { color: theme.onSurfaceVariant }]}>
+            {showDemoOption
+              ? Platform.OS === 'web'
+                ? 'Folder selection requires Android. Use demo songs to explore the app, or run on an Android device for full access.'
+                : 'Folder selection is only available on Android. Use demo songs to explore the app.'
+              : 'Select a folder on your device that contains your music files. We\'ll scan it for audio files.'}
+          </ThemedText>
         </View>
 
-        <View style={[styles.infoItem, { backgroundColor: theme.backgroundSecondary }]}>
-          <View style={[styles.infoIcon, { backgroundColor: theme.success + '20' }]}>
-            <MaterialCommunityIcons name="shield-lock" size={24} color={theme.success} />
-          </View>
-          <View style={styles.infoContent}>
-            <ThemedText type="bodyLarge" style={{ fontWeight: '600' }}>Private & Secure</ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
-              Your music stays on your device
-            </ThemedText>
-          </View>
-        </View>
-
-        {folderSelected && musicFolderUri && (
-          <View style={[styles.infoItem, { backgroundColor: theme.success + '15', borderColor: theme.success, borderWidth: 1 }]}>
-            <View style={[styles.infoIcon, { backgroundColor: theme.success + '30' }]}>
-              <MaterialCommunityIcons name="check-circle" size={24} color={theme.success} />
+        <View style={styles.infoSection}>
+          <View style={[styles.infoItem, { backgroundColor: theme.surfaceContainer }]}>
+            <View style={[styles.infoIcon, { backgroundColor: theme.primary + '20' }]}>
+              <MaterialCommunityIcons name="folder-search" size={24} color={theme.primary} />
             </View>
             <View style={styles.infoContent}>
-              <ThemedText type="bodyLarge" style={{ fontWeight: '600', color: theme.success }}>Folder Selected</ThemedText>
-              <ThemedText type="small" style={{ color: theme.textSecondary }} numberOfLines={1}>
-                {getFolderDisplayName(musicFolderUri)}
+              <ThemedText type="bodyMediumSemibold">Supported Formats</ThemedText>
+              <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>
+                MP3, WAV, FLAC, M4A, AAC, OGG
               </ThemedText>
             </View>
           </View>
-        )}
-      </View>
 
-      <View style={styles.footer}>
-        {isAndroid && (
-          <Pressable
-            style={[
-              styles.button,
-              { backgroundColor: theme.primary },
-              isSelecting && styles.buttonDisabled
-            ]}
-            onPress={handleSelectFolder}
-            disabled={isSelecting}
-          >
-            {isSelecting ? (
-              <ThemedText type="h4" style={styles.buttonText}>Selecting...</ThemedText>
-            ) : (
-              <>
-                <MaterialCommunityIcons name="folder-open" size={20} color="#FFFFFF" />
-                <ThemedText type="h4" style={styles.buttonText}>Select Music Folder</ThemedText>
-              </>
-            )}
-          </Pressable>
-        )}
+          <View style={[styles.infoItem, { backgroundColor: theme.surfaceContainer }]}>
+            <View style={[styles.infoIcon, { backgroundColor: theme.success + '20' }]}>
+              <MaterialCommunityIcons name="shield-lock" size={24} color={theme.success} />
+            </View>
+            <View style={styles.infoContent}>
+              <ThemedText type="bodyMediumSemibold">Private & Secure</ThemedText>
+              <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>
+                Your music stays on your device
+              </ThemedText>
+            </View>
+          </View>
 
-        <Pressable
-          style={[
-            styles.button,
-            { backgroundColor: showDemoOption ? theme.primary : theme.backgroundSecondary }
-          ]}
-          onPress={handleUseDemoSongs}
-        >
-          <MaterialCommunityIcons 
-            name="music-note-plus" 
-            size={20} 
-            color={showDemoOption ? '#FFFFFF' : theme.text} 
-          />
-          <ThemedText 
-            type="h4" 
-            style={[styles.buttonText, { color: showDemoOption ? '#FFFFFF' : theme.text }]}
+          {folderSelected && musicFolderUri && (
+            <View style={[styles.infoItem, { backgroundColor: theme.success + '15', borderColor: theme.success, borderWidth: 1 }]}>
+              <View style={[styles.infoIcon, { backgroundColor: theme.success + '30' }]}>
+                <MaterialCommunityIcons name="check-circle" size={24} color={theme.success} />
+              </View>
+              <View style={styles.infoContent}>
+                <ThemedText type="bodyMediumSemibold" style={{ color: theme.success }}>Folder Selected</ThemedText>
+                <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }} numberOfLines={1}>
+                  {getFolderDisplayName(musicFolderUri)}
+                </ThemedText>
+              </View>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.footer}>
+          {isAndroid && (
+            <Button
+              variant="default"
+              size="lg"
+              onPress={handleSelectFolder}
+              disabled={isSelecting}
+              style={styles.button}
+            >
+              {isSelecting ? 'Selecting...' : 'Select Music Folder'}
+            </Button>
+          )}
+
+          <Button
+            variant={showDemoOption ? "default" : "secondary"}
+            size="lg"
+            onPress={handleUseDemoSongs}
+            style={styles.button}
           >
             Use Demo Songs
-          </ThemedText>
-        </Pressable>
+          </Button>
 
-        <ThemedText type="caption" style={[styles.privacyNote, { color: theme.textSecondary }]}>
-          {isAndroid ? 'You can change the folder anytime in Settings' : 'Demo songs let you explore all features'}
-        </ThemedText>
+          <ThemedText type="bodySmall" style={[styles.privacyNote, { color: theme.onSurfaceVariant }]}>
+            {isAndroid ? 'You can change the folder anytime in Settings' : 'Demo songs let you explore all features'}
+          </ThemedText>
+        </View>
       </View>
     </ThemedView>
   );
@@ -181,11 +165,14 @@ export default function FolderSelectionScreen({ onComplete }: FolderSelectionScr
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  content: {
+    flex: 1,
     paddingHorizontal: Spacing.xl,
   },
   header: {
     alignItems: 'center',
-    marginBottom: Spacing['3xl'],
+    marginBottom: Spacing.xxxl,
   },
   iconContainer: {
     width: 120,
@@ -193,11 +180,11 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.l,
   },
   title: {
     textAlign: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.m,
   },
   subtitle: {
     textAlign: 'center',
@@ -205,14 +192,14 @@ const styles = StyleSheet.create({
   },
   infoSection: {
     flex: 1,
-    gap: Spacing.md,
+    gap: Spacing.m,
   },
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.md,
+    padding: Spacing.l,
+    borderRadius: BorderRadius.xLarge,
+    gap: Spacing.m,
   },
   infoIcon: {
     width: 48,
@@ -226,27 +213,14 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   footer: {
-    gap: Spacing.md,
+    gap: Spacing.m,
     alignItems: 'center',
   },
   button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    height: 52,
     width: '100%',
-    borderRadius: BorderRadius.lg,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
   },
   privacyNote: {
     textAlign: 'center',
-    marginTop: Spacing.md,
+    marginTop: Spacing.m,
   },
 });

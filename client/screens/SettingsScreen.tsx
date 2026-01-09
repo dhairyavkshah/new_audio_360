@@ -2,17 +2,15 @@ import React, { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Pressable, BackHandler, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
 import { TopBar } from "@/components/TopBar";
 import { FluentToggle } from "@/components/FluentToggle";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, BorderRadius, Layout, M3Shape } from "@/constants/theme";
+import { Spacing, BorderRadius, Layout } from "@/constants/theme";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 import { getHapticEnabled, setHapticEnabled as saveHapticEnabled } from "@/lib/storage";
 import { usePlayerContext } from "@/contexts/PlayerContext";
@@ -57,10 +55,10 @@ function MenuItem({ icon, iconColor, title, subtitle, onPress }: MenuItemProps) 
         <MaterialCommunityIcons name={icon} size={24} color={iconColor || theme.primary} />
       </View>
       <View style={styles.menuTextContainer}>
-        <ThemedText type="bodyLarge" style={styles.menuTitle}>
+        <ThemedText type="body1" style={styles.menuTitle}>
           {title}
         </ThemedText>
-        <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant }}>
+        <ThemedText type="caption1" style={{ color: theme.onSurfaceVariant }}>
           {subtitle}
         </ThemedText>
       </View>
@@ -72,7 +70,6 @@ function MenuItem({ icon, iconColor, title, subtitle, onPress }: MenuItemProps) 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
-  const tabBarHeight = useSafeTabBarHeight();
   const { theme } = useThemeContext();
   const { uiSoundEnabled, setUiSoundEnabled, playTapSound } = useUiSound();
   const { sleepTimerMinutes, setSleepTimer } = usePlayerContext();
@@ -80,6 +77,8 @@ export default function SettingsScreen() {
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [showExitScreen, setShowExitScreen] = useState(false);
   const [isChangingFolder, setIsChangingFolder] = useState(false);
+
+  const bottomPadding = Layout.bottomNavHeight + Layout.miniPlayerHeight + Layout.miniPlayerGapFromNav + Spacing.xxxl + insets.bottom;
 
   useEffect(() => {
     getHapticEnabled().then(setHapticEnabled);
@@ -144,33 +143,32 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <TopBar title="Settings" showBack={false} />
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Spacing.l, paddingBottom: tabBarHeight + Spacing.xxxl },
+          { paddingTop: Spacing.l, paddingBottom: bottomPadding },
         ]}
         showsVerticalScrollIndicator={false}
       >
-
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="folder-music" size={20} color={theme.primary} />
-            <ThemedText type="h4" style={styles.sectionTitle}>
+            <ThemedText type="title4" style={styles.sectionTitle}>
               Music Source
             </ThemedText>
           </View>
-          <View style={[styles.musicSourceCard, { backgroundColor: theme.backgroundSecondary }]}>
+          <View style={[styles.musicSourceCard, { backgroundColor: theme.surfaceContainerLow }]}>
             <View style={styles.musicSourceInfo}>
               <View style={[styles.folderIconContainer, { backgroundColor: theme.primary + '20' }]}>
                 <MaterialCommunityIcons name="folder" size={24} color={theme.primary} />
               </View>
               <View style={styles.musicSourceDetails}>
-                <ThemedText type="bodyLarge" style={{ fontWeight: '600' }} numberOfLines={1}>
+                <ThemedText type="body1" style={{ fontWeight: '600' }} numberOfLines={1}>
                   {musicFolderUri ? getFolderDisplayName(musicFolderUri) : 'No folder selected'}
                 </ThemedText>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                <ThemedText type="caption1" style={{ color: theme.onSurfaceVariant }}>
                   {songs.length} {songs.length === 1 ? 'song' : 'songs'} found
                 </ThemedText>
               </View>
@@ -181,9 +179,9 @@ export default function SettingsScreen() {
               disabled={isChangingFolder}
             >
               {isChangingFolder ? (
-                <ThemedText type="small" style={{ color: '#FFFFFF', fontWeight: '600' }}>...</ThemedText>
+                <ThemedText type="caption1" style={{ color: '#FFFFFF', fontWeight: '600' }}>...</ThemedText>
               ) : (
-                <ThemedText type="small" style={{ color: '#FFFFFF', fontWeight: '600' }}>Change</ThemedText>
+                <ThemedText type="caption1" style={{ color: '#FFFFFF', fontWeight: '600' }}>Change</ThemedText>
               )}
             </Pressable>
           </View>
@@ -192,7 +190,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="music-note" size={20} color={theme.primary} />
-            <ThemedText type="h4" style={styles.sectionTitle}>
+            <ThemedText type="title4" style={styles.sectionTitle}>
               Audio
             </ThemedText>
           </View>
@@ -209,7 +207,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="palette" size={20} color={theme.primary} />
-            <ThemedText type="h4" style={styles.sectionTitle}>
+            <ThemedText type="title4" style={styles.sectionTitle}>
               Display
             </ThemedText>
           </View>
@@ -226,14 +224,14 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="cog-outline" size={20} color={theme.primary} />
-            <ThemedText type="h4" style={styles.sectionTitle}>
+            <ThemedText type="title4" style={styles.sectionTitle}>
               Preferences
             </ThemedText>
           </View>
-          <View style={[styles.settingItem, { backgroundColor: theme.backgroundSecondary }]}>
+          <View style={[styles.settingItem, { backgroundColor: theme.surfaceContainerLow }]}>
             <View style={styles.settingInfo}>
               <MaterialCommunityIcons name="vibrate" size={18} color={theme.text} />
-              <ThemedText type="body" style={styles.settingLabel}>
+              <ThemedText type="body1" style={styles.settingLabel}>
                 Haptic Feedback
               </ThemedText>
             </View>
@@ -242,10 +240,10 @@ export default function SettingsScreen() {
               onValueChange={handleHapticToggle}
             />
           </View>
-          <View style={[styles.settingItem, { backgroundColor: theme.backgroundSecondary, marginTop: Spacing.s }]}>
+          <View style={[styles.settingItem, { backgroundColor: theme.surfaceContainerLow, marginTop: Spacing.s }]}>
             <View style={styles.settingInfo}>
               <MaterialCommunityIcons name="volume-high" size={18} color={theme.text} />
-              <ThemedText type="body" style={styles.settingLabel}>
+              <ThemedText type="body1" style={styles.settingLabel}>
                 UI Sounds
               </ThemedText>
             </View>
@@ -259,7 +257,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="timer-outline" size={20} color={theme.primary} />
-            <ThemedText type="h4" style={styles.sectionTitle}>
+            <ThemedText type="title4" style={styles.sectionTitle}>
               Sleep Timer
             </ThemedText>
           </View>
@@ -272,7 +270,7 @@ export default function SettingsScreen() {
                   { 
                     backgroundColor: sleepTimerMinutes === option.value 
                       ? theme.primary 
-                      : theme.backgroundSecondary 
+                      : theme.surfaceContainerLow 
                   },
                 ]}
                 onPress={() => {
@@ -282,7 +280,7 @@ export default function SettingsScreen() {
                 }}
               >
                 <ThemedText
-                  type="small"
+                  type="caption1"
                   style={{
                     color: sleepTimerMinutes === option.value ? "#FFFFFF" : theme.text,
                     fontWeight: "600",
@@ -294,7 +292,7 @@ export default function SettingsScreen() {
             ))}
           </View>
           {sleepTimerMinutes ? (
-            <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.m }}>
+            <ThemedText type="caption1" style={{ color: theme.onSurfaceVariant, marginTop: Spacing.m }}>
               Playback will stop in {sleepTimerMinutes} minutes
             </ThemedText>
           ) : null}
@@ -303,7 +301,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="crown" size={20} color={theme.warning} />
-            <ThemedText type="h4" style={styles.sectionTitle}>
+            <ThemedText type="title4" style={styles.sectionTitle}>
               Subscription
             </ThemedText>
           </View>
@@ -321,7 +319,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="information" size={20} color={theme.primary} />
-            <ThemedText type="h4" style={styles.sectionTitle}>
+            <ThemedText type="title4" style={styles.sectionTitle}>
               About
             </ThemedText>
           </View>
@@ -343,12 +341,12 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.footer}>
-          <ThemedText type="caption" style={{ color: theme.textSecondary, textAlign: "center" }}>
+          <ThemedText type="caption1" style={{ color: theme.onSurfaceVariant, textAlign: "center" }}>
             New Audio 360 v1.0.0
           </ThemedText>
           <ThemedText
-            type="caption"
-            style={{ color: theme.textSecondary, textAlign: "center", marginTop: Spacing.xs }}
+            type="caption2"
+            style={{ color: theme.onSurfaceVariant, textAlign: "center", marginTop: Spacing.xs }}
           >
             Your personal music experience
           </ThemedText>
@@ -360,7 +358,7 @@ export default function SettingsScreen() {
           onConfirm={handleExitConfirm}
         />
       ) : null}
-    </ThemedView>
+    </View>
   );
 }
 
@@ -369,75 +367,75 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: Spacing.l,
   },
   menuGroup: {
-    gap: Spacing.contentBlock,
+    gap: Spacing.m,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     padding: Spacing.l,
-    borderRadius: BorderRadius.card,
-    minHeight: Layout.listItemStandard,
+    borderRadius: BorderRadius.medium,
+    minHeight: 64,
   },
   menuIconContainer: {
-    width: Layout.touchTargetMin,
-    height: Layout.touchTargetMin,
-    borderRadius: BorderRadius.card,
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.medium,
     alignItems: "center",
     justifyContent: "center",
   },
   menuTextContainer: {
     flex: 1,
-    marginLeft: Spacing.contentBlock,
-    gap: Spacing.titleToSubtitle,
+    marginLeft: Spacing.m,
+    gap: Spacing.xs,
   },
   menuTitle: {
     fontWeight: "600",
   },
   section: {
-    marginBottom: Layout.sectionGap,
+    marginBottom: Spacing.xl,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.contentBlock,
+    marginBottom: Spacing.m,
   },
   sectionTitle: {
-    marginLeft: Spacing.iconGap,
+    marginLeft: Spacing.s,
   },
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     padding: Spacing.l,
-    borderRadius: BorderRadius.card,
-    minHeight: Layout.listItemStandard,
+    borderRadius: BorderRadius.medium,
+    minHeight: 56,
   },
   settingInfo: {
     flexDirection: "row",
     alignItems: "center",
   },
   settingLabel: {
-    marginLeft: Spacing.contentBlock,
+    marginLeft: Spacing.m,
   },
   footer: {
-    paddingVertical: Layout.sectionGap,
+    paddingVertical: Spacing.xl,
     alignItems: "center",
   },
   timerGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.iconGap,
+    gap: Spacing.s,
   },
   timerOption: {
     paddingVertical: Spacing.m,
     paddingHorizontal: Spacing.l,
-    borderRadius: BorderRadius.button,
+    borderRadius: BorderRadius.medium,
     minWidth: 70,
     alignItems: "center",
-    height: Layout.buttonStandard,
+    minHeight: 48,
     justifyContent: "center",
   },
   musicSourceCard: {
@@ -445,8 +443,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: Spacing.l,
-    borderRadius: BorderRadius.card,
-    minHeight: Layout.listItemStandard,
+    borderRadius: BorderRadius.medium,
+    minHeight: 72,
   },
   musicSourceInfo: {
     flexDirection: "row",
@@ -455,22 +453,23 @@ const styles = StyleSheet.create({
     marginRight: Spacing.m,
   },
   folderIconContainer: {
-    width: Layout.touchTargetMin,
-    height: Layout.touchTargetMin,
-    borderRadius: BorderRadius.card,
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.medium,
     alignItems: "center",
     justifyContent: "center",
   },
   musicSourceDetails: {
     flex: 1,
-    marginLeft: Spacing.contentBlock,
-    gap: Spacing.titleToSubtitle,
+    marginLeft: Spacing.m,
+    gap: Spacing.xs,
   },
   changeFolderButton: {
     paddingVertical: Spacing.s,
     paddingHorizontal: Spacing.l,
-    borderRadius: BorderRadius.button,
+    borderRadius: BorderRadius.medium,
     alignItems: "center",
     justifyContent: "center",
+    minHeight: 40,
   },
 });

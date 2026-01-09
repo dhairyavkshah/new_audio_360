@@ -18,7 +18,7 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, M3Motion, M3Shape } from "@/constants/theme";
+import { Spacing, BorderRadius, FluentMotion, FluentShadow } from "@/constants/theme";
 
 interface DialogAction {
   label: string;
@@ -37,6 +37,23 @@ interface DialogProps {
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DIALOG_WIDTH = Math.min(SCREEN_WIDTH * 0.9, 400);
+
+const getFluentShadowStyle = (shadow: typeof FluentShadow.shadow64) => {
+  return Platform.select({
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: shadow.key.x, height: shadow.key.y },
+      shadowOpacity: 0.24,
+      shadowRadius: shadow.key.blur,
+    },
+    android: {
+      elevation: shadow.elevation,
+    },
+    default: {
+      boxShadow: shadow.combined,
+    },
+  }) || {};
+};
 
 export function Dialog({
   visible,
@@ -62,31 +79,37 @@ export function Dialog({
     if (visible) {
       setIsRendered(true);
       scale.value = withTiming(1, {
-        duration: M3Motion.durationShort4,
+        duration: FluentMotion.duration.normal,
         easing: Easing.bezier(
-          M3Motion.easingEmphasized.x1,
-          M3Motion.easingEmphasized.y1,
-          M3Motion.easingEmphasized.x2,
-          M3Motion.easingEmphasized.y2
+          FluentMotion.easing.decelerateMax.x1,
+          FluentMotion.easing.decelerateMax.y1,
+          FluentMotion.easing.decelerateMax.x2,
+          FluentMotion.easing.decelerateMax.y2
         ),
       });
       opacity.value = withTiming(1, {
-        duration: M3Motion.durationShort4,
+        duration: FluentMotion.duration.fast,
       });
-      scrimOpacity.value = withTiming(0.5, {
-        duration: M3Motion.durationMedium2,
+      scrimOpacity.value = withTiming(1, {
+        duration: FluentMotion.duration.normal,
       });
     } else if (isRendered) {
-      scale.value = withTiming(0.9, {
-        duration: M3Motion.durationShort3,
+      scale.value = withTiming(0.95, {
+        duration: FluentMotion.duration.fast,
+        easing: Easing.bezier(
+          FluentMotion.easing.accelerate.x1,
+          FluentMotion.easing.accelerate.y1,
+          FluentMotion.easing.accelerate.x2,
+          FluentMotion.easing.accelerate.y2
+        ),
       });
       opacity.value = withTiming(0, {
-        duration: M3Motion.durationShort3,
+        duration: FluentMotion.duration.fast,
       }, () => {
         runOnJS(handleAnimationComplete)(false);
       });
       scrimOpacity.value = withTiming(0, {
-        duration: M3Motion.durationShort3,
+        duration: FluentMotion.duration.fast,
       });
     }
   }, [visible]);
@@ -128,15 +151,16 @@ export function Dialog({
           style={[
             styles.dialog,
             {
-              backgroundColor: theme.surfaceContainerHigh,
+              backgroundColor: theme.surface,
               width: DIALOG_WIDTH,
             },
+            getFluentShadowStyle(FluentShadow.shadow64),
             dialogStyle,
           ]}
           accessibilityRole="alert"
           accessibilityLiveRegion="polite"
         >
-          <ThemedText type="titleMedium" style={styles.title}>
+          <ThemedText type="title4" style={styles.title}>
             {title}
           </ThemedText>
 
@@ -185,29 +209,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dialog: {
-    borderRadius: M3Shape.cornerExtraLarge,
+    borderRadius: BorderRadius.xLarge,
     padding: Spacing.xxl,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 24,
-      },
-      default: {},
-    }),
   },
   title: {
-    marginBottom: Spacing.contentBlock,
+    marginBottom: Spacing.m,
   },
   message: {
-    marginBottom: Spacing.contentBlock,
+    marginBottom: Spacing.m,
   },
   content: {
-    marginBottom: Spacing.xxl,
+    marginBottom: Spacing.xl,
   },
   actions: {
     flexDirection: "row",

@@ -20,7 +20,7 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, M3Motion, M3Shape, Layout } from "@/constants/theme";
+import { Spacing, BorderRadius, FluentMotion, FluentShadow } from "@/constants/theme";
 
 interface MenuItem {
   id: string;
@@ -28,6 +28,7 @@ interface MenuItem {
   icon?: keyof typeof MaterialCommunityIcons.glyphMap;
   destructive?: boolean;
   disabled?: boolean;
+  dividerAfter?: boolean;
 }
 
 interface ContextMenuProps {
@@ -39,9 +40,28 @@ interface ContextMenuProps {
 }
 
 const MENU_WIDTH = 240;
-const ITEM_HEIGHT = Layout.listItemCompact;
+const ITEM_HEIGHT = 44;
+const ICON_SIZE = 20;
+const ICON_GAP = 12;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MENU_MARGIN = 16;
+
+const getFluentShadowStyle = (shadow: typeof FluentShadow.shadow8) => {
+  return Platform.select({
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: shadow.key.x, height: shadow.key.y },
+      shadowOpacity: 0.14,
+      shadowRadius: shadow.key.blur,
+    },
+    android: {
+      elevation: shadow.elevation,
+    },
+    default: {
+      boxShadow: shadow.combined,
+    },
+  }) || {};
+};
 
 export function ContextMenu({
   visible,
@@ -53,7 +73,7 @@ export function ContextMenu({
   const { theme } = useThemeContext();
   const { playTapSound } = useUiSound();
   const [isRendered, setIsRendered] = useState(visible);
-  const scale = useSharedValue(0.9);
+  const scale = useSharedValue(0.95);
   const opacity = useSharedValue(0);
   const scrimOpacity = useSharedValue(0);
 
@@ -67,31 +87,37 @@ export function ContextMenu({
     if (visible) {
       setIsRendered(true);
       scale.value = withTiming(1, {
-        duration: M3Motion.durationShort3,
+        duration: FluentMotion.duration.fast,
         easing: Easing.bezier(
-          M3Motion.easingEmphasized.x1,
-          M3Motion.easingEmphasized.y1,
-          M3Motion.easingEmphasized.x2,
-          M3Motion.easingEmphasized.y2
+          FluentMotion.easing.decelerateMax.x1,
+          FluentMotion.easing.decelerateMax.y1,
+          FluentMotion.easing.decelerateMax.x2,
+          FluentMotion.easing.decelerateMax.y2
         ),
       });
       opacity.value = withTiming(1, {
-        duration: M3Motion.durationShort3,
+        duration: FluentMotion.duration.fast,
       });
-      scrimOpacity.value = withTiming(0.3, {
-        duration: M3Motion.durationShort4,
+      scrimOpacity.value = withTiming(1, {
+        duration: FluentMotion.duration.normal,
       });
     } else if (isRendered) {
-      scale.value = withTiming(0.9, {
-        duration: M3Motion.durationShort2,
+      scale.value = withTiming(0.95, {
+        duration: FluentMotion.duration.faster,
+        easing: Easing.bezier(
+          FluentMotion.easing.accelerate.x1,
+          FluentMotion.easing.accelerate.y1,
+          FluentMotion.easing.accelerate.x2,
+          FluentMotion.easing.accelerate.y2
+        ),
       });
       opacity.value = withTiming(0, {
-        duration: M3Motion.durationShort2,
+        duration: FluentMotion.duration.faster,
       }, () => {
         runOnJS(handleAnimationComplete)(false);
       });
       scrimOpacity.value = withTiming(0, {
-        duration: M3Motion.durationShort2,
+        duration: FluentMotion.duration.faster,
       });
     }
   }, [visible]);
@@ -173,9 +199,10 @@ export function ContextMenu({
           style={[
             styles.menu,
             {
-              backgroundColor: theme.surfaceContainer,
+              backgroundColor: theme.surface,
               width: MENU_WIDTH,
             },
+            getFluentShadowStyle(FluentShadow.shadow8),
             getMenuPosition(),
             menuStyle,
           ]}
@@ -187,54 +214,56 @@ export function ContextMenu({
             showsVerticalScrollIndicator={false}
           >
             {items.map((item, index) => (
-              <Pressable
-                key={item.id}
-                onPress={() => !item.disabled && handleSelect(item.id)}
-                disabled={item.disabled}
-                accessibilityRole="menuitem"
-                accessibilityLabel={item.label}
-                accessibilityState={{ disabled: item.disabled }}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  {
-                    backgroundColor: pressed
-                      ? theme.surfaceContainerHighest
-                      : "transparent",
-                  },
-                  index === 0 && styles.firstItem,
-                  index === items.length - 1 && styles.lastItem,
-                ]}
-              >
-                {item.icon ? (
-                  <MaterialCommunityIcons
-                    name={item.icon}
-                    size={20}
-                    color={
-                      item.disabled
-                        ? theme.onSurfaceVariant
-                        : item.destructive
-                          ? theme.error
-                          : theme.onSurface
-                    }
-                    style={styles.menuIcon}
-                  />
-                ) : null}
-                <ThemedText
-                  type="bodyMedium"
-                  style={[
-                    styles.menuLabel,
+              <React.Fragment key={item.id}>
+                <Pressable
+                  onPress={() => !item.disabled && handleSelect(item.id)}
+                  disabled={item.disabled}
+                  accessibilityRole="menuitem"
+                  accessibilityLabel={item.label}
+                  accessibilityState={{ disabled: item.disabled }}
+                  style={({ pressed }) => [
+                    styles.menuItem,
                     {
-                      color: item.disabled
-                        ? theme.onSurfaceVariant
-                        : item.destructive
-                          ? theme.error
-                          : theme.onSurface,
+                      backgroundColor: pressed
+                        ? theme.surfaceContainerHighest
+                        : "transparent",
                     },
                   ]}
                 >
-                  {item.label}
-                </ThemedText>
-              </Pressable>
+                  {item.icon ? (
+                    <MaterialCommunityIcons
+                      name={item.icon}
+                      size={ICON_SIZE}
+                      color={
+                        item.disabled
+                          ? theme.onSurfaceVariant
+                          : item.destructive
+                            ? theme.error
+                            : theme.onSurface
+                      }
+                      style={styles.menuIcon}
+                    />
+                  ) : null}
+                  <ThemedText
+                    type="bodyMedium"
+                    style={[
+                      styles.menuLabel,
+                      {
+                        color: item.disabled
+                          ? theme.onSurfaceVariant
+                          : item.destructive
+                            ? theme.error
+                            : theme.onSurface,
+                      },
+                    ]}
+                  >
+                    {item.label}
+                  </ThemedText>
+                </Pressable>
+                {item.dividerAfter && index < items.length - 1 && (
+                  <View style={[styles.divider, { backgroundColor: theme.divider }]} />
+                )}
+              </React.Fragment>
             ))}
           </ScrollView>
         </Animated.View>
@@ -256,21 +285,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menu: {
-    borderRadius: M3Shape.cornerMedium,
+    borderRadius: BorderRadius.large,
     overflow: "hidden",
-    maxHeight: ITEM_HEIGHT * 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 8,
-      },
-      default: {},
-    }),
+    maxHeight: ITEM_HEIGHT * 8 + Spacing.s * 2,
   },
   scrollView: {
     flex: 1,
@@ -282,20 +299,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: ITEM_HEIGHT,
-    paddingHorizontal: Spacing.l,
-  },
-  firstItem: {
-    borderTopLeftRadius: M3Shape.cornerMedium,
-    borderTopRightRadius: M3Shape.cornerMedium,
-  },
-  lastItem: {
-    borderBottomLeftRadius: M3Shape.cornerMedium,
-    borderBottomRightRadius: M3Shape.cornerMedium,
+    paddingHorizontal: Spacing.m,
   },
   menuIcon: {
-    marginRight: Spacing.contentBlock,
+    marginRight: ICON_GAP,
   },
   menuLabel: {
     flex: 1,
+  },
+  divider: {
+    height: 1,
+    marginVertical: Spacing.xs,
+    marginHorizontal: Spacing.m,
   },
 });
