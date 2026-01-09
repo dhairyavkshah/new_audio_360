@@ -167,3 +167,12 @@ The app features a 3-tab navigation structure:
   - Privacy Policy accessible from About screen under Legal section
   - Updated PermissionOnboardingFlow: replaced microphone with Photos & Videos permission (Studio hidden)
   - Permission steps now: Music & Audio, Photos & Videos, Notifications
+
+- **2026-01-09**: **Native Immersive Modes & Waveform Visualization**:
+  - **ImmersiveModeEngineModule** (Kotlin): Native Android module managing 7 immersive audio modes (off, music, 360_reality, signature_360, gaming, podcast, movie) using Equalizer, BassBoost, Virtualizer, and LoudnessEnhancer APIs
+  - **Immersive Mode Presets**: Gaming mode (enhanced bass, spatial audio, loud clarity), Signature 360 (balanced 360 reality for music), plus Movie, Podcast, and Music modes
+  - **NativeAudioService**: Unified TypeScript bridge for PlaybackEngine, WaveformAnalyzer, and ImmersiveModeEngine native modules with auto-initialization
+  - **SoundLabScreen/Context Updates**: Integrated ImmersiveModeEngineModule with proper error handling - UI only updates after native calls succeed, failures surfaced to user
+  - **NativeWaveformVisualizer**: Real-time 64-bar waveform visualization using WaveformAnalyzerModule with FFT support, RMS/peak levels, and smooth react-native-reanimated animations
+  - **Audio Effects Module Index**: Updated with immersive mode exports, type definitions, and IMMERSIVE_MODE_INFO constants
+  - **TypeScript Path Mapping**: Added audio-effects module alias in tsconfig.json

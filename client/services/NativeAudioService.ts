@@ -1,0 +1,449 @@
+import { Platform } from 'react-native';
+import { 
+  PlaybackEngineModule, 
+  WaveformAnalyzerModule, 
+  ImmersiveModeEngineModule,
+  EqualizerModule,
+  BassBoostModule,
+  VirtualizerModule,
+  PlaybackStatus,
+  WaveformData,
+  FftData,
+  ImmersiveMode,
+  ImmersiveModeSettings,
+  ImmersiveModeInfo
+} from '../../modules/audio-effects';
+
+export interface AudioServiceState {
+  isInitialized: boolean;
+  isPlaying: boolean;
+  currentPositionMs: number;
+  durationMs: number;
+  currentIndex: number;
+  queueLength: number;
+  repeatMode: 'off' | 'one' | 'all';
+  shuffleEnabled: boolean;
+  audioSessionId: number;
+  immersiveMode: ImmersiveMode;
+  isWaveformCapturing: boolean;
+}
+
+export interface WaveformCallback {
+  (data: WaveformData): void;
+}
+
+export interface FftCallback {
+  (data: FftData): void;
+}
+
+class NativeAudioServiceClass {
+  private audioSessionId: number = 0;
+  private isInitialized: boolean = false;
+  private immersiveMode: ImmersiveMode = 'off';
+  private isWaveformCapturing: boolean = false;
+  private waveformCallbacks: Set<WaveformCallback> = new Set();
+  private fftCallbacks: Set<FftCallback> = new Set();
+  private waveformPollingInterval: NodeJS.Timeout | null = null;
+
+  isNativeAvailable(): boolean {
+    return Platform.OS === 'android' && PlaybackEngineModule.isAvailable();
+  }
+
+  isImmersiveModeAvailable(): boolean {
+    return Platform.OS === 'android' && ImmersiveModeEngineModule.isAvailable();
+  }
+
+  isWaveformAvailable(): boolean {
+    return Platform.OS === 'android' && WaveformAnalyzerModule.isAvailable();
+  }
+
+  async initialize(): Promise<{ success: boolean; audioSessionId?: number; error?: string }> {
+    if (!this.isNativeAvailable()) {
+      return { success: false, error: 'Native audio not available on this platform' };
+    }
+
+    try {
+      const result = await PlaybackEngineModule.initialize();
+      if (result.success && result.audioSessionId) {
+        this.audioSessionId = result.audioSessionId;
+        this.isInitialized = true;
+
+        if (this.isImmersiveModeAvailable()) {
+          await ImmersiveModeEngineModule.attach(this.audioSessionId);
+        }
+
+        if (this.isWaveformAvailable()) {
+          await WaveformAnalyzerModule.attach(this.audioSessionId);
+        }
+
+        return { success: true, audioSessionId: this.audioSessionId };
+      }
+      return { success: false, error: result.error };
+    } catch (error) {
+      console.error('NativeAudioService.initialize error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async setQueue(uris: string[], startIndex: number = 0): Promise<{ success: boolean; error?: string }> {
+    if (!this.isInitialized) {
+      const initResult = await this.initialize();
+      if (!initResult.success) return initResult;
+    }
+
+    try {
+      const result = await PlaybackEngineModule.setQueue(uris, startIndex);
+      return { success: result.success, error: result.error };
+    } catch (error) {
+      console.error('NativeAudioService.setQueue error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async loadTrack(uri: string): Promise<{ success: boolean; error?: string }> {
+    if (!this.isInitialized) {
+      const initResult = await this.initialize();
+      if (!initResult.success) return initResult;
+    }
+
+    try {
+      const result = await PlaybackEngineModule.loadTrack(uri);
+      return { success: result.success, error: result.error };
+    } catch (error) {
+      console.error('NativeAudioService.loadTrack error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async play(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await PlaybackEngineModule.play();
+      return { success: result.success, error: result.error };
+    } catch (error) {
+      console.error('NativeAudioService.play error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async pause(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await PlaybackEngineModule.pause();
+      return { success: result.success, error: result.error };
+    } catch (error) {
+      console.error('NativeAudioService.pause error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async stop(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await PlaybackEngineModule.stop();
+      return { success: result.success, error: result.error };
+    } catch (error) {
+      console.error('NativeAudioService.stop error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async seekTo(positionMs: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await PlaybackEngineModule.seekTo(positionMs);
+      return { success: result.success, error: result.error };
+    } catch (error) {
+      console.error('NativeAudioService.seekTo error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async skipToNext(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await PlaybackEngineModule.skipToNext();
+      return { success: result.success, error: result.error };
+    } catch (error) {
+      console.error('NativeAudioService.skipToNext error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async skipToPrevious(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await PlaybackEngineModule.skipToPrevious();
+      return { success: result.success, error: result.error };
+    } catch (error) {
+      console.error('NativeAudioService.skipToPrevious error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async skipToIndex(index: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      const result = await PlaybackEngineModule.skipToIndex(index);
+      return { success: result.success, error: result.error };
+    } catch (error) {
+      console.error('NativeAudioService.skipToIndex error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  setVolume(volume: number): { success: boolean; volume: number } {
+    return PlaybackEngineModule.setVolume(volume);
+  }
+
+  setPlaybackSpeed(speed: number): { success: boolean; speed: number } {
+    return PlaybackEngineModule.setPlaybackSpeed(speed);
+  }
+
+  setRepeatMode(mode: 'off' | 'one' | 'all'): { success: boolean; mode: string } {
+    return PlaybackEngineModule.setRepeatMode(mode);
+  }
+
+  setShuffleMode(enabled: boolean): { success: boolean; shuffle: boolean } {
+    return PlaybackEngineModule.setShuffleMode(enabled);
+  }
+
+  getStatus(): PlaybackStatus {
+    return PlaybackEngineModule.getStatus();
+  }
+
+  getAudioSessionId(): number {
+    return this.audioSessionId || PlaybackEngineModule.getAudioSessionId();
+  }
+
+  getCurrentPosition(): number {
+    return PlaybackEngineModule.getCurrentPosition();
+  }
+
+  getDuration(): number {
+    return PlaybackEngineModule.getDuration();
+  }
+
+  async setImmersiveMode(mode: ImmersiveMode): Promise<{ success: boolean; error?: string; settings?: ImmersiveModeSettings }> {
+    if (!this.isImmersiveModeAvailable()) {
+      return { success: false, error: 'Immersive mode not available on this platform' };
+    }
+
+    try {
+      if (!this.isInitialized) {
+        const initResult = await this.initialize();
+        if (!initResult.success) {
+          return { success: false, error: `Failed to initialize audio engine: ${initResult.error || 'Unknown error'}` };
+        }
+      }
+
+      const sessionId = this.getAudioSessionId();
+      if (!sessionId || sessionId === 0) {
+        return { success: false, error: 'No valid audio session available. Please start playback first.' };
+      }
+
+      const currentMode = ImmersiveModeEngineModule.getCurrentMode();
+      if (!currentMode.isAttached) {
+        const attachResult = await ImmersiveModeEngineModule.attach(sessionId);
+        if (!attachResult.success) {
+          return { success: false, error: `Failed to attach immersive mode engine: ${attachResult.error || 'Unknown error'}` };
+        }
+      }
+
+      const result = await ImmersiveModeEngineModule.setMode(mode);
+      if (result.success) {
+        this.immersiveMode = mode;
+      }
+      return { success: result.success, error: result.error, settings: result.settings };
+    } catch (error) {
+      console.error('NativeAudioService.setImmersiveMode error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  getCurrentImmersiveMode(): { mode: ImmersiveMode; isAttached: boolean; settings: ImmersiveModeSettings } {
+    if (!this.isImmersiveModeAvailable()) {
+      return {
+        mode: 'off',
+        isAttached: false,
+        settings: {
+          equalizerEnabled: false,
+          bassBoostEnabled: false,
+          bassBoostStrength: 0,
+          virtualizerEnabled: false,
+          virtualizerStrength: 0,
+          loudnessEnhancerEnabled: false,
+          loudnessGain: 0,
+          equalizerBandLevels: []
+        }
+      };
+    }
+    return ImmersiveModeEngineModule.getCurrentMode();
+  }
+
+  getAvailableImmersiveModes(): ImmersiveModeInfo[] {
+    return ImmersiveModeEngineModule.getAvailableModes();
+  }
+
+  async setCustomAudioParameters(
+    bassStrength: number,
+    virtualizerStrength: number,
+    loudnessGain: number,
+    eqPreset: number = -1
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.isImmersiveModeAvailable()) {
+      return { success: false, error: 'Immersive mode not available' };
+    }
+
+    try {
+      const result = await ImmersiveModeEngineModule.setCustomParameters(
+        bassStrength,
+        virtualizerStrength,
+        loudnessGain,
+        eqPreset
+      );
+      if (result.success) {
+        this.immersiveMode = 'custom';
+      }
+      return { success: result.success, error: result.error };
+    } catch (error) {
+      console.error('NativeAudioService.setCustomAudioParameters error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async startWaveformCapture(rateHz: number = 30): Promise<{ success: boolean; error?: string }> {
+    if (!this.isWaveformAvailable()) {
+      return { success: false, error: 'Waveform analyzer not available on this platform' };
+    }
+
+    try {
+      const result = await WaveformAnalyzerModule.startCapture(rateHz);
+      if (result.success) {
+        this.isWaveformCapturing = true;
+        this.startWaveformPolling();
+      }
+      return { success: result.success };
+    } catch (error) {
+      console.error('NativeAudioService.startWaveformCapture error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async stopWaveformCapture(): Promise<{ success: boolean }> {
+    this.stopWaveformPolling();
+    this.isWaveformCapturing = false;
+
+    if (!this.isWaveformAvailable()) {
+      return { success: true };
+    }
+
+    try {
+      return await WaveformAnalyzerModule.stopCapture();
+    } catch (error) {
+      console.error('NativeAudioService.stopWaveformCapture error:', error);
+      return { success: false };
+    }
+  }
+
+  private startWaveformPolling(): void {
+    if (this.waveformPollingInterval) {
+      clearInterval(this.waveformPollingInterval);
+    }
+
+    this.waveformPollingInterval = setInterval(() => {
+      if (!this.isWaveformCapturing) {
+        this.stopWaveformPolling();
+        return;
+      }
+
+      const waveformData = WaveformAnalyzerModule.getWaveformSnapshot();
+      if (waveformData) {
+        this.waveformCallbacks.forEach(callback => callback(waveformData));
+      }
+
+      const fftData = WaveformAnalyzerModule.getFftSnapshot();
+      if (fftData) {
+        this.fftCallbacks.forEach(callback => callback(fftData));
+      }
+    }, 33);
+  }
+
+  private stopWaveformPolling(): void {
+    if (this.waveformPollingInterval) {
+      clearInterval(this.waveformPollingInterval);
+      this.waveformPollingInterval = null;
+    }
+  }
+
+  subscribeToWaveform(callback: WaveformCallback): () => void {
+    this.waveformCallbacks.add(callback);
+    return () => {
+      this.waveformCallbacks.delete(callback);
+    };
+  }
+
+  subscribeToFft(callback: FftCallback): () => void {
+    this.fftCallbacks.add(callback);
+    return () => {
+      this.fftCallbacks.delete(callback);
+    };
+  }
+
+  getWaveformSnapshot(): WaveformData | null {
+    if (!this.isWaveformAvailable()) {
+      return null;
+    }
+    return WaveformAnalyzerModule.getWaveformSnapshot();
+  }
+
+  getFftSnapshot(): FftData | null {
+    if (!this.isWaveformAvailable()) {
+      return null;
+    }
+    return WaveformAnalyzerModule.getFftSnapshot();
+  }
+
+  getState(): AudioServiceState {
+    const status = this.getStatus();
+    const immersiveModeState = this.getCurrentImmersiveMode();
+
+    return {
+      isInitialized: this.isInitialized,
+      isPlaying: status.isPlaying,
+      currentPositionMs: status.currentPositionMs,
+      durationMs: status.durationMs,
+      currentIndex: status.currentIndex,
+      queueLength: status.queueLength,
+      repeatMode: status.repeatMode,
+      shuffleEnabled: status.shuffleEnabled,
+      audioSessionId: status.audioSessionId,
+      immersiveMode: immersiveModeState.mode,
+      isWaveformCapturing: this.isWaveformCapturing
+    };
+  }
+
+  async release(): Promise<{ success: boolean }> {
+    try {
+      this.stopWaveformPolling();
+      this.waveformCallbacks.clear();
+      this.fftCallbacks.clear();
+      this.isWaveformCapturing = false;
+
+      if (this.isWaveformAvailable()) {
+        await WaveformAnalyzerModule.release();
+      }
+
+      if (this.isImmersiveModeAvailable()) {
+        await ImmersiveModeEngineModule.release();
+      }
+
+      const result = await PlaybackEngineModule.release();
+
+      this.isInitialized = false;
+      this.audioSessionId = 0;
+      this.immersiveMode = 'off';
+
+      return result;
+    } catch (error) {
+      console.error('NativeAudioService.release error:', error);
+      return { success: false };
+    }
+  }
+}
+
+export const NativeAudioService = new NativeAudioServiceClass();
+export default NativeAudioService;

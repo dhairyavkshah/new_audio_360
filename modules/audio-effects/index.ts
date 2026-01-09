@@ -1601,3 +1601,209 @@ export const WaveformAnalyzerModule = {
     }
   }
 };
+
+// Immersive Mode Engine Types
+export type ImmersiveMode = 
+  | 'off'
+  | 'music'
+  | '360_reality'
+  | 'signature_360'
+  | 'gaming'
+  | 'podcast'
+  | 'movie'
+  | 'custom';
+
+export interface ImmersiveModeInfo {
+  id: ImmersiveMode;
+  name: string;
+  description: string;
+  icon: string;
+}
+
+export interface ImmersiveModeSettings {
+  equalizerEnabled: boolean;
+  bassBoostEnabled: boolean;
+  bassBoostStrength: number;
+  virtualizerEnabled: boolean;
+  virtualizerStrength: number;
+  loudnessEnhancerEnabled: boolean;
+  loudnessGain: number;
+  equalizerBandLevels: number[];
+}
+
+export interface ImmersiveModeAttachResult {
+  success: boolean;
+  error?: string;
+  audioSessionId?: number;
+  equalizerBands?: number;
+  bassBoostSupported?: boolean;
+  virtualizerSupported?: boolean;
+  loudnessEnhancerAvailable?: boolean;
+}
+
+export interface ImmersiveModeResult {
+  success: boolean;
+  error?: string;
+  mode?: ImmersiveMode;
+  settings?: ImmersiveModeSettings;
+}
+
+interface ImmersiveModeEngineModuleInterface extends NativeModule {
+  isAvailable(): boolean;
+  attach(sessionId: number): Promise<ImmersiveModeAttachResult>;
+  setMode(mode: string): Promise<ImmersiveModeResult>;
+  getCurrentMode(): { mode: ImmersiveMode; isAttached: boolean; settings: ImmersiveModeSettings };
+  getAvailableModes(): ImmersiveModeInfo[];
+  setCustomParameters(
+    bassStrength: number,
+    virtualizerStrength: number,
+    loudnessGain: number,
+    eqPreset: number
+  ): Promise<ImmersiveModeResult>;
+  release(): Promise<{ success: boolean }>;
+}
+
+let ImmersiveModeEngineModuleNative: ImmersiveModeEngineModuleInterface | null = null;
+
+if (Platform.OS === 'android') {
+  try {
+    ImmersiveModeEngineModuleNative = requireNativeModule<ImmersiveModeEngineModuleInterface>('ImmersiveModeEngineModule');
+  } catch (e) {
+    console.warn('ImmersiveModeEngineModule not available:', e);
+  }
+}
+
+// ImmersiveModeEngine Module Export
+export const ImmersiveModeEngineModule = {
+  isAvailable: (): boolean => {
+    return Platform.OS === 'android' && ImmersiveModeEngineModuleNative !== null;
+  },
+
+  attach: async (audioSessionId: number): Promise<ImmersiveModeAttachResult> => {
+    if (!ImmersiveModeEngineModuleNative) {
+      return { success: false, error: 'Immersive mode engine not available on this platform' };
+    }
+    try {
+      return await ImmersiveModeEngineModuleNative.attach(audioSessionId);
+    } catch (error) {
+      console.error('ImmersiveModeEngineModule.attach error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setMode: async (mode: ImmersiveMode): Promise<ImmersiveModeResult> => {
+    if (!ImmersiveModeEngineModuleNative) {
+      return { success: false, error: 'Immersive mode engine not available' };
+    }
+    try {
+      return await ImmersiveModeEngineModuleNative.setMode(mode);
+    } catch (error) {
+      console.error('ImmersiveModeEngineModule.setMode error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  getCurrentMode: (): { mode: ImmersiveMode; isAttached: boolean; settings: ImmersiveModeSettings } => {
+    if (!ImmersiveModeEngineModuleNative) {
+      return {
+        mode: 'off',
+        isAttached: false,
+        settings: {
+          equalizerEnabled: false,
+          bassBoostEnabled: false,
+          bassBoostStrength: 0,
+          virtualizerEnabled: false,
+          virtualizerStrength: 0,
+          loudnessEnhancerEnabled: false,
+          loudnessGain: 0,
+          equalizerBandLevels: []
+        }
+      };
+    }
+    try {
+      return ImmersiveModeEngineModuleNative.getCurrentMode();
+    } catch (error) {
+      console.error('ImmersiveModeEngineModule.getCurrentMode error:', error);
+      return {
+        mode: 'off',
+        isAttached: false,
+        settings: {
+          equalizerEnabled: false,
+          bassBoostEnabled: false,
+          bassBoostStrength: 0,
+          virtualizerEnabled: false,
+          virtualizerStrength: 0,
+          loudnessEnhancerEnabled: false,
+          loudnessGain: 0,
+          equalizerBandLevels: []
+        }
+      };
+    }
+  },
+
+  getAvailableModes: (): ImmersiveModeInfo[] => {
+    if (!ImmersiveModeEngineModuleNative) {
+      return [
+        { id: 'off', name: 'Off', description: 'No audio enhancement', icon: 'volume-off' },
+        { id: 'music', name: 'Music', description: 'Optimized for music listening with enhanced clarity and bass', icon: 'music' },
+        { id: '360_reality', name: '360 Reality', description: 'Immersive 3D spatial audio experience', icon: 'surround-sound' },
+        { id: 'signature_360', name: 'Signature 360', description: 'Balanced combination of Music clarity and 360 Reality immersion', icon: 'music-circle' },
+        { id: 'gaming', name: 'Gaming', description: 'Enhanced positional audio for gaming with boosted footsteps and effects', icon: 'gamepad-variant' },
+        { id: 'podcast', name: 'Podcast', description: 'Voice clarity enhancement for podcasts and audiobooks', icon: 'podcast' },
+        { id: 'movie', name: 'Movie', description: 'Cinematic audio with enhanced dialogue and surround effects', icon: 'movie-open' }
+      ];
+    }
+    try {
+      return ImmersiveModeEngineModuleNative.getAvailableModes() as ImmersiveModeInfo[];
+    } catch (error) {
+      console.error('ImmersiveModeEngineModule.getAvailableModes error:', error);
+      return [];
+    }
+  },
+
+  setCustomParameters: async (
+    bassStrength: number,
+    virtualizerStrength: number,
+    loudnessGain: number,
+    eqPreset: number = -1
+  ): Promise<ImmersiveModeResult> => {
+    if (!ImmersiveModeEngineModuleNative) {
+      return { success: false, error: 'Immersive mode engine not available' };
+    }
+    try {
+      return await ImmersiveModeEngineModuleNative.setCustomParameters(
+        bassStrength,
+        virtualizerStrength,
+        loudnessGain,
+        eqPreset
+      );
+    } catch (error) {
+      console.error('ImmersiveModeEngineModule.setCustomParameters error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  release: async (): Promise<{ success: boolean }> => {
+    if (!ImmersiveModeEngineModuleNative) {
+      return { success: true };
+    }
+    try {
+      return await ImmersiveModeEngineModuleNative.release();
+    } catch (error) {
+      console.error('ImmersiveModeEngineModule.release error:', error);
+      return { success: false };
+    }
+  }
+};
+
+// Immersive Mode Presets Info
+export const IMMERSIVE_MODE_INFO: Record<ImmersiveMode, { name: string; description: string; icon: string }> = {
+  off: { name: 'Off', description: 'No audio enhancement', icon: 'volume-off' },
+  music: { name: 'Music', description: 'Optimized for music listening with enhanced clarity and bass', icon: 'music' },
+  '360_reality': { name: '360 Reality', description: 'Immersive 3D spatial audio experience', icon: 'surround-sound' },
+  signature_360: { name: 'Signature 360', description: 'Balanced combination of Music clarity and 360 Reality immersion', icon: 'music-circle' },
+  gaming: { name: 'Gaming', description: 'Enhanced positional audio for gaming with boosted footsteps and effects', icon: 'gamepad-variant' },
+  podcast: { name: 'Podcast', description: 'Voice clarity enhancement for podcasts and audiobooks', icon: 'podcast' },
+  movie: { name: 'Movie', description: 'Cinematic audio with enhanced dialogue and surround effects', icon: 'movie-open' },
+  custom: { name: 'Custom', description: 'Custom audio settings', icon: 'tune' }
+};

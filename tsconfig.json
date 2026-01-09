@@ -6,10 +6,11 @@
     "paths": {
       "@/*": ["./client/*"],
       "@shared/*": ["./shared/*"],
-      "@/modules/*": ["./modules/*"]
+      "@/modules/*": ["./modules/*"],
+      "audio-effects": ["./modules/audio-effects/index.ts"]
     },
     "types": ["node"]
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
+  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"]
 }

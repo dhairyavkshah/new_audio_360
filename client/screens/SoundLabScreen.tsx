@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
@@ -11,6 +11,13 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { getEQPreset, saveEQPreset, clearEQPreset, getSoundMode, saveSoundMode, clearSoundMode } from "@/lib/storage";
+import { 
+  ImmersiveModeEngineModule, 
+  IMMERSIVE_MODE_INFO, 
+  ImmersiveMode,
+  ImmersiveModeInfo 
+} from "../../modules/audio-effects";
+import NativeAudioService from "@/services/NativeAudioService";
 
 type SoundLabMode = "equalizer" | "immersive" | "off";
 
@@ -57,31 +64,8 @@ const EQ_PRESETS = [
   },
 ];
 
-const IMMERSIVE_MODES = [
-  { 
-    name: "Cinema", 
-    icon: "filmstrip" as const,
-    description: "Wide, cinematic soundstage",
-    effect: { stereoWidth: 1.4, reverb: 0.3, delay: 40 }
-  },
-  { 
-    name: "Music", 
-    icon: "music" as const,
-    description: "Balanced richness",
-    effect: { stereoWidth: 1.2, reverb: 0.15, delay: 20 }
-  },
-  { 
-    name: "Sports", 
-    icon: "run-fast" as const,
-    description: "Enhanced voice clarity",
-    effect: { stereoWidth: 1.0, reverb: 0.05, delay: 0 }
-  },
-  { 
-    name: "360 Reality", 
-    icon: "earth" as const,
-    description: "Immersive surround feel",
-    effect: { stereoWidth: 1.6, reverb: 0.4, delay: 60 }
-  },
+const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
+  'off', 'music', '360_reality', 'signature_360', 'gaming', 'podcast', 'movie'
 ];
 
 export default function SoundLabScreen() {
@@ -91,10 +75,26 @@ export default function SoundLabScreen() {
   const { isImmersiveModeUnlocked } = useSubscription();
   const [soundLabMode, setSoundLabMode] = useState<SoundLabMode>("off");
   const [selectedEQ, setSelectedEQ] = useState("Flat");
-  const [selectedImmersive, setSelectedImmersive] = useState("Music");
+  const [selectedImmersive, setSelectedImmersive] = useState<ImmersiveMode>("off");
+  const [availableModes, setAvailableModes] = useState<ImmersiveModeInfo[]>([]);
+
+  const immersiveModes = useMemo(() => {
+    if (availableModes.length > 0) {
+      return availableModes.filter(mode => DISPLAY_IMMERSIVE_MODES.includes(mode.id));
+    }
+    return DISPLAY_IMMERSIVE_MODES.map(modeId => ({
+      id: modeId,
+      name: IMMERSIVE_MODE_INFO[modeId].name,
+      description: IMMERSIVE_MODE_INFO[modeId].description,
+      icon: IMMERSIVE_MODE_INFO[modeId].icon
+    }));
+  }, [availableModes]);
 
   useEffect(() => {
     const loadSettings = async () => {
+      const modes = ImmersiveModeEngineModule.getAvailableModes();
+      setAvailableModes(modes);
+
       const eqPreset = await getEQPreset();
       const soundMode = await getSoundMode();
       
@@ -103,12 +103,12 @@ export default function SoundLabScreen() {
         setSoundLabMode("equalizer");
       } else if (soundMode) {
         if (isImmersiveModeUnlocked()) {
-          setSelectedImmersive(soundMode);
+          setSelectedImmersive(soundMode as ImmersiveMode);
           setSoundLabMode("immersive");
         } else {
           await clearSoundMode();
           setSoundLabMode("off");
-          setSelectedImmersive("");
+          setSelectedImmersive("off");
         }
       } else {
         setSoundLabMode("off");
@@ -124,12 +124,15 @@ export default function SoundLabScreen() {
     if (mode === "equalizer") {
       await clearSoundMode();
       await saveEQPreset(selectedEQ);
+      await NativeAudioService.setImmersiveMode('off');
     } else if (mode === "immersive") {
       await clearEQPreset();
       await saveSoundMode(selectedImmersive);
+      await NativeAudioService.setImmersiveMode(selectedImmersive);
     } else {
       await clearEQPreset();
       await clearSoundMode();
+      await NativeAudioService.setImmersiveMode('off');
     }
   };
 
@@ -139,18 +142,20 @@ export default function SoundLabScreen() {
       setSoundLabMode("off");
       setSelectedEQ("");
       await clearEQPreset();
+      await NativeAudioService.setImmersiveMode('off');
     } else {
       setSelectedEQ(preset);
       setSoundLabMode("equalizer");
       await clearSoundMode();
       await saveEQPreset(preset);
+      await NativeAudioService.setImmersiveMode('off');
     }
   };
 
-  const handleImmersiveChange = async (mode: string) => {
+  const handleImmersiveChange = async (modeId: ImmersiveMode) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    if (!isImmersiveModeUnlocked()) {
+    if (!isImmersiveModeUnlocked() && modeId !== 'off') {
       Alert.alert(
         "Premium Feature",
         "Upgrade to Premium to unlock Immersive Modes for a rich, cinematic audio experience.",
@@ -159,16 +164,48 @@ export default function SoundLabScreen() {
       return;
     }
     
-    if (soundLabMode === "immersive" && selectedImmersive === mode) {
-      setSoundLabMode("off");
-      setSelectedImmersive("");
-      await clearSoundMode();
+    if (soundLabMode === "immersive" && selectedImmersive === modeId) {
+      const result = await NativeAudioService.setImmersiveMode('off');
+      if (result.success) {
+        setSoundLabMode("off");
+        setSelectedImmersive("off");
+        await clearSoundMode();
+      } else {
+        Alert.alert(
+          "Audio Error",
+          result.error || "Failed to disable immersive mode. Please try again.",
+          [{ text: "OK", style: "default" }]
+        );
+      }
     } else {
-      setSelectedImmersive(mode);
-      setSoundLabMode("immersive");
-      await clearEQPreset();
-      await saveSoundMode(mode);
+      const result = await NativeAudioService.setImmersiveMode(modeId);
+      if (result.success) {
+        setSelectedImmersive(modeId);
+        setSoundLabMode("immersive");
+        await clearEQPreset();
+        await saveSoundMode(modeId);
+      } else {
+        Alert.alert(
+          "Audio Error",
+          result.error || "Failed to set immersive mode. Please ensure audio is playing and try again.",
+          [{ text: "OK", style: "default" }]
+        );
+      }
     }
+  };
+
+  const getModeIcon = (iconName: string): keyof typeof MaterialCommunityIcons.glyphMap => {
+    const iconMap: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
+      'volume-off': 'volume-off',
+      'music': 'music',
+      'surround-sound': 'surround-sound',
+      'music-circle': 'music-circle',
+      'gamepad-variant': 'gamepad-variant',
+      'podcast': 'podcast',
+      'movie-open': 'movie-open',
+      'tune': 'tune',
+    };
+    return iconMap[iconName] || 'music';
   };
 
   return (
@@ -230,21 +267,21 @@ export default function SoundLabScreen() {
                 <MaterialCommunityIcons name="crown" size={12} color={colors.colorPaletteYellowForeground1} />
                 <FluentText variant="caption1" style={{ color: colors.colorPaletteYellowForeground1, fontWeight: "600", marginLeft: 4 }}>Premium</FluentText>
               </View>
-            ) : soundLabMode === "immersive" && selectedImmersive ? (
+            ) : soundLabMode === "immersive" && selectedImmersive !== 'off' ? (
               <View style={[styles.activeIndicator, { backgroundColor: colors.colorBrandBackground }]}>
                 <FluentText variant="caption1" color="onBrand" style={{ fontWeight: "600" }}>Active</FluentText>
               </View>
             ) : null}
           </View>
           <View style={styles.modesContainer}>
-            {IMMERSIVE_MODES.map((mode) => (
+            {immersiveModes.filter(mode => mode.id !== 'off').map((mode) => (
               <Pressable
-                key={mode.name}
-                onPress={() => handleImmersiveChange(mode.name)}
+                key={mode.id}
+                onPress={() => handleImmersiveChange(mode.id)}
                 style={[
                   styles.modeCard,
                   {
-                    backgroundColor: soundLabMode === "immersive" && selectedImmersive === mode.name 
+                    backgroundColor: soundLabMode === "immersive" && selectedImmersive === mode.id 
                       ? colors.colorBrandBackground 
                       : colors.colorNeutralBackground2,
                   },
@@ -252,16 +289,16 @@ export default function SoundLabScreen() {
               >
                 <View style={styles.modeCardContent}>
                   <MaterialCommunityIcons
-                    name={mode.icon}
+                    name={getModeIcon(mode.icon)}
                     size={20}
-                    color={soundLabMode === "immersive" && selectedImmersive === mode.name ? "#FFFFFF" : colors.colorNeutralForeground1}
+                    color={soundLabMode === "immersive" && selectedImmersive === mode.id ? "#FFFFFF" : colors.colorNeutralForeground1}
                   />
                   <View style={styles.modeCardText}>
                     <FluentText
                       variant="body1"
                       style={{
                         fontWeight: "600",
-                        color: soundLabMode === "immersive" && selectedImmersive === mode.name ? "#FFFFFF" : colors.colorNeutralForeground1,
+                        color: soundLabMode === "immersive" && selectedImmersive === mode.id ? "#FFFFFF" : colors.colorNeutralForeground1,
                       }}
                     >
                       {mode.name}
@@ -269,7 +306,7 @@ export default function SoundLabScreen() {
                     <FluentText
                       variant="caption1"
                       style={{
-                        color: soundLabMode === "immersive" && selectedImmersive === mode.name 
+                        color: soundLabMode === "immersive" && selectedImmersive === mode.id 
                           ? "rgba(255,255,255,0.8)" 
                           : colors.colorNeutralForeground2,
                       }}
@@ -277,7 +314,7 @@ export default function SoundLabScreen() {
                       {mode.description}
                     </FluentText>
                   </View>
-                  {soundLabMode === "immersive" && selectedImmersive === mode.name ? (
+                  {soundLabMode === "immersive" && selectedImmersive === mode.id ? (
                     <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" />
                   ) : null}
                 </View>
