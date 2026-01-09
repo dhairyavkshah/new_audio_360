@@ -137,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const initializeAuth = async () => {
     try {
+      console.log('[INIT AUTH] Starting initialization...');
       const biometricAvailable = await checkBiometricAvailability();
       const biometricEnabled = (await secureGet(STORAGE_KEYS.BIOMETRIC_ENABLED)) === 'true';
 
@@ -145,7 +146,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const subscriptionJson = await secureGet(STORAGE_KEYS.SUBSCRIPTION);
       const lastAuthTime = await secureGet(STORAGE_KEYS.LAST_AUTH_TIME);
 
+      console.log('[INIT AUTH] accessToken:', accessToken ? 'present' : 'missing');
+      console.log('[INIT AUTH] userJson:', userJson ? 'present' : 'missing');
+      console.log('[INIT AUTH] subscriptionJson:', subscriptionJson ? 'present' : 'missing');
+
       if (!accessToken || !userJson) {
+        console.log('[INIT AUTH] No token or user, staying on login screen');
         setState(prev => ({
           ...prev,
           isLoading: false,
@@ -249,6 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInAsTestUser = useCallback(async (): Promise<boolean> => {
     try {
+      console.log('[TEST AUTH] Starting test sign-in...');
       setState(prev => ({ ...prev, isLoading: true }));
 
       const testUser: UserProfile = {
@@ -272,12 +279,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         purchaseTime,
       };
 
+      console.log('[TEST AUTH] Saving auth data...');
       await secureSet(STORAGE_KEYS.ACCESS_TOKEN, 'test-access-token');
       await secureSet(STORAGE_KEYS.REFRESH_TOKEN, 'test-refresh-token');
       await secureSet(STORAGE_KEYS.USER_PROFILE, JSON.stringify(testUser));
       await secureSet(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(testSubscription));
       await secureSet(STORAGE_KEYS.LAST_AUTH_TIME, Date.now().toString());
       await secureSet('subscription_data', JSON.stringify(subscriptionData));
+      console.log('[TEST AUTH] Auth data saved successfully');
 
       setState(prev => ({
         ...prev,
@@ -287,14 +296,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscription: testSubscription,
         requiresReauth: false,
       }));
-
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        setTimeout(() => window.location.reload(), 100);
-      }
+      console.log('[TEST AUTH] State updated successfully with premium access');
 
       return true;
     } catch (error) {
-      console.error('Test sign in error:', error);
+      console.error('[TEST AUTH] Test sign in error:', error);
       setState(prev => ({ ...prev, isLoading: false }));
       return false;
     }
