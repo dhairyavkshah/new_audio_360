@@ -7,7 +7,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { TopBar } from "@/components/TopBar";
 import { SongContextMenu } from "@/components/SongContextMenu";
 import { SongCard } from "@/components/SongCard";
 import { AnimatedCard } from "@/components/AnimatedCard";
@@ -248,22 +247,25 @@ export default function LibraryScreen() {
 
   const activeConfig = categories.find(c => c.key === activeCategory) || categories[0];
 
-  const renderHeaderDropdown = () => (
-    <Pressable
-      style={[styles.headerDropdownButton, { backgroundColor: theme.surfaceContainerHigh }]}
-      onPress={toggleCategoryDropdown}
-      accessibilityRole="button"
-      accessibilityLabel={`${activeConfig.label}. Tap to change category.`}
-    >
-      <MaterialCommunityIcons name={activeConfig.icon} size={16} color={activeConfig.color} />
-      <ThemedText type="bodyMedium" style={{ marginLeft: 6, fontWeight: "500" }}>{activeConfig.label}</ThemedText>
-      <MaterialCommunityIcons 
-        name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
-        size={18} 
-        color={theme.onSurfaceVariant} 
-        style={{ marginLeft: 2 }}
-      />
-    </Pressable>
+  const renderLibraryHeader = () => (
+    <View style={[styles.libraryHeader, { paddingTop: insets.top, backgroundColor: theme.surface, borderBottomColor: theme.outlineVariant }]}>
+      <ThemedText type="title1" style={{ fontWeight: "600" }}>Library</ThemedText>
+      <Pressable
+        style={[styles.headerDropdownButton, { backgroundColor: theme.surfaceContainerHigh }]}
+        onPress={toggleCategoryDropdown}
+        accessibilityRole="button"
+        accessibilityLabel={`${activeConfig.label}. Tap to change category.`}
+      >
+        <MaterialCommunityIcons name={activeConfig.icon} size={16} color={activeConfig.color} />
+        <ThemedText type="bodyMedium" style={{ marginLeft: 6, fontWeight: "500" }}>{activeConfig.label}</ThemedText>
+        <MaterialCommunityIcons 
+          name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
+          size={16} 
+          color={theme.onSurfaceVariant} 
+          style={{ marginLeft: 2 }}
+        />
+      </Pressable>
+    </View>
   );
 
   const renderCategoryDropdownOverlay = () => (
@@ -550,7 +552,7 @@ export default function LibraryScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={insets.top}
       >
-        <TopBar title="Library" showBack={false} actions={renderHeaderDropdown()} />
+        {renderLibraryHeader()}
 
         {renderSearchBar()}
 
@@ -584,6 +586,14 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  libraryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Layout.horizontalPadding,
+    paddingBottom: Spacing.s,
+    borderBottomWidth: 1,
   },
   headerDropdownButton: {
     flexDirection: "row",
