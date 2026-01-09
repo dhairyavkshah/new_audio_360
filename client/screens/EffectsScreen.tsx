@@ -16,7 +16,7 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { useStudioContext, REVERB_PRESETS, NOISE_REDUCTION_LEVELS } from "@/contexts/StudioContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
 import { studioAudioEngine } from "@/services/StudioAudioEngine";
 
@@ -124,7 +124,7 @@ export default function EffectsScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: headerHeight + Spacing.xl, paddingBottom: tabBarHeight + Spacing.xl },
+          { paddingTop: headerHeight + FluentSpacing.xl, paddingBottom: tabBarHeight + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -142,7 +142,7 @@ export default function EffectsScreen() {
               onPress={handlePlayPreview}
               style={[styles.playButton, { backgroundColor: theme.primary }]}
             >
-              <MaterialCommunityIcons name={isPlaying ? "pause" : "play"} size={20} color="#FFFFFF" />
+              <MaterialCommunityIcons name={isPlaying ? "pause" : "play"} size={FluentIconSize.regular} color="#FFFFFF" />
             </Pressable>
           </View>
           <AudioWaveform
@@ -156,7 +156,7 @@ export default function EffectsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="volume-off" size={20} color={theme.primary} />
+            <MaterialCommunityIcons name="volume-off" size={FluentIconSize.regular} color={theme.primary} />
             <ThemedText type="h4" style={styles.sectionTitle}>
               Noise Reduction
             </ThemedText>
@@ -179,7 +179,7 @@ export default function EffectsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="waveform" size={20} color={theme.primary} />
+            <MaterialCommunityIcons name="waveform" size={FluentIconSize.regular} color={theme.primary} />
             <ThemedText type="h4" style={styles.sectionTitle}>
               Reverb
             </ThemedText>
@@ -207,7 +207,7 @@ export default function EffectsScreen() {
           <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
             Save Recording
           </ThemedText>
-          <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
+          <MaterialCommunityIcons name="arrow-right" size={FluentIconSize.regular} color="#FFFFFF" />
         </Pressable>
       </ScrollView>
     </ThemedView>
@@ -219,37 +219,37 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: FluentSpacing.l,
   },
   previewCard: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   previewHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   playButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: FluentSpacing.xxxxxl,
+    height: FluentSpacing.xxxxxl,
+    borderRadius: FluentSpacing.xxl,
     justifyContent: "center",
     alignItems: "center",
   },
   section: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
   sectionTitle: {
-    marginLeft: Spacing.sm,
+    marginLeft: FluentSpacing.s,
   },
   sectionDesc: {
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   effectsContainer: {
     flexDirection: "row",
@@ -259,9 +259,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
-    marginTop: Spacing.lg,
+    paddingVertical: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
+    gap: FluentSpacing.s,
+    marginTop: FluentSpacing.l,
   },
 });

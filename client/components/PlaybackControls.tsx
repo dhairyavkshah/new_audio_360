@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
@@ -9,7 +9,13 @@ import Animated, {
 import * as Haptics from "expo-haptics";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, Layout } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentIconSize,
+  FluentSpring,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface PlaybackControlsProps {
   isPlaying: boolean;
@@ -35,6 +41,7 @@ function ControlButton({
   borderRadius,
   glowColor,
   useGlow,
+  fluentColors,
 }: {
   icon: string;
   size: number;
@@ -46,6 +53,7 @@ function ControlButton({
   borderRadius?: number;
   glowColor?: string | null;
   useGlow?: boolean;
+  fluentColors: typeof FluentLightColors;
 }) {
   const { theme } = useThemeContext();
   const { shapes, components } = useSkin();
@@ -57,18 +65,20 @@ function ControlButton({
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.9, { damping: 15, stiffness: 200 });
+    scale.value = withSpring(0.9, FluentSpring.standard);
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+    scale.value = withSpring(1, FluentSpring.standard);
   };
 
   const handlePress = () => {
     playTapSound();
-    Haptics.impactAsync(
-      isPrimary ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light
-    );
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(
+        isPrimary ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light
+      );
+    }
     onPress();
   };
 
@@ -103,8 +113,8 @@ function ControlButton({
           justifyContent: "center",
           alignItems: "center",
         },
-        isPrimary && { backgroundColor: backgroundColor || theme.primary },
-        isActive && { backgroundColor: theme.primary + "30" },
+        isPrimary && { backgroundColor: backgroundColor || fluentColors.colorBrandBackground },
+        isActive && { backgroundColor: fluentColors.colorSubtleBackgroundPressed },
         glowStyle,
         bevelStyle,
         animatedStyle,
@@ -129,8 +139,9 @@ export function PlaybackControls({
   shuffleEnabled = false,
   repeatMode = "off",
 }: PlaybackControlsProps) {
-  const { theme } = useThemeContext();
+  const { theme, isDark } = useThemeContext();
   const { icons, shapes, components } = useSkin();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 
   return (
     <View style={styles.container}>
@@ -138,12 +149,13 @@ export function PlaybackControls({
         {onShuffle ? (
           <ControlButton
             icon={icons.shuffle}
-            size={20}
-            color={shuffleEnabled ? theme.primary : theme.textSecondary}
+            size={FluentIconSize.regular}
+            color={shuffleEnabled ? fluentColors.colorBrandForeground1 : fluentColors.colorNeutralForeground3}
             onPress={onShuffle}
             isActive={shuffleEnabled}
             useGlow={components.useGlow && shuffleEnabled}
             glowColor={components.glowColor}
+            fluentColors={fluentColors}
           />
         ) : (
           <View style={{ width: shapes.controlSize, height: shapes.controlSize }} />
@@ -153,28 +165,31 @@ export function PlaybackControls({
       <View style={styles.mainControls}>
         <ControlButton
           icon={icons.skipPrevious}
-          size={28}
-          color={theme.text}
+          size={FluentIconSize.large}
+          color={fluentColors.colorNeutralForeground1}
           onPress={onPrevious}
           useGlow={components.useGlow}
           glowColor={components.glowColor}
+          fluentColors={fluentColors}
         />
         <ControlButton
           icon={isPlaying ? icons.pause : icons.play}
-          size={32}
-          color="#FFFFFF"
+          size={FluentIconSize.xlarge}
+          color={fluentColors.colorNeutralForegroundOnBrand}
           onPress={onPlayPause}
           isPrimary
           useGlow={components.useGlow}
           glowColor={components.glowColor}
+          fluentColors={fluentColors}
         />
         <ControlButton
           icon={icons.skipNext}
-          size={28}
-          color={theme.text}
+          size={FluentIconSize.large}
+          color={fluentColors.colorNeutralForeground1}
           onPress={onNext}
           useGlow={components.useGlow}
           glowColor={components.glowColor}
+          fluentColors={fluentColors}
         />
       </View>
 
@@ -182,12 +197,13 @@ export function PlaybackControls({
         {onRepeat ? (
           <ControlButton
             icon={repeatMode === "one" ? icons.repeatOnce : icons.repeat}
-            size={20}
-            color={repeatMode !== "off" ? theme.primary : theme.textSecondary}
+            size={FluentIconSize.regular}
+            color={repeatMode !== "off" ? fluentColors.colorBrandForeground1 : fluentColors.colorNeutralForeground3}
             onPress={onRepeat}
             isActive={repeatMode !== "off"}
             useGlow={components.useGlow && repeatMode !== "off"}
             glowColor={components.glowColor}
+            fluentColors={fluentColors}
           />
         ) : (
           <View style={{ width: shapes.controlSize, height: shapes.controlSize }} />
@@ -202,12 +218,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.xxl,
+    paddingHorizontal: FluentSpacing.xxl,
   },
   mainControls: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.controlCluster,
+    gap: FluentSpacing.xl,
   },
   secondaryControls: {
     alignItems: "center",

@@ -9,7 +9,8 @@ import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useSubscription, PRICING, SupportedCurrency } from "@/contexts/SubscriptionContext";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import { Spacing, BorderRadius, Layout } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius } from "@/constants/fluent2";
+import { Layout } from "@/constants/theme";
 import { detectUserRegion } from "@/lib/payment";
 
 type FeatureItem = {
@@ -150,7 +151,7 @@ export default function PlanScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Spacing.lg, paddingBottom: tabBarHeight + Spacing.xl },
+          { paddingTop: FluentSpacing.l, paddingBottom: tabBarHeight + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -165,7 +166,7 @@ export default function PlanScreen() {
             {badge.label}
           </ThemedText>
           {plan === "premium" && (
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
+            <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: FluentSpacing.xs }}>
               All features unlocked
             </ThemedText>
           )}
@@ -205,7 +206,7 @@ export default function PlanScreen() {
           <ThemedText type="h4" style={styles.sectionTitle}>
             One-Time Purchase
           </ThemedText>
-          <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.lg }}>
+          <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: FluentSpacing.l }}>
             Pay once, own forever. No subscriptions.
           </ThemedText>
 
@@ -247,7 +248,7 @@ export default function PlanScreen() {
                 { 
                   backgroundColor: theme.warning,
                   opacity: isProcessing ? 0.6 : 1,
-                  marginTop: plan === "free" ? Spacing.md : 0,
+                  marginTop: plan === "free" ? FluentSpacing.m : 0,
                 },
               ]}
             >
@@ -271,7 +272,7 @@ export default function PlanScreen() {
           {plan === "premium" && (
             <View style={[styles.allUnlockedCard, { backgroundColor: theme.success + "15" }]}>
               <MaterialCommunityIcons name="check-decagram" size={32} color={theme.success} />
-              <ThemedText type="body" style={{ color: theme.success, marginTop: Spacing.sm }}>
+              <ThemedText type="body" style={{ color: theme.success, marginTop: FluentSpacing.s }}>
                 You have access to all features!
               </ThemedText>
             </View>
@@ -284,7 +285,7 @@ export default function PlanScreen() {
           style={[styles.restoreButton, { backgroundColor: theme.backgroundSecondary }]}
         >
           <MaterialCommunityIcons name="refresh" size={20} color={theme.textSecondary} />
-          <ThemedText type="body" style={{ color: theme.textSecondary, marginLeft: Spacing.sm }}>
+          <ThemedText type="body" style={{ color: theme.textSecondary, marginLeft: FluentSpacing.s }}>
             Restore Purchases
           </ThemedText>
         </Pressable>
@@ -292,19 +293,19 @@ export default function PlanScreen() {
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
             <MaterialCommunityIcons name="shield-check" size={16} color={theme.success} />
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: Spacing.sm }}>
+            <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: FluentSpacing.s }}>
               Secure payment via Google Play
             </ThemedText>
           </View>
           <View style={styles.infoRow}>
             <MaterialCommunityIcons name="infinity" size={16} color={theme.primary} />
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: Spacing.sm }}>
+            <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: FluentSpacing.s }}>
               Lifetime access - no recurring fees
             </ThemedText>
           </View>
           <View style={styles.infoRow}>
             <MaterialCommunityIcons name="cellphone" size={16} color={theme.secondary} />
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: Spacing.sm }}>
+            <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: FluentSpacing.s }}>
               100% offline - works without internet
             </ThemedText>
           </View>
@@ -323,7 +324,7 @@ const styles = StyleSheet.create({
   },
   currentPlanCard: {
     alignItems: "center",
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   planBadge: {
     width: 56,
@@ -331,38 +332,38 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.md,
+    marginBottom: FluentSpacing.m,
   },
   currentPlanTitle: {
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
   planName: {
     fontWeight: "700",
   },
   comparisonSection: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   sectionTitle: {
-    marginBottom: Spacing.md,
+    marginBottom: FluentSpacing.m,
   },
   comparisonHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderTopLeftRadius: BorderRadius.lg,
-    borderTopRightRadius: BorderRadius.lg,
+    paddingVertical: FluentSpacing.s,
+    paddingHorizontal: FluentSpacing.m,
+    borderTopLeftRadius: FluentControlRadius.dialog,
+    borderTopRightRadius: FluentControlRadius.dialog,
   },
   featuresList: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderBottomLeftRadius: BorderRadius.lg,
-    borderBottomRightRadius: BorderRadius.lg,
+    paddingHorizontal: FluentSpacing.m,
+    paddingVertical: FluentSpacing.s,
+    borderBottomLeftRadius: FluentControlRadius.dialog,
+    borderBottomRightRadius: FluentControlRadius.dialog,
   },
   featureRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.sm,
+    paddingVertical: FluentSpacing.s,
   },
   featureLeft: {
     flex: 1,
@@ -370,7 +371,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   featureText: {
-    marginLeft: Spacing.sm,
+    marginLeft: FluentSpacing.s,
   },
   featureChecks: {
     flexDirection: "row",
@@ -380,37 +381,37 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   pricingSection: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   planButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.dialog,
   },
   planButtonContent: {
     flexDirection: "row",
     alignItems: "center",
   },
   planButtonText: {
-    marginLeft: Spacing.md,
+    marginLeft: FluentSpacing.m,
   },
   allUnlockedCard: {
     alignItems: "center",
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.lg,
+    padding: FluentSpacing.xl,
+    borderRadius: FluentControlRadius.dialog,
   },
   restoreButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.xl,
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.dialog,
+    marginBottom: FluentSpacing.xl,
   },
   infoSection: {
-    gap: Spacing.sm,
+    gap: FluentSpacing.s,
   },
   infoRow: {
     flexDirection: "row",

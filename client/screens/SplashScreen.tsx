@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated, Platform } from "react-native";
 import { Image } from "expo-image";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius } from "@/constants/fluent2";
 
 type SplashScreenProps = {
   onFinish: () => void;
@@ -13,6 +14,7 @@ const useNativeDriver = Platform.OS !== "web";
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const { theme } = useThemeContext();
+  const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
@@ -76,7 +78,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           Your personal music experience
         </ThemedText>
       </Animated.View>
-      <View style={styles.footer}>
+      <View style={[styles.footer, { bottom: insets.bottom + FluentSpacing.xxxl }]}>
         <ThemedText type="caption" style={{ color: theme.textTertiary }}>
           v1.0.0
         </ThemedText>
@@ -97,10 +99,10 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 120,
     height: 120,
-    borderRadius: BorderRadius.xl,
+    borderRadius: FluentControlRadius.dialog,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: Spacing.size6,
+    marginBottom: FluentSpacing.xxl,
     overflow: "hidden",
   },
   icon: {
@@ -108,7 +110,7 @@ const styles = StyleSheet.create({
     height: 120,
   },
   title: {
-    marginBottom: Spacing.size2,
+    marginBottom: FluentSpacing.s,
     textAlign: "center",
   },
   tagline: {
@@ -116,6 +118,5 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: "absolute",
-    bottom: Spacing.size8,
   },
 });

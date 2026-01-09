@@ -3,7 +3,13 @@ import { View, StyleSheet, Pressable, Animated, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { M3Motion } from "@/constants/theme";
+import {
+  FluentDuration,
+  FluentSpring,
+  FluentLightColors,
+  FluentDarkColors,
+  getShadowStyle,
+} from "@/constants/fluent2";
 
 interface FluentToggleProps {
   value: boolean;
@@ -12,34 +18,25 @@ interface FluentToggleProps {
   size?: 'default' | 'large';
 }
 
-const adjustBrightness = (color: string, amount: number): string => {
-  if (!color || color === 'transparent') return color;
-  const hex = color.replace('#', '');
-  if (hex.length !== 6) return color;
-  
-  const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) + amount));
-  const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) + amount));
-  const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + amount));
-  
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-};
-
 export function FluentToggle({ 
   value, 
   onValueChange, 
   disabled = false,
   size = 'default',
 }: FluentToggleProps) {
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const { playTickSound } = useUiSound();
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [hoverActive, setHoverActive] = useState(false);
+
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   
   const trackWidth = size === 'large' ? 52 : 40;
   const trackHeight = size === 'large' ? 32 : 20;
   const thumbSize = size === 'large' ? 24 : 14;
   const thumbTravel = trackWidth - thumbSize - 6;
+  const trackBorderRadius = trackHeight / 2;
   
   const translateX = useRef(new Animated.Value(value ? thumbTravel : 0)).current;
   const thumbScale = useRef(new Animated.Value(1)).current;
@@ -50,13 +47,13 @@ export function FluentToggle({
       Animated.spring(translateX, {
         toValue: value ? thumbTravel : 0,
         useNativeDriver: true,
-        damping: 18,
-        stiffness: 300,
-        mass: 0.6,
+        damping: FluentSpring.standard.damping,
+        stiffness: FluentSpring.standard.stiffness,
+        mass: FluentSpring.standard.mass,
       }),
       Animated.timing(trackOpacity, {
         toValue: value ? 1 : 0,
-        duration: M3Motion.durationShort3,
+        duration: FluentDuration.fast,
         useNativeDriver: false,
       }),
     ]).start();
@@ -67,8 +64,9 @@ export function FluentToggle({
     Animated.spring(thumbScale, {
       toValue: 0.85,
       useNativeDriver: true,
-      damping: 15,
-      stiffness: 300,
+      damping: FluentSpring.gentle.damping,
+      stiffness: FluentSpring.gentle.stiffness,
+      mass: FluentSpring.gentle.mass,
     }).start();
   };
 
@@ -77,8 +75,9 @@ export function FluentToggle({
     Animated.spring(thumbScale, {
       toValue: 1,
       useNativeDriver: true,
-      damping: 15,
-      stiffness: 300,
+      damping: FluentSpring.gentle.damping,
+      stiffness: FluentSpring.gentle.stiffness,
+      mass: FluentSpring.gentle.mass,
     }).start();
   };
 
@@ -103,21 +102,16 @@ export function FluentToggle({
     onValueChange(!value);
   };
 
-  const hoverAdjust = isDark ? 15 : -10;
-  const pressedAdjust = isDark ? 25 : -20;
-
   const getTrackOffColor = () => {
-    const baseOff = theme.surfaceContainerHigh || '#3A3A3A';
-    if (isPressed) return adjustBrightness(baseOff, pressedAdjust);
-    if (hoverActive) return adjustBrightness(baseOff, hoverAdjust);
-    return baseOff;
+    if (isPressed) return fluentColors.colorNeutralBackground1Pressed;
+    if (hoverActive) return fluentColors.colorNeutralBackground1Hover;
+    return fluentColors.colorNeutralBackground5;
   };
 
   const getTrackOnColor = () => {
-    const baseOn = theme.primary || '#0078D4';
-    if (isPressed) return theme.primaryPressed || adjustBrightness(baseOn, pressedAdjust);
-    if (hoverActive) return theme.primaryHover || adjustBrightness(baseOn, hoverAdjust);
-    return baseOn;
+    if (isPressed) return fluentColors.colorCompoundBrandBackgroundPressed;
+    if (hoverActive) return fluentColors.colorCompoundBrandBackgroundHover;
+    return fluentColors.colorCompoundBrandBackground;
   };
 
   const trackBackgroundColor = trackOpacity.interpolate({
@@ -127,20 +121,24 @@ export function FluentToggle({
 
   const getBorderColor = () => {
     if (value) return 'transparent';
-    if (isPressed) return theme.primary;
-    if (hoverActive) return theme.outline;
-    return theme.outlineVariant;
+    if (isPressed) return fluentColors.colorNeutralStrokeAccessiblePressed;
+    if (hoverActive) return fluentColors.colorNeutralStrokeAccessibleHover;
+    return fluentColors.colorNeutralStrokeAccessible;
   };
 
-  const thumbColor = value ? "#FFFFFF" : theme.onSurfaceVariant;
+  const thumbColor = value 
+    ? fluentColors.colorNeutralForegroundOnBrand 
+    : fluentColors.colorNeutralForeground3;
 
   const focusRingStyle = isFocused ? Platform.select({
     web: {
-      outline: `2px solid ${theme.primary}`,
+      outline: `2px solid ${fluentColors.colorStrokeFocus2}`,
       outlineOffset: 2,
     },
     default: {},
   }) : {};
+
+  const thumbShadow = getShadowStyle('shadow2', isDark);
 
   return (
     <View style={styles.wrapper}>
@@ -149,7 +147,7 @@ export function FluentToggle({
           style={[
             styles.focusRing, 
             { 
-              borderColor: theme.primary,
+              borderColor: fluentColors.colorStrokeFocus2,
               width: trackWidth + 8,
               height: trackHeight + 8,
               borderRadius: (trackHeight + 8) / 2,
@@ -176,7 +174,7 @@ export function FluentToggle({
             {
               width: trackWidth,
               height: trackHeight,
-              borderRadius: trackHeight / 2,
+              borderRadius: trackBorderRadius,
               backgroundColor: trackBackgroundColor,
               opacity: disabled ? 0.38 : 1,
               borderWidth: value ? 0 : 1,
@@ -196,18 +194,7 @@ export function FluentToggle({
                   { translateX },
                   { scale: thumbScale },
                 ],
-                ...Platform.select({
-                  ios: {
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.15,
-                    shadowRadius: 2,
-                  },
-                  android: {
-                    elevation: 2,
-                  },
-                  default: {},
-                }),
+                ...thumbShadow,
               },
             ]}
           />

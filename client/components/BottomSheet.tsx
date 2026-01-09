@@ -7,6 +7,7 @@ import {
   Platform,
   Modal,
   ScrollView,
+  Text,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -16,7 +17,6 @@ import Animated, {
   withTiming,
   withSpring,
   runOnJS,
-  Easing,
 } from "react-native-reanimated";
 import {
   Gesture,
@@ -24,7 +24,16 @@ import {
   GestureHandlerRootView,
 } from "react-native-gesture-handler";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, M3Motion, M3Shape, Layout } from "@/constants/theme";
+import {
+  FluentControlRadius,
+  FluentSpacing,
+  FluentTypography,
+  FluentDuration,
+  FluentCurve,
+  getShadowStyle,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface BottomSheetProps {
   visible: boolean;
@@ -44,13 +53,14 @@ export function BottomSheet({
   snapPoints = [0.5],
   title,
 }: BottomSheetProps) {
-  const { theme } = useThemeContext();
+  const { theme, isDark } = useThemeContext();
   const insets = useSafeAreaInsets();
   const [isRendered, setIsRendered] = useState(visible);
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const scrimOpacity = useSharedValue(0);
   const context = useSharedValue({ y: 0 });
 
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   const maxHeight = SCREEN_HEIGHT * Math.max(...snapPoints);
   const minY = SCREEN_HEIGHT - maxHeight;
 
@@ -63,27 +73,22 @@ export function BottomSheet({
   useEffect(() => {
     if (visible) {
       setIsRendered(true);
-      translateY.value = withSpring(minY, {
-        damping: 20,
-        stiffness: 150,
+      translateY.value = withTiming(minY, {
+        duration: FluentDuration.normal,
+        easing: FluentCurve.decelerateMid,
       });
       scrimOpacity.value = withTiming(0.5, {
-        duration: M3Motion.durationMedium2,
+        duration: FluentDuration.normal,
       });
     } else if (isRendered) {
       translateY.value = withTiming(SCREEN_HEIGHT, {
-        duration: M3Motion.durationShort4,
-        easing: Easing.bezier(
-          M3Motion.easingStandard.x1,
-          M3Motion.easingStandard.y1,
-          M3Motion.easingStandard.x2,
-          M3Motion.easingStandard.y2
-        ),
+        duration: FluentDuration.fast,
+        easing: FluentCurve.accelerateMid,
       }, () => {
         runOnJS(handleAnimationComplete)(false);
       });
       scrimOpacity.value = withTiming(0, {
-        duration: M3Motion.durationShort4,
+        duration: FluentDuration.fast,
       });
     }
   }, [visible]);
@@ -106,12 +111,13 @@ export function BottomSheet({
     .onEnd((event) => {
       if (event.velocityY > 500 || translateY.value > SCREEN_HEIGHT * 0.7) {
         translateY.value = withTiming(SCREEN_HEIGHT, {
-          duration: M3Motion.durationShort4,
+          duration: FluentDuration.fast,
+          easing: FluentCurve.accelerateMid,
         }, () => {
           runOnJS(handleAnimationComplete)(false);
         });
         scrimOpacity.value = withTiming(0, {
-          duration: M3Motion.durationShort4,
+          duration: FluentDuration.fast,
         });
         runOnJS(dismiss)();
       } else {
@@ -157,21 +163,35 @@ export function BottomSheet({
               style={[
                 styles.sheet,
                 {
-                  backgroundColor: theme.surfaceContainerLow,
-                  paddingBottom: insets.bottom + Spacing.xxl,
+                  backgroundColor: fluentColors.colorNeutralBackground1,
                   maxHeight: maxHeight,
                 },
+                getShadowStyle('shadow28', isDark),
                 sheetStyle,
               ]}
             >
               <View style={styles.handleContainer}>
                 <View
-                  style={[styles.handle, { backgroundColor: theme.outline }]}
+                  style={[styles.handle, { backgroundColor: fluentColors.colorNeutralStroke1 }]}
                 />
               </View>
+              {title && (
+                <Text
+                  style={[
+                    styles.title,
+                    FluentTypography.subtitle1,
+                    { color: fluentColors.colorNeutralForeground1 },
+                  ]}
+                >
+                  {title}
+                </Text>
+              )}
               <ScrollView
                 style={styles.content}
-                contentContainerStyle={styles.contentContainer}
+                contentContainerStyle={[
+                  styles.contentContainer,
+                  { paddingBottom: insets.bottom + FluentSpacing.xxl },
+                ]}
                 showsVerticalScrollIndicator={false}
               >
                 {children}
@@ -199,38 +219,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheet: {
-    borderTopLeftRadius: M3Shape.cornerExtraLarge,
-    borderTopRightRadius: M3Shape.cornerExtraLarge,
+    borderTopLeftRadius: FluentControlRadius.bottomSheet,
+    borderTopRightRadius: FluentControlRadius.bottomSheet,
     minHeight: 200,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 16,
-      },
-      default: {},
-    }),
   },
   handleContainer: {
     height: HANDLE_HEIGHT,
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: Spacing.s,
+    paddingTop: FluentSpacing.s,
   },
   handle: {
     width: 40,
     height: 4,
     borderRadius: 2,
   },
+  title: {
+    paddingHorizontal: FluentSpacing.l,
+    paddingBottom: FluentSpacing.s,
+  },
   content: {
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.s,
+    paddingHorizontal: FluentSpacing.l,
+    paddingTop: FluentSpacing.s,
   },
 });

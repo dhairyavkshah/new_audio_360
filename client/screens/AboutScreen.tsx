@@ -8,7 +8,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius, Layout } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 
 export default function AboutScreen() {
   const insets = useSafeAreaInsets();
@@ -25,14 +25,14 @@ export default function AboutScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Spacing.m, paddingBottom: tabBarHeight + Spacing.xl },
+          { paddingTop: FluentSpacing.m, paddingBottom: tabBarHeight + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
         <View style={styles.logoContainer}>
           <View style={[styles.logoCircle, { backgroundColor: theme.primary + "20" }]}>
-            <MaterialCommunityIcons name="music-circle" size={48} color={theme.primary} />
+            <MaterialCommunityIcons name="music-circle" size={FluentIconSize.xxlarge} color={theme.primary} />
           </View>
           <ThemedText type="h3" style={styles.appName}>
             New Audio 360
@@ -52,7 +52,7 @@ export default function AboutScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="star" size={18} color={theme.primary} />
+            <MaterialCommunityIcons name="star" size={FluentIconSize.small} color={theme.primary} />
             <ThemedText type="body" style={styles.sectionTitle}>
               Features
             </ThemedText>
@@ -87,7 +87,7 @@ export default function AboutScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="scale-balance" size={18} color={theme.primary} />
+            <MaterialCommunityIcons name="scale-balance" size={FluentIconSize.small} color={theme.primary} />
             <ThemedText type="body" style={styles.sectionTitle}>
               Legal
             </ThemedText>
@@ -96,29 +96,29 @@ export default function AboutScreen() {
             <Pressable
               style={[styles.linkItem, { backgroundColor: theme.backgroundSecondary }]}
             >
-              <MaterialCommunityIcons name="file-document-outline" size={18} color={theme.text} />
+              <MaterialCommunityIcons name="file-document-outline" size={FluentIconSize.small} color={theme.text} />
               <ThemedText type="small" style={styles.linkText}>
                 Terms of Service
               </ThemedText>
-              <MaterialCommunityIcons name="chevron-right" size={18} color={theme.textSecondary} />
+              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={theme.textSecondary} />
             </Pressable>
             <Pressable
               style={[styles.linkItem, { backgroundColor: theme.backgroundSecondary }]}
             >
-              <MaterialCommunityIcons name="shield-lock-outline" size={18} color={theme.text} />
+              <MaterialCommunityIcons name="shield-lock-outline" size={FluentIconSize.small} color={theme.text} />
               <ThemedText type="small" style={styles.linkText}>
                 Privacy Policy
               </ThemedText>
-              <MaterialCommunityIcons name="chevron-right" size={18} color={theme.textSecondary} />
+              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={theme.textSecondary} />
             </Pressable>
             <Pressable
               style={[styles.linkItem, { backgroundColor: theme.backgroundSecondary }]}
             >
-              <MaterialCommunityIcons name="license" size={18} color={theme.text} />
+              <MaterialCommunityIcons name="license" size={FluentIconSize.small} color={theme.text} />
               <ThemedText type="small" style={styles.linkText}>
                 Open Source Licenses
               </ThemedText>
-              <MaterialCommunityIcons name="chevron-right" size={18} color={theme.textSecondary} />
+              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={theme.textSecondary} />
             </Pressable>
           </View>
         </View>
@@ -129,7 +129,7 @@ export default function AboutScreen() {
           </ThemedText>
           <ThemedText
             type="caption"
-            style={{ color: theme.textSecondary, textAlign: "center", marginTop: Spacing.xs }}
+            style={{ color: theme.textSecondary, textAlign: "center", marginTop: FluentSpacing.xs }}
           >
             2024-2026 New Audio 360. All rights reserved.
           </ThemedText>
@@ -153,7 +153,7 @@ function FeatureItem({
   return (
     <View style={[styles.featureItem, { backgroundColor: theme.backgroundSecondary }]}>
       <View style={[styles.featureIcon, { backgroundColor: theme.primary + "20" }]}>
-        <MaterialCommunityIcons name={icon} size={18} color={theme.primary} />
+        <MaterialCommunityIcons name={icon} size={FluentIconSize.small} color={theme.primary} />
       </View>
       <View style={styles.featureText}>
         <ThemedText type="small" style={{ fontWeight: "600" }}>
@@ -172,80 +172,80 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: FluentSpacing.l,
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   logoCircle: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.m,
+    marginBottom: FluentSpacing.m,
   },
   appName: {
     fontWeight: "700",
   },
   version: {
-    marginTop: Spacing.xs,
+    marginTop: FluentSpacing.xs,
   },
   descriptionCard: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   description: {
     textAlign: "center",
     lineHeight: 20,
   },
   section: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.m,
+    marginBottom: FluentSpacing.m,
   },
   sectionTitle: {
-    marginLeft: Spacing.xs,
+    marginLeft: FluentSpacing.xs,
     fontWeight: "600",
   },
   featuresList: {
-    gap: Spacing.xs,
+    gap: FluentSpacing.xs,
   },
   featureItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.m,
-    borderRadius: BorderRadius.medium,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
   },
   featureIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: FluentIconSize.xxlarge,
+    height: FluentIconSize.xxlarge,
+    borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
   },
   featureText: {
     flex: 1,
-    marginLeft: Spacing.m,
+    marginLeft: FluentSpacing.m,
   },
   legalLinks: {
-    gap: Spacing.xs,
+    gap: FluentSpacing.xs,
   },
   linkItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.m,
-    borderRadius: BorderRadius.medium,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
   },
   linkText: {
     flex: 1,
-    marginLeft: Spacing.m,
+    marginLeft: FluentSpacing.m,
   },
   footer: {
-    paddingVertical: Spacing.l,
+    paddingVertical: FluentSpacing.l,
     alignItems: "center",
   },
 });

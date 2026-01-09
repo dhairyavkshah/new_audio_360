@@ -4,14 +4,20 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  Easing,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
-import { Spacing, M3Motion, BorderRadius } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentRadius,
+  FluentDuration,
+  FluentCurve,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface ProgressBarProps {
   progress: number;
@@ -38,6 +44,7 @@ export function ProgressBar({
 }: ProgressBarProps) {
   const { theme, isDark } = useThemeContext();
   const { shapes, components } = useSkin();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 
   const textShadowStyle = showTextShadow ? {
     textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
@@ -69,8 +76,8 @@ export function ProgressBar({
     .onStart(() => {
       isDragging.value = true;
       trackHeight.value = withTiming(ACTIVE_TRACK_HEIGHT, { 
-        duration: M3Motion.durationShort3,
-        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+        duration: FluentDuration.fast,
+        easing: FluentCurve.decelerateMid,
       });
     })
     .onUpdate((event) => {
@@ -80,8 +87,8 @@ export function ProgressBar({
     .onEnd(() => {
       isDragging.value = false;
       trackHeight.value = withTiming(TRACK_HEIGHT, { 
-        duration: M3Motion.durationShort4,
-        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+        duration: FluentDuration.normal,
+        easing: FluentCurve.decelerateMid,
       });
       const seekTime = (translateX.value / (width - THUMB_SIZE)) * duration;
       scheduleOnRN(handleSeek, seekTime);
@@ -92,8 +99,8 @@ export function ProgressBar({
     .onEnd((event) => {
       const tapX = Math.max(0, Math.min(event.x, width - THUMB_SIZE));
       translateX.value = withTiming(tapX, { 
-        duration: M3Motion.durationShort4,
-        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+        duration: FluentDuration.normal,
+        easing: FluentCurve.decelerateMid,
       });
       const seekTime = (tapX / (width - THUMB_SIZE)) * duration;
       scheduleOnRN(handleSeek, seekTime);
@@ -127,8 +134,8 @@ export function ProgressBar({
             style={[
               styles.track,
               {
-                borderRadius: BorderRadius.circular,
-                backgroundColor: theme.surfaceContainerHigh,
+                borderRadius: FluentRadius.small,
+                backgroundColor: fluentColors.colorNeutralBackground5,
               },
               trackAnimatedStyle,
             ]}
@@ -137,8 +144,8 @@ export function ProgressBar({
               style={[
                 styles.fill,
                 {
-                  borderRadius: BorderRadius.circular,
-                  backgroundColor: theme.primary,
+                  borderRadius: FluentRadius.small,
+                  backgroundColor: fluentColors.colorCompoundBrandBackground,
                 },
                 fillStyle,
               ]}
@@ -151,10 +158,10 @@ export function ProgressBar({
                 width: THUMB_SIZE,
                 height: THUMB_SIZE,
                 borderRadius: THUMB_SIZE / 2,
-                backgroundColor: theme.primary,
+                backgroundColor: fluentColors.colorCompoundBrandBackground,
                 ...Platform.select({
                   ios: {
-                    shadowColor: theme.primary,
+                    shadowColor: fluentColors.colorCompoundBrandBackground,
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: 0.25,
                     shadowRadius: 4,
@@ -171,10 +178,10 @@ export function ProgressBar({
         </View>
       </GestureDetector>
       <View style={styles.timeContainer}>
-        <ThemedText type="caption" style={[{ color: theme.textSecondary }, textShadowStyle]}>
+        <ThemedText type="caption" style={[{ color: fluentColors.colorNeutralForeground3 }, textShadowStyle]}>
           {formatTime(currentTime)}
         </ThemedText>
-        <ThemedText type="caption" style={[{ color: theme.textSecondary }, textShadowStyle]}>
+        <ThemedText type="caption" style={[{ color: fluentColors.colorNeutralForeground3 }, textShadowStyle]}>
           {formatTime(duration)}
         </ThemedText>
       </View>
@@ -206,6 +213,6 @@ const styles = StyleSheet.create({
   timeContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: Spacing.s,
+    marginTop: FluentSpacing.s,
   },
 });

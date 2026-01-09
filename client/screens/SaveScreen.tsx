@@ -13,7 +13,7 @@ import { Dialog } from "@/components/Dialog";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useStudioContext } from "@/contexts/StudioContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import { addRecording, Recording } from "@/lib/storage";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
 import { studioAudioEngine } from "@/services/StudioAudioEngine";
@@ -174,7 +174,7 @@ export default function SaveScreen() {
       <KeyboardAwareScrollViewCompat
         contentContainerStyle={[
           styles.content,
-          { paddingTop: headerHeight + Spacing.xl, paddingBottom: insets.bottom + Spacing.xl },
+          { paddingTop: headerHeight + FluentSpacing.xxl, paddingBottom: insets.bottom + FluentSpacing.xxl },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -182,7 +182,7 @@ export default function SaveScreen() {
           <GlassCard style={styles.previewCard}>
             <View style={styles.previewContent}>
               <View style={[styles.artworkPlaceholder, { backgroundColor: theme.primary + "30" }]}>
-                <MaterialCommunityIcons name="music" size={32} color={theme.primary} />
+                <MaterialCommunityIcons name="music" size={FluentIconSize.xlarge} color={theme.primary} />
               </View>
               <View style={styles.previewInfo}>
                 <ThemedText type="caption" style={{ color: theme.textSecondary }}>
@@ -214,7 +214,7 @@ export default function SaveScreen() {
             />
             {title.length > 0 ? (
               <Pressable onPress={() => setTitle("")}>
-                <MaterialCommunityIcons name="close" size={20} color={theme.textSecondary} />
+                <MaterialCommunityIcons name="close" size={FluentIconSize.regular} color={theme.textSecondary} />
               </Pressable>
             ) : null}
           </View>
@@ -223,14 +223,14 @@ export default function SaveScreen() {
         <GlassCard style={styles.infoCard}>
           <View style={styles.infoRow}>
             <View style={styles.infoItem}>
-              <MaterialCommunityIcons name="waveform" size={18} color={theme.primary} />
-              <ThemedText type="small" style={{ marginLeft: Spacing.sm }}>
+              <MaterialCommunityIcons name="waveform" size={FluentIconSize.regular} color={theme.primary} />
+              <ThemedText type="small" style={{ marginLeft: FluentSpacing.s }}>
                 {selectedReverb}
               </ThemedText>
             </View>
             <View style={styles.infoItem}>
-              <MaterialCommunityIcons name="volume-off" size={18} color={theme.primary} />
-              <ThemedText type="small" style={{ marginLeft: Spacing.sm }}>
+              <MaterialCommunityIcons name="volume-off" size={FluentIconSize.regular} color={theme.primary} />
+              <ThemedText type="small" style={{ marginLeft: FluentSpacing.s }}>
                 Noise: {noiseReduction}
               </ThemedText>
             </View>
@@ -239,7 +239,7 @@ export default function SaveScreen() {
 
         <GlassCard style={styles.qualityCard}>
           <View style={styles.qualityContent}>
-            <MaterialCommunityIcons name="quality-high" size={24} color={theme.primary} />
+            <MaterialCommunityIcons name="quality-high" size={FluentIconSize.medium} color={theme.primary} />
             <View style={styles.qualityText}>
               <ThemedText type="body" style={{ fontWeight: "600" }}>
                 High Quality Export
@@ -261,14 +261,14 @@ export default function SaveScreen() {
         >
           {isSaving ? (
             <View style={styles.savingContent}>
-              <MaterialCommunityIcons name="loading" size={20} color="#FFFFFF" />
-              <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: Spacing.sm }}>
+              <MaterialCommunityIcons name="loading" size={FluentIconSize.regular} color="#FFFFFF" />
+              <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.s }}>
                 {saveProgress || "Saving..."}
               </ThemedText>
             </View>
           ) : (
             <>
-              <MaterialCommunityIcons name="content-save" size={20} color="#FFFFFF" />
+              <MaterialCommunityIcons name="content-save" size={FluentIconSize.regular} color="#FFFFFF" />
               <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
                 Save Recording
               </ThemedText>
@@ -305,10 +305,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: FluentSpacing.l,
   },
   previewCard: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xxl,
   },
   previewContent: {
     flexDirection: "row",
@@ -317,34 +317,34 @@ const styles = StyleSheet.create({
   artworkPlaceholder: {
     width: 72,
     height: 72,
-    borderRadius: BorderRadius.md,
+    borderRadius: FluentControlRadius.card,
     justifyContent: "center",
     alignItems: "center",
   },
   previewInfo: {
     flex: 1,
-    marginLeft: Spacing.lg,
+    marginLeft: FluentSpacing.l,
   },
   section: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xxl,
   },
   sectionTitle: {
-    marginBottom: Spacing.md,
+    marginBottom: FluentSpacing.m,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
+    paddingHorizontal: FluentSpacing.l,
+    paddingVertical: FluentSpacing.m,
+    borderRadius: FluentControlRadius.dialog,
   },
   input: {
     flex: 1,
     fontSize: 16,
-    paddingVertical: Spacing.sm,
+    paddingVertical: FluentSpacing.s,
   },
   infoCard: {
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   infoRow: {
     flexDirection: "row",
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   qualityCard: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xxl,
   },
   qualityContent: {
     flexDirection: "row",
@@ -363,15 +363,15 @@ const styles = StyleSheet.create({
   },
   qualityText: {
     flex: 1,
-    marginLeft: Spacing.lg,
+    marginLeft: FluentSpacing.l,
   },
   saveButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
+    paddingVertical: FluentSpacing.l,
+    borderRadius: FluentControlRadius.dialog,
+    gap: FluentSpacing.s,
   },
   savingContent: {
     flexDirection: "row",

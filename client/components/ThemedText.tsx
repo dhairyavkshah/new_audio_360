@@ -1,21 +1,33 @@
-import { Text, type TextProps } from "react-native";
+import { Text, type TextProps, TextStyle } from "react-native";
 
 import { useTheme } from "@/hooks/useTheme";
-import { Typography } from "@/constants/theme";
+import { FluentTypography, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
   type?:
     | "display"
+    | "largeTitle"
+    | "title1"
+    | "title2"
+    | "title3"
+    | "subtitle1"
+    | "subtitle2"
+    | "body1"
+    | "body1Strong"
+    | "body2"
+    | "body2Strong"
+    | "caption1"
+    | "caption1Strong"
+    | "caption2"
+    | "link"
     | "displayLarge"
     | "displayMedium"
     | "displaySmall"
     | "titleLarge"
     | "titleMedium"
     | "titleSmall"
-    | "subtitle1"
-    | "subtitle2"
     | "bodyLarge"
     | "body"
     | "bodyMedium"
@@ -25,7 +37,6 @@ export type ThemedTextProps = TextProps & {
     | "labelSmall"
     | "caption"
     | "captionSmall"
-    | "link"
     | "h1"
     | "h2"
     | "h3"
@@ -37,12 +48,13 @@ export function ThemedText({
   style,
   lightColor,
   darkColor,
-  type = "body",
+  type = "body1",
   ...rest
 }: ThemedTextProps) {
-  const { theme, isDark } = useTheme();
+  const { isDark } = useTheme();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
-  const getColor = () => {
+  const getColor = (): string => {
     if (isDark && darkColor) {
       return darkColor;
     }
@@ -52,63 +64,82 @@ export function ThemedText({
     }
 
     if (type === "link") {
-      return theme.link;
+      return colors.colorBrandForegroundLink;
     }
 
-    if (type === "caption" || type === "captionSmall" || type === "small" || type === "labelSmall") {
-      return theme.textSecondary;
+    if (
+      type === "caption1" ||
+      type === "caption1Strong" ||
+      type === "caption2" ||
+      type === "caption" ||
+      type === "captionSmall" ||
+      type === "small" ||
+      type === "labelSmall"
+    ) {
+      return colors.colorNeutralForeground2;
     }
 
-    return theme.text;
+    return colors.colorNeutralForeground1;
   };
 
-  const getTypeStyle = () => {
+  const getTypeStyle = (): TextStyle => {
     switch (type) {
       case "display":
-        return Typography.display;
+        return FluentTypography.display;
+      case "largeTitle":
       case "displayLarge":
-        return Typography.displayLarge;
+        return FluentTypography.largeTitle;
       case "displayMedium":
-        return Typography.displayMedium;
+        return FluentTypography.title1;
       case "displaySmall":
-        return Typography.displaySmall;
+        return FluentTypography.title2;
+      case "title1":
       case "titleLarge":
       case "h1":
-        return Typography.titleLarge;
+        return FluentTypography.title1;
+      case "title2":
       case "titleMedium":
       case "h2":
-        return Typography.titleMedium;
+        return FluentTypography.title2;
+      case "title3":
       case "titleSmall":
       case "h3":
-        return Typography.titleSmall;
+        return FluentTypography.title3;
       case "h4":
-        return Typography.h4;
+        return FluentTypography.subtitle1;
       case "subtitle1":
-        return Typography.subtitle1;
+        return FluentTypography.subtitle1;
       case "subtitle2":
-        return Typography.subtitle2;
-      case "bodyLarge":
-        return Typography.bodyLarge;
+        return FluentTypography.subtitle2;
+      case "body1":
       case "body":
       case "bodyMedium":
-        return Typography.body;
+        return FluentTypography.body1;
+      case "body1Strong":
+      case "labelLarge":
+        return FluentTypography.body1Strong;
+      case "body2":
+      case "bodyLarge":
+        return FluentTypography.body2;
+      case "body2Strong":
+        return FluentTypography.body2Strong;
       case "bodySmall":
       case "small":
-        return Typography.bodySmall;
-      case "labelLarge":
-        return Typography.labelLarge;
-      case "labelMedium":
-        return Typography.labelMedium;
-      case "labelSmall":
-        return Typography.labelSmall;
+        return FluentTypography.caption1;
+      case "caption1":
       case "caption":
-        return Typography.caption;
+      case "labelMedium":
+        return FluentTypography.caption1;
+      case "caption1Strong":
+        return FluentTypography.caption1Strong;
+      case "caption2":
       case "captionSmall":
-        return Typography.captionSmall;
+      case "labelSmall":
+        return FluentTypography.caption2;
       case "link":
-        return Typography.link;
+        return FluentTypography.body1;
       default:
-        return Typography.body;
+        return FluentTypography.body1;
     }
   };
 

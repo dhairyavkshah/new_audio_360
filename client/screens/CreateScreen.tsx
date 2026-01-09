@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { View, StyleSheet, FlatList, TextInput, Pressable } from "react-native";
+import { View, StyleSheet, FlatList, TextInput, Pressable, KeyboardAvoidingView, Platform } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -10,7 +11,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { SongCard } from "@/components/SongCard";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentTypography } from "@/constants/fluent2";
 import { mockSongs, Song } from "@/lib/data";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
 
@@ -19,6 +20,7 @@ type NavigationProp = NativeStackNavigationProp<CreateStackParamList>;
 export default function CreateScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useSafeTabBarHeight();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useThemeContext();
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,11 +40,11 @@ export default function CreateScreen() {
       <GlassCard style={styles.introCard}>
         <View style={styles.introContent}>
           <View style={[styles.iconCircle, { backgroundColor: theme.primary + "20" }]}>
-            <MaterialCommunityIcons name="microphone" size={24} color={theme.primary} />
+            <MaterialCommunityIcons name="microphone" size={FluentIconSize.medium} color={theme.primary} />
           </View>
           <View style={styles.introText}>
             <ThemedText type="h4">Create Your Recording</ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
+            <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: FluentSpacing.xs }}>
               Select a song as your backing track and start singing
             </ThemedText>
           </View>
@@ -50,7 +52,7 @@ export default function CreateScreen() {
       </GlassCard>
 
       <View style={[styles.searchContainer, { backgroundColor: theme.backgroundSecondary }]}>
-        <MaterialCommunityIcons name="magnify" size={18} color={theme.textSecondary} />
+        <MaterialCommunityIcons name="magnify" size={FluentIconSize.small} color={theme.textSecondary} />
         <TextInput
           style={[styles.searchInput, { color: theme.text }]}
           placeholder="Search songs..."
@@ -60,7 +62,7 @@ export default function CreateScreen() {
         />
         {searchQuery.length > 0 ? (
           <Pressable onPress={() => setSearchQuery("")}>
-            <MaterialCommunityIcons name="close" size={18} color={theme.textSecondary} />
+            <MaterialCommunityIcons name="close" size={FluentIconSize.small} color={theme.textSecondary} />
           </Pressable>
         ) : null}
       </View>
@@ -81,25 +83,32 @@ export default function CreateScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <FlatList
-        data={filteredSongs}
-        renderItem={renderSong}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingTop: headerHeight + Spacing.xl, paddingBottom: tabBarHeight + Spacing.xl },
-        ]}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="music" size={48} color={theme.textSecondary} />
-            <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
-              No songs found
-            </ThemedText>
-          </View>
-        }
-        showsVerticalScrollIndicator={false}
-      />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={headerHeight}
+      >
+        <FlatList
+          data={filteredSongs}
+          renderItem={renderSong}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingTop: headerHeight + FluentSpacing.xl, paddingBottom: tabBarHeight + FluentSpacing.xl },
+          ]}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="music" size={FluentIconSize.xxlarge} color={theme.textSecondary} />
+              <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: FluentSpacing.m }}>
+                No songs found
+              </ThemedText>
+            </View>
+          }
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        />
+      </KeyboardAvoidingView>
     </ThemedView>
   );
 }
@@ -109,13 +118,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: FluentSpacing.l,
   },
   header: {
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   introCard: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   introContent: {
     flexDirection: "row",
@@ -124,32 +133,32 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
   },
   introText: {
     flex: 1,
-    marginLeft: Spacing.lg,
+    marginLeft: FluentSpacing.l,
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.xl,
+    paddingHorizontal: FluentSpacing.l,
+    paddingVertical: FluentSpacing.m,
+    borderRadius: FluentControlRadius.input,
+    marginBottom: FluentSpacing.xl,
   },
   searchInput: {
     flex: 1,
-    marginLeft: Spacing.sm,
-    fontSize: 16,
+    marginLeft: FluentSpacing.s,
+    ...FluentTypography.body2,
   },
   sectionTitle: {
-    marginBottom: Spacing.md,
+    marginBottom: FluentSpacing.m,
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: Spacing["2xl"],
+    paddingVertical: FluentSpacing.xxxl,
   },
 });

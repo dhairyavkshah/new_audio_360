@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
-import { Spacing, Layout, M3Shape } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius } from "@/constants/fluent2";
 import { mockSongs } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 
@@ -67,7 +67,7 @@ export default function AlbumDetailScreen() {
         <ThemedText type="bodyLarge" style={{ color: theme.onSurfaceVariant }}>
           {album.artist}
         </ThemedText>
-        <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant, marginTop: Spacing.xs }}>
+        <ThemedText type="bodySmall" style={{ color: theme.onSurfaceVariant, marginTop: FluentSpacing.xs }}>
           {albumSongs.length} {albumSongs.length === 1 ? "song" : "songs"}
         </ThemedText>
       </View>
@@ -99,7 +99,7 @@ export default function AlbumDetailScreen() {
         }
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: tabBarHeight + Spacing.xl },
+          { paddingBottom: tabBarHeight + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
@@ -115,25 +115,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.m,
+    paddingHorizontal: FluentSpacing.l,
+    paddingTop: FluentSpacing.m,
   },
   header: {
     flexDirection: "row",
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   artwork: {
     width: 120,
     height: 120,
-    borderRadius: M3Shape.cornerMedium,
+    borderRadius: FluentControlRadius.card,
   },
   headerInfo: {
     flex: 1,
-    marginLeft: Spacing.l,
+    marginLeft: FluentSpacing.l,
     justifyContent: "center",
   },
   albumTitle: {
     fontWeight: "700",
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
 });

@@ -7,20 +7,30 @@ import {
   Modal,
   ScrollView,
   Dimensions,
+  Text,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
   runOnJS,
-  Easing,
 } from "react-native-reanimated";
-import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, M3Motion, M3Shape, Layout } from "@/constants/theme";
+import {
+  FluentControlRadius,
+  FluentSpacing,
+  FluentTypography,
+  FluentIconSize,
+  FluentDuration,
+  FluentCurve,
+  getShadowStyle,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface MenuItem {
   id: string;
@@ -39,9 +49,9 @@ interface ContextMenuProps {
 }
 
 const MENU_WIDTH = 240;
-const ITEM_HEIGHT = Layout.listItemCompact;
+const ITEM_HEIGHT = 48;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const MENU_MARGIN = 16;
+const MENU_MARGIN = FluentSpacing.l;
 
 export function ContextMenu({
   visible,
@@ -50,12 +60,15 @@ export function ContextMenu({
   onSelect,
   anchorPosition,
 }: ContextMenuProps) {
-  const { theme } = useThemeContext();
+  const { theme, isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
+  const insets = useSafeAreaInsets();
   const [isRendered, setIsRendered] = useState(visible);
   const scale = useSharedValue(0.9);
   const opacity = useSharedValue(0);
   const scrimOpacity = useSharedValue(0);
+
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 
   const handleAnimationComplete = useCallback((toVisible: boolean) => {
     if (!toVisible) {
@@ -67,31 +80,27 @@ export function ContextMenu({
     if (visible) {
       setIsRendered(true);
       scale.value = withTiming(1, {
-        duration: M3Motion.durationShort3,
-        easing: Easing.bezier(
-          M3Motion.easingEmphasized.x1,
-          M3Motion.easingEmphasized.y1,
-          M3Motion.easingEmphasized.x2,
-          M3Motion.easingEmphasized.y2
-        ),
+        duration: FluentDuration.fast,
+        easing: FluentCurve.decelerateMid,
       });
       opacity.value = withTiming(1, {
-        duration: M3Motion.durationShort3,
+        duration: FluentDuration.fast,
       });
       scrimOpacity.value = withTiming(0.3, {
-        duration: M3Motion.durationShort4,
+        duration: FluentDuration.normal,
       });
     } else if (isRendered) {
       scale.value = withTiming(0.9, {
-        duration: M3Motion.durationShort2,
+        duration: FluentDuration.faster,
+        easing: FluentCurve.accelerateMid,
       });
       opacity.value = withTiming(0, {
-        duration: M3Motion.durationShort2,
+        duration: FluentDuration.faster,
       }, () => {
         runOnJS(handleAnimationComplete)(false);
       });
       scrimOpacity.value = withTiming(0, {
-        duration: M3Motion.durationShort2,
+        duration: FluentDuration.faster,
       });
     }
   }, [visible]);
@@ -126,7 +135,9 @@ export function ContextMenu({
       return { alignSelf: "center" as const };
     }
 
-    const menuHeight = Math.min(items.length * ITEM_HEIGHT + Spacing.s * 2, ITEM_HEIGHT * 8);
+    const menuHeight = Math.min(items.length * ITEM_HEIGHT + FluentSpacing.s * 2, ITEM_HEIGHT * 8);
+    const safeTop = insets.top + MENU_MARGIN;
+    const safeBottom = SCREEN_HEIGHT - insets.bottom - MENU_MARGIN;
     
     let left = anchorPosition.x;
     let top = anchorPosition.y;
@@ -138,11 +149,11 @@ export function ContextMenu({
       left = MENU_MARGIN;
     }
 
-    if (top + menuHeight > SCREEN_HEIGHT - MENU_MARGIN) {
+    if (top + menuHeight > safeBottom) {
       top = anchorPosition.y - menuHeight;
     }
-    if (top < MENU_MARGIN) {
-      top = MENU_MARGIN;
+    if (top < safeTop) {
+      top = safeTop;
     }
 
     return {
@@ -173,9 +184,10 @@ export function ContextMenu({
           style={[
             styles.menu,
             {
-              backgroundColor: theme.surfaceContainer,
+              backgroundColor: fluentColors.colorNeutralBackground1,
               width: MENU_WIDTH,
             },
+            getShadowStyle('shadow16', isDark),
             getMenuPosition(),
             menuStyle,
           ]}
@@ -198,7 +210,7 @@ export function ContextMenu({
                   styles.menuItem,
                   {
                     backgroundColor: pressed
-                      ? theme.surfaceContainerHighest
+                      ? fluentColors.colorNeutralBackground1Hover
                       : "transparent",
                   },
                   index === 0 && styles.firstItem,
@@ -208,32 +220,32 @@ export function ContextMenu({
                 {item.icon ? (
                   <MaterialCommunityIcons
                     name={item.icon}
-                    size={20}
+                    size={FluentIconSize.regular}
                     color={
                       item.disabled
-                        ? theme.onSurfaceVariant
+                        ? fluentColors.colorNeutralForegroundDisabled
                         : item.destructive
-                          ? theme.error
-                          : theme.onSurface
+                          ? fluentColors.colorPaletteRedForeground1
+                          : fluentColors.colorNeutralForeground1
                     }
                     style={styles.menuIcon}
                   />
                 ) : null}
-                <ThemedText
-                  type="bodyMedium"
+                <Text
                   style={[
                     styles.menuLabel,
+                    FluentTypography.body1,
                     {
                       color: item.disabled
-                        ? theme.onSurfaceVariant
+                        ? fluentColors.colorNeutralForegroundDisabled
                         : item.destructive
-                          ? theme.error
-                          : theme.onSurface,
+                          ? fluentColors.colorPaletteRedForeground1
+                          : fluentColors.colorNeutralForeground1,
                     },
                   ]}
                 >
                   {item.label}
-                </ThemedText>
+                </Text>
               </Pressable>
             ))}
           </ScrollView>
@@ -256,44 +268,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menu: {
-    borderRadius: M3Shape.cornerMedium,
+    borderRadius: FluentControlRadius.card,
     overflow: "hidden",
     maxHeight: ITEM_HEIGHT * 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 8,
-      },
-      default: {},
-    }),
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingVertical: Spacing.s,
+    paddingVertical: FluentSpacing.s,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     height: ITEM_HEIGHT,
-    paddingHorizontal: Spacing.l,
+    paddingHorizontal: FluentSpacing.l,
   },
   firstItem: {
-    borderTopLeftRadius: M3Shape.cornerMedium,
-    borderTopRightRadius: M3Shape.cornerMedium,
+    borderTopLeftRadius: FluentControlRadius.card,
+    borderTopRightRadius: FluentControlRadius.card,
   },
   lastItem: {
-    borderBottomLeftRadius: M3Shape.cornerMedium,
-    borderBottomRightRadius: M3Shape.cornerMedium,
+    borderBottomLeftRadius: FluentControlRadius.card,
+    borderBottomRightRadius: FluentControlRadius.card,
   },
   menuIcon: {
-    marginRight: Spacing.contentBlock,
+    marginRight: FluentSpacing.m,
   },
   menuLabel: {
     flex: 1,

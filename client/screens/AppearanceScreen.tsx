@@ -7,7 +7,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, ThemeName, Layout } from "@/constants/theme";
+import { ThemeName } from "@/constants/theme";
+import { FluentSpacing } from "@/constants/fluent2";
 
 export default function AppearanceScreen() {
   const insets = useSafeAreaInsets();
@@ -24,7 +25,7 @@ export default function AppearanceScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Spacing.m, paddingBottom: tabBarHeight + Spacing.xl },
+          { paddingTop: FluentSpacing.m, paddingBottom: tabBarHeight + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
@@ -44,9 +45,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: FluentSpacing.l,
   },
   sectionDesc: {
-    marginBottom: Spacing.m,
+    marginBottom: FluentSpacing.m,
   },
 });

@@ -9,7 +9,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius, Layout } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius } from "@/constants/fluent2";
+import { Layout } from "@/constants/theme";
 import { Playlist, getPlaylists, addPlaylist, updatePlaylist, deletePlaylist } from "@/lib/storage";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 
@@ -112,7 +113,7 @@ export default function PlaylistManagementScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Spacing.sm, paddingBottom: tabBarHeight + Spacing.lg },
+          { paddingTop: FluentSpacing.s, paddingBottom: tabBarHeight + FluentSpacing.l },
         ]}
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
@@ -122,7 +123,7 @@ export default function PlaylistManagementScreen() {
           style={[styles.createButton, { backgroundColor: theme.primary }]}
         >
           <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
-          <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: Spacing.xs }}>
+          <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.xs }}>
             Create New Playlist
           </ThemedText>
         </Pressable>
@@ -173,7 +174,7 @@ export default function PlaylistManagementScreen() {
                     style={[styles.actionButton, { backgroundColor: theme.backgroundSecondary }]}
                   >
                     <MaterialCommunityIcons name="pencil-outline" size={18} color={theme.text} />
-                    <ThemedText type="small" style={{ marginLeft: Spacing["2xs"] }}>
+                    <ThemedText type="small" style={{ marginLeft: FluentSpacing.xxs }}>
                       Edit
                     </ThemedText>
                   </Pressable>
@@ -182,7 +183,7 @@ export default function PlaylistManagementScreen() {
                     style={[styles.actionButton, { backgroundColor: theme.error + "15" }]}
                   >
                     <MaterialCommunityIcons name="trash-can-outline" size={18} color={theme.error} />
-                    <ThemedText type="small" style={{ marginLeft: Spacing["2xs"], color: theme.error }}>
+                    <ThemedText type="small" style={{ marginLeft: FluentSpacing.xxs, color: theme.error }}>
                       Delete
                     </ThemedText>
                   </Pressable>
@@ -199,7 +200,7 @@ export default function PlaylistManagementScreen() {
               <ThemedText type="small" style={{ fontWeight: "600" }}>
                 Smart Playlist Tips
               </ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing["2xs"] }}>
+              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: FluentSpacing.xxs }}>
                 Long-press songs in your library to quickly add them to playlists. You can also create genre-based or mood-based playlists for a better listening experience.
               </ThemedText>
             </View>
@@ -299,29 +300,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.lg,
+    paddingVertical: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
+    marginBottom: FluentSpacing.l,
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: Spacing["2xl"],
+    paddingVertical: FluentSpacing.xxl,
   },
   emptyTitle: {
-    marginTop: Spacing.md,
-    marginBottom: Spacing.xs,
+    marginTop: FluentSpacing.m,
+    marginBottom: FluentSpacing.xs,
     fontWeight: "600",
   },
   playlistsList: {
-    gap: Spacing.sm,
+    gap: FluentSpacing.s,
   },
   playlistCard: {
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
   playlistHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
   playlistIcon: {
     width: 48,
@@ -332,27 +333,27 @@ const styles = StyleSheet.create({
   },
   playlistInfo: {
     flex: 1,
-    marginLeft: Spacing.sm,
+    marginLeft: FluentSpacing.s,
   },
   playlistDesc: {
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
   playlistMeta: {
-    marginBottom: Spacing.sm,
+    marginBottom: FluentSpacing.s,
   },
   playlistActions: {
     flexDirection: "row",
-    gap: Spacing.xs,
+    gap: FluentSpacing.xs,
   },
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.md,
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xs,
+    borderRadius: FluentControlRadius.card,
   },
   infoCard: {
-    marginTop: Spacing.lg,
+    marginTop: FluentSpacing.l,
   },
   infoContent: {
     flexDirection: "row",
@@ -360,7 +361,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     flex: 1,
-    marginLeft: Spacing.sm,
+    marginLeft: FluentSpacing.s,
   },
   modalOverlay: {
     flex: 1,
@@ -371,27 +372,27 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    borderTopLeftRadius: BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-    paddingBottom: Spacing["2xl"],
+    borderTopLeftRadius: FluentControlRadius.bottomSheet,
+    borderTopRightRadius: FluentControlRadius.bottomSheet,
+    padding: FluentSpacing.l,
+    paddingBottom: FluentSpacing.xxl,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   inputGroup: {
-    marginBottom: Spacing.md,
+    marginBottom: FluentSpacing.m,
   },
   inputLabel: {
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
     fontWeight: "500",
   },
   textInput: {
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
     fontSize: 16,
   },
   textArea: {
@@ -399,13 +400,13 @@ const styles = StyleSheet.create({
   },
   modalActions: {
     flexDirection: "row",
-    gap: Spacing.sm,
-    marginTop: Spacing.md,
+    gap: FluentSpacing.s,
+    marginTop: FluentSpacing.m,
   },
   modalButton: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
+    paddingVertical: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
   },
 });

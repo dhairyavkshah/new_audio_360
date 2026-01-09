@@ -9,9 +9,16 @@ import Animated, {
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, BorderRadius, M3Motion } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentControlRadius,
+  FluentDuration,
+  FluentEasingValues,
+  getShadowStyle,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 type ButtonVariant = 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'subtle';
 type ButtonSize = 'sm' | 'default' | 'lg';
@@ -29,32 +36,20 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const sizeStyles = {
   sm: { 
-    height: 36,
-    paddingHorizontal: Spacing.l,
+    height: 32,
+    paddingHorizontal: FluentSpacing.s,
     minWidth: 64,
   },
   default: { 
-    height: 44,
-    paddingHorizontal: Spacing.xl,
+    height: 36,
+    paddingHorizontal: FluentSpacing.m,
     minWidth: 96,
   },
   lg: { 
-    height: 48,
-    paddingHorizontal: Spacing.xxl,
+    height: 44,
+    paddingHorizontal: FluentSpacing.l,
     minWidth: 120,
   },
-};
-
-const adjustBrightness = (color: string, amount: number): string => {
-  if (!color || color === 'transparent') return color;
-  const hex = color.replace('#', '');
-  if (hex.length !== 6) return color;
-  
-  const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) + amount));
-  const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) + amount));
-  const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + amount));
-  
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 };
 
 export function Button({
@@ -65,13 +60,14 @@ export function Button({
   variant = 'default',
   size = 'default',
 }: ButtonProps) {
-  const { theme, isDark } = useTheme();
-  const { shapes } = useSkin();
+  const { isDark } = useTheme();
   const { playKeypressSound } = useUiSound();
   const scale = useSharedValue(1);
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [hoverActive, setHoverActive] = useState(false);
+
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -88,8 +84,13 @@ export function Button({
     if (!disabled) {
       setIsPressed(true);
       scale.value = withTiming(0.98, { 
-        duration: M3Motion.durationShort3,
-        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+        duration: FluentDuration.fast,
+        easing: Easing.bezier(
+          FluentEasingValues.decelerateMid.x1,
+          FluentEasingValues.decelerateMid.y1,
+          FluentEasingValues.decelerateMid.x2,
+          FluentEasingValues.decelerateMid.y2
+        ),
       });
     }
   };
@@ -98,8 +99,13 @@ export function Button({
     if (!disabled) {
       setIsPressed(false);
       scale.value = withTiming(1, { 
-        duration: M3Motion.durationShort4,
-        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+        duration: FluentDuration.normal,
+        easing: Easing.bezier(
+          FluentEasingValues.decelerateMid.x1,
+          FluentEasingValues.decelerateMid.y1,
+          FluentEasingValues.decelerateMid.x2,
+          FluentEasingValues.decelerateMid.y2
+        ),
       });
     }
   };
@@ -117,59 +123,52 @@ export function Button({
   };
 
   const getVariantColors = () => {
-    const hoverAdjust = isDark ? 15 : -10;
-    const pressedAdjust = isDark ? 25 : -20;
-    
     switch (variant) {
       case 'secondary':
         return {
-          rest: theme.surfaceContainer,
-          hover: theme.surfaceContainerHigh,
-          pressed: theme.surfaceContainerHighest,
-          text: theme.onSurface,
+          rest: fluentColors.colorNeutralBackground3,
+          hover: fluentColors.colorNeutralBackground1Hover,
+          pressed: fluentColors.colorNeutralBackground1Pressed,
+          text: fluentColors.colorNeutralForeground1,
         };
       case 'outline':
         return {
-          rest: 'transparent',
-          hover: theme.surfaceContainerLow,
-          pressed: theme.surfaceContainer,
-          text: theme.primary,
-          borderColor: theme.outline,
-          borderHover: theme.primary,
-          borderPressed: theme.primary,
+          rest: fluentColors.colorTransparentBackground,
+          hover: fluentColors.colorSubtleBackgroundHover,
+          pressed: fluentColors.colorSubtleBackgroundPressed,
+          text: fluentColors.colorBrandForeground1,
+          borderColor: fluentColors.colorNeutralStroke1,
+          borderHover: fluentColors.colorBrandStroke1,
+          borderPressed: fluentColors.colorBrandStroke1,
         };
       case 'ghost':
         return {
-          rest: 'transparent',
-          hover: theme.surfaceContainerLow,
-          pressed: theme.surfaceContainer,
-          text: theme.onSurface,
+          rest: fluentColors.colorSubtleBackground,
+          hover: fluentColors.colorSubtleBackgroundHover,
+          pressed: fluentColors.colorSubtleBackgroundPressed,
+          text: fluentColors.colorNeutralForeground1,
         };
       case 'subtle':
         return {
-          rest: theme.surfaceContainerLow,
-          hover: theme.surfaceContainer,
-          pressed: theme.surfaceContainerHigh,
-          text: theme.primary,
+          rest: fluentColors.colorSubtleBackground,
+          hover: fluentColors.colorSubtleBackgroundHover,
+          pressed: fluentColors.colorSubtleBackgroundPressed,
+          text: fluentColors.colorBrandForeground1,
         };
-      case 'destructive': {
-        const errorBase = theme.error || '#DC3545';
+      case 'destructive':
         return {
-          rest: errorBase,
-          hover: adjustBrightness(errorBase, hoverAdjust),
-          pressed: adjustBrightness(errorBase, pressedAdjust),
-          text: '#FFFFFF',
+          rest: fluentColors.colorPaletteRedForeground2,
+          hover: fluentColors.colorPaletteRedForeground1,
+          pressed: fluentColors.colorPaletteRedBorderActive,
+          text: fluentColors.colorNeutralForegroundOnBrand,
         };
-      }
-      default: {
-        const primaryBase = theme.primary || '#0078D4';
+      default:
         return {
-          rest: primaryBase,
-          hover: theme.primaryHover || adjustBrightness(primaryBase, hoverAdjust),
-          pressed: theme.primaryPressed || adjustBrightness(primaryBase, pressedAdjust),
-          text: theme.onPrimary || '#FFFFFF',
+          rest: fluentColors.colorBrandBackground,
+          hover: fluentColors.colorBrandBackgroundHover,
+          pressed: fluentColors.colorBrandBackgroundPressed,
+          text: fluentColors.colorNeutralForegroundOnBrand,
         };
-      }
     }
   };
 
@@ -183,16 +182,13 @@ export function Button({
 
   const getBorderColor = () => {
     if (variant !== 'outline') return 'transparent';
-    if (isPressed) return colors.borderPressed || theme.primary;
-    if (hoverActive) return colors.borderHover || theme.primary;
-    return colors.borderColor || theme.outline;
+    if (isPressed) return colors.borderPressed || fluentColors.colorBrandStroke1;
+    if (hoverActive) return colors.borderHover || fluentColors.colorBrandStroke1;
+    return colors.borderColor || fluentColors.colorNeutralStroke1;
   };
 
   const getFocusRingColor = () => {
-    if (variant === 'default') {
-      return isDark ? '#FFFFFF' : '#000000';
-    }
-    return theme.primary;
+    return fluentColors.colorStrokeFocus2;
   };
 
   const focusRingStyle = isFocused ? Platform.select({
@@ -206,18 +202,9 @@ export function Button({
     },
   }) : {};
 
-  const shadowStyle = variant === 'default' && !disabled ? Platform.select({
-    ios: {
-      shadowColor: theme.primary,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: isPressed ? 0.1 : 0.15,
-      shadowRadius: isPressed ? 1 : 2,
-    },
-    android: {
-      elevation: isPressed ? 1 : 2,
-    },
-    default: {},
-  }) : {};
+  const shadowStyle = variant === 'default' && !disabled 
+    ? getShadowStyle('shadow2', isDark) 
+    : {};
 
   return (
     <AnimatedPressable
@@ -236,7 +223,7 @@ export function Button({
         sizeStyles[size],
         {
           opacity: disabled ? 0.38 : 1,
-          borderRadius: shapes.buttonBorderRadius || BorderRadius.medium,
+          borderRadius: FluentControlRadius.button,
           borderWidth: variant === 'outline' ? 1 : 0,
           borderColor: getBorderColor(),
           backgroundColor: getBackgroundColor() as string,
@@ -262,7 +249,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
-    gap: Spacing.s,
+    gap: FluentSpacing.s,
   },
   buttonText: {
     textAlign: "center",

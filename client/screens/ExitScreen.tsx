@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 
 type ExitScreenProps = {
   onCancel: () => void;
@@ -59,7 +59,7 @@ export default function ExitScreen({ onCancel, onConfirm }: ExitScreenProps) {
         ]}
       >
         <View style={[styles.iconContainer, { backgroundColor: theme.error + "15" }]}>
-          <MaterialCommunityIcons name="power" size={32} color={theme.error} />
+          <MaterialCommunityIcons name="power" size={FluentIconSize.xlarge} color={theme.error} />
         </View>
         <ThemedText type="h4" style={styles.title}>
           Close New Audio 360?
@@ -101,29 +101,29 @@ const styles = StyleSheet.create({
   dialog: {
     width: "85%",
     maxWidth: 340,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.size6,
+    borderRadius: FluentControlRadius.dialog,
+    padding: FluentSpacing.xl,
     alignItems: "center",
   },
   iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: FluentSpacing.xxxxxxl,
+    height: FluentSpacing.xxxxxxl,
+    borderRadius: FluentSpacing.xxxl,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: Spacing.size4,
+    marginBottom: FluentSpacing.m,
   },
   title: {
-    marginBottom: Spacing.size2,
+    marginBottom: FluentSpacing.xs,
     textAlign: "center",
   },
   message: {
     textAlign: "center",
-    marginBottom: Spacing.size5,
+    marginBottom: FluentSpacing.l,
   },
   buttonContainer: {
     flexDirection: "row",
-    gap: Spacing.size3,
+    gap: FluentSpacing.s,
     width: "100%",
   },
   button: {

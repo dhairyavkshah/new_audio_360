@@ -1,14 +1,25 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Image, Platform } from "react-native";
+import { View, StyleSheet, Pressable, Image, Platform, Text } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import { Spacing, BorderRadius, Layout, M3Shape, M3Elevation } from "@/constants/theme";
+import { Layout } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentIconSize,
+  FluentTypography,
+  FluentControlRadius,
+  FluentDuration,
+  FluentLightColors,
+  FluentDarkColors,
+  getShadowStyle,
+} from "@/constants/fluent2";
 
 interface MiniPlayerProps {
   bottomOffset?: number;
@@ -20,6 +31,8 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
   const { icons } = useSkin();
   const { playTapSound } = useUiSound();
   const { currentSong, isPlaying, togglePlayPause, progress } = usePlayerContext();
+  const insets = useSafeAreaInsets();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 
   if (!currentSong) {
     return null;
@@ -30,7 +43,6 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // Navigate through root stack -> tab -> stack screen
     navigation.navigate("Main", {
       screen: "ListenTab",
       params: {
@@ -49,15 +61,17 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
     togglePlayPause();
   };
 
+  const containerBottom = bottomOffset + FluentSpacing.s + (insets.bottom > 0 ? 0 : FluentSpacing.s);
+
   return (
-    <View style={[styles.container, { bottom: bottomOffset + Spacing.s }]}>
+    <View style={[styles.container, { bottom: containerBottom }, getShadowStyle('shadow8', isDark)]}>
       <View style={styles.progressTrack}>
         <View 
           style={[
             styles.progressFill, 
             { 
               width: `${(progress || 0) * 100}%`,
-              backgroundColor: theme.primary,
+              backgroundColor: fluentColors.colorBrandForeground1,
             }
           ]} 
         />
@@ -82,24 +96,24 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
         <Pressable style={styles.content} onPress={handlePress}>
           <Image source={{ uri: currentSong.artwork }} style={styles.artwork} />
           <View style={styles.info}>
-            <ThemedText type="labelMedium" numberOfLines={1}>
+            <Text style={[FluentTypography.body1Strong, { color: fluentColors.colorNeutralForeground1 }]} numberOfLines={1}>
               {currentSong.title}
-            </ThemedText>
-            <ThemedText type="caption" style={{ color: theme.textSecondary }} numberOfLines={1}>
+            </Text>
+            <Text style={[FluentTypography.caption1, { color: fluentColors.colorNeutralForeground3 }]} numberOfLines={1}>
               {currentSong.artist}
-            </ThemedText>
+            </Text>
           </View>
           <Pressable
             onPress={handlePlayPause}
-            style={[styles.playButton, { backgroundColor: theme.primary }]}
+            style={[styles.playButton, { backgroundColor: fluentColors.colorBrandBackground }]}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityRole="button"
             accessibilityLabel={isPlaying ? "Pause" : "Play"}
           >
             <MaterialCommunityIcons 
               name={(isPlaying ? icons.pause : icons.play) as keyof typeof MaterialCommunityIcons.glyphMap} 
-              size={20} 
-              color="#FFFFFF" 
+              size={FluentIconSize.medium} 
+              color={fluentColors.colorNeutralForegroundOnBrand} 
             />
           </Pressable>
         </Pressable>
@@ -108,27 +122,15 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
   );
 }
 
+const MINI_PLAYER_HEIGHT = 64;
+
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    left: Layout.horizontalPadding,
-    right: Layout.horizontalPadding,
-    borderRadius: BorderRadius.miniPlayer,
+    left: FluentSpacing.l,
+    right: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
     overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 8,
-      },
-      default: {
-        boxShadow: "0 8px 16px rgba(0, 0, 0, 0.14)",
-      },
-    }),
   },
   progressTrack: {
     position: "absolute",
@@ -143,30 +145,30 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   background: {
-    borderRadius: BorderRadius.miniPlayer,
+    borderRadius: FluentControlRadius.card,
     overflow: "hidden",
   },
   content: {
     flexDirection: "row",
     alignItems: "center",
-    height: Layout.miniPlayerHeight,
-    paddingVertical: Spacing.m,
-    paddingHorizontal: Spacing.l,
+    height: MINI_PLAYER_HEIGHT,
+    paddingVertical: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.l,
   },
   artwork: {
     width: 48,
     height: 48,
-    borderRadius: BorderRadius.medium,
+    borderRadius: FluentControlRadius.button,
   },
   info: {
     flex: 1,
-    marginLeft: Spacing.miniPlayerArtworkGap,
-    gap: Spacing.titleToSubtitle,
+    marginLeft: FluentSpacing.m,
+    gap: FluentSpacing.xxs,
   },
   playButton: {
-    width: Layout.touchTargetMin,
-    height: Layout.touchTargetMin,
-    borderRadius: Layout.touchTargetMin / 2,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
   },

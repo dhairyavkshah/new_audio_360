@@ -9,7 +9,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useUiSound } from '@/contexts/UiSoundContext';
 import { useMediaLibraryContext } from '@/contexts/MediaLibraryContext';
-import { Spacing, BorderRadius, Typography } from '@/constants/theme';
+import { FluentSpacing, FluentControlRadius } from '@/constants/fluent2';
 
 interface PermissionOnboardingScreenProps {
   onComplete: () => void;
@@ -101,7 +101,7 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
   );
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing.xl }]}>
+    <ThemedView style={[styles.container, { paddingTop: insets.top + FluentSpacing.xl, paddingBottom: insets.bottom + FluentSpacing.xl }]}>
       <View style={styles.header}>
         <View style={[styles.iconContainer, { backgroundColor: theme.primary + '15' }]}>
           <MaterialCommunityIcons name="music-box-multiple" size={64} color={theme.primary} />
@@ -189,11 +189,11 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: FluentSpacing.xl,
   },
   header: {
     alignItems: 'center',
-    marginBottom: Spacing['3xl'],
+    marginBottom: FluentSpacing.xxxl,
   },
   iconContainer: {
     width: 120,
@@ -201,11 +201,11 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   title: {
     textAlign: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: FluentSpacing.m,
   },
   subtitle: {
     textAlign: 'center',
@@ -213,14 +213,14 @@ const styles = StyleSheet.create({
   },
   permissionsList: {
     flex: 1,
-    gap: Spacing.md,
+    gap: FluentSpacing.m,
   },
   permissionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.md,
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.dialog,
+    gap: FluentSpacing.m,
   },
   permissionIcon: {
     width: 52,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   },
   permissionContent: {
     flex: 1,
-    gap: Spacing.xs,
+    gap: FluentSpacing.xs,
   },
   permissionTitle: {
     fontWeight: '600',
@@ -241,17 +241,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footer: {
-    gap: Spacing.md,
+    gap: FluentSpacing.m,
     alignItems: 'center',
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.sm,
+    gap: FluentSpacing.s,
     height: 52,
     width: '100%',
-    borderRadius: BorderRadius.lg,
+    borderRadius: FluentControlRadius.dialog,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -265,15 +265,15 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: BorderRadius.lg,
+    borderRadius: FluentControlRadius.dialog,
     borderWidth: 1,
   },
   deniedText: {
     textAlign: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: FluentSpacing.s,
   },
   privacyNote: {
     textAlign: 'center',
-    marginTop: Spacing.md,
+    marginTop: FluentSpacing.m,
   },
 });

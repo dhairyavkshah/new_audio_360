@@ -1,10 +1,10 @@
 import React, { ReactNode } from "react";
-import { View, StyleSheet, ViewStyle, Platform } from "react-native";
+import { View, StyleSheet, ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { ThemedView } from "@/components/ThemedView";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import { Layout, Spacing } from "@/constants/theme";
+import { FluentSpacing } from "@/constants/fluent2";
 
 interface ScreenLayoutProps {
   children: ReactNode;
@@ -15,6 +15,8 @@ interface ScreenLayoutProps {
   contentStyle?: ViewStyle;
   mode?: "listen" | "create";
 }
+
+const HEADER_FALLBACK_HEIGHT = 56;
 
 export function ScreenLayout({
   children,
@@ -31,15 +33,18 @@ export function ScreenLayout({
   try {
     headerHeight = useHeaderHeight();
   } catch {
-    headerHeight = hasHeader ? Layout.topBarHeight + insets.top : insets.top;
+    headerHeight = hasHeader ? HEADER_FALLBACK_HEIGHT + insets.top : 0;
   }
   
   const tabBarHeight = useSafeTabBarHeight();
 
-  const topPadding = hasHeader ? headerHeight + Spacing.l : insets.top + Layout.safeAreaPadding;
-  const bottomPadding = hasBottomControls
-    ? tabBarHeight + Spacing.xxl
-    : tabBarHeight + Spacing.l;
+  const topPadding = hasHeader 
+    ? headerHeight + FluentSpacing.l 
+    : insets.top + FluentSpacing.l;
+    
+  const bottomPadding = hasTabBar
+    ? (hasBottomControls ? tabBarHeight + FluentSpacing.xxl : tabBarHeight + FluentSpacing.l)
+    : (hasBottomControls ? insets.bottom + FluentSpacing.xxl : insets.bottom + FluentSpacing.l);
 
   return (
     <ThemedView style={[styles.container, style]}>
@@ -49,7 +54,7 @@ export function ScreenLayout({
           {
             paddingTop: topPadding,
             paddingBottom: bottomPadding,
-            paddingHorizontal: Layout.horizontalPadding,
+            paddingHorizontal: FluentSpacing.l,
           },
           contentStyle,
         ]}
@@ -81,6 +86,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: {
-    marginBottom: Layout.sectionGap,
+    marginBottom: FluentSpacing.xxl,
   },
 });

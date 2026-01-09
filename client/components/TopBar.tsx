@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, StyleSheet, Pressable, Platform } from "react-native";
+import { View, StyleSheet, Pressable, Platform, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -12,7 +12,18 @@ import Animated, {
 } from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Layout, Spacing, BorderRadius, M3Motion, M3Shape, M3Elevation } from "@/constants/theme";
+import { Layout } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentIconSize,
+  FluentTypography,
+  FluentControlRadius,
+  FluentDuration,
+  FluentEasingValues,
+  FluentLightColors,
+  FluentDarkColors,
+  getShadowStyle,
+} from "@/constants/fluent2";
 
 interface TopBarProps {
   title: string;
@@ -55,18 +66,9 @@ export function TopBar({
     });
   };
 
-  const shadowStyle = !transparent ? Platform.select({
-    ios: {
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 4,
-    },
-    android: {
-      elevation: M3Elevation.level2.elevation,
-    },
-    default: {},
-  }) : {};
+  const { isDark } = useThemeContext();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const shadowStyle = !transparent ? getShadowStyle('shadow4', isDark) : {};
 
   return (
     <View
@@ -74,8 +76,8 @@ export function TopBar({
         styles.container,
         {
           paddingTop: insets.top,
-          backgroundColor: transparent ? "transparent" : theme.surfaceContainer,
-          borderBottomColor: transparent ? "transparent" : theme.outlineVariant,
+          backgroundColor: transparent ? "transparent" : fluentColors.colorNeutralBackground1,
+          borderBottomColor: transparent ? "transparent" : fluentColors.colorNeutralStroke2,
         },
         shadowStyle,
       ]}
@@ -88,6 +90,7 @@ export function TopBar({
               onPress={handleBack}
               label="Go back"
               theme={theme}
+              isDark={isDark}
             />
           ) : null}
           {showHome && !shouldShowBack ? (
@@ -96,14 +99,22 @@ export function TopBar({
               onPress={handleHome}
               label="Go to home"
               theme={theme}
+              isDark={isDark}
             />
           ) : null}
-          <ThemedText 
-            type="titleLarge" 
-            style={[styles.title, { marginLeft: shouldShowBack || showHome ? 0 : Spacing.s }]}
+          <Text 
+            style={[
+              styles.title, 
+              FluentTypography.title3,
+              { 
+                color: fluentColors.colorNeutralForeground1,
+                marginLeft: shouldShowBack || showHome ? 0 : FluentSpacing.s,
+              }
+            ]}
+            numberOfLines={1}
           >
             {title}
-          </ThemedText>
+          </Text>
         </View>
         {actions ? <View style={styles.actions}>{actions}</View> : null}
       </View>
@@ -115,13 +126,16 @@ function IconButton({
   icon, 
   onPress, 
   label, 
-  theme 
+  theme,
+  isDark,
 }: { 
   icon: keyof typeof MaterialCommunityIcons.glyphMap; 
   onPress: () => void; 
   label: string;
   theme: any;
+  isDark: boolean;
 }) {
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   const scale = useSharedValue(1);
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
@@ -134,16 +148,16 @@ function IconButton({
   const handlePressIn = () => {
     setIsPressed(true);
     scale.value = withTiming(0.95, { 
-      duration: M3Motion.durationShort3,
-      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+      duration: FluentDuration.fast,
+      easing: Easing.bezier(FluentEasingValues.easeMax.x1, FluentEasingValues.easeMax.y1, FluentEasingValues.easeMax.x2, FluentEasingValues.easeMax.y2),
     });
   };
 
   const handlePressOut = () => {
     setIsPressed(false);
     scale.value = withTiming(1, { 
-      duration: M3Motion.durationShort4,
-      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+      duration: FluentDuration.normal,
+      easing: Easing.bezier(FluentEasingValues.easeMax.x1, FluentEasingValues.easeMax.y1, FluentEasingValues.easeMax.x2, FluentEasingValues.easeMax.y2),
     });
   };
 
@@ -156,19 +170,19 @@ function IconButton({
   };
 
   const getBackgroundColor = () => {
-    if (isPressed) return theme.surfaceContainerHighest;
-    if (hoverActive) return theme.surfaceContainerHigh;
-    return theme.surfaceContainer;
+    if (isPressed) return fluentColors.colorNeutralBackground1Pressed;
+    if (hoverActive) return fluentColors.colorNeutralBackground1Hover;
+    return fluentColors.colorNeutralBackground1;
   };
 
   const focusStyle = isFocused ? Platform.select({
     web: {
-      outline: `2px solid ${theme.primary}`,
+      outline: `2px solid ${fluentColors.colorBrandForeground1}`,
       outlineOffset: 2,
     },
     default: {
       borderWidth: 2,
-      borderColor: theme.primary,
+      borderColor: fluentColors.colorBrandForeground1,
     },
   }) : {};
 
@@ -193,8 +207,8 @@ function IconButton({
     >
       <MaterialCommunityIcons
         name={icon}
-        size={24}
-        color={theme.onSurface}
+        size={FluentIconSize.medium}
+        color={fluentColors.colorNeutralForeground1}
       />
     </AnimatedPressable>
   );
@@ -211,7 +225,8 @@ export function TopBarAction({
   badge?: number;
   label: string;
 }) {
-  const { theme } = useThemeContext();
+  const { theme, isDark } = useThemeContext();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   const scale = useSharedValue(1);
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
@@ -231,16 +246,16 @@ export function TopBarAction({
   const handlePressIn = () => {
     setIsPressed(true);
     scale.value = withTiming(0.95, { 
-      duration: M3Motion.durationShort3,
-      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+      duration: FluentDuration.fast,
+      easing: Easing.bezier(FluentEasingValues.easeMax.x1, FluentEasingValues.easeMax.y1, FluentEasingValues.easeMax.x2, FluentEasingValues.easeMax.y2),
     });
   };
 
   const handlePressOut = () => {
     setIsPressed(false);
     scale.value = withTiming(1, { 
-      duration: M3Motion.durationShort4,
-      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+      duration: FluentDuration.normal,
+      easing: Easing.bezier(FluentEasingValues.easeMax.x1, FluentEasingValues.easeMax.y1, FluentEasingValues.easeMax.x2, FluentEasingValues.easeMax.y2),
     });
   };
 
@@ -253,19 +268,19 @@ export function TopBarAction({
   };
 
   const getBackgroundColor = () => {
-    if (isPressed) return theme.surfaceContainerHighest;
-    if (hoverActive) return theme.surfaceContainerHigh;
-    return theme.surfaceContainer;
+    if (isPressed) return fluentColors.colorNeutralBackground1Pressed;
+    if (hoverActive) return fluentColors.colorNeutralBackground1Hover;
+    return fluentColors.colorNeutralBackground1;
   };
 
   const focusStyle = isFocused ? Platform.select({
     web: {
-      outline: `2px solid ${theme.primary}`,
+      outline: `2px solid ${fluentColors.colorBrandForeground1}`,
       outlineOffset: 2,
     },
     default: {
       borderWidth: 2,
-      borderColor: theme.primary,
+      borderColor: fluentColors.colorBrandForeground1,
     },
   }) : {};
 
@@ -288,10 +303,10 @@ export function TopBarAction({
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <MaterialCommunityIcons name={icon} size={24} color={theme.onSurface} />
+      <MaterialCommunityIcons name={icon} size={FluentIconSize.medium} color={fluentColors.colorNeutralForeground1} />
       {badge && badge > 0 ? (
-        <View style={[styles.badge, { backgroundColor: theme.error }]}>
-          <ThemedText style={styles.badgeText}>{badge > 99 ? "99+" : badge}</ThemedText>
+        <View style={[styles.badge, { backgroundColor: fluentColors.colorPaletteRedForeground2 }]}>
+          <Text style={styles.badgeText}>{badge > 99 ? "99+" : badge}</Text>
         </View>
       ) : null}
     </AnimatedPressable>
@@ -307,13 +322,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Layout.horizontalPaddingMin,
+    paddingHorizontal: FluentSpacing.l,
   },
   leftSection: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-    gap: Spacing.iconGap,
+    gap: FluentSpacing.s,
   },
   title: {
     flex: 1,
@@ -321,7 +336,7 @@ const styles = StyleSheet.create({
   iconButton: {
     width: Layout.touchTargetMin,
     height: Layout.touchTargetMin,
-    borderRadius: BorderRadius.button,
+    borderRadius: FluentControlRadius.button,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -329,7 +344,7 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.iconGap,
+    gap: FluentSpacing.s,
   },
   badge: {
     position: "absolute",
@@ -340,11 +355,11 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing.xs,
+    paddingHorizontal: FluentSpacing.xs,
   },
   badgeText: {
     color: "#FFFFFF",
-    fontSize: 10,
+    fontSize: FluentTypography.caption2.fontSize,
     fontWeight: "600",
   },
 });

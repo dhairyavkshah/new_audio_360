@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { View, StyleSheet, FlatList, Pressable, Image, Platform, TextInput, ActivityIndicator, LayoutChangeEvent } from "react-native";
+import { View, StyleSheet, FlatList, Pressable, Image, Platform, TextInput, ActivityIndicator, LayoutChangeEvent, KeyboardAvoidingView } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
@@ -257,25 +257,32 @@ export default function ListenScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      {renderStickyHeader()}
-      <FlatList
-        data={filteredAndSortedSongs}
-        renderItem={renderSong}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingTop: headerHeight + stickyHeaderHeight + Spacing.m, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
-        ]}
-        ListEmptyComponent={renderEmptyList}
-        showsVerticalScrollIndicator={false}
-        initialNumToRender={15}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        removeClippedSubviews={Platform.OS === 'android'}
-        updateCellsBatchingPeriod={50}
-        getItemLayout={getItemLayout}
-      />
-      {renderSortOverlay()}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={headerHeight}
+      >
+        {renderStickyHeader()}
+        <FlatList
+          data={filteredAndSortedSongs}
+          renderItem={renderSong}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingTop: headerHeight + stickyHeaderHeight + Spacing.m, paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + Spacing.xl },
+          ]}
+          ListEmptyComponent={renderEmptyList}
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={15}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          removeClippedSubviews={Platform.OS === 'android'}
+          updateCellsBatchingPeriod={50}
+          getItemLayout={getItemLayout}
+          keyboardShouldPersistTaps="handled"
+        />
+        {renderSortOverlay()}
+      </KeyboardAvoidingView>
 
       <SongContextMenu
         visible={showContextMenu}

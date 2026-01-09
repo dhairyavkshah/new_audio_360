@@ -1,18 +1,27 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef } from "react";
 import { View, StyleSheet, Pressable, Image, Platform, GestureResponderEvent, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  Easing,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
-import { Spacing, BorderRadius, M3Motion, Layout } from "@/constants/theme";
+import { Layout } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentControlRadius,
+  FluentTypography,
+  FluentIconSize,
+  FluentDuration,
+  FluentCurve,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 const ActionButton = ({ onPress, accessibilityLabel, children }: { 
   onPress: (e: any) => void; 
@@ -70,13 +79,14 @@ export function SongCard({
   showFavoriteButton = true, 
   showAddToPlaylist = false 
 }: SongCardProps) {
-  const { theme } = useThemeContext();
+  const { theme, isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
   const { isFavorite, toggleFavorite } = usePlayerContext();
   const scale = useSharedValue(1);
   const bgOpacity = useSharedValue(0);
   const longPressTriggered = useRef(false);
   const favorite = isFavorite(song.id);
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 
   const handleFavoritePress = useCallback((e: any) => {
     e.stopPropagation?.();
@@ -107,18 +117,18 @@ export function SongCard({
   const handlePressIn = () => {
     longPressTriggered.current = false;
     scale.value = withTiming(0.98, { 
-      duration: M3Motion.durationShort3,
-      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+      duration: FluentDuration.fast,
+      easing: FluentCurve.decelerateMid,
     });
-    bgOpacity.value = withTiming(1, { duration: M3Motion.durationShort3 });
+    bgOpacity.value = withTiming(1, { duration: FluentDuration.fast });
   };
 
   const handlePressOut = () => {
     scale.value = withTiming(1, { 
-      duration: M3Motion.durationShort4,
-      easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+      duration: FluentDuration.normal,
+      easing: FluentCurve.decelerateMid,
     });
-    bgOpacity.value = withTiming(0, { duration: M3Motion.durationShort4 });
+    bgOpacity.value = withTiming(0, { duration: FluentDuration.normal });
   };
 
   const handlePress = () => {
@@ -173,8 +183,8 @@ export function SongCard({
       style={[
         styles.container,
         {
-          backgroundColor: theme.surfaceContainerLow,
-          borderColor: isPlaying ? theme.primary : theme.outlineVariant,
+          backgroundColor: fluentColors.colorNeutralBackground2,
+          borderColor: isPlaying ? fluentColors.colorBrandStroke1 : fluentColors.colorNeutralStroke2,
           borderWidth: 1,
           ...(Platform.OS === "web" ? {
             boxShadow: "0 1px 2px rgba(0, 0, 0, 0.14)",
@@ -195,32 +205,55 @@ export function SongCard({
       <Animated.View 
         style={[
           StyleSheet.absoluteFill, 
-          { backgroundColor: theme.surfaceContainerHigh, borderRadius: BorderRadius.large - 1 },
+          { 
+            backgroundColor: fluentColors.colorNeutralBackground1Pressed, 
+            borderRadius: FluentControlRadius.card - 1 
+          },
           bgAnimatedStyle,
         ]} 
       />
       <View style={styles.artworkContainer}>
         <Image source={{ uri: song.artwork }} style={styles.artwork} />
         {isPlaying ? (
-          <View style={[styles.playingIndicator, { backgroundColor: theme.primary }]}>
+          <View style={[styles.playingIndicator, { backgroundColor: fluentColors.colorBrandBackground }]}>
             <MaterialCommunityIcons name="volume-high" size={10} color="#FFFFFF" />
           </View>
         ) : null}
       </View>
       <View style={styles.info}>
-        <ThemedText type="labelMedium" numberOfLines={1}>
+        <ThemedText 
+          style={{ 
+            color: fluentColors.colorNeutralForeground1,
+            fontSize: FluentTypography.body1Strong.fontSize,
+            fontWeight: FluentTypography.body1Strong.fontWeight,
+            lineHeight: FluentTypography.body1Strong.lineHeight,
+          }} 
+          numberOfLines={1}
+        >
           {song.title}
         </ThemedText>
         <ThemedText
-          type="caption"
-          style={{ color: theme.textSecondary }}
+          style={{ 
+            color: fluentColors.colorNeutralForeground2,
+            fontSize: FluentTypography.caption1.fontSize,
+            fontWeight: FluentTypography.caption1.fontWeight,
+            lineHeight: FluentTypography.caption1.lineHeight,
+          }}
           numberOfLines={1}
         >
           {song.artist}
         </ThemedText>
       </View>
       {showDuration ? (
-        <ThemedText type="caption" style={[styles.duration, { color: theme.textSecondary }]}>
+        <ThemedText 
+          style={[
+            styles.duration, 
+            { 
+              color: fluentColors.colorNeutralForeground3,
+              fontSize: FluentTypography.caption1.fontSize,
+            }
+          ]}
+        >
           {formatDuration(song.duration)}
         </ThemedText>
       ) : null}
@@ -228,8 +261,8 @@ export function SongCard({
         <ActionButton onPress={handleAddToPlaylistPress} accessibilityLabel="Add to playlist">
           <MaterialCommunityIcons 
             name="playlist-plus" 
-            size={20} 
-            color={theme.primary} 
+            size={FluentIconSize.regular} 
+            color={fluentColors.colorBrandForeground1} 
           />
         </ActionButton>
       ) : null}
@@ -237,12 +270,16 @@ export function SongCard({
         <ActionButton onPress={handleFavoritePress} accessibilityLabel={favorite ? "Remove from favorites" : "Add to favorites"}>
           <MaterialCommunityIcons 
             name={favorite ? "heart" : "heart-outline"} 
-            size={20} 
-            color={favorite ? "#FF4D67" : theme.textSecondary} 
+            size={FluentIconSize.regular} 
+            color={favorite ? "#FF4D67" : fluentColors.colorNeutralForeground3} 
           />
         </ActionButton>
       ) : null}
-      <MaterialCommunityIcons name="chevron-right" size={18} color={theme.textSecondary} />
+      <MaterialCommunityIcons 
+        name="chevron-right" 
+        size={FluentIconSize.small} 
+        color={fluentColors.colorNeutralForeground3} 
+      />
     </AnimatedPressable>
   );
 }
@@ -251,10 +288,10 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.m,
-    paddingHorizontal: Layout.horizontalPadding,
-    borderRadius: BorderRadius.card,
-    marginBottom: Spacing.s,
+    paddingVertical: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
+    marginBottom: FluentSpacing.s,
     minHeight: Layout.listItemRich,
   },
   artworkContainer: {
@@ -263,7 +300,7 @@ const styles = StyleSheet.create({
   artwork: {
     width: 48,
     height: 48,
-    borderRadius: BorderRadius.medium,
+    borderRadius: FluentControlRadius.card,
   },
   playingIndicator: {
     position: "absolute",
@@ -279,10 +316,10 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
-    marginLeft: Spacing.miniPlayerArtworkGap,
-    gap: Spacing.titleToSubtitle,
+    marginLeft: FluentSpacing.m,
+    gap: FluentSpacing.xxs,
   },
   duration: {
-    marginRight: Spacing.iconGap,
+    marginRight: FluentSpacing.s,
   },
 });

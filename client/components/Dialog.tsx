@@ -6,6 +6,7 @@ import {
   Dimensions,
   Platform,
   Modal,
+  Text,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import Animated, {
@@ -13,12 +14,19 @@ import Animated, {
   useSharedValue,
   withTiming,
   runOnJS,
-  Easing,
 } from "react-native-reanimated";
-import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, M3Motion, M3Shape } from "@/constants/theme";
+import {
+  FluentControlRadius,
+  FluentSpacing,
+  FluentTypography,
+  FluentDuration,
+  FluentCurve,
+  getShadowStyle,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface DialogAction {
   label: string;
@@ -46,11 +54,13 @@ export function Dialog({
   actions = [],
   children,
 }: DialogProps) {
-  const { theme } = useThemeContext();
+  const { theme, isDark } = useThemeContext();
   const [isRendered, setIsRendered] = useState(visible);
   const scale = useSharedValue(0.9);
   const opacity = useSharedValue(0);
   const scrimOpacity = useSharedValue(0);
+
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 
   const handleAnimationComplete = useCallback((toVisible: boolean) => {
     if (!toVisible) {
@@ -62,31 +72,27 @@ export function Dialog({
     if (visible) {
       setIsRendered(true);
       scale.value = withTiming(1, {
-        duration: M3Motion.durationShort4,
-        easing: Easing.bezier(
-          M3Motion.easingEmphasized.x1,
-          M3Motion.easingEmphasized.y1,
-          M3Motion.easingEmphasized.x2,
-          M3Motion.easingEmphasized.y2
-        ),
+        duration: FluentDuration.normal,
+        easing: FluentCurve.decelerateMid,
       });
       opacity.value = withTiming(1, {
-        duration: M3Motion.durationShort4,
+        duration: FluentDuration.normal,
       });
       scrimOpacity.value = withTiming(0.5, {
-        duration: M3Motion.durationMedium2,
+        duration: FluentDuration.normal,
       });
     } else if (isRendered) {
       scale.value = withTiming(0.9, {
-        duration: M3Motion.durationShort3,
+        duration: FluentDuration.fast,
+        easing: FluentCurve.accelerateMid,
       });
       opacity.value = withTiming(0, {
-        duration: M3Motion.durationShort3,
+        duration: FluentDuration.fast,
       }, () => {
         runOnJS(handleAnimationComplete)(false);
       });
       scrimOpacity.value = withTiming(0, {
-        duration: M3Motion.durationShort3,
+        duration: FluentDuration.fast,
       });
     }
   }, [visible]);
@@ -128,25 +134,35 @@ export function Dialog({
           style={[
             styles.dialog,
             {
-              backgroundColor: theme.surfaceContainerHigh,
+              backgroundColor: fluentColors.colorNeutralBackground1,
               width: DIALOG_WIDTH,
             },
+            getShadowStyle('shadow64', isDark),
             dialogStyle,
           ]}
           accessibilityRole="alert"
           accessibilityLiveRegion="polite"
         >
-          <ThemedText type="titleMedium" style={styles.title}>
+          <Text
+            style={[
+              styles.title,
+              FluentTypography.subtitle1,
+              { color: fluentColors.colorNeutralForeground1 },
+            ]}
+          >
             {title}
-          </ThemedText>
+          </Text>
 
           {message ? (
-            <ThemedText
-              type="bodyMedium"
-              style={[styles.message, { color: theme.onSurfaceVariant }]}
+            <Text
+              style={[
+                styles.message,
+                FluentTypography.body1,
+                { color: fluentColors.colorNeutralForeground2 },
+              ]}
             >
               {message}
-            </ThemedText>
+            </Text>
           ) : null}
 
           {children ? <View style={styles.content}>{children}</View> : null}
@@ -185,35 +201,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dialog: {
-    borderRadius: M3Shape.cornerExtraLarge,
-    padding: Spacing.xxl,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 24,
-      },
-      default: {},
-    }),
+    borderRadius: FluentControlRadius.dialog,
+    padding: FluentSpacing.xxl,
   },
   title: {
-    marginBottom: Spacing.contentBlock,
+    marginBottom: FluentSpacing.m,
   },
   message: {
-    marginBottom: Spacing.contentBlock,
+    marginBottom: FluentSpacing.m,
   },
   content: {
-    marginBottom: Spacing.xxl,
+    marginBottom: FluentSpacing.xxl,
   },
   actions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: Spacing.m,
-    marginTop: Spacing.l,
+    gap: FluentSpacing.m,
+    marginTop: FluentSpacing.l,
   },
   actionButton: {
     minWidth: 64,

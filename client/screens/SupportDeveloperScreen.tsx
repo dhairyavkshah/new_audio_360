@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   Pressable,
   TextInput,
   Alert,
   Modal,
   AppState,
   AppStateStatus,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -28,7 +29,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius, Layout } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import {
   PaymentHandler,
   Currency,
@@ -252,7 +254,7 @@ export default function SupportDeveloperScreen() {
         >
           <MaterialCommunityIcons
             name={tier.icon as keyof typeof MaterialCommunityIcons.glyphMap}
-            size={24}
+            size={FluentIconSize.medium}
             color={isSelected ? "#FFFFFF" : theme.primary}
           />
         </View>
@@ -279,17 +281,22 @@ export default function SupportDeveloperScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: Spacing.sm, paddingBottom: tabBarHeight + Spacing.lg },
-        ]}
-        showsVerticalScrollIndicator={false}
-        scrollIndicatorInsets={{ bottom: tabBarHeight }}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={insets.top}
       >
+        <KeyboardAwareScrollViewCompat
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: FluentSpacing.s, paddingBottom: tabBarHeight + FluentSpacing.l },
+          ]}
+          showsVerticalScrollIndicator={false}
+          scrollIndicatorInsets={{ bottom: tabBarHeight }}
+        >
         <GlassCard style={styles.developerCard}>
           <View style={[styles.avatar, { backgroundColor: theme.primary + "20" }]}>
-            <MaterialCommunityIcons name="account" size={40} color={theme.primary} />
+            <MaterialCommunityIcons name="account" size={FluentIconSize.xxlarge} color={theme.primary} />
           </View>
           <ThemedText type="h4" style={styles.developerName}>
             Dhairya Shah (The Team 360)
@@ -300,7 +307,7 @@ export default function SupportDeveloperScreen() {
           </ThemedText>
           {isDonor ? (
             <View style={[styles.donorBadge, { backgroundColor: theme.success + "20" }]}>
-              <MaterialCommunityIcons name="heart" size={14} color={theme.success} />
+              <MaterialCommunityIcons name="heart" size={FluentIconSize.tiny} color={theme.success} />
               <ThemedText type="caption" style={{ color: theme.success, marginLeft: 4 }}>
                 Supporter
               </ThemedText>
@@ -310,7 +317,7 @@ export default function SupportDeveloperScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="currency-usd" size={18} color={theme.primary} />
+            <MaterialCommunityIcons name="currency-usd" size={FluentIconSize.regular} color={theme.primary} />
             <ThemedText type="body" style={styles.sectionTitle}>
               Select Currency
             </ThemedText>
@@ -330,7 +337,7 @@ export default function SupportDeveloperScreen() {
             </ThemedText>
             <MaterialCommunityIcons
               name={showCurrencyPicker ? "chevron-up" : "chevron-down"}
-              size={20}
+              size={FluentIconSize.regular}
               color={theme.textSecondary}
             />
           </Pressable>
@@ -372,7 +379,7 @@ export default function SupportDeveloperScreen() {
           <>
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons name="heart" size={18} color={theme.primary} />
+                <MaterialCommunityIcons name="heart" size={FluentIconSize.regular} color={theme.primary} />
                 <ThemedText type="body" style={styles.sectionTitle}>
                   Choose an Amount
                 </ThemedText>
@@ -388,7 +395,7 @@ export default function SupportDeveloperScreen() {
 
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons name="pencil" size={18} color={theme.primary} />
+                <MaterialCommunityIcons name="pencil" size={FluentIconSize.regular} color={theme.primary} />
                 <ThemedText type="body" style={styles.sectionTitle}>
                   Custom Amount
                 </ThemedText>
@@ -424,7 +431,7 @@ export default function SupportDeveloperScreen() {
                 >
                   <MaterialCommunityIcons
                     name="bank"
-                    size={22}
+                    size={FluentIconSize.medium}
                     color={finalAmount > 0 ? "#FFFFFF" : theme.textSecondary}
                   />
                   <ThemedText
@@ -456,7 +463,7 @@ export default function SupportDeveloperScreen() {
                 >
                   <MaterialCommunityIcons
                     name="credit-card-outline"
-                    size={22}
+                    size={FluentIconSize.medium}
                     color={finalAmount > 0 ? "#FFFFFF" : theme.textSecondary}
                   />
                   <ThemedText
@@ -478,25 +485,26 @@ export default function SupportDeveloperScreen() {
 
         <GlassCard style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="shield-check" size={18} color={theme.success} />
+            <MaterialCommunityIcons name="shield-check" size={FluentIconSize.regular} color={theme.success} />
             <ThemedText type="small" style={[styles.infoText, { color: theme.textSecondary }]}>
               Secure payment processing
             </ThemedText>
           </View>
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="gift" size={18} color={theme.primary} />
+            <MaterialCommunityIcons name="gift" size={FluentIconSize.regular} color={theme.primary} />
             <ThemedText type="small" style={[styles.infoText, { color: theme.textSecondary }]}>
               All donations unlock premium features as a thank you
             </ThemedText>
           </View>
           <View style={[styles.infoRow, { marginBottom: 0 }]}>
-            <MaterialCommunityIcons name="heart-outline" size={18} color={theme.error} />
+            <MaterialCommunityIcons name="heart-outline" size={FluentIconSize.regular} color={theme.error} />
             <ThemedText type="small" style={[styles.infoText, { color: theme.textSecondary }]}>
               Your support keeps this app ad-free
             </ThemedText>
           </View>
         </GlassCard>
-      </ScrollView>
+        </KeyboardAwareScrollViewCompat>
+      </KeyboardAvoidingView>
 
       <Modal
         visible={showConfirmationModal}
@@ -522,7 +530,7 @@ export default function SupportDeveloperScreen() {
               onPress={handleConfirmPayment}
               style={[styles.confirmButton, { backgroundColor: theme.success }]}
             >
-              <MaterialCommunityIcons name="check" size={20} color="#FFFFFF" />
+              <MaterialCommunityIcons name="check" size={FluentIconSize.regular} color="#FFFFFF" />
               <ThemedText type="body" style={styles.confirmButtonText}>
                 Yes, I contributed
               </ThemedText>
@@ -552,22 +560,22 @@ export default function SupportDeveloperScreen() {
           >
             <View style={styles.confettiContainer}>
               <Animated.View style={[styles.confettiParticle, confetti1Style]}>
-                <MaterialCommunityIcons name="star" size={20} color="#FFD700" />
+                <MaterialCommunityIcons name="star" size={FluentIconSize.regular} color="#FFD700" />
               </Animated.View>
               <Animated.View style={[styles.confettiParticle, confetti2Style]}>
-                <MaterialCommunityIcons name="heart" size={16} color="#FF6B6B" />
+                <MaterialCommunityIcons name="heart" size={FluentIconSize.small} color="#FF6B6B" />
               </Animated.View>
               <Animated.View style={[styles.confettiParticle, confetti3Style]}>
-                <MaterialCommunityIcons name="star" size={14} color="#4ECDC4" />
+                <MaterialCommunityIcons name="star" size={FluentIconSize.tiny} color="#4ECDC4" />
               </Animated.View>
               <Animated.View style={[styles.confettiParticle, confetti4Style]}>
-                <MaterialCommunityIcons name="circle" size={12} color="#9B59B6" />
+                <MaterialCommunityIcons name="circle" size={FluentIconSize.tiny} color="#9B59B6" />
               </Animated.View>
               <Animated.View style={[styles.confettiParticle, confetti5Style]}>
-                <MaterialCommunityIcons name="star" size={18} color="#3498DB" />
+                <MaterialCommunityIcons name="star" size={FluentIconSize.regular} color="#3498DB" />
               </Animated.View>
               <Animated.View style={[styles.confettiParticle, confetti6Style]}>
-                <MaterialCommunityIcons name="heart" size={14} color="#E74C3C" />
+                <MaterialCommunityIcons name="heart" size={FluentIconSize.tiny} color="#E74C3C" />
               </Animated.View>
             </View>
             <Animated.View style={heartStyle}>
@@ -602,23 +610,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: FluentSpacing.l,
   },
   developerCard: {
     alignItems: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   avatar: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.sm,
+    marginBottom: FluentSpacing.s,
   },
   developerName: {
     fontWeight: "700",
-    marginBottom: Spacing["2xs"],
+    marginBottom: FluentSpacing.xxs,
   },
   developerBio: {
     textAlign: "center",
@@ -627,43 +635,43 @@ const styles = StyleSheet.create({
   donorBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing["2xs"],
-    borderRadius: BorderRadius.full,
-    marginTop: Spacing.sm,
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xxs,
+    borderRadius: FluentControlRadius.avatar,
+    marginTop: FluentSpacing.s,
   },
   section: {
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing["2xs"],
+    marginBottom: FluentSpacing.xxs,
   },
   sectionTitle: {
-    marginLeft: Spacing.xs,
+    marginLeft: FluentSpacing.xs,
     fontWeight: "600",
   },
   sectionDesc: {
-    marginBottom: Spacing.sm,
+    marginBottom: FluentSpacing.s,
   },
   currencySelector: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
   },
   currencyList: {
-    marginTop: Spacing.xs,
-    borderRadius: BorderRadius.md,
+    marginTop: FluentSpacing.xs,
+    borderRadius: FluentControlRadius.card,
     overflow: "hidden",
   },
   currencyOption: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: Spacing.md,
+    padding: FluentSpacing.m,
   },
   currencyInfo: {
     flex: 1,
@@ -671,22 +679,22 @@ const styles = StyleSheet.create({
   tiersGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.sm,
+    gap: FluentSpacing.s,
   },
   tierCard: {
     width: "31%",
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.lg,
+    padding: FluentSpacing.s,
+    borderRadius: FluentControlRadius.dialog,
     alignItems: "center",
     borderWidth: 1,
   },
   tierIconHalo: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
   tierAmount: {
     fontWeight: "600",
@@ -695,12 +703,12 @@ const styles = StyleSheet.create({
   customInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
   },
   customInput: {
     flex: 1,
-    marginLeft: Spacing.xs,
+    marginLeft: FluentSpacing.xs,
     fontSize: 16,
     minHeight: 24,
   },
@@ -708,31 +716,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.full,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.avatar,
     minHeight: 52,
   },
   payButtonText: {
     fontWeight: "700",
-    marginLeft: Spacing.xs,
+    marginLeft: FluentSpacing.xs,
   },
   payHint: {
     textAlign: "center",
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.sm,
+    marginTop: FluentSpacing.s,
+    marginBottom: FluentSpacing.s,
   },
   manualCard: {
-    marginTop: Spacing.md,
+    marginTop: FluentSpacing.m,
   },
   manualTitle: {
     fontWeight: "600",
-    marginBottom: Spacing.sm,
+    marginBottom: FluentSpacing.s,
   },
   manualRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: Spacing.sm,
+    marginBottom: FluentSpacing.s,
   },
   manualInfo: {
     flex: 1,
@@ -740,24 +748,24 @@ const styles = StyleSheet.create({
   copyButton: {
     width: 48,
     height: 48,
-    borderRadius: BorderRadius.medium,
+    borderRadius: FluentControlRadius.button,
     justifyContent: "center",
     alignItems: "center",
   },
   showManualLink: {
-    marginTop: Spacing.sm,
+    marginTop: FluentSpacing.s,
     alignItems: "center",
   },
   infoCard: {
-    marginBottom: Spacing.md,
+    marginBottom: FluentSpacing.m,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
   infoText: {
-    marginLeft: Spacing.sm,
+    marginLeft: FluentSpacing.s,
     flex: 1,
   },
   modalOverlay: {
@@ -766,65 +774,65 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   confirmationSheet: {
-    borderTopLeftRadius: BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-    paddingBottom: Spacing.xl,
+    borderTopLeftRadius: FluentControlRadius.bottomSheet,
+    borderTopRightRadius: FluentControlRadius.bottomSheet,
+    padding: FluentSpacing.l,
+    paddingBottom: FluentSpacing.xxl,
   },
   sheetHandle: {
     width: 40,
     height: 4,
     borderRadius: 2,
     alignSelf: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   confirmationTitle: {
     textAlign: "center",
-    marginBottom: Spacing.sm,
+    marginBottom: FluentSpacing.s,
   },
   confirmationDesc: {
     textAlign: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   confirmButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.full,
-    marginBottom: Spacing.sm,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.avatar,
+    marginBottom: FluentSpacing.s,
   },
   confirmButtonText: {
     color: "#FFFFFF",
     fontWeight: "600",
-    marginLeft: Spacing.xs,
+    marginLeft: FluentSpacing.xs,
   },
   denyButton: {
     alignItems: "center",
     justifyContent: "center",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.full,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.avatar,
   },
   thankYouCard: {
-    margin: Spacing.lg,
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.xl,
+    margin: FluentSpacing.l,
+    padding: FluentSpacing.xxl,
+    borderRadius: FluentControlRadius.bottomSheet,
     alignItems: "center",
     alignSelf: "center",
     maxWidth: 320,
   },
   thankYouTitle: {
-    marginTop: Spacing.md,
-    marginBottom: Spacing.sm,
+    marginTop: FluentSpacing.m,
+    marginBottom: FluentSpacing.s,
   },
   thankYouDesc: {
     textAlign: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   thankYouButton: {
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.full,
+    paddingHorizontal: FluentSpacing.xxl,
+    paddingVertical: FluentSpacing.m,
+    borderRadius: FluentControlRadius.avatar,
   },
   confettiContainer: {
     position: "absolute",

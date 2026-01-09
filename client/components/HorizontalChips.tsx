@@ -5,12 +5,21 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  Easing,
 } from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, M3Motion, M3Shape, Layout, M3Elevation } from "@/constants/theme";
+import { Layout } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentControlRadius,
+  FluentTypography,
+  FluentDuration,
+  FluentCurve,
+  FluentLightColors,
+  FluentDarkColors,
+  getShadowStyle,
+} from "@/constants/fluent2";
 
 interface ChipItem {
   id: string;
@@ -30,12 +39,13 @@ function Chip({
   item,
   isSelected,
   onPress,
+  fluentColors,
 }: {
   item: ChipItem;
   isSelected: boolean;
   onPress: () => void;
+  fluentColors: typeof FluentLightColors;
 }) {
-  const { theme } = useThemeContext();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -44,33 +54,25 @@ function Chip({
 
   const handlePressIn = () => {
     scale.value = withTiming(0.95, {
-      duration: M3Motion.durationShort3,
-      easing: Easing.bezier(
-        M3Motion.easingStandard.x1,
-        M3Motion.easingStandard.y1,
-        M3Motion.easingStandard.x2,
-        M3Motion.easingStandard.y2
-      ),
+      duration: FluentDuration.fast,
+      easing: FluentCurve.decelerateMid,
     });
   };
 
   const handlePressOut = () => {
     scale.value = withTiming(1, {
-      duration: M3Motion.durationShort4,
-      easing: Easing.bezier(
-        M3Motion.easingStandard.x1,
-        M3Motion.easingStandard.y1,
-        M3Motion.easingStandard.x2,
-        M3Motion.easingStandard.y2
-      ),
+      duration: FluentDuration.normal,
+      easing: FluentCurve.decelerateMid,
     });
   };
 
   const backgroundColor = isSelected
-    ? `${theme.primary}26`
-    : theme.surfaceContainerHigh;
-  const textColor = isSelected ? theme.primary : theme.onSurfaceVariant;
-  const borderColor = isSelected ? theme.primary : "transparent";
+    ? fluentColors.colorBrandBackground
+    : fluentColors.colorSubtleBackgroundHover;
+  const textColor = isSelected 
+    ? fluentColors.colorNeutralForegroundOnBrand 
+    : fluentColors.colorNeutralForeground2;
+  const borderColor = isSelected ? fluentColors.colorBrandStroke1 : "transparent";
 
   return (
     <AnimatedPressable
@@ -90,8 +92,15 @@ function Chip({
       ]}
     >
       <ThemedText
-        type="labelMedium"
-        style={[styles.chipText, { color: textColor }]}
+        style={[
+          styles.chipText, 
+          { 
+            color: textColor,
+            fontSize: FluentTypography.caption1Strong.fontSize,
+            fontWeight: FluentTypography.caption1Strong.fontWeight,
+            lineHeight: FluentTypography.caption1Strong.lineHeight,
+          }
+        ]}
       >
         {item.label}
       </ThemedText>
@@ -104,8 +113,9 @@ export function HorizontalChips({
   selectedId,
   onSelect,
 }: HorizontalChipsProps) {
-  const { theme } = useThemeContext();
+  const { theme, isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 
   const handleSelect = (id: string) => {
     playTapSound();
@@ -120,28 +130,20 @@ export function HorizontalChips({
       item={item}
       isSelected={selectedId === item.id}
       onPress={() => handleSelect(item.id)}
+      fluentColors={fluentColors}
     />
   );
+
+  const shadowStyle = getShadowStyle('shadow4', isDark);
 
   return (
     <View style={[
       styles.container, 
       { 
-        backgroundColor: theme.surfaceContainer,
-        borderBottomColor: theme.outlineVariant,
+        backgroundColor: fluentColors.colorNeutralBackground3,
+        borderBottomColor: fluentColors.colorNeutralStroke2,
       },
-      Platform.select({
-        ios: {
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.08,
-          shadowRadius: 4,
-        },
-        android: {
-          elevation: M3Elevation.level2.elevation,
-        },
-        default: {},
-      }),
+      shadowStyle,
     ]}>
       <FlatList
         data={items}
@@ -163,16 +165,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   listContent: {
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: FluentSpacing.l,
     alignItems: "center",
   },
   separator: {
-    width: Spacing.s,
+    width: FluentSpacing.s,
   },
   chip: {
-    height: Layout.buttonSmall,
-    paddingHorizontal: Spacing.l,
-    borderRadius: M3Shape.cornerFull,
+    height: 32,
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xs,
+    borderRadius: FluentControlRadius.chip,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,

@@ -15,7 +15,8 @@ import { AudioWaveform } from "@/components/AudioWaveform";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useStudioContext } from "@/contexts/StudioContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { Spacing, BorderRadius, Layout } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentRadius } from "@/constants/fluent2";
+import { Layout } from "@/constants/theme";
 import { CreateStackParamList } from "@/navigation/CreateStackNavigator";
 import { studioAudioEngine } from "@/services/StudioAudioEngine";
 
@@ -215,7 +216,7 @@ export default function MixingScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: headerHeight + Spacing.lg, paddingBottom: insets.bottom + 180 },
+          { paddingTop: headerHeight + FluentSpacing.l, paddingBottom: insets.bottom + 180 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -260,7 +261,7 @@ export default function MixingScreen() {
             <View style={backingTrackAvailable ? styles.waveformTrack : styles.waveformTrackDisabled}>
               <View style={styles.trackLabel}>
                 <MaterialCommunityIcons name="music" size={12} color={backingTrackAvailable ? theme.primary : theme.textTertiary} />
-                <ThemedText type="caption" style={{ marginLeft: Spacing.xs, color: backingTrackAvailable ? theme.textSecondary : theme.textTertiary }}>
+                <ThemedText type="caption" style={{ marginLeft: FluentSpacing.xs, color: backingTrackAvailable ? theme.textSecondary : theme.textTertiary }}>
                   Music ({backingTrackAvailable ? `${musicVolume}%` : "N/A"})
                 </ThemedText>
               </View>
@@ -275,7 +276,7 @@ export default function MixingScreen() {
             <View style={styles.waveformTrack}>
               <View style={styles.trackLabel}>
                 <MaterialCommunityIcons name="microphone" size={12} color={theme.secondary} />
-                <ThemedText type="caption" style={{ marginLeft: Spacing.xs, color: theme.textSecondary }}>
+                <ThemedText type="caption" style={{ marginLeft: FluentSpacing.xs, color: theme.textSecondary }}>
                   Voice ({voiceVolume}%)
                 </ThemedText>
               </View>
@@ -421,7 +422,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.horizontalPadding,
   },
   warningCard: {
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   warningContent: {
     flexDirection: "row",
@@ -429,7 +430,7 @@ const styles = StyleSheet.create({
   },
   warningText: {
     flex: 1,
-    marginLeft: Spacing.md,
+    marginLeft: FluentSpacing.m,
   },
   waveformCard: {
     marginBottom: Layout.sectionGap,
@@ -438,11 +439,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   playControls: {
     flexDirection: "row",
-    gap: Spacing.sm,
+    gap: FluentSpacing.s,
   },
   controlButton: {
     width: 36,
@@ -459,25 +460,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   waveformRow: {
-    gap: Spacing.md,
+    gap: FluentSpacing.m,
   },
   waveformTrack: {
-    marginBottom: Spacing.sm,
+    marginBottom: FluentSpacing.s,
   },
   waveformTrackDisabled: {
-    marginBottom: Spacing.sm,
+    marginBottom: FluentSpacing.s,
     opacity: 0.5,
   },
   trackLabel: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
   progressContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: Spacing.md,
-    gap: Spacing.sm,
+    marginTop: FluentSpacing.m,
+    gap: FluentSpacing.s,
   },
   progressBar: {
     flex: 1,
@@ -497,25 +498,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
   sectionTitle: {
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
   sectionDesc: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   slidersRow: {
     flexDirection: "row",
     justifyContent: "center",
   },
   syncBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xs,
+    borderRadius: FluentRadius.circular,
   },
   syncSliderContainer: {
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: FluentSpacing.s,
   },
   syncSlider: {
     width: "100%",
@@ -524,39 +525,39 @@ const styles = StyleSheet.create({
   syncLabels: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: Spacing.xs,
+    marginBottom: FluentSpacing.xs,
   },
   syncMarkers: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
   trimCard: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
   },
   trimCardLocked: {
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xl,
     opacity: 0.7,
   },
   trimHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.sm,
+    marginBottom: FluentSpacing.s,
   },
   trimTitleRow: {
     flexDirection: "row",
     alignItems: "center",
   },
   trimTitle: {
-    marginLeft: Spacing.sm,
+    marginLeft: FluentSpacing.s,
     fontWeight: "600",
   },
   premiumBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xs,
+    borderRadius: FluentRadius.circular,
   },
   bottomBar: {
     position: "absolute",
@@ -564,14 +565,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.lg,
+    paddingTop: FluentSpacing.l,
   },
   continueButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
+    paddingVertical: FluentSpacing.l,
+    borderRadius: FluentControlRadius.dialog,
+    gap: FluentSpacing.s,
   },
 });

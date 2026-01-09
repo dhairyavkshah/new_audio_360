@@ -6,7 +6,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { Spacing, BorderRadius } from '@/constants/theme';
+import { FluentSpacing, FluentControlRadius, FluentIconSize } from '@/constants/fluent2';
 
 export default function LockoutScreen() {
   const insets = useSafeAreaInsets();
@@ -39,10 +39,10 @@ export default function LockoutScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={[styles.content, { paddingTop: insets.top + 60, paddingBottom: insets.bottom + 40 }]}>
+      <View style={[styles.content, { paddingTop: insets.top + FluentSpacing.xxxxxxl, paddingBottom: insets.bottom + FluentSpacing.xxxxl }]}>
         <View style={styles.iconContainer}>
           <View style={[styles.iconCircle, { backgroundColor: theme.error + '20' }]}>
-            <MaterialCommunityIcons name="shield-alert" size={64} color={theme.error} />
+            <MaterialCommunityIcons name="shield-alert" size={FluentIconSize.xxlarge + 16} color={theme.error} />
           </View>
         </View>
 
@@ -57,7 +57,7 @@ export default function LockoutScreen() {
 
         <View style={[styles.infoCard, { backgroundColor: theme.surfaceContainer }]}>
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="clock-outline" size={20} color={theme.primary} />
+            <MaterialCommunityIcons name="clock-outline" size={FluentIconSize.regular} color={theme.primary} />
             <View style={styles.infoText}>
               <ThemedText type="body" style={{ fontWeight: '600' }}>
                 Access Restored In
@@ -81,16 +81,16 @@ export default function LockoutScreen() {
             onPress={handleRetry}
             style={[styles.retryButton, { backgroundColor: theme.primary }]}
           >
-            <MaterialCommunityIcons name="refresh" size={20} color="#FFFFFF" />
-            <ThemedText type="body" style={{ color: '#FFFFFF', fontWeight: '600', marginLeft: Spacing.sm }}>
+            <MaterialCommunityIcons name="refresh" size={FluentIconSize.regular} color="#FFFFFF" />
+            <ThemedText type="body" style={{ color: '#FFFFFF', fontWeight: '600', marginLeft: FluentSpacing.s }}>
               Retry Verification
             </ThemedText>
           </Pressable>
         </View>
 
         <View style={styles.footer}>
-          <MaterialCommunityIcons name="shield-check" size={16} color={theme.textTertiary} />
-          <ThemedText type="caption" style={{ color: theme.textTertiary, marginLeft: Spacing.xs }}>
+          <MaterialCommunityIcons name="shield-check" size={FluentIconSize.small} color={theme.textTertiary} />
+          <ThemedText type="caption" style={{ color: theme.textTertiary, marginLeft: FluentSpacing.xs }}>
             Protected by New Audio 360 Security
           </ThemedText>
         </View>
@@ -105,12 +105,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: FluentSpacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconContainer: {
-    marginBottom: Spacing['2xl'],
+    marginBottom: FluentSpacing.xxl,
   },
   iconCircle: {
     width: 120,
@@ -121,28 +121,28 @@ const styles = StyleSheet.create({
   },
   title: {
     textAlign: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: FluentSpacing.l,
   },
   description: {
     textAlign: 'center',
-    marginBottom: Spacing['2xl'],
+    marginBottom: FluentSpacing.xxl,
     lineHeight: 24,
   },
   infoCard: {
     width: '100%',
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing['2xl'],
+    padding: FluentSpacing.xl,
+    borderRadius: FluentControlRadius.card,
+    marginBottom: FluentSpacing.xxl,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   infoText: {
-    marginLeft: Spacing.lg,
+    marginLeft: FluentSpacing.l,
   },
   messageContainer: {
-    marginBottom: Spacing['2xl'],
+    marginBottom: FluentSpacing.xxl,
   },
   messageText: {
     textAlign: 'center',
@@ -150,14 +150,14 @@ const styles = StyleSheet.create({
   },
   buttonsContainer: {
     width: '100%',
-    marginBottom: Spacing['2xl'],
+    marginBottom: FluentSpacing.xxl,
   },
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Spacing.lg,
-    borderRadius: BorderRadius.lg,
+    paddingVertical: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
   },
   footer: {
     flexDirection: 'row',

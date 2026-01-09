@@ -1,10 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, TextInput, Pressable, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, M3Shape, Layout, Typography, M3Elevation } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentControlRadius,
+  FluentTypography,
+  FluentIconSize,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
+import { Layout } from "@/constants/theme";
 
 interface SearchBarProps {
   value: string;
@@ -13,8 +21,10 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ value, onChangeText, placeholder = "Search..." }: SearchBarProps) {
-  const { theme } = useThemeContext();
+  const { theme, isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
+  const [isFocused, setIsFocused] = useState(false);
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 
   const handleClear = () => {
     playTapSound();
@@ -25,27 +35,43 @@ export function SearchBar({ value, onChangeText, placeholder = "Search..." }: Se
   };
 
   return (
-    <View style={[styles.wrapper, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
-      <View style={[styles.container, { backgroundColor: theme.surfaceContainerHigh }]}>
+    <View style={[
+      styles.wrapper, 
+      { 
+        backgroundColor: fluentColors.colorNeutralBackground3,
+        borderBottomColor: fluentColors.colorNeutralStroke1,
+      }
+    ]}>
+      <View style={[
+        styles.container, 
+        { 
+          backgroundColor: fluentColors.colorNeutralBackground3,
+          borderColor: isFocused ? fluentColors.colorStrokeFocus2 : fluentColors.colorNeutralStroke1,
+          borderWidth: isFocused ? 2 : 1,
+        }
+      ]}>
         <MaterialCommunityIcons
           name="magnify"
-          size={20}
-          color={theme.onSurfaceVariant}
+          size={FluentIconSize.regular}
+          color={fluentColors.colorNeutralForeground3}
           style={styles.searchIcon}
         />
         <TextInput
           style={[
             styles.input, 
             { 
-              color: theme.onSurface,
-              fontSize: Typography.bodyMedium.fontSize,
-              lineHeight: Typography.bodyMedium.lineHeight,
+              color: fluentColors.colorNeutralForeground1,
+              fontSize: FluentTypography.body1.fontSize,
+              lineHeight: FluentTypography.body1.lineHeight,
+              fontWeight: FluentTypography.body1.fontWeight,
             }
           ]}
           placeholder={placeholder}
-          placeholderTextColor={theme.onSurfaceVariant}
+          placeholderTextColor={fluentColors.colorNeutralForeground3}
           value={value}
           onChangeText={onChangeText}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           returnKeyType="search"
           autoCapitalize="none"
           autoCorrect={false}
@@ -60,7 +86,11 @@ export function SearchBar({ value, onChangeText, placeholder = "Search..." }: Se
             accessibilityLabel="Clear search"
             accessibilityRole="button"
           >
-            <MaterialCommunityIcons name="close-circle" size={18} color={theme.onSurfaceVariant} />
+            <MaterialCommunityIcons 
+              name="close-circle" 
+              size={FluentIconSize.small} 
+              color={fluentColors.colorNeutralForeground3} 
+            />
           </Pressable>
         ) : null}
       </View>
@@ -71,8 +101,8 @@ export function SearchBar({ value, onChangeText, placeholder = "Search..." }: Se
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    paddingHorizontal: Layout.horizontalPadding,
-    paddingVertical: Spacing.s,
+    paddingHorizontal: FluentSpacing.l,
+    paddingVertical: FluentSpacing.s,
     borderBottomWidth: 1,
   },
   container: {
@@ -80,18 +110,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: Layout.inputFieldHeight,
-    borderRadius: M3Shape.cornerFull,
-    paddingHorizontal: Spacing.l,
+    borderRadius: FluentControlRadius.input,
+    paddingHorizontal: FluentSpacing.m,
   },
   searchIcon: {
-    marginRight: Spacing.s,
+    marginRight: FluentSpacing.s,
   },
   input: {
     flex: 1,
     paddingVertical: 0,
   },
   clearButton: {
-    marginLeft: Spacing.s,
+    marginLeft: FluentSpacing.s,
     width: Layout.touchTargetMin,
     height: Layout.touchTargetMin,
     alignItems: "center",

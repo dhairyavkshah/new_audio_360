@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Image, TextInput, Platform, ActivityIndicator, FlatList } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Image, TextInput, Platform, ActivityIndicator, FlatList, KeyboardAvoidingView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -378,6 +378,7 @@ export default function LibraryScreen() {
         windowSize={10}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
+        keyboardShouldPersistTaps="handled"
       />
     );
   };
@@ -412,6 +413,7 @@ export default function LibraryScreen() {
         windowSize={10}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
+        keyboardShouldPersistTaps="handled"
       />
     );
   };
@@ -445,6 +447,7 @@ export default function LibraryScreen() {
         windowSize={10}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
+        keyboardShouldPersistTaps="handled"
       />
     );
   };
@@ -489,6 +492,7 @@ export default function LibraryScreen() {
         windowSize={10}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
+        keyboardShouldPersistTaps="handled"
       />
     );
   };
@@ -549,19 +553,25 @@ export default function LibraryScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <TopBar title="Library" showBack={false} />
-      
-      <View style={[styles.categorySection, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
-        {renderCategoryGrid()}
-      </View>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={insets.top}
+      >
+        <TopBar title="Library" showBack={false} />
+        
+        <View style={[styles.categorySection, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
+          {renderCategoryGrid()}
+        </View>
 
-      {renderSearchBar()}
+        {renderSearchBar()}
 
-      <View style={[styles.contentArea, { flex: 1 }]}>
-        {renderContent()}
-      </View>
+        <View style={[styles.contentArea, { flex: 1 }]}>
+          {renderContent()}
+        </View>
 
-      {renderSortOverlay()}
+        {renderSortOverlay()}
+      </KeyboardAvoidingView>
 
       <SongContextMenu
         visible={showContextMenu}

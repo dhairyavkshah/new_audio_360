@@ -9,7 +9,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import { getRecordings, deleteRecording, Recording } from "@/lib/storage";
 import { mockSongs } from "@/lib/data";
 
@@ -108,13 +108,13 @@ export default function RecordingsScreen() {
           onPress={() => handleShare(item)}
           style={[styles.actionButton, { backgroundColor: theme.primary + "20" }]}
         >
-          <MaterialCommunityIcons name="share-variant" size={18} color={theme.primary} />
+          <MaterialCommunityIcons name="share-variant" size={FluentIconSize.regular} color={theme.primary} />
         </Pressable>
         <Pressable
           onPress={() => handleDelete(item)}
           style={[styles.actionButton, { backgroundColor: theme.error + "20" }]}
         >
-          <MaterialCommunityIcons name="delete-outline" size={18} color={theme.error} />
+          <MaterialCommunityIcons name="delete-outline" size={FluentIconSize.regular} color={theme.error} />
         </Pressable>
       </View>
     </GlassCard>
@@ -123,7 +123,7 @@ export default function RecordingsScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyState}>
       <View style={[styles.emptyIcon, { backgroundColor: theme.primary + "20" }]}>
-        <MaterialCommunityIcons name="microphone-off" size={48} color={theme.primary} />
+        <MaterialCommunityIcons name="microphone-off" size={FluentIconSize.xxlarge} color={theme.primary} />
       </View>
       <ThemedText type="h4" style={styles.emptyTitle}>
         No Recordings Yet
@@ -142,7 +142,7 @@ export default function RecordingsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContent,
-          { paddingTop: headerHeight + Spacing.xl, paddingBottom: insets.bottom + Spacing.xl },
+          { paddingTop: headerHeight + FluentSpacing.xxl, paddingBottom: insets.bottom + FluentSpacing.xxl },
         ]}
         ListEmptyComponent={isLoading ? null : renderEmpty}
         showsVerticalScrollIndicator={false}
@@ -156,60 +156,60 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: FluentSpacing.l,
     flexGrow: 1,
   },
   recordingCard: {
-    marginBottom: Spacing.md,
+    marginBottom: FluentSpacing.m,
   },
   recordingContent: {
     flexDirection: "row",
-    marginBottom: Spacing.md,
+    marginBottom: FluentSpacing.m,
   },
   artwork: {
     width: 64,
     height: 64,
-    borderRadius: BorderRadius.md,
+    borderRadius: FluentControlRadius.card,
   },
   recordingInfo: {
     flex: 1,
-    marginLeft: Spacing.md,
+    marginLeft: FluentSpacing.m,
     justifyContent: "center",
   },
   recordingMeta: {
     flexDirection: "row",
-    gap: Spacing.md,
-    marginTop: Spacing.xs,
+    gap: FluentSpacing.m,
+    marginTop: FluentSpacing.xs,
   },
   recordingActions: {
     flexDirection: "row",
-    gap: Spacing.sm,
+    gap: FluentSpacing.s,
   },
   actionButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    gap: Spacing.sm,
+    paddingVertical: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
+    gap: FluentSpacing.s,
   },
   emptyState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: FluentSpacing.xxl,
   },
   emptyIcon: {
     width: 96,
     height: 96,
-    borderRadius: 48,
+    borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.xl,
+    marginBottom: FluentSpacing.xxl,
   },
   emptyTitle: {
-    marginBottom: Spacing.sm,
+    marginBottom: FluentSpacing.s,
     textAlign: "center",
   },
   emptyDesc: {

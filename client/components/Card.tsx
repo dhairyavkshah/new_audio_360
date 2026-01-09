@@ -10,7 +10,15 @@ import Animated, {
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { useSkin } from "@/contexts/ThemeContext";
-import { Spacing, BorderRadius, M3Motion, M3Elevation } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentControlRadius,
+  FluentDuration,
+  FluentEasingValues,
+  getShadowStyle,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface CardProps {
   elevation?: number;
@@ -23,22 +31,30 @@ interface CardProps {
 
 const getBackgroundColorForElevation = (
   elevation: number,
-  theme: any,
+  fluentColors: typeof FluentLightColors,
 ): string => {
   switch (elevation) {
     case 0:
-      return theme.surfaceContainerLowest;
+      return fluentColors.colorNeutralBackground1;
     case 1:
-      return theme.surfaceContainerLow;
+      return fluentColors.colorNeutralBackground2;
     case 2:
-      return theme.surfaceContainer;
+      return fluentColors.colorNeutralBackground3;
     case 3:
-      return theme.surfaceContainerHigh;
+      return fluentColors.colorNeutralBackground4;
     case 4:
-      return theme.surfaceContainerHighest;
+      return fluentColors.colorNeutralBackground5;
     default:
-      return theme.surface;
+      return fluentColors.colorNeutralBackground1;
   }
+};
+
+const getShadowForElevation = (elevation: number, isDark: boolean) => {
+  if (elevation === 0) return {};
+  if (elevation <= 1) return getShadowStyle('shadow2', isDark);
+  if (elevation <= 2) return getShadowStyle('shadow4', isDark);
+  if (elevation <= 3) return getShadowStyle('shadow8', isDark);
+  return getShadowStyle('shadow16', isDark);
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -51,12 +67,13 @@ export function Card({
   onPress,
   style,
 }: CardProps) {
-  const { theme } = useTheme();
-  const { shapes, components } = useSkin();
+  const { isDark, theme } = useTheme();
+  const { components } = useSkin();
   const scale = useSharedValue(1);
   const bgOpacity = useSharedValue(1);
 
-  const cardBackgroundColor = getBackgroundColorForElevation(elevation, theme);
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const cardBackgroundColor = getBackgroundColorForElevation(elevation, fluentColors);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -66,11 +83,16 @@ export function Card({
   const handlePressIn = () => {
     if (onPress) {
       scale.value = withTiming(0.98, { 
-        duration: M3Motion.durationShort3,
-        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+        duration: FluentDuration.fast,
+        easing: Easing.bezier(
+          FluentEasingValues.decelerateMid.x1,
+          FluentEasingValues.decelerateMid.y1,
+          FluentEasingValues.decelerateMid.x2,
+          FluentEasingValues.decelerateMid.y2
+        ),
       });
       bgOpacity.value = withTiming(0.95, { 
-        duration: M3Motion.durationShort3,
+        duration: FluentDuration.fast,
       });
     }
   };
@@ -78,32 +100,23 @@ export function Card({
   const handlePressOut = () => {
     if (onPress) {
       scale.value = withTiming(1, { 
-        duration: M3Motion.durationShort4,
-        easing: Easing.bezier(M3Motion.easingStandard.x1, M3Motion.easingStandard.y1, M3Motion.easingStandard.x2, M3Motion.easingStandard.y2),
+        duration: FluentDuration.normal,
+        easing: Easing.bezier(
+          FluentEasingValues.decelerateMid.x1,
+          FluentEasingValues.decelerateMid.y1,
+          FluentEasingValues.decelerateMid.x2,
+          FluentEasingValues.decelerateMid.y2
+        ),
       });
       bgOpacity.value = withTiming(1, { 
-        duration: M3Motion.durationShort4,
+        duration: FluentDuration.normal,
       });
     }
   };
 
-  const getShadowStyle = () => {
+  const getCardShadowStyle = () => {
     if (!components.useShadow) return {};
-    
-    return Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: elevation },
-        shadowOpacity: 0.08 + (elevation * 0.02),
-        shadowRadius: elevation * 2,
-      },
-      android: {
-        elevation: elevation,
-      },
-      default: {
-        boxShadow: elevation >= 2 ? "0 2px 4px rgba(0, 0, 0, 0.14)" : "0 1px 2px rgba(0, 0, 0, 0.14)",
-      },
-    }) || {};
+    return getShadowForElevation(elevation, isDark);
   };
 
   return (
@@ -117,10 +130,10 @@ export function Card({
         styles.card,
         {
           backgroundColor: cardBackgroundColor,
-          borderRadius: shapes.cardBorderRadius || BorderRadius.large,
-          borderColor: theme.outlineVariant,
+          borderRadius: FluentControlRadius.card,
+          borderColor: fluentColors.colorNeutralStroke2,
         },
-        getShadowStyle(),
+        getCardShadowStyle(),
         animatedStyle,
         style,
       ]}
@@ -131,7 +144,7 @@ export function Card({
         </ThemedText>
       ) : null}
       {description ? (
-        <ThemedText type="bodySmall" style={[styles.cardDescription, { color: theme.textSecondary }]}>
+        <ThemedText type="bodySmall" style={[styles.cardDescription, { color: fluentColors.colorNeutralForeground2 }]}>
           {description}
         </ThemedText>
       ) : null}
@@ -161,11 +174,12 @@ interface OutlinedCardProps {
 }
 
 export function OutlinedCard({ children, onPress, style }: OutlinedCardProps) {
-  const { theme } = useTheme();
+  const { isDark } = useTheme();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   
   const outlinedStyle: ViewStyle = {
     borderWidth: 1, 
-    borderColor: theme.outline,
+    borderColor: fluentColors.colorNeutralStroke1,
   };
   
   const mergedStyle: ViewStyle = style 
@@ -195,13 +209,13 @@ export function FilledCard({ children, onPress, style }: FilledCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    padding: Spacing.l,
+    padding: FluentSpacing.l,
     borderWidth: 1,
   },
   cardTitle: {
-    marginBottom: Spacing.titleToSubtitle,
+    marginBottom: FluentSpacing.xs,
   },
   cardDescription: {
-    marginBottom: Spacing.contentBlock,
+    marginBottom: FluentSpacing.m,
   },
 });

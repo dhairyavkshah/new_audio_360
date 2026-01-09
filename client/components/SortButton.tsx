@@ -1,12 +1,20 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Modal } from "react-native";
+import { View, StyleSheet, Pressable, Modal, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { Platform } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Spacing, M3Shape, Layout, M3Elevation } from "@/constants/theme";
+import { Layout } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentControlRadius,
+  FluentTypography,
+  FluentIconSize,
+  FluentLightColors,
+  FluentDarkColors,
+  getShadowStyle,
+} from "@/constants/fluent2";
 
 export interface SortOption {
   key: string;
@@ -23,8 +31,9 @@ interface SortButtonProps {
 }
 
 export function SortButton({ options, selectedKey, onSelect, isOpen, onToggle }: SortButtonProps) {
-  const { theme } = useThemeContext();
+  const { theme, isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 
   const selectedOption = options.find((o) => o.key === selectedKey);
 
@@ -44,10 +53,12 @@ export function SortButton({ options, selectedKey, onSelect, isOpen, onToggle }:
     onToggle();
   };
 
+  const shadowStyle = getShadowStyle('shadow8', isDark);
+
   return (
     <>
       <Pressable
-        style={[styles.button, { backgroundColor: theme.surfaceContainerHigh }]}
+        style={[styles.button, { backgroundColor: fluentColors.colorNeutralBackground3 }]}
         onPress={handleToggle}
         accessibilityLabel={`Sort by ${selectedOption?.label || "default"}`}
         accessibilityRole="button"
@@ -55,13 +66,13 @@ export function SortButton({ options, selectedKey, onSelect, isOpen, onToggle }:
       >
         <MaterialCommunityIcons
           name={selectedOption?.icon || "sort"}
-          size={18}
-          color={theme.onSurface}
+          size={FluentIconSize.small}
+          color={fluentColors.colorNeutralForeground1}
         />
         <MaterialCommunityIcons
           name={isOpen ? "chevron-up" : "chevron-down"}
-          size={16}
-          color={theme.onSurfaceVariant}
+          size={FluentIconSize.small}
+          color={fluentColors.colorNeutralForeground2}
           style={{ marginLeft: 2 }}
         />
       </Pressable>
@@ -73,13 +84,17 @@ export function SortButton({ options, selectedKey, onSelect, isOpen, onToggle }:
         onRequestClose={onToggle}
       >
         <Pressable style={styles.backdrop} onPress={onToggle}>
-          <View style={[styles.menu, { backgroundColor: theme.surfaceContainerHigh }]}>
+          <View style={[
+            styles.menu, 
+            { backgroundColor: fluentColors.colorNeutralBackground1 },
+            shadowStyle,
+          ]}>
             {options.map((option) => (
               <Pressable
                 key={option.key}
                 style={[
                   styles.menuItem,
-                  selectedKey === option.key && { backgroundColor: theme.secondaryContainer },
+                  selectedKey === option.key && { backgroundColor: fluentColors.colorSubtleBackgroundHover },
                 ]}
                 onPress={() => handleSelect(option.key)}
                 accessibilityRole="menuitem"
@@ -87,14 +102,18 @@ export function SortButton({ options, selectedKey, onSelect, isOpen, onToggle }:
               >
                 <MaterialCommunityIcons
                   name={option.icon}
-                  size={20}
-                  color={selectedKey === option.key ? theme.onSecondaryContainer : theme.onSurface}
+                  size={FluentIconSize.regular}
+                  color={selectedKey === option.key ? fluentColors.colorBrandForeground1 : fluentColors.colorNeutralForeground1}
                 />
                 <ThemedText
-                  type="bodyMedium"
                   style={[
                     styles.menuItemLabel,
-                    { color: selectedKey === option.key ? theme.onSecondaryContainer : theme.onSurface },
+                    { 
+                      color: selectedKey === option.key ? fluentColors.colorBrandForeground1 : fluentColors.colorNeutralForeground1,
+                      fontSize: FluentTypography.body1.fontSize,
+                      fontWeight: FluentTypography.body1.fontWeight,
+                      lineHeight: FluentTypography.body1.lineHeight,
+                    },
                   ]}
                 >
                   {option.label}
@@ -102,8 +121,8 @@ export function SortButton({ options, selectedKey, onSelect, isOpen, onToggle }:
                 {selectedKey === option.key ? (
                   <MaterialCommunityIcons
                     name="check"
-                    size={18}
-                    color={theme.onSecondaryContainer}
+                    size={FluentIconSize.small}
+                    color={fluentColors.colorBrandForeground1}
                   />
                 ) : null}
               </Pressable>
@@ -120,8 +139,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: Layout.touchTargetMin,
-    paddingHorizontal: Spacing.m,
-    borderRadius: M3Shape.cornerFull,
+    paddingHorizontal: FluentSpacing.m,
+    borderRadius: FluentControlRadius.button,
     gap: 2,
   },
   backdrop: {
@@ -129,35 +148,23 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.4)",
     justifyContent: "center",
     alignItems: "center",
-    padding: Spacing.xxxl,
+    padding: FluentSpacing.xxxl,
   },
   menu: {
     width: "100%",
     maxWidth: 280,
-    borderRadius: M3Shape.cornerMedium,
-    paddingVertical: Spacing.s,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: M3Elevation.level3.elevation,
-      },
-      default: {},
-    }),
+    borderRadius: FluentControlRadius.dialog,
+    paddingVertical: FluentSpacing.s,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.m,
-    paddingHorizontal: Spacing.l,
+    paddingVertical: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.l,
     minHeight: Layout.touchTargetMin,
   },
   menuItemLabel: {
     flex: 1,
-    marginLeft: Spacing.m,
+    marginLeft: FluentSpacing.m,
   },
 });

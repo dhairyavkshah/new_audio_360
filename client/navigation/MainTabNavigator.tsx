@@ -10,6 +10,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ListenStackNavigator from "@/navigation/ListenStackNavigator";
 import LibraryStackNavigator from "@/navigation/LibraryStackNavigator";
 import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
@@ -19,7 +20,15 @@ import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
-import { Layout, Spacing, Typography, Motion, M3Motion, M3Elevation } from "@/constants/theme";
+import {
+  FluentSpacing,
+  FluentIconSize,
+  FluentTypography,
+  FluentDuration,
+  FluentLightColors,
+  FluentDarkColors,
+  getShadowStyle,
+} from "@/constants/fluent2";
 
 export type MainTabParamList = {
   ListenTab: undefined;
@@ -34,13 +43,15 @@ function TabIcon({
   iconKey,
   color,
   focused,
+  isDark,
 }: {
   iconKey: 'listen' | 'library' | 'studio' | 'settings';
   color: string;
   focused: boolean;
+  isDark: boolean;
 }) {
-  const { theme } = useThemeContext();
   const skin = useSkin();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   const indicatorScale = useSharedValue(focused ? 1 : 0);
   const iconScale = useSharedValue(1);
   
@@ -64,8 +75,8 @@ function TabIcon({
   
   const iconName = iconMap[iconKey] as keyof typeof MaterialCommunityIcons.glyphMap;
   
-  const activeIndicatorColor = theme.secondaryContainer;
-  const activeIconColor = theme.onSecondaryContainer;
+  const activeIndicatorColor = fluentColors.colorBrandBackground;
+  const activeIconColor = fluentColors.colorNeutralForegroundOnBrand;
   
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [
@@ -91,7 +102,7 @@ function TabIcon({
       <Animated.View style={[styles.tabIcon, iconAnimatedStyle]}>
         <MaterialCommunityIcons
           name={iconName}
-          size={24}
+          size={FluentIconSize.medium}
           color={focused ? activeIconColor : color}
         />
       </Animated.View>
@@ -99,14 +110,18 @@ function TabIcon({
   );
 }
 
+const TAB_BAR_HEIGHT = 56;
+
 export default function MainTabNavigator() {
-  const { theme } = useThemeContext();
+  const { isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
   const { currentSong } = usePlayerContext();
   const { isNowPlayingVisible } = useNavigationContext();
   const [currentTab, setCurrentTab] = useState<string>("ListenTab");
+  const insets = useSafeAreaInsets();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   
-  const tabBarHeight = Platform.OS === "ios" ? Layout.bottomNavHeight + 20 : Layout.bottomNavHeight;
+  const tabBarHeight = TAB_BAR_HEIGHT + insets.bottom;
   const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && currentTab !== "StudioTab" && !isNowPlayingVisible;
 
   return (
@@ -114,38 +129,26 @@ export default function MainTabNavigator() {
     <Tab.Navigator
       initialRouteName="ListenTab"
       screenOptions={{
-        tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.onSurfaceVariant,
+        tabBarActiveTintColor: fluentColors.colorBrandForeground1,
+        tabBarInactiveTintColor: fluentColors.colorNeutralForeground3,
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: theme.surfaceContainer,
+          backgroundColor: fluentColors.colorNeutralBackground1,
           borderTopWidth: 1,
-          borderTopColor: theme.outlineVariant,
-          height: Platform.OS === "ios" ? Layout.bottomNavHeight + 20 : Layout.bottomNavHeight,
-          paddingBottom: Platform.OS === "ios" ? Spacing.l : Spacing.s,
-          paddingTop: Spacing.s,
-          ...Platform.select({
-            ios: {
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: -2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 4,
-            },
-            android: {
-              elevation: M3Elevation.level2.elevation,
-            },
-            default: {},
-          }),
+          borderTopColor: fluentColors.colorNeutralStroke2,
+          height: tabBarHeight,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : FluentSpacing.s,
+          paddingTop: FluentSpacing.xs,
+          ...getShadowStyle('shadow4', isDark),
         },
         headerShown: false,
         tabBarLabelStyle: {
-          fontSize: Typography.labelMedium.fontSize,
-          fontWeight: Typography.labelMedium.fontWeight,
-          letterSpacing: Typography.labelMedium.letterSpacing,
-          marginTop: Spacing.titleToSubtitle,
+          fontSize: FluentTypography.caption1.fontSize,
+          fontWeight: FluentTypography.caption1.fontWeight as any,
+          marginTop: FluentSpacing.xxs,
         },
         tabBarItemStyle: {
-          paddingVertical: Spacing.s,
+          paddingVertical: FluentSpacing.xs,
         },
       }}
       screenListeners={{
@@ -169,6 +172,7 @@ export default function MainTabNavigator() {
               iconKey="listen"
               color={color}
               focused={focused}
+              isDark={isDark}
             />
           ),
         }}
@@ -183,6 +187,7 @@ export default function MainTabNavigator() {
               iconKey="library"
               color={color}
               focused={focused}
+              isDark={isDark}
             />
           ),
         }}
@@ -197,6 +202,7 @@ export default function MainTabNavigator() {
               iconKey="studio"
               color={color}
               focused={focused}
+              isDark={isDark}
             />
           ),
         }}
@@ -212,6 +218,7 @@ export default function MainTabNavigator() {
               iconKey="settings"
               color={color}
               focused={focused}
+              isDark={isDark}
             />
           ),
         }}
@@ -219,8 +226,8 @@ export default function MainTabNavigator() {
     </Tab.Navigator>
     {showMiniPlayer ? (
       <Animated.View 
-        entering={FadeIn.duration(Motion.duration.normal)}
-        exiting={FadeOut.duration(Motion.duration.normal)}
+        entering={FadeIn.duration(FluentDuration.normal)}
+        exiting={FadeOut.duration(FluentDuration.normal)}
       >
         <MiniPlayer bottomOffset={tabBarHeight} />
       </Animated.View>
