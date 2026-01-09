@@ -160,6 +160,7 @@ export default function ListenScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setShowSortOptions(!showSortOptions);
           }}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
         >
           <MaterialCommunityIcons
             name={SORT_OPTIONS.find((o) => o.key === sortBy)?.icon as any || "sort"}
@@ -174,9 +175,6 @@ export default function ListenScreen() {
           />
         </Pressable>
       </View>
-      <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
-        {filteredAndSortedSongs.length} {filteredAndSortedSongs.length === 1 ? "song" : "songs"}
-      </ThemedText>
     </View>
   );
 
@@ -317,38 +315,39 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
     paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.s,
-    paddingBottom: Spacing.m,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.xs,
     borderBottomWidth: 1,
   },
   searchSortRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.contentBlock,
+    gap: Spacing.s,
   },
   searchContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     borderRadius: BorderRadius.input,
-    paddingHorizontal: Spacing.m,
-    height: Layout.inputFieldHeight,
+    paddingHorizontal: Spacing.s,
+    height: 44,
   },
   searchIcon: {
-    marginRight: Spacing.iconGap,
+    marginRight: Spacing.xs,
   },
   searchInput: {
     flex: 1,
-    fontSize: Typography.body.fontSize,
+    fontSize: 14,
     height: "100%",
   },
   sortButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.m,
+    justifyContent: "center",
+    paddingHorizontal: Spacing.s,
     borderRadius: BorderRadius.button,
-    height: Layout.buttonStandard,
+    height: 44,
+    minWidth: 44,
   },
   sortOverlayBackdrop: {
     position: "absolute",

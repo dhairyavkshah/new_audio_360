@@ -76,6 +76,7 @@ function CategoryCard({
           borderColor: isActive ? category.color : theme.outlineVariant,
         },
       ]}
+      hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
       accessibilityRole="button"
       accessibilityState={{ selected: isActive }}
       accessibilityLabel={`${category.label}, ${count} items`}
@@ -83,11 +84,11 @@ function CategoryCard({
       <View style={styles.categoryCardContent}>
         <MaterialCommunityIcons
           name={category.icon}
-          size={22}
+          size={18}
           color={isActive ? "#FFFFFF" : category.color}
         />
         <ThemedText
-          type="labelMedium"
+          type="labelSmall"
           style={[
             styles.categoryLabel,
             { color: isActive ? "#FFFFFF" : theme.onSurface },
@@ -99,7 +100,7 @@ function CategoryCard({
       </View>
       <ThemedText
         type="labelSmall"
-        style={{ color: isActive ? "rgba(255,255,255,0.8)" : theme.onSurfaceVariant }}
+        style={{ color: isActive ? "rgba(255,255,255,0.8)" : theme.onSurfaceVariant, fontSize: 12 }}
       >
         {count}
       </ThemedText>
@@ -331,6 +332,7 @@ export default function LibraryScreen() {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           setShowSortOptions(!showSortOptions);
         }}
+        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
       >
         <MaterialCommunityIcons name={SORT_OPTIONS.find((o) => o.key === sortBy)?.icon as any || "sort"} size={16} color={theme.onSurface} />
         <MaterialCommunityIcons name={showSortOptions ? "chevron-up" : "chevron-down"} size={14} color={theme.onSurfaceVariant} style={{ marginLeft: 2 }} />
@@ -598,26 +600,27 @@ const styles = StyleSheet.create({
   },
   categorySection: {
     paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.s,
+    paddingTop: Spacing.xs,
     paddingBottom: Spacing.xs,
     borderBottomWidth: 1,
   },
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.xs,
+    gap: 4,
   },
   categoryCard: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Spacing.s,
-    paddingVertical: Spacing.xs,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     borderRadius: M3Shape.cornerSmall,
     borderWidth: 1,
     minWidth: "30%",
     flex: 1,
     maxWidth: "33%",
+    minHeight: 36,
   },
   categoryCardContent: {
     flexDirection: "row",
@@ -626,14 +629,15 @@ const styles = StyleSheet.create({
   },
   categoryLabel: {
     fontWeight: "600",
+    fontSize: 12,
   },
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.s,
-    paddingBottom: Spacing.m,
-    gap: Spacing.s,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.xs,
+    gap: Spacing.xs,
     borderBottomWidth: 1,
   },
   searchContainer: {
@@ -641,24 +645,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderRadius: M3Shape.cornerFull,
-    paddingHorizontal: Spacing.m,
-    height: 40,
+    paddingHorizontal: Spacing.s,
+    height: 44,
   },
   searchIcon: {
-    marginRight: Spacing.s,
+    marginRight: Spacing.xs,
   },
   searchInput: {
     flex: 1,
-    fontSize: Typography.bodyMedium.fontSize,
+    fontSize: 14,
     height: "100%",
   },
   sortButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
+    justifyContent: "center",
+    paddingHorizontal: Spacing.s,
     borderRadius: M3Shape.cornerFull,
-    height: 40,
+    height: 44,
+    minWidth: 44,
   },
   addButton: {
     width: 40,
