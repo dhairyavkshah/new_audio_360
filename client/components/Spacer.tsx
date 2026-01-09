@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use FluentStack with gap prop or FluentSpacing tokens instead.
+ * This component is kept for backward compatibility but will be removed in a future version.
+ */
 import { View } from "react-native";
 
 type Props = {

@@ -71,6 +71,17 @@ The app features a 3-tab navigation structure:
 
 ## Recent Changes
 
+- **2026-01-09**: **Complete Fluent 2 Migration - All Screens & Components**:
+  - **Navigation Infrastructure**: useScreenOptions.ts and HeaderTitle.tsx now use Fluent 2 tokens
+  - **All 27 Screens Migrated**: Listen, Library, Settings, System/Utility, and Studio stacks fully use Fluent 2 design tokens
+  - **All 24+ Components Migrated**: Core UI, music player, audio visualization, and form/input components
+  - **Legacy Components Deprecated**: ThemedText, ThemedView, ScreenLayout, TopBar, Spacer marked as @deprecated with migration guidance to FluentText, FluentSurface, FluentScreenLayout
+  - **Consistent Pattern Applied**: `const colors = isDark ? FluentDarkColors : FluentLightColors` across all files
+  - **Color Token Mappings**: theme.text → colorNeutralForeground1, theme.primary → colorBrandForeground1, etc.
+  - **Spacing Migration**: Spacing.* → FluentSpacing.* (4px grid)
+  - **Radius Migration**: BorderRadius.* → FluentRadius.* / FluentControlRadius.*
+  - **Typography Migration**: ThemedText type variants → FluentText variant props
+
 - **2026-01-09**: **Comprehensive Fluent 2 UI Component Library & Screen Migration**:
   - **New Fluent 2 Primitive Components** (in `client/components/fluent/`):
     - FluentText: 14 typography variants with 10 color options

@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use FluentTopBar from @/components/fluent instead.
+ * This component is kept for backward compatibility but will be removed in a future version.
+ */
 import React, { useState, useRef } from "react";
 import { View, StyleSheet, Pressable, Platform, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";

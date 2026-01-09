@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use FluentScreenLayout from @/components/fluent instead.
+ * This component is kept for backward compatibility but will be removed in a future version.
+ */
 import React, { ReactNode } from "react";
 import { View, StyleSheet, ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

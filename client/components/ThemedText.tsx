@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use FluentText from @/components/fluent instead.
+ * This component is kept for backward compatibility but will be removed in a future version.
+ */
 import { Text, type TextProps, TextStyle } from "react-native";
 
 import { useTheme } from "@/hooks/useTheme";

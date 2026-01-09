@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use FluentSurface or FluentScreenLayout from @/components/fluent instead.
+ * This component is kept for backward compatibility but will be removed in a future version.
+ */
 import { View, type ViewProps } from "react-native";
 
 import { useTheme } from "@/hooks/useTheme";
