@@ -21,3 +21,6 @@ export type { FluentDividerProps } from './FluentDivider';
 
 export { FluentChip } from './FluentChip';
 export type { FluentChipProps } from './FluentChip';
+
+export { FluentScreenLayout } from './FluentScreenLayout';
+export type { FluentScreenLayoutProps } from './FluentScreenLayout';
