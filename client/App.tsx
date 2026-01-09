@@ -16,12 +16,38 @@ import { NavigationProvider } from "@/contexts/NavigationContext";
 import { SoundLabProvider } from "@/contexts/SoundLabContext";
 import { StudioProvider } from "@/contexts/StudioContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import SplashScreen from "@/screens/SplashScreen";
 import LoadingScreen from "@/screens/LoadingScreen";
 import PermissionOnboardingFlow from "@/screens/PermissionOnboardingFlow";
 import LockoutScreen from "@/screens/LockoutScreen";
+import LoginScreen from "@/screens/LoginScreen";
+import BiometricLockScreen from "@/screens/BiometricLockScreen";
+import SubscriptionRequiredScreen from "@/screens/SubscriptionRequiredScreen";
 
 type AppState = "splash" | "loading" | "checkingOnboarding" | "onboarding" | "ready";
+
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, requiresReauth, hasActiveSubscription } = useAuth();
+
+  if (isLoading) {
+    return <LoadingScreen message="Checking authentication..." />;
+  }
+
+  if (!isAuthenticated && !requiresReauth) {
+    return <LoginScreen />;
+  }
+
+  if (requiresReauth) {
+    return <BiometricLockScreen />;
+  }
+
+  if (!hasActiveSubscription()) {
+    return <SubscriptionRequiredScreen />;
+  }
+
+  return <>{children}</>;
+}
 
 function LockoutGuard({ children }: { children: React.ReactNode }) {
   const { isLocked, isLoading } = useSubscription();
@@ -112,19 +138,23 @@ export default function App() {
           <KeyboardProvider>
             <ThemeProvider>
               <UiSoundProvider>
-                <SubscriptionProvider>
-                  <LockoutGuard>
-                    <MediaLibraryProvider>
-                      <SoundLabProvider>
-                        <StudioProvider>
-                          <PlayerProvider>
-                            <AppContent />
-                          </PlayerProvider>
-                        </StudioProvider>
-                      </SoundLabProvider>
-                    </MediaLibraryProvider>
-                  </LockoutGuard>
-                </SubscriptionProvider>
+                <AuthProvider>
+                  <AuthGuard>
+                    <SubscriptionProvider>
+                      <LockoutGuard>
+                        <MediaLibraryProvider>
+                          <SoundLabProvider>
+                            <StudioProvider>
+                              <PlayerProvider>
+                                <AppContent />
+                              </PlayerProvider>
+                            </StudioProvider>
+                          </SoundLabProvider>
+                        </MediaLibraryProvider>
+                      </LockoutGuard>
+                    </SubscriptionProvider>
+                  </AuthGuard>
+                </AuthProvider>
               </UiSoundProvider>
             </ThemeProvider>
           </KeyboardProvider>

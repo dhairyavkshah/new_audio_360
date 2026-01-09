@@ -405,16 +405,40 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     }
   }, [hiddenSongIds]);
 
+  // Reset onboarding if permissions were revoked
+  const validateOnboardingStatus = useCallback(async () => {
+    if (Platform.OS === 'web') return;
+    
+    try {
+      const storedOnboarding = await AsyncStorage.getItem(ONBOARDING_COMPLETE_KEY);
+      if (storedOnboarding === 'true') {
+        // Check if permissions are actually granted
+        const { status } = await MediaLibrary.getPermissionsAsync();
+        if (status !== MediaLibrary.PermissionStatus.GRANTED) {
+          // Permissions were revoked - reset onboarding
+          console.log('Permissions revoked, resetting onboarding status');
+          await AsyncStorage.removeItem(ONBOARDING_COMPLETE_KEY);
+          setIsOnboardingComplete(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Error validating onboarding status:', err);
+    }
+  }, []);
+
   useEffect(() => {
     const initialize = async () => {
       await loadHiddenSongs();
       await loadOnboardingStatus();
       await loadSelectedFolders();
       await checkPermission();
+      // Validate that onboarding complete matches actual permission status
+      await validateOnboardingStatus();
       setInitialized(true);
     };
     initialize();
-  }, [loadHiddenSongs, loadOnboardingStatus, loadSelectedFolders, checkPermission]);
+  }, [loadHiddenSongs, loadOnboardingStatus, loadSelectedFolders, checkPermission, validateOnboardingStatus]);
 
   useEffect(() => {
     if (initialized && isOnboardingComplete) {

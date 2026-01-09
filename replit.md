@@ -2,15 +2,45 @@
 
 ## Overview
 
-New Audio 360 is a premium, 100% offline mobile music player application for audio enthusiasts. Built with React Native and Expo, it offers a full-featured, device-local music experience including a robust music player, comprehensive music organization, professional sound customization, and extensive personalization through 55 themes. The project's vision is to provide a high-quality, private, and fully self-contained music experience without relying on external servers, cloud services, or internet connectivity. All user data, settings, and media are stored exclusively on the device.
+New Audio 360 is a premium hybrid mobile music player application for audio enthusiasts. Built with React Native and Expo, it offers a full-featured music experience including a robust music player, comprehensive music organization, professional sound customization, and extensive personalization through 55 themes. The app uses a hybrid architecture with a backend server for authentication and subscription management via Google Play, while maintaining device-local storage for music data, settings, and preferences.
 
 ## User Preferences
 
-I prefer concise and direct communication. When making changes, prioritize core functionality and architectural integrity. I value clear explanations for complex decisions. Do not introduce external dependencies or network requests, as the application is strictly offline and device-local. All data must reside on the user's device. I prefer iterative development with clear justifications for each step.
+I prefer concise and direct communication. When making changes, prioritize core functionality and architectural integrity. I value clear explanations for complex decisions. I prefer iterative development with clear justifications for each step.
 
 ## System Architecture
 
-The application is built with **React Native and Expo**, ensuring cross-platform support while maintaining a fully offline and device-local experience. There is no backend server, API calls, or cloud integration; all data persists locally via AsyncStorage. The UI/UX adheres to **Microsoft Fluent 2** design system with pixel-perfect compliance, featuring a 4px grid system, Fluent typography scale, semantic color tokens, elevation shadows, and motion curves. The app maintains 100% Android safe area compliance for status bar, navigation bar, and keyboard.
+The application is built with **React Native and Expo** (frontend) and **Express.js with PostgreSQL** (backend). The UI/UX adheres to **Microsoft Fluent 2** design system with pixel-perfect compliance, featuring a 4px grid system, Fluent typography scale, semantic color tokens, elevation shadows, and motion curves. The app maintains 100% Android safe area compliance for status bar, navigation bar, and keyboard.
+
+### Hybrid Architecture
+
+**Frontend (React Native/Expo):**
+- Music playback and media library access remain fully device-local
+- User settings, playlists, and preferences stored in AsyncStorage
+- Authentication state cached locally with intelligent refresh strategies
+
+**Backend (Express.js + PostgreSQL):**
+- Located in `server/` directory
+- PostgreSQL database with Drizzle ORM (`server/schema.ts`)
+- Endpoints: Google OAuth, subscription verification, user management
+- JWT-based authentication with refresh tokens
+- Port: 3001
+
+### Authentication Flow
+1. **Initial Login**: Google Sign-In via expo-auth-session
+2. **Token Management**: 
+   - Access tokens (7-day expiry) cached locally
+   - Refresh tokens (30-day expiry) for silent re-authentication
+3. **Biometric Re-authentication**: 
+   - Native Android PIN/biometric for subsequent app access (24-hour window)
+   - Falls back to Google Sign-In after biometric window expires
+4. **Subscription Verification**: Server-side validation with Google Play Developer API
+
+### Key Backend Endpoints
+- `POST /api/auth/google` - Exchange Google auth code for tokens
+- `POST /api/auth/refresh` - Refresh access token
+- `GET /api/auth/profile` - Get user profile and subscription status
+- `POST /api/subscription/verify` - Verify Google Play subscription
 
 **Technical Implementations:**
 - **Platform**: React Native with Expo SDK
@@ -70,6 +100,18 @@ The app features a 3-tab navigation structure:
 - **expo-notifications**: For now-playing controls and permission flow
 
 ## Recent Changes
+
+- **2026-01-09**: **Hybrid Architecture Implementation - Backend & Authentication**:
+  - **Backend Server**: Express.js + PostgreSQL + Drizzle ORM in `server/` directory
+  - **Database Schema**: Users and subscriptions tables with JWT refresh tokens (`server/schema.ts`)
+  - **Google OAuth**: expo-auth-session integration for Google Sign-In
+  - **JWT Authentication**: 7-day access tokens, 30-day refresh tokens with intelligent caching
+  - **Biometric/PIN Auth**: expo-local-authentication for 24-hour re-authentication window
+  - **Subscription Verification**: Google Play Developer API integration
+  - **AuthContext**: Complete authentication state management with subscription sync
+  - **New Screens**: LoginScreen, BiometricLockScreen, SubscriptionRequiredScreen
+  - **Metro Config**: Enabled unstable_enablePackageExports for expo-auth-session module resolution
+  - **Permission Bugfix**: Reset isOnboardingComplete when permissions are denied/revoked
 
 - **2026-01-09**: **Complete Fluent 2 Migration - All Screens & Components**:
   - **Navigation Infrastructure**: useScreenOptions.ts and HeaderTitle.tsx now use Fluent 2 tokens

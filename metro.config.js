@@ -5,6 +5,9 @@ const config = getDefaultConfig(__dirname);
 
 config.resolver.assetExts.push('ogg');
 
+// Enable package exports for modern ES modules resolution
+config.resolver.unstable_enablePackageExports = true;
+
 // Add modules directory to watch folders for native module resolution
 config.watchFolders = [
   ...(config.watchFolders || []),
