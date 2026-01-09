@@ -251,18 +251,18 @@ export default function LibraryScreen() {
     <View style={[styles.libraryHeader, { paddingTop: insets.top, backgroundColor: theme.surface, borderBottomColor: theme.outlineVariant }]}>
       <ThemedText type="title1" style={{ fontWeight: "600" }}>Library</ThemedText>
       <Pressable
-        style={[styles.headerDropdownButton, { backgroundColor: theme.surfaceContainerHigh }]}
+        style={[styles.headerDropdownButton, { backgroundColor: theme.surfaceContainerHigh, borderColor: theme.outlineVariant, borderWidth: 1 }]}
         onPress={toggleCategoryDropdown}
         accessibilityRole="button"
         accessibilityLabel={`${activeConfig.label}. Tap to change category.`}
       >
-        <MaterialCommunityIcons name={activeConfig.icon} size={16} color={activeConfig.color} />
-        <ThemedText type="bodyMedium" style={{ marginLeft: 6, fontWeight: "500" }}>{activeConfig.label}</ThemedText>
+        <MaterialCommunityIcons name={activeConfig.icon} size={18} color={activeConfig.color} />
+        <ThemedText type="bodyMedium" style={{ marginLeft: 6, fontWeight: "600", color: theme.onSurface }}>{activeConfig.label}</ThemedText>
         <MaterialCommunityIcons 
           name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
-          size={16} 
+          size={18} 
           color={theme.onSurfaceVariant} 
-          style={{ marginLeft: 2 }}
+          style={{ marginLeft: 4 }}
         />
       </Pressable>
     </View>
@@ -598,10 +598,10 @@ const styles = StyleSheet.create({
   headerDropdownButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.s,
+    paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.xs,
     borderRadius: M3Shape.cornerFull,
-    height: 32,
+    height: 36,
   },
   categoryOverlayBackdrop: {
     ...StyleSheet.absoluteFillObject,
