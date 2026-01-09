@@ -264,11 +264,11 @@ class ImmersiveModeEngineModule : Module() {
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 100.toShort())
-                eq.setBandLevel(1, 50.toShort())
-                eq.setBandLevel(2, 0.toShort())
-                eq.setBandLevel(3, 50.toShort())
-                eq.setBandLevel(4, 100.toShort())
+                eq.setBandLevel(0, 60.toShort())
+                eq.setBandLevel(1, 10.toShort())
+                eq.setBandLevel(2, (-60).toShort())
+                eq.setBandLevel(3, 10.toShort())
+                eq.setBandLevel(4, (-20).toShort())
             }
         }
         
@@ -297,11 +297,11 @@ class ImmersiveModeEngineModule : Module() {
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 80.toShort())
-                eq.setBandLevel(1, 50.toShort())
-                eq.setBandLevel(2, 30.toShort())
-                eq.setBandLevel(3, 50.toShort())
-                eq.setBandLevel(4, 100.toShort())
+                eq.setBandLevel(0, 18.toShort())
+                eq.setBandLevel(1, (-12).toShort())
+                eq.setBandLevel(2, (-32).toShort())
+                eq.setBandLevel(3, (-12).toShort())
+                eq.setBandLevel(4, 38.toShort())
             }
         }
         
@@ -330,11 +330,11 @@ class ImmersiveModeEngineModule : Module() {
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 120.toShort())
-                eq.setBandLevel(1, 70.toShort())
-                eq.setBandLevel(2, 0.toShort())
-                eq.setBandLevel(3, 50.toShort())
-                eq.setBandLevel(4, 100.toShort())
+                eq.setBandLevel(0, 52.toShort())
+                eq.setBandLevel(1, 2.toShort())
+                eq.setBandLevel(2, (-68).toShort())
+                eq.setBandLevel(3, (-18).toShort())
+                eq.setBandLevel(4, 32.toShort())
             }
         }
         
@@ -363,11 +363,11 @@ class ImmersiveModeEngineModule : Module() {
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 50.toShort())
-                eq.setBandLevel(1, (-30).toShort())
-                eq.setBandLevel(2, 80.toShort())
-                eq.setBandLevel(3, 120.toShort())
-                eq.setBandLevel(4, 100.toShort())
+                eq.setBandLevel(0, (-14).toShort())
+                eq.setBandLevel(1, (-94).toShort())
+                eq.setBandLevel(2, 16.toShort())
+                eq.setBandLevel(3, 56.toShort())
+                eq.setBandLevel(4, 36.toShort())
             }
         }
         
@@ -396,11 +396,11 @@ class ImmersiveModeEngineModule : Module() {
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, (-100).toShort())
-                eq.setBandLevel(1, 0.toShort())
-                eq.setBandLevel(2, 100.toShort())
-                eq.setBandLevel(3, 120.toShort())
-                eq.setBandLevel(4, 80.toShort())
+                eq.setBandLevel(0, (-140).toShort())
+                eq.setBandLevel(1, (-40).toShort())
+                eq.setBandLevel(2, 60.toShort())
+                eq.setBandLevel(3, 80.toShort())
+                eq.setBandLevel(4, 40.toShort())
             }
         }
         
@@ -424,11 +424,11 @@ class ImmersiveModeEngineModule : Module() {
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 150.toShort())
-                eq.setBandLevel(1, 80.toShort())
-                eq.setBandLevel(2, 30.toShort())
-                eq.setBandLevel(3, 80.toShort())
-                eq.setBandLevel(4, 120.toShort())
+                eq.setBandLevel(0, 58.toShort())
+                eq.setBandLevel(1, (-12).toShort())
+                eq.setBandLevel(2, (-62).toShort())
+                eq.setBandLevel(3, (-12).toShort())
+                eq.setBandLevel(4, 28.toShort())
             }
         }
         
