@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FluentScreenLayout, FluentText } from '@/components/fluent';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
 
 const DEV_MODE = __DEV__ || process.env.NODE_ENV === 'development';
@@ -15,6 +16,7 @@ export default function LoginScreen() {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { signInWithGoogle, signInAsTestUser, isLoading } = useAuth();
+  const { setPlanForTesting } = useSubscription();
   const [error, setError] = useState<string | null>(null);
 
   const handleGoogleSignIn = async () => {
@@ -28,7 +30,9 @@ export default function LoginScreen() {
   const handleTestSignIn = async () => {
     setError(null);
     const success = await signInAsTestUser();
-    if (!success) {
+    if (success) {
+      setPlanForTesting('premium');
+    } else {
       setError('Test sign in failed. Please try again.');
     }
   };

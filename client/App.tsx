@@ -139,8 +139,8 @@ export default function App() {
             <ThemeProvider>
               <UiSoundProvider>
                 <AuthProvider>
-                  <AuthGuard>
-                    <SubscriptionProvider>
+                  <SubscriptionProvider>
+                    <AuthGuard>
                       <LockoutGuard>
                         <MediaLibraryProvider>
                           <SoundLabProvider>
@@ -152,8 +152,8 @@ export default function App() {
                           </SoundLabProvider>
                         </MediaLibraryProvider>
                       </LockoutGuard>
-                    </SubscriptionProvider>
-                  </AuthGuard>
+                    </AuthGuard>
+                  </SubscriptionProvider>
                 </AuthProvider>
               </UiSoundProvider>
             </ThemeProvider>
