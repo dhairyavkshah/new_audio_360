@@ -594,6 +594,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.horizontalPadding,
     paddingBottom: Spacing.s,
     borderBottomWidth: 1,
+    zIndex: 10,
   },
   headerDropdownButton: {
     flexDirection: "row",
@@ -602,6 +603,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     borderRadius: M3Shape.cornerFull,
     height: 36,
+    zIndex: 11,
   },
   categoryOverlayBackdrop: {
     ...StyleSheet.absoluteFillObject,
