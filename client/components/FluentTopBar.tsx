@@ -379,6 +379,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     paddingHorizontal: FluentSpacing.l,
     paddingBottom: FluentSpacing.m,
+    zIndex: 100,
   },
   titleRow: {
     flexDirection: "row",
