@@ -332,14 +332,14 @@ class ImmersiveModeEngineModule : Module() {
         
         bassBoost?.let {
             if (it.strengthSupported) {
-                it.setStrength(300.toShort())
+                it.setStrength(200.toShort())
                 it.enabled = true
             }
         }
         
         virtualizer?.let {
             if (it.strengthSupported) {
-                it.setStrength(350.toShort())
+                it.setStrength(200.toShort())
                 it.enabled = true
             }
         }
