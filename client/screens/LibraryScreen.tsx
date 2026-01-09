@@ -248,35 +248,29 @@ export default function LibraryScreen() {
 
   const activeConfig = categories.find(c => c.key === activeCategory) || categories[0];
 
-  const renderCategoryDropdown = () => (
-    <View style={styles.categoryDropdownContainer}>
-      <Pressable
-        style={[styles.categoryDropdownButton, { backgroundColor: theme.surfaceContainerHigh, borderColor: theme.outlineVariant }]}
-        onPress={toggleCategoryDropdown}
-        accessibilityRole="button"
-        accessibilityLabel={`Category: ${activeConfig.label}, ${categoryCounts[activeCategory]} items. Tap to change.`}
-      >
-        <View style={[styles.categoryDropdownIcon, { backgroundColor: activeConfig.color + "20" }]}>
-          <MaterialCommunityIcons name={activeConfig.icon} size={20} color={activeConfig.color} />
-        </View>
-        <View style={styles.categoryDropdownText}>
-          <ThemedText type="bodyLarge" style={{ fontWeight: "600" }}>{activeConfig.label}</ThemedText>
-          <ThemedText type="caption" style={{ color: theme.onSurfaceVariant }}>{categoryCounts[activeCategory]} items</ThemedText>
-        </View>
-        <MaterialCommunityIcons 
-          name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
-          size={24} 
-          color={theme.onSurfaceVariant} 
-        />
-      </Pressable>
-    </View>
+  const renderHeaderDropdown = () => (
+    <Pressable
+      style={[styles.headerDropdownButton, { backgroundColor: theme.surfaceContainerHigh }]}
+      onPress={toggleCategoryDropdown}
+      accessibilityRole="button"
+      accessibilityLabel={`${activeConfig.label}. Tap to change category.`}
+    >
+      <MaterialCommunityIcons name={activeConfig.icon} size={16} color={activeConfig.color} />
+      <ThemedText type="bodyMedium" style={{ marginLeft: 6, fontWeight: "500" }}>{activeConfig.label}</ThemedText>
+      <MaterialCommunityIcons 
+        name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
+        size={18} 
+        color={theme.onSurfaceVariant} 
+        style={{ marginLeft: 2 }}
+      />
+    </Pressable>
   );
 
   const renderCategoryDropdownOverlay = () => (
     showCategoryDropdown ? (
       <>
         <Pressable style={styles.categoryOverlayBackdrop} onPress={() => setShowCategoryDropdown(false)} />
-        <View style={[styles.categoryOptionsOverlay, { backgroundColor: theme.surfaceContainerHigh }]}>
+        <View style={[styles.categoryOptionsOverlay, { backgroundColor: theme.surfaceContainerHigh, top: insets.top + 48 }]}>
           {categories.map((category) => {
             const isActive = activeCategory === category.key;
             return (
@@ -285,9 +279,7 @@ export default function LibraryScreen() {
                 style={[styles.categoryOption, isActive && { backgroundColor: category.color + "15" }]}
                 onPress={() => handleCategoryChange(category.key)}
               >
-                <View style={[styles.categoryOptionIcon, { backgroundColor: category.color + "20" }]}>
-                  <MaterialCommunityIcons name={category.icon} size={18} color={category.color} />
-                </View>
+                <MaterialCommunityIcons name={category.icon} size={16} color={category.color} />
                 <ThemedText type="bodyMedium" style={[styles.categoryOptionLabel, isActive && { color: category.color, fontWeight: "600" }]}>
                   {category.label}
                 </ThemedText>
@@ -295,7 +287,7 @@ export default function LibraryScreen() {
                   {categoryCounts[category.key]}
                 </ThemedText>
                 {isActive && (
-                  <MaterialCommunityIcons name="check" size={18} color={category.color} style={{ marginLeft: Spacing.s }} />
+                  <MaterialCommunityIcons name="check" size={16} color={category.color} style={{ marginLeft: Spacing.xs }} />
                 )}
               </Pressable>
             );
@@ -558,11 +550,7 @@ export default function LibraryScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={insets.top}
       >
-        <TopBar title="Library" showBack={false} />
-        
-        <View style={[styles.categorySection, { backgroundColor: theme.surfaceContainer, borderBottomColor: theme.outlineVariant }]}>
-          {renderCategoryDropdown()}
-        </View>
+        <TopBar title="Library" showBack={false} actions={renderHeaderDropdown()} />
 
         {renderSearchBar()}
 
@@ -597,33 +585,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  categorySection: {
-    paddingHorizontal: Layout.horizontalPadding,
-    paddingTop: Spacing.s,
-    paddingBottom: Spacing.s,
-    borderBottomWidth: 1,
-  },
-  categoryDropdownContainer: {
-    width: "100%",
-  },
-  categoryDropdownButton: {
+  headerDropdownButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
-    borderRadius: M3Shape.cornerMedium,
-    borderWidth: 1,
-  },
-  categoryDropdownIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  categoryDropdownText: {
-    flex: 1,
-    marginLeft: Spacing.m,
+    paddingHorizontal: Spacing.s,
+    paddingVertical: Spacing.xs,
+    borderRadius: M3Shape.cornerFull,
+    height: 32,
   },
   categoryOverlayBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -631,12 +599,11 @@ const styles = StyleSheet.create({
   },
   categoryOptionsOverlay: {
     position: "absolute",
-    top: 110,
-    left: Layout.horizontalPadding,
     right: Layout.horizontalPadding,
     zIndex: 30,
     borderRadius: M3Shape.cornerMedium,
     overflow: "hidden",
+    minWidth: 180,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -655,17 +622,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.s,
-  },
-  categoryOptionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
+    gap: Spacing.s,
   },
   categoryOptionLabel: {
     flex: 1,
-    marginLeft: Spacing.m,
   },
   searchRow: {
     flexDirection: "row",
