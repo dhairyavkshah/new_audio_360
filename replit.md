@@ -107,6 +107,7 @@ The app uses **Material Design 3** (Material You) design language with M3 type s
 
 ## Recent Changes
 
+- **2026-01-09**: Fixed Recording screen layout - restructured layout so ScrollView only takes space needed for warning cards/effects, added mainContentContainer with centered justification to keep song info, waveform, and record controls visible and properly positioned.
 - **2026-01-08**: Added music folder selection feature. Users now select their music folder on first launch using Android SAF. The app loads songs only from the selected folder. Settings includes "Music Source" section to view/change the folder. Web/iOS users have "Use Demo Songs" option.
 - **2026-01-08**: Compact Listen screen header - integrated search and sort into a single header row, removed app icon.
 - **2026-01-08**: Fixed Metro bundler resolution for native modules by creating symlink at `client/modules/audio-effects`. Updated metro.config.js with platform-specific source extensions and watch folders. Web preview now loads correctly with expo-av fallback.
