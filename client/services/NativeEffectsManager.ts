@@ -5,7 +5,13 @@ import {
   VirtualizerModule,
   EqualizerAttachResult 
 } from '@/modules/audio-effects';
-import type { EQBands, SoundLabMode, ImmersiveEffect } from '@/contexts/SoundLabContext';
+import type { EQBands, SoundLabMode } from '@/contexts/SoundLabContext';
+
+interface ImmersiveEffect {
+  reverb: number;
+  delay: number;
+  stereoWidth: number;
+}
 
 class NativeEffectsManagerClass {
   private isInitialized = false;
@@ -70,12 +76,10 @@ class NativeEffectsManagerClass {
     EqualizerModule.setEnabled(true);
 
     const numBands = this.equalizerInfo?.numberOfBands || 5;
-    const minLevel = this.equalizerInfo?.minLevel || -1500;
-    const maxLevel = this.equalizerInfo?.maxLevel || 1500;
 
     const normalize = (val: number) => {
-      const millibels = val * 250;
-      return Math.max(minLevel, Math.min(maxLevel, millibels));
+      const millibels = val * 35;
+      return Math.max(-300, Math.min(150, millibels));
     };
 
     const bandValues: number[] = [];
