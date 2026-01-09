@@ -1607,7 +1607,6 @@ export type ImmersiveMode =
   | 'off'
   | 'music'
   | '360_reality'
-  | 'signature_360'
   | 'gaming'
   | 'podcast'
   | 'movie'
@@ -1747,7 +1746,6 @@ export const ImmersiveModeEngineModule = {
         { id: 'off', name: 'Off', description: 'No audio enhancement', icon: 'volume-off' },
         { id: 'music', name: 'Music', description: 'Optimized for music listening with enhanced clarity and bass', icon: 'music' },
         { id: '360_reality', name: '360 Reality', description: 'Immersive 3D spatial audio experience', icon: 'surround-sound' },
-        { id: 'signature_360', name: 'The Signature 360', description: 'The signature sound by Dhairya Shah', icon: 'music-circle' },
         { id: 'gaming', name: 'Gaming', description: 'Enhanced positional audio for gaming with boosted footsteps and effects', icon: 'gamepad-variant' },
         { id: 'podcast', name: 'Podcast', description: 'Voice clarity enhancement for podcasts and audiobooks', icon: 'podcast' },
         { id: 'movie', name: 'Movie', description: 'Cinematic audio with enhanced dialogue and surround effects', icon: 'movie-open' }
@@ -1801,7 +1799,6 @@ export const IMMERSIVE_MODE_INFO: Record<ImmersiveMode, { name: string; descript
   off: { name: 'Off', description: 'No audio enhancement', icon: 'volume-off' },
   music: { name: 'Music', description: 'Optimized for music listening with enhanced clarity and bass', icon: 'music' },
   '360_reality': { name: '360 Reality', description: 'Immersive 3D spatial audio experience', icon: 'surround-sound' },
-  signature_360: { name: 'The Signature 360', description: 'The signature sound by Dhairya Shah', icon: 'music-circle' },
   gaming: { name: 'Gaming', description: 'Enhanced positional audio for gaming with boosted footsteps and effects', icon: 'gamepad-variant' },
   podcast: { name: 'Podcast', description: 'Voice clarity enhancement for podcasts and audiobooks', icon: 'podcast' },
   movie: { name: 'Movie', description: 'Cinematic audio with enhanced dialogue and surround effects', icon: 'movie-open' },

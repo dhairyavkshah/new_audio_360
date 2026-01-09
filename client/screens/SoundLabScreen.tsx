@@ -65,7 +65,7 @@ const EQ_PRESETS = [
 ];
 
 const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
-  'off', 'music', '360_reality', 'signature_360', 'gaming', 'podcast', 'movie'
+  'off', 'music', '360_reality', 'gaming', 'podcast', 'movie'
 ];
 
 export default function SoundLabScreen() {
