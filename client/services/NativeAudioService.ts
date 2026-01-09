@@ -36,6 +36,8 @@ export interface FftCallback {
   (data: FftData): void;
 }
 
+const IS_DEV_MODE = __DEV__ || process.env.NODE_ENV === 'development';
+
 class NativeAudioServiceClass {
   private audioSessionId: number = 0;
   private isInitialized: boolean = false;
@@ -50,6 +52,9 @@ class NativeAudioServiceClass {
   }
 
   isImmersiveModeAvailable(): boolean {
+    if (Platform.OS === 'web' && IS_DEV_MODE) {
+      return true;
+    }
     return Platform.OS === 'android' && ImmersiveModeEngineModule.isAvailable();
   }
 
@@ -222,6 +227,24 @@ class NativeAudioServiceClass {
       return { success: false, error: 'Immersive mode not available on this platform' };
     }
 
+    if (Platform.OS === 'web' && IS_DEV_MODE) {
+      console.log('[DEV] Simulating immersive mode change to:', mode);
+      this.immersiveMode = mode;
+      return { 
+        success: true, 
+        settings: {
+          equalizerEnabled: mode !== 'off',
+          bassBoostEnabled: mode !== 'off',
+          bassBoostStrength: mode !== 'off' ? 500 : 0,
+          virtualizerEnabled: mode !== 'off',
+          virtualizerStrength: mode !== 'off' ? 500 : 0,
+          loudnessEnhancerEnabled: mode !== 'off',
+          loudnessGain: mode !== 'off' ? 300 : 0,
+          equalizerBandLevels: []
+        }
+      };
+    }
+
     try {
       if (!this.isInitialized) {
         const initResult = await this.initialize();
@@ -255,6 +278,22 @@ class NativeAudioServiceClass {
   }
 
   getCurrentImmersiveMode(): { mode: ImmersiveMode; isAttached: boolean; settings: ImmersiveModeSettings } {
+    if (Platform.OS === 'web' && IS_DEV_MODE) {
+      return {
+        mode: this.immersiveMode,
+        isAttached: true,
+        settings: {
+          equalizerEnabled: this.immersiveMode !== 'off',
+          bassBoostEnabled: this.immersiveMode !== 'off',
+          bassBoostStrength: this.immersiveMode !== 'off' ? 500 : 0,
+          virtualizerEnabled: this.immersiveMode !== 'off',
+          virtualizerStrength: this.immersiveMode !== 'off' ? 500 : 0,
+          loudnessEnhancerEnabled: this.immersiveMode !== 'off',
+          loudnessGain: this.immersiveMode !== 'off' ? 300 : 0,
+          equalizerBandLevels: []
+        }
+      };
+    }
     if (!this.isImmersiveModeAvailable()) {
       return {
         mode: 'off',
@@ -275,6 +314,17 @@ class NativeAudioServiceClass {
   }
 
   getAvailableImmersiveModes(): ImmersiveModeInfo[] {
+    if (Platform.OS === 'web' && IS_DEV_MODE) {
+      return [
+        { id: 'off', name: 'Off', description: 'No audio enhancement', icon: 'volume-off' },
+        { id: 'music', name: 'Music', description: 'Balanced for music listening', icon: 'music' },
+        { id: '360_reality', name: '360 Reality', description: 'Immersive spatial audio', icon: 'surround-sound' },
+        { id: 'signature_360', name: 'Signature 360', description: 'Premium spatial experience', icon: 'music-circle' },
+        { id: 'gaming', name: 'Gaming', description: 'Enhanced for gaming audio', icon: 'gamepad-variant' },
+        { id: 'podcast', name: 'Podcast', description: 'Optimized for voice clarity', icon: 'podcast' },
+        { id: 'movie', name: 'Movie', description: 'Cinematic audio experience', icon: 'movie-open' },
+      ];
+    }
     return ImmersiveModeEngineModule.getAvailableModes();
   }
 
