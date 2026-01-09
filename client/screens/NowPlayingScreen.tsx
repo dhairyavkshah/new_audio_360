@@ -16,6 +16,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { PlaybackControls } from "@/components/PlaybackControls";
 import { ProgressBar } from "@/components/ProgressBar";
 import { AudioWaveform } from "@/components/AudioWaveform";
+import { BottomSheet } from "@/components/BottomSheet";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
@@ -50,6 +51,7 @@ export default function NowPlayingScreen() {
     progress,
     shuffle,
     repeat,
+    sleepTimerMinutes,
     isLoading,
     isBuffering,
     error,
@@ -59,7 +61,10 @@ export default function NowPlayingScreen() {
     seek,
     toggleShuffle,
     toggleRepeat,
+    setSleepTimer,
   } = usePlayer();
+
+  const [isSleepTimerVisible, setIsSleepTimerVisible] = React.useState(false);
 
   const artworkScale = useSharedValue(1);
 
@@ -88,6 +93,18 @@ export default function NowPlayingScreen() {
     textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const formatSleepTime = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins}m ${secs}s`;
   };
 
   if (!currentSong) {
@@ -170,6 +187,27 @@ export default function NowPlayingScreen() {
               onPress={() => {
                 playTapSound();
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setIsSleepTimerVisible(true);
+              }}
+            >
+              <MaterialCommunityIcons
+                name={sleepTimerMinutes ? "moon-waning-crescent" : "sleep"}
+                size={24}
+                color={sleepTimerMinutes ? theme.primary : (isDark ? "rgba(255,255,255,0.85)" : theme.textSecondary)}
+              />
+              {sleepTimerMinutes ? (
+                <View style={[styles.timerBadge, { backgroundColor: theme.primary }]}>
+                  <ThemedText type="caption" style={styles.timerBadgeText}>
+                    {sleepTimerMinutes}
+                  </ThemedText>
+                </View>
+              ) : null}
+            </Pressable>
+            <Pressable
+              style={styles.actionButton}
+              onPress={() => {
+                playTapSound();
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 navigation.navigate("Queue");
               }}
             >
@@ -216,6 +254,65 @@ export default function NowPlayingScreen() {
           />
         </View>
       </View>
+
+      <BottomSheet
+        visible={isSleepTimerVisible}
+        onDismiss={() => setIsSleepTimerVisible(false)}
+        title="Sleep Timer"
+      >
+        <View style={styles.sleepTimerContent}>
+          {sleepTimerMinutes ? (
+            <View style={styles.activeTimerInfo}>
+              <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                Timer active: {sleepTimerMinutes} minutes
+              </ThemedText>
+            </View>
+          ) : null}
+          
+          {[15, 30, 45, 60].map((mins) => (
+            <Pressable
+              key={mins}
+              style={[
+                styles.timerOption,
+                sleepTimerMinutes === mins && { backgroundColor: theme.primary + '20' }
+              ]}
+              onPress={() => {
+                playTapSound();
+                setSleepTimer(mins);
+                setIsSleepTimerVisible(false);
+              }}
+            >
+              <ThemedText 
+                type="body" 
+                style={[
+                  styles.timerOptionText,
+                  sleepTimerMinutes === mins && { color: theme.primary, fontWeight: '600' }
+                ]}
+              >
+                {mins} Minutes
+              </ThemedText>
+              {sleepTimerMinutes === mins && (
+                <MaterialCommunityIcons name="check" size={20} color={theme.primary} />
+              )}
+            </Pressable>
+          ))}
+          
+          {sleepTimerMinutes !== null && (
+            <Pressable
+              style={[styles.timerOption, { marginTop: Spacing.s }]}
+              onPress={() => {
+                playTapSound();
+                setSleepTimer(null);
+                setIsSleepTimerVisible(false);
+              }}
+            >
+              <ThemedText type="body" style={[styles.timerOptionText, { color: theme.error || '#FF4D67' }]}>
+                Turn Off Timer
+              </ThemedText>
+            </Pressable>
+          )}
+        </View>
+      </BottomSheet>
     </View>
   );
 }
@@ -306,5 +403,42 @@ const styles = StyleSheet.create({
   controlsContainer: {
     width: "100%",
     marginBottom: IS_COMPACT ? Spacing.s : Spacing.l,
+  },
+  timerBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 2,
+  },
+  timerBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  sleepTimerContent: {
+    paddingBottom: Spacing.xl,
+  },
+  activeTimerInfo: {
+    paddingVertical: Spacing.m,
+    alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(150,150,150,0.2)',
+    marginBottom: Spacing.s,
+  },
+  timerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.m,
+    paddingHorizontal: Spacing.l,
+    borderRadius: BorderRadius.medium,
+  },
+  timerOptionText: {
+    fontSize: 16,
   },
 });

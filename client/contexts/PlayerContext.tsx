@@ -141,6 +141,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         NativeEffectsManager.release();
         PlaybackEngineModule.release();
       }
+      if (sleepTimerRef.current) {
+        clearInterval(sleepTimerRef.current);
+      }
     };
   }, []);
 

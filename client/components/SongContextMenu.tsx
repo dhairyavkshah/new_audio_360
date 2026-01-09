@@ -101,7 +101,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
     setIsLoading(true);
     try {
       const newPlaylist: Playlist = {
-        id: `playlist_${Date.now()}`,
+        id: Date.now().toString(),
         name: newPlaylistName.trim(),
         songIds: [song.id],
         createdAt: Date.now(),

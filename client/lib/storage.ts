@@ -68,6 +68,12 @@ export async function deletePlaylist(id: string): Promise<void> {
   await savePlaylists(filtered);
 }
 
+export async function isSongInPlaylist(playlistId: string, songId: string): Promise<boolean> {
+  const playlists = await getPlaylists();
+  const playlist = playlists.find(p => p.id === playlistId);
+  return playlist ? playlist.songIds.includes(songId) : false;
+}
+
 export async function addSongToPlaylist(playlistId: string, songId: string): Promise<void> {
   const playlists = await getPlaylists();
   const index = playlists.findIndex(p => p.id === playlistId);

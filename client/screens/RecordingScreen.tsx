@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, StyleSheet, Image, Pressable, ImageBackground, Platform, ActivityIndicator } from "react-native";
+import { View, StyleSheet, Image, Pressable, ImageBackground, Platform, ActivityIndicator, ScrollView } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -12,12 +12,15 @@ import { RecordButton } from "@/components/RecordButton";
 import { LiveAudioWaveform } from "@/components/LiveAudioWaveform";
 import { GlassCard } from "@/components/GlassCard";
 import { Dialog } from "@/components/Dialog";
+import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { useStudioContext } from "@/contexts/StudioContext";
+import { useStudioContext, REVERB_PRESETS, NOISE_REDUCTION_LEVELS } from "@/contexts/StudioContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Spacing, BorderRadius, ModeStyles, Layout } from "@/constants/theme";
 import { studioAudioEngine } from "@/services/StudioAudioEngine";
 import { audioDeviceService, LatencyWarning } from "@/services/AudioDeviceService";
 import { micTestService, MicTestResult, MicTestStatus } from "@/services/MicTestService";
+import { LiveRecordingModule } from "../../modules/audio-effects";
 
 const STUDIO_BLUR_INTENSITY = 35;
 import { getSongById } from "@/lib/data";
@@ -32,7 +35,8 @@ export default function RecordingScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RecordingRouteProp>();
   const { theme, isDark } = useThemeContext();
-  const { updateProject, currentProject } = useStudioContext();
+  const { updateProject, currentProject, selectedReverb, noiseReduction, setSelectedReverb, setNoiseReduction } = useStudioContext();
+  const { isNoiseReductionUnlocked, isReverbUnlocked } = useSubscription();
 
   const song = getSongById(route.params.songId);
   const [isRecording, setIsRecording] = useState(false);
@@ -45,6 +49,9 @@ export default function RecordingScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [audioLevel, setAudioLevel] = useState<number>(-160);
   const [hasRecorded, setHasRecorded] = useState(false);
+  const [recordedUri, setRecordedUri] = useState<string | null>(null);
+  const [isPlayingRecording, setIsPlayingRecording] = useState(false);
+  const [showEffects, setShowEffects] = useState(false);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const [showHeadphoneDialogModal, setShowHeadphoneDialogModal] = useState(true);
@@ -52,6 +59,7 @@ export default function RecordingScreen() {
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showReRecordDialog, setShowReRecordDialog] = useState(false);
   
   const [micTestStatus, setMicTestStatus] = useState<MicTestStatus>('idle');
   const [micTestResult, setMicTestResult] = useState<MicTestResult | null>(null);
@@ -60,6 +68,9 @@ export default function RecordingScreen() {
   const [latencyWarning, setLatencyWarning] = useState<LatencyWarning | null>(null);
   const [inputGain, setInputGain] = useState(100);
   const [showGainControl, setShowGainControl] = useState(false);
+  
+  const isWebPlatform = Platform.OS === 'web';
+  const nativeRecordingAvailable = LiveRecordingModule.isAvailable();
 
   const textShadowStyle = {
     textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
@@ -142,6 +153,61 @@ export default function RecordingScreen() {
     const roundedValue = Math.round(value);
     setInputGain(roundedValue);
     studioAudioEngine.setInputGain(roundedValue);
+  }, []);
+
+  const handleNoiseReductionSelect = useCallback((level: typeof noiseReduction) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    if (!isNoiseReductionUnlocked(level)) {
+      return;
+    }
+    setNoiseReduction(level);
+  }, [isNoiseReductionUnlocked, setNoiseReduction]);
+
+  const handleReverbSelect = useCallback((reverb: typeof selectedReverb) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    if (!isReverbUnlocked(reverb)) {
+      return;
+    }
+    setSelectedReverb(reverb);
+  }, [isReverbUnlocked, setSelectedReverb]);
+
+  const handlePlayRecording = useCallback(async () => {
+    if (!recordedUri) return;
+    
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    
+    if (isPlayingRecording) {
+      await studioAudioEngine.pauseMix();
+      setIsPlayingRecording(false);
+    } else {
+      await studioAudioEngine.loadVoiceTrack(recordedUri);
+      await studioAudioEngine.playMix();
+      setIsPlayingRecording(true);
+    }
+  }, [recordedUri, isPlayingRecording]);
+
+  const handleReRecord = useCallback(() => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setShowReRecordDialog(true);
+  }, []);
+
+  const confirmReRecord = useCallback(async () => {
+    setShowReRecordDialog(false);
+    setHasRecorded(false);
+    setRecordedUri(null);
+    setRecordingTime(0);
+    setIsPlayingRecording(false);
+    try {
+      await studioAudioEngine.stopMix();
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -250,9 +316,9 @@ export default function RecordingScreen() {
       recordingIntervalRef.current = null;
     }
 
-    let recordedUri: string | null = null;
+    let uri: string | null = null;
     try {
-      recordedUri = await studioAudioEngine.stopRecordingWithBackingTrack();
+      uri = await studioAudioEngine.stopRecordingWithBackingTrack();
     } catch (error) {
       console.error("Failed to stop recording:", error);
       setIsRecording(false);
@@ -266,11 +332,12 @@ export default function RecordingScreen() {
     setIsRecording(false);
     setIsPaused(false);
     setIsBackingTrackPlaying(false);
+    setRecordedUri(uri);
 
-    if (currentProject && recordedUri) {
+    if (currentProject && uri) {
       try {
         await updateProject(currentProject.id, {
-          voiceRecordingUri: recordedUri,
+          voiceRecordingUri: uri,
           backgroundTrackUri: song?.audioUrl || null,
           backgroundTrackTitle: song?.title || null,
           duration: recordingTime,
@@ -490,6 +557,95 @@ export default function RecordingScreen() {
           </GlassCard>
         ) : null}
 
+        {isWebPlatform ? (
+          <GlassCard style={styles.reminderCard}>
+            <View style={styles.reminderContent}>
+              <MaterialCommunityIcons name="information-outline" size={24} color={theme.primary} />
+              <View style={styles.reminderText}>
+                <ThemedText type="body" style={{ fontWeight: "600", color: theme.primary }}>
+                  Web Preview Mode
+                </ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                  Recording works with basic features. For best quality with noise reduction and echo cancellation, use the Android app.
+                </ThemedText>
+              </View>
+            </View>
+          </GlassCard>
+        ) : null}
+
+        {!isRecording && !isPaused && !hasRecorded ? (
+          <Pressable onPress={() => setShowEffects(!showEffects)}>
+            <GlassCard style={styles.effectsCard}>
+              <View style={styles.effectsHeader}>
+                <View style={styles.effectsTitleRow}>
+                  <MaterialCommunityIcons name="tune-variant" size={20} color={theme.primary} />
+                  <ThemedText type="body" style={{ fontWeight: "600", marginLeft: Spacing.sm }}>
+                    Voice Effects
+                  </ThemedText>
+                </View>
+                <View style={styles.effectsBadge}>
+                  <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                    {selectedReverb !== 'None' ? selectedReverb : 'No Reverb'} • {noiseReduction !== 'Off' ? noiseReduction : 'No NR'}
+                  </ThemedText>
+                  <MaterialCommunityIcons 
+                    name={showEffects ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color={theme.textSecondary} 
+                  />
+                </View>
+              </View>
+              {showEffects ? (
+                <View style={styles.effectsContent}>
+                  {!nativeRecordingAvailable && !isWebPlatform ? (
+                    <View style={styles.effectsWarning}>
+                      <MaterialCommunityIcons name="android" size={16} color={theme.warning} />
+                      <ThemedText type="small" style={{ color: theme.warning, marginLeft: Spacing.xs }}>
+                        Effects require Android native build
+                      </ThemedText>
+                    </View>
+                  ) : null}
+                  <View style={styles.effectSection}>
+                    <ThemedText type="small" style={{ fontWeight: "600", marginBottom: Spacing.sm }}>
+                      Noise Reduction
+                    </ThemedText>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      <View style={styles.effectChipsRow}>
+                        {NOISE_REDUCTION_LEVELS.map((level) => (
+                          <EffectChip
+                            key={level}
+                            label={level}
+                            isSelected={noiseReduction === level}
+                            isLocked={!isNoiseReductionUnlocked(level)}
+                            onPress={() => handleNoiseReductionSelect(level)}
+                          />
+                        ))}
+                      </View>
+                    </ScrollView>
+                  </View>
+                  <View style={styles.effectSection}>
+                    <ThemedText type="small" style={{ fontWeight: "600", marginBottom: Spacing.sm }}>
+                      Reverb
+                    </ThemedText>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      <View style={styles.effectChipsRow}>
+                        {REVERB_PRESETS.map((reverb) => (
+                          <EffectChip
+                            key={reverb}
+                            label={reverb}
+                            isSelected={selectedReverb === reverb}
+                            isLocked={!isReverbUnlocked(reverb)}
+                            onPress={() => handleReverbSelect(reverb)}
+                          />
+                        ))}
+                      </View>
+                    </ScrollView>
+                  </View>
+                </View>
+              ) : null}
+            </GlassCard>
+          </Pressable>
+        ) : null}
+
         <View style={styles.songInfo}>
           <Image source={{ uri: song.artwork }} style={styles.artwork} />
           <ThemedText type="h4" style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
@@ -655,6 +811,17 @@ export default function RecordingScreen() {
         message={errorMessage}
         actions={[
           { label: "OK", onPress: () => setShowErrorDialog(false), variant: "default" },
+        ]}
+      />
+
+      <Dialog
+        visible={showReRecordDialog}
+        onDismiss={() => setShowReRecordDialog(false)}
+        title="Re-record?"
+        message="This will discard your current recording. Are you sure you want to start over?"
+        actions={[
+          { label: "Cancel", onPress: () => setShowReRecordDialog(false), variant: "ghost" },
+          { label: "Re-record", onPress: confirmReRecord, variant: "default" },
         ]}
       />
 
@@ -855,5 +1022,65 @@ const styles = StyleSheet.create({
   micLevelFill: {
     height: "100%",
     borderRadius: 4,
+  },
+  effectsCard: {
+    marginBottom: Spacing.lg,
+  },
+  effectsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  effectsTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  effectsBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  effectsContent: {
+    marginTop: Spacing.lg,
+  },
+  effectsWarning: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 152, 0, 0.1)",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.md,
+  },
+  effectSection: {
+    marginBottom: Spacing.md,
+  },
+  effectChipsRow: {
+    flexDirection: "row",
+    gap: Spacing.xs,
+  },
+  takeManagementCard: {
+    marginBottom: Spacing.lg,
+  },
+  takeManagementHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  takeManagementTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  takeManagementActions: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    gap: Spacing.xs,
   },
 });
