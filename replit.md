@@ -68,3 +68,18 @@ The app features a 3-tab navigation structure:
 - **@react-navigation**: Navigation system
 - **MaterialCommunityIcons**: Iconography
 - **expo-notifications**: For now-playing controls and permission flow
+
+## Recent Changes
+
+- **2026-01-09**: **Library Category Dropdown** - Replaced category grid with dropdown selector:
+  - Converted 7 category cards (Liked, Recent, Top, Songs, Albums, Artists, Playlists) to single dropdown
+  - Dropdown shows current category with icon, label, and item count
+  - Overlay dropdown menu with all categories for selection
+  - Saves vertical space for more content visibility
+
+- **2026-01-09**: **Privacy Policy & Attribution** - Added comprehensive privacy policy and app attribution:
+  - Created PrivacyPolicyScreen with 10 policy sections covering offline-first data practices
+  - Added "By: Dhairya Shah (The Team 360)" attribution to SplashScreen, SettingsScreen, and AboutScreen footers
+  - Privacy Policy accessible from About screen under Legal section
+  - Updated PermissionOnboardingFlow: replaced microphone with Photos & Videos permission (Studio hidden)
+  - Permission steps now: Music & Audio, Photos & Videos, Notifications
