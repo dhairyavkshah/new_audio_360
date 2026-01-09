@@ -501,9 +501,11 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: FluentSpacing.l,
+    paddingTop: FluentSpacing.l,
   },
   gridContent: {
     padding: FluentSpacing.l,
+    paddingTop: FluentSpacing.l,
   },
   albumRow: {
     gap: FluentSpacing.m,

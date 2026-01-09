@@ -185,7 +185,7 @@ export default function ListenScreen() {
 
 const styles = StyleSheet.create({
   listContent: {
-    paddingTop: FluentSpacing.m,
+    paddingTop: FluentSpacing.l,
   },
   emptyContainer: {
     alignItems: "center",
