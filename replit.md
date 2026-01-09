@@ -122,6 +122,16 @@ The app uses **Microsoft Fluent 2** design system with comprehensive token-based
 
 ## Recent Changes
 
+- **2026-01-09**: **Multi-Step Permission Onboarding Flow** - Replaced single-screen onboarding with comprehensive step-based permission flow:
+  - Created PermissionOnboardingFlow.tsx with visual step indicators (dots) and progress counter
+  - Three permission steps: Music & Audio (Media Library), Microphone (for Studio/Karaoke), Notifications (for now-playing controls)
+  - Added expo-notifications package with Android notification channel "now-playing" setup
+  - Each step shows permission status (pending/granted/denied) with appropriate actions
+  - "Open Settings" button for denied permissions, "Skip" option for optional permissions
+  - Web platform shows simplified screen with "Get Started" button (permissions work differently on web)
+  - Integrated into App.tsx with proper onboarding state transitions
+  - All styling uses Fluent 2 design tokens for consistent UI
+
 - **2026-01-09**: **Music Folder Selection Feature** - Users can now select specific device folders to source music from:
   - Added FolderSelectionScreen with multi-select folder browsing
   - Storage functions for folder persistence (getSelectedFolders, setSelectedFolders)
