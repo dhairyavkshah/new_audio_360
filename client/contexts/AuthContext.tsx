@@ -342,6 +342,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       secureDelete(STORAGE_KEYS.SUBSCRIPTION),
       secureDelete(STORAGE_KEYS.ENTITLEMENT),
       secureDelete(STORAGE_KEYS.LAST_AUTH_TIME),
+      secureDelete('subscription_data'),
     ]);
 
     setState({
@@ -353,6 +354,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       biometricAvailable: state.biometricAvailable,
       requiresReauth: false,
     });
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      setTimeout(() => window.location.reload(), 100);
+    }
   }, [state.biometricEnabled, state.biometricAvailable]);
 
   const enableBiometric = useCallback(async (): Promise<boolean> => {
