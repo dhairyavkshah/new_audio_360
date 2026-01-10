@@ -169,110 +169,125 @@ export default function PlanScreen() {
         </GlassCard>
 
         <View style={styles.comparisonSection}>
-          <FluentText variant="title3" style={styles.sectionTitle}>
+          <FluentText variant="subtitle1" style={styles.sectionTitle}>
             Compare Plans
           </FluentText>
           
-          <View style={[styles.comparisonHeader, { backgroundColor: colors.colorNeutralBackground2 }]}>
-            <View style={styles.featureLeft}>
-              <FluentText variant="caption1" color="secondary">
-                Features
-              </FluentText>
-            </View>
-            <View style={styles.featureChecks}>
-              <View style={[styles.checkBox, { width: 60 }]}>
-                <FluentText variant="caption1" color="brand" style={{ fontWeight: "600" }}>
-                  Standard
+          <View style={{
+            backgroundColor: colors.colorNeutralBackground2,
+            borderRadius: 12,
+            padding: FluentSpacing.l,
+            marginBottom: FluentSpacing.m,
+          }}>
+            <View style={styles.comparisonHeader}>
+              <View style={styles.featureLeft}>
+                <FluentText variant="caption1" color="secondary">
+                  Features
                 </FluentText>
               </View>
-              <View style={[styles.checkBox, { width: 60 }]}>
-                <FluentText variant="caption1" style={{ color: colors.colorPaletteYellowForeground1, fontWeight: "600" }}>
-                  Premium
-                </FluentText>
+              <View style={styles.featureChecks}>
+                <View style={[styles.checkBox, { width: 60 }]}>
+                  <FluentText variant="caption1" color="brand" style={{ fontWeight: "600" }}>
+                    Standard
+                  </FluentText>
+                </View>
+                <View style={[styles.checkBox, { width: 60 }]}>
+                  <FluentText variant="caption1" style={{ color: colors.colorPaletteYellowForeground1, fontWeight: "600" }}>
+                    Premium
+                  </FluentText>
+                </View>
               </View>
             </View>
-          </View>
 
-          <View style={[styles.featuresList, { backgroundColor: colors.colorNeutralBackground2 }]}>
-            {FEATURES.map(renderFeatureRow)}
+            <View style={styles.featuresList}>
+              {FEATURES.map(renderFeatureRow)}
+            </View>
           </View>
         </View>
 
         <View style={styles.pricingSection}>
-          <FluentText variant="title3" style={styles.sectionTitle}>
+          <FluentText variant="subtitle1" style={styles.sectionTitle}>
             One-Time Purchase
           </FluentText>
-          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.l }}>
-            Pay once, own forever. No subscriptions.
-          </FluentText>
+          
+          <View style={{
+            backgroundColor: colors.colorNeutralBackground2,
+            borderRadius: 12,
+            padding: FluentSpacing.l,
+            marginBottom: FluentSpacing.m,
+          }}>
+            <FluentText variant="body2" color="secondary" style={{ marginBottom: FluentSpacing.l }}>
+              Pay once, own forever. No subscriptions.
+            </FluentText>
 
-          {plan === "free" && (
-            <Pressable
-              onPress={handlePurchaseStandard}
-              disabled={isProcessing}
-              style={[
-                styles.planButton,
-                { 
-                  backgroundColor: colors.colorBrandBackground,
-                  opacity: isProcessing ? 0.6 : 1,
-                },
-              ]}
-            >
-              <View style={styles.planButtonContent}>
-                <MaterialCommunityIcons name="check-circle" size={24} color="#FFFFFF" />
-                <View style={styles.planButtonText}>
-                  <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-                    Standard
-                  </FluentText>
-                  <FluentText variant="caption1" style={{ color: "rgba(255,255,255,0.8)" }}>
-                    5 themes, Equalizer, Playlists
-                  </FluentText>
+            {plan === "free" && (
+              <Pressable
+                onPress={handlePurchaseStandard}
+                disabled={isProcessing}
+                style={[
+                  styles.planButton,
+                  { 
+                    backgroundColor: colors.colorBrandBackground,
+                    opacity: isProcessing ? 0.6 : 1,
+                  },
+                ]}
+              >
+                <View style={styles.planButtonContent}>
+                  <MaterialCommunityIcons name="check-circle" size={24} color="#FFFFFF" />
+                  <View style={styles.planButtonText}>
+                    <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                      Standard
+                    </FluentText>
+                    <FluentText variant="caption1" style={{ color: "rgba(255,255,255,0.8)" }}>
+                      5 themes, Equalizer, Playlists
+                    </FluentText>
+                  </View>
                 </View>
-              </View>
-              <FluentText variant="title3" style={{ color: "#FFFFFF" }}>
-                {pricing.symbol}{pricing.standard}
-              </FluentText>
-            </Pressable>
-          )}
+                <FluentText variant="title3" style={{ color: "#FFFFFF" }}>
+                  {pricing.symbol}{pricing.standard}
+                </FluentText>
+              </Pressable>
+            )}
 
-          {plan !== "premium" && (
-            <Pressable
-              onPress={handlePurchasePremium}
-              disabled={isProcessing}
-              style={[
-                styles.planButton,
-                { 
-                  backgroundColor: colors.colorPaletteYellowForeground1,
-                  opacity: isProcessing ? 0.6 : 1,
-                  marginTop: plan === "free" ? FluentSpacing.m : 0,
-                },
-              ]}
-            >
-              <View style={styles.planButtonContent}>
-                <MaterialCommunityIcons name="crown" size={24} color="#FFFFFF" />
-                <View style={styles.planButtonText}>
-                  <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-                    {plan === "standard" ? "Upgrade to Premium" : "Premium"}
-                  </FluentText>
-                  <FluentText variant="caption1" style={{ color: "rgba(255,255,255,0.8)" }}>
-                    All 55 themes, Immersive Audio
-                  </FluentText>
+            {plan !== "premium" && (
+              <Pressable
+                onPress={handlePurchasePremium}
+                disabled={isProcessing}
+                style={[
+                  styles.planButton,
+                  { 
+                    backgroundColor: colors.colorPaletteYellowForeground1,
+                    opacity: isProcessing ? 0.6 : 1,
+                    marginTop: plan === "free" ? FluentSpacing.m : 0,
+                  },
+                ]}
+              >
+                <View style={styles.planButtonContent}>
+                  <MaterialCommunityIcons name="crown" size={24} color="#FFFFFF" />
+                  <View style={styles.planButtonText}>
+                    <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                      {plan === "standard" ? "Upgrade to Premium" : "Premium"}
+                    </FluentText>
+                    <FluentText variant="caption1" style={{ color: "rgba(255,255,255,0.8)" }}>
+                      All 55 themes, Immersive Audio
+                    </FluentText>
+                  </View>
                 </View>
-              </View>
-              <FluentText variant="title3" style={{ color: "#FFFFFF" }}>
-                {pricing.symbol}{plan === "standard" ? pricing.upgrade : pricing.premium}
-              </FluentText>
-            </Pressable>
-          )}
+                <FluentText variant="title3" style={{ color: "#FFFFFF" }}>
+                  {pricing.symbol}{plan === "standard" ? pricing.upgrade : pricing.premium}
+                </FluentText>
+              </Pressable>
+            )}
 
-          {plan === "premium" && (
-            <View style={[styles.allUnlockedCard, { backgroundColor: colors.colorPaletteGreenForeground1 + "15" }]}>
-              <MaterialCommunityIcons name="check-decagram" size={32} color={colors.colorPaletteGreenForeground1} />
-              <FluentText variant="body1" style={{ color: colors.colorPaletteGreenForeground1, marginTop: FluentSpacing.s }}>
-                You have access to all features!
-              </FluentText>
-            </View>
-          )}
+            {plan === "premium" && (
+              <View style={[styles.allUnlockedCard, { backgroundColor: colors.colorPaletteGreenForeground1 + "15" }]}>
+                <MaterialCommunityIcons name="check-decagram" size={32} color={colors.colorPaletteGreenForeground1} />
+                <FluentText variant="body1" style={{ color: colors.colorPaletteGreenForeground1, marginTop: FluentSpacing.s }}>
+                  You have access to all features!
+                </FluentText>
+              </View>
+            )}
+          </View>
         </View>
 
         <Pressable
@@ -286,24 +301,31 @@ export default function PlanScreen() {
           </FluentText>
         </Pressable>
 
-        <View style={styles.infoSection}>
-          <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="shield-check" size={16} color={colors.colorPaletteGreenForeground1} />
-            <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
-              Secure payment via Google Play
-            </FluentText>
-          </View>
-          <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="infinity" size={16} color={colors.colorBrandForeground1} />
-            <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
-              Lifetime access - no recurring fees
-            </FluentText>
-          </View>
-          <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="cellphone" size={16} color={colors.colorBrandForeground2} />
-            <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
-              100% offline - works without internet
-            </FluentText>
+        <View style={{
+          backgroundColor: colors.colorNeutralBackground2,
+          borderRadius: 12,
+          padding: FluentSpacing.l,
+          marginBottom: FluentSpacing.m,
+        }}>
+          <View style={styles.infoSection}>
+            <View style={styles.infoRow}>
+              <MaterialCommunityIcons name="shield-check" size={16} color={colors.colorPaletteGreenForeground1} />
+              <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
+                Secure payment via Google Play
+              </FluentText>
+            </View>
+            <View style={styles.infoRow}>
+              <MaterialCommunityIcons name="infinity" size={16} color={colors.colorBrandForeground1} />
+              <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
+                Lifetime access - no recurring fees
+              </FluentText>
+            </View>
+            <View style={styles.infoRow}>
+              <MaterialCommunityIcons name="cellphone" size={16} color={colors.colorBrandForeground2} />
+              <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
+                100% offline - works without internet
+              </FluentText>
+            </View>
           </View>
         </View>
       </ScrollView>

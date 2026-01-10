@@ -346,24 +346,29 @@ export default function FolderSelectionScreen() {
           <FluentText variant="body1" color="secondary" style={{ textAlign: "center", marginBottom: FluentSpacing.xl }}>
             Click "Add Folder" to select a folder containing your music files
           </FluentText>
-          <View style={styles.instructionsList}>
-            <View style={styles.instructionItem}>
-              <MaterialCommunityIcons name="numeric-1-circle" size={24} color={colors.colorBrandForeground1} />
-              <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s, flex: 1 }}>
-                Click the "Add Folder" button above
-              </FluentText>
-            </View>
-            <View style={styles.instructionItem}>
-              <MaterialCommunityIcons name="numeric-2-circle" size={24} color={colors.colorBrandForeground1} />
-              <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s, flex: 1 }}>
-                Select a folder containing audio files (MP3, M4A, WAV, etc.)
-              </FluentText>
-            </View>
-            <View style={styles.instructionItem}>
-              <MaterialCommunityIcons name="numeric-3-circle" size={24} color={colors.colorBrandForeground1} />
-              <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s, flex: 1 }}>
-                Your songs will appear in the library
-              </FluentText>
+          <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
+            <FluentText variant="subtitle1" style={{ color: colors.colorNeutralForeground1, marginBottom: FluentSpacing.m }}>
+              How to Get Started
+            </FluentText>
+            <View style={styles.instructionsList}>
+              <View style={styles.instructionItem}>
+                <MaterialCommunityIcons name="numeric-1-circle" size={24} color={colors.colorBrandForeground1} />
+                <FluentText variant="body2" color="secondary" style={{ marginLeft: FluentSpacing.s, flex: 1 }}>
+                  Click the "Add Folder" button above
+                </FluentText>
+              </View>
+              <View style={styles.instructionItem}>
+                <MaterialCommunityIcons name="numeric-2-circle" size={24} color={colors.colorBrandForeground1} />
+                <FluentText variant="body2" color="secondary" style={{ marginLeft: FluentSpacing.s, flex: 1 }}>
+                  Select a folder containing audio files (MP3, M4A, WAV, etc.)
+                </FluentText>
+              </View>
+              <View style={styles.instructionItem}>
+                <MaterialCommunityIcons name="numeric-3-circle" size={24} color={colors.colorBrandForeground1} />
+                <FluentText variant="body2" color="secondary" style={{ marginLeft: FluentSpacing.s, flex: 1 }}>
+                  Your songs will appear in the library
+                </FluentText>
+              </View>
             </View>
           </View>
         </View>
@@ -379,42 +384,47 @@ export default function FolderSelectionScreen() {
             {folders.length} folder{folders.length === 1 ? "" : "s"} added ({totalSongsSelected} songs total)
           </FluentText>
 
-          {folders.map((folder) => (
-            <View
-              key={folder.id}
-              style={[
-                styles.folderItem,
-                { 
-                  backgroundColor: colors.colorNeutralBackground2,
-                  borderColor: colors.colorBrandForeground1,
-                },
-              ]}
-            >
-              <View style={styles.folderContent}>
-                <View style={[styles.folderIcon, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
-                  <MaterialCommunityIcons name="folder-music" size={24} color={colors.colorBrandForeground1} />
-                </View>
-                <View style={styles.folderInfo}>
-                  <FluentText 
-                    variant="body1" 
-                    style={[styles.folderTitle, { color: colors.colorNeutralForeground1 }]}
-                    numberOfLines={1}
+          <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
+            <FluentText variant="subtitle1" style={{ color: colors.colorNeutralForeground1, marginBottom: FluentSpacing.m }}>
+              Added Folders
+            </FluentText>
+            {folders.map((folder) => (
+              <View
+                key={folder.id}
+                style={[
+                  styles.folderItem,
+                  { 
+                    backgroundColor: colors.colorNeutralBackground2,
+                    borderColor: colors.colorBrandForeground1,
+                  },
+                ]}
+              >
+                <View style={styles.folderContent}>
+                  <View style={[styles.folderIcon, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
+                    <MaterialCommunityIcons name="folder-music" size={24} color={colors.colorBrandForeground1} />
+                  </View>
+                  <View style={styles.folderInfo}>
+                    <FluentText 
+                      variant="body1" 
+                      style={[styles.folderTitle, { color: colors.colorNeutralForeground1 }]}
+                      numberOfLines={1}
+                    >
+                      {folder.title}
+                    </FluentText>
+                    <FluentText variant="caption2" color="secondary">
+                      {folder.assetCount} {folder.assetCount === 1 ? "song" : "songs"}
+                    </FluentText>
+                  </View>
+                  <Pressable
+                    onPress={() => handleRemoveFolder(folder.id)}
+                    style={[styles.removeButton, { backgroundColor: colors.colorPaletteRedForeground1 + "15" }]}
                   >
-                    {folder.title}
-                  </FluentText>
-                  <FluentText variant="caption2" color="secondary">
-                    {folder.assetCount} {folder.assetCount === 1 ? "song" : "songs"}
-                  </FluentText>
+                    <MaterialCommunityIcons name="close" size={18} color={colors.colorPaletteRedForeground1} />
+                  </Pressable>
                 </View>
-                <Pressable
-                  onPress={() => handleRemoveFolder(folder.id)}
-                  style={[styles.removeButton, { backgroundColor: colors.colorPaletteRedForeground1 + "15" }]}
-                >
-                  <MaterialCommunityIcons name="close" size={18} color={colors.colorPaletteRedForeground1} />
-                </Pressable>
               </View>
-            </View>
-          ))}
+            ))}
+          </View>
         </ScrollView>
       )}
 
@@ -443,7 +453,7 @@ export default function FolderSelectionScreen() {
             ) : (
               <>
                 <MaterialCommunityIcons name="content-save" size={20} color="#FFFFFF" />
-                <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.xs }}>
+                <FluentText variant="body1Strong" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.xs }}>
                   Apply Changes
                 </FluentText>
               </>
@@ -494,7 +504,7 @@ export default function FolderSelectionScreen() {
           <FluentText variant="body1" color="secondary" style={styles.emptyTitle}>
             No Music Folders Found
           </FluentText>
-          <FluentText variant="caption1" color="secondary" style={{ textAlign: "center" }}>
+          <FluentText variant="body1" color="secondary" style={{ textAlign: "center" }}>
             Add music to your device to see folders here
           </FluentText>
         </View>
@@ -513,53 +523,58 @@ export default function FolderSelectionScreen() {
             }
           </FluentText>
 
-          {folders.map((folder) => {
-            const isSelected = selectedFolderIds.includes(folder.id);
-            return (
-              <Pressable
-                key={folder.id}
-                onPress={() => toggleFolder(folder.id)}
-                style={[
-                  styles.folderItem,
-                  { 
-                    backgroundColor: isSelected ? colors.colorBrandForeground1 + "15" : colors.colorNeutralBackground2,
-                    borderColor: isSelected ? colors.colorBrandForeground1 : colors.colorNeutralStroke2,
-                  },
-                ]}
-              >
-                <View style={[
-                  styles.checkbox,
-                  { 
-                    backgroundColor: isSelected ? colors.colorBrandBackground : "transparent",
-                    borderColor: isSelected ? colors.colorBrandForeground1 : colors.colorNeutralStroke2,
-                  },
-                ]}>
-                  {isSelected && (
-                    <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
-                  )}
-                </View>
-                <View style={styles.folderInfo}>
-                  <View style={styles.folderTitleRow}>
-                    <MaterialCommunityIcons 
-                      name="folder-music" 
-                      size={20} 
-                      color={isSelected ? colors.colorBrandForeground1 : colors.colorNeutralForeground2} 
-                    />
-                    <FluentText 
-                      variant="body1" 
-                      style={[styles.folderTitle, { color: colors.colorNeutralForeground1 }]}
-                      numberOfLines={1}
-                    >
-                      {folder.title}
+          <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
+            <FluentText variant="subtitle1" style={{ color: colors.colorNeutralForeground1, marginBottom: FluentSpacing.m }}>
+              Available Folders
+            </FluentText>
+            {folders.map((folder) => {
+              const isSelected = selectedFolderIds.includes(folder.id);
+              return (
+                <Pressable
+                  key={folder.id}
+                  onPress={() => toggleFolder(folder.id)}
+                  style={[
+                    styles.folderItem,
+                    { 
+                      backgroundColor: isSelected ? colors.colorBrandForeground1 + "15" : colors.colorNeutralBackground2,
+                      borderColor: isSelected ? colors.colorBrandForeground1 : colors.colorNeutralStroke2,
+                    },
+                  ]}
+                >
+                  <View style={[
+                    styles.checkbox,
+                    { 
+                      backgroundColor: isSelected ? colors.colorBrandBackground : "transparent",
+                      borderColor: isSelected ? colors.colorBrandForeground1 : colors.colorNeutralStroke2,
+                    },
+                  ]}>
+                    {isSelected && (
+                      <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
+                    )}
+                  </View>
+                  <View style={styles.folderInfo}>
+                    <View style={styles.folderTitleRow}>
+                      <MaterialCommunityIcons 
+                        name="folder-music" 
+                        size={20} 
+                        color={isSelected ? colors.colorBrandForeground1 : colors.colorNeutralForeground2} 
+                      />
+                      <FluentText 
+                        variant="body1" 
+                        style={[styles.folderTitle, { color: colors.colorNeutralForeground1 }]}
+                        numberOfLines={1}
+                      >
+                        {folder.title}
+                      </FluentText>
+                    </View>
+                    <FluentText variant="caption2" color="secondary">
+                      {folder.assetCount} {folder.assetCount === 1 ? "song" : "songs"}
                     </FluentText>
                   </View>
-                  <FluentText variant="caption2" color="secondary">
-                    {folder.assetCount} {folder.assetCount === 1 ? "song" : "songs"}
-                  </FluentText>
-                </View>
-              </Pressable>
-            );
-          })}
+                </Pressable>
+              );
+            })}
+          </View>
         </ScrollView>
       )}
 
@@ -587,7 +602,7 @@ export default function FolderSelectionScreen() {
           ) : (
             <>
               <MaterialCommunityIcons name="content-save" size={20} color="#FFFFFF" />
-              <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.xs }}>
+              <FluentText variant="body1Strong" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.xs }}>
                 Save Selection
               </FluentText>
             </>
@@ -642,6 +657,11 @@ const styles = StyleSheet.create({
     marginTop: FluentSpacing.l,
     marginBottom: FluentSpacing.s,
     fontWeight: "600",
+  },
+  sectionCard: {
+    borderRadius: 12,
+    padding: FluentSpacing.l,
+    marginBottom: FluentSpacing.m,
   },
   instructionsList: {
     width: "100%",
