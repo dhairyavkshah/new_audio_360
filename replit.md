@@ -88,12 +88,15 @@ A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Set
 
 ## Recent Changes
 
-- **2026-01-10**: **Fluent 2 Typography & Sound Lab UI Improvements**:
+- **2026-01-10**: **Fluent 2 Typography & Settings Screens UI Improvements**:
   - **Typography Scale Updated**: Body1/Body1Strong increased to 16px (from 14px), Caption1 increased to 13px (from 12px)
   - **Typography Hierarchy**: caption2=11px, caption1=13px, body2=14px, body1=16px, subtitle2=16px semibold, subtitle1=18px semibold
   - **Sound Lab Card Layout**: Sections wrapped in cards with borderRadius: 12, padding: 16px, colorNeutralBackground2 backgrounds
   - **EffectChip Improvements**: body1Strong (16px) text, paddingHorizontal: 20px, paddingVertical: 12px
-  - Files updated: typography.ts, SoundLabScreen.tsx, EffectChip.tsx
+  - **Music Folders Screen**: Added section cards around folder lists with headers, updated empty state with card wrapper, body1Strong button text
+  - **Appearance Screen**: Added "Themes" section header (subtitle1), description upgraded to body2, ThemeSelector wrapped in section card
+  - **Plan Screen**: Compare Plans, One-Time Purchase, and Info sections wrapped in cards, section titles changed to subtitle1
+  - Files updated: typography.ts, SoundLabScreen.tsx, EffectChip.tsx, FolderSelectionScreen.tsx, AppearanceScreen.tsx, PlanScreen.tsx
 
 - **2026-01-09**: **Zero-Sum Balanced Audio System**:
   - **EQ Presets**: All 8 presets redesigned so band values sum to zero - positive boosts balanced by negative cuts
