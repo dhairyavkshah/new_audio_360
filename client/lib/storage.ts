@@ -20,7 +20,17 @@ const STORAGE_KEYS = {
   WEB_FOLDER_DATA: '@new_audio_360_web_folder_data',
   BASS_BOOST_ENABLED: '@new_audio_360_bass_boost_enabled',
   VIRTUALIZER_ENABLED: '@new_audio_360_virtualizer_enabled',
+  BASS_BOOST_STRENGTH: '@new_audio_360_bass_boost_strength',
+  VIRTUALIZER_STRENGTH: '@new_audio_360_virtualizer_strength',
+  CUSTOM_EQ_BANDS: '@new_audio_360_custom_eq_bands',
+  CUSTOM_EQ_PRESETS: '@new_audio_360_custom_eq_presets',
 };
+
+export interface CustomEQPreset {
+  id: string;
+  name: string;
+  bands: number[];
+}
 
 export interface WebFolderSong {
   id: string;
@@ -454,5 +464,77 @@ export async function setWebFolderData(folders: WebFolderData[]): Promise<void> 
     await AsyncStorage.setItem(STORAGE_KEYS.WEB_FOLDER_DATA, JSON.stringify(foldersToSave));
   } catch (error) {
     console.error('Error saving web folder data:', error);
+  }
+}
+
+export async function saveBassBoostStrength(strength: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.BASS_BOOST_STRENGTH, JSON.stringify(strength));
+  } catch (error) {
+    console.error('Error saving bass boost strength:', error);
+  }
+}
+
+export async function getBassBoostStrength(): Promise<number> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.BASS_BOOST_STRENGTH);
+    return data ? JSON.parse(data) : 200;
+  } catch (error) {
+    console.error('Error getting bass boost strength:', error);
+    return 200;
+  }
+}
+
+export async function saveVirtualizerStrength(strength: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.VIRTUALIZER_STRENGTH, JSON.stringify(strength));
+  } catch (error) {
+    console.error('Error saving virtualizer strength:', error);
+  }
+}
+
+export async function getVirtualizerStrength(): Promise<number> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.VIRTUALIZER_STRENGTH);
+    return data ? JSON.parse(data) : 200;
+  } catch (error) {
+    console.error('Error getting virtualizer strength:', error);
+    return 200;
+  }
+}
+
+export async function saveCustomEQBands(bands: number[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_EQ_BANDS, JSON.stringify(bands));
+  } catch (error) {
+    console.error('Error saving custom EQ bands:', error);
+  }
+}
+
+export async function getCustomEQBands(): Promise<number[]> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.CUSTOM_EQ_BANDS);
+    return data ? JSON.parse(data) : [0, 0, 0, 0, 0];
+  } catch (error) {
+    console.error('Error getting custom EQ bands:', error);
+    return [0, 0, 0, 0, 0];
+  }
+}
+
+export async function saveCustomEQPresets(presets: CustomEQPreset[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_EQ_PRESETS, JSON.stringify(presets));
+  } catch (error) {
+    console.error('Error saving custom EQ presets:', error);
+  }
+}
+
+export async function getCustomEQPresets(): Promise<CustomEQPreset[]> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.CUSTOM_EQ_PRESETS);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error getting custom EQ presets:', error);
+    return [];
   }
 }

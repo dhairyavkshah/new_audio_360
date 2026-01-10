@@ -137,6 +137,49 @@ class NativeEffectsManagerClass {
     return this.equalizerInfo;
   }
 
+  /**
+   * Apply 5-band EQ values directly (for use with Sound Lab presets and custom EQ)
+   * Band values should be in range -8 to +8 (user units)
+   */
+  applyFiveBandEQ(bands: number[]): void {
+    if (!this.isAvailable() || !this.equalizerAttached) {
+      console.log('[NativeEffectsManager] Cannot apply 5-band EQ - not available or not attached');
+      return;
+    }
+
+    EqualizerModule.setEnabled(true);
+
+    const MB_PER_UNIT = 35;
+    const numBands = this.equalizerInfo?.numberOfBands || 5;
+
+    // Copy and pad if needed
+    const rawBands = [...bands];
+    while (rawBands.length < numBands) {
+      rawBands.push(0);
+    }
+
+    // Zero-sum balancing
+    const sum = rawBands.reduce((acc, v) => acc + v, 0);
+    const offset = sum / rawBands.length;
+    const balancedBands = rawBands.map(v => v - offset);
+
+    // Convert to millibels and clamp
+    const bandValues = balancedBands.map(v => {
+      const millibels = v * MB_PER_UNIT;
+      return Math.max(-300, Math.min(150, millibels));
+    });
+
+    console.log('[NativeEffectsManager] Applying 5-band EQ:', { input: bands, balanced: balancedBands, millibels: bandValues });
+    EqualizerModule.setCustomBands(bandValues);
+  }
+
+  /**
+   * Disable the equalizer
+   */
+  disableEQ(): void {
+    this.disableEqualizer();
+  }
+
   async release(): Promise<void> {
     await Promise.all([
       EqualizerModule.release(),
