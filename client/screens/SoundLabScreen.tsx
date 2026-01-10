@@ -10,7 +10,13 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
-import { getEQPreset, saveEQPreset, clearEQPreset, getSoundMode, saveSoundMode, clearSoundMode } from "@/lib/storage";
+import { 
+  getEQPreset, saveEQPreset, clearEQPreset, 
+  getSoundMode, saveSoundMode, clearSoundMode,
+  getBassBoostEnabled, saveBassBoostEnabled,
+  getVirtualizerEnabled, saveVirtualizerEnabled
+} from "@/lib/storage";
+import { BassBoostModule, VirtualizerModule } from "../../modules/audio-effects";
 import { 
   ImmersiveModeEngineModule, 
   IMMERSIVE_MODE_INFO, 
@@ -77,6 +83,8 @@ export default function SoundLabScreen() {
   const [selectedEQ, setSelectedEQ] = useState("Flat");
   const [selectedImmersive, setSelectedImmersive] = useState<ImmersiveMode>("off");
   const [availableModes, setAvailableModes] = useState<ImmersiveModeInfo[]>([]);
+  const [bassBoostEnabled, setBassBoostEnabled] = useState(false);
+  const [virtualizerEnabled, setVirtualizerEnabled] = useState(false);
 
   const immersiveModes = useMemo(() => {
     if (availableModes.length > 0) {
@@ -97,6 +105,11 @@ export default function SoundLabScreen() {
 
       const eqPreset = await getEQPreset();
       const soundMode = await getSoundMode();
+      const bassBoost = await getBassBoostEnabled();
+      const virtualizer = await getVirtualizerEnabled();
+      
+      setBassBoostEnabled(bassBoost);
+      setVirtualizerEnabled(virtualizer);
       
       if (eqPreset) {
         setSelectedEQ(eqPreset);
@@ -150,6 +163,36 @@ export default function SoundLabScreen() {
       await saveEQPreset(preset);
       await NativeAudioService.setImmersiveMode('off');
     }
+  };
+
+  const handleBassBoostToggle = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newValue = !bassBoostEnabled;
+    setBassBoostEnabled(newValue);
+    await saveBassBoostEnabled(newValue);
+    
+    if (BassBoostModule.isAvailable()) {
+      BassBoostModule.setEnabled(newValue);
+      if (newValue) {
+        BassBoostModule.setStrength(500);
+      }
+    }
+    console.log(`[SoundLab] Bass Boost ${newValue ? 'enabled' : 'disabled'}`);
+  };
+
+  const handleVirtualizerToggle = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newValue = !virtualizerEnabled;
+    setVirtualizerEnabled(newValue);
+    await saveVirtualizerEnabled(newValue);
+    
+    if (VirtualizerModule.isAvailable()) {
+      VirtualizerModule.setEnabled(newValue);
+      if (newValue) {
+        VirtualizerModule.setStrength(500);
+      }
+    }
+    console.log(`[SoundLab] Virtualizer ${newValue ? 'enabled' : 'disabled'}`);
   };
 
   const handleImmersiveChange = async (modeId: ImmersiveMode) => {
@@ -254,6 +297,107 @@ export default function SoundLabScreen() {
               </FluentText>
             </GlassCard>
           ) : null}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="speaker" size={18} color={colors.colorBrandForeground1} />
+            <FluentText variant="body1Strong" style={styles.sectionTitle}>
+              Audio Enhancements
+            </FluentText>
+          </View>
+          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
+            These effects work alongside Equalizer Presets
+          </FluentText>
+          <View style={styles.enhancementsContainer}>
+            <Pressable
+              onPress={handleBassBoostToggle}
+              style={[
+                styles.enhancementCard,
+                {
+                  backgroundColor: bassBoostEnabled 
+                    ? colors.colorBrandBackground 
+                    : colors.colorNeutralBackground2,
+                },
+              ]}
+            >
+              <View style={styles.enhancementContent}>
+                <MaterialCommunityIcons
+                  name="speaker"
+                  size={20}
+                  color={bassBoostEnabled ? "#FFFFFF" : colors.colorNeutralForeground1}
+                />
+                <View style={styles.enhancementText}>
+                  <FluentText
+                    variant="body1"
+                    style={{
+                      fontWeight: "600",
+                      color: bassBoostEnabled ? "#FFFFFF" : colors.colorNeutralForeground1,
+                    }}
+                  >
+                    Bass Boost
+                  </FluentText>
+                  <FluentText
+                    variant="caption1"
+                    style={{
+                      color: bassBoostEnabled 
+                        ? "rgba(255,255,255,0.8)" 
+                        : colors.colorNeutralForeground2,
+                    }}
+                  >
+                    Enhanced low frequencies
+                  </FluentText>
+                </View>
+                {bassBoostEnabled ? (
+                  <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" />
+                ) : null}
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={handleVirtualizerToggle}
+              style={[
+                styles.enhancementCard,
+                {
+                  backgroundColor: virtualizerEnabled 
+                    ? colors.colorBrandBackground 
+                    : colors.colorNeutralBackground2,
+                },
+              ]}
+            >
+              <View style={styles.enhancementContent}>
+                <MaterialCommunityIcons
+                  name="surround-sound"
+                  size={20}
+                  color={virtualizerEnabled ? "#FFFFFF" : colors.colorNeutralForeground1}
+                />
+                <View style={styles.enhancementText}>
+                  <FluentText
+                    variant="body1"
+                    style={{
+                      fontWeight: "600",
+                      color: virtualizerEnabled ? "#FFFFFF" : colors.colorNeutralForeground1,
+                    }}
+                  >
+                    Virtualizer
+                  </FluentText>
+                  <FluentText
+                    variant="caption1"
+                    style={{
+                      color: virtualizerEnabled 
+                        ? "rgba(255,255,255,0.8)" 
+                        : colors.colorNeutralForeground2,
+                    }}
+                  >
+                    Spatial audio effect
+                  </FluentText>
+                </View>
+                {virtualizerEnabled ? (
+                  <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" />
+                ) : null}
+              </View>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -406,6 +550,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modeCardText: {
+    flex: 1,
+    marginLeft: FluentSpacing.m,
+  },
+  enhancementsContainer: {
+    gap: FluentSpacing.s,
+  },
+  enhancementCard: {
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
+  },
+  enhancementContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  enhancementText: {
     flex: 1,
     marginLeft: FluentSpacing.m,
   },

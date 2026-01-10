@@ -18,6 +18,8 @@ const STORAGE_KEYS = {
   PLAY_COUNTS: '@new_audio_360_play_counts',
   SELECTED_FOLDERS: '@new_audio_360_selected_folders',
   WEB_FOLDER_DATA: '@new_audio_360_web_folder_data',
+  BASS_BOOST_ENABLED: '@new_audio_360_bass_boost_enabled',
+  VIRTUALIZER_ENABLED: '@new_audio_360_virtualizer_enabled',
 };
 
 export interface WebFolderSong {
@@ -187,6 +189,42 @@ export async function clearEQPreset(): Promise<void> {
     await AsyncStorage.removeItem(STORAGE_KEYS.EQ_PRESET);
   } catch (error) {
     console.error('Error clearing EQ preset:', error);
+  }
+}
+
+export async function saveBassBoostEnabled(enabled: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.BASS_BOOST_ENABLED, JSON.stringify(enabled));
+  } catch (error) {
+    console.error('Error saving bass boost setting:', error);
+  }
+}
+
+export async function getBassBoostEnabled(): Promise<boolean> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.BASS_BOOST_ENABLED);
+    return data ? JSON.parse(data) : false;
+  } catch (error) {
+    console.error('Error getting bass boost setting:', error);
+    return false;
+  }
+}
+
+export async function saveVirtualizerEnabled(enabled: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.VIRTUALIZER_ENABLED, JSON.stringify(enabled));
+  } catch (error) {
+    console.error('Error saving virtualizer setting:', error);
+  }
+}
+
+export async function getVirtualizerEnabled(): Promise<boolean> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.VIRTUALIZER_ENABLED);
+    return data ? JSON.parse(data) : false;
+  } catch (error) {
+    console.error('Error getting virtualizer setting:', error);
+    return false;
   }
 }
 
