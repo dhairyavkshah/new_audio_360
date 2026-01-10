@@ -411,10 +411,10 @@ export default function SoundLabScreen() {
           Tap a preset to apply, tap again to turn off. Only one mode can be active at a time.
         </FluentText>
 
-        <View style={styles.section}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="tune-vertical" size={18} color={colors.colorBrandForeground1} />
-            <FluentText variant="body1Strong" style={styles.sectionTitle}>
+            <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Equalizer Mode
             </FluentText>
             {isEqualizerActive ? (
@@ -518,14 +518,14 @@ export default function SoundLabScreen() {
         </View>
 
         {isEqualizerActive ? (
-          <View style={styles.section}>
+          <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
             <View style={styles.sectionHeader}>
               <MaterialCommunityIcons name="speaker" size={18} color={colors.colorBrandForeground1} />
-              <FluentText variant="body1Strong" style={styles.sectionTitle}>
+              <FluentText variant="subtitle1" style={styles.sectionTitle}>
                 Audio Enhancements
               </FluentText>
             </View>
-            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
+            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
               Enhance your sound with bass boost and virtualizer effects
             </FluentText>
             
@@ -645,10 +645,10 @@ export default function SoundLabScreen() {
           </View>
         ) : null}
 
-        <View style={styles.section}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="headphones" size={18} color={colors.colorBrandForeground1} />
-            <FluentText variant="body1Strong" style={styles.sectionTitle}>
+            <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Immersive Modes
             </FluentText>
             {!isImmersiveModeUnlocked() ? (
@@ -664,11 +664,11 @@ export default function SoundLabScreen() {
           </View>
           
           {isEqualizerActive ? (
-            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
+            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
               Disable equalizer to use immersive modes
             </FluentText>
           ) : (
-            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
+            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
               Premium audio processing for an immersive experience
             </FluentText>
           )}
@@ -794,13 +794,15 @@ const styles = StyleSheet.create({
   sectionDesc: {
     marginBottom: FluentSpacing.m,
   },
-  section: {
-    marginBottom: FluentSpacing.l,
+  sectionCard: {
+    borderRadius: 12,
+    padding: FluentSpacing.l,
+    marginBottom: FluentSpacing.m,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: FluentSpacing.s,
+    marginBottom: FluentSpacing.m,
   },
   sectionTitle: {
     marginLeft: FluentSpacing.xs,
@@ -821,7 +823,7 @@ const styles = StyleSheet.create({
   chipsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: FluentSpacing.xs,
+    gap: FluentSpacing.s,
   },
   presetInfo: {
     marginTop: FluentSpacing.m,

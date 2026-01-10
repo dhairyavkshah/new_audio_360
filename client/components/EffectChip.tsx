@@ -89,7 +89,7 @@ export function EffectChip({
       ]}
     >
       <FluentText
-        variant="body2"
+        variant="body1Strong"
         style={[styles.label, { color: textColor }]}
       >
         {label}
@@ -112,14 +112,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: FluentSpacing.l,
+    paddingHorizontal: FluentSpacing.xl,
     paddingVertical: FluentSpacing.m,
     borderRadius: FluentRadius.circular,
-    marginRight: FluentSpacing.s,
-    marginBottom: FluentSpacing.s,
   },
   label: {
-    fontWeight: "500",
+    fontWeight: "600",
   },
   premiumIndicator: {
     width: 6,
