@@ -13,6 +13,7 @@ import {
   FluentSpacing,
   FluentIconSize,
   FluentTypography,
+  FluentLayoutSize,
 } from "@/constants/fluent2";
 
 interface MiniPlayerProps {
@@ -124,8 +125,6 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
   );
 }
 
-const MINI_PLAYER_HEIGHT = 64;
-
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
@@ -150,7 +149,7 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: "row",
     alignItems: "center",
-    height: MINI_PLAYER_HEIGHT,
+    height: FluentLayoutSize.miniPlayerHeight,
     paddingVertical: FluentSpacing.m,
     paddingHorizontal: FluentSpacing.l,
   },

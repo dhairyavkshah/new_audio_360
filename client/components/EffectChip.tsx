@@ -15,6 +15,7 @@ import {
   FluentLightColors,
   FluentDarkColors,
   FluentIconSize,
+  FluentBorderWidth,
 } from "@/constants/fluent2";
 
 interface EffectChipProps {
@@ -82,7 +83,7 @@ export function EffectChip({
         {
           backgroundColor,
           borderColor,
-          borderWidth: 1.5,
+          borderWidth: FluentBorderWidth.medium,
           opacity: disabled ? 0.5 : 1,
         },
         animatedStyle,

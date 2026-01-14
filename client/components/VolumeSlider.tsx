@@ -12,7 +12,7 @@ import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
 import { useThemeTokens } from "@/contexts/ThemeContext";
 import { getProgressBarStyle, getSliderThumbStyle, getGlowStyle } from "@/lib/themeUtils";
-import { FluentSpacing } from "@/constants/fluent2";
+import { FluentSpacing, FluentSliderSize } from "@/constants/fluent2";
 
 interface VolumeSliderProps {
   label: string;
@@ -25,7 +25,7 @@ interface VolumeSliderProps {
 
 const SLIDER_HEIGHT = 160;
 const SLIDER_WIDTH = 48;
-const THUMB_SIZE = 24;
+const THUMB_SIZE = FluentSliderSize.thumbLarge;
 const TRACK_HEIGHT = SLIDER_HEIGHT - THUMB_SIZE;
 
 export function VolumeSlider({

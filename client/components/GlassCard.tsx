@@ -16,6 +16,7 @@ import {
   getShadowStyle,
   FluentLightColors,
   FluentDarkColors,
+  FluentBorderWidth,
 } from "@/constants/fluent2";
 
 interface GlassCardProps {
@@ -97,7 +98,7 @@ export function GlassCard({
             styles.blur, 
             { 
               borderColor: selected ? colors.colorBrandForeground1 : colors.colorNeutralStroke2,
-              borderWidth: 1,
+              borderWidth: FluentBorderWidth.thin,
             }
           ]}
         >
@@ -117,7 +118,7 @@ export function GlassCard({
             {
               backgroundColor: colors.colorNeutralBackground2,
               borderColor: selected ? colors.colorBrandForeground1 : colors.colorNeutralStroke2,
-              borderWidth: 1,
+              borderWidth: FluentBorderWidth.thin,
             },
           ]}
         >

@@ -15,6 +15,7 @@ import {
   FluentSpacing,
   FluentDuration,
   FluentCurve,
+  FluentSliderSize,
 } from "@/constants/fluent2";
 
 interface ProgressBarProps {
@@ -27,9 +28,9 @@ interface ProgressBarProps {
   showTextShadow?: boolean;
 }
 
-const THUMB_SIZE = 16;
-const TRACK_HEIGHT = 4;
-const ACTIVE_TRACK_HEIGHT = 6;
+const THUMB_SIZE = FluentSliderSize.thumbSmall;
+const TRACK_HEIGHT = FluentSliderSize.trackThin;
+const ACTIVE_TRACK_HEIGHT = FluentSliderSize.trackMedium;
 
 export function ProgressBar({
   progress,
@@ -52,7 +53,7 @@ export function ProgressBar({
   
   const translateX = useSharedValue(progress * (width - THUMB_SIZE));
   const isDragging = useSharedValue(false);
-  const trackHeight = useSharedValue(TRACK_HEIGHT);
+  const trackHeight = useSharedValue<number>(TRACK_HEIGHT);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

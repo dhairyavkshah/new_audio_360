@@ -15,6 +15,7 @@ import {
   FluentSpacing,
   FluentLightColors,
   FluentDarkColors,
+  FluentBorderWidth,
 } from "@/constants/fluent2";
 
 interface RecordButtonProps {
@@ -114,7 +115,7 @@ export function RecordButton({
             width: size + FluentSpacing.xxl,
             height: size + FluentSpacing.xxl,
             borderRadius: (size + FluentSpacing.xxl) / 2,
-            borderWidth: 3,
+            borderWidth: FluentBorderWidth.thicker,
             borderColor: recordButtonColor,
           },
           pulseStyle,
