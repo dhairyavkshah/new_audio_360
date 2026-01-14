@@ -88,6 +88,12 @@ A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Set
 
 ## Recent Changes
 
+- **2026-01-14**: **Seamless EQ/Immersive Mode Switching**:
+  - Removed UI restrictions that blocked switching between Equalizer Presets and Immersive Modes
+  - Users can now directly tap any Immersive Mode while an EQ preset is active (and vice versa)
+  - The app automatically disables the current mode when switching to the other
+  - File updated: SoundLabScreen.tsx
+
 - **2026-01-14**: **Comprehensive Theme Token System Implementation**:
   - **New themeUtils.ts**: Centralized theming utilities with functions for theme-aware styling:
     - `getThemeTokens()` - Returns colors, shapes, components, icons for any theme

@@ -667,29 +667,21 @@ export default function SoundLabScreen() {
             ) : null}
           </View>
           
-          {isEqualizerActive ? (
-            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
-              Disable equalizer to use immersive modes
-            </FluentText>
-          ) : (
-            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
-              Premium audio processing for an immersive experience
-            </FluentText>
-          )}
+          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
+            Premium audio processing for an immersive experience
+          </FluentText>
           
           <View style={styles.modesContainer}>
             {immersiveModes.filter(mode => mode.id !== 'off').map((mode) => (
               <Pressable
                 key={mode.id}
                 onPress={() => handleImmersiveChange(mode.id)}
-                disabled={isEqualizerActive}
                 style={[
                   styles.modeCard,
                   {
                     backgroundColor: isImmersiveActive && selectedImmersive === mode.id 
                       ? tokens.colors.primary 
                       : tokens.colors.surface,
-                    opacity: isEqualizerActive ? 0.5 : 1,
                     borderRadius: tokens.shapes.cardBorderRadius,
                   },
                 ]}
