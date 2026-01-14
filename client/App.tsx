@@ -15,6 +15,7 @@ import { MediaLibraryProvider, useMediaLibraryContext } from "@/contexts/MediaLi
 import { NavigationProvider } from "@/contexts/NavigationContext";
 import { SoundLabProvider } from "@/contexts/SoundLabContext";
 import { StudioProvider } from "@/contexts/StudioContext";
+import { RadioProvider } from "@/contexts/RadioContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import SplashScreen from "@/screens/SplashScreen";
@@ -145,9 +146,11 @@ export default function App() {
                         <MediaLibraryProvider>
                           <SoundLabProvider>
                             <StudioProvider>
-                              <PlayerProvider>
-                                <AppContent />
-                              </PlayerProvider>
+                              <RadioProvider>
+                                <PlayerProvider>
+                                  <AppContent />
+                                </PlayerProvider>
+                              </RadioProvider>
                             </StudioProvider>
                           </SoundLabProvider>
                         </MediaLibraryProvider>

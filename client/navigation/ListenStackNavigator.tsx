@@ -6,12 +6,16 @@ import ListenScreen from "@/screens/ListenScreen";
 import NowPlayingScreen from "@/screens/NowPlayingScreen";
 import SoundLabScreen from "@/screens/SoundLabScreen";
 import QueueScreen from "@/screens/QueueScreen";
+import RadioScreen from "@/screens/RadioScreen";
+import RadioStationsScreen from "@/screens/RadioStationsScreen";
 
 export type ListenStackParamList = {
   Listen: undefined;
   NowPlaying: { songId: string };
   SoundLab: undefined;
   Queue: undefined;
+  Radio: undefined;
+  RadioStations: undefined;
 };
 
 const Stack = createNativeStackNavigator<ListenStackParamList>();
@@ -50,6 +54,20 @@ export default function ListenStackNavigator() {
         options={{
           headerTitle: "Play Queue",
           presentation: "modal",
+        }}
+      />
+      <Stack.Screen
+        name="Radio"
+        component={RadioScreen}
+        options={{
+          headerTitle: "Radio",
+        }}
+      />
+      <Stack.Screen
+        name="RadioStations"
+        component={RadioStationsScreen}
+        options={{
+          headerTitle: "Stations",
         }}
       />
     </Stack.Navigator>
