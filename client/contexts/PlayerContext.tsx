@@ -7,7 +7,7 @@ import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecent
 import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
 import { PlaybackEngineModule, PlaybackStatus } from '@/modules/audio-effects';
 import { NativeEffectsManager } from '@/services/NativeEffectsManager';
-import { TrackPlayerService, State, TrackMetadata } from '@/services/TrackPlayerService';
+import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
 
 const EQ_FREQUENCIES: Record<keyof EQBands, number> = {
   sub: 32,
@@ -153,25 +153,38 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           
           TrackPlayerService.setCallbacks({
             onPlay: () => {
-              setIsPlaying(true);
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                setIsPlaying(true);
+              }
             },
             onPause: () => {
-              setIsPlaying(false);
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                setIsPlaying(false);
+              }
             },
             onStop: () => {
-              setIsPlaying(false);
-              setCurrentTime(0);
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                setIsPlaying(false);
+                setCurrentTime(0);
+              }
             },
             onNext: () => {
-              handleNextInternal();
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                handleNextInternal();
+              }
             },
             onPrevious: () => {
-              handlePreviousInternal();
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                handlePreviousInternal();
+              }
             },
             onSeek: (position) => {
-              setCurrentTime(position);
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                setCurrentTime(position);
+              }
             },
             onTrackChange: async (trackIndex) => {
+              if (TrackPlayerService.getPlaybackSource() !== 'music') return;
               if (trackIndex !== null && trackIndex >= 0) {
                 const currentQueue = queueRef.current;
                 if (currentQueue[trackIndex]) {
@@ -184,6 +197,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
               }
             },
             onProgress: (progress) => {
+              if (TrackPlayerService.getPlaybackSource() !== 'music') return;
               setCurrentTime(progress.position);
               if (progress.duration > 0) {
                 setDuration(progress.duration);
@@ -191,6 +205,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
               setIsBuffering(progress.buffered < progress.position);
             },
             onStateChange: (state) => {
+              if (TrackPlayerService.getPlaybackSource() !== 'music') return;
               if (state === State.Playing) {
                 setIsPlaying(true);
                 setIsBuffering(false);
@@ -568,6 +583,102 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setIsPlaying(true);
         setIsLoading(false);
       } else if (useTrackPlayerRef.current) {
+        if (!trackPlayerInitializedRef.current) {
+          const initialized = await TrackPlayerService.initialize();
+          if (!initialized) {
+            console.warn('[PlayerContext] TrackPlayer failed to initialize, falling back to expo-av');
+            cleanupPlayer();
+            
+            const newPlayer = createAudioPlayer(audioSource, { updateInterval: 0.1 });
+            playerRef.current = newPlayer;
+
+            statusListenerRef.current = newPlayer.addListener('playbackStatusUpdate', handleStatusUpdate);
+
+            newPlayer.play();
+            setIsPlaying(true);
+            setIsLoading(false);
+            return;
+          }
+          trackPlayerInitializedRef.current = true;
+        }
+
+        // Stop any current playback first (radio or previous music)
+        await TrackPlayerService.stop();
+
+        // Set source to music
+        TrackPlayerService.setPlaybackSource('music');
+        
+        // Register music callbacks fresh to prevent overwrites from other contexts
+        TrackPlayerService.setCallbacks({
+          onPlay: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              setIsPlaying(true);
+            }
+          },
+          onPause: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              setIsPlaying(false);
+            }
+          },
+          onStop: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              setIsPlaying(false);
+              setCurrentTime(0);
+            }
+          },
+          onNext: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              handleNextInternal();
+            }
+          },
+          onPrevious: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              handlePreviousInternal();
+            }
+          },
+          onSeek: (position) => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              setCurrentTime(position);
+            }
+          },
+          onTrackChange: async (trackIndex) => {
+            if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+            if (trackIndex !== null && trackIndex >= 0) {
+              const currentQueue = queueRef.current;
+              if (currentQueue[trackIndex]) {
+                setCurrentSong(currentQueue[trackIndex]);
+                const track = await TrackPlayerService.getCurrentTrack();
+                if (track?.duration) {
+                  setDuration(track.duration);
+                }
+              }
+            }
+          },
+          onProgress: (progress) => {
+            if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+            setCurrentTime(progress.position);
+            if (progress.duration > 0) {
+              setDuration(progress.duration);
+            }
+            setIsBuffering(progress.buffered < progress.position);
+          },
+          onStateChange: (state) => {
+            if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+            if (state === State.Playing) {
+              setIsPlaying(true);
+              setIsBuffering(false);
+            } else if (state === State.Paused) {
+              setIsPlaying(false);
+              setIsBuffering(false);
+            } else if (state === State.Buffering || state === State.Loading) {
+              setIsBuffering(true);
+            } else if (state === State.Stopped) {
+              setIsPlaying(false);
+              setCurrentTime(0);
+            }
+          },
+        });
+        
         const currentQueue = queueRef.current;
         const songIndex = currentQueue.findIndex(s => s.id === song.id);
         

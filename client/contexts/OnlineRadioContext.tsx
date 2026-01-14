@@ -14,7 +14,7 @@ import {
   OnlineRadioService,
   OnlineRadioStation,
 } from '@/services/OnlineRadioService';
-import { TrackPlayerService, TrackMetadata, State } from '@/services/TrackPlayerService';
+import { TrackPlayerService, TrackMetadata, State, PlaybackSource } from '@/services/TrackPlayerService';
 
 const STORAGE_KEY_COUNTRY = '@new_audio_360_online_radio_country';
 const STORAGE_KEY_STATIONS_CACHE = '@new_audio_360_online_radio_stations';
@@ -89,18 +89,25 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   const setupTrackPlayerCallbacks = () => {
     TrackPlayerService.setCallbacks({
       onPlay: () => {
-        setIsPlaying(true);
-        setIsBuffering(false);
+        if (TrackPlayerService.getPlaybackSource() === 'radio') {
+          setIsPlaying(true);
+          setIsBuffering(false);
+        }
       },
       onPause: () => {
-        setIsPlaying(false);
+        if (TrackPlayerService.getPlaybackSource() === 'radio') {
+          setIsPlaying(false);
+        }
       },
       onStop: () => {
-        setIsPlaying(false);
-        setCurrentStation(null);
-        setIsBuffering(false);
+        if (TrackPlayerService.getPlaybackSource() === 'radio') {
+          setIsPlaying(false);
+          setCurrentStation(null);
+          setIsBuffering(false);
+        }
       },
       onStateChange: (state: State) => {
+        if (TrackPlayerService.getPlaybackSource() !== 'radio') return;
         if (state === State.Buffering) {
           setIsBuffering(true);
         } else if (state === State.Playing) {
@@ -312,6 +319,10 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       // Try to use TrackPlayerService on native platforms
       if (TrackPlayerService.isAvailable()) {
         try {
+          await TrackPlayerService.stop();
+          
+          TrackPlayerService.setPlaybackSource('radio');
+          
           const trackMetadata: TrackMetadata = {
             id: station.stationuuid,
             url: streamUrl,

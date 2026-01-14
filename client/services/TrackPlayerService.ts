@@ -21,8 +21,11 @@ export interface TrackMetadata {
   isLiveStream?: boolean;
 }
 
+export type PlaybackSource = 'music' | 'radio' | null;
+
 class TrackPlayerServiceClass {
   private isInitialized = false;
+  private playbackSource: PlaybackSource = null;
   private onPlayCallback?: () => void;
   private onPauseCallback?: () => void;
   private onStopCallback?: () => void;
@@ -308,48 +311,40 @@ class TrackPlayerServiceClass {
   getIsInitialized(): boolean {
     return this.isInitialized;
   }
+
+  setPlaybackSource(source: PlaybackSource): void {
+    this.playbackSource = source;
+  }
+
+  getPlaybackSource(): PlaybackSource {
+    return this.playbackSource;
+  }
 }
 
 export const TrackPlayerService = new TrackPlayerServiceClass();
 
 export async function PlaybackService() {
   TrackPlayer.addEventListener(Event.RemotePlay, () => {
-    TrackPlayer.play();
     TrackPlayerService.handleRemotePlay();
   });
 
   TrackPlayer.addEventListener(Event.RemotePause, () => {
-    TrackPlayer.pause();
     TrackPlayerService.handleRemotePause();
   });
 
-  TrackPlayer.addEventListener(Event.RemoteStop, async () => {
-    await TrackPlayer.stop();
-    await TrackPlayer.reset();
+  TrackPlayer.addEventListener(Event.RemoteStop, () => {
     TrackPlayerService.handleRemoteStop();
   });
 
-  TrackPlayer.addEventListener(Event.RemoteNext, async () => {
-    const queue = await TrackPlayer.getQueue();
-    const currentIndex = await TrackPlayer.getActiveTrackIndex();
-    
-    if (currentIndex !== undefined && currentIndex !== null && currentIndex < queue.length - 1) {
-      await TrackPlayer.skipToNext();
-      TrackPlayerService.handleRemoteNext();
-    }
+  TrackPlayer.addEventListener(Event.RemoteNext, () => {
+    TrackPlayerService.handleRemoteNext();
   });
 
-  TrackPlayer.addEventListener(Event.RemotePrevious, async () => {
-    const currentIndex = await TrackPlayer.getActiveTrackIndex();
-    
-    if (currentIndex !== undefined && currentIndex !== null && currentIndex > 0) {
-      await TrackPlayer.skipToPrevious();
-      TrackPlayerService.handleRemotePrevious();
-    }
+  TrackPlayer.addEventListener(Event.RemotePrevious, () => {
+    TrackPlayerService.handleRemotePrevious();
   });
 
-  TrackPlayer.addEventListener(Event.RemoteSeek, async ({ position }) => {
-    await TrackPlayer.seekTo(position);
+  TrackPlayer.addEventListener(Event.RemoteSeek, ({ position }) => {
     TrackPlayerService.handleRemoteSeek(position);
   });
 

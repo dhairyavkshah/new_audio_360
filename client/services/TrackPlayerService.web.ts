@@ -9,6 +9,8 @@ export interface TrackMetadata {
   isLiveStream?: boolean;
 }
 
+export type PlaybackSource = 'music' | 'radio' | null;
+
 export const State = {
   None: 'none',
   Ready: 'ready',
@@ -119,6 +121,12 @@ class TrackPlayerServiceClass {
 
   getIsInitialized(): boolean {
     return false;
+  }
+
+  setPlaybackSource(_source: PlaybackSource): void {}
+
+  getPlaybackSource(): PlaybackSource {
+    return null;
   }
 }
 
