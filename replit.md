@@ -58,7 +58,7 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 -   **Sound Lab**: Offers mutually exclusive Equalizer presets or Immersive modes with zero-sum balanced audio.
 -   **FM/AM Radio**: Native Android radio with scanning, tuning, favorite stations, and Sound Lab effects on live radio audio.
 -   **Online Radio Streaming**: Location-based internet radio with country detection, genre filtering, 48,000+ stations via Radio Browser API, and streaming playback.
--   **Subscription System**: Two-tier model (Free, Premium) with server-side normalization and regional pricing via Google Play.
+-   **One-Time Purchase**: License model with ₹299 INR (India) / $29 USD (International) pricing. Lifetime access with no expiration.
 -   **MiniPlayer**: Persistent, glassmorphism-effect mini-player.
 -   **Media Library Integration**: Onboarding for access, paginated loading, "Hide Song" feature.
 -   **Playlist Management**: Full CRUD for local playlists.
@@ -71,6 +71,14 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 -   Native audio modules are in `modules/audio-effects/` with platform-specific implementations.
 -   Requires an **Expo Development Build** for full native module functionality.
 -   Native audio effects are Android-only.
+
+### Production License Verification
+For production release, the following must be implemented:
+1.  **Google Play Integrity API**: Replace stub in `checkInstallSource()` with actual Play Integrity API calls to verify the app was installed from Google Play Store.
+2.  **Server-Side Purchase Verification**: Configure `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` environment variable with Google Play Developer API service account credentials to verify purchases server-side.
+3.  **react-native-iap Integration**: Replace mock billing in `purchaseLicense()` with `react-native-iap` library for real Google Play Billing integration.
+
+Current implementation uses development stubs that will accept any purchase for testing purposes.
 
 ## External Dependencies
 
