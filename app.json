@@ -65,8 +65,7 @@
         {
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice recording."
         }
-      ],
-      "react-native-track-player"
+      ]
     ],
     "experiments": {
       "reactCompiler": true
