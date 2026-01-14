@@ -28,7 +28,10 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.WAKE_LOCK"
       ]
     },
     "web": {
@@ -62,7 +65,8 @@
         {
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice recording."
         }
-      ]
+      ],
+      "react-native-track-player"
     ],
     "experiments": {
       "reactCompiler": true
