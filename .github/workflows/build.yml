@@ -34,7 +34,11 @@ jobs:
       - name: Build Preview APK (develop branch)
         if: github.ref == 'refs/heads/develop'
         run: eas build --platform android --profile preview --non-interactive
+        env:
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
 
       - name: Build Production AAB (main branch)
         if: github.ref == 'refs/heads/main'
         run: eas build --platform android --profile production --non-interactive
+        env:
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
