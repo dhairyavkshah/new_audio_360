@@ -535,16 +535,32 @@ app.get('/admin', (req: Request, res: Response) => {
   `);
 });
 
+const VALID_PRODUCT_IDS = [
+  'new_audio_360_premium_monthly',
+  'new_audio_360_premium_annual',
+  'new_audio_360_premium',
+];
+
 async function verifyGooglePlaySubscription(
   packageName: string,
   subscriptionId: string,
   purchaseToken: string
-): Promise<{ expiryTimeMillis?: string; paymentState?: number }> {
+): Promise<{ expiryTimeMillis?: string; paymentState?: number; subscriptionType?: 'monthly' | 'annual' }> {
+  const subscriptionType = subscriptionId.includes('annual') ? 'annual' : 'monthly';
+  
+  if (!VALID_PRODUCT_IDS.includes(subscriptionId)) {
+    throw new Error(`Invalid product ID: ${subscriptionId}`);
+  }
+
   if (!GOOGLE_PLAY_SERVICE_ACCOUNT) {
     console.warn('Google Play service account not configured, using mock verification');
+    const expiryDuration = subscriptionType === 'annual' 
+      ? 365 * 24 * 60 * 60 * 1000 
+      : 30 * 24 * 60 * 60 * 1000;
     return {
-      expiryTimeMillis: String(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      expiryTimeMillis: String(Date.now() + expiryDuration),
       paymentState: 1,
+      subscriptionType,
     };
   }
 
@@ -567,6 +583,7 @@ async function verifyGooglePlaySubscription(
   return {
     expiryTimeMillis: response.data.expiryTimeMillis || undefined,
     paymentState: response.data.paymentState || undefined,
+    subscriptionType,
   };
 }
 
