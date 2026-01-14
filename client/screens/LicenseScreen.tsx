@@ -14,26 +14,25 @@ import { detectUserRegion } from "@/lib/payment";
 type FeatureItem = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   text: string;
-  free: boolean;
   licensed: boolean;
 };
 
 const FEATURES: FeatureItem[] = [
-  { icon: "music", text: "Music Player", free: true, licensed: true },
-  { icon: "playlist-music", text: "Playlist Management", free: true, licensed: true },
-  { icon: "palette", text: "5 System Themes", free: true, licensed: true },
-  { icon: "palette-outline", text: "All 55 Themes", free: false, licensed: true },
-  { icon: "equalizer", text: "Equalizer Presets", free: true, licensed: true },
-  { icon: "surround-sound", text: "Immersive Modes", free: false, licensed: true },
-  { icon: "heart", text: "Favorites & History", free: true, licensed: true },
-  { icon: "timer-sand", text: "Sleep Timer", free: true, licensed: true },
+  { icon: "music", text: "Music Player", licensed: true },
+  { icon: "playlist-music", text: "Playlist Management", licensed: true },
+  { icon: "palette-outline", text: "All 55 Themes", licensed: true },
+  { icon: "equalizer", text: "Equalizer Presets", licensed: true },
+  { icon: "surround-sound", text: "Immersive Modes", licensed: true },
+  { icon: "heart", text: "Favorites & History", licensed: true },
+  { icon: "timer-sand", text: "Sleep Timer", licensed: true },
+  { icon: "volume-high", text: "All Effects & Reverbs", licensed: true },
 ];
 
 export default function LicenseScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const { licenseStatus, isLoading, purchaseLicense, restorePurchases } = useSubscription();
+  const { licenseStatus, isLoading, purchaseApp, restorePurchases } = useSubscription();
 
   const [isIndian, setIsIndian] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -51,7 +50,7 @@ export default function LicenseScreen() {
     setIsProcessing(true);
     
     try {
-      const success = await purchaseLicense();
+      const success = await purchaseApp();
       if (success) {
         Alert.alert(
           "Success", 
@@ -87,7 +86,7 @@ export default function LicenseScreen() {
         icon: "crown" as const 
       };
     }
-    return { label: "Free", color: colors.colorNeutralForeground2, icon: "account-outline" as const };
+    return { label: "Unlicensed", color: colors.colorNeutralForeground2, icon: "lock-outline" as const };
   };
 
   const badge = getLicenseBadge();
@@ -106,13 +105,6 @@ export default function LicenseScreen() {
           </FluentText>
         </View>
         <View style={styles.featureChecks}>
-          <View style={[styles.checkBox, { width: 60 }]}>
-            {feature.free ? (
-              <MaterialCommunityIcons name="check" size={18} color={colors.colorPaletteGreenForeground1} />
-            ) : (
-              <MaterialCommunityIcons name="close" size={18} color={colors.colorPaletteRedForeground1} />
-            )}
-          </View>
           <View style={[styles.checkBox, { width: 60 }]}>
             {feature.licensed ? (
               <MaterialCommunityIcons name="check" size={18} color={colors.colorPaletteGreenForeground1} />
@@ -153,7 +145,7 @@ export default function LicenseScreen() {
 
         <View style={styles.comparisonSection}>
           <FluentText variant="subtitle1" style={styles.sectionTitle}>
-            Compare Plans
+            Features Included
           </FluentText>
           
           <View style={{
@@ -170,13 +162,8 @@ export default function LicenseScreen() {
               </View>
               <View style={styles.featureChecks}>
                 <View style={[styles.checkBox, { width: 60 }]}>
-                  <FluentText variant="caption1" color="secondary" style={{ fontWeight: "600" }}>
-                    Free
-                  </FluentText>
-                </View>
-                <View style={[styles.checkBox, { width: 60 }]}>
                   <FluentText variant="caption1" style={{ color: colors.colorPaletteYellowForeground1, fontWeight: "600" }}>
-                    Licensed
+                    Included
                   </FluentText>
                 </View>
               </View>
@@ -231,7 +218,7 @@ export default function LicenseScreen() {
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
                       <FluentText variant="title2" style={{ fontWeight: "700" }}>
-                        {pricing.symbol}{pricing.oneTime}
+                        {pricing.symbol}{pricing.amount}
                       </FluentText>
                       <FluentText variant="caption1" color="secondary">
                         one-time

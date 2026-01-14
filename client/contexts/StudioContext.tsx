@@ -75,7 +75,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const { isNoiseReductionUnlocked, isReverbUnlocked } = useSubscription();
+  const { isLicensed } = useSubscription();
 
   useEffect(() => {
     loadProjects();
@@ -94,26 +94,22 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       let newReverb = currentProject.voiceSettings.reverb;
       let newNoise = currentProject.voiceSettings.noiseReduction;
       
-      if (!isReverbUnlocked(newReverb)) {
+      if (!isLicensed) {
         newReverb = 'None';
-      }
-      if (!isNoiseReductionUnlocked(newNoise)) {
         newNoise = 'Off';
       }
       
       setSelectedReverbState(newReverb);
       setNoiseReductionState(newNoise);
     }
-  }, [currentProject, isReverbUnlocked, isNoiseReductionUnlocked]);
+  }, [currentProject, isLicensed]);
   
   useEffect(() => {
-    if (!isReverbUnlocked(selectedReverb)) {
+    if (!isLicensed) {
       setSelectedReverbState('None');
-    }
-    if (!isNoiseReductionUnlocked(noiseReduction)) {
       setNoiseReductionState('Off');
     }
-  }, [isReverbUnlocked, isNoiseReductionUnlocked]);
+  }, [isLicensed]);
 
   const loadProjects = async () => {
     try {

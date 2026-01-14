@@ -33,7 +33,7 @@ export default function EffectsScreen() {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { selectedReverb, noiseReduction, setSelectedReverb, setNoiseReduction } = useStudioContext();
-  const { isNoiseReductionUnlocked, isReverbUnlocked } = useSubscription();
+  const { isLicensed } = useSubscription();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
@@ -58,7 +58,7 @@ export default function EffectsScreen() {
 
   const handleNoiseReductionSelect = (level: typeof noiseReduction) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (!isNoiseReductionUnlocked(level)) {
+    if (!isLicensed) {
       return;
     }
     setNoiseReduction(level);
@@ -66,7 +66,7 @@ export default function EffectsScreen() {
 
   const handleReverbSelect = (reverb: typeof selectedReverb) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (!isReverbUnlocked(reverb)) {
+    if (!isLicensed) {
       return;
     }
     setSelectedReverb(reverb);
@@ -170,7 +170,7 @@ export default function EffectsScreen() {
                 key={level}
                 label={level}
                 isSelected={noiseReduction === level}
-                isLocked={!isNoiseReductionUnlocked(level)}
+                isLocked={!isLicensed}
                 onPress={() => handleNoiseReductionSelect(level)}
               />
             ))}
@@ -193,7 +193,7 @@ export default function EffectsScreen() {
                 key={reverb}
                 label={reverb}
                 isSelected={selectedReverb === reverb}
-                isLocked={!isReverbUnlocked(reverb)}
+                isLocked={!isLicensed}
                 onPress={() => handleReverbSelect(reverb)}
               />
             ))}

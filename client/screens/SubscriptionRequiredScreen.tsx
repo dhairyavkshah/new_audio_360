@@ -1,22 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Pressable, Linking, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { FluentScreenLayout, FluentText } from '@/components/fluent';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription, PRICING } from '@/contexts/SubscriptionContext';
 import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
-import { PRICING } from '@/contexts/SubscriptionContext';
 import { detectUserRegion } from '@/lib/payment';
 
 export default function SubscriptionRequiredScreen() {
   const insets = useSafeAreaInsets();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const { user, signOut, checkSubscriptionStatus } = useAuth();
+  const { user, signOut } = useAuth();
+  const { purchaseApp, restorePurchases, checkLicenseStatus, isLoading } = useSubscription();
 
   const [isIndian, setIsIndian] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     detectUserRegion().then((result) => {
@@ -27,15 +29,39 @@ export default function SubscriptionRequiredScreen() {
   const pricing = isIndian ? PRICING.india : PRICING.international;
 
   const handlePurchase = async () => {
-    if (Platform.OS === 'android') {
-      await Linking.openURL('https://play.google.com/store/apps/details?id=com.newaudio360');
-    } else {
-      await Linking.openURL('https://newaudio360.com/purchase');
+    setIsProcessing(true);
+    try {
+      const success = await purchaseApp();
+      if (success) {
+        Alert.alert("Success", "Lifetime license activated! All features are now unlocked.");
+      } else {
+        Alert.alert("Error", "Purchase could not be completed. Please try again.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to complete purchase. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setIsProcessing(true);
+    try {
+      const success = await restorePurchases();
+      if (success) {
+        Alert.alert("Restored", "Your purchase has been restored successfully!");
+      } else {
+        Alert.alert("No Purchase Found", "No previous purchase was found for this account.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to restore purchases. Please try again.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleRefresh = async () => {
-    await checkSubscriptionStatus();
+    await checkLicenseStatus();
   };
 
   const handleSignOut = async () => {
@@ -76,7 +102,7 @@ export default function SubscriptionRequiredScreen() {
               <View style={styles.licenseHeader}>
                 <FluentText variant="title3">Lifetime License</FluentText>
                 <FluentText variant="title2" style={{ color: colors.colorBrandForeground1 }}>
-                  {pricing.symbol}{pricing.oneTime}
+                  {pricing.symbol}{pricing.amount}
                 </FluentText>
               </View>
               <View style={styles.licenseFeatures}>
@@ -103,20 +129,37 @@ export default function SubscriptionRequiredScreen() {
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + FluentSpacing.m }]}>
           <Pressable
-            style={[styles.purchaseButton, { backgroundColor: colors.colorBrandBackground }]}
+            style={[styles.purchaseButton, { backgroundColor: colors.colorBrandBackground, opacity: isProcessing || isLoading ? 0.6 : 1 }]}
             onPress={handlePurchase}
+            disabled={isProcessing || isLoading}
           >
-            <MaterialCommunityIcons name="google-play" size={20} color="#FFFFFF" />
-            <FluentText variant="subtitle1" color="onBrand">Purchase on Google Play</FluentText>
+            {isProcessing ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <MaterialCommunityIcons name="crown" size={20} color="#FFFFFF" />
+                <FluentText variant="subtitle1" color="onBrand">Purchase Now</FluentText>
+              </>
+            )}
           </Pressable>
 
           <View style={styles.footerButtons}>
             <Pressable
               style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
+              onPress={handleRestore}
+              disabled={isProcessing || isLoading}
+            >
+              <MaterialCommunityIcons name="restore" size={18} color={colors.colorNeutralForeground1} />
+              <FluentText variant="body2">Restore</FluentText>
+            </Pressable>
+
+            <Pressable
+              style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
               onPress={handleRefresh}
+              disabled={isProcessing || isLoading}
             >
               <MaterialCommunityIcons name="refresh" size={18} color={colors.colorNeutralForeground1} />
-              <FluentText variant="body2">Refresh Status</FluentText>
+              <FluentText variant="body2">Refresh</FluentText>
             </Pressable>
             
             <Pressable

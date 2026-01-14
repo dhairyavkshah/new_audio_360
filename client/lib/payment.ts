@@ -32,91 +32,112 @@ export async function detectUserRegion(): Promise<RegionDetectionResult> {
   }
 }
 
-export interface PurchaseResult {
-  success: boolean;
-  purchaseToken?: string;
+export interface PurchaseInfo {
+  productId: string;
+  purchaseToken: string;
+  purchaseTime: number;
+  orderId: string;
+}
+
+export interface PurchaseVerificationResult {
+  isPurchased: boolean;
+  purchase?: PurchaseInfo;
   error?: string;
 }
 
-export interface LicenseVerificationResult {
-  isValid: boolean;
-  purchaseTime?: number;
-  orderId?: string;
-}
+export const PRODUCT_ID = 'new_audio_360_lifetime';
 
-export const GooglePlayBilling = {
-  async purchaseLicense(productId: string): Promise<PurchaseResult> {
+export const GooglePlayLicense = {
+  async checkPurchaseStatus(): Promise<PurchaseVerificationResult> {
     try {
       if (Platform.OS === "web") {
-        console.log("[GooglePlayBilling] Web platform - simulating license purchase for:", productId);
+        const storedPurchase = localStorage.getItem('na360_test_purchase');
+        if (storedPurchase) {
+          return {
+            isPurchased: true,
+            purchase: JSON.parse(storedPurchase),
+          };
+        }
+        return { isPurchased: false };
+      }
+
+      console.log("[GooglePlayLicense] Checking purchase status...");
+      
+      return { isPurchased: false };
+    } catch (error) {
+      console.error("[GooglePlayLicense] Error checking purchase:", error);
+      return {
+        isPurchased: false,
+        error: error instanceof Error ? error.message : "Failed to verify purchase",
+      };
+    }
+  },
+
+  async purchaseApp(): Promise<PurchaseVerificationResult> {
+    try {
+      if (Platform.OS === "web") {
+        const mockPurchase: PurchaseInfo = {
+          productId: PRODUCT_ID,
+          purchaseToken: `web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          purchaseTime: Date.now(),
+          orderId: `GPA.WEB.${Date.now()}`,
+        };
+        localStorage.setItem('na360_test_purchase', JSON.stringify(mockPurchase));
         return {
-          success: true,
-          purchaseToken: `mock_web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          isPurchased: true,
+          purchase: mockPurchase,
         };
       }
 
-      console.log("[GooglePlayBilling] Initiating one-time purchase for product:", productId);
+      console.log("[GooglePlayLicense] Initiating purchase...");
       
-      const purchaseToken = `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const mockPurchase: PurchaseInfo = {
+        productId: PRODUCT_ID,
+        purchaseToken: `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        purchaseTime: Date.now(),
+        orderId: `GPA.${Date.now()}`,
+      };
       
       return {
-        success: true,
-        purchaseToken,
+        isPurchased: true,
+        purchase: mockPurchase,
       };
     } catch (error) {
-      console.error("[GooglePlayBilling] Purchase error:", error);
+      console.error("[GooglePlayLicense] Purchase error:", error);
       return {
-        success: false,
+        isPurchased: false,
         error: error instanceof Error ? error.message : "Purchase failed",
       };
     }
   },
 
-  async restoreLicenses(): Promise<void> {
+  async restorePurchases(): Promise<PurchaseVerificationResult> {
     try {
       if (Platform.OS === "web") {
-        console.log("[GooglePlayBilling] Web platform - restore not available");
-        return;
+        const storedPurchase = localStorage.getItem('na360_test_purchase');
+        if (storedPurchase) {
+          return {
+            isPurchased: true,
+            purchase: JSON.parse(storedPurchase),
+          };
+        }
+        return { isPurchased: false };
       }
 
-      console.log("[GooglePlayBilling] Restoring license purchases...");
+      console.log("[GooglePlayLicense] Restoring purchases...");
+      return { isPurchased: false };
     } catch (error) {
-      console.error("[GooglePlayBilling] Restore error:", error);
-      throw error;
+      console.error("[GooglePlayLicense] Restore error:", error);
+      return {
+        isPurchased: false,
+        error: error instanceof Error ? error.message : "Failed to restore purchases",
+      };
     }
   },
 
-  async verifyLicense(purchaseToken: string): Promise<LicenseVerificationResult> {
-    try {
-      console.log("[GooglePlayBilling] Verifying license for token:", purchaseToken);
-      
-      if (purchaseToken.startsWith('gp_') || purchaseToken.startsWith('mock_') || purchaseToken.startsWith('test_')) {
-        return {
-          isValid: true,
-          purchaseTime: Date.now(),
-          orderId: `GPA.${Date.now()}-${Math.random().toString(36).substr(2, 8)}`,
-        };
-      }
-      
-      return { isValid: false };
-    } catch (error) {
-      console.error("[GooglePlayBilling] License verification error:", error);
-      return { isValid: false };
-    }
-  },
-
-  async checkInstallSource(): Promise<{ isFromPlayStore: boolean; installSource?: string }> {
-    try {
-      if (Platform.OS === "web") {
-        return { isFromPlayStore: true, installSource: 'web' };
-      }
-
-      console.log("[GooglePlayBilling] Checking install source...");
-      
-      return { isFromPlayStore: true, installSource: 'com.android.vending' };
-    } catch (error) {
-      console.error("[GooglePlayBilling] Install source check error:", error);
-      return { isFromPlayStore: false };
+  clearTestPurchase(): void {
+    if (Platform.OS === "web") {
+      localStorage.removeItem('na360_test_purchase');
     }
   },
 };

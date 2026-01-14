@@ -90,7 +90,7 @@ const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
 export default function SoundLabScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const tokens = useThemeTokens();
-  const { isImmersiveModeUnlocked } = useSubscription();
+  const { isLicensed } = useSubscription();
   
   const cardStyle = getCardEffectStyle(tokens);
   
@@ -164,7 +164,7 @@ export default function SoundLabScreen() {
         }
         setSoundLabMode("equalizer");
       } else if (soundMode) {
-        if (isImmersiveModeUnlocked()) {
+        if (isLicensed) {
           setSelectedImmersive(soundMode as ImmersiveMode);
           setSoundLabMode("immersive");
         } else {
@@ -177,7 +177,7 @@ export default function SoundLabScreen() {
       }
     };
     loadSettings();
-  }, [isImmersiveModeUnlocked]);
+  }, [isLicensed]);
 
   const disableAudioEnhancements = useCallback(async () => {
     setBassBoostEnabled(false);
@@ -403,10 +403,10 @@ export default function SoundLabScreen() {
   const handleImmersiveChange = async (modeId: ImmersiveMode) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    if (!isImmersiveModeUnlocked() && modeId !== 'off') {
+    if (!isLicensed && modeId !== 'off') {
       Alert.alert(
-        "Premium Feature",
-        "Upgrade to Premium to unlock Immersive Modes for a rich, cinematic audio experience.",
+        "License Required",
+        "A license is required to use Immersive Modes.",
         [{ text: "OK", style: "default" }]
       );
       return;
@@ -743,10 +743,10 @@ export default function SoundLabScreen() {
             <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Immersive Modes
             </FluentText>
-            {!isImmersiveModeUnlocked() ? (
+            {!isLicensed ? (
               <View style={[styles.premiumBadge, { backgroundColor: tokens.colors.warning }]}>
                 <MaterialCommunityIcons name="crown" size={12} color={tokens.colors.onPrimary} />
-                <FluentText variant="caption1" style={{ color: tokens.colors.onPrimary, fontWeight: "600", marginLeft: 4 }}>Premium</FluentText>
+                <FluentText variant="caption1" style={{ color: tokens.colors.onPrimary, fontWeight: "600", marginLeft: 4 }}>License Required</FluentText>
               </View>
             ) : isImmersiveActive && selectedImmersive !== 'off' ? (
               <View style={[styles.activeIndicator, { backgroundColor: tokens.colors.primary }]}>
