@@ -27,6 +27,10 @@ const db = drizzle(client);
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
+function normalizePlan(plan: string): 'free' | 'premium' {
+  return (plan === 'standard' || plan === 'premium') ? 'premium' : 'free';
+}
+
 interface AuthRequest extends Request {
   userId?: string;
   userEmail?: string;
@@ -117,7 +121,7 @@ app.post('/api/auth/google', async (req: Request, res: Response) => {
         photoUrl: user[0].photoUrl,
       },
       subscription: subscription.length > 0 ? {
-        plan: subscription[0].plan,
+        plan: subscription[0].isActive ? normalizePlan(subscription[0].plan) : 'free',
         isActive: subscription[0].isActive,
         expiresAt: subscription[0].expiresAt,
       } : {
@@ -180,7 +184,7 @@ app.post('/api/auth/refresh', async (req: Request, res: Response) => {
         photoUrl: user[0].photoUrl,
       },
       subscription: subscription.length > 0 ? {
-        plan: subscription[0].plan,
+        plan: subscription[0].isActive ? normalizePlan(subscription[0].plan) : 'free',
         isActive: subscription[0].isActive,
         expiresAt: subscription[0].expiresAt,
       } : {
@@ -214,7 +218,7 @@ app.post('/api/subscription/verify', authenticateToken, async (req: AuthRequest,
       return res.status(400).json({ error: 'Invalid purchase or subscription expired' });
     }
 
-    const plan = productId.includes('premium') ? 'premium' : 'standard';
+    const plan = 'premium';
     const expiresAt = subscriptionData.expiryTimeMillis 
       ? new Date(parseInt(subscriptionData.expiryTimeMillis))
       : null;
@@ -297,6 +301,7 @@ app.get('/api/subscription/status', authenticateToken, async (req: AuthRequest, 
 
     const sub = subscription[0];
     const isActive = sub.isActive && (!sub.expiresAt || sub.expiresAt > new Date());
+    const normalizedPlan = normalizePlan(sub.plan);
 
     if (sub.isActive !== isActive) {
       await db.update(subscriptions)
@@ -307,7 +312,7 @@ app.get('/api/subscription/status', authenticateToken, async (req: AuthRequest, 
     const entitlement = jwt.sign(
       {
         userId: req.userId,
-        plan: isActive ? sub.plan : 'free',
+        plan: isActive ? normalizedPlan : 'free',
         isActive,
         expiresAt: sub.expiresAt?.toISOString(),
         verifiedAt: new Date().toISOString(),
@@ -319,7 +324,7 @@ app.get('/api/subscription/status', authenticateToken, async (req: AuthRequest, 
     res.json({
       success: true,
       subscription: {
-        plan: isActive ? sub.plan : 'free',
+        plan: isActive ? normalizedPlan : 'free',
         isActive,
         expiresAt: sub.expiresAt,
       },
@@ -333,6 +338,201 @@ app.get('/api/subscription/status', authenticateToken, async (req: AuthRequest, 
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'admin-dev-key-change-in-production';
+
+const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
+  const apiKey = req.headers['x-admin-api-key'];
+  if (apiKey !== ADMIN_API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid admin API key' });
+  }
+  next();
+};
+
+app.get('/api/admin/users', authenticateAdmin, async (req: Request, res: Response) => {
+  try {
+    const allUsers = await db.select().from(users).orderBy(users.createdAt);
+    
+    const usersWithSubscriptions = await Promise.all(
+      allUsers.map(async (user) => {
+        const subscription = await db.select()
+          .from(subscriptions)
+          .where(eq(subscriptions.userId, user.id))
+          .limit(1);
+        
+        return {
+          id: user.id,
+          email: user.email,
+          displayName: user.displayName,
+          photoUrl: user.photoUrl,
+          createdAt: user.createdAt,
+          lastLoginAt: user.lastLoginAt,
+          subscription: subscription.length > 0 ? {
+            plan: subscription[0].isActive ? normalizePlan(subscription[0].plan) : 'free',
+            isActive: subscription[0].isActive,
+            expiresAt: subscription[0].expiresAt,
+          } : {
+            plan: 'free',
+            isActive: false,
+            expiresAt: null,
+          },
+        };
+      })
+    );
+    
+    res.json({
+      success: true,
+      users: usersWithSubscriptions,
+      total: usersWithSubscriptions.length,
+    });
+  } catch (error) {
+    console.error('Admin users list error:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+app.get('/api/admin/stats', authenticateAdmin, async (req: Request, res: Response) => {
+  try {
+    const allUsers = await db.select().from(users);
+    const allSubscriptions = await db.select().from(subscriptions);
+    
+    const premiumCount = allSubscriptions.filter(s => (s.plan === 'premium' || s.plan === 'standard') && s.isActive).length;
+    const freeCount = allUsers.length - premiumCount;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const newUsersToday = allUsers.filter(u => u.createdAt >= today).length;
+    
+    res.json({
+      success: true,
+      stats: {
+        totalUsers: allUsers.length,
+        premiumUsers: premiumCount,
+        freeUsers: freeCount,
+        newUsersToday,
+      },
+    });
+  } catch (error) {
+    console.error('Admin stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+app.get('/admin', (req: Request, res: Response) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Audio 360 - Admin Panel</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f0f; color: #fff; min-height: 100vh; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    .subtitle { color: #888; margin-bottom: 24px; }
+    .auth-form { background: #1a1a1a; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
+    .auth-form input { width: 100%; padding: 12px; border: 1px solid #333; border-radius: 8px; background: #252525; color: #fff; font-size: 14px; margin-bottom: 12px; }
+    .auth-form button { padding: 12px 24px; background: #0078d4; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+    .auth-form button:hover { background: #106ebe; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #1a1a1a; padding: 20px; border-radius: 12px; }
+    .stat-value { font-size: 32px; font-weight: 700; color: #0078d4; }
+    .stat-label { color: #888; font-size: 14px; margin-top: 4px; }
+    .users-table { width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 12px; overflow: hidden; }
+    .users-table th, .users-table td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #252525; }
+    .users-table th { background: #252525; font-weight: 600; font-size: 13px; color: #888; text-transform: uppercase; }
+    .users-table tr:hover { background: #252525; }
+    .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge-premium { background: #ffc107; color: #000; }
+    .badge-free { background: #333; color: #888; }
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: #333; }
+    .hidden { display: none; }
+    .error { color: #ff4444; margin-top: 8px; }
+    @media (max-width: 768px) { .users-table { font-size: 13px; } .users-table th, .users-table td { padding: 10px 8px; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>New Audio 360 Admin</h1>
+    <p class="subtitle">User Management Dashboard</p>
+    
+    <div class="auth-form" id="authForm">
+      <input type="password" id="apiKey" placeholder="Enter Admin API Key" />
+      <button onclick="authenticate()">Access Dashboard</button>
+      <p class="error hidden" id="authError"></p>
+    </div>
+    
+    <div id="dashboard" class="hidden">
+      <div class="stats" id="stats"></div>
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Plan</th>
+            <th>Joined</th>
+            <th>Last Login</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+  
+  <script>
+    let adminKey = '';
+    
+    async function authenticate() {
+      adminKey = document.getElementById('apiKey').value;
+      const errorEl = document.getElementById('authError');
+      
+      try {
+        const res = await fetch('/api/admin/users', { headers: { 'x-admin-api-key': adminKey } });
+        if (!res.ok) throw new Error('Invalid API key');
+        
+        document.getElementById('authForm').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+        loadDashboard();
+      } catch (e) {
+        errorEl.textContent = 'Invalid API key. Please try again.';
+        errorEl.classList.remove('hidden');
+      }
+    }
+    
+    async function loadDashboard() {
+      const [statsRes, usersRes] = await Promise.all([
+        fetch('/api/admin/stats', { headers: { 'x-admin-api-key': adminKey } }),
+        fetch('/api/admin/users', { headers: { 'x-admin-api-key': adminKey } })
+      ]);
+      
+      const statsData = await statsRes.json();
+      const usersData = await usersRes.json();
+      
+      document.getElementById('stats').innerHTML = \`
+        <div class="stat-card"><div class="stat-value">\${statsData.stats.totalUsers}</div><div class="stat-label">Total Users</div></div>
+        <div class="stat-card"><div class="stat-value">\${statsData.stats.premiumUsers}</div><div class="stat-label">Premium Users</div></div>
+        <div class="stat-card"><div class="stat-value">\${statsData.stats.freeUsers}</div><div class="stat-label">Free Users</div></div>
+        <div class="stat-card"><div class="stat-value">\${statsData.stats.newUsersToday}</div><div class="stat-label">New Today</div></div>
+      \`;
+      
+      document.getElementById('usersTableBody').innerHTML = usersData.users.map(u => \`
+        <tr>
+          <td><div class="user-info"><img class="user-avatar" src="\${u.photoUrl || ''}" onerror="this.style.display='none'" /><span>\${u.displayName || 'No name'}</span></div></td>
+          <td>\${u.email}</td>
+          <td><span class="badge \${u.subscription.plan === 'premium' ? 'badge-premium' : 'badge-free'}">\${u.subscription.plan.toUpperCase()}</span></td>
+          <td>\${new Date(u.createdAt).toLocaleDateString()}</td>
+          <td>\${new Date(u.lastLoginAt).toLocaleDateString()}</td>
+        </tr>
+      \`).join('');
+    }
+  </script>
+</body>
+</html>
+  `);
 });
 
 async function verifyGooglePlaySubscription(
