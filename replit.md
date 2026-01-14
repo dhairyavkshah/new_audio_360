@@ -74,6 +74,10 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 -   Requires an **Expo Development Build** for full native module functionality.
 -   Native audio effects are Android-only.
 
+### App Version
+-   **Version Name**: v1.0
+-   **Version Code**: 1 (Android)
+
 ### Environment Configuration
 Three build profiles are available via EAS Build:
 -   **development**: Debug APK with development client (`APP_ENV=development`)

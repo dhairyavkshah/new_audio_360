@@ -23,7 +23,7 @@ export default {
   expo: {
     name: getAppName(),
     slug: 'new-audio-360',
-    version: '1.0.0',
+    version: '1.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     userInterfaceStyle: 'automatic',
@@ -43,7 +43,7 @@ export default {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       package: getAppIdentifier(),
-      versionCode: 1,
+      versionCode: 1, // v1.0
       permissions: [
         'android.permission.READ_EXTERNAL_STORAGE',
         'android.permission.READ_MEDIA_AUDIO',
