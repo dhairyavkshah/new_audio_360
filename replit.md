@@ -1,29 +1,31 @@
 # New Audio 360
 
 ## Overview
-New Audio 360 is a premium hybrid mobile music player application built with React Native and Expo, targeting audio enthusiasts. It offers robust playback, extensive music organization, professional sound customization, and deep personalization through 55 themes. The application uses a hybrid architecture with a backend for authentication and subscriptions, while music data, settings, and preferences are stored locally on the device.
+New Audio 360 is a premium mobile music player application built with React Native and Expo, targeting audio enthusiasts. It offers robust playback, extensive music organization, professional sound customization, and deep personalization through 55 themes. The app requires a one-time purchase to function (no free tier). All data is stored locally on the device, with client-side license verification via Google Play.
 
 ## User Preferences
 I prefer concise and direct communication. When making changes, prioritize core functionality and architectural integrity. I value clear explanations for complex decisions. I prefer iterative development with clear justifications for each step.
 
 ## System Architecture
-The application leverages React Native and Expo for the frontend and Express.js with PostgreSQL for the backend. The UI/UX strictly adheres to the Microsoft Fluent 2 design system, implementing a 4px grid, Fluent typography, semantic color tokens, elevation shadows, and motion curves, ensuring 100% Android safe area compliance.
+The application leverages React Native and Expo for the frontend. The UI/UX strictly adheres to the Microsoft Fluent 2 design system, implementing a 4px grid, Fluent typography, semantic color tokens, elevation shadows, and motion curves, ensuring 100% Android safe area compliance.
 
-### Hybrid Architecture
-**Frontend (React Native/Expo):**
-- Device-local music playback and media library access.
-- User settings, playlists, and preferences stored in AsyncStorage.
-- Local caching of authentication state with intelligent refresh strategies.
+### Client-Side Architecture
+**All data is stored locally on the device:**
+- Device-local music playback and media library access
+- User settings, playlists, and preferences stored in AsyncStorage/SecureStorage
+- License state cached locally after initial Google Play verification
 
-**Backend (Express.js + PostgreSQL):**
-- Handles Google OAuth, subscription verification, and user management.
-- Implements JWT-based authentication with refresh tokens.
+**No backend required:**
+- Google Sign-In handled by expo-auth-session
+- License verification done directly with Google Play Billing API (client-side)
+- No server infrastructure, database, or admin panel needed
 
-### Authentication Flow
-1.  **Initial Login**: Google Sign-In via `expo-auth-session`.
-2.  **Token Management**: Access tokens (7-day expiry) cached locally, refresh tokens (30-day expiry) for silent re-authentication.
-3.  **Biometric Re-authentication**: Native Android PIN/biometric re-authentication for 24 hours.
-4.  **Subscription Verification**: Server-side validation using the Google Play Developer API.
+### License Verification Flow
+1.  **App Launch**: User opens the app
+2.  **Google Sign-In**: User signs in with their Google/Play Store account
+3.  **Purchase Check**: App queries Google Play directly via react-native-iap
+4.  **License Status**: If valid purchase exists, app unlocks. If not, user is prompted to purchase.
+5.  **Offline Access**: License state is cached in SecureStorage for offline use
 
 ### Technical Implementations
 -   **Platform**: React Native with Expo SDK.
@@ -39,7 +41,7 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 -   **ListenTab**: Main player, Now Playing, Sound Lab, Queue.
 -   **LibraryTab**: Music organization with Quick Access Category Grid.
 -   **RadioTab**: FM/AM native radio and Online streaming radio with location-based channel discovery.
--   **SettingsTab**: General settings, Sound Lab, Appearance, Subscription Plan, About.
+-   **SettingsTab**: General settings, Sound Lab, Appearance, License, About.
 
 ### Native Audio Modules (Android-specific)
 -   **PlaybackEngineModule**: ExoPlayer-based playback with queue, shuffle, repeat, speed control, and audio session management.
@@ -73,27 +75,30 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 -   Native audio effects are Android-only.
 
 ### Production License Verification
-For production release, the following must be implemented:
-1.  **Google Play Integrity API**: Replace stub in `checkInstallSource()` with actual Play Integrity API calls to verify the app was installed from Google Play Store.
-2.  **Server-Side Purchase Verification**: Configure `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` environment variable with Google Play Developer API service account credentials to verify purchases server-side.
-3.  **react-native-iap Integration**: Replace mock billing in `purchaseLicense()` with `react-native-iap` library for real Google Play Billing integration.
+For production release, implement in `client/lib/payment.ts`:
 
-Current implementation uses development stubs that will accept any purchase for testing purposes.
+1. **Install react-native-iap**: `npm install react-native-iap`
+2. **Replace stubs with real calls**:
+   - `checkPurchaseStatus()` → Use `RNIap.getAvailablePurchases()` to check for existing purchase
+   - `purchaseApp()` → Use `RNIap.requestPurchase(PRODUCT_ID)` to open Play Store billing
+   - `restorePurchases()` → Use `RNIap.getAvailablePurchases()` to restore from Play Store
+3. **Set up product in Google Play Console** with ID: `new_audio_360_lifetime`
+4. **Configure EAS Build** with proper app signing for Play Store
+
+Current implementation uses development stubs for testing. Web platform uses localStorage; Android mocks responses.
 
 ## External Dependencies
 
--   **React Native**: Core cross-platform mobile framework.
--   **Expo SDK**: Development and build tooling.
--   **expo-av**: Audio playback (primarily web fallback).
--   **expo-media-library**: Device media access.
--   **react-native-reanimated**: Smooth animations.
--   **@react-navigation**: Navigation system.
--   **MaterialCommunityIcons**: Iconography.
--   **expo-notifications**: For now-playing controls and permission flow.
--   **Express.js**: Backend web framework.
--   **PostgreSQL**: Database for backend.
--   **Drizzle ORM**: TypeScript ORM for PostgreSQL.
--   **expo-auth-session**: Google Sign-In.
--   **expo-local-authentication**: Biometric/PIN authentication.
--   **expo-location**: Location detection for online radio country discovery.
--   **react-native-track-player**: Background audio playback with notification controls.
+-   **React Native**: Core cross-platform mobile framework
+-   **Expo SDK**: Development and build tooling
+-   **expo-av**: Audio playback (primarily web fallback)
+-   **expo-media-library**: Device media access
+-   **react-native-reanimated**: Smooth animations
+-   **@react-navigation**: Navigation system
+-   **MaterialCommunityIcons**: Iconography
+-   **expo-notifications**: For now-playing controls and permission flow
+-   **expo-auth-session**: Google Sign-In
+-   **expo-local-authentication**: Biometric/PIN authentication
+-   **expo-location**: Location detection for online radio country discovery
+-   **react-native-track-player**: Background audio playback with notification controls
+-   **react-native-iap** (production): Google Play Billing integration for license verification

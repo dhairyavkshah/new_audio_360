@@ -1,3 +1,19 @@
+/**
+ * Google Play License Verification
+ * 
+ * This module handles direct Google Play purchase verification.
+ * No server required - all verification happens on-device.
+ * 
+ * PRODUCTION SETUP:
+ * 1. Install react-native-iap: npm install react-native-iap
+ * 2. Configure in app.json/app.config.js for Expo EAS Build
+ * 3. Replace stubs below with real react-native-iap calls
+ * 4. Set up the product in Google Play Console with ID: new_audio_360_lifetime
+ * 
+ * The current implementation has development stubs for testing.
+ * Web platform uses localStorage; Android uses mock responses.
+ */
+
 import { Platform } from "react-native";
 
 export interface RegionDetectionResult {
