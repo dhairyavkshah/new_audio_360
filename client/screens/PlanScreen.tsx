@@ -14,26 +14,26 @@ import { detectUserRegion } from "@/lib/payment";
 type FeatureItem = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   text: string;
-  standard: boolean;
+  free: boolean;
   premium: boolean;
 };
 
 const FEATURES: FeatureItem[] = [
-  { icon: "music", text: "Music Player", standard: true, premium: true },
-  { icon: "playlist-music", text: "Playlist Management", standard: true, premium: true },
-  { icon: "palette", text: "5 System Themes", standard: true, premium: true },
-  { icon: "palette-outline", text: "All 55 Themes", standard: false, premium: true },
-  { icon: "equalizer", text: "Equalizer Presets", standard: true, premium: true },
-  { icon: "surround-sound", text: "Immersive Modes", standard: false, premium: true },
-  { icon: "heart", text: "Favorites & History", standard: true, premium: true },
-  { icon: "timer-sand", text: "Sleep Timer", standard: true, premium: true },
+  { icon: "music", text: "Music Player", free: true, premium: true },
+  { icon: "playlist-music", text: "Playlist Management", free: true, premium: true },
+  { icon: "palette", text: "5 System Themes", free: true, premium: true },
+  { icon: "palette-outline", text: "All 55 Themes", free: false, premium: true },
+  { icon: "equalizer", text: "Equalizer Presets", free: true, premium: true },
+  { icon: "surround-sound", text: "Immersive Modes", free: false, premium: true },
+  { icon: "heart", text: "Favorites & History", free: true, premium: true },
+  { icon: "timer-sand", text: "Sleep Timer", free: true, premium: true },
 ];
 
 export default function PlanScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const { plan, isLoading, purchaseStandard, purchasePremium, upgradeToPremiun, restorePurchases } = useSubscription();
+  const { plan, isLoading, purchasePremium, restorePurchases } = useSubscription();
 
   const [currency, setCurrency] = useState<SupportedCurrency>("USD");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -48,30 +48,12 @@ export default function PlanScreen() {
 
   const pricing = PRICING[currency];
 
-  const handlePurchaseStandard = async () => {
-    if (plan !== "free") return;
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setIsProcessing(true);
-    
-    try {
-      const success = await purchaseStandard();
-      if (success) {
-        Alert.alert("Success", "Standard plan activated! Enjoy your music.");
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to complete purchase. Please try again.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   const handlePurchasePremium = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsProcessing(true);
     
     try {
-      const success = plan === "standard" ? await upgradeToPremiun() : await purchasePremium();
+      const success = await purchasePremium();
       if (success) {
         Alert.alert("Success", "Premium plan activated! All features unlocked.");
       }
@@ -100,10 +82,8 @@ export default function PlanScreen() {
     switch (plan) {
       case "premium":
         return { label: "Premium", color: colors.colorPaletteYellowForeground1, icon: "crown" as const };
-      case "standard":
-        return { label: "Standard", color: colors.colorBrandForeground1, icon: "check-circle" as const };
       default:
-        return { label: "Free Trial", color: colors.colorNeutralForeground2, icon: "account-outline" as const };
+        return { label: "Free", color: colors.colorNeutralForeground2, icon: "account-outline" as const };
     }
   };
 
@@ -124,7 +104,7 @@ export default function PlanScreen() {
         </View>
         <View style={styles.featureChecks}>
           <View style={[styles.checkBox, { width: 60 }]}>
-            {feature.standard ? (
+            {feature.free ? (
               <MaterialCommunityIcons name="check" size={18} color={colors.colorPaletteGreenForeground1} />
             ) : (
               <MaterialCommunityIcons name="close" size={18} color={colors.colorPaletteRedForeground1} />
@@ -187,8 +167,8 @@ export default function PlanScreen() {
               </View>
               <View style={styles.featureChecks}>
                 <View style={[styles.checkBox, { width: 60 }]}>
-                  <FluentText variant="caption1" color="brand" style={{ fontWeight: "600" }}>
-                    Standard
+                  <FluentText variant="caption1" color="secondary" style={{ fontWeight: "600" }}>
+                    Free
                   </FluentText>
                 </View>
                 <View style={[styles.checkBox, { width: 60 }]}>
@@ -220,35 +200,6 @@ export default function PlanScreen() {
               Pay once, own forever. No subscriptions.
             </FluentText>
 
-            {plan === "free" && (
-              <Pressable
-                onPress={handlePurchaseStandard}
-                disabled={isProcessing}
-                style={[
-                  styles.planButton,
-                  { 
-                    backgroundColor: colors.colorBrandBackground,
-                    opacity: isProcessing ? 0.6 : 1,
-                  },
-                ]}
-              >
-                <View style={styles.planButtonContent}>
-                  <MaterialCommunityIcons name="check-circle" size={24} color="#FFFFFF" />
-                  <View style={styles.planButtonText}>
-                    <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-                      Standard
-                    </FluentText>
-                    <FluentText variant="caption1" style={{ color: "rgba(255,255,255,0.8)" }}>
-                      5 themes, Equalizer, Playlists
-                    </FluentText>
-                  </View>
-                </View>
-                <FluentText variant="title3" style={{ color: "#FFFFFF" }}>
-                  {pricing.symbol}{pricing.standard}
-                </FluentText>
-              </Pressable>
-            )}
-
             {plan !== "premium" && (
               <Pressable
                 onPress={handlePurchasePremium}
@@ -258,7 +209,6 @@ export default function PlanScreen() {
                   { 
                     backgroundColor: colors.colorPaletteYellowForeground1,
                     opacity: isProcessing ? 0.6 : 1,
-                    marginTop: plan === "free" ? FluentSpacing.m : 0,
                   },
                 ]}
               >
@@ -266,7 +216,7 @@ export default function PlanScreen() {
                   <MaterialCommunityIcons name="crown" size={24} color="#FFFFFF" />
                   <View style={styles.planButtonText}>
                     <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-                      {plan === "standard" ? "Upgrade to Premium" : "Premium"}
+                      Get Premium
                     </FluentText>
                     <FluentText variant="caption1" style={{ color: "rgba(255,255,255,0.8)" }}>
                       All 55 themes, Immersive Audio
@@ -274,7 +224,7 @@ export default function PlanScreen() {
                   </View>
                 </View>
                 <FluentText variant="title3" style={{ color: "#FFFFFF" }}>
-                  {pricing.symbol}{plan === "standard" ? pricing.upgrade : pricing.premium}
+                  {pricing.symbol}{pricing.premium}
                 </FluentText>
               </Pressable>
             )}

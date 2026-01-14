@@ -3,7 +3,7 @@ import { ThemeName } from '@/constants/theme';
 import { IntegrityService } from '@/services/IntegrityService';
 import { SecureStorage } from '@/services/SecureStorage';
 
-export type SubscriptionPlan = 'free' | 'standard' | 'premium';
+export type SubscriptionPlan = 'free' | 'premium';
 
 export interface SubscriptionState {
   plan: SubscriptionPlan;
@@ -15,70 +15,41 @@ export interface SubscriptionState {
 
 const SECURE_STORAGE_KEY = 'subscription_data';
 
-const STANDARD_THEMES: ThemeName[] = [
-  'fluent',
-  'fluentDark',
-  'nightAmoled',
-  'warmNeutral',
-  'coolBlue',
-];
-
-const STANDARD_NOISE_REDUCTION = ['Off', 'Light'];
-const STANDARD_REVERB = ['None', 'Small Studio'];
-
 export const PRODUCT_IDS = {
-  standard: 'new_audio_360_standard',
   premium: 'new_audio_360_premium',
-  upgrade: 'new_audio_360_upgrade_premium',
 };
 
 export const PRICING = {
   INR: {
-    standard: 100,
     premium: 299,
-    upgrade: 199,
     symbol: '₹',
   },
   USD: {
-    standard: 10,
     premium: 30,
-    upgrade: 20,
     symbol: '$',
   },
   EUR: {
-    standard: 9,
     premium: 27,
-    upgrade: 18,
     symbol: '€',
   },
   GBP: {
-    standard: 8,
     premium: 24,
-    upgrade: 16,
     symbol: '£',
   },
   AUD: {
-    standard: 15,
     premium: 45,
-    upgrade: 30,
     symbol: 'A$',
   },
   CAD: {
-    standard: 14,
     premium: 42,
-    upgrade: 28,
     symbol: 'C$',
   },
   JPY: {
-    standard: 1500,
     premium: 4500,
-    upgrade: 3000,
     symbol: '¥',
   },
   BRL: {
-    standard: 50,
     premium: 150,
-    upgrade: 100,
     symbol: 'R$',
   },
 } as const;
@@ -95,9 +66,7 @@ interface SubscriptionContextType {
   isNoiseReductionUnlocked: (level: string) => boolean;
   isReverbUnlocked: (reverb: string) => boolean;
   getAvailableThemes: () => ThemeName[];
-  purchaseStandard: () => Promise<boolean>;
   purchasePremium: () => Promise<boolean>;
-  upgradeToPremiun: () => Promise<boolean>;
   restorePurchases: () => Promise<void>;
   setPlanForTesting: (plan: SubscriptionPlan) => void;
   runIntegrityCheck: () => Promise<void>;
@@ -255,17 +224,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const isThemeUnlocked = useCallback((themeId: ThemeName): boolean => {
     if (isLocked) return false;
-    if (state.plan === 'premium') return true;
-    if (state.plan === 'standard') return STANDARD_THEMES.includes(themeId);
-    return STANDARD_THEMES.includes(themeId);
+    return state.plan === 'premium';
   }, [state.plan, isLocked]);
 
   const getAvailableThemes = useCallback((): ThemeName[] => {
-    if (isLocked) return STANDARD_THEMES.slice(0, 1);
+    if (isLocked) return [];
     if (state.plan === 'premium') {
       return [];
     }
-    return STANDARD_THEMES;
+    return [];
   }, [state.plan, isLocked]);
 
   const isImmersiveModeUnlocked = useCallback((): boolean => {
@@ -276,38 +243,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const isNoiseReductionUnlocked = useCallback((level: string): boolean => {
     if (isLocked) return level === 'Off';
-    if (state.plan === 'premium') return true;
-    return STANDARD_NOISE_REDUCTION.includes(level);
+    return state.plan === 'premium';
   }, [state.plan, isLocked]);
 
   const isReverbUnlocked = useCallback((reverb: string): boolean => {
     if (isLocked) return reverb === 'None';
-    if (state.plan === 'premium') return true;
-    return STANDARD_REVERB.includes(reverb);
+    return state.plan === 'premium';
   }, [state.plan, isLocked]);
-
-  const purchaseStandard = useCallback(async (): Promise<boolean> => {
-    try {
-      const integrityState = await IntegrityService.runIntegrityCheck(true);
-      if (integrityState.isLocked || integrityState.isCompromised) {
-        console.warn('Purchase blocked due to integrity issues');
-        return false;
-      }
-
-      const purchaseTime = Date.now();
-      const newState: SubscriptionState = {
-        plan: 'standard',
-        purchaseToken: `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        productId: PRODUCT_IDS.standard,
-        purchaseTime,
-      };
-      await saveSubscriptionState(newState);
-      return true;
-    } catch (error) {
-      console.error('Error purchasing standard:', error);
-      return false;
-    }
-  }, []);
 
   const purchasePremium = useCallback(async (): Promise<boolean> => {
     try {
@@ -332,30 +274,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const upgradeToPremiun = useCallback(async (): Promise<boolean> => {
-    if (state.plan !== 'standard') return false;
-    try {
-      const integrityState = await IntegrityService.runIntegrityCheck(true);
-      if (integrityState.isLocked || integrityState.isCompromised) {
-        console.warn('Upgrade blocked due to integrity issues');
-        return false;
-      }
-
-      const purchaseTime = Date.now();
-      const newState: SubscriptionState = {
-        plan: 'premium',
-        purchaseToken: `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        productId: PRODUCT_IDS.upgrade,
-        purchaseTime,
-      };
-      await saveSubscriptionState(newState);
-      return true;
-    } catch (error) {
-      console.error('Error upgrading to premium:', error);
-      return false;
-    }
-  }, [state.plan]);
-
   const restorePurchases = useCallback(async (): Promise<void> => {
     setIsLoading(true);
     try {
@@ -376,7 +294,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     const newState: SubscriptionState = {
       plan,
       purchaseToken: plan === 'free' ? null : `test_${Date.now()}`,
-      productId: plan === 'free' ? null : plan === 'standard' ? PRODUCT_IDS.standard : PRODUCT_IDS.premium,
+      productId: plan === 'free' ? null : PRODUCT_IDS.premium,
       purchaseTime: plan === 'free' ? null : purchaseTime,
     };
     saveSubscriptionState(newState);
@@ -394,9 +312,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         isNoiseReductionUnlocked,
         isReverbUnlocked,
         getAvailableThemes,
-        purchaseStandard,
         purchasePremium,
-        upgradeToPremiun,
         restorePurchases,
         setPlanForTesting,
         runIntegrityCheck,

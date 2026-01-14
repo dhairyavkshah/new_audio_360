@@ -24,6 +24,8 @@ const STORAGE_KEYS = {
   VIRTUALIZER_STRENGTH: '@new_audio_360_virtualizer_strength',
   CUSTOM_EQ_BANDS: '@new_audio_360_custom_eq_bands',
   CUSTOM_EQ_PRESETS: '@new_audio_360_custom_eq_presets',
+  BASS_CONTROL_LEVEL: '@new_audio_360_bass_control_level',
+  TREBLE_CONTROL_LEVEL: '@new_audio_360_treble_control_level',
 };
 
 export interface CustomEQPreset {
@@ -536,5 +538,41 @@ export async function getCustomEQPresets(): Promise<CustomEQPreset[]> {
   } catch (error) {
     console.error('Error getting custom EQ presets:', error);
     return [];
+  }
+}
+
+export async function saveBassControlLevel(level: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.BASS_CONTROL_LEVEL, JSON.stringify(level));
+  } catch (error) {
+    console.error('Error saving bass control level:', error);
+  }
+}
+
+export async function getBassControlLevel(): Promise<number> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.BASS_CONTROL_LEVEL);
+    return data ? JSON.parse(data) : 0;
+  } catch (error) {
+    console.error('Error getting bass control level:', error);
+    return 0;
+  }
+}
+
+export async function saveTrebleControlLevel(level: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.TREBLE_CONTROL_LEVEL, JSON.stringify(level));
+  } catch (error) {
+    console.error('Error saving treble control level:', error);
+  }
+}
+
+export async function getTrebleControlLevel(): Promise<number> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.TREBLE_CONTROL_LEVEL);
+    return data ? JSON.parse(data) : 0;
+  } catch (error) {
+    console.error('Error getting treble control level:', error);
+    return 0;
   }
 }

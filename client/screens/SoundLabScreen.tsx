@@ -21,6 +21,8 @@ import {
   getVirtualizerStrength, saveVirtualizerStrength,
   getCustomEQBands, saveCustomEQBands,
   getCustomEQPresets, saveCustomEQPresets,
+  getBassControlLevel, saveBassControlLevel,
+  getTrebleControlLevel, saveTrebleControlLevel,
   CustomEQPreset
 } from "@/lib/storage";
 import { BassBoostModule, VirtualizerModule } from "../../modules/audio-effects";
@@ -79,7 +81,7 @@ const EQ_PRESETS = [
 ];
 
 const CUSTOM_EQ_BAND_LABELS = ["60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz"];
-const STRENGTH_OPTIONS = [100, 200, 300];
+const VIRTUALIZER_STRENGTH_OPTIONS = [1, 2, 3, 4, 5];
 
 const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
   'off', 'music', '360_reality', 'gaming', 'podcast', 'movie'
@@ -104,9 +106,16 @@ export default function SoundLabScreen() {
   const [bassBoostStrength, setBassBoostStrength] = useState(200);
   const [virtualizerEnabled, setVirtualizerEnabled] = useState(false);
   const [virtualizerStrength, setVirtualizerStrength] = useState(200);
+  const [bassControlLevel, setBassControlLevel] = useState(0);
+  const [trebleControlLevel, setTrebleControlLevel] = useState(0);
   
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [newPresetName, setNewPresetName] = useState("");
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingPreset, setEditingPreset] = useState<CustomEQPreset | null>(null);
+  const [editPresetName, setEditPresetName] = useState("");
+
+  const MAX_CUSTOM_PRESETS = 5;
 
   const immersiveModes = useMemo(() => {
     if (availableModes.length > 0) {
@@ -125,7 +134,7 @@ export default function SoundLabScreen() {
       const modes = ImmersiveModeEngineModule.getAvailableModes();
       setAvailableModes(modes);
 
-      const [eqPreset, soundMode, bassBoost, virtualizer, bbStrength, virStrength, bands, presets] = await Promise.all([
+      const [eqPreset, soundMode, bassBoost, virtualizer, bbStrength, virStrength, bands, presets, bassLevel, trebleLevel] = await Promise.all([
         getEQPreset(),
         getSoundMode(),
         getBassBoostEnabled(),
@@ -133,7 +142,9 @@ export default function SoundLabScreen() {
         getBassBoostStrength(),
         getVirtualizerStrength(),
         getCustomEQBands(),
-        getCustomEQPresets()
+        getCustomEQPresets(),
+        getBassControlLevel(),
+        getTrebleControlLevel()
       ]);
       
       setBassBoostEnabled(bassBoost);
@@ -142,6 +153,8 @@ export default function SoundLabScreen() {
       setVirtualizerStrength(virStrength);
       setCustomBands(bands);
       setCustomPresets(presets);
+      setBassControlLevel(bassLevel);
+      setTrebleControlLevel(trebleLevel);
       
       if (eqPreset) {
         if (eqPreset === "Custom") {
@@ -169,8 +182,12 @@ export default function SoundLabScreen() {
   const disableAudioEnhancements = useCallback(async () => {
     setBassBoostEnabled(false);
     setVirtualizerEnabled(false);
+    setBassControlLevel(0);
+    setTrebleControlLevel(0);
     await saveBassBoostEnabled(false);
     await saveVirtualizerEnabled(false);
+    await saveBassControlLevel(0);
+    await saveTrebleControlLevel(0);
     if (BassBoostModule.isAvailable()) {
       BassBoostModule.setEnabled(false);
     }
@@ -241,6 +258,16 @@ export default function SoundLabScreen() {
   };
 
   const handleSavePreset = async () => {
+    if (customPresets.length >= MAX_CUSTOM_PRESETS) {
+      Alert.alert(
+        "Limit Reached",
+        "Maximum 5 custom presets allowed. Delete an existing preset to add a new one."
+      );
+      setShowSaveDialog(false);
+      setNewPresetName("");
+      return;
+    }
+
     if (!newPresetName.trim()) {
       Alert.alert("Error", "Please enter a preset name");
       return;
@@ -267,51 +294,81 @@ export default function SoundLabScreen() {
     NativeEffectsManager.applyFiveBandEQ(preset.bands);
   };
 
-  const handleDeletePreset = async (presetId: string) => {
+  const handleDeletePreset = async (preset: CustomEQPreset) => {
     Alert.alert(
       "Delete Preset",
-      "Are you sure you want to delete this preset?",
+      `Are you sure you want to delete "${preset.name}"? This action cannot be undone.`,
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            const updatedPresets = customPresets.filter(p => p.id !== presetId);
+            const updatedPresets = customPresets.filter(p => p.id !== preset.id);
             setCustomPresets(updatedPresets);
             await saveCustomEQPresets(updatedPresets);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           }
         }
       ]
     );
   };
 
-  const handleBassBoostToggle = async () => {
+  const handleEditPreset = (preset: CustomEQPreset) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setEditingPreset(preset);
+    setEditPresetName(preset.name);
+    setCustomBands(preset.bands);
+    NativeEffectsManager.applyFiveBandEQ(preset.bands);
+    setShowEditDialog(true);
+  };
+
+  const handleUpdatePreset = async () => {
+    if (!editingPreset) return;
+    
+    if (!editPresetName.trim()) {
+      Alert.alert("Error", "Please enter a preset name");
+      return;
+    }
+    
+    const updatedPresets = customPresets.map(p => 
+      p.id === editingPreset.id 
+        ? { ...p, name: editPresetName.trim(), bands: [...customBands] }
+        : p
+    );
+    
+    setCustomPresets(updatedPresets);
+    await saveCustomEQPresets(updatedPresets);
+    await saveCustomEQBands(customBands);
+    setEditingPreset(null);
+    setEditPresetName("");
+    setShowEditDialog(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const handleBassControlChange = async (value: number) => {
     if (soundLabMode !== "equalizer") return;
     
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const newValue = !bassBoostEnabled;
-    setBassBoostEnabled(newValue);
-    await saveBassBoostEnabled(newValue);
+    const newLevel = Math.round(value);
+    setBassControlLevel(newLevel);
+    await saveBassControlLevel(newLevel);
     
     if (BassBoostModule.isAvailable()) {
-      BassBoostModule.setEnabled(newValue);
-      if (newValue) {
-        BassBoostModule.setStrength(bassBoostStrength);
+      if (newLevel > 0) {
+        BassBoostModule.setEnabled(true);
+        BassBoostModule.setStrength(newLevel * 100);
+      } else {
+        BassBoostModule.setEnabled(false);
       }
     }
   };
 
-  const handleBassBoostStrengthChange = async (strength: number) => {
+  const handleTrebleControlChange = async (value: number) => {
     if (soundLabMode !== "equalizer") return;
     
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setBassBoostStrength(strength);
-    await saveBassBoostStrength(strength);
-    
-    if (BassBoostModule.isAvailable() && bassBoostEnabled) {
-      BassBoostModule.setStrength(strength);
-    }
+    const newLevel = Math.round(value);
+    setTrebleControlLevel(newLevel);
+    await saveTrebleControlLevel(newLevel);
   };
 
   const handleVirtualizerToggle = async () => {
@@ -330,15 +387,16 @@ export default function SoundLabScreen() {
     }
   };
 
-  const handleVirtualizerStrengthChange = async (strength: number) => {
+  const handleVirtualizerStrengthChange = async (displayValue: number) => {
     if (soundLabMode !== "equalizer") return;
     
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setVirtualizerStrength(strength);
-    await saveVirtualizerStrength(strength);
+    const internalStrength = displayValue * 100;
+    setVirtualizerStrength(internalStrength);
+    await saveVirtualizerStrength(internalStrength);
     
     if (VirtualizerModule.isAvailable() && virtualizerEnabled) {
-      VirtualizerModule.setStrength(strength);
+      VirtualizerModule.setStrength(internalStrength);
     }
   };
 
@@ -498,7 +556,7 @@ export default function SoundLabScreen() {
               {customPresets.length > 0 ? (
                 <View style={styles.savedPresetsSection}>
                   <FluentText variant="body2" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
-                    Saved Presets
+                    My Presets ({customPresets.length}/{MAX_CUSTOM_PRESETS})
                   </FluentText>
                   {customPresets.map((preset) => (
                     <View key={preset.id} style={[styles.savedPresetRow, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.cardBorderRadius }]}>
@@ -508,9 +566,14 @@ export default function SoundLabScreen() {
                           {preset.bands.map(b => b > 0 ? `+${b}` : b).join(", ")}
                         </FluentText>
                       </Pressable>
-                      <Pressable onPress={() => handleDeletePreset(preset.id)} style={styles.deleteButton}>
-                        <MaterialCommunityIcons name="delete-outline" size={18} color={tokens.colors.error} />
-                      </Pressable>
+                      <View style={styles.presetActions}>
+                        <Pressable onPress={() => handleEditPreset(preset)} style={styles.actionIconButton}>
+                          <MaterialCommunityIcons name="pencil-outline" size={18} color={tokens.colors.primary} />
+                        </Pressable>
+                        <Pressable onPress={() => handleDeletePreset(preset)} style={styles.actionIconButton}>
+                          <MaterialCommunityIcons name="delete-outline" size={18} color={tokens.colors.error} />
+                        </Pressable>
+                      </View>
                     </View>
                   ))}
                 </View>
@@ -528,65 +591,90 @@ export default function SoundLabScreen() {
               </FluentText>
             </View>
             <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
-              Enhance your sound with bass boost and virtualizer effects
+              Fine-tune bass, treble, and spatial audio effects
             </FluentText>
             
             <View style={styles.enhancementsContainer}>
               <GlassCard style={styles.enhancementSection}>
-                <Pressable onPress={handleBassBoostToggle} style={styles.enhancementHeader}>
+                <View style={styles.enhancementHeader}>
                   <MaterialCommunityIcons
                     name="speaker"
                     size={20}
-                    color={bassBoostEnabled ? tokens.colors.primary : tokens.colors.textSecondary}
+                    color={bassControlLevel !== 0 ? tokens.colors.primary : tokens.colors.textSecondary}
                   />
                   <View style={styles.enhancementText}>
-                    <FluentText variant="body1Strong">Bass Boost</FluentText>
-                    <FluentText variant="caption1" color="secondary">Enhanced low frequencies</FluentText>
+                    <FluentText variant="body1Strong">Bass Control</FluentText>
+                    <FluentText variant="caption1" color="secondary">Adjust low frequencies</FluentText>
                   </View>
-                  <View style={[
-                    styles.toggleIndicator,
-                    { backgroundColor: bassBoostEnabled ? tokens.colors.primary : tokens.colors.surfaceVariant }
-                  ]}>
-                    <FluentText variant="caption1" style={{ color: bassBoostEnabled ? tokens.colors.onPrimary : tokens.colors.textSecondary }}>
-                      {bassBoostEnabled ? "ON" : "OFF"}
-                    </FluentText>
-                  </View>
-                </Pressable>
+                  <FluentText
+                    variant="body2"
+                    style={{
+                      color: bassControlLevel !== 0 ? tokens.colors.primary : tokens.colors.textSecondary,
+                      fontWeight: "600",
+                      minWidth: 30,
+                      textAlign: "right"
+                    }}
+                  >
+                    {bassControlLevel > 0 ? `+${bassControlLevel}` : bassControlLevel}
+                  </FluentText>
+                </View>
                 
-                {bassBoostEnabled ? (
-                  <View style={styles.strengthSelector}>
-                    <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.xs }}>
-                      Strength
-                    </FluentText>
-                    <View style={styles.strengthChips}>
-                      {STRENGTH_OPTIONS.map((strength) => (
-                        <Pressable
-                          key={strength}
-                          style={[
-                            styles.strengthChip,
-                            {
-                              backgroundColor: bassBoostStrength === strength 
-                                ? tokens.colors.primary 
-                                : tokens.colors.surfaceVariant,
-                              borderRadius: tokens.shapes.buttonBorderRadius,
-                            }
-                          ]}
-                          onPress={() => handleBassBoostStrengthChange(strength)}
-                        >
-                          <FluentText
-                            variant="caption1"
-                            style={{
-                              color: bassBoostStrength === strength ? tokens.colors.onPrimary : tokens.colors.text,
-                              fontWeight: "600"
-                            }}
-                          >
-                            {strength}
-                          </FluentText>
-                        </Pressable>
-                      ))}
-                    </View>
+                <View style={styles.sliderContainer}>
+                  <FluentText variant="caption1" color="secondary">-5</FluentText>
+                  <Slider
+                    style={styles.controlSlider}
+                    minimumValue={-5}
+                    maximumValue={5}
+                    step={1}
+                    value={bassControlLevel}
+                    onValueChange={handleBassControlChange}
+                    minimumTrackTintColor={tokens.colors.primary}
+                    maximumTrackTintColor={tokens.colors.outline}
+                    thumbTintColor={tokens.colors.primary}
+                  />
+                  <FluentText variant="caption1" color="secondary">+5</FluentText>
+                </View>
+              </GlassCard>
+
+              <GlassCard style={styles.enhancementSection}>
+                <View style={styles.enhancementHeader}>
+                  <MaterialCommunityIcons
+                    name="tune"
+                    size={20}
+                    color={trebleControlLevel !== 0 ? tokens.colors.primary : tokens.colors.textSecondary}
+                  />
+                  <View style={styles.enhancementText}>
+                    <FluentText variant="body1Strong">Treble Control</FluentText>
+                    <FluentText variant="caption1" color="secondary">Adjust high frequencies</FluentText>
                   </View>
-                ) : null}
+                  <FluentText
+                    variant="body2"
+                    style={{
+                      color: trebleControlLevel !== 0 ? tokens.colors.primary : tokens.colors.textSecondary,
+                      fontWeight: "600",
+                      minWidth: 30,
+                      textAlign: "right"
+                    }}
+                  >
+                    {trebleControlLevel > 0 ? `+${trebleControlLevel}` : trebleControlLevel}
+                  </FluentText>
+                </View>
+                
+                <View style={styles.sliderContainer}>
+                  <FluentText variant="caption1" color="secondary">-5</FluentText>
+                  <Slider
+                    style={styles.controlSlider}
+                    minimumValue={-5}
+                    maximumValue={5}
+                    step={1}
+                    value={trebleControlLevel}
+                    onValueChange={handleTrebleControlChange}
+                    minimumTrackTintColor={tokens.colors.primary}
+                    maximumTrackTintColor={tokens.colors.outline}
+                    thumbTintColor={tokens.colors.primary}
+                  />
+                  <FluentText variant="caption1" color="secondary">+5</FluentText>
+                </View>
               </GlassCard>
 
               <GlassCard style={styles.enhancementSection}>
@@ -616,28 +704,28 @@ export default function SoundLabScreen() {
                       Strength
                     </FluentText>
                     <View style={styles.strengthChips}>
-                      {STRENGTH_OPTIONS.map((strength) => (
+                      {VIRTUALIZER_STRENGTH_OPTIONS.map((displayValue) => (
                         <Pressable
-                          key={strength}
+                          key={displayValue}
                           style={[
                             styles.strengthChip,
                             {
-                              backgroundColor: virtualizerStrength === strength 
+                              backgroundColor: virtualizerStrength === displayValue * 100 
                                 ? tokens.colors.primary 
                                 : tokens.colors.surfaceVariant,
                               borderRadius: tokens.shapes.buttonBorderRadius,
                             }
                           ]}
-                          onPress={() => handleVirtualizerStrengthChange(strength)}
+                          onPress={() => handleVirtualizerStrengthChange(displayValue)}
                         >
                           <FluentText
                             variant="caption1"
                             style={{
-                              color: virtualizerStrength === strength ? tokens.colors.onPrimary : tokens.colors.text,
+                              color: virtualizerStrength === displayValue * 100 ? tokens.colors.onPrimary : tokens.colors.text,
                               fontWeight: "600"
                             }}
                           >
-                            {strength}
+                            {displayValue}
                           </FluentText>
                         </Pressable>
                       ))}
@@ -781,6 +869,81 @@ export default function SoundLabScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={showEditDialog}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setShowEditDialog(false);
+          setEditingPreset(null);
+          setEditPresetName("");
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: tokens.colors.backgroundDefault, borderRadius: tokens.shapes.cardBorderRadius }]}>
+            <FluentText variant="subtitle1" style={{ marginBottom: FluentSpacing.m }}>
+              Edit Preset
+            </FluentText>
+            <TextInput
+              style={[
+                styles.textInput,
+                {
+                  backgroundColor: tokens.colors.surfaceVariant,
+                  color: tokens.colors.text,
+                  borderColor: tokens.colors.outline,
+                  borderRadius: tokens.shapes.buttonBorderRadius,
+                  marginBottom: FluentSpacing.m,
+                }
+              ]}
+              placeholder="Preset name"
+              placeholderTextColor={tokens.colors.textSecondary}
+              value={editPresetName}
+              onChangeText={setEditPresetName}
+            />
+            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
+              Adjust EQ bands and save changes
+            </FluentText>
+            {CUSTOM_EQ_BAND_LABELS.map((label, index) => (
+              <View key={label} style={styles.bandRow}>
+                <FluentText variant="caption1" style={styles.bandLabel}>{label}</FluentText>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={-8}
+                  maximumValue={8}
+                  step={1}
+                  value={customBands[index]}
+                  onValueChange={(value) => handleBandChange(index, value)}
+                  minimumTrackTintColor={tokens.colors.primary}
+                  maximumTrackTintColor={tokens.colors.outline}
+                  thumbTintColor={tokens.colors.primary}
+                />
+                <FluentText variant="caption1" style={styles.bandValue}>
+                  {customBands[index] > 0 ? `+${customBands[index]}` : customBands[index]}
+                </FluentText>
+              </View>
+            ))}
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
+                onPress={() => {
+                  setShowEditDialog(false);
+                  setEditingPreset(null);
+                  setEditPresetName("");
+                }}
+              >
+                <FluentText variant="body2">Cancel</FluentText>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
+                onPress={handleUpdatePreset}
+              >
+                <FluentText variant="body2" style={{ color: tokens.colors.onPrimary }}>Save Changes</FluentText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </FluentScreenLayout>
   );
 }
@@ -871,7 +1034,12 @@ const styles = StyleSheet.create({
   savedPresetInfo: {
     flex: 1,
   },
-  deleteButton: {
+  presetActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: FluentSpacing.xs,
+  },
+  actionIconButton: {
     padding: FluentSpacing.xs,
   },
   enhancementsContainer: {
@@ -907,6 +1075,19 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingVertical: FluentSpacing.s,
+  },
+  sliderContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: FluentSpacing.m,
+    paddingTop: FluentSpacing.m,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(128,128,128,0.2)",
+    gap: FluentSpacing.s,
+  },
+  controlSlider: {
+    flex: 1,
+    height: 40,
   },
   modesContainer: {
     gap: FluentSpacing.s,
