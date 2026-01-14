@@ -30,7 +30,7 @@ The application leverages React Native and Expo for the frontend and Express.js 
 -   **State Management**: React Context API with custom hooks.
 -   **Data Persistence**: AsyncStorage for local storage.
 -   **Design System**: Microsoft Fluent 2 tokens.
--   **Audio Playback**: `expo-av` (with native Android modules for advanced features).
+-   **Audio Playback**: `react-native-track-player` for background playback with notification controls (Android), `expo-av` fallback for web.
 -   **Media Access**: `expo-media-library` for device audio files.
 -   **Animations**: `react-native-reanimated` integrating Fluent 2 motion curves.
 
@@ -63,6 +63,7 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 -   **Media Library Integration**: Onboarding for access, paginated loading, "Hide Song" feature.
 -   **Playlist Management**: Full CRUD for local playlists.
 -   **Playback Features**: Favorites, Recently Played, Most Played, Queue Management, Sleep Timer.
+-   **Background Playback**: Music and radio continue playing when the app is closed, with Android notification controls (play/pause, next/previous, stop).
 -   **Music Folder Selection**: Users can select specific device folders for music sourcing.
 -   **Multi-Step Permission Onboarding**: Guides users through necessary permissions.
 
@@ -87,3 +88,4 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 -   **expo-auth-session**: Google Sign-In.
 -   **expo-local-authentication**: Biometric/PIN authentication.
 -   **expo-location**: Location detection for online radio country discovery.
+-   **react-native-track-player**: Background audio playback with notification controls.
