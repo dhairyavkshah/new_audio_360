@@ -16,7 +16,7 @@ export default function LoginScreen() {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { signInWithGoogle, signInAsTestUser, isLoading } = useAuth();
-  const { setPlanForTesting } = useSubscription();
+  const { setLicenseForTesting } = useSubscription();
   const [error, setError] = useState<string | null>(null);
 
   const handleGoogleSignIn = async () => {
@@ -31,7 +31,7 @@ export default function LoginScreen() {
     setError(null);
     const success = await signInAsTestUser();
     if (success) {
-      setPlanForTesting('premium');
+      setLicenseForTesting('licensed');
     } else {
       setError('Test sign in failed. Please try again.');
     }
@@ -56,7 +56,7 @@ export default function LoginScreen() {
           </FluentText>
           
           <FluentText variant="body2" color="secondary" align="center" style={styles.description}>
-            A subscription is required to use New Audio 360. Sign in with your Google account to verify your subscription.
+            A license is required to use New Audio 360. Sign in with your Google account to verify your purchase.
           </FluentText>
 
           {error && (
