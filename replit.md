@@ -88,6 +88,20 @@ A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Set
 
 ## Recent Changes
 
+- **2026-01-14**: **Comprehensive Theme Token System Implementation**:
+  - **New themeUtils.ts**: Centralized theming utilities with functions for theme-aware styling:
+    - `getThemeTokens()` - Returns colors, shapes, components, icons for any theme
+    - `getCardEffectStyle()` - Theme-specific card styling (beveled, glass, aero, chrome, lcd, flat)
+    - `getButtonEffectStyle()` - Theme-specific button styling with effect flags
+    - `getTabBarStyle()` - Tab bar with glass/beveled/aero effects
+    - `getGlowStyle()` / `getTextGlowStyle()` - Glow effects for Winamp-style themes
+    - `getProgressBarStyle()` / `getSliderThumbStyle()` - Theme-aware sliders
+  - **ThemeContext Enhanced**: Added `useThemeTokens()` hook for accessing complete token bundles
+  - **Components Updated**: Card, MiniPlayer, PlaybackControls, ProgressBar, VolumeSlider, MainTabNavigator now use theme tokens
+  - **Screens Updated**: SoundLabScreen, AppearanceScreen use theme tokens for consistent styling
+  - **Theme Effects System**: Each of 55 themes applies unique visual effects (glass for iOS, beveled for Winamp, material elevation for Android, etc.)
+  - Files updated: themeUtils.ts, ThemeContext.tsx, Card.tsx, MainTabNavigator.tsx, MiniPlayer.tsx, PlaybackControls.tsx, ProgressBar.tsx, VolumeSlider.tsx, SoundLabScreen.tsx, AppearanceScreen.tsx
+
 - **2026-01-10**: **Fluent 2 Typography & Settings Screens UI Improvements**:
   - **Typography Scale Updated**: Body1/Body1Strong increased to 16px (from 14px), Caption1 increased to 13px (from 12px)
   - **Typography Hierarchy**: caption2=11px, caption1=13px, body2=14px, body1=16px, subtitle2=16px semibold, subtitle1=18px semibold
