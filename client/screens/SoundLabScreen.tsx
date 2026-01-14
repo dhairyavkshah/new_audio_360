@@ -7,9 +7,10 @@ import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText, FluentButton } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { getCardEffectStyle } from "@/lib/themeUtils";
+import { FluentSpacing, FluentRadius } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { 
   getEQPreset, saveEQPreset, clearEQPreset, 
@@ -86,9 +87,10 @@ const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
 
 export default function SoundLabScreen() {
   const tabBarHeight = useSafeTabBarHeight();
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const tokens = useThemeTokens();
   const { isImmersiveModeUnlocked } = useSubscription();
+  
+  const cardStyle = getCardEffectStyle(tokens);
   
   const [soundLabMode, setSoundLabMode] = useState<SoundLabMode>("off");
   const [selectedEQ, setSelectedEQ] = useState("Flat");
@@ -411,14 +413,14 @@ export default function SoundLabScreen() {
           Tap a preset to apply, tap again to turn off. Only one mode can be active at a time.
         </FluentText>
 
-        <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
+        <View style={[styles.sectionCard, cardStyle]}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="tune-vertical" size={18} color={colors.colorBrandForeground1} />
+            <MaterialCommunityIcons name="tune-vertical" size={18} color={tokens.colors.primary} />
             <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Equalizer Mode
             </FluentText>
             {isEqualizerActive ? (
-              <View style={[styles.activeIndicator, { backgroundColor: colors.colorBrandBackground }]}>
+              <View style={[styles.activeIndicator, { backgroundColor: tokens.colors.primary }]}>
                 <FluentText variant="caption1" color="onBrand" style={{ fontWeight: "600" }}>Active</FluentText>
               </View>
             ) : null}
@@ -466,9 +468,9 @@ export default function SoundLabScreen() {
                     step={1}
                     value={customBands[index]}
                     onValueChange={(value) => handleBandChange(index, value)}
-                    minimumTrackTintColor={colors.colorBrandForeground1}
-                    maximumTrackTintColor={colors.colorNeutralStroke2}
-                    thumbTintColor={colors.colorBrandForeground1}
+                    minimumTrackTintColor={tokens.colors.primary}
+                    maximumTrackTintColor={tokens.colors.outline}
+                    thumbTintColor={tokens.colors.primary}
                   />
                   <FluentText variant="caption1" style={styles.bandValue}>
                     {customBands[index] > 0 ? `+${customBands[index]}` : customBands[index]}
@@ -478,18 +480,18 @@ export default function SoundLabScreen() {
               
               <View style={styles.customEQButtons}>
                 <Pressable
-                  style={[styles.actionButton, { backgroundColor: colors.colorNeutralBackground3 }]}
+                  style={[styles.actionButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
                   onPress={handleResetBands}
                 >
-                  <MaterialCommunityIcons name="refresh" size={16} color={colors.colorNeutralForeground1} />
+                  <MaterialCommunityIcons name="refresh" size={16} color={tokens.colors.text} />
                   <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs }}>Reset</FluentText>
                 </Pressable>
                 <Pressable
-                  style={[styles.actionButton, { backgroundColor: colors.colorBrandBackground }]}
+                  style={[styles.actionButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
                   onPress={() => setShowSaveDialog(true)}
                 >
-                  <MaterialCommunityIcons name="content-save" size={16} color="#FFFFFF" />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, color: "#FFFFFF" }}>Save Preset</FluentText>
+                  <MaterialCommunityIcons name="content-save" size={16} color={tokens.colors.onPrimary} />
+                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, color: tokens.colors.onPrimary }}>Save Preset</FluentText>
                 </Pressable>
               </View>
 
@@ -499,7 +501,7 @@ export default function SoundLabScreen() {
                     Saved Presets
                   </FluentText>
                   {customPresets.map((preset) => (
-                    <View key={preset.id} style={[styles.savedPresetRow, { backgroundColor: colors.colorNeutralBackground3 }]}>
+                    <View key={preset.id} style={[styles.savedPresetRow, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.cardBorderRadius }]}>
                       <Pressable style={styles.savedPresetInfo} onPress={() => handleLoadPreset(preset)}>
                         <FluentText variant="body2">{preset.name}</FluentText>
                         <FluentText variant="caption1" color="secondary">
@@ -507,7 +509,7 @@ export default function SoundLabScreen() {
                         </FluentText>
                       </Pressable>
                       <Pressable onPress={() => handleDeletePreset(preset.id)} style={styles.deleteButton}>
-                        <MaterialCommunityIcons name="delete-outline" size={18} color={colors.colorPaletteRedForeground1} />
+                        <MaterialCommunityIcons name="delete-outline" size={18} color={tokens.colors.error} />
                       </Pressable>
                     </View>
                   ))}
@@ -518,9 +520,9 @@ export default function SoundLabScreen() {
         </View>
 
         {isEqualizerActive ? (
-          <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
+          <View style={[styles.sectionCard, cardStyle]}>
             <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons name="speaker" size={18} color={colors.colorBrandForeground1} />
+              <MaterialCommunityIcons name="speaker" size={18} color={tokens.colors.primary} />
               <FluentText variant="subtitle1" style={styles.sectionTitle}>
                 Audio Enhancements
               </FluentText>
@@ -535,7 +537,7 @@ export default function SoundLabScreen() {
                   <MaterialCommunityIcons
                     name="speaker"
                     size={20}
-                    color={bassBoostEnabled ? colors.colorBrandForeground1 : colors.colorNeutralForeground2}
+                    color={bassBoostEnabled ? tokens.colors.primary : tokens.colors.textSecondary}
                   />
                   <View style={styles.enhancementText}>
                     <FluentText variant="body1Strong">Bass Boost</FluentText>
@@ -543,9 +545,9 @@ export default function SoundLabScreen() {
                   </View>
                   <View style={[
                     styles.toggleIndicator,
-                    { backgroundColor: bassBoostEnabled ? colors.colorBrandBackground : colors.colorNeutralBackground3 }
+                    { backgroundColor: bassBoostEnabled ? tokens.colors.primary : tokens.colors.surfaceVariant }
                   ]}>
-                    <FluentText variant="caption1" style={{ color: bassBoostEnabled ? "#FFFFFF" : colors.colorNeutralForeground2 }}>
+                    <FluentText variant="caption1" style={{ color: bassBoostEnabled ? tokens.colors.onPrimary : tokens.colors.textSecondary }}>
                       {bassBoostEnabled ? "ON" : "OFF"}
                     </FluentText>
                   </View>
@@ -564,8 +566,9 @@ export default function SoundLabScreen() {
                             styles.strengthChip,
                             {
                               backgroundColor: bassBoostStrength === strength 
-                                ? colors.colorBrandBackground 
-                                : colors.colorNeutralBackground3,
+                                ? tokens.colors.primary 
+                                : tokens.colors.surfaceVariant,
+                              borderRadius: tokens.shapes.buttonBorderRadius,
                             }
                           ]}
                           onPress={() => handleBassBoostStrengthChange(strength)}
@@ -573,7 +576,7 @@ export default function SoundLabScreen() {
                           <FluentText
                             variant="caption1"
                             style={{
-                              color: bassBoostStrength === strength ? "#FFFFFF" : colors.colorNeutralForeground1,
+                              color: bassBoostStrength === strength ? tokens.colors.onPrimary : tokens.colors.text,
                               fontWeight: "600"
                             }}
                           >
@@ -591,7 +594,7 @@ export default function SoundLabScreen() {
                   <MaterialCommunityIcons
                     name="surround-sound"
                     size={20}
-                    color={virtualizerEnabled ? colors.colorBrandForeground1 : colors.colorNeutralForeground2}
+                    color={virtualizerEnabled ? tokens.colors.primary : tokens.colors.textSecondary}
                   />
                   <View style={styles.enhancementText}>
                     <FluentText variant="body1Strong">Virtualizer</FluentText>
@@ -599,9 +602,9 @@ export default function SoundLabScreen() {
                   </View>
                   <View style={[
                     styles.toggleIndicator,
-                    { backgroundColor: virtualizerEnabled ? colors.colorBrandBackground : colors.colorNeutralBackground3 }
+                    { backgroundColor: virtualizerEnabled ? tokens.colors.primary : tokens.colors.surfaceVariant }
                   ]}>
-                    <FluentText variant="caption1" style={{ color: virtualizerEnabled ? "#FFFFFF" : colors.colorNeutralForeground2 }}>
+                    <FluentText variant="caption1" style={{ color: virtualizerEnabled ? tokens.colors.onPrimary : tokens.colors.textSecondary }}>
                       {virtualizerEnabled ? "ON" : "OFF"}
                     </FluentText>
                   </View>
@@ -620,8 +623,9 @@ export default function SoundLabScreen() {
                             styles.strengthChip,
                             {
                               backgroundColor: virtualizerStrength === strength 
-                                ? colors.colorBrandBackground 
-                                : colors.colorNeutralBackground3,
+                                ? tokens.colors.primary 
+                                : tokens.colors.surfaceVariant,
+                              borderRadius: tokens.shapes.buttonBorderRadius,
                             }
                           ]}
                           onPress={() => handleVirtualizerStrengthChange(strength)}
@@ -629,7 +633,7 @@ export default function SoundLabScreen() {
                           <FluentText
                             variant="caption1"
                             style={{
-                              color: virtualizerStrength === strength ? "#FFFFFF" : colors.colorNeutralForeground1,
+                              color: virtualizerStrength === strength ? tokens.colors.onPrimary : tokens.colors.text,
                               fontWeight: "600"
                             }}
                           >
@@ -645,19 +649,19 @@ export default function SoundLabScreen() {
           </View>
         ) : null}
 
-        <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
+        <View style={[styles.sectionCard, cardStyle]}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="headphones" size={18} color={colors.colorBrandForeground1} />
+            <MaterialCommunityIcons name="headphones" size={18} color={tokens.colors.primary} />
             <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Immersive Modes
             </FluentText>
             {!isImmersiveModeUnlocked() ? (
-              <View style={[styles.premiumBadge, { backgroundColor: colors.colorPaletteYellowBackground1 }]}>
-                <MaterialCommunityIcons name="crown" size={12} color={colors.colorPaletteYellowForeground1} />
-                <FluentText variant="caption1" style={{ color: colors.colorPaletteYellowForeground1, fontWeight: "600", marginLeft: 4 }}>Premium</FluentText>
+              <View style={[styles.premiumBadge, { backgroundColor: tokens.colors.warning }]}>
+                <MaterialCommunityIcons name="crown" size={12} color={tokens.colors.onPrimary} />
+                <FluentText variant="caption1" style={{ color: tokens.colors.onPrimary, fontWeight: "600", marginLeft: 4 }}>Premium</FluentText>
               </View>
             ) : isImmersiveActive && selectedImmersive !== 'off' ? (
-              <View style={[styles.activeIndicator, { backgroundColor: colors.colorBrandBackground }]}>
+              <View style={[styles.activeIndicator, { backgroundColor: tokens.colors.primary }]}>
                 <FluentText variant="caption1" color="onBrand" style={{ fontWeight: "600" }}>Active</FluentText>
               </View>
             ) : null}
@@ -683,9 +687,10 @@ export default function SoundLabScreen() {
                   styles.modeCard,
                   {
                     backgroundColor: isImmersiveActive && selectedImmersive === mode.id 
-                      ? colors.colorBrandBackground 
-                      : colors.colorNeutralBackground2,
+                      ? tokens.colors.primary 
+                      : tokens.colors.surface,
                     opacity: isEqualizerActive ? 0.5 : 1,
+                    borderRadius: tokens.shapes.cardBorderRadius,
                   },
                 ]}
               >
@@ -693,14 +698,14 @@ export default function SoundLabScreen() {
                   <MaterialCommunityIcons
                     name={getModeIcon(mode.icon)}
                     size={20}
-                    color={isImmersiveActive && selectedImmersive === mode.id ? "#FFFFFF" : colors.colorNeutralForeground1}
+                    color={isImmersiveActive && selectedImmersive === mode.id ? tokens.colors.onPrimary : tokens.colors.text}
                   />
                   <View style={styles.modeCardText}>
                     <FluentText
                       variant="body1"
                       style={{
                         fontWeight: "600",
-                        color: isImmersiveActive && selectedImmersive === mode.id ? "#FFFFFF" : colors.colorNeutralForeground1,
+                        color: isImmersiveActive && selectedImmersive === mode.id ? tokens.colors.onPrimary : tokens.colors.text,
                       }}
                     >
                       {mode.name}
@@ -710,14 +715,14 @@ export default function SoundLabScreen() {
                       style={{
                         color: isImmersiveActive && selectedImmersive === mode.id 
                           ? "rgba(255,255,255,0.8)" 
-                          : colors.colorNeutralForeground2,
+                          : tokens.colors.textSecondary,
                       }}
                     >
                       {mode.description}
                     </FluentText>
                   </View>
                   {isImmersiveActive && selectedImmersive === mode.id ? (
-                    <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" />
+                    <MaterialCommunityIcons name="check-circle" size={20} color={tokens.colors.onPrimary} />
                   ) : null}
                 </View>
               </Pressable>
@@ -727,7 +732,7 @@ export default function SoundLabScreen() {
 
         <GlassCard style={styles.infoCard}>
           <View style={styles.infoContent}>
-            <MaterialCommunityIcons name="information-outline" size={18} color={colors.colorBrandForeground1} />
+            <MaterialCommunityIcons name="information-outline" size={18} color={tokens.colors.primary} />
             <View style={styles.infoText}>
               <FluentText variant="body1Strong">Sound Experience</FluentText>
               <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
@@ -745,7 +750,7 @@ export default function SoundLabScreen() {
         onRequestClose={() => setShowSaveDialog(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.colorNeutralBackground1 }]}>
+          <View style={[styles.modalContent, { backgroundColor: tokens.colors.backgroundDefault, borderRadius: tokens.shapes.cardBorderRadius }]}>
             <FluentText variant="subtitle1" style={{ marginBottom: FluentSpacing.m }}>
               Save Custom Preset
             </FluentText>
@@ -753,19 +758,20 @@ export default function SoundLabScreen() {
               style={[
                 styles.textInput,
                 {
-                  backgroundColor: colors.colorNeutralBackground3,
-                  color: colors.colorNeutralForeground1,
-                  borderColor: colors.colorNeutralStroke2,
+                  backgroundColor: tokens.colors.surfaceVariant,
+                  color: tokens.colors.text,
+                  borderColor: tokens.colors.outline,
+                  borderRadius: tokens.shapes.buttonBorderRadius,
                 }
               ]}
               placeholder="Preset name"
-              placeholderTextColor={colors.colorNeutralForeground2}
+              placeholderTextColor={tokens.colors.textSecondary}
               value={newPresetName}
               onChangeText={setNewPresetName}
             />
             <View style={styles.modalButtons}>
               <Pressable
-                style={[styles.modalButton, { backgroundColor: colors.colorNeutralBackground3 }]}
+                style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
                 onPress={() => {
                   setShowSaveDialog(false);
                   setNewPresetName("");
@@ -774,10 +780,10 @@ export default function SoundLabScreen() {
                 <FluentText variant="body2">Cancel</FluentText>
               </Pressable>
               <Pressable
-                style={[styles.modalButton, { backgroundColor: colors.colorBrandBackground }]}
+                style={[styles.modalButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
                 onPress={handleSavePreset}
               >
-                <FluentText variant="body2" style={{ color: "#FFFFFF" }}>Save</FluentText>
+                <FluentText variant="body2" style={{ color: tokens.colors.onPrimary }}>Save</FluentText>
               </Pressable>
             </View>
           </View>
@@ -795,7 +801,6 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.m,
   },
   sectionCard: {
-    borderRadius: 12,
     padding: FluentSpacing.l,
     marginBottom: FluentSpacing.m,
   },
@@ -858,7 +863,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: FluentSpacing.m,
-    borderRadius: FluentControlRadius.card,
   },
   savedPresetsSection: {
     marginTop: FluentSpacing.l,
@@ -870,7 +874,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: FluentSpacing.m,
-    borderRadius: FluentControlRadius.card,
     marginBottom: FluentSpacing.xs,
   },
   savedPresetInfo: {
@@ -912,14 +915,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingVertical: FluentSpacing.s,
-    borderRadius: FluentControlRadius.card,
   },
   modesContainer: {
     gap: FluentSpacing.s,
   },
   modeCard: {
     padding: FluentSpacing.m,
-    borderRadius: FluentControlRadius.card,
   },
   modeCardContent: {
     flexDirection: "row",
@@ -951,12 +952,10 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 400,
     padding: FluentSpacing.xl,
-    borderRadius: FluentControlRadius.card,
   },
   textInput: {
     paddingHorizontal: FluentSpacing.m,
     paddingVertical: FluentSpacing.m,
-    borderRadius: FluentControlRadius.card,
     borderWidth: 1,
     fontSize: 16,
   },
@@ -969,6 +968,5 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingVertical: FluentSpacing.m,
-    borderRadius: FluentControlRadius.card,
   },
 });

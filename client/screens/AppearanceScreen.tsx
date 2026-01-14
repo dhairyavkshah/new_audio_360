@@ -4,19 +4,22 @@ import * as Haptics from "expo-haptics";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { ThemeSelector } from "@/components/ThemeSelector";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { ThemeName } from "@/constants/theme";
-import { FluentSpacing, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing } from "@/constants/fluent2";
+import { getCardEffectStyle } from "@/lib/themeUtils";
 
 export default function AppearanceScreen() {
   const tabBarHeight = useSafeTabBarHeight();
-  const { themeName, setThemeName, isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const { themeName, setThemeName } = useThemeContext();
+  const tokens = useThemeTokens();
 
   const handleThemeChange = (newTheme: ThemeName) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setThemeName(newTheme);
   };
+
+  const cardStyle = getCardEffectStyle(tokens);
 
   return (
     <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
@@ -28,7 +31,11 @@ export default function AppearanceScreen() {
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
-        <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
+        <View style={[
+          styles.sectionCard,
+          cardStyle,
+          { padding: FluentSpacing.l, marginBottom: FluentSpacing.m }
+        ]}>
           <FluentText variant="subtitle1" style={styles.sectionHeader}>
             Themes
           </FluentText>
@@ -47,11 +54,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: FluentSpacing.l,
   },
-  sectionCard: {
-    borderRadius: 12,
-    padding: FluentSpacing.l,
-    marginBottom: FluentSpacing.m,
-  },
+  sectionCard: {},
   sectionHeader: {
     marginBottom: FluentSpacing.xs,
   },

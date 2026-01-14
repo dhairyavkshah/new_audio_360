@@ -9,14 +9,12 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
+import { getProgressBarStyle } from "@/lib/themeUtils";
 import {
   FluentSpacing,
-  FluentRadius,
   FluentDuration,
   FluentCurve,
-  FluentLightColors,
-  FluentDarkColors,
 } from "@/constants/fluent2";
 
 interface ProgressBarProps {
@@ -43,8 +41,8 @@ export function ProgressBar({
   showTextShadow = false,
 }: ProgressBarProps) {
   const { isDark } = useThemeContext();
-  const { shapes, components } = useSkin();
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const tokens = useThemeTokens();
+  const { trackStyle, progressStyle, trackRadius } = getProgressBarStyle(tokens);
 
   const textShadowStyle = showTextShadow ? {
     textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
@@ -133,20 +131,14 @@ export function ProgressBar({
           <Animated.View
             style={[
               styles.track,
-              {
-                borderRadius: FluentRadius.small,
-                backgroundColor: fluentColors.colorNeutralBackground5,
-              },
+              trackStyle,
               trackAnimatedStyle,
             ]}
           >
             <Animated.View
               style={[
                 styles.fill,
-                {
-                  borderRadius: FluentRadius.small,
-                  backgroundColor: fluentColors.colorCompoundBrandBackground,
-                },
+                progressStyle,
                 fillStyle,
               ]}
             />
@@ -158,13 +150,13 @@ export function ProgressBar({
                 width: THUMB_SIZE,
                 height: THUMB_SIZE,
                 borderRadius: THUMB_SIZE / 2,
-                backgroundColor: fluentColors.colorCompoundBrandBackground,
+                backgroundColor: tokens.colors.primary,
                 ...Platform.select({
                   ios: {
-                    shadowColor: fluentColors.colorCompoundBrandBackground,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
+                    shadowColor: progressStyle.shadowColor || tokens.colors.primary,
+                    shadowOffset: progressStyle.shadowOffset || { width: 0, height: 2 },
+                    shadowOpacity: progressStyle.shadowOpacity || 0.25,
+                    shadowRadius: progressStyle.shadowRadius || 4,
                   },
                   android: {
                     elevation: 4,

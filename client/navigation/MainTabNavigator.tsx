@@ -15,18 +15,16 @@ import ListenStackNavigator from "@/navigation/ListenStackNavigator";
 import LibraryStackNavigator from "@/navigation/LibraryStackNavigator";
 import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
 import { MiniPlayer } from "@/components/MiniPlayer";
-import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
+import { useThemeContext, useSkin, useThemeTokens } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
+import { getTabBarStyle } from "@/lib/themeUtils";
 import {
   FluentSpacing,
   FluentIconSize,
   FluentTypography,
   FluentDuration,
-  FluentLightColors,
-  FluentDarkColors,
-  getShadowStyle,
 } from "@/constants/fluent2";
 
 export type MainTabParamList = {
@@ -49,7 +47,7 @@ function TabIcon({
   isDark: boolean;
 }) {
   const skin = useSkin();
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const tokens = useThemeTokens();
   const indicatorScale = useSharedValue(focused ? 1 : 0);
   const iconScale = useSharedValue(1);
   
@@ -72,8 +70,8 @@ function TabIcon({
   
   const iconName = iconMap[iconKey] as keyof typeof MaterialCommunityIcons.glyphMap;
   
-  const activeIndicatorColor = fluentColors.colorBrandBackground;
-  const activeIconColor = fluentColors.colorNeutralForegroundOnBrand;
+  const activeIndicatorColor = tokens.colors.primary;
+  const activeIconColor = tokens.colors.onPrimary;
   
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [
@@ -111,12 +109,12 @@ const TAB_BAR_HEIGHT = 56;
 
 export default function MainTabNavigator() {
   const { isDark } = useThemeContext();
+  const tokens = useThemeTokens();
   const { playTapSound } = useUiSound();
   const { currentSong } = usePlayerContext();
   const { isNowPlayingVisible } = useNavigationContext();
   const [currentTab, setCurrentTab] = useState<string>("ListenTab");
   const insets = useSafeAreaInsets();
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   
   const tabBarHeight = TAB_BAR_HEIGHT + insets.bottom;
   const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && !isNowPlayingVisible;
@@ -126,17 +124,14 @@ export default function MainTabNavigator() {
     <Tab.Navigator
       initialRouteName="ListenTab"
       screenOptions={{
-        tabBarActiveTintColor: fluentColors.colorBrandForeground1,
-        tabBarInactiveTintColor: fluentColors.colorNeutralForeground3,
+        tabBarActiveTintColor: tokens.colors.primary,
+        tabBarInactiveTintColor: tokens.colors.textSecondary,
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: fluentColors.colorNeutralBackground1,
-          borderTopWidth: 1,
-          borderTopColor: fluentColors.colorNeutralStroke2,
           height: tabBarHeight,
           paddingBottom: insets.bottom > 0 ? insets.bottom : FluentSpacing.s,
           paddingTop: FluentSpacing.xs,
-          ...getShadowStyle('shadow4', isDark),
+          ...getTabBarStyle(tokens),
         },
         headerShown: false,
         tabBarLabelStyle: {
