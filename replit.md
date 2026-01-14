@@ -88,6 +88,16 @@ A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Set
 
 ## Recent Changes
 
+- **2026-01-14**: **Comprehensive Design Token System & Accessibility Overhaul**:
+  - **New controls.ts**: Added FluentControlHeight, FluentControlMinWidth, FluentSliderSize, FluentBorderWidth, FluentTouchTarget, FluentLayoutSize tokens
+  - **ProgressBar/VolumeSlider**: Replaced hardcoded slider dimensions with FluentSliderSize tokens
+  - **Button.tsx**: Uses FluentControlHeight and FluentControlMinWidth tokens, added accessibilityLabel prop
+  - **Layout Components**: MiniPlayer, BottomSheet, Dialog, ContextMenu now use FluentLayoutSize tokens
+  - **Border Width Consistency**: EffectChip, GlassCard, RecordButton use FluentBorderWidth tokens
+  - **Accessibility Compliance**: Added FluentTouchTarget (44px minimum), hitSlop calculations in FluentIconButton, proper accessibility labels
+  - **Documentation**: DESIGN_LANGUAGE.md updated with complete token reference and usage guidelines
+  - Files updated: controls.ts, index.ts, ProgressBar.tsx, VolumeSlider.tsx, MiniPlayer.tsx, Button.tsx, BottomSheet.tsx, Dialog.tsx, ContextMenu.tsx, EffectChip.tsx, GlassCard.tsx, RecordButton.tsx, SongCard.tsx, AnimatedCard.tsx, FluentIconButton.tsx, DESIGN_LANGUAGE.md
+
 - **2026-01-14**: **Audio Controls & Subscription Overhaul**:
   - **Bass Control**: Renamed from Bass Boost, now with -5 to +5 user-facing range (-500 to +500 mB internally)
   - **Treble Control**: New audio enhancement with -5 to +5 range and AsyncStorage persistence
