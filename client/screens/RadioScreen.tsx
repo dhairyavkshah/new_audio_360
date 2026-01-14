@@ -1,16 +1,18 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Platform, ActivityIndicator } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Platform, ActivityIndicator, TextInput } from "react-native";
 import Slider from "@react-native-community/slider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText, FluentButton, FluentIconButton } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useRadio, RadioStation, RDSData } from "@/contexts/RadioContext";
+import { useOnlineRadio, OnlineRadioStation } from "@/contexts/OnlineRadioContext";
 import { useSoundLab } from "@/contexts/SoundLabContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
 import {
@@ -21,6 +23,8 @@ import {
   FluentIconSize,
   FluentTouchTarget,
   FluentControlRadius,
+  FluentTypography,
+  FluentBorderWidth,
 } from "@/constants/fluent2";
 import { FMBandType } from "../../modules/audio-effects";
 
@@ -34,6 +38,26 @@ const AM_STEP = 10;
 
 const SIGNAL_STRENGTH_BARS = 5;
 
+const STORAGE_KEY_RADIO_MODE = '@new_audio_360_radio_mode';
+
+type RadioMode = 'fmam' | 'online';
+
+const COUNTRY_FLAGS: Record<string, string> = {
+  US: '🇺🇸', GB: '🇬🇧', DE: '🇩🇪', FR: '🇫🇷', ES: '🇪🇸', IT: '🇮🇹', JP: '🇯🇵',
+  CN: '🇨🇳', IN: '🇮🇳', BR: '🇧🇷', CA: '🇨🇦', AU: '🇦🇺', RU: '🇷🇺', MX: '🇲🇽',
+  KR: '🇰🇷', NL: '🇳🇱', SE: '🇸🇪', CH: '🇨🇭', AT: '🇦🇹', BE: '🇧🇪', PL: '🇵🇱',
+  PT: '🇵🇹', NO: '🇳🇴', DK: '🇩🇰', FI: '🇫🇮', IE: '🇮🇪', NZ: '🇳🇿', ZA: '🇿🇦',
+  AR: '🇦🇷', CL: '🇨🇱', CO: '🇨🇴', PH: '🇵🇭', TH: '🇹🇭', VN: '🇻🇳', ID: '🇮🇩',
+  MY: '🇲🇾', SG: '🇸🇬', AE: '🇦🇪', SA: '🇸🇦', EG: '🇪🇬', NG: '🇳🇬', KE: '🇰🇪',
+  UA: '🇺🇦', CZ: '🇨🇿', RO: '🇷🇴', HU: '🇭🇺', GR: '🇬🇷', TR: '🇹🇷', IL: '🇮🇱',
+  PK: '🇵🇰', BD: '🇧🇩', LK: '🇱🇰', NP: '🇳🇵', TW: '🇹🇼', HK: '🇭🇰',
+};
+
+const getCountryFlag = (countryCode: string | null): string => {
+  if (!countryCode) return '🌍';
+  return COUNTRY_FLAGS[countryCode.toUpperCase()] || '🌍';
+};
+
 export default function RadioScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const tabBarHeight = useSafeTabBarHeight();
@@ -43,11 +67,11 @@ export default function RadioScreen() {
   const cardStyle = getCardEffectStyle(tokens);
 
   const {
-    isAvailable,
+    isAvailable: isFmAvailable,
     isInitialized,
     currentFrequency,
     bandType,
-    isPlaying,
+    isPlaying: isFmPlaying,
     signalStrength,
     rdsData,
     stations,
@@ -57,11 +81,11 @@ export default function RadioScreen() {
     hasHeadphoneConnected,
     hasEffectsSupport,
     isEffectsAttached,
-    error,
+    error: fmError,
     initialize,
     tune,
-    play,
-    stop,
+    play: fmPlay,
+    stop: fmStop,
     seekUp,
     seekDown,
     scan,
@@ -69,20 +93,110 @@ export default function RadioScreen() {
     removeFavorite,
   } = useRadio();
 
+  const {
+    isLoading: isOnlineLoading,
+    error: onlineError,
+    detectedCountry,
+    detectedCountryCode,
+    popularStations,
+    currentStation,
+    isPlaying: isOnlinePlaying,
+    isBuffering,
+    detectLocation,
+    loadPopularStations,
+    searchStations,
+    playStation,
+    stopPlayback: onlineStop,
+    clearError: clearOnlineError,
+  } = useOnlineRadio();
+
   const { mode: soundLabMode, eqPresetName, immersiveModeName, getImmersiveModeInfo } = useSoundLab();
 
+  const [radioMode, setRadioMode] = useState<RadioMode>('fmam');
   const [localFrequency, setLocalFrequency] = useState(currentFrequency);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasLoadedOnline, setHasLoadedOnline] = useState(false);
+  const [modeLoaded, setModeLoaded] = useState(false);
+
+  useEffect(() => {
+    loadSavedMode();
+  }, []);
 
   useEffect(() => {
     setLocalFrequency(currentFrequency);
   }, [currentFrequency]);
 
   useEffect(() => {
-    if (isAvailable && !isInitialized && !isInitializing) {
+    if (isFmAvailable && !isInitialized && !isInitializing && radioMode === 'fmam') {
       handleInitialize();
     }
-  }, [isAvailable, isInitialized]);
+  }, [isFmAvailable, isInitialized, radioMode]);
+
+  useEffect(() => {
+    if (radioMode === 'online' && !hasLoadedOnline && modeLoaded) {
+      loadOnlineData();
+    }
+  }, [radioMode, hasLoadedOnline, modeLoaded]);
+
+  const loadSavedMode = async () => {
+    try {
+      const savedMode = await AsyncStorage.getItem(STORAGE_KEY_RADIO_MODE);
+      if (savedMode === 'fmam' || savedMode === 'online') {
+        if (savedMode === 'fmam' && !isFmAvailable) {
+          setRadioMode('online');
+        } else {
+          setRadioMode(savedMode);
+        }
+      } else if (!isFmAvailable) {
+        setRadioMode('online');
+      }
+    } catch (err) {
+      console.warn('Error loading radio mode:', err);
+      if (!isFmAvailable) {
+        setRadioMode('online');
+      }
+    }
+    setModeLoaded(true);
+  };
+
+  const saveMode = async (mode: RadioMode) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_RADIO_MODE, mode);
+    } catch (err) {
+      console.warn('Error saving radio mode:', err);
+    }
+  };
+
+  const loadOnlineData = async () => {
+    setHasLoadedOnline(true);
+    const result = await detectLocation();
+    if (result.countryCode) {
+      await loadPopularStations(result.countryCode);
+    }
+  };
+
+  const handleModeChange = useCallback(async (mode: RadioMode) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    if (mode === radioMode) return;
+
+    if (mode === 'online' && isFmPlaying) {
+      await fmStop();
+    } else if (mode === 'fmam' && isOnlinePlaying) {
+      await onlineStop();
+    }
+
+    setRadioMode(mode);
+    saveMode(mode);
+
+    if (mode === 'online' && !hasLoadedOnline) {
+      loadOnlineData();
+    }
+  }, [radioMode, isFmPlaying, isOnlinePlaying, fmStop, onlineStop, hasLoadedOnline]);
 
   const handleInitialize = async () => {
     setIsInitializing(true);
@@ -114,16 +228,16 @@ export default function RadioScreen() {
     }
   }, [bandType, tune]);
 
-  const handlePlayStop = useCallback(async () => {
+  const handleFmPlayStop = useCallback(async () => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    if (isPlaying) {
-      await stop();
+    if (isFmPlaying) {
+      await fmStop();
     } else {
-      await play();
+      await fmPlay();
     }
-  }, [isPlaying, play, stop]);
+  }, [isFmPlaying, fmPlay, fmStop]);
 
   const handleSeekUp = useCallback(async () => {
     if (Platform.OS !== "web") {
@@ -187,10 +301,55 @@ export default function RadioScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     await tune(station.frequencyMHz, station.bandType);
-    if (!isPlaying) {
-      await play();
+    if (!isFmPlaying) {
+      await fmPlay();
     }
-  }, [tune, play, isPlaying]);
+  }, [tune, fmPlay, isFmPlaying]);
+
+  const handleOnlineStationPress = useCallback(async (station: OnlineRadioStation) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    await playStation(station);
+  }, [playStation]);
+
+  const handleOnlinePlayStop = useCallback(async () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    if (isOnlinePlaying) {
+      await onlineStop();
+    } else if (currentStation) {
+      await playStation(currentStation);
+    }
+  }, [isOnlinePlaying, currentStation, onlineStop, playStation]);
+
+  const handleSearch = useCallback(async () => {
+    if (!searchQuery.trim()) return;
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setIsSearching(true);
+    await searchStations(searchQuery);
+    setIsSearching(false);
+  }, [searchQuery, searchStations]);
+
+  const handleRetryLocation = useCallback(async () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    const result = await detectLocation();
+    if (result.countryCode) {
+      await loadPopularStations(result.countryCode);
+    }
+  }, [detectLocation, loadPopularStations]);
+
+  const handleNavigateToStations = useCallback(() => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    navigation.navigate("RadioStations");
+  }, [navigation]);
 
   const formatFrequency = (freq: number, band: FMBandType): string => {
     if (band === "fm") {
@@ -230,42 +389,271 @@ export default function RadioScreen() {
     );
   };
 
-  if (!isAvailable) {
+  const renderModeToggle = () => (
+    <View style={styles.modeToggle}>
+      <EffectChip
+        label="FM/AM"
+        isSelected={radioMode === "fmam"}
+        onPress={() => handleModeChange("fmam")}
+        disabled={!isFmAvailable}
+      />
+      <View style={{ width: FluentSpacing.m }} />
+      <EffectChip
+        label="Online"
+        isSelected={radioMode === "online"}
+        onPress={() => handleModeChange("online")}
+      />
+    </View>
+  );
+
+  const renderFmUnavailableNotice = () => {
+    if (isFmAvailable || radioMode !== 'online') return null;
     return (
-      <FluentScreenLayout contentPadding="l">
-        <View style={styles.unavailableContainer}>
-          <View style={[styles.unavailableIconContainer, { backgroundColor: colors.colorPaletteRedBackground2 }]}>
-            <MaterialCommunityIcons
-              name="radio-off"
-              size={64}
-              color={colors.colorPaletteRedForeground1}
-            />
+      <View style={[styles.noticeCard, { backgroundColor: colors.colorNeutralBackground3 }]}>
+        <MaterialCommunityIcons
+          name="information-outline"
+          size={FluentIconSize.small}
+          color={colors.colorNeutralForeground2}
+        />
+        <FluentText variant="caption1" color="secondary" style={styles.noticeText}>
+          FM hardware not available on this device. Using online radio.
+        </FluentText>
+      </View>
+    );
+  };
+
+  const renderOnlineContent = () => {
+    const error = onlineError;
+
+    return (
+      <>
+        <View style={styles.countryHeader}>
+          <FluentText variant="title3" style={styles.countryTitle}>
+            {getCountryFlag(detectedCountryCode)} {detectedCountry || 'Detecting location...'}
+          </FluentText>
+          <FluentIconButton
+            icon={<MaterialCommunityIcons name="refresh" />}
+            size="medium"
+            variant="subtle"
+            onPress={handleRetryLocation}
+            disabled={isOnlineLoading}
+            accessibilityLabel="Refresh location"
+          />
+        </View>
+
+        <View style={[styles.searchContainer, { backgroundColor: colors.colorNeutralBackground3, borderColor: colors.colorNeutralStroke2 }]}>
+          <MaterialCommunityIcons
+            name="magnify"
+            size={FluentIconSize.regular}
+            color={colors.colorNeutralForeground3}
+          />
+          <TextInput
+            style={[
+              styles.searchInput,
+              {
+                backgroundColor: colors.colorNeutralBackground2,
+                color: colors.colorNeutralForeground1,
+                borderColor: colors.colorNeutralStroke1,
+                fontSize: FluentTypography.body1.fontSize,
+                paddingVertical: FluentSpacing.xs,
+              },
+            ]}
+            placeholder="Search stations..."
+            placeholderTextColor={colors.colorNeutralForeground3}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+            accessibilityLabel="Search stations"
+          />
+          {searchQuery.length > 0 && (
+            <Pressable
+              onPress={() => setSearchQuery('')}
+              style={styles.clearButton}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityLabel="Clear search"
+            >
+              <MaterialCommunityIcons
+                name="close-circle"
+                size={FluentIconSize.small}
+                color={colors.colorNeutralForeground3}
+              />
+            </Pressable>
+          )}
+          <FluentButton
+            size="small"
+            onPress={handleSearch}
+            disabled={!searchQuery.trim() || isSearching}
+            style={styles.searchButton}
+          >
+            {isSearching ? 'Searching...' : 'Search'}
+          </FluentButton>
+        </View>
+
+        {error && (
+          <View style={[styles.errorCard, { backgroundColor: colors.colorPaletteRedBackground2, borderRadius: FluentRadius.large }]}>
+            <View style={styles.errorCardHeader}>
+              <MaterialCommunityIcons
+                name="alert-circle"
+                size={FluentIconSize.regular}
+                color={colors.colorPaletteRedForeground1}
+              />
+              <FluentText variant="body2" style={{ color: colors.colorPaletteRedForeground1, flex: 1, marginLeft: FluentSpacing.s }}>
+                {error}
+              </FluentText>
+              <Pressable onPress={clearOnlineError} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                <MaterialCommunityIcons name="close" size={FluentIconSize.small} color={colors.colorPaletteRedForeground1} />
+              </Pressable>
+            </View>
           </View>
-          <FluentText variant="title2" style={styles.unavailableTitle}>
-            FM Hardware Unavailable
-          </FluentText>
-          <FluentText variant="body1" color="secondary" style={styles.unavailableText}>
-            FM Radio requires specialized hardware that is not available on this device.
-            This feature requires Android devices with built-in FM radio chips.
-          </FluentText>
-          <View style={[styles.fallbackCard, { backgroundColor: colors.colorNeutralBackground3, borderRadius: FluentRadius.large }]}>
-            <MaterialCommunityIcons
-              name="lightbulb-outline"
-              size={FluentIconSize.regular}
-              color={colors.colorBrandForeground1}
-            />
-            <FluentText variant="body2" color="secondary" style={styles.fallbackText}>
-              Try internet radio services like TuneIn, iHeartRadio, or your local station's app for streaming radio.
+        )}
+
+        {currentStation && (
+          <GlassCard style={{ ...cardStyle, ...styles.nowPlayingCard }}>
+            <View style={styles.nowPlayingHeader}>
+              <MaterialCommunityIcons
+                name="radio"
+                size={FluentIconSize.medium}
+                color={colors.colorBrandForeground1}
+              />
+              <FluentText variant="caption1" color="secondary" style={styles.nowPlayingLabel}>
+                NOW PLAYING
+              </FluentText>
+            </View>
+            <FluentText variant="title2" numberOfLines={2} style={styles.stationName}>
+              {currentStation.name}
+            </FluentText>
+            <View style={styles.stationMeta}>
+              {currentStation.tags && (
+                <FluentText variant="caption1" color="secondary" numberOfLines={1}>
+                  {currentStation.tags.split(',').slice(0, 2).join(' • ')}
+                </FluentText>
+              )}
+              <FluentText variant="caption1" color="secondary">
+                {getCountryFlag(currentStation.countrycode)} {currentStation.country}
+              </FluentText>
+            </View>
+            <View style={styles.nowPlayingControls}>
+              <Pressable
+                style={[
+                  styles.playButton,
+                  { backgroundColor: colors.colorBrandBackground },
+                ]}
+                onPress={handleOnlinePlayStop}
+                accessibilityLabel={isOnlinePlaying ? "Stop streaming" : "Resume streaming"}
+                accessibilityRole="button"
+              >
+                {isBuffering ? (
+                  <ActivityIndicator size="small" color={colors.colorNeutralForegroundOnBrand} />
+                ) : (
+                  <MaterialCommunityIcons
+                    name={isOnlinePlaying ? "stop" : "play"}
+                    size={32}
+                    color={colors.colorNeutralForegroundOnBrand}
+                  />
+                )}
+              </Pressable>
+            </View>
+          </GlassCard>
+        )}
+
+        {isOnlineLoading && !currentStation && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.colorBrandForeground1} />
+            <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.m }}>
+              Loading stations...
             </FluentText>
           </View>
-        </View>
-      </FluentScreenLayout>
-    );
-  }
+        )}
 
-  if (needsHeadphoneAntenna && !hasHeadphoneConnected) {
-    return (
-      <FluentScreenLayout contentPadding="l">
+        {!isOnlineLoading && popularStations.length > 0 && (
+          <View style={styles.stationsSection}>
+            <FluentText variant="title3" style={styles.sectionTitle}>
+              Popular Stations
+            </FluentText>
+            <View style={styles.stationsGrid}>
+              {popularStations.slice(0, 8).map((station) => (
+                <Pressable
+                  key={station.stationuuid}
+                  style={[
+                    styles.onlineStationCard,
+                    {
+                      backgroundColor: currentStation?.stationuuid === station.stationuuid
+                        ? colors.colorBrandBackgroundSelected
+                        : colors.colorNeutralBackground3,
+                      borderColor: currentStation?.stationuuid === station.stationuuid
+                        ? colors.colorBrandStroke1
+                        : colors.colorNeutralStroke2,
+                      minHeight: FluentTouchTarget.minimum,
+                    },
+                  ]}
+                  onPress={() => handleOnlineStationPress(station)}
+                  accessibilityLabel={`Play ${station.name}`}
+                  accessibilityRole="button"
+                >
+                  <View style={styles.onlineStationContent}>
+                    {station.favicon ? (
+                      <View style={[styles.stationIcon, { backgroundColor: colors.colorNeutralBackground2 }]}>
+                        <MaterialCommunityIcons
+                          name="radio"
+                          size={FluentIconSize.regular}
+                          color={colors.colorBrandForeground1}
+                        />
+                      </View>
+                    ) : (
+                      <View style={[styles.stationIcon, { backgroundColor: colors.colorBrandBackground + '20' }]}>
+                        <MaterialCommunityIcons
+                          name="radio"
+                          size={FluentIconSize.regular}
+                          color={colors.colorBrandForeground1}
+                        />
+                      </View>
+                    )}
+                    <View style={styles.stationDetails}>
+                      <FluentText
+                        variant="body2Strong"
+                        numberOfLines={1}
+                        style={{
+                          color: currentStation?.stationuuid === station.stationuuid
+                            ? colors.colorBrandForeground1
+                            : colors.colorNeutralForeground1,
+                        }}
+                      >
+                        {station.name}
+                      </FluentText>
+                      <FluentText variant="caption1" color="secondary" numberOfLines={1}>
+                        {station.tags?.split(',')[0] || station.country}
+                      </FluentText>
+                    </View>
+                    {currentStation?.stationuuid === station.stationuuid && isOnlinePlaying && (
+                      <MaterialCommunityIcons
+                        name="volume-high"
+                        size={FluentIconSize.small}
+                        color={colors.colorBrandForeground1}
+                      />
+                    )}
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
+
+        <FluentButton
+          iconBefore={<MaterialCommunityIcons name="radio-tower" size={20} />}
+          onPress={handleNavigateToStations}
+          variant="outline"
+          style={styles.browseButton}
+        >
+          Browse All Stations
+        </FluentButton>
+      </>
+    );
+  };
+
+  const renderFmContent = () => {
+    if (needsHeadphoneAntenna && !hasHeadphoneConnected) {
+      return (
         <View style={styles.unavailableContainer}>
           <View style={[styles.unavailableIconContainer, { backgroundColor: colors.colorPaletteYellowBackground2 }]}>
             <MaterialCommunityIcons
@@ -307,33 +695,25 @@ export default function RadioScreen() {
             Try Again
           </FluentButton>
           <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.m, textAlign: 'center' }}>
-            Alternatively, try internet radio services for streaming audio.
+            Or switch to Online mode for internet streaming.
           </FluentText>
         </View>
-      </FluentScreenLayout>
-    );
-  }
+      );
+    }
 
-  if (isInitializing) {
-    return (
-      <FluentScreenLayout contentPadding="l">
+    if (isInitializing) {
+      return (
         <View style={styles.unavailableContainer}>
           <ActivityIndicator size="large" color={colors.colorBrandForeground1} />
           <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.l }}>
             Initializing radio...
           </FluentText>
         </View>
-      </FluentScreenLayout>
-    );
-  }
+      );
+    }
 
-  return (
-    <FluentScreenLayout contentPadding="l">
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight + FluentSpacing.xxl }]}
-        showsVerticalScrollIndicator={false}
-      >
+    return (
+      <>
         <View style={styles.bandToggle}>
           <EffectChip
             label="FM"
@@ -426,12 +806,12 @@ export default function RadioScreen() {
               styles.playButton,
               { backgroundColor: colors.colorBrandBackground },
             ]}
-            onPress={handlePlayStop}
-            accessibilityLabel={isPlaying ? "Stop radio" : "Play radio"}
+            onPress={handleFmPlayStop}
+            accessibilityLabel={isFmPlaying ? "Stop radio" : "Play radio"}
             accessibilityRole="button"
           >
             <MaterialCommunityIcons
-              name={isPlaying ? "stop" : "play"}
+              name={isFmPlaying ? "stop" : "play"}
               size={40}
               color={colors.colorNeutralForegroundOnBrand}
             />
@@ -476,7 +856,7 @@ export default function RadioScreen() {
           />
         </View>
 
-        {isPlaying && (
+        {isFmPlaying && (
           <Pressable
             style={[
               styles.soundLabCard,
@@ -535,19 +915,19 @@ export default function RadioScreen() {
           </Pressable>
         )}
 
-        {error && (
+        {fmError && (
           <View style={[styles.errorCard, { backgroundColor: colors.colorPaletteRedBackground2, borderRadius: FluentRadius.large }]}>
             <View style={styles.errorCardHeader}>
               <MaterialCommunityIcons
-                name={error.toLowerCase().includes('permission') ? 'shield-alert' : 'alert-circle'}
+                name={fmError.toLowerCase().includes('permission') ? 'shield-alert' : 'alert-circle'}
                 size={FluentIconSize.regular}
                 color={colors.colorPaletteRedForeground1}
               />
               <FluentText variant="body2" style={{ color: colors.colorPaletteRedForeground1, flex: 1, marginLeft: FluentSpacing.s }}>
-                {error}
+                {fmError}
               </FluentText>
             </View>
-            {error.toLowerCase().includes('permission') && (
+            {fmError.toLowerCase().includes('permission') && (
               <FluentButton
                 variant="outline"
                 size="small"
@@ -655,6 +1035,21 @@ export default function RadioScreen() {
             </View>
           </View>
         )}
+      </>
+    );
+  };
+
+  return (
+    <FluentScreenLayout contentPadding="l">
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight + FluentSpacing.xxl }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {renderModeToggle()}
+        {renderFmUnavailableNotice()}
+        
+        {radioMode === 'fmam' ? renderFmContent() : renderOnlineContent()}
       </ScrollView>
     </FluentScreenLayout>
   );
@@ -666,6 +1061,22 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: FluentSpacing.m,
+  },
+  modeToggle: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: FluentSpacing.l,
+  },
+  noticeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: FluentSpacing.s,
+    borderRadius: FluentRadius.medium,
+    marginBottom: FluentSpacing.l,
+    gap: FluentSpacing.xs,
+  },
+  noticeText: {
+    flex: 1,
   },
   bandToggle: {
     flexDirection: "row",
@@ -785,6 +1196,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: FluentSpacing.xxl,
+    paddingVertical: FluentSpacing.xxl,
   },
   unavailableIconContainer: {
     width: 120,
@@ -848,5 +1260,91 @@ const styles = StyleSheet.create({
   },
   instructionText: {
     flex: 1,
+  },
+  countryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: FluentSpacing.l,
+  },
+  countryTitle: {
+    flex: 1,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: FluentSpacing.m,
+    paddingVertical: FluentSpacing.s,
+    borderRadius: FluentControlRadius.input,
+    borderWidth: FluentBorderWidth.thin,
+    marginBottom: FluentSpacing.l,
+    minHeight: FluentTouchTarget.minimum,
+  },
+  searchInput: {
+    flex: 1,
+    marginHorizontal: FluentSpacing.s,
+    fontSize: FluentTypography.body1.fontSize,
+    paddingVertical: FluentSpacing.xs,
+  },
+  clearButton: {
+    padding: FluentSpacing.xs,
+  },
+  searchButton: {
+    marginLeft: FluentSpacing.s,
+  },
+  nowPlayingCard: {
+    marginBottom: FluentSpacing.l,
+  },
+  nowPlayingHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: FluentSpacing.s,
+  },
+  nowPlayingLabel: {
+    marginLeft: FluentSpacing.xs,
+    letterSpacing: 1,
+    fontWeight: "600",
+  },
+  stationMeta: {
+    marginTop: FluentSpacing.xs,
+    gap: FluentSpacing.xxs,
+  },
+  nowPlayingControls: {
+    alignItems: "center",
+    marginTop: FluentSpacing.l,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    paddingVertical: FluentSpacing.xxl,
+  },
+  stationsSection: {
+    marginBottom: FluentSpacing.l,
+  },
+  onlineStationCard: {
+    flex: 1,
+    minWidth: '45%',
+    padding: FluentSpacing.m,
+    borderRadius: FluentRadius.medium,
+    borderWidth: 1,
+  },
+  onlineStationContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  stationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: FluentRadius.medium,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  stationDetails: {
+    flex: 1,
+    marginLeft: FluentSpacing.s,
+    marginRight: FluentSpacing.xs,
+  },
+  browseButton: {
+    marginTop: FluentSpacing.m,
+    marginBottom: FluentSpacing.l,
   },
 });

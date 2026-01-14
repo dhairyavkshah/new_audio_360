@@ -13,6 +13,7 @@ import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ListenStackNavigator from "@/navigation/ListenStackNavigator";
 import LibraryStackNavigator from "@/navigation/LibraryStackNavigator";
+import RadioStackNavigator from "@/navigation/RadioStackNavigator";
 import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { useThemeContext, useSkin, useThemeTokens } from "@/contexts/ThemeContext";
@@ -30,6 +31,7 @@ import {
 export type MainTabParamList = {
   ListenTab: undefined;
   LibraryTab: undefined;
+  RadioTab: undefined;
   SettingsTab: undefined;
 };
 
@@ -41,7 +43,7 @@ function TabIcon({
   focused,
   isDark,
 }: {
-  iconKey: 'listen' | 'library' | 'settings';
+  iconKey: 'listen' | 'library' | 'radio' | 'settings';
   color: string;
   focused: boolean;
   isDark: boolean;
@@ -65,6 +67,7 @@ function TabIcon({
   const iconMap = {
     listen: focused ? skin.icons.tabListenFocused : skin.icons.tabListen,
     library: focused ? skin.icons.tabLibraryFocused : skin.icons.tabLibrary,
+    radio: focused ? skin.icons.tabRadioFocused : skin.icons.tabRadio,
     settings: focused ? skin.icons.tabSettingsFocused : skin.icons.tabSettings,
   };
   
@@ -117,7 +120,7 @@ export default function MainTabNavigator() {
   const insets = useSafeAreaInsets();
   
   const tabBarHeight = TAB_BAR_HEIGHT + insets.bottom;
-  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && !isNowPlayingVisible;
+  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && currentTab !== "RadioTab" && !isNowPlayingVisible;
 
   return (
     <View style={{ flex: 1 }}>
@@ -177,6 +180,21 @@ export default function MainTabNavigator() {
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               iconKey="library"
+              color={color}
+              focused={focused}
+              isDark={isDark}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="RadioTab"
+        component={RadioStackNavigator}
+        options={{
+          title: "Radio",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              iconKey="radio"
               color={color}
               focused={focused}
               isDark={isDark}

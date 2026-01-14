@@ -35,7 +35,11 @@ The application leverages React Native and Expo for the frontend and Express.js 
 -   **Animations**: `react-native-reanimated` integrating Fluent 2 motion curves.
 
 ### Navigation Structure
-A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Settings tabs, with a persistent MiniPlayer.
+A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, and Settings tabs, with a persistent MiniPlayer.
+-   **ListenTab**: Main player, Now Playing, Sound Lab, Queue.
+-   **LibraryTab**: Music organization with Quick Access Category Grid.
+-   **RadioTab**: FM/AM native radio and Online streaming radio with location-based channel discovery.
+-   **SettingsTab**: General settings, Sound Lab, Appearance, Subscription Plan, About.
 
 ### Native Audio Modules (Android-specific)
 -   **PlaybackEngineModule**: ExoPlayer-based playback with queue, shuffle, repeat, speed control, and audio session management.
@@ -53,6 +57,7 @@ A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Set
 -   **Theming**: 55 themes with custom icons, shapes, and component variants, applying unique visual effects (glass, beveled, aero, etc.).
 -   **Sound Lab**: Offers mutually exclusive Equalizer presets or Immersive modes with zero-sum balanced audio.
 -   **FM/AM Radio**: Native Android radio with scanning, tuning, favorite stations, and Sound Lab effects on live radio audio.
+-   **Online Radio Streaming**: Location-based internet radio with country detection, genre filtering, 48,000+ stations via Radio Browser API, and streaming playback.
 -   **Subscription System**: Two-tier model (Free, Premium) with server-side normalization and regional pricing via Google Play.
 -   **MiniPlayer**: Persistent, glassmorphism-effect mini-player.
 -   **Media Library Integration**: Onboarding for access, paginated loading, "Hide Song" feature.
@@ -81,3 +86,4 @@ A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Set
 -   **Drizzle ORM**: TypeScript ORM for PostgreSQL.
 -   **expo-auth-session**: Google Sign-In.
 -   **expo-local-authentication**: Biometric/PIN authentication.
+-   **expo-location**: Location detection for online radio country discovery.

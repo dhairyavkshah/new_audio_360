@@ -16,6 +16,7 @@ import { NavigationProvider } from "@/contexts/NavigationContext";
 import { SoundLabProvider } from "@/contexts/SoundLabContext";
 import { StudioProvider } from "@/contexts/StudioContext";
 import { RadioProvider } from "@/contexts/RadioContext";
+import { OnlineRadioProvider } from "@/contexts/OnlineRadioContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import SplashScreen from "@/screens/SplashScreen";
@@ -147,9 +148,11 @@ export default function App() {
                           <SoundLabProvider>
                             <StudioProvider>
                               <RadioProvider>
-                                <PlayerProvider>
-                                  <AppContent />
-                                </PlayerProvider>
+                                <OnlineRadioProvider>
+                                  <PlayerProvider>
+                                    <AppContent />
+                                  </PlayerProvider>
+                                </OnlineRadioProvider>
                               </RadioProvider>
                             </StudioProvider>
                           </SoundLabProvider>

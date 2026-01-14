@@ -1,18 +1,17 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, StyleSheet, FlatList, Platform, Pressable } from "react-native";
+import { View, StyleSheet, FlatList, Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { FluentTopBar, SortOption } from "@/components/FluentTopBar";
 import { SongCard } from "@/components/SongCard";
 import { SongContextMenu } from "@/components/SongContextMenu";
-import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
+import { useThemeContext } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { mockSongs, Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import { PlayableSong } from "@/contexts/PlayerContext";
@@ -23,18 +22,10 @@ export default function ListenScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { isDark } = useThemeContext();
-  const tokens = useThemeTokens();
   const { currentSong, isPlaying, playSong, setQueue } = usePlayer();
   const { songs: deviceSongs } = useMediaLibraryContext();
 
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-
-  const handleRadioPress = useCallback(() => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    navigation.navigate("Radio");
-  }, [navigation]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("title_asc");
@@ -154,43 +145,6 @@ export default function ListenScreen() {
       contentPadding="l"
       avoidKeyboard
     >
-      <Pressable
-        style={[
-          styles.radioCard,
-          {
-            backgroundColor: tokens.colors.surface,
-            borderColor: tokens.colors.outline,
-          },
-        ]}
-        onPress={handleRadioPress}
-        accessibilityLabel="Open Radio"
-        accessibilityRole="button"
-      >
-        <View
-          style={[
-            styles.radioIconContainer,
-            { backgroundColor: tokens.colors.primary + "20" },
-          ]}
-        >
-          <MaterialCommunityIcons
-            name="radio-tower"
-            size={FluentIconSize.large}
-            color={tokens.colors.primary}
-          />
-        </View>
-        <View style={styles.radioTextContainer}>
-          <FluentText variant="body1Strong">Radio</FluentText>
-          <FluentText variant="caption1" color="secondary">
-            Listen to FM/AM stations
-          </FluentText>
-        </View>
-        <MaterialCommunityIcons
-          name="chevron-right"
-          size={FluentIconSize.regular}
-          color={colors.colorNeutralForeground2}
-        />
-      </Pressable>
-
       <FlatList
         data={filteredAndSortedSongs}
         renderItem={renderSong}
@@ -230,25 +184,6 @@ export default function ListenScreen() {
 }
 
 const styles = StyleSheet.create({
-  radioCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: FluentSpacing.m,
-    borderRadius: FluentRadius.large,
-    borderWidth: 1,
-    marginBottom: FluentSpacing.l,
-  },
-  radioIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: FluentRadius.medium,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  radioTextContainer: {
-    flex: 1,
-    marginLeft: FluentSpacing.m,
-  },
   listContent: {
     paddingTop: FluentSpacing.l,
   },
