@@ -57,7 +57,7 @@ A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Set
 ### Feature Specifications
 -   **Theming**: 55 themes with custom icons, shapes, and component variants.
 -   **Sound Lab**: Offers mutually exclusive Equalizer presets or Immersive modes.
--   **Subscription System**: Two-tier model (Standard, Premium) with client-side security.
+-   **Subscription System**: Two-tier model (Free, Premium) with server-side normalization.
 -   **MiniPlayer**: Persistent, glassmorphism-effect mini-player.
 -   **Media Library Integration**: Onboarding for access, paginated loading, "Hide Song" feature.
 -   **Playlist Management**: Full CRUD for local playlists.
@@ -87,6 +87,16 @@ A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Set
 -   **expo-local-authentication**: Biometric/PIN authentication.
 
 ## Recent Changes
+
+- **2026-01-14**: **Audio Controls & Subscription Overhaul**:
+  - **Bass Control**: Renamed from Bass Boost, now with -5 to +5 user-facing range (-500 to +500 mB internally)
+  - **Treble Control**: New audio enhancement with -5 to +5 range and AsyncStorage persistence
+  - **Virtualizer**: Simplified strength display as 1-5 (mapping to 100-500 internally)
+  - **Custom EQ Presets**: Limited to maximum 5 presets with edit and delete functionality
+  - **Subscription Model**: Removed 'standard' tier - now only 'free' and 'premium' plans
+  - **Server Normalization**: Added `normalizePlan()` function ensuring consistent free/premium across all endpoints
+  - **Admin Panel**: New `/admin` endpoint with secure API key authentication for user management
+  - Files updated: SoundLabScreen.tsx, storage.ts, SubscriptionContext.tsx, server/index.ts
 
 - **2026-01-14**: **Seamless EQ/Immersive Mode Switching**:
   - Removed UI restrictions that blocked switching between Equalizer Presets and Immersive Modes
