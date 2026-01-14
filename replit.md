@@ -88,6 +88,16 @@ A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Set
 
 ## Recent Changes
 
+- **2026-01-14**: **Single Paid Plan with Regional Pricing via Google Play**:
+  - **Subscription Model**: Single premium plan with monthly and annual options
+  - **Regional Pricing**: India (₹30/month, ₹300/year) | International ($1/month, $10/year)
+  - **Google Play Product IDs**: `new_audio_360_premium_monthly`, `new_audio_360_premium_annual`
+  - **Product ID Validation**: Server validates product IDs against allowed list before granting entitlement
+  - **Region Detection**: Simplified to detect India vs International only
+  - **Payment**: Removed UPI/PayPal - 100% Google Play subscriptions only
+  - **PlanScreen UI**: Monthly/Annual selection with "Best Value" badge, regional pricing display
+  - Files updated: SubscriptionContext.tsx, payment.ts, PlanScreen.tsx, server/index.ts
+
 - **2026-01-14**: **Comprehensive Design Token System & Accessibility Overhaul**:
   - **New controls.ts**: Added FluentControlHeight, FluentControlMinWidth, FluentSliderSize, FluentBorderWidth, FluentTouchTarget, FluentLayoutSize tokens
   - **ProgressBar/VolumeSlider**: Replaced hardcoded slider dimensions with FluentSliderSize tokens

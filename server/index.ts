@@ -210,6 +210,14 @@ app.post('/api/subscription/verify', authenticateToken, async (req: AuthRequest,
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    const validProductIds = ['new_audio_360_premium_monthly', 'new_audio_360_premium_annual'];
+    if (!validProductIds.includes(productId)) {
+      console.warn(`Invalid product ID attempted: ${productId}`);
+      return res.status(400).json({ error: 'Invalid product ID' });
+    }
+
+    const subscriptionType = productId.includes('annual') ? 'annual' : 'monthly';
+
     let subscriptionData;
     try {
       subscriptionData = await verifyGooglePlaySubscription(packageName, productId, purchaseToken);
@@ -538,7 +546,6 @@ app.get('/admin', (req: Request, res: Response) => {
 const VALID_PRODUCT_IDS = [
   'new_audio_360_premium_monthly',
   'new_audio_360_premium_annual',
-  'new_audio_360_premium',
 ];
 
 async function verifyGooglePlaySubscription(
