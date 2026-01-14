@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -7,7 +7,8 @@ import { FluentScreenLayout, FluentText } from '@/components/fluent';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
-import { PRICING, SupportedCurrency } from '@/contexts/SubscriptionContext';
+import { PRICING } from '@/contexts/SubscriptionContext';
+import { detectUserRegion } from '@/lib/payment';
 
 export default function SubscriptionRequiredScreen() {
   const insets = useSafeAreaInsets();
@@ -15,14 +16,21 @@ export default function SubscriptionRequiredScreen() {
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { user, signOut, checkSubscriptionStatus } = useAuth();
 
-  const currency: SupportedCurrency = 'INR';
-  const pricing = PRICING[currency];
+  const [isIndian, setIsIndian] = useState(false);
 
-  const handleSubscribe = async () => {
+  useEffect(() => {
+    detectUserRegion().then((result) => {
+      setIsIndian(result.isIndian);
+    });
+  }, []);
+
+  const pricing = isIndian ? PRICING.india : PRICING.international;
+
+  const handlePurchase = async () => {
     if (Platform.OS === 'android') {
       await Linking.openURL('https://play.google.com/store/apps/details?id=com.newaudio360');
     } else {
-      await Linking.openURL('https://newaudio360.com/subscribe');
+      await Linking.openURL('https://newaudio360.com/purchase');
     }
   };
 
@@ -41,9 +49,9 @@ export default function SubscriptionRequiredScreen() {
           <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground + '15' }]}>
             <MaterialCommunityIcons name="crown" size={64} color={colors.colorBrandForeground1} />
           </View>
-          <FluentText variant="title1" align="center">Subscription Required</FluentText>
+          <FluentText variant="title1" align="center">License Required</FluentText>
           <FluentText variant="body1" color="secondary" align="center" style={styles.subtitle}>
-            An active subscription is required to use New Audio 360
+            A license is required to use New Audio 360
           </FluentText>
         </View>
 
@@ -58,43 +66,20 @@ export default function SubscriptionRequiredScreen() {
             </View>
           )}
 
-          <View style={styles.plansSection}>
-            <FluentText variant="subtitle1" align="center">Choose a Plan</FluentText>
+          <View style={styles.purchaseSection}>
+            <FluentText variant="subtitle1" align="center">Unlock All Features</FluentText>
 
-            <View style={[styles.planCard, { backgroundColor: colors.colorNeutralBackground2, borderColor: colors.colorNeutralStroke2 }]}>
-              <View style={styles.planHeader}>
-                <FluentText variant="title3">Standard</FluentText>
+            <View style={[styles.licenseCard, styles.highlightedCard, { backgroundColor: colors.colorBrandBackground + '10', borderColor: colors.colorBrandForeground1 }]}>
+              <View style={[styles.oneTimeBadge, { backgroundColor: colors.colorBrandBackground }]}>
+                <FluentText variant="caption2" color="onBrand">ONE-TIME PURCHASE</FluentText>
+              </View>
+              <View style={styles.licenseHeader}>
+                <FluentText variant="title3">Lifetime License</FluentText>
                 <FluentText variant="title2" style={{ color: colors.colorBrandForeground1 }}>
-                  {pricing.symbol}{pricing.standard}
+                  {pricing.symbol}{pricing.oneTime}
                 </FluentText>
               </View>
-              <View style={styles.planFeatures}>
-                <View style={styles.featureRow}>
-                  <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
-                  <FluentText variant="caption1" color="secondary">5 Premium Themes</FluentText>
-                </View>
-                <View style={styles.featureRow}>
-                  <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
-                  <FluentText variant="caption1" color="secondary">Basic Equalizer</FluentText>
-                </View>
-                <View style={styles.featureRow}>
-                  <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
-                  <FluentText variant="caption1" color="secondary">Unlimited Playback</FluentText>
-                </View>
-              </View>
-            </View>
-
-            <View style={[styles.planCard, styles.recommendedPlan, { backgroundColor: colors.colorBrandBackground + '10', borderColor: colors.colorBrandForeground1 }]}>
-              <View style={[styles.recommendedBadge, { backgroundColor: colors.colorBrandBackground }]}>
-                <FluentText variant="caption2" color="onBrand">RECOMMENDED</FluentText>
-              </View>
-              <View style={styles.planHeader}>
-                <FluentText variant="title3">Premium</FluentText>
-                <FluentText variant="title2" style={{ color: colors.colorBrandForeground1 }}>
-                  {pricing.symbol}{pricing.premium}
-                </FluentText>
-              </View>
-              <View style={styles.planFeatures}>
+              <View style={styles.licenseFeatures}>
                 <View style={styles.featureRow}>
                   <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
                   <FluentText variant="caption1" color="secondary">All 55 Themes</FluentText>
@@ -109,7 +94,7 @@ export default function SubscriptionRequiredScreen() {
                 </View>
                 <View style={styles.featureRow}>
                   <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
-                  <FluentText variant="caption1" color="secondary">Priority Support</FluentText>
+                  <FluentText variant="caption1" color="secondary">Lifetime Access - Never Expires</FluentText>
                 </View>
               </View>
             </View>
@@ -118,11 +103,11 @@ export default function SubscriptionRequiredScreen() {
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + FluentSpacing.m }]}>
           <Pressable
-            style={[styles.subscribeButton, { backgroundColor: colors.colorBrandBackground }]}
-            onPress={handleSubscribe}
+            style={[styles.purchaseButton, { backgroundColor: colors.colorBrandBackground }]}
+            onPress={handlePurchase}
           >
             <MaterialCommunityIcons name="google-play" size={20} color="#FFFFFF" />
-            <FluentText variant="subtitle1" color="onBrand">Subscribe on Google Play</FluentText>
+            <FluentText variant="subtitle1" color="onBrand">Purchase on Google Play</FluentText>
           </Pressable>
 
           <View style={styles.footerButtons}>
@@ -183,20 +168,20 @@ const styles = StyleSheet.create({
   userInfo: {
     flex: 1,
   },
-  plansSection: {
+  purchaseSection: {
     gap: FluentSpacing.m,
   },
-  planCard: {
+  licenseCard: {
     padding: FluentSpacing.m,
     borderRadius: FluentControlRadius.card,
     borderWidth: 1,
     gap: FluentSpacing.s,
   },
-  recommendedPlan: {
+  highlightedCard: {
     borderWidth: 2,
     position: 'relative',
   },
-  recommendedBadge: {
+  oneTimeBadge: {
     position: 'absolute',
     top: -10,
     right: FluentSpacing.m,
@@ -204,12 +189,12 @@ const styles = StyleSheet.create({
     paddingVertical: FluentSpacing.xxs,
     borderRadius: FluentControlRadius.button,
   },
-  planHeader: {
+  licenseHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  planFeatures: {
+  licenseFeatures: {
     gap: FluentSpacing.xs,
     marginTop: FluentSpacing.xs,
   },
@@ -221,7 +206,7 @@ const styles = StyleSheet.create({
   footer: {
     gap: FluentSpacing.m,
   },
-  subscribeButton: {
+  purchaseButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

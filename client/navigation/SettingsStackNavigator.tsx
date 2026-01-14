@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import SettingsScreen from "@/screens/SettingsScreen";
 import SoundLabScreen from "@/screens/SoundLabScreen";
 import AppearanceScreen from "@/screens/AppearanceScreen";
-import PlanScreen from "@/screens/PlanScreen";
+import LicenseScreen from "@/screens/LicenseScreen";
 import AboutScreen from "@/screens/AboutScreen";
 import FolderSelectionScreen from "@/screens/FolderSelectionScreen";
 import PrivacyPolicyScreen from "@/screens/PrivacyPolicyScreen";
@@ -13,7 +13,7 @@ export type SettingsStackParamList = {
   Settings: undefined;
   SoundLab: undefined;
   Appearance: undefined;
-  Plan: undefined;
+  License: undefined;
   About: undefined;
   FolderSelection: undefined;
   PrivacyPolicy: undefined;
@@ -50,10 +50,10 @@ export default function SettingsStackNavigator() {
         }}
       />
       <Stack.Screen
-        name="Plan"
-        component={PlanScreen}
+        name="License"
+        component={LicenseScreen}
         options={{
-          headerTitle: "Plan",
+          headerTitle: "License",
           headerBackTitle: "Settings",
         }}
       />

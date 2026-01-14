@@ -4,44 +4,39 @@ import { IntegrityService } from '@/services/IntegrityService';
 import { SecureStorage } from '@/services/SecureStorage';
 import { GooglePlayBilling } from '@/lib/payment';
 
-export type SubscriptionPlan = 'free' | 'premium';
-export type SubscriptionType = 'monthly' | 'annual' | null;
+export type LicenseStatus = 'unlicensed' | 'licensed';
 
-export interface SubscriptionState {
-  plan: SubscriptionPlan;
-  subscriptionType: SubscriptionType;
+export interface LicenseState {
+  status: LicenseStatus;
   purchaseToken: string | null;
   productId: string | null;
   purchaseTime: number | null;
-  expiresAt: number | null;
   checksum?: string;
 }
 
 const SECURE_STORAGE_KEY = 'subscription_data';
 
 export const PRODUCT_IDS = {
-  monthly: 'new_audio_360_premium_monthly',
-  annual: 'new_audio_360_premium_annual',
+  lifetime: 'new_audio_360_lifetime',
 };
 
 export const PRICING = {
   india: {
-    monthly: 30,
-    annual: 300,
-    annualSavings: 60,
+    oneTime: 299,
     symbol: '₹',
+    currency: 'INR',
   },
   international: {
-    monthly: 1,
-    annual: 10,
-    annualSavings: 2,
+    oneTime: 29,
     symbol: '$',
+    currency: 'USD',
   },
 } as const;
 
+export type SupportedCurrency = 'INR' | 'USD';
+
 interface SubscriptionContextType {
-  plan: SubscriptionPlan;
-  subscriptionType: SubscriptionType;
+  licenseStatus: LicenseStatus;
   isLoading: boolean;
   isLocked: boolean;
   lockoutRemaining: number | null;
@@ -50,22 +45,20 @@ interface SubscriptionContextType {
   isNoiseReductionUnlocked: (level: string) => boolean;
   isReverbUnlocked: (reverb: string) => boolean;
   getAvailableThemes: () => ThemeName[];
-  purchaseSubscription: (type: 'monthly' | 'annual') => Promise<boolean>;
+  purchaseLicense: () => Promise<boolean>;
   restorePurchases: () => Promise<void>;
-  setPlanForTesting: (plan: SubscriptionPlan, type?: SubscriptionType) => void;
+  setLicenseForTesting: (status: LicenseStatus) => void;
   runIntegrityCheck: () => Promise<void>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<SubscriptionState>({
-    plan: 'free',
-    subscriptionType: null,
+  const [state, setState] = useState<LicenseState>({
+    status: 'unlicensed',
     purchaseToken: null,
     productId: null,
     purchaseTime: null,
-    expiresAt: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
@@ -96,6 +89,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, [lockoutRemaining]);
 
+  const getDefaultState = (): LicenseState => ({
+    status: 'unlicensed',
+    purchaseToken: null,
+    productId: null,
+    purchaseTime: null,
+  });
+
   const initializeWithIntegrity = async () => {
     try {
       await IntegrityService.initialize();
@@ -105,21 +105,21 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       if (integrityState.isLocked) {
         setIsLocked(true);
         setLockoutRemaining(IntegrityService.getLockoutRemaining());
-        setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+        setState(getDefaultState());
         setIsLoading(false);
         return;
       }
 
       if (integrityState.isCompromised) {
-        setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+        setState(getDefaultState());
         setIsLoading(false);
         return;
       }
 
-      await loadSubscriptionState();
+      await loadLicenseState();
     } catch (error) {
       console.error('Initialization error:', error);
-      setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+      setState(getDefaultState());
     } finally {
       setIsLoading(false);
     }
@@ -127,8 +127,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const runPeriodicIntegrityCheck = async () => {
     try {
-      const isTestSubscription = state.purchaseToken?.startsWith('test_');
-      if (isTestSubscription) {
+      const isTestLicense = state.purchaseToken?.startsWith('test_');
+      if (isTestLicense) {
         return;
       }
 
@@ -137,9 +137,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       if (integrityState.isLocked) {
         setIsLocked(true);
         setLockoutRemaining(IntegrityService.getLockoutRemaining());
-        setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+        setState(getDefaultState());
       } else if (integrityState.isCompromised) {
-        setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+        setState(getDefaultState());
       }
     } catch (error) {
       console.warn('Periodic integrity check failed:', error);
@@ -150,100 +150,94 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     await runPeriodicIntegrityCheck();
   }, []);
 
-  const loadSubscriptionState = async () => {
+  const loadLicenseState = async () => {
     try {
       const stored = await SecureStorage.getSecureItem(SECURE_STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored) as SubscriptionState;
+        const parsed = JSON.parse(stored) as LicenseState;
         
-        const isTestSubscription = parsed.purchaseToken?.startsWith('test_');
+        const isTestLicense = parsed.purchaseToken?.startsWith('test_');
         
-        if (!isTestSubscription && parsed.checksum && parsed.purchaseTime) {
+        if (!isTestLicense && parsed.checksum && parsed.purchaseTime) {
           const expectedChecksum = await IntegrityService.computeChecksum(
-            parsed.plan,
+            parsed.status,
             parsed.purchaseTime
           );
           
           if (parsed.checksum !== expectedChecksum) {
-            console.warn('Subscription data tampering detected');
-            setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+            console.warn('License data tampering detected');
+            setState(getDefaultState());
             return;
           }
-        }
-        
-        if (parsed.expiresAt && parsed.expiresAt < Date.now()) {
-          console.log('[SUB] Subscription expired');
-          setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
-          return;
         }
         
         setState(parsed);
       }
     } catch (error) {
-      console.error('Error loading subscription state:', error);
-      setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+      console.error('Error loading license state:', error);
+      setState(getDefaultState());
     }
   };
 
-  const saveSubscriptionState = async (newState: SubscriptionState) => {
+  const saveLicenseState = async (newState: LicenseState) => {
     try {
-      console.log('[SUB] saveSubscriptionState called with plan:', newState.plan, 'type:', newState.subscriptionType);
+      console.log('[LICENSE] saveLicenseState called with status:', newState.status);
       
-      const isTestSubscription = newState.purchaseToken?.startsWith('test_');
+      const isTestLicense = newState.purchaseToken?.startsWith('test_');
       
-      if (!isTestSubscription) {
+      if (!isTestLicense) {
         const integrityState = await IntegrityService.runIntegrityCheck(true);
         if (integrityState.isLocked || integrityState.isCompromised) {
-          console.warn('Cannot save subscription in compromised state');
+          console.warn('Cannot save license in compromised state');
           return;
         }
       }
 
       const checksum = await IntegrityService.computeChecksum(
-        newState.plan,
+        newState.status,
         newState.purchaseTime || Date.now()
       );
       
       const stateWithChecksum = { ...newState, checksum };
       
       await SecureStorage.setSecureItem(SECURE_STORAGE_KEY, JSON.stringify(stateWithChecksum));
-      console.log('[SUB] State saved and updated to plan:', stateWithChecksum.plan);
+      console.log('[LICENSE] State saved and updated to status:', stateWithChecksum.status);
       setState(stateWithChecksum);
     } catch (error) {
-      console.error('Error saving subscription state:', error);
+      console.error('Error saving license state:', error);
     }
   };
 
   const isThemeUnlocked = useCallback((themeId: ThemeName): boolean => {
     if (isLocked) return false;
-    return state.plan === 'premium';
-  }, [state.plan, isLocked]);
+    return state.status === 'licensed';
+  }, [state.status, isLocked]);
 
   const getAvailableThemes = useCallback((): ThemeName[] => {
     if (isLocked) return [];
-    if (state.plan === 'premium') {
+    if (state.status === 'licensed') {
       return [];
     }
     return [];
-  }, [state.plan, isLocked]);
+  }, [state.status, isLocked]);
 
   const isImmersiveModeUnlocked = useCallback((): boolean => {
-    console.log('[SUB] isImmersiveModeUnlocked check - plan:', state.plan, 'isLocked:', isLocked);
+    console.log('[LICENSE] isImmersiveModeUnlocked check - status:', state.status, 'isLocked:', isLocked);
     if (isLocked) return false;
-    return state.plan === 'premium';
-  }, [state.plan, isLocked]);
+    return state.status === 'licensed';
+  }, [state.status, isLocked]);
 
   const isNoiseReductionUnlocked = useCallback((level: string): boolean => {
     if (isLocked) return level === 'Off';
-    return state.plan === 'premium';
-  }, [state.plan, isLocked]);
+    return state.status === 'licensed';
+  }, [state.status, isLocked]);
 
   const isReverbUnlocked = useCallback((reverb: string): boolean => {
     if (isLocked) return reverb === 'None';
-    return state.plan === 'premium';
-  }, [state.plan, isLocked]);
+    return state.status === 'licensed';
+  }, [state.status, isLocked]);
 
-  const purchaseSubscription = useCallback(async (type: 'monthly' | 'annual'): Promise<boolean> => {
+  const purchaseLicense = useCallback(async (): Promise<boolean> => {
     try {
       const integrityState = await IntegrityService.runIntegrityCheck(true);
       if (integrityState.isLocked || integrityState.isCompromised) {
@@ -251,7 +245,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      const productId = type === 'monthly' ? PRODUCT_IDS.monthly : PRODUCT_IDS.annual;
+      const productId = PRODUCT_IDS.lifetime;
       const result = await GooglePlayBilling.purchaseSubscription(productId);
       
       if (!result.success) {
@@ -260,22 +254,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       }
 
       const purchaseTime = Date.now();
-      const expiresAt = type === 'monthly' 
-        ? purchaseTime + 30 * 24 * 60 * 60 * 1000
-        : purchaseTime + 365 * 24 * 60 * 60 * 1000;
 
-      const newState: SubscriptionState = {
-        plan: 'premium',
-        subscriptionType: type,
+      const newState: LicenseState = {
+        status: 'licensed',
         purchaseToken: result.purchaseToken || `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         productId,
         purchaseTime,
-        expiresAt,
       };
-      await saveSubscriptionState(newState);
+      await saveLicenseState(newState);
       return true;
     } catch (error) {
-      console.error('Error purchasing subscription:', error);
+      console.error('Error purchasing license:', error);
       return false;
     }
   }, []);
@@ -291,34 +280,28 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       }
       
       await GooglePlayBilling.restoreSubscriptions();
-      await loadSubscriptionState();
+      await loadLicenseState();
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const setPlanForTesting = useCallback((plan: SubscriptionPlan, type: SubscriptionType = 'monthly') => {
+  const setLicenseForTesting = useCallback((status: LicenseStatus) => {
     const purchaseTime = Date.now();
-    const expiresAt = type === 'monthly' 
-      ? purchaseTime + 30 * 24 * 60 * 60 * 1000
-      : purchaseTime + 365 * 24 * 60 * 60 * 1000;
     
-    const newState: SubscriptionState = {
-      plan,
-      subscriptionType: plan === 'free' ? null : type,
-      purchaseToken: plan === 'free' ? null : `test_${Date.now()}`,
-      productId: plan === 'free' ? null : (type === 'monthly' ? PRODUCT_IDS.monthly : PRODUCT_IDS.annual),
-      purchaseTime: plan === 'free' ? null : purchaseTime,
-      expiresAt: plan === 'free' ? null : expiresAt,
+    const newState: LicenseState = {
+      status,
+      purchaseToken: status === 'unlicensed' ? null : `test_${Date.now()}`,
+      productId: status === 'unlicensed' ? null : PRODUCT_IDS.lifetime,
+      purchaseTime: status === 'unlicensed' ? null : purchaseTime,
     };
-    saveSubscriptionState(newState);
+    saveLicenseState(newState);
   }, []);
 
   return (
     <SubscriptionContext.Provider
       value={{
-        plan: isLocked ? 'free' : state.plan,
-        subscriptionType: isLocked ? null : state.subscriptionType,
+        licenseStatus: isLocked ? 'unlicensed' : state.status,
         isLoading,
         isLocked,
         lockoutRemaining,
@@ -327,9 +310,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         isNoiseReductionUnlocked,
         isReverbUnlocked,
         getAvailableThemes,
-        purchaseSubscription,
+        purchaseLicense,
         restorePurchases,
-        setPlanForTesting,
+        setLicenseForTesting,
         runIntegrityCheck,
       }}
     >

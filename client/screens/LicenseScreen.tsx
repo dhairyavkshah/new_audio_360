@@ -15,29 +15,28 @@ type FeatureItem = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   text: string;
   free: boolean;
-  premium: boolean;
+  licensed: boolean;
 };
 
 const FEATURES: FeatureItem[] = [
-  { icon: "music", text: "Music Player", free: true, premium: true },
-  { icon: "playlist-music", text: "Playlist Management", free: true, premium: true },
-  { icon: "palette", text: "5 System Themes", free: true, premium: true },
-  { icon: "palette-outline", text: "All 55 Themes", free: false, premium: true },
-  { icon: "equalizer", text: "Equalizer Presets", free: true, premium: true },
-  { icon: "surround-sound", text: "Immersive Modes", free: false, premium: true },
-  { icon: "heart", text: "Favorites & History", free: true, premium: true },
-  { icon: "timer-sand", text: "Sleep Timer", free: true, premium: true },
+  { icon: "music", text: "Music Player", free: true, licensed: true },
+  { icon: "playlist-music", text: "Playlist Management", free: true, licensed: true },
+  { icon: "palette", text: "5 System Themes", free: true, licensed: true },
+  { icon: "palette-outline", text: "All 55 Themes", free: false, licensed: true },
+  { icon: "equalizer", text: "Equalizer Presets", free: true, licensed: true },
+  { icon: "surround-sound", text: "Immersive Modes", free: false, licensed: true },
+  { icon: "heart", text: "Favorites & History", free: true, licensed: true },
+  { icon: "timer-sand", text: "Sleep Timer", free: true, licensed: true },
 ];
 
-export default function PlanScreen() {
+export default function LicenseScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const { plan, subscriptionType, isLoading, purchaseSubscription, restorePurchases } = useSubscription();
+  const { licenseStatus, isLoading, purchaseLicense, restorePurchases } = useSubscription();
 
   const [isIndian, setIsIndian] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
 
   useEffect(() => {
     detectUserRegion().then((result) => {
@@ -47,16 +46,16 @@ export default function PlanScreen() {
 
   const pricing = isIndian ? PRICING.india : PRICING.international;
 
-  const handlePurchaseSubscription = async (type: 'monthly' | 'annual') => {
+  const handlePurchase = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsProcessing(true);
     
     try {
-      const success = await purchaseSubscription(type);
+      const success = await purchaseLicense();
       if (success) {
         Alert.alert(
           "Success", 
-          `Premium ${type === 'monthly' ? 'Monthly' : 'Annual'} subscription activated! All features unlocked.`
+          "Lifetime license activated! All features are now unlocked forever."
         );
       }
     } catch (error) {
@@ -72,7 +71,7 @@ export default function PlanScreen() {
     
     try {
       await restorePurchases();
-      Alert.alert("Restored", "Your subscriptions have been restored.");
+      Alert.alert("Restored", "Your purchases have been restored.");
     } catch (error) {
       Alert.alert("Error", "Failed to restore purchases.");
     } finally {
@@ -80,10 +79,10 @@ export default function PlanScreen() {
     }
   };
 
-  const getPlanBadge = () => {
-    if (plan === "premium") {
+  const getLicenseBadge = () => {
+    if (licenseStatus === "licensed") {
       return { 
-        label: subscriptionType === 'annual' ? "Premium Annual" : "Premium Monthly", 
+        label: "Licensed", 
         color: colors.colorPaletteYellowForeground1, 
         icon: "crown" as const 
       };
@@ -91,7 +90,7 @@ export default function PlanScreen() {
     return { label: "Free", color: colors.colorNeutralForeground2, icon: "account-outline" as const };
   };
 
-  const badge = getPlanBadge();
+  const badge = getLicenseBadge();
 
   const renderFeatureRow = (feature: FeatureItem) => {
     return (
@@ -115,7 +114,7 @@ export default function PlanScreen() {
             )}
           </View>
           <View style={[styles.checkBox, { width: 60 }]}>
-            {feature.premium ? (
+            {feature.licensed ? (
               <MaterialCommunityIcons name="check" size={18} color={colors.colorPaletteGreenForeground1} />
             ) : (
               <MaterialCommunityIcons name="close" size={18} color={colors.colorPaletteRedForeground1} />
@@ -140,14 +139,14 @@ export default function PlanScreen() {
             <MaterialCommunityIcons name={badge.icon} size={24} color={badge.color} />
           </View>
           <FluentText variant="title3" style={styles.currentPlanTitle}>
-            Current Plan
+            Current Status
           </FluentText>
           <FluentText variant="title1" style={[styles.planName, { color: badge.color }]}>
             {badge.label}
           </FluentText>
-          {plan === "premium" && (
+          {licenseStatus === "licensed" && (
             <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
-              All features unlocked
+              All features unlocked forever
             </FluentText>
           )}
         </GlassCard>
@@ -177,7 +176,7 @@ export default function PlanScreen() {
                 </View>
                 <View style={[styles.checkBox, { width: 60 }]}>
                   <FluentText variant="caption1" style={{ color: colors.colorPaletteYellowForeground1, fontWeight: "600" }}>
-                    Premium
+                    Licensed
                   </FluentText>
                 </View>
               </View>
@@ -191,7 +190,7 @@ export default function PlanScreen() {
 
         <View style={styles.pricingSection}>
           <FluentText variant="subtitle1" style={styles.sectionTitle}>
-            Subscription Plans
+            One-Time Purchase
           </FluentText>
           
           <View style={{
@@ -201,128 +200,51 @@ export default function PlanScreen() {
             marginBottom: FluentSpacing.m,
           }}>
             <FluentText variant="body2" color="secondary" style={{ marginBottom: FluentSpacing.l }}>
-              Choose your subscription plan. Cancel anytime.
+              Pay once, unlock forever. No subscriptions, no renewals.
             </FluentText>
 
-            {plan !== "premium" && (
+            {licenseStatus !== "licensed" && (
               <>
-                <Pressable
-                  onPress={() => setSelectedPlan('annual')}
-                  style={[
-                    styles.subscriptionOption,
-                    { 
-                      backgroundColor: selectedPlan === 'annual' 
-                        ? colors.colorPaletteYellowForeground1 + "15" 
-                        : colors.colorNeutralBackground3,
-                      borderColor: selectedPlan === 'annual' 
-                        ? colors.colorPaletteYellowForeground1 
-                        : 'transparent',
-                      borderWidth: 2,
-                    },
-                  ]}
-                >
-                  <View style={styles.subscriptionOptionHeader}>
-                    <View style={styles.subscriptionOptionLeft}>
-                      <View style={[
-                        styles.radioButton,
-                        { 
-                          borderColor: selectedPlan === 'annual' 
-                            ? colors.colorPaletteYellowForeground1 
-                            : colors.colorNeutralForeground3,
-                        }
-                      ]}>
-                        {selectedPlan === 'annual' && (
-                          <View style={[
-                            styles.radioButtonInner,
-                            { backgroundColor: colors.colorPaletteYellowForeground1 }
-                          ]} />
-                        )}
-                      </View>
-                      <View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: FluentSpacing.s }}>
-                          <FluentText variant="body1" style={{ fontWeight: "600" }}>
-                            Annual
-                          </FluentText>
-                          <View style={[styles.bestValueBadge, { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
-                            <FluentText variant="caption2" style={{ color: "#FFFFFF", fontWeight: "700" }}>
-                              BEST VALUE
-                            </FluentText>
-                          </View>
-                        </View>
-                        <FluentText variant="caption1" color="secondary">
-                          Save {pricing.symbol}{pricing.annualSavings}/year
-                        </FluentText>
-                      </View>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <FluentText variant="title3" style={{ fontWeight: "700" }}>
-                        {pricing.symbol}{pricing.annual}
-                      </FluentText>
-                      <FluentText variant="caption1" color="secondary">
-                        per year
-                      </FluentText>
-                    </View>
-                  </View>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => setSelectedPlan('monthly')}
-                  style={[
-                    styles.subscriptionOption,
-                    { 
-                      backgroundColor: selectedPlan === 'monthly' 
-                        ? colors.colorPaletteYellowForeground1 + "15" 
-                        : colors.colorNeutralBackground3,
-                      borderColor: selectedPlan === 'monthly' 
-                        ? colors.colorPaletteYellowForeground1 
-                        : 'transparent',
-                      borderWidth: 2,
-                      marginTop: FluentSpacing.m,
-                    },
-                  ]}
-                >
-                  <View style={styles.subscriptionOptionHeader}>
-                    <View style={styles.subscriptionOptionLeft}>
-                      <View style={[
-                        styles.radioButton,
-                        { 
-                          borderColor: selectedPlan === 'monthly' 
-                            ? colors.colorPaletteYellowForeground1 
-                            : colors.colorNeutralForeground3,
-                        }
-                      ]}>
-                        {selectedPlan === 'monthly' && (
-                          <View style={[
-                            styles.radioButtonInner,
-                            { backgroundColor: colors.colorPaletteYellowForeground1 }
-                          ]} />
-                        )}
-                      </View>
-                      <View>
+                <View style={[
+                  styles.priceCard,
+                  { 
+                    backgroundColor: colors.colorPaletteYellowForeground1 + "15",
+                    borderColor: colors.colorPaletteYellowForeground1,
+                    borderWidth: 2,
+                  },
+                ]}>
+                  <View style={styles.priceCardContent}>
+                    <View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: FluentSpacing.s }}>
                         <FluentText variant="body1" style={{ fontWeight: "600" }}>
-                          Monthly
+                          Lifetime License
                         </FluentText>
-                        <FluentText variant="caption1" color="secondary">
-                          Flexible billing
-                        </FluentText>
+                        <View style={[styles.bestValueBadge, { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
+                          <FluentText variant="caption2" style={{ color: "#FFFFFF", fontWeight: "700" }}>
+                            ONE-TIME
+                          </FluentText>
+                        </View>
                       </View>
+                      <FluentText variant="caption1" color="secondary">
+                        All features, forever
+                      </FluentText>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <FluentText variant="title3" style={{ fontWeight: "700" }}>
-                        {pricing.symbol}{pricing.monthly}
+                      <FluentText variant="title2" style={{ fontWeight: "700" }}>
+                        {pricing.symbol}{pricing.oneTime}
                       </FluentText>
                       <FluentText variant="caption1" color="secondary">
-                        per month
+                        one-time
                       </FluentText>
                     </View>
                   </View>
-                </Pressable>
+                </View>
 
                 <Pressable
-                  onPress={() => handlePurchaseSubscription(selectedPlan)}
+                  onPress={handlePurchase}
                   disabled={isProcessing}
                   style={[
-                    styles.subscribeButton,
+                    styles.purchaseButton,
                     { 
                       backgroundColor: colors.colorPaletteYellowForeground1,
                       opacity: isProcessing ? 0.6 : 1,
@@ -332,20 +254,20 @@ export default function PlanScreen() {
                 >
                   <MaterialCommunityIcons name="crown" size={20} color="#FFFFFF" />
                   <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.s }}>
-                    {isProcessing ? "Processing..." : `Subscribe ${selectedPlan === 'annual' ? 'Annually' : 'Monthly'}`}
+                    {isProcessing ? "Processing..." : "Unlock Now"}
                   </FluentText>
                 </Pressable>
               </>
             )}
 
-            {plan === "premium" && (
+            {licenseStatus === "licensed" && (
               <View style={[styles.allUnlockedCard, { backgroundColor: colors.colorPaletteGreenForeground1 + "15" }]}>
                 <MaterialCommunityIcons name="check-decagram" size={32} color={colors.colorPaletteGreenForeground1} />
                 <FluentText variant="body1" style={{ color: colors.colorPaletteGreenForeground1, marginTop: FluentSpacing.s }}>
                   You have access to all features!
                 </FluentText>
                 <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
-                  {subscriptionType === 'annual' ? 'Annual' : 'Monthly'} subscription active
+                  Lifetime license active
                 </FluentText>
               </View>
             )}
@@ -379,13 +301,13 @@ export default function PlanScreen() {
             <View style={styles.infoRow}>
               <MaterialCommunityIcons name="google-play" size={16} color={colors.colorBrandForeground1} />
               <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
-                Managed by Google Play - cancel anytime
+                One-time purchase - no recurring charges
               </FluentText>
             </View>
             <View style={styles.infoRow}>
-              <MaterialCommunityIcons name="autorenew" size={16} color={colors.colorBrandForeground2} />
+              <MaterialCommunityIcons name="infinity" size={16} color={colors.colorBrandForeground2} />
               <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
-                Auto-renews until cancelled
+                Lifetime access - never expires
               </FluentText>
             </View>
             <View style={styles.infoRow}>
@@ -466,39 +388,21 @@ const styles = StyleSheet.create({
   pricingSection: {
     marginBottom: FluentSpacing.xl,
   },
-  subscriptionOption: {
+  priceCard: {
     padding: FluentSpacing.l,
     borderRadius: FluentControlRadius.dialog,
   },
-  subscriptionOptionHeader: {
+  priceCardContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  subscriptionOptionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: FluentSpacing.m,
-  },
-  radioButton: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  radioButtonInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
   },
   bestValueBadge: {
     paddingHorizontal: FluentSpacing.s,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  subscribeButton: {
+  purchaseButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
