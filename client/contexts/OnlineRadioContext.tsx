@@ -14,6 +14,7 @@ import {
   OnlineRadioService,
   OnlineRadioStation,
 } from '@/services/OnlineRadioService';
+import { TrackPlayerService, TrackMetadata, State } from '@/services/TrackPlayerService';
 
 const STORAGE_KEY_COUNTRY = '@new_audio_360_online_radio_country';
 const STORAGE_KEY_STATIONS_CACHE = '@new_audio_360_online_radio_stations';
@@ -62,10 +63,55 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     loadCachedData();
+    initializeTrackPlayer();
     return () => {
       cleanupSound();
     };
   }, []);
+
+  const initializeTrackPlayer = async () => {
+    if (!TrackPlayerService.isAvailable()) {
+      console.log('[OnlineRadioContext] TrackPlayerService not available (web platform)');
+      return;
+    }
+
+    try {
+      const initialized = await TrackPlayerService.initialize();
+      if (initialized) {
+        setupTrackPlayerCallbacks();
+        console.log('[OnlineRadioContext] TrackPlayerService initialized');
+      }
+    } catch (err) {
+      console.warn('[OnlineRadioContext] Failed to initialize TrackPlayerService:', err);
+    }
+  };
+
+  const setupTrackPlayerCallbacks = () => {
+    TrackPlayerService.setCallbacks({
+      onPlay: () => {
+        setIsPlaying(true);
+        setIsBuffering(false);
+      },
+      onPause: () => {
+        setIsPlaying(false);
+      },
+      onStop: () => {
+        setIsPlaying(false);
+        setCurrentStation(null);
+        setIsBuffering(false);
+      },
+      onStateChange: (state: State) => {
+        if (state === State.Buffering) {
+          setIsBuffering(true);
+        } else if (state === State.Playing) {
+          setIsBuffering(false);
+          setIsPlaying(true);
+        } else if (state === State.Paused) {
+          setIsPlaying(false);
+        }
+      },
+    });
+  };
 
   const loadCachedData = async () => {
     try {
@@ -258,6 +304,37 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     setIsBuffering(true);
 
     try {
+      const streamUrl = station.url_resolved || station.url;
+      if (!streamUrl) {
+        throw new Error('No stream URL available for this station');
+      }
+
+      // Try to use TrackPlayerService on native platforms
+      if (TrackPlayerService.isAvailable()) {
+        try {
+          const trackMetadata: TrackMetadata = {
+            id: station.stationuuid,
+            url: streamUrl,
+            title: station.name,
+            artist: station.country || 'Online Radio',
+            artwork: station.favicon || undefined,
+            isLiveStream: true,
+          };
+
+          await TrackPlayerService.setQueue([trackMetadata]);
+          await TrackPlayerService.play();
+          setCurrentStation(station);
+          setIsPlaying(true);
+          setIsBuffering(false);
+
+          OnlineRadioService.reportStationClick(station.stationuuid).catch(() => {});
+          return;
+        } catch (nativeErr) {
+          console.warn('[OnlineRadioContext] TrackPlayerService failed, falling back to expo-av:', nativeErr);
+        }
+      }
+
+      // Fallback to expo-av for web platform
       await cleanupSound();
 
       await Audio.setAudioModeAsync({
@@ -265,11 +342,6 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         staysActiveInBackground: true,
         shouldDuckAndroid: true,
       });
-
-      const streamUrl = station.url_resolved || station.url;
-      if (!streamUrl) {
-        throw new Error('No stream URL available for this station');
-      }
 
       const { sound } = await Audio.Sound.createAsync(
         { uri: streamUrl },
@@ -280,6 +352,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       soundRef.current = sound;
       setCurrentStation(station);
       setIsPlaying(true);
+      setIsBuffering(false);
 
       OnlineRadioService.reportStationClick(station.stationuuid).catch(() => {});
     } catch (err) {
@@ -294,6 +367,14 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
   const stopPlayback = useCallback(async (): Promise<void> => {
     try {
+      if (TrackPlayerService.isAvailable()) {
+        try {
+          await TrackPlayerService.stop();
+        } catch (nativeErr) {
+          console.warn('[OnlineRadioContext] TrackPlayerService.stop() failed:', nativeErr);
+        }
+      }
+
       if (soundRef.current) {
         await soundRef.current.stopAsync();
         await soundRef.current.unloadAsync();
@@ -311,11 +392,19 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     const clampedVolume = Math.max(0, Math.min(1, newVolume));
     setVolumeState(clampedVolume);
 
+    if (TrackPlayerService.isAvailable()) {
+      try {
+        await TrackPlayerService.setVolume(clampedVolume);
+      } catch (err) {
+        console.warn('[OnlineRadioContext] TrackPlayerService.setVolume error:', err);
+      }
+    }
+
     if (soundRef.current) {
       try {
         await soundRef.current.setVolumeAsync(clampedVolume);
       } catch (err) {
-        console.warn('[OnlineRadioContext] setVolume error:', err);
+        console.warn('[OnlineRadioContext] expo-av setVolume error:', err);
       }
     }
   }, []);
