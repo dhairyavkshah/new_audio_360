@@ -27,7 +27,8 @@ const db = drizzle(client);
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-function normalizePlan(plan: string): 'free' | 'premium' {
+function normalizePlan(plan: string): 'free' | 'premium' | 'licensed' {
+  if (plan === 'licensed' || plan === 'lifetime') return 'licensed';
   return (plan === 'standard' || plan === 'premium') ? 'premium' : 'free';
 }
 
@@ -210,29 +211,27 @@ app.post('/api/subscription/verify', authenticateToken, async (req: AuthRequest,
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const validProductIds = ['new_audio_360_premium_monthly', 'new_audio_360_premium_annual'];
+    const validProductIds = ['new_audio_360_premium_monthly', 'new_audio_360_premium_annual', 'new_audio_360_lifetime'];
     if (!validProductIds.includes(productId)) {
       console.warn(`Invalid product ID attempted: ${productId}`);
       return res.status(400).json({ error: 'Invalid product ID' });
     }
 
-    const subscriptionType = productId.includes('annual') ? 'annual' : 'monthly';
+    const isLifetimePurchase = productId === 'new_audio_360_lifetime';
 
-    let subscriptionData;
+    let verificationData;
     try {
-      subscriptionData = await verifyGooglePlaySubscription(packageName, productId, purchaseToken);
+      verificationData = await verifyGooglePlayPurchase(packageName, productId, purchaseToken, isLifetimePurchase);
     } catch (verifyError) {
       console.error('Google Play verification error:', verifyError);
       return res.status(400).json({ error: 'Invalid purchase or subscription expired' });
     }
 
-    const plan = 'premium';
-    const expiresAt = subscriptionData.expiryTimeMillis 
-      ? new Date(parseInt(subscriptionData.expiryTimeMillis))
-      : null;
-    const isActive = subscriptionData.paymentState === 1 || 
-                     Boolean(subscriptionData.expiryTimeMillis && 
-                      parseInt(subscriptionData.expiryTimeMillis) > Date.now());
+    const plan = isLifetimePurchase ? 'licensed' : 'premium';
+    const expiresAt = isLifetimePurchase ? null : (verificationData.expiryTimeMillis 
+      ? new Date(parseInt(verificationData.expiryTimeMillis))
+      : null);
+    const isActive = verificationData.isValid;
 
     const existingSub = await db.select()
       .from(subscriptions)
@@ -267,7 +266,8 @@ app.post('/api/subscription/verify', authenticateToken, async (req: AuthRequest,
         userId: req.userId,
         plan,
         isActive,
-        expiresAt: expiresAt?.toISOString(),
+        expiresAt: expiresAt?.toISOString() || null,
+        isLifetime: isLifetimePurchase,
         verifiedAt: new Date().toISOString(),
       },
       JWT_SECRET,
@@ -280,12 +280,98 @@ app.post('/api/subscription/verify', authenticateToken, async (req: AuthRequest,
         plan,
         isActive,
         expiresAt,
+        isLifetime: isLifetimePurchase,
       },
       entitlement,
     });
   } catch (error) {
     console.error('Subscription verification error:', error);
     res.status(500).json({ error: 'Subscription verification failed' });
+  }
+});
+
+app.post('/api/license/verify', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { purchaseToken, installSource } = req.body;
+
+    if (!purchaseToken) {
+      return res.status(400).json({ error: 'Purchase token is required' });
+    }
+
+    const validPrefixes = ['gp_', 'mock_', 'test_', 'mock_web_'];
+    const isValidToken = validPrefixes.some(prefix => purchaseToken.startsWith(prefix));
+
+    if (!isValidToken) {
+      console.warn(`Invalid license token format: ${purchaseToken.substring(0, 10)}...`);
+      return res.status(400).json({ 
+        error: 'Invalid license', 
+        isValid: false,
+        reason: 'unrecognized_token'
+      });
+    }
+
+    const validInstallSources = ['com.android.vending', 'web', 'com.amazon.venezia'];
+    const isValidInstallSource = !installSource || validInstallSources.includes(installSource);
+
+    if (!isValidInstallSource) {
+      console.warn(`Sideloaded app detected from source: ${installSource}`);
+      return res.status(400).json({ 
+        error: 'App not installed from valid source', 
+        isValid: false,
+        reason: 'sideload_detected'
+      });
+    }
+
+    const subscription = await db.select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, req.userId!))
+      .limit(1);
+
+    if (subscription.length === 0 || !subscription[0].isActive) {
+      return res.status(400).json({ 
+        error: 'No active license found', 
+        isValid: false,
+        reason: 'no_license'
+      });
+    }
+
+    const sub = subscription[0];
+    const isLifetime = sub.plan === 'licensed' || sub.plan === 'lifetime';
+    const isExpired = !isLifetime && sub.expiresAt && sub.expiresAt < new Date();
+
+    if (isExpired) {
+      return res.status(400).json({ 
+        error: 'License expired', 
+        isValid: false,
+        reason: 'expired'
+      });
+    }
+
+    const verificationToken = jwt.sign(
+      {
+        userId: req.userId,
+        licenseValid: true,
+        isLifetime,
+        verifiedAt: new Date().toISOString(),
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      success: true,
+      isValid: true,
+      license: {
+        plan: normalizePlan(sub.plan),
+        isLifetime,
+        purchaseTime: sub.createdAt,
+        expiresAt: sub.expiresAt,
+      },
+      verificationToken,
+    });
+  } catch (error) {
+    console.error('License verification error:', error);
+    res.status(500).json({ error: 'License verification failed' });
   }
 });
 
@@ -546,28 +632,49 @@ app.get('/admin', (req: Request, res: Response) => {
 const VALID_PRODUCT_IDS = [
   'new_audio_360_premium_monthly',
   'new_audio_360_premium_annual',
+  'new_audio_360_lifetime',
 ];
 
-async function verifyGooglePlaySubscription(
+interface PurchaseVerificationResult {
+  isValid: boolean;
+  expiryTimeMillis?: string;
+  paymentState?: number;
+  purchaseType?: 'subscription' | 'one_time';
+  purchaseTime?: string;
+  orderId?: string;
+}
+
+async function verifyGooglePlayPurchase(
   packageName: string,
-  subscriptionId: string,
-  purchaseToken: string
-): Promise<{ expiryTimeMillis?: string; paymentState?: number; subscriptionType?: 'monthly' | 'annual' }> {
-  const subscriptionType = subscriptionId.includes('annual') ? 'annual' : 'monthly';
-  
-  if (!VALID_PRODUCT_IDS.includes(subscriptionId)) {
-    throw new Error(`Invalid product ID: ${subscriptionId}`);
+  productId: string,
+  purchaseToken: string,
+  isOneTimePurchase: boolean = false
+): Promise<PurchaseVerificationResult> {
+  if (!VALID_PRODUCT_IDS.includes(productId)) {
+    throw new Error(`Invalid product ID: ${productId}`);
   }
 
   if (!GOOGLE_PLAY_SERVICE_ACCOUNT) {
     console.warn('Google Play service account not configured, using mock verification');
+    
+    if (isOneTimePurchase) {
+      return {
+        isValid: true,
+        purchaseType: 'one_time',
+        purchaseTime: String(Date.now()),
+        orderId: `GPA.${Date.now()}-mock`,
+      };
+    }
+    
+    const subscriptionType = productId.includes('annual') ? 'annual' : 'monthly';
     const expiryDuration = subscriptionType === 'annual' 
       ? 365 * 24 * 60 * 60 * 1000 
       : 30 * 24 * 60 * 60 * 1000;
     return {
+      isValid: true,
       expiryTimeMillis: String(Date.now() + expiryDuration),
       paymentState: 1,
-      subscriptionType,
+      purchaseType: 'subscription',
     };
   }
 
@@ -581,16 +688,39 @@ async function verifyGooglePlaySubscription(
 
   const androidPublisher = google.androidpublisher({ version: 'v3', auth });
 
+  if (isOneTimePurchase) {
+    const response = await androidPublisher.purchases.products.get({
+      packageName,
+      productId,
+      token: purchaseToken,
+    });
+
+    const purchaseState = response.data.purchaseState;
+    const isValid = purchaseState === 0;
+
+    return {
+      isValid,
+      purchaseType: 'one_time',
+      purchaseTime: response.data.purchaseTimeMillis || undefined,
+      orderId: response.data.orderId || undefined,
+    };
+  }
+
   const response = await androidPublisher.purchases.subscriptions.get({
     packageName,
-    subscriptionId,
+    subscriptionId: productId,
     token: purchaseToken,
   });
 
+  const isValid = response.data.paymentState === 1 || 
+    Boolean(response.data.expiryTimeMillis && 
+      parseInt(response.data.expiryTimeMillis) > Date.now());
+
   return {
+    isValid,
     expiryTimeMillis: response.data.expiryTimeMillis || undefined,
     paymentState: response.data.paymentState || undefined,
-    subscriptionType,
+    purchaseType: 'subscription',
   };
 }
 

@@ -38,18 +38,24 @@ export interface PurchaseResult {
   error?: string;
 }
 
+export interface LicenseVerificationResult {
+  isValid: boolean;
+  purchaseTime?: number;
+  orderId?: string;
+}
+
 export const GooglePlayBilling = {
-  async purchaseSubscription(productId: string): Promise<PurchaseResult> {
+  async purchaseLicense(productId: string): Promise<PurchaseResult> {
     try {
       if (Platform.OS === "web") {
-        console.log("[GooglePlayBilling] Web platform - simulating purchase for:", productId);
+        console.log("[GooglePlayBilling] Web platform - simulating license purchase for:", productId);
         return {
           success: true,
           purchaseToken: `mock_web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         };
       }
 
-      console.log("[GooglePlayBilling] Initiating purchase for product:", productId);
+      console.log("[GooglePlayBilling] Initiating one-time purchase for product:", productId);
       
       const purchaseToken = `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
@@ -66,31 +72,51 @@ export const GooglePlayBilling = {
     }
   },
 
-  async restoreSubscriptions(): Promise<void> {
+  async restoreLicenses(): Promise<void> {
     try {
       if (Platform.OS === "web") {
         console.log("[GooglePlayBilling] Web platform - restore not available");
         return;
       }
 
-      console.log("[GooglePlayBilling] Restoring subscriptions...");
+      console.log("[GooglePlayBilling] Restoring license purchases...");
     } catch (error) {
       console.error("[GooglePlayBilling] Restore error:", error);
       throw error;
     }
   },
 
-  async getSubscriptionStatus(purchaseToken: string): Promise<{ isActive: boolean; expiresAt?: number }> {
+  async verifyLicense(purchaseToken: string): Promise<LicenseVerificationResult> {
     try {
-      console.log("[GooglePlayBilling] Checking subscription status for token:", purchaseToken);
+      console.log("[GooglePlayBilling] Verifying license for token:", purchaseToken);
       
-      return {
-        isActive: true,
-        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-      };
+      if (purchaseToken.startsWith('gp_') || purchaseToken.startsWith('mock_') || purchaseToken.startsWith('test_')) {
+        return {
+          isValid: true,
+          purchaseTime: Date.now(),
+          orderId: `GPA.${Date.now()}-${Math.random().toString(36).substr(2, 8)}`,
+        };
+      }
+      
+      return { isValid: false };
     } catch (error) {
-      console.error("[GooglePlayBilling] Status check error:", error);
-      return { isActive: false };
+      console.error("[GooglePlayBilling] License verification error:", error);
+      return { isValid: false };
+    }
+  },
+
+  async checkInstallSource(): Promise<{ isFromPlayStore: boolean; installSource?: string }> {
+    try {
+      if (Platform.OS === "web") {
+        return { isFromPlayStore: true, installSource: 'web' };
+      }
+
+      console.log("[GooglePlayBilling] Checking install source...");
+      
+      return { isFromPlayStore: true, installSource: 'com.android.vending' };
+    } catch (error) {
+      console.error("[GooglePlayBilling] Install source check error:", error);
+      return { isFromPlayStore: false };
     }
   },
 };

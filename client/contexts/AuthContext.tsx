@@ -33,7 +33,7 @@ interface UserProfile {
 }
 
 interface SubscriptionState {
-  plan: 'free' | 'standard' | 'premium';
+  plan: 'free' | 'standard' | 'premium' | 'licensed';
   isActive: boolean;
   expiresAt: string | null;
 }
@@ -267,17 +267,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       const testSubscription: SubscriptionState = {
-        plan: 'premium',
+        plan: 'licensed',
         isActive: true,
-        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        expiresAt: null,
       };
 
       const purchaseTime = Date.now();
-      const subscriptionData = {
-        plan: 'premium',
+      const licenseData = {
+        plan: 'licensed',
         purchaseToken: `test_${purchaseTime}`,
-        productId: 'com.newaudio360.premium',
+        productId: 'new_audio_360_lifetime',
         purchaseTime,
+        isLifetime: true,
       };
 
       console.log('[TEST AUTH] Saving auth data...');
@@ -286,8 +287,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await secureSet(STORAGE_KEYS.USER_PROFILE, JSON.stringify(testUser));
       await secureSet(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(testSubscription));
       await secureSet(STORAGE_KEYS.LAST_AUTH_TIME, Date.now().toString());
-      await SecureStorage.setSecureItem('subscription_data', JSON.stringify(subscriptionData));
-      console.log('[TEST AUTH] Auth data saved successfully (plan: premium)');
+      await SecureStorage.setSecureItem('subscription_data', JSON.stringify(licenseData));
+      console.log('[TEST AUTH] Auth data saved successfully (plan: licensed)');
 
       setState(prev => ({
         ...prev,
@@ -297,7 +298,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscription: testSubscription,
         requiresReauth: false,
       }));
-      console.log('[TEST AUTH] State updated successfully with premium access');
+      console.log('[TEST AUTH] State updated successfully with licensed access');
 
       return true;
     } catch (error) {
@@ -487,7 +488,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasActiveSubscription = useCallback((): boolean => {
     if (!state.subscription) return false;
-    return state.subscription.isActive && state.subscription.plan !== 'free';
+    const { plan, isActive } = state.subscription;
+    return isActive && (plan === 'licensed' || plan === 'premium' || plan === 'standard');
   }, [state.subscription]);
 
   return (
