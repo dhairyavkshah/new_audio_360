@@ -15,6 +15,9 @@
  */
 
 import { Platform } from "react-native";
+import Constants from 'expo-constants';
+
+const IS_PRODUCTION = Constants.expoConfig?.extra?.appVariant === 'production';
 
 export interface RegionDetectionResult {
   isIndian: boolean;
@@ -77,7 +80,11 @@ export const GooglePlayLicense = {
         return { isPurchased: false };
       }
 
-      console.log("[GooglePlayLicense] Checking purchase status...");
+      if (IS_PRODUCTION) {
+        console.warn("[GooglePlayLicense] Production mode: react-native-iap integration required for real purchase verification");
+      } else {
+        console.log("[GooglePlayLicense] Development mode: Checking purchase status...");
+      }
       
       return { isPurchased: false };
     } catch (error) {
@@ -105,7 +112,15 @@ export const GooglePlayLicense = {
         };
       }
 
-      console.log("[GooglePlayLicense] Initiating purchase...");
+      if (IS_PRODUCTION) {
+        console.warn("[GooglePlayLicense] Production mode: react-native-iap integration required for real purchases");
+        return {
+          isPurchased: false,
+          error: "In-app purchases require react-native-iap integration",
+        };
+      }
+
+      console.log("[GooglePlayLicense] Development mode: Initiating mock purchase...");
       
       const mockPurchase: PurchaseInfo = {
         productId: PRODUCT_ID,
@@ -140,7 +155,12 @@ export const GooglePlayLicense = {
         return { isPurchased: false };
       }
 
-      console.log("[GooglePlayLicense] Restoring purchases...");
+      if (IS_PRODUCTION) {
+        console.warn("[GooglePlayLicense] Production mode: react-native-iap integration required for restoring purchases");
+      } else {
+        console.log("[GooglePlayLicense] Development mode: Restoring purchases...");
+      }
+      
       return { isPurchased: false };
     } catch (error) {
       console.error("[GooglePlayLicense] Restore error:", error);
