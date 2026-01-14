@@ -422,6 +422,72 @@ export default function RadioScreen() {
     );
   };
 
+  const renderPersistentNowPlaying = () => {
+    if (!currentStation || !isOnlinePlaying || radioMode === 'online') return null;
+    
+    return (
+      <Pressable
+        style={[
+          styles.persistentNowPlaying,
+          {
+            backgroundColor: colors.colorBrandBackground,
+            borderRadius: FluentRadius.large,
+          },
+        ]}
+        onPress={() => handleModeChange('online')}
+        accessibilityLabel={`Now playing: ${currentStation.name}. Tap to view.`}
+        accessibilityRole="button"
+      >
+        <View style={styles.persistentNowPlayingContent}>
+          <View style={styles.persistentNowPlayingInfo}>
+            <View style={styles.persistentNowPlayingIcon}>
+              <MaterialCommunityIcons
+                name="radio"
+                size={FluentIconSize.regular}
+                color={colors.colorNeutralForegroundOnBrand}
+              />
+            </View>
+            <View style={styles.persistentNowPlayingText}>
+              <FluentText
+                variant="caption1"
+                style={{ color: colors.colorNeutralForegroundOnBrand + 'CC' }}
+              >
+                NOW PLAYING
+              </FluentText>
+              <FluentText
+                variant="body2Strong"
+                numberOfLines={1}
+                style={{ color: colors.colorNeutralForegroundOnBrand }}
+              >
+                {currentStation.name}
+              </FluentText>
+            </View>
+          </View>
+          <Pressable
+            style={[
+              styles.persistentStopButton,
+              { backgroundColor: colors.colorNeutralForegroundOnBrand + '20' },
+            ]}
+            onPress={(e) => {
+              e.stopPropagation();
+              onlineStop();
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }}
+            accessibilityLabel="Stop playing"
+            accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MaterialCommunityIcons
+              name="stop"
+              size={24}
+              color={colors.colorNeutralForegroundOnBrand}
+            />
+          </Pressable>
+        </View>
+      </Pressable>
+    );
+  };
+
   const renderOnlineContent = () => {
     const error = onlineError;
 
@@ -1047,6 +1113,7 @@ export default function RadioScreen() {
         showsVerticalScrollIndicator={false}
       >
         {renderModeToggle()}
+        {renderPersistentNowPlaying()}
         {renderFmUnavailableNotice()}
         
         {radioMode === 'fmam' ? renderFmContent() : renderOnlineContent()}
@@ -1066,6 +1133,40 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     marginBottom: FluentSpacing.l,
+  },
+  persistentNowPlaying: {
+    padding: FluentSpacing.m,
+    marginBottom: FluentSpacing.l,
+  },
+  persistentNowPlayingContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  persistentNowPlayingInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: FluentSpacing.m,
+  },
+  persistentNowPlayingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: FluentSpacing.m,
+  },
+  persistentNowPlayingText: {
+    flex: 1,
+  },
+  persistentStopButton: {
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentTouchTarget.minimum / 2,
+    justifyContent: "center",
+    alignItems: "center",
   },
   noticeCard: {
     flexDirection: "row",
