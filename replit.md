@@ -109,6 +109,7 @@ All documentation is in the `docs/` folder:
 -   `RELEASE_NOTES.md`: Version history and changelog
 -   `TEST_PLAN.md`: Testing strategy and acceptance criteria
 -   `TEST_CASES.md`: Comprehensive 1000 test cases
+-   `TEST_REPORT.md`: Latest test execution report
 -   `APP_STORE_DESCRIPTIONS.md`: Play Store listing content
 -   `design_guidelines.md`: UI/UX design specifications
 
