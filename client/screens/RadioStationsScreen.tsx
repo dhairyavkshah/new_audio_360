@@ -3,10 +3,9 @@ import { View, StyleSheet, ScrollView, Pressable, TextInput, ActivityIndicator, 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
-import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
+import { useRoute, RouteProp } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText, FluentButton, FluentIconButton, FluentChip } from "@/components/fluent";
-import { FluentTopBar } from "@/components/FluentTopBar";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
@@ -234,7 +233,6 @@ function LoadingState({ message }: { message: string }) {
 
 export default function RadioStationsScreen() {
   const route = useRoute<RouteProp<RadioStackParamList, 'RadioStations'>>();
-  const navigation = useNavigation();
   const initialMode = route.params?.mode || 'fmam';
   
   const tabBarHeight = useSafeTabBarHeight();
@@ -700,20 +698,6 @@ export default function RadioStationsScreen() {
 
   return (
     <FluentScreenLayout 
-      header={<FluentTopBar title="Browse Stations" rightAction={
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={{ padding: FluentSpacing.s }}
-          accessibilityLabel="Go back"
-          accessibilityRole="button"
-        >
-          <MaterialCommunityIcons 
-            name="arrow-left" 
-            size={24} 
-            color={colors.colorNeutralForeground1} 
-          />
-        </Pressable>
-      } />}
       edges={[]} 
       hasBottomNavigation={true}
     >

@@ -13,7 +13,7 @@ export type RadioStackParamList = {
 const Stack = createNativeStackNavigator<RadioStackParamList>();
 
 export default function RadioStackNavigator() {
-  const screenOptions = useScreenOptions();
+  const screenOptions = useScreenOptions({ transparent: false });
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>
@@ -21,14 +21,15 @@ export default function RadioStackNavigator() {
         name="RadioMain"
         component={RadioScreen}
         options={{
-          headerTitle: "Radio",
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="RadioStations"
         component={RadioStationsScreen}
         options={{
-          headerTitle: "Stations",
+          headerTitle: "Browse Stations",
+          headerBackTitle: "Radio",
         }}
       />
     </Stack.Navigator>
