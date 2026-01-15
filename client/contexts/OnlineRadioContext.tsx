@@ -16,6 +16,7 @@ import {
   OnlineRadioCountry,
 } from '@/services/OnlineRadioService';
 import { TrackPlayerService, TrackMetadata, State, PlaybackSource } from '@/services/TrackPlayerService';
+import { AudioCoordinator } from '@/services/AudioCoordinator';
 
 const STORAGE_KEY_COUNTRY = '@new_audio_360_online_radio_country';
 const STORAGE_KEY_STATIONS_CACHE = '@new_audio_360_online_radio_stations';
@@ -330,16 +331,24 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const playStation = useCallback(async (station: OnlineRadioStation): Promise<void> => {
+    if (currentStation?.stationuuid === station.stationuuid && isPlaying) {
+      console.log('[OnlineRadioContext] Station already playing:', station.name);
+      setError('This station is already playing');
+      setTimeout(() => setError(null), 2000);
+      return;
+    }
+
     setError(null);
     setIsBuffering(true);
 
     try {
+      await AudioCoordinator.requestPlayback('radio');
+
       const streamUrl = station.url_resolved || station.url;
       if (!streamUrl) {
         throw new Error('No stream URL available for this station');
       }
 
-      // Try to use TrackPlayerService on native platforms
       if (TrackPlayerService.isAvailable()) {
         try {
           await TrackPlayerService.stop();
@@ -360,6 +369,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
           setCurrentStation(station);
           setIsPlaying(true);
           setIsBuffering(false);
+          AudioCoordinator.notifyPlaybackStarted('radio');
 
           OnlineRadioService.reportStationClick(station.stationuuid).catch(() => {});
           return;
@@ -368,7 +378,6 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Fallback to expo-av for web platform
       await cleanupSound();
 
       await Audio.setAudioModeAsync({
@@ -387,6 +396,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       setCurrentStation(station);
       setIsPlaying(true);
       setIsBuffering(false);
+      AudioCoordinator.notifyPlaybackStarted('radio');
 
       OnlineRadioService.reportStationClick(station.stationuuid).catch(() => {});
     } catch (err) {
@@ -397,7 +407,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       setIsBuffering(false);
       setCurrentStation(null);
     }
-  }, [volume, onPlaybackStatusUpdate]);
+  }, [volume, onPlaybackStatusUpdate, currentStation, isPlaying]);
 
   const stopPlayback = useCallback(async (): Promise<void> => {
     try {
@@ -417,10 +427,15 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       setIsPlaying(false);
       setIsBuffering(false);
       setCurrentStation(null);
+      AudioCoordinator.notifyPlaybackStopped('radio');
     } catch (err) {
       console.error('[OnlineRadioContext] stopPlayback error:', err);
     }
   }, []);
+
+  useEffect(() => {
+    AudioCoordinator.registerRadioStopCallback(stopPlayback);
+  }, [stopPlayback]);
 
   const setVolume = useCallback(async (newVolume: number): Promise<void> => {
     const clampedVolume = Math.max(0, Math.min(1, newVolume));

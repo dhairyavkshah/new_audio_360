@@ -8,6 +8,7 @@ import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
 import { PlaybackEngineModule, PlaybackStatus } from '@/modules/audio-effects';
 import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
+import { AudioCoordinator } from '@/services/AudioCoordinator';
 
 const EQ_FREQUENCIES: Record<keyof EQBands, number> = {
   sub: 32,
@@ -421,7 +422,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (delayNodeRef.current) { try { delayNodeRef.current.disconnect(); } catch {} }
       if (delayGainRef.current) { try { delayGainRef.current.disconnect(); } catch {} }
     }
+    AudioCoordinator.notifyPlaybackStopped('music');
   }, []);
+
+  const stopMusicForCoordinator = useCallback(async (): Promise<void> => {
+    cleanupPlayer();
+    setIsPlaying(false);
+    setCurrentTime(0);
+  }, [cleanupPlayer]);
+
+  useEffect(() => {
+    AudioCoordinator.registerMusicStopCallback(stopMusicForCoordinator);
+  }, [stopMusicForCoordinator]);
   
   const createEQChain = useCallback((ctx: AudioContext): BiquadFilterNode[] => {
     eqFiltersRef.current.forEach(f => { try { f.disconnect(); } catch {} });
@@ -491,6 +503,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setCurrentSong(song);
 
     try {
+      await AudioCoordinator.requestPlayback('music');
+
       let audioSource: string | null = null;
 
       if (isDeviceSong(song) && song.uri) {
@@ -582,6 +596,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         await audio.play();
         setIsPlaying(true);
         setIsLoading(false);
+        AudioCoordinator.notifyPlaybackStarted('music');
       } else if (useTrackPlayerRef.current) {
         if (!trackPlayerInitializedRef.current) {
           const initialized = await TrackPlayerService.initialize();
@@ -703,6 +718,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         
         setIsPlaying(true);
         setIsLoading(false);
+        AudioCoordinator.notifyPlaybackStarted('music');
       } else if (useNativePlaybackRef.current) {
         cleanupPlayer();
         
@@ -733,6 +749,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
         setIsPlaying(true);
         setIsLoading(false);
+        AudioCoordinator.notifyPlaybackStarted('music');
       } else {
         cleanupPlayer();
         
@@ -744,6 +761,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         newPlayer.play();
         setIsPlaying(true);
         setIsLoading(false);
+        AudioCoordinator.notifyPlaybackStarted('music');
       }
 
       addToRecentlyPlayed(song.id).then(() => {
