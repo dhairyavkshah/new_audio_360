@@ -65,7 +65,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           },
         ]}
       >
-        <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground }]}>
+        <View style={styles.iconContainer}>
           <Image
             source={require("../../assets/images/icon.png")}
             style={styles.icon}
@@ -103,11 +103,9 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 120,
     height: 120,
-    borderRadius: FluentControlRadius.dialog,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: FluentSpacing.xxl,
-    overflow: "hidden",
   },
   icon: {
     width: 120,
