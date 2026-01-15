@@ -63,13 +63,16 @@ export default function NowPlayingScreen() {
   const artworkScale = useSharedValue(1);
   
   const isCompact = screenWidth <= 375 || screenHeight <= 700;
-  const isVeryCompact = screenHeight <= 600;
+  const isVeryCompact = screenHeight <= 667;
+  const isExtraCompact = screenHeight <= 580;
   const availableHeight = screenHeight - headerHeight - tabBarHeight - insets.top - insets.bottom;
-  const artworkSize = isVeryCompact 
-    ? Math.min(screenWidth - FluentSpacing.l * 2, availableHeight * 0.35, 200)
-    : isCompact 
-      ? Math.min(screenWidth - FluentSpacing.l * 2, availableHeight * 0.4, 240)
-      : Math.min(screenWidth - FluentSpacing.xxl * 2, availableHeight * 0.45, 320);
+  const artworkSize = isExtraCompact 
+    ? Math.min(screenWidth - FluentSpacing.m * 2, availableHeight * 0.32, 160)
+    : isVeryCompact 
+      ? Math.min(screenWidth - FluentSpacing.l * 2, availableHeight * 0.35, 200)
+      : isCompact 
+        ? Math.min(screenWidth - FluentSpacing.l * 2, availableHeight * 0.4, 240)
+        : Math.min(screenWidth - FluentSpacing.xxl * 2, availableHeight * 0.45, 320);
 
   useFocusEffect(
     useCallback(() => {
@@ -126,16 +129,16 @@ export default function NowPlayingScreen() {
         contentContainerStyle={[
           styles.content, 
           { 
-            paddingTop: headerHeight + (isCompact ? FluentSpacing.s : FluentSpacing.m), 
-            paddingBottom: tabBarHeight + FluentSpacing.m, 
-            paddingHorizontal: isCompact ? FluentSpacing.m : HORIZONTAL_PADDING,
+            paddingTop: headerHeight + (isExtraCompact ? FluentSpacing.xxs : isCompact ? FluentSpacing.s : FluentSpacing.m), 
+            paddingBottom: tabBarHeight + (isExtraCompact ? FluentSpacing.xs : FluentSpacing.m), 
+            paddingHorizontal: isExtraCompact ? FluentSpacing.s : isCompact ? FluentSpacing.m : HORIZONTAL_PADDING,
             minHeight: availableHeight,
           }
         ]}
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-        <View style={[styles.artworkContainer, { marginTop: isVeryCompact ? 0 : isCompact ? FluentSpacing.s : FluentSpacing.l }]}>
+        <View style={[styles.artworkContainer, { marginTop: isExtraCompact ? 0 : isVeryCompact ? FluentSpacing.xxs : isCompact ? FluentSpacing.s : FluentSpacing.l }]}>
           <Animated.View style={[styles.artworkWrapper, artworkStyle]}>
             <Image
               source={{ uri: currentSong.artwork }}
@@ -160,18 +163,18 @@ export default function NowPlayingScreen() {
           ) : null}
         </View>
 
-        <View style={[styles.songInfo, { marginTop: isVeryCompact ? FluentSpacing.m : isCompact ? FluentSpacing.l : FluentSpacing.xl, marginBottom: isVeryCompact ? FluentSpacing.xs : FluentSpacing.s }]}>
-          <FluentText variant={isVeryCompact ? "subtitle1" : "title1"} style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
+        <View style={[styles.songInfo, { marginTop: isExtraCompact ? FluentSpacing.s : isVeryCompact ? FluentSpacing.m : isCompact ? FluentSpacing.l : FluentSpacing.xl, marginBottom: isExtraCompact ? 0 : isVeryCompact ? FluentSpacing.xs : FluentSpacing.s }]}>
+          <FluentText variant={isExtraCompact ? "body1" : isVeryCompact ? "subtitle1" : "title1"} style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
             {currentSong.title}
           </FluentText>
           <FluentText 
-            variant={isVeryCompact ? "body2" : "subtitle1"} 
+            variant={isExtraCompact ? "caption1" : isVeryCompact ? "body2" : "subtitle1"} 
             style={[styles.artistName, textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.85)' : colors.colorNeutralForeground2 }]} 
             numberOfLines={1}
           >
             {currentSong.artist}
           </FluentText>
-          <View style={[styles.actionButtons, isVeryCompact && { marginTop: FluentSpacing.s }]}>
+          <View style={[styles.actionButtons, (isExtraCompact || isVeryCompact) && { marginTop: FluentSpacing.xs, gap: FluentSpacing.l }]}>
             <Pressable
               style={styles.actionButton}
               onPress={() => {
@@ -203,28 +206,30 @@ export default function NowPlayingScreen() {
           </View>
         </View>
 
-        <View style={[styles.waveformContainer, { marginVertical: isVeryCompact ? FluentSpacing.xs : isCompact ? FluentSpacing.s : FluentSpacing.m }]}>
-          <AudioWaveform
-            isAnimating={isPlaying}
-            barCount={isVeryCompact ? 40 : 50}
-            barWidth={isVeryCompact ? 2 : 3}
-            height={isVeryCompact ? 30 : 40}
-            color={colors.colorBrandForeground1}
-          />
-        </View>
+        {!isExtraCompact && (
+          <View style={[styles.waveformContainer, { marginVertical: isVeryCompact ? FluentSpacing.xxs : isCompact ? FluentSpacing.s : FluentSpacing.m }]}>
+            <AudioWaveform
+              isAnimating={isPlaying}
+              barCount={isVeryCompact ? 35 : 50}
+              barWidth={isVeryCompact ? 2 : 3}
+              height={isVeryCompact ? 24 : 40}
+              color={colors.colorBrandForeground1}
+            />
+          </View>
+        )}
 
-        <View style={[styles.progressContainer, { marginBottom: isVeryCompact ? FluentSpacing.xs : FluentSpacing.s }]}>
+        <View style={[styles.progressContainer, { marginTop: isExtraCompact ? FluentSpacing.xs : 0, marginBottom: isExtraCompact ? FluentSpacing.xxs : isVeryCompact ? FluentSpacing.xs : FluentSpacing.s }]}>
           <ProgressBar
             progress={progress}
             duration={duration || currentSong.duration}
             currentTime={currentTime}
             onSeek={seek}
-            width={screenWidth - (isCompact ? FluentSpacing.l * 2 : FluentSpacing.xxl * 2)}
+            width={screenWidth - (isExtraCompact ? FluentSpacing.m * 2 : isCompact ? FluentSpacing.l * 2 : FluentSpacing.xxl * 2)}
             showTextShadow={true}
           />
         </View>
 
-        <View style={[styles.controlsContainer, { marginBottom: isVeryCompact ? FluentSpacing.xs : FluentSpacing.s }]}>
+        <View style={[styles.controlsContainer, { marginBottom: isExtraCompact ? 0 : isVeryCompact ? FluentSpacing.xs : FluentSpacing.s }]}>
           <PlaybackControls
             isPlaying={isPlaying}
             onPlayPause={togglePlayPause}
