@@ -1,4 +1,4 @@
-name: Build Production APK
+name: Build Production APK (Direct Install)
 
 on:
   workflow_dispatch:
@@ -6,12 +6,12 @@ on:
       message:
         description: 'Release message'
         required: false
-        default: 'Production APK build'
+        default: 'Production APK release'
 
 jobs:
-  build-production-apk:
+  build:
     runs-on: ubuntu-latest
-    name: Build Production APK for Direct Distribution
+    name: Build Signed Production APK
     
     steps:
       - name: Checkout repository
@@ -23,7 +23,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Setup Expo
+      - name: Setup Expo & EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
@@ -32,14 +32,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Production APK
+      - name: Build Signed Production APK
         run: eas build --platform android --profile production-apk --non-interactive
         env:
-          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Get build URL
+      - name: Build Complete
         run: |
-          echo "Production APK build completed!"
-          echo "Profile: production-apk"
-          echo "Type: APK (for direct distribution)"
-          echo "Check Expo dashboard for download link."
+          echo "================================================"
+          echo "Production APK build submitted to EAS!"
+          echo "================================================"
+          echo ""
+          echo "Download your signed APK from:"
+          echo "https://expo.dev/accounts/shahdhairyavk/projects/new-audio-360/builds"
+          echo ""
+          echo "This APK can be installed directly on devices"
+          echo "or distributed outside the Play Store."
+          echo "================================================"

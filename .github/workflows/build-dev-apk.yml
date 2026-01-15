@@ -12,7 +12,7 @@ on:
       - develop
 
 jobs:
-  build-dev:
+  build:
     runs-on: ubuntu-latest
     name: Build Development APK
     
@@ -26,7 +26,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Setup Expo
+      - name: Setup Expo & EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
@@ -38,10 +38,14 @@ jobs:
       - name: Build Development APK
         run: eas build --platform android --profile development --non-interactive
         env:
-          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Get build URL
+      - name: Build Complete
         run: |
-          echo "Build completed! Check Expo dashboard for download link."
-          echo "Profile: development"
-          echo "Type: APK (debug)"
+          echo "================================================"
+          echo "Development APK build submitted to EAS!"
+          echo "================================================"
+          echo ""
+          echo "Download from:"
+          echo "https://expo.dev/accounts/shahdhairyavk/projects/new-audio-360/builds"
+          echo "================================================"
