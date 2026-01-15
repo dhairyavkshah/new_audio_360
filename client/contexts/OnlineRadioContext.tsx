@@ -270,7 +270,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     try {
       const fetchedStations = await OnlineRadioService.getPopularStations(
         countryCode,
-        50
+        30
       );
       setPopularStations(fetchedStations);
 
