@@ -84,7 +84,7 @@ export const OnlineRadioService = {
   ): Promise<OnlineRadioStation[]> {
     try {
       const stations = await fetchWithFallback<OnlineRadioStation[]>(
-        `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${limit}&order=clickcount&reverse=true&hidebroken=true`
+        `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${limit}&order=votes&reverse=true&hidebroken=true`
       );
       return stations.filter((s) => s.url_resolved && s.name);
     } catch (error) {
@@ -99,7 +99,7 @@ export const OnlineRadioService = {
     countryCode?: string
   ): Promise<OnlineRadioStation[]> {
     try {
-      let endpoint = `/json/stations/search?name=${encodeURIComponent(query)}&limit=${limit}&order=clickcount&reverse=true&hidebroken=true`;
+      let endpoint = `/json/stations/search?name=${encodeURIComponent(query)}&limit=${limit}&order=votes&reverse=true&hidebroken=true`;
       if (countryCode) {
         endpoint += `&countrycode=${countryCode.toUpperCase()}`;
       }
@@ -116,9 +116,9 @@ export const OnlineRadioService = {
     limit: number = 50
   ): Promise<OnlineRadioStation[]> {
     try {
-      let endpoint = `/json/stations/topclick/${limit}?hidebroken=true`;
+      let endpoint = `/json/stations/topvote/${limit}?hidebroken=true`;
       if (countryCode) {
-        endpoint = `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${limit}&order=clickcount&reverse=true&hidebroken=true`;
+        endpoint = `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${limit}&order=votes&reverse=true&hidebroken=true`;
       }
       const stations = await fetchWithFallback<OnlineRadioStation[]>(endpoint);
       return stations.filter((s) => s.url_resolved && s.name);
@@ -134,7 +134,7 @@ export const OnlineRadioService = {
     limit: number = 50
   ): Promise<OnlineRadioStation[]> {
     try {
-      let endpoint = `/json/stations/bytag/${encodeURIComponent(genre)}?limit=${limit}&order=clickcount&reverse=true&hidebroken=true`;
+      let endpoint = `/json/stations/bytag/${encodeURIComponent(genre)}?limit=${limit}&order=votes&reverse=true&hidebroken=true`;
       if (countryCode) {
         endpoint += `&countrycode=${countryCode.toUpperCase()}`;
       }
