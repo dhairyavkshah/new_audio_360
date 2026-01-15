@@ -134,16 +134,77 @@ export const OnlineRadioService = {
     limit: number = 50
   ): Promise<OnlineRadioStation[]> {
     try {
-      let endpoint = `/json/stations/topvote/${limit * 2}?hidebroken=true&lastcheckok=1`;
       if (countryCode) {
-        endpoint = `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${limit * 2}&order=votes&reverse=true&hidebroken=true&lastcheckok=1`;
+        const curatedStations = await this.getCuratedStations(countryCode, limit);
+        if (curatedStations.length >= limit) {
+          return curatedStations.slice(0, limit);
+        }
+        
+        const remainingLimit = limit - curatedStations.length;
+        const additionalStations = await fetchWithFallback<OnlineRadioStation[]>(
+          `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${remainingLimit * 3}&order=votes&reverse=true&hidebroken=true&lastcheckok=1`
+        );
+        
+        const curatedUuids = new Set(curatedStations.map(s => s.stationuuid));
+        const filteredAdditional = additionalStations
+          .filter(isStreamSupported)
+          .filter(s => !curatedUuids.has(s.stationuuid))
+          .slice(0, remainingLimit);
+        
+        return [...curatedStations, ...filteredAdditional];
       }
-      const stations = await fetchWithFallback<OnlineRadioStation[]>(endpoint);
+      
+      const stations = await fetchWithFallback<OnlineRadioStation[]>(
+        `/json/stations/topvote/${limit * 2}?hidebroken=true&lastcheckok=1`
+      );
       return stations.filter(isStreamSupported).slice(0, limit);
     } catch (error) {
       console.error('[OnlineRadioService] getPopularStations error:', error);
       throw new Error('Failed to fetch popular stations. Please check your internet connection.');
     }
+  },
+
+  async getCuratedStations(
+    countryCode: string,
+    limit: number = 20
+  ): Promise<OnlineRadioStation[]> {
+    const { getCuratedStationsForCountry } = await import('./CuratedStations');
+    const curatedList = getCuratedStationsForCountry(countryCode);
+    
+    if (curatedList.length === 0) {
+      return [];
+    }
+
+    const foundStations: OnlineRadioStation[] = [];
+    const seenUuids = new Set<string>();
+
+    for (const curated of curatedList) {
+      if (foundStations.length >= limit) break;
+      
+      for (const term of curated.searchTerms) {
+        if (foundStations.length >= limit) break;
+        
+        try {
+          const stations = await fetchWithFallback<OnlineRadioStation[]>(
+            `/json/stations/search?name=${encodeURIComponent(term)}&countrycode=${countryCode.toUpperCase()}&limit=5&order=votes&reverse=true&hidebroken=true&lastcheckok=1`
+          );
+          
+          const validStation = stations.find(s => 
+            isStreamSupported(s) && !seenUuids.has(s.stationuuid)
+          );
+          
+          if (validStation) {
+            seenUuids.add(validStation.stationuuid);
+            foundStations.push(validStation);
+            break;
+          }
+        } catch (err) {
+          console.warn(`[OnlineRadioService] Failed to find curated station: ${curated.name}`);
+        }
+      }
+    }
+
+    return foundStations;
   },
 
   async getStationsByGenre(
