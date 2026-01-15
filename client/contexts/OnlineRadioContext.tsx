@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   OnlineRadioService,
   OnlineRadioStation,
+  OnlineRadioCountry,
 } from '@/services/OnlineRadioService';
 import { TrackPlayerService, TrackMetadata, State, PlaybackSource } from '@/services/TrackPlayerService';
 
@@ -28,6 +29,7 @@ interface OnlineRadioContextType {
   error: string | null;
   detectedCountry: string | null;
   detectedCountryCode: string | null;
+  availableCountries: OnlineRadioCountry[];
   stations: OnlineRadioStation[];
   popularStations: OnlineRadioStation[];
   currentStation: OnlineRadioStation | null;
@@ -36,6 +38,8 @@ interface OnlineRadioContextType {
   volume: number;
 
   detectLocation: () => Promise<{ countryCode: string | null; country: string | null }>;
+  loadCountries: () => Promise<void>;
+  setCountryManual: (countryCode: string, countryName: string) => Promise<void>;
   loadStations: (countryCode: string) => Promise<void>;
   loadPopularStations: (countryCode?: string) => Promise<void>;
   searchStations: (query: string) => Promise<void>;
@@ -52,6 +56,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [detectedCountry, setDetectedCountry] = useState<string | null>(null);
   const [detectedCountryCode, setDetectedCountryCode] = useState<string | null>(null);
+  const [availableCountries, setAvailableCountries] = useState<OnlineRadioCountry[]>([]);
   const [stations, setStations] = useState<OnlineRadioStation[]>([]);
   const [popularStations, setPopularStations] = useState<OnlineRadioStation[]>([]);
   const [currentStation, setCurrentStation] = useState<OnlineRadioStation | null>(null);
@@ -286,6 +291,24 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const loadCountries = useCallback(async (): Promise<void> => {
+    if (availableCountries.length > 0) return;
+    
+    try {
+      const countries = await OnlineRadioService.getCountries();
+      setAvailableCountries(countries);
+    } catch (err) {
+      console.error('[OnlineRadioContext] loadCountries error:', err);
+    }
+  }, [availableCountries.length]);
+
+  const setCountryManual = useCallback(async (countryCode: string, countryName: string): Promise<void> => {
+    setDetectedCountryCode(countryCode);
+    setDetectedCountry(countryName);
+    await cacheCountry(countryCode, countryName);
+    await loadPopularStations(countryCode);
+  }, [loadPopularStations]);
+
   const searchStations = useCallback(async (query: string): Promise<void> => {
     if (!query.trim()) {
       return;
@@ -431,6 +454,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         error,
         detectedCountry,
         detectedCountryCode,
+        availableCountries,
         stations,
         popularStations,
         currentStation,
@@ -438,6 +462,8 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         isBuffering,
         volume,
         detectLocation,
+        loadCountries,
+        setCountryManual,
         loadStations,
         loadPopularStations,
         searchStations,
