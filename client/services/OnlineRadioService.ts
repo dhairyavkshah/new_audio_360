@@ -15,7 +15,25 @@ export interface OnlineRadioStation {
   bitrate: number;
   votes: number;
   clickcount: number;
+  lastcheckok: number;
+  hls: number;
 }
+
+const isStreamSupported = (station: OnlineRadioStation): boolean => {
+  if (!station.url_resolved || !station.name) return false;
+  if (station.lastcheckok !== 1) return false;
+  
+  const codec = station.codec?.toUpperCase() || '';
+  const supportedCodecs = ['MP3', 'AAC', 'AAC+', 'OGG', 'OPUS', 'FLAC', 'UNKNOWN'];
+  const unsupportedCodecs = ['WMA', 'ASF'];
+  
+  if (unsupportedCodecs.some(c => codec.includes(c))) return false;
+  
+  const url = station.url_resolved.toLowerCase();
+  if (url.includes('.asx') || url.includes('.wma') || url.includes('.asf')) return false;
+  
+  return true;
+};
 
 export interface OnlineRadioCountry {
   name: string;
@@ -84,9 +102,9 @@ export const OnlineRadioService = {
   ): Promise<OnlineRadioStation[]> {
     try {
       const stations = await fetchWithFallback<OnlineRadioStation[]>(
-        `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${limit}&order=votes&reverse=true&hidebroken=true`
+        `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${limit * 2}&order=votes&reverse=true&hidebroken=true&lastcheckok=1`
       );
-      return stations.filter((s) => s.url_resolved && s.name);
+      return stations.filter(isStreamSupported).slice(0, limit);
     } catch (error) {
       console.error('[OnlineRadioService] getStationsByCountryCode error:', error);
       throw new Error('Failed to fetch stations for your country. Please check your internet connection.');
@@ -99,12 +117,12 @@ export const OnlineRadioService = {
     countryCode?: string
   ): Promise<OnlineRadioStation[]> {
     try {
-      let endpoint = `/json/stations/search?name=${encodeURIComponent(query)}&limit=${limit}&order=votes&reverse=true&hidebroken=true`;
+      let endpoint = `/json/stations/search?name=${encodeURIComponent(query)}&limit=${limit * 2}&order=votes&reverse=true&hidebroken=true&lastcheckok=1`;
       if (countryCode) {
         endpoint += `&countrycode=${countryCode.toUpperCase()}`;
       }
       const stations = await fetchWithFallback<OnlineRadioStation[]>(endpoint);
-      return stations.filter((s) => s.url_resolved && s.name);
+      return stations.filter(isStreamSupported).slice(0, limit);
     } catch (error) {
       console.error('[OnlineRadioService] searchStations error:', error);
       throw new Error('Failed to search stations. Please check your internet connection.');
@@ -116,12 +134,12 @@ export const OnlineRadioService = {
     limit: number = 50
   ): Promise<OnlineRadioStation[]> {
     try {
-      let endpoint = `/json/stations/topvote/${limit}?hidebroken=true`;
+      let endpoint = `/json/stations/topvote/${limit * 2}?hidebroken=true&lastcheckok=1`;
       if (countryCode) {
-        endpoint = `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${limit}&order=votes&reverse=true&hidebroken=true`;
+        endpoint = `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${limit * 2}&order=votes&reverse=true&hidebroken=true&lastcheckok=1`;
       }
       const stations = await fetchWithFallback<OnlineRadioStation[]>(endpoint);
-      return stations.filter((s) => s.url_resolved && s.name);
+      return stations.filter(isStreamSupported).slice(0, limit);
     } catch (error) {
       console.error('[OnlineRadioService] getPopularStations error:', error);
       throw new Error('Failed to fetch popular stations. Please check your internet connection.');
@@ -134,12 +152,12 @@ export const OnlineRadioService = {
     limit: number = 50
   ): Promise<OnlineRadioStation[]> {
     try {
-      let endpoint = `/json/stations/bytag/${encodeURIComponent(genre)}?limit=${limit}&order=votes&reverse=true&hidebroken=true`;
+      let endpoint = `/json/stations/bytag/${encodeURIComponent(genre)}?limit=${limit * 2}&order=votes&reverse=true&hidebroken=true&lastcheckok=1`;
       if (countryCode) {
         endpoint += `&countrycode=${countryCode.toUpperCase()}`;
       }
       const stations = await fetchWithFallback<OnlineRadioStation[]>(endpoint);
-      return stations.filter((s) => s.url_resolved && s.name);
+      return stations.filter(isStreamSupported).slice(0, limit);
     } catch (error) {
       console.error('[OnlineRadioService] getStationsByGenre error:', error);
       throw new Error('Failed to fetch stations by genre. Please check your internet connection.');
