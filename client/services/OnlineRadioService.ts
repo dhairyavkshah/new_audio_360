@@ -95,12 +95,15 @@ export const OnlineRadioService = {
 
   async searchStations(
     query: string,
-    limit: number = 50
+    limit: number = 50,
+    countryCode?: string
   ): Promise<OnlineRadioStation[]> {
     try {
-      const stations = await fetchWithFallback<OnlineRadioStation[]>(
-        `/json/stations/search?name=${encodeURIComponent(query)}&limit=${limit}&order=clickcount&reverse=true&hidebroken=true`
-      );
+      let endpoint = `/json/stations/search?name=${encodeURIComponent(query)}&limit=${limit}&order=clickcount&reverse=true&hidebroken=true`;
+      if (countryCode) {
+        endpoint += `&countrycode=${countryCode.toUpperCase()}`;
+      }
+      const stations = await fetchWithFallback<OnlineRadioStation[]>(endpoint);
       return stations.filter((s) => s.url_resolved && s.name);
     } catch (error) {
       console.error('[OnlineRadioService] searchStations error:', error);

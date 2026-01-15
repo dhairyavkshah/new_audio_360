@@ -283,19 +283,25 @@ export default function RadioStationsScreen() {
 
   useEffect(() => {
     if (radioMode === "online") {
-      if (detectedCountryCode && onlineStations.length > 0) {
-        setFilteredOnlineStations(onlineStations.slice(0, 50));
-      } else if (!detectedCountryCode) {
+      if (detectedCountryCode) {
+        loadStationsForCountry();
+      } else {
         initOnlineMode();
       }
     }
-  }, [radioMode, detectedCountryCode, onlineStations]);
+  }, [radioMode, detectedCountryCode]);
 
   useEffect(() => {
     if (radioMode === "online" && detectedCountryCode && genreFilter === "all" && !searchQuery) {
       setFilteredOnlineStations(onlineStations.slice(0, 50));
     }
   }, [onlineStations, radioMode, genreFilter, searchQuery, detectedCountryCode]);
+
+  const loadStationsForCountry = async () => {
+    if (detectedCountryCode) {
+      await loadStations(detectedCountryCode);
+    }
+  };
 
   const initOnlineMode = async () => {
     const result = await detectLocation();
@@ -381,7 +387,7 @@ export default function RadioStationsScreen() {
       setDisplayedStationsCount(50);
       setIsSearching(true);
       try {
-        const results = await OnlineRadioService.searchStations(query, 100);
+        const results = await OnlineRadioService.searchStations(query, 100, detectedCountryCode || undefined);
         setSearchResults(results);
         setFilteredOnlineStations(results);
       } catch (err) {
