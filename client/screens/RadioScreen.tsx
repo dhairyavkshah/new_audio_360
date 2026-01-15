@@ -8,6 +8,7 @@ import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText, FluentButton, FluentIconButton } from "@/components/fluent";
+import { FluentTopBar } from "@/components/FluentTopBar";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
@@ -1141,7 +1142,10 @@ export default function RadioScreen() {
   };
 
   return (
-    <FluentScreenLayout contentPadding="l">
+    <FluentScreenLayout 
+      header={<FluentTopBar title="Radio" />}
+      contentPadding="l"
+    >
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight + FluentSpacing.xxl }]}
