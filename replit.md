@@ -79,10 +79,11 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 -   **Version Code**: 1 (Android)
 
 ### Environment Configuration
-Three build profiles are available via EAS Build:
+Four build profiles are available via EAS Build:
 -   **development**: Debug APK with development client (`APP_ENV=development`)
 -   **preview**: Internal APK for testing (`APP_ENV=preview`)
 -   **production**: Play Store AAB with auto-increment (`APP_ENV=production`)
+-   **production-apk**: Production APK for direct distribution (`APP_ENV=production`)
 
 Bundle identifiers:
 -   Development: `com.theteam360.newaudio360.dev`
@@ -90,13 +91,26 @@ Bundle identifiers:
 -   Production: `com.theteam360.newaudio360`
 
 ### CI/CD Pipeline
-GitHub Actions workflow (`.github/workflows/build.yml`) automates builds:
--   Push to `develop` branch → Builds preview APK
--   Push to `main` branch → Builds production AAB
+GitHub Actions workflows in `.github/workflows/`:
+
+| Workflow | Trigger | Output |
+|----------|---------|--------|
+| `build-dev-apk.yml` | Push to `develop` or manual | Development APK |
+| `build-prod-aab.yml` | Push to `main` or manual | Production AAB (Play Store) |
+| `build-prod-apk.yml` | Manual only | Production APK (direct distribution) |
 
 Required secrets in GitHub:
 -   `EXPO_TOKEN`: EAS Build authentication token
 -   `EAS_PROJECT_ID`: Your Expo project ID (get from `eas project:info`)
+
+### Documentation
+All documentation is in the `docs/` folder:
+-   `PRIVACY_POLICY.md`: Privacy policy for app stores
+-   `RELEASE_NOTES.md`: Version history and changelog
+-   `TEST_PLAN.md`: Testing strategy and acceptance criteria
+-   `TEST_CASES.md`: Comprehensive 1000 test cases
+-   `APP_STORE_DESCRIPTIONS.md`: Play Store listing content
+-   `design_guidelines.md`: UI/UX design specifications
 
 ### Production License Verification
 For production release, implement in `client/lib/payment.ts`:

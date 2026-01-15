@@ -1,0 +1,48 @@
+name: Build Production AAB
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Release message'
+        required: false
+        default: 'Production release'
+  push:
+    branches:
+      - main
+
+jobs:
+  build-production-aab:
+    runs-on: ubuntu-latest
+    name: Build Production AAB for Play Store
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Production AAB
+        run: eas build --platform android --profile production --non-interactive
+        env:
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+
+      - name: Get build URL
+        run: |
+          echo "Production AAB build completed!"
+          echo "Profile: production"
+          echo "Type: AAB (App Bundle for Play Store)"
+          echo "Check Expo dashboard for download and submission."

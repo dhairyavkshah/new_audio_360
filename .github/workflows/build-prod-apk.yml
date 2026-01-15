@@ -1,0 +1,45 @@
+name: Build Production APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Release message'
+        required: false
+        default: 'Production APK build'
+
+jobs:
+  build-production-apk:
+    runs-on: ubuntu-latest
+    name: Build Production APK for Direct Distribution
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Production APK
+        run: eas build --platform android --profile production-apk --non-interactive
+        env:
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+
+      - name: Get build URL
+        run: |
+          echo "Production APK build completed!"
+          echo "Profile: production-apk"
+          echo "Type: APK (for direct distribution)"
+          echo "Check Expo dashboard for download link."
