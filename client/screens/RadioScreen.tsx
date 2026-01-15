@@ -673,7 +673,7 @@ export default function RadioScreen() {
               Popular Stations
             </FluentText>
             <View style={styles.stationsGrid}>
-              {popularStations.map((station) => (
+              {popularStations.slice(0, 8).map((station) => (
                 <Pressable
                   key={station.stationuuid}
                   style={[
