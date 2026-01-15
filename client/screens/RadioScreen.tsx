@@ -381,8 +381,8 @@ export default function RadioScreen() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    navigation.navigate("RadioStations");
-  }, [navigation]);
+    navigation.navigate("RadioStations", { mode: radioMode });
+  }, [navigation, radioMode]);
 
   const formatFrequency = (freq: number, band: FMBandType): string => {
     if (band === "fm") {

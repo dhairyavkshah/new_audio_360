@@ -6,7 +6,7 @@ import RadioStationsScreen from "@/screens/RadioStationsScreen";
 
 export type RadioStackParamList = {
   RadioMain: undefined;
-  RadioStations: undefined;
+  RadioStations: { mode?: 'fmam' | 'online' };
   SoundLab: undefined;
 };
 
