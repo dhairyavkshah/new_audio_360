@@ -97,7 +97,7 @@ export default {
     },
     extra: {
       eas: {
-        projectId: process.env.EAS_PROJECT_ID || 'your-project-id',
+        projectId: process.env.EAS_PROJECT_ID || '',
       },
       appVariant: getAppVariant(),
     },
