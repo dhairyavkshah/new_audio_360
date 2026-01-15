@@ -35,7 +35,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        backgroundColor: '#1A1A2E',
+        backgroundColor: '#0078D4',
         foregroundImage: './assets/images/android-icon-foreground.png',
         backgroundImage: './assets/images/android-icon-background.png',
         monochromeImage: './assets/images/android-icon-monochrome.png',
@@ -70,9 +70,9 @@ export default {
           image: './assets/images/splash-icon.png',
           imageWidth: 200,
           resizeMode: 'contain',
-          backgroundColor: '#1A1A2E',
+          backgroundColor: '#0057A0',
           dark: {
-            backgroundColor: '#0D0D1A',
+            backgroundColor: '#003366',
           },
         },
       ],
