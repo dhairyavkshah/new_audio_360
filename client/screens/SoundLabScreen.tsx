@@ -405,10 +405,20 @@ export default function SoundLabScreen() {
     // Apply to native equalizer
     EqualizerModule.setEnabled(true);
     
+    // Zero-sum balancing - ensure bands always sum to zero
     const MB_PER_UNIT = 50; // Increased from 35 for more impact
     const sum = baseBands.reduce((acc, v) => acc + v, 0);
     const offset = sum / baseBands.length;
     const balancedBands = baseBands.map(v => v - offset);
+    
+    // Verify zero-sum (should always be ~0)
+    const balancedSum = balancedBands.reduce((acc, v) => acc + v, 0);
+    console.log('[SoundLab] Zero-sum EQ:', { 
+      original: baseBands, 
+      balanced: balancedBands, 
+      sum: balancedSum.toFixed(4) 
+    });
+    
     const bandValues = balancedBands.map(v => {
       const millibels = v * MB_PER_UNIT;
       return Math.max(-400, Math.min(200, millibels));
