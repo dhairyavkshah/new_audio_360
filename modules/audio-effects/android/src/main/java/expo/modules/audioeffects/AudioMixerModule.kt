@@ -147,14 +147,17 @@ class AudioMixerModule : Module() {
                 return@Function emptyList<Map<String, Any>>()
             }
             
-            outputDir.listFiles()?.filter { it.isFile && it.extension in listOf("m4a", "mp3", "wav") }?.map {
-                mapOf(
-                    "name" to it.name,
-                    "uri" to it.absolutePath,
-                    "size" to it.length(),
-                    "lastModified" to it.lastModified()
+            val files = outputDir.listFiles() ?: return@Function emptyList<Map<String, Any>>()
+            val audioFiles = files.filter { file -> file.isFile && file.extension in listOf("m4a", "mp3", "wav") }
+            val result: List<Map<String, Any>> = audioFiles.map { file ->
+                mapOf<String, Any>(
+                    "name" to file.name,
+                    "uri" to file.absolutePath,
+                    "size" to file.length(),
+                    "lastModified" to file.lastModified()
                 )
-            } ?: emptyList()
+            }
+            result
         }
 
         AsyncFunction("deleteRecording") { uri: String, promise: Promise ->
