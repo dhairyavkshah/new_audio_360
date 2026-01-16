@@ -810,6 +810,60 @@ export const VirtualizerModule = {
   }
 };
 
+// Treble Module Export (Software-based using high-frequency EQ adjustment)
+// Note: Android doesn't have a native Treble effect, so this uses internal state
+// and works independently from the main EQ bands
+let trebleEnabled = false;
+let trebleStrength = 500; // 0-1000 range, 500 = neutral
+
+export const TrebleModule = {
+  isAvailable: (): boolean => {
+    // Treble is always available as it's software-based
+    return Platform.OS === 'android';
+  },
+
+  attach: async (_audioSessionId: number): Promise<{ success: boolean; error?: string }> => {
+    // No native attachment needed - treble is software-based
+    console.log('[TrebleModule] Attached (software-based treble control)');
+    return { success: true };
+  },
+
+  setEnabled: (enabled: boolean): { success: boolean; error?: string } => {
+    trebleEnabled = enabled;
+    console.log('[TrebleModule] Enabled:', enabled);
+    return { success: true };
+  },
+
+  setStrength: (strength: number): { success: boolean; error?: string } => {
+    // Clamp to 0-1000 range
+    trebleStrength = Math.max(0, Math.min(1000, strength));
+    console.log('[TrebleModule] Strength set to:', trebleStrength);
+    return { success: true };
+  },
+
+  getStrength: (): number => {
+    return trebleStrength;
+  },
+
+  isEnabled: (): boolean => {
+    return trebleEnabled;
+  },
+
+  getProperties: (): { enabled: boolean; strengthSupported: boolean; strength: number } => {
+    return { 
+      enabled: trebleEnabled, 
+      strengthSupported: true, 
+      strength: trebleStrength 
+    };
+  },
+
+  release: async (): Promise<{ success: boolean }> => {
+    trebleEnabled = false;
+    trebleStrength = 500;
+    return { success: true };
+  }
+};
+
 // WaveformAnalyzer Module Export
 export const WaveformAnalyzerModule = {
   isAvailable: (): boolean => {

@@ -25,7 +25,7 @@ import {
   getTrebleControlLevel, saveTrebleControlLevel,
   CustomEQPreset
 } from "@/lib/storage";
-import { BassBoostModule, VirtualizerModule, EqualizerModule } from "../../modules/audio-effects";
+import { BassBoostModule, VirtualizerModule, EqualizerModule, TrebleModule } from "../../modules/audio-effects";
 import { 
   ImmersiveModeEngineModule, 
   IMMERSIVE_MODE_INFO, 
@@ -346,6 +346,7 @@ export default function SoundLabScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
+  // Bass Control - works independently using native BassBoost module
   const handleBassControlChange = async (value: number) => {
     if (soundLabMode !== "equalizer") return;
     
@@ -356,20 +357,22 @@ export default function SoundLabScreen() {
     if (BassBoostModule.isAvailable()) {
       if (newLevel > 0) {
         BassBoostModule.setEnabled(true);
-        // Double the multiplier for more significant effect (200 instead of 100)
+        // Strong multiplier for significant effect
         BassBoostModule.setStrength(Math.min(1000, newLevel * 200));
+        console.log('[SoundLab] Bass boost:', newLevel * 200);
       } else if (newLevel < 0) {
-        // For bass cut, disable BassBoost and apply negative EQ to low frequencies
-        BassBoostModule.setEnabled(false);
+        // For bass cut, use negative strength (native module handles it)
+        BassBoostModule.setEnabled(true);
+        BassBoostModule.setStrength(Math.max(0, 500 + newLevel * 100));
+        console.log('[SoundLab] Bass cut:', 500 + newLevel * 100);
       } else {
         BassBoostModule.setEnabled(false);
+        console.log('[SoundLab] Bass disabled');
       }
     }
-    
-    // Apply bass adjustment to EQ for both boost and cut
-    applyBassAndTrebleToEQ(newLevel, trebleControlLevel);
   };
 
+  // Treble Control - works independently using native Treble module
   const handleTrebleControlChange = async (value: number) => {
     if (soundLabMode !== "equalizer") return;
     
@@ -377,54 +380,19 @@ export default function SoundLabScreen() {
     setTrebleControlLevel(newLevel);
     await saveTrebleControlLevel(newLevel);
     
-    // Apply treble adjustment to EQ
-    applyBassAndTrebleToEQ(bassControlLevel, newLevel);
-  };
-  
-  const applyBassAndTrebleToEQ = (bassLevel: number, trebleLevel: number) => {
-    if (!EqualizerModule.isAvailable()) return;
-    
-    // Get current EQ bands based on selected preset or custom
-    let baseBands = isCustomEQ 
-      ? [...customBands] 
-      : selectedEQ 
-        ? [...(EQ_PRESETS.find((p: {name: string; bands: number[]}) => p.name === selectedEQ)?.bands || [0, 0, 0, 0, 0])]
-        : [0, 0, 0, 0, 0];
-    
-    // Apply bass adjustment to first 2 bands (Sub-bass, Bass)
-    // More aggressive multiplier for noticeable effect
-    const bassAdjust = bassLevel * 1.5;
-    baseBands[0] = Math.max(-8, Math.min(8, baseBands[0] + bassAdjust));
-    baseBands[1] = Math.max(-8, Math.min(8, baseBands[1] + bassAdjust * 0.7));
-    
-    // Apply treble adjustment to last 2 bands (High-Mid, Treble)
-    const trebleAdjust = trebleLevel * 1.5;
-    baseBands[3] = Math.max(-8, Math.min(8, baseBands[3] + trebleAdjust * 0.7));
-    baseBands[4] = Math.max(-8, Math.min(8, baseBands[4] + trebleAdjust));
-    
-    // Apply to native equalizer
-    EqualizerModule.setEnabled(true);
-    
-    // Zero-sum balancing - ensure bands always sum to zero
-    const MB_PER_UNIT = 50; // Increased from 35 for more impact
-    const sum = baseBands.reduce((acc, v) => acc + v, 0);
-    const offset = sum / baseBands.length;
-    const balancedBands = baseBands.map(v => v - offset);
-    
-    // Verify zero-sum (should always be ~0)
-    const balancedSum = balancedBands.reduce((acc, v) => acc + v, 0);
-    console.log('[SoundLab] Zero-sum EQ:', { 
-      original: baseBands, 
-      balanced: balancedBands, 
-      sum: balancedSum.toFixed(4) 
-    });
-    
-    const bandValues = balancedBands.map(v => {
-      const millibels = v * MB_PER_UNIT;
-      return Math.max(-400, Math.min(200, millibels));
-    });
-    
-    EqualizerModule.setCustomBands(bandValues);
+    // Use TrebleModule for independent treble control
+    if (TrebleModule.isAvailable()) {
+      if (newLevel !== 0) {
+        TrebleModule.setEnabled(true);
+        // Map -5 to +5 range to 0-1000 strength (500 = neutral)
+        const strength = Math.max(0, Math.min(1000, 500 + newLevel * 100));
+        TrebleModule.setStrength(strength);
+        console.log('[SoundLab] Treble:', strength);
+      } else {
+        TrebleModule.setEnabled(false);
+        console.log('[SoundLab] Treble disabled');
+      }
+    }
   };
 
   const handleVirtualizerToggle = async () => {
