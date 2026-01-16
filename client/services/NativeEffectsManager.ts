@@ -31,10 +31,12 @@ class NativeEffectsManagerClass {
   }
 
   async attach(audioSessionId: number): Promise<boolean> {
-    if (!this.isAvailable() || audioSessionId === 0) {
+    if (!this.isAvailable()) {
       return false;
     }
 
+    // Session ID 0 = global audio output mix (applies to all audio)
+    // Session ID > 0 = specific player's audio session
     this.audioSessionId = audioSessionId;
     this.musicSessionId = audioSessionId;
     this.currentSource = 'music';

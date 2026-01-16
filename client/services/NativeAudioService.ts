@@ -253,10 +253,9 @@ class NativeAudioServiceClass {
         }
       }
 
-      const sessionId = this.getAudioSessionId();
-      if (!sessionId || sessionId === 0) {
-        return { success: false, error: 'No valid audio session available. Please start playback first.' };
-      }
+      // Use session ID 0 (global audio output) if no specific session available
+      // This allows effects to work with react-native-track-player which doesn't expose its session ID
+      const sessionId = this.getAudioSessionId() || 0;
 
       const currentMode = ImmersiveModeEngineModule.getCurrentMode();
       if (!currentMode.isAttached) {

@@ -5,7 +5,7 @@ import { mockSongs, Song } from '@/lib/data';
 import { DeviceSong } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
 import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
-import { PlaybackEngineModule, PlaybackStatus } from '@/modules/audio-effects';
+import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule } from '@/modules/audio-effects';
 import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
@@ -223,6 +223,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           });
 
           TrackPlayerService.setRepeatMode(repeat);
+          
+          // Initialize native audio effects with global audio session (0) for TrackPlayer
+          if (Platform.OS === 'android' && NativeEffectsManager.isAvailable()) {
+            try {
+              // Use global audio output session (0) to apply effects to all audio
+              const attached = await NativeEffectsManager.attach(0);
+              if (attached) {
+                console.log('[PlayerContext] NativeEffectsManager attached to global audio session');
+              } else {
+                console.log('[PlayerContext] NativeEffectsManager attachment returned false - effects may not work');
+              }
+              
+              // Also attach ImmersiveModeEngineModule to global session
+              if (ImmersiveModeEngineModule.isAvailable()) {
+                const immersiveResult = await ImmersiveModeEngineModule.attach(0);
+                if (immersiveResult.success) {
+                  console.log('[PlayerContext] ImmersiveModeEngineModule attached to global audio session');
+                }
+              }
+            } catch (err) {
+              console.warn('[PlayerContext] Failed to attach audio effects:', err);
+            }
+          }
         }
       });
     }
@@ -230,6 +253,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return () => {
       if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
         TrackPlayerService.destroy();
+        NativeEffectsManager.release();
+        if (Platform.OS === 'android' && ImmersiveModeEngineModule.isAvailable()) {
+          ImmersiveModeEngineModule.release();
+        }
         trackPlayerInitializedRef.current = false;
       }
     };
