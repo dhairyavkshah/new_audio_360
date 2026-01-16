@@ -18,10 +18,6 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 5001
-externalPort = 3001
-
-[[ports]]
 localPort = 8081
 externalPort = 8081
 
@@ -54,11 +50,12 @@ author = "agent"
 mode = "parallel"
 
 [workflows.workflow.metadata]
-outputType = "console"
+outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "EXPO_TUNNEL_SUBDOMAIN=newaudio360dev npx expo start --tunnel"
+args = "EXPO_TUNNEL_SUBDOMAIN=newaudio360dev npx expo start --tunnel --web --port 5000"
+waitForPort = 5000
 
 [userenv]
 
