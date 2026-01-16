@@ -12,7 +12,7 @@ import { FluentTopBar } from "@/components/FluentTopBar";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
-import { useRadio, RadioStation, RDSData } from "@/contexts/RadioContext";
+import { useRadio, RadioStation, RDSData, FMBandType } from "@/contexts/RadioContext";
 import { useOnlineRadio, OnlineRadioStation } from "@/contexts/OnlineRadioContext";
 import { useSoundLab } from "@/contexts/SoundLabContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
@@ -27,7 +27,6 @@ import {
   FluentTypography,
   FluentBorderWidth,
 } from "@/constants/fluent2";
-import { FMBandType } from "../../modules/audio-effects";
 
 const FM_MIN = 87.5;
 const FM_MAX = 108.0;

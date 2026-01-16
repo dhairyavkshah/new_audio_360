@@ -1,32 +1,6 @@
 // Web fallback for native audio effects modules
 // These modules only work on Android with native development builds
 
-export type ReverbPreset = 
-  | 'none'
-  | 'small_studio'
-  | 'medium_studio'
-  | 'large_studio'
-  | 'open_theatre'
-  | 'auditorium';
-
-export type NoiseReductionLevel = 'off' | 'light' | 'medium' | 'strong';
-
-export interface MixExportResult {
-  success: boolean;
-  uri?: string;
-  fileName?: string;
-  duration?: number;
-  fileSize?: number;
-  error?: string;
-}
-
-export interface RecordingFile {
-  name: string;
-  uri: string;
-  size: number;
-  lastModified: number;
-}
-
 export interface PlaybackStatus {
   isInitialized: boolean;
   isPlaying: boolean;
@@ -96,86 +70,6 @@ export interface WaveformAttachResult {
   captureSize?: number;
   samplingRate?: number;
 }
-
-// Web stub for ReverbModule
-export const ReverbModule = {
-  isAvailable: () => false,
-  initialize: async () => ({ success: false, error: 'Not available on web' }),
-  setPreset: async () => ({ success: false, error: 'Not available on web' }),
-  setWetDryMix: async () => ({ success: false, error: 'Not available on web' }),
-  enable: async () => ({ success: false, error: 'Not available on web' }),
-  getCurrentPreset: async () => ({ preset: 'none', enabled: false }),
-  getAvailablePresets: async () => [],
-  release: async () => ({ success: true }),
-};
-
-// Web stub for NoiseReductionModule
-export const NoiseReductionModule = {
-  isAvailable: async () => ({ noiseSuppressor: false, automaticGainControl: false }),
-  initialize: async () => ({ success: false, error: 'Not available on web' }),
-  setLevel: async () => ({ success: false, error: 'Not available on web' }),
-  getCurrentLevel: async () => ({ success: false, level: 'off' }),
-  getAvailableLevels: async () => ['off'],
-  release: async () => ({ success: true }),
-};
-
-// Web stub for AudioMixerModule
-export const AudioMixerModule = {
-  isAvailable: () => false,
-  mixAndExport: async () => ({ success: false, error: 'Not available on web' }),
-  cancelExport: async () => ({ success: true }),
-  getExportProgress: () => 0,
-};
-
-// Web stub for LiveRecordingModule
-export const LiveRecordingModule = {
-  isAvailable: () => false,
-  getAudioCapabilities: async () => ({
-    hasEchoCanceler: false,
-    hasNoiseSuppressor: false,
-    hasAutomaticGainControl: false,
-  }),
-  initializeRecording: async () => ({ success: false, error: 'Not available on web' }),
-  startRecording: async () => ({ success: false, error: 'Not available on web' }),
-  pauseRecording: async () => ({ success: false, error: 'Not available on web' }),
-  resumeRecording: async () => ({ success: false, error: 'Not available on web' }),
-  stopRecording: async () => ({ success: false, error: 'Not available on web' }),
-  setRecordingEffects: async () => ({ success: false, error: 'Not available on web' }),
-  getRecordingStatus: () => ({
-    isInitialized: false,
-    isRecording: false,
-    isPaused: false,
-    durationMs: 0,
-    audioSessionId: 0,
-  }),
-  listRecordings: async () => [],
-  deleteRecording: async () => ({ success: false, error: 'Not available on web' }),
-  release: async () => ({ success: true }),
-  getAudioSessionId: () => 0,
-};
-
-// Web stub for BackingTrackModule
-export const BackingTrackModule = {
-  isAvailable: () => false,
-  loadTrack: async () => ({ success: false, error: 'Not available on web' }),
-  play: async () => ({ success: false, error: 'Not available on web' }),
-  pause: async () => ({ success: false, error: 'Not available on web' }),
-  stop: async () => ({ success: false, error: 'Not available on web' }),
-  seekTo: async () => ({ success: false, error: 'Not available on web' }),
-  setVolume: () => ({ success: false, volume: 0 }),
-  getStatus: () => ({
-    isLoaded: false,
-    isPlaying: false,
-    currentPositionMs: 0,
-    durationMs: 0,
-    volume: 0,
-    audioSessionId: 0,
-  }),
-  release: async () => ({ success: true }),
-  getDuration: () => 0,
-  getCurrentPosition: () => 0,
-  getAudioSessionId: () => 0,
-};
 
 // Web stub for PlaybackEngineModule
 export const PlaybackEngineModule = {
@@ -334,7 +228,8 @@ export const ImmersiveModeEngineModule = {
     { id: '360_reality', name: '360 Reality', description: 'Immersive 3D spatial audio', icon: 'surround-sound' },
     { id: 'gaming', name: 'Gaming', description: 'Enhanced positional audio for gaming', icon: 'gamepad-variant' },
     { id: 'podcast', name: 'Podcast', description: 'Voice clarity enhancement', icon: 'podcast' },
-    { id: 'movie', name: 'Movie', description: 'Cinematic audio enhancement', icon: 'movie-open' }
+    { id: 'movie', name: 'Movie', description: 'Cinematic audio enhancement', icon: 'movie-open' },
+    { id: 'custom', name: 'Custom', description: 'Custom audio settings', icon: 'tune' }
   ],
   setCustomParameters: async (): Promise<ImmersiveModeResult> => ({ success: false, error: 'Not available on web' }),
   release: async () => ({ success: true }),

@@ -4,9 +4,9 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  runOnJS,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { scheduleOnRN } from "react-native-worklets";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
@@ -90,8 +90,8 @@ export function ProgressBar({
         easing: FluentCurve.decelerateMid,
       });
       const seekTime = (translateX.value / (width - THUMB_SIZE)) * duration;
-      scheduleOnRN(handleSeek, seekTime);
-      scheduleOnRN(triggerHaptic);
+      runOnJS(handleSeek)(seekTime);
+      runOnJS(triggerHaptic)();
     });
 
   const tapGesture = Gesture.Tap()
@@ -102,8 +102,8 @@ export function ProgressBar({
         easing: FluentCurve.decelerateMid,
       });
       const seekTime = (tapX / (width - THUMB_SIZE)) * duration;
-      scheduleOnRN(handleSeek, seekTime);
-      scheduleOnRN(triggerHaptic);
+      runOnJS(handleSeek)(seekTime);
+      runOnJS(triggerHaptic)();
     });
 
   const composedGesture = Gesture.Race(panGesture, tapGesture);
