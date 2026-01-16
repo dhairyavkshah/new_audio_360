@@ -4,9 +4,9 @@
 
 ---
 
-## Version 1.0.0 (January 2026)
+## Version 1.0 (January 16, 2026)
 
-**Initial Release**
+**Initial Release - Version Code 1**
 
 ### Features
 
@@ -35,12 +35,15 @@
 - Quick Access category grid
 
 #### Sound Lab
-- **8 Equalizer Presets:** Flat, Bass Boost, Treble Boost, Vocal, Electronic, Rock, Classical, Jazz
-- **6 Immersive Audio Modes:** Concert Hall, Studio, Jazz Club, Arena, Intimate, Cathedral
-- Bass enhancement control
-- Treble adjustment
-- Virtualizer (spatial audio)
+- **8 Equalizer Presets:** Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic
+- **6 Immersive Audio Modes:** Music, 360 Reality, Gaming, Podcast, Movie, Custom
+- **Independent Audio Effects:**
+  - Bass Control with native BassBoost module (works independently from EQ)
+  - Treble Control with software-based adjustment (works independently from EQ)
+  - Virtualizer for spatial audio (works independently from EQ)
+- All effects stack additively on top of selected EQ preset
 - Real-time 64-bar waveform visualization
+- Custom 5-band EQ with save/load presets (up to 5 custom presets)
 
 #### Radio
 - **FM/AM Radio:** Native Android radio tuning (device hardware required)
@@ -69,10 +72,13 @@
 
 ### Technical Details
 
+- **Version Name:** 1.0
+- **Version Code:** 1
 - **Platform:** React Native with Expo SDK
 - **Minimum Android Version:** Android 8.0 (API 26)
 - **Target Android Version:** Android 14 (API 34)
 - **Architecture:** ARM64, ARM32, x86_64
+- **Package Name:** com.theteam360.newaudio360
 
 ### Known Issues
 

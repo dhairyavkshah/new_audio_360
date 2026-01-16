@@ -18,10 +18,12 @@ Premium music player with pro audio, 55 themes, radio, and studio-grade sound.
 
 **PROFESSIONAL SOUND**
 Transform your music with our Sound Lab featuring:
-- 8 Equalizer Presets: Flat, Bass Boost, Treble Boost, Vocal, Electronic, Rock, Classical, Jazz
-- 6 Immersive Audio Modes: Concert Hall, Studio, Jazz Club, Arena, Intimate, Cathedral
-- Bass & Treble controls for precise tuning
+- 8 Equalizer Presets: Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic
+- 6 Immersive Audio Modes: Music, 360 Reality, Gaming, Podcast, Movie, Custom
+- Independent Bass Control with native BassBoost
+- Independent Treble Control for precise tuning
 - Virtualizer for spatial audio experience
+- Custom 5-band EQ with save/load presets
 - Real-time waveform visualization
 
 **55 STUNNING THEMES**
@@ -67,14 +69,15 @@ Download now and elevate your music experience!
 
 ### What's New (500 characters max)
 
-**Version 1.0.0 - Initial Release**
+**Version 1.0 - Initial Release**
 
 - Complete music player with background playback
-- Sound Lab with equalizer and immersive modes
+- Sound Lab with 8 EQ presets and 6 immersive modes
+- Independent Bass, Treble, and Virtualizer controls
 - 55 themes to personalize your experience
-- FM/AM and Online Radio support
-- Playlist management
-- Microsoft Fluent 2 design
+- FM/AM and Online Radio (48,000+ stations)
+- Custom 5-band equalizer with save/load
+- Microsoft Fluent 2 design system
 
 ---
 
@@ -187,4 +190,4 @@ No backend servers are used. The app is fully functional offline after initial l
 
 ---
 
-*Last Updated: January 15, 2026*
+*Last Updated: January 16, 2026*
