@@ -30,18 +30,17 @@ class AudioMixerModule : Module() {
     override fun definition() = ModuleDefinition {
         Name("AudioMixerModule")
 
-        AsyncFunction("mixAndExport") { 
-            backingTrackUri: String,
-            voiceTrackUri: String,
-            outputFileName: String,
-            musicVolume: Double,
-            voiceVolume: Double,
-            syncOffsetMs: Int,
-            reverbPreset: String,
-            noiseReduction: String,
-            promise: Promise ->
-            
+        AsyncFunction("mixAndExport") { options: Map<String, Any>, promise: Promise ->
             try {
+                val backingTrackUri = options["backingTrackUri"] as? String ?: throw Exception("backingTrackUri is required")
+                val voiceTrackUri = options["voiceTrackUri"] as? String ?: throw Exception("voiceTrackUri is required")
+                val outputFileName = options["outputFileName"] as? String ?: "mixed_audio"
+                val musicVolume = (options["musicVolume"] as? Number)?.toDouble() ?: 1.0
+                val voiceVolume = (options["voiceVolume"] as? Number)?.toDouble() ?: 1.0
+                val syncOffsetMs = (options["syncOffsetMs"] as? Number)?.toInt() ?: 0
+                val reverbPreset = options["reverbPreset"] as? String ?: "none"
+                val noiseReduction = options["noiseReduction"] as? String ?: "none"
+                
                 val context = appContext.reactContext ?: throw Exception("Context not available")
                 
                 Log.d(TAG, "Starting mix: backing=$backingTrackUri, voice=$voiceTrackUri")

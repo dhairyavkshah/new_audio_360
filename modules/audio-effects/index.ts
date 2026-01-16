@@ -407,16 +407,16 @@ export const AudioMixerModule = {
     try {
       const normalizedMusicVolume = Math.max(0, Math.min(1, musicVolume / 100));
       const normalizedVoiceVolume = Math.max(0, Math.min(1, voiceVolume / 100));
-      return await AudioMixerModuleNative.mixAndExport(
+      return await AudioMixerModuleNative.mixAndExport({
         backingTrackUri,
         voiceTrackUri,
         outputFileName,
-        normalizedMusicVolume,
-        normalizedVoiceVolume,
+        musicVolume: normalizedMusicVolume,
+        voiceVolume: normalizedVoiceVolume,
         syncOffsetMs,
         reverbPreset,
         noiseReduction
-      );
+      });
     } catch (error) {
       console.error('AudioMixerModule.mixAndExport error:', error);
       return { success: false, error: String(error) };
