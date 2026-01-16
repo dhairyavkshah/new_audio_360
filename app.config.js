@@ -27,7 +27,7 @@ export default {
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     userInterfaceStyle: 'automatic',
-    newArchEnabled: false,
+    newArchEnabled: true,
     scheme: 'newaudio360',
     ios: {
       supportsTablet: true,
