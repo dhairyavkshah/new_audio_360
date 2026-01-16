@@ -64,6 +64,7 @@ export default {
       favicon: './assets/images/favicon.png',
     },
     plugins: [
+      'expo-asset',
       [
         'expo-splash-screen',
         {
