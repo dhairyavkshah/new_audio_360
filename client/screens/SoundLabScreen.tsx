@@ -597,30 +597,32 @@ export default function SoundLabScreen() {
             <View style={styles.enhancementsContainer}>
               <GlassCard style={styles.enhancementSection}>
                 <View style={styles.enhancementHeader}>
-                  <MaterialCommunityIcons
-                    name="speaker"
-                    size={20}
-                    color={bassControlLevel !== 0 ? tokens.colors.primary : tokens.colors.textSecondary}
-                  />
+                  <View style={[styles.enhancementIconContainer, { backgroundColor: bassControlLevel !== 0 ? tokens.colors.primary + "20" : tokens.colors.surfaceVariant }]}>
+                    <MaterialCommunityIcons
+                      name="speaker"
+                      size={22}
+                      color={bassControlLevel !== 0 ? tokens.colors.primary : tokens.colors.textSecondary}
+                    />
+                  </View>
                   <View style={styles.enhancementText}>
                     <FluentText variant="body1Strong">Bass Control</FluentText>
                     <FluentText variant="caption1" color="secondary">Adjust low frequencies</FluentText>
                   </View>
-                  <FluentText
-                    variant="body2"
-                    style={{
-                      color: bassControlLevel !== 0 ? tokens.colors.primary : tokens.colors.textSecondary,
-                      fontWeight: "600",
-                      minWidth: 30,
-                      textAlign: "right"
-                    }}
-                  >
-                    {bassControlLevel > 0 ? `+${bassControlLevel}` : bassControlLevel}
-                  </FluentText>
+                  <View style={[styles.levelBadge, { backgroundColor: bassControlLevel !== 0 ? tokens.colors.primary : tokens.colors.surfaceVariant }]}>
+                    <FluentText
+                      variant="body2"
+                      style={{
+                        color: bassControlLevel !== 0 ? tokens.colors.onPrimary : tokens.colors.textSecondary,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {bassControlLevel > 0 ? `+${bassControlLevel}` : bassControlLevel}
+                    </FluentText>
+                  </View>
                 </View>
                 
                 <View style={styles.sliderContainer}>
-                  <FluentText variant="caption1" color="secondary">-5</FluentText>
+                  <FluentText variant="caption1" color="secondary" style={styles.sliderLabel}>-5</FluentText>
                   <Slider
                     style={styles.controlSlider}
                     minimumValue={-5}
@@ -632,36 +634,38 @@ export default function SoundLabScreen() {
                     maximumTrackTintColor={tokens.colors.outline}
                     thumbTintColor={tokens.colors.primary}
                   />
-                  <FluentText variant="caption1" color="secondary">+5</FluentText>
+                  <FluentText variant="caption1" color="secondary" style={styles.sliderLabel}>+5</FluentText>
                 </View>
               </GlassCard>
 
               <GlassCard style={styles.enhancementSection}>
                 <View style={styles.enhancementHeader}>
-                  <MaterialCommunityIcons
-                    name="tune"
-                    size={20}
-                    color={trebleControlLevel !== 0 ? tokens.colors.primary : tokens.colors.textSecondary}
-                  />
+                  <View style={[styles.enhancementIconContainer, { backgroundColor: trebleControlLevel !== 0 ? tokens.colors.primary + "20" : tokens.colors.surfaceVariant }]}>
+                    <MaterialCommunityIcons
+                      name="tune"
+                      size={22}
+                      color={trebleControlLevel !== 0 ? tokens.colors.primary : tokens.colors.textSecondary}
+                    />
+                  </View>
                   <View style={styles.enhancementText}>
                     <FluentText variant="body1Strong">Treble Control</FluentText>
                     <FluentText variant="caption1" color="secondary">Adjust high frequencies</FluentText>
                   </View>
-                  <FluentText
-                    variant="body2"
-                    style={{
-                      color: trebleControlLevel !== 0 ? tokens.colors.primary : tokens.colors.textSecondary,
-                      fontWeight: "600",
-                      minWidth: 30,
-                      textAlign: "right"
-                    }}
-                  >
-                    {trebleControlLevel > 0 ? `+${trebleControlLevel}` : trebleControlLevel}
-                  </FluentText>
+                  <View style={[styles.levelBadge, { backgroundColor: trebleControlLevel !== 0 ? tokens.colors.primary : tokens.colors.surfaceVariant }]}>
+                    <FluentText
+                      variant="body2"
+                      style={{
+                        color: trebleControlLevel !== 0 ? tokens.colors.onPrimary : tokens.colors.textSecondary,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {trebleControlLevel > 0 ? `+${trebleControlLevel}` : trebleControlLevel}
+                    </FluentText>
+                  </View>
                 </View>
                 
                 <View style={styles.sliderContainer}>
-                  <FluentText variant="caption1" color="secondary">-5</FluentText>
+                  <FluentText variant="caption1" color="secondary" style={styles.sliderLabel}>-5</FluentText>
                   <Slider
                     style={styles.controlSlider}
                     minimumValue={-5}
@@ -673,17 +677,19 @@ export default function SoundLabScreen() {
                     maximumTrackTintColor={tokens.colors.outline}
                     thumbTintColor={tokens.colors.primary}
                   />
-                  <FluentText variant="caption1" color="secondary">+5</FluentText>
+                  <FluentText variant="caption1" color="secondary" style={styles.sliderLabel}>+5</FluentText>
                 </View>
               </GlassCard>
 
               <GlassCard style={styles.enhancementSection}>
                 <Pressable onPress={handleVirtualizerToggle} style={styles.enhancementHeader}>
-                  <MaterialCommunityIcons
-                    name="surround-sound"
-                    size={20}
-                    color={virtualizerEnabled ? tokens.colors.primary : tokens.colors.textSecondary}
-                  />
+                  <View style={[styles.enhancementIconContainer, { backgroundColor: virtualizerEnabled ? tokens.colors.primary + "20" : tokens.colors.surfaceVariant }]}>
+                    <MaterialCommunityIcons
+                      name="surround-sound"
+                      size={22}
+                      color={virtualizerEnabled ? tokens.colors.primary : tokens.colors.textSecondary}
+                    />
+                  </View>
                   <View style={styles.enhancementText}>
                     <FluentText variant="body1Strong">Virtualizer</FluentText>
                     <FluentText variant="caption1" color="secondary">Spatial audio effect</FluentText>
@@ -1043,10 +1049,12 @@ const styles = StyleSheet.create({
     padding: FluentSpacing.xs,
   },
   enhancementsContainer: {
-    gap: FluentSpacing.s,
+    gap: FluentSpacing.m,
   },
   enhancementSection: {
-    padding: FluentSpacing.m,
+    padding: FluentSpacing.l,
+    borderWidth: 1,
+    borderColor: "rgba(128,128,128,0.15)",
   },
   enhancementHeader: {
     flexDirection: "row",
@@ -1055,6 +1063,25 @@ const styles = StyleSheet.create({
   enhancementText: {
     flex: 1,
     marginLeft: FluentSpacing.m,
+  },
+  enhancementIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  levelBadge: {
+    minWidth: 40,
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xs,
+    borderRadius: FluentRadius.circular,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sliderLabel: {
+    width: 24,
+    textAlign: "center",
   },
   toggleIndicator: {
     paddingHorizontal: FluentSpacing.m,

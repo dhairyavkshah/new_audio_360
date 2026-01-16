@@ -109,6 +109,7 @@ function TabIcon({
 }
 
 const TAB_BAR_HEIGHT = 56;
+const MIN_BOTTOM_PADDING = 16;
 
 export default function MainTabNavigator() {
   const { isDark } = useThemeContext();
@@ -119,7 +120,8 @@ export default function MainTabNavigator() {
   const [currentTab, setCurrentTab] = useState<string>("ListenTab");
   const insets = useSafeAreaInsets();
   
-  const tabBarHeight = TAB_BAR_HEIGHT + insets.bottom;
+  const safeBottom = Platform.OS === 'android' ? Math.max(insets.bottom, MIN_BOTTOM_PADDING) : insets.bottom;
+  const tabBarHeight = TAB_BAR_HEIGHT + safeBottom;
   const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && currentTab !== "RadioTab" && !isNowPlayingVisible;
 
   return (
@@ -132,7 +134,7 @@ export default function MainTabNavigator() {
         tabBarStyle: {
           position: "absolute",
           height: tabBarHeight,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : FluentSpacing.s,
+          paddingBottom: safeBottom > 0 ? safeBottom : FluentSpacing.s,
           paddingTop: FluentSpacing.xs,
           ...getTabBarStyle(tokens),
         },

@@ -17,14 +17,14 @@ export function useScreenOptions({
 
   return {
     headerTitleAlign: "left",
-    headerTransparent: transparent,
+    headerTransparent: Platform.OS === 'ios' ? transparent : false,
     headerBlurEffect: isDark ? "dark" : "light",
     headerTintColor: colors.colorNeutralForeground1,
     headerStyle: {
       backgroundColor: Platform.select({
-        ios: undefined,
+        ios: transparent ? undefined : colors.colorNeutralBackground2,
         android: colors.colorNeutralBackground2,
-        web: colors.colorNeutralBackground2,
+        default: colors.colorNeutralBackground2,
       }),
     },
     headerTitleStyle: {
