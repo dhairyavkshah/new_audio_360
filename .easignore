@@ -21,3 +21,9 @@ __tests__
 coverage
 attached_assets
 generated-icon.png
+
+# Large folders - EAS will run npm install, don't upload node_modules
+node_modules
+
+# Test audio files - not needed for build
+public/audio
