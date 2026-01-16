@@ -595,7 +595,7 @@ export default function SoundLabScreen() {
             </FluentText>
             
             <View style={styles.enhancementsContainer}>
-              <GlassCard style={styles.enhancementSection}>
+              <View style={styles.enhancementItem}>
                 <View style={styles.enhancementHeader}>
                   <View style={[styles.enhancementIconContainer, { backgroundColor: bassControlLevel !== 0 ? tokens.colors.primary + "20" : tokens.colors.surfaceVariant }]}>
                     <MaterialCommunityIcons
@@ -636,9 +636,11 @@ export default function SoundLabScreen() {
                   />
                   <FluentText variant="caption1" color="secondary" style={styles.sliderLabel}>+5</FluentText>
                 </View>
-              </GlassCard>
+              </View>
 
-              <GlassCard style={styles.enhancementSection}>
+              <View style={[styles.enhancementDivider, { backgroundColor: tokens.colors.outline }]} />
+
+              <View style={styles.enhancementItem}>
                 <View style={styles.enhancementHeader}>
                   <View style={[styles.enhancementIconContainer, { backgroundColor: trebleControlLevel !== 0 ? tokens.colors.primary + "20" : tokens.colors.surfaceVariant }]}>
                     <MaterialCommunityIcons
@@ -679,9 +681,11 @@ export default function SoundLabScreen() {
                   />
                   <FluentText variant="caption1" color="secondary" style={styles.sliderLabel}>+5</FluentText>
                 </View>
-              </GlassCard>
+              </View>
 
-              <GlassCard style={styles.enhancementSection}>
+              <View style={[styles.enhancementDivider, { backgroundColor: tokens.colors.outline }]} />
+
+              <View style={styles.enhancementItem}>
                 <Pressable onPress={handleVirtualizerToggle} style={styles.enhancementHeader}>
                   <View style={[styles.enhancementIconContainer, { backgroundColor: virtualizerEnabled ? tokens.colors.primary + "20" : tokens.colors.surfaceVariant }]}>
                     <MaterialCommunityIcons
@@ -738,7 +742,7 @@ export default function SoundLabScreen() {
                     </View>
                   </View>
                 ) : null}
-              </GlassCard>
+              </View>
             </View>
           </View>
         ) : null}
@@ -1049,7 +1053,14 @@ const styles = StyleSheet.create({
     padding: FluentSpacing.xs,
   },
   enhancementsContainer: {
-    gap: FluentSpacing.m,
+    gap: 0,
+  },
+  enhancementItem: {
+    paddingVertical: FluentSpacing.m,
+  },
+  enhancementDivider: {
+    height: 1,
+    opacity: 0.3,
   },
   enhancementSection: {
     padding: FluentSpacing.l,
