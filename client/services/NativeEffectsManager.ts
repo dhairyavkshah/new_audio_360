@@ -4,7 +4,7 @@ import {
   BassBoostModule, 
   VirtualizerModule,
   EqualizerAttachResult 
-} from '@/modules/audio-effects';
+} from 'audio-effects';
 import type { EQBands, SoundLabMode } from '@/contexts/SoundLabContext';
 
 interface ImmersiveEffect {

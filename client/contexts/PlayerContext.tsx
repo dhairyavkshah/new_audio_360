@@ -5,7 +5,7 @@ import { mockSongs, Song } from '@/lib/data';
 import { DeviceSong } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
 import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
-import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule } from '@/modules/audio-effects';
+import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule } from 'audio-effects';
 import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';

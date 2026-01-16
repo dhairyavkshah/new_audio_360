@@ -1,0 +1,30 @@
+React Compiler enabled
+Starting Metro Bundler
+Android client/index.js ▓▓░░░░░░░░░░░░░░ 17.0% ( 71/241)
+Android client/index.js ▓▓▓▓░░░░░░░░░░░░ 30.9% (265/491)
+Android client/index.js ▓▓▓▓▓▓▓▓░░░░░░░░ 50.7% (640/916)
+Android client/index.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 66.2% ( 930/1145)
+Android client/index.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 66.9% (1021/1266)
+Android client/index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 87.8% (1340/1430)
+Android Bundling failed 21564ms client/index.js (1602 modules)
+Error: Unable to resolve module ../modules/audio-effects from /home/expo/workingdir/build/client/contexts/PlayerContext.tsx: 
+None of these files exist:
+  * client/modules/audio-effects(.android.ts|.native.ts|.ts|.android.tsx|.native.tsx|.tsx|.android.mjs|.native.mjs|.mjs|.android.js|.native.js|.js|.android.jsx|.native.jsx|.jsx|.android.json|.native.json|.json|.android.cjs|.native.cjs|.cjs|.android.scss|.native.scss|.scss|.android.sass|.native.sass|.sass|.android.css|.native.css|.css)
+  * client/modules/audio-effects
+   6 | import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
+   7 | import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
+>  8 | import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule } from '@/modules/audio-effects';
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   9 | import { NativeEffectsManager } from '@/services/NativeEffectsManager';
+  10 | import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
+  11 | import { AudioCoordinator } from '@/services/AudioCoordinator';
+Import stack:
+ client/contexts/PlayerContext.tsx
+ | import "../modules/audio-effects"
+ client/App.tsx
+ | import "./contexts/PlayerContext"
+ client/index.js
+ | import "./App"
+ 
+ | import "/home/expo/workingdir/build/client/index.js"
+npx expo export:embed --eager --platform android --dev false exited with non-zero code: 1
