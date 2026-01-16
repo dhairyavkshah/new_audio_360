@@ -1,4 +1,5 @@
 import React from "react";
+import { Platform } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { HeaderTitle } from "@/components/HeaderTitle";
@@ -33,7 +34,7 @@ export default function ListenStackNavigator() {
         component={NowPlayingScreen}
         options={{
           headerTitle: "Now Playing",
-          headerTransparent: true,
+          headerTransparent: Platform.OS === 'ios',
         }}
       />
       <Stack.Screen
