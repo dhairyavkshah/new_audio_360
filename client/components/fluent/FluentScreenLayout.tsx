@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useState } from 'react';
+import React, { ReactNode } from 'react';
 import { View, StyleSheet, StatusBar, Platform, KeyboardAvoidingView, ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeContext } from '@/contexts/ThemeContext';
@@ -47,17 +47,15 @@ export function FluentScreenLayout({
   const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
   const { isDark } = useThemeContext();
-  const [isReady, setIsReady] = useState(Platform.OS !== 'android');
 
   const bgColor = getBackgroundColor(backgroundColor, isDark);
   const paddingValue = FluentPadding[contentPadding];
 
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      const timer = setTimeout(() => setIsReady(true), 50);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+  // On Android with non-translucent status bar, don't add top safe area padding
+  // as the StatusBar component already reserves that space
+  const safeAreaEdges = Platform.OS === 'android' 
+    ? edges.filter(e => e !== 'top') 
+    : edges;
 
   const bottomPadding = hasBottomNavigation ? tabBarHeight + FluentSpacing.l : insets.bottom + FluentSpacing.l;
 
@@ -78,12 +76,8 @@ export function FluentScreenLayout({
 
   return (
     <SafeAreaView 
-      style={[
-        styles.container, 
-        { backgroundColor: bgColor, opacity: isReady ? 1 : 0 }, 
-        style
-      ]} 
-      edges={edges}
+      style={[styles.container, { backgroundColor: bgColor }, style]} 
+      edges={safeAreaEdges}
     >
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
