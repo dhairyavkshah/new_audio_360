@@ -26,7 +26,6 @@
       }
     },
     "production": {
-      "channel": "production",
       "env": {
         "APP_ENV": "production"
       },
@@ -37,12 +36,10 @@
       "autoIncrement": true
     },
     "production-apk": {
-      "extends": "production",
       "distribution": "internal",
       "env": {
         "APP_ENV": "production"
       },
-      "channel": "production",
       "android": {
         "buildType": "apk",
         "credentialsSource": "remote"

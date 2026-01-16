@@ -91,7 +91,7 @@ export default {
       ],
     ],
     experiments: {
-      reactCompiler: true,
+      reactCompiler: false,
     },
     extra: {
       eas: {
