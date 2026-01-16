@@ -33,7 +33,7 @@ jobs:
         run: npm ci
 
       - name: Build Signed Production APK
-        run: eas build --platform android --profile production-apk --non-interactive
+        run: eas build --platform android --profile production-apk --non-interactive --clear-cache
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
