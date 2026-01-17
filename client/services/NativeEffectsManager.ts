@@ -154,7 +154,10 @@ class NativeEffectsManagerClass {
     EqualizerModule.setEnabled(true);
 
     const numBands = this.equalizerInfo?.numberOfBands || 5;
-    const MB_PER_UNIT = 35;
+    // Conservative conversion: user units (-8 to +8) to millibels
+    // Using 50 millibels per unit gives range of -400 to +400 millibels
+    // which is well within typical hardware limits of -1500 to +1500
+    const MB_PER_UNIT = 50;
 
     const rawBands: number[] = [];
     
@@ -170,15 +173,19 @@ class NativeEffectsManagerClass {
       rawBands.push(0);
     }
 
-    // Zero-sum balancing
+    // Zero-sum balancing to prevent overall volume change
     const sum = rawBands.reduce((acc, v) => acc + v, 0);
     const offset = sum / rawBands.length;
     const balancedBands = rawBands.map(v => v - offset);
 
-    // Convert to millibels and clamp
+    // Convert to millibels with symmetric clamping
+    // Use hardware limits if available, otherwise conservative defaults
+    const minLevel = this.equalizerInfo?.minLevel ?? -1500;
+    const maxLevel = this.equalizerInfo?.maxLevel ?? 1500;
+    
     const bandValues = balancedBands.map(v => {
-      const millibels = v * MB_PER_UNIT;
-      return Math.max(-300, Math.min(150, millibels));
+      const millibels = Math.round(v * MB_PER_UNIT);
+      return Math.max(minLevel, Math.min(maxLevel, millibels));
     });
 
     console.log('[NativeEffectsManager] Applying EQ:', { input: rawBands, balanced: balancedBands, millibels: bandValues });
@@ -207,7 +214,9 @@ class NativeEffectsManagerClass {
 
     EqualizerModule.setEnabled(true);
 
-    const MB_PER_UNIT = 35;
+    // Conservative conversion: user units (-8 to +8) to millibels
+    // Using 50 millibels per unit gives range of -400 to +400 millibels
+    const MB_PER_UNIT = 50;
     const numBands = this.equalizerInfo?.numberOfBands || 5;
 
     // Copy and pad if needed
@@ -216,15 +225,18 @@ class NativeEffectsManagerClass {
       rawBands.push(0);
     }
 
-    // Zero-sum balancing
+    // Zero-sum balancing to prevent overall volume change
     const sum = rawBands.reduce((acc, v) => acc + v, 0);
     const offset = sum / rawBands.length;
     const balancedBands = rawBands.map(v => v - offset);
 
-    // Convert to millibels and clamp
+    // Convert to millibels with symmetric clamping using hardware limits
+    const minLevel = this.equalizerInfo?.minLevel ?? -1500;
+    const maxLevel = this.equalizerInfo?.maxLevel ?? 1500;
+    
     const bandValues = balancedBands.map(v => {
-      const millibels = v * MB_PER_UNIT;
-      return Math.max(-300, Math.min(150, millibels));
+      const millibels = Math.round(v * MB_PER_UNIT);
+      return Math.max(minLevel, Math.min(maxLevel, millibels));
     });
 
     console.log('[NativeEffectsManager] Applying 5-band EQ:', { input: bands, balanced: balancedBands, millibels: bandValues });

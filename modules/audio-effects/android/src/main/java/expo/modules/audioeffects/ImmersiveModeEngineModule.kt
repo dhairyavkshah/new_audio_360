@@ -1,6 +1,8 @@
 package expo.modules.audioeffects
 
+import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
+import android.media.audiofx.Virtualizer
 import android.os.Handler
 import android.os.Looper
 import expo.modules.kotlin.modules.Module
@@ -10,6 +12,8 @@ import expo.modules.kotlin.Promise
 class ImmersiveModeEngineModule : Module() {
     private var audioSessionId: Int = 0
     private var equalizer: Equalizer? = null
+    private var bassBoost: BassBoost? = null
+    private var virtualizer: Virtualizer? = null
     
     private var currentMode: String = "off"
     private var isAttached = false
@@ -39,8 +43,35 @@ class ImmersiveModeEngineModule : Module() {
                     
                     audioSessionId = sessionId
                     
+                    // Initialize Equalizer
                     equalizer = Equalizer(0, sessionId).apply {
                         enabled = false
+                    }
+                    
+                    // Initialize BassBoost with low priority
+                    try {
+                        bassBoost = BassBoost(1, sessionId).apply {
+                            enabled = false
+                            if (strengthSupported) {
+                                setStrength(0)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("ImmersiveMode", "BassBoost not supported: ${e.message}")
+                        bassBoost = null
+                    }
+                    
+                    // Initialize Virtualizer with low priority
+                    try {
+                        virtualizer = Virtualizer(1, sessionId).apply {
+                            enabled = false
+                            if (strengthSupported) {
+                                setStrength(0)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("ImmersiveMode", "Virtualizer not supported: ${e.message}")
+                        virtualizer = null
                     }
                     
                     isAttached = true
@@ -49,7 +80,9 @@ class ImmersiveModeEngineModule : Module() {
                     promise.resolve(mapOf(
                         "success" to true,
                         "audioSessionId" to sessionId,
-                        "equalizerBands" to (equalizer?.numberOfBands?.toInt() ?: 0)
+                        "equalizerBands" to (equalizer?.numberOfBands?.toInt() ?: 0),
+                        "bassBoostSupported" to (bassBoost?.strengthSupported ?: false),
+                        "virtualizerSupported" to (virtualizer?.strengthSupported ?: false)
                     ))
                     
                 } catch (e: Exception) {
@@ -194,59 +227,115 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyModeOff() {
         equalizer?.enabled = false
+        bassBoost?.enabled = false
+        virtualizer?.enabled = false
     }
     
-    // Zero-sum EQ: all bands sum to 0
-    private fun applyZeroSumEQ(bands: IntArray) {
+    /**
+     * Apply immersive mode settings with BassBoost, Virtualizer, and EQ
+     * @param eqBands EQ band levels in millibels (will be zero-sum balanced internally)
+     * @param bassStrength BassBoost strength 0-1000 (conservative: 0-400 recommended)
+     * @param virtualizerStrength Virtualizer strength 0-1000 (conservative: 0-500 recommended)
+     */
+    private fun applyImmersiveSettings(eqBands: IntArray, bassStrength: Int, virtualizerStrength: Int) {
+        // Apply EQ with zero-sum balancing
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
-            if (numBands >= 5 && bands.size >= 5) {
-                // Verify zero-sum
-                val sum = bands.sum()
-                val offset = sum / bands.size
-                for (i in 0 until minOf(numBands, bands.size)) {
-                    val balancedValue = bands[i] - offset
-                    eq.setBandLevel(i.toShort(), balancedValue.toShort())
-                }
+            val minLevel = eq.bandLevelRange[0]
+            val maxLevel = eq.bandLevelRange[1]
+            
+            // Calculate offset for zero-sum balancing
+            val sum = eqBands.sum()
+            val offset = if (eqBands.isNotEmpty()) sum / eqBands.size else 0
+            
+            for (i in 0 until minOf(numBands, eqBands.size)) {
+                // Apply zero-sum offset and clamp to hardware limits
+                val balancedValue = eqBands[i] - offset
+                val level = balancedValue.coerceIn(minLevel.toInt(), maxLevel.toInt()).toShort()
+                eq.setBandLevel(i.toShort(), level)
+            }
+        }
+        
+        // Apply BassBoost with conservative strength
+        bassBoost?.let { bb ->
+            if (bb.strengthSupported && bassStrength > 0) {
+                bb.setStrength(bassStrength.toShort())
+                bb.enabled = true
+            } else {
+                bb.enabled = false
+            }
+        }
+        
+        // Apply Virtualizer with conservative strength
+        virtualizer?.let { virt ->
+            if (virt.strengthSupported && virtualizerStrength > 0) {
+                virt.setStrength(virtualizerStrength.toShort())
+                virt.enabled = true
+            } else {
+                virt.enabled = false
             }
         }
     }
     
     private fun applyModeMusic() {
-        // Zero-sum balanced EQ for music: slight bass and treble boost, mids cut
-        // Sum: 50 + 20 + (-70) + (-20) + 20 = 0
-        applyZeroSumEQ(intArrayOf(50, 20, -70, -20, 20))
+        // Music mode: Slight V-curve EQ, moderate bass, subtle spatial
+        // Raw: +150, +50, -100, +50, -150 (sum = 0, already balanced)
+        applyImmersiveSettings(
+            eqBands = intArrayOf(150, 50, -100, 50, -150),
+            bassStrength = 200,  // Moderate bass enhancement
+            virtualizerStrength = 150  // Subtle spatial widening
+        )
     }
     
     private fun applyMode360Reality() {
-        // Zero-sum for spatial: V-shaped curve
-        // Sum: 40 + (-20) + (-40) + (-20) + 40 = 0
-        applyZeroSumEQ(intArrayOf(40, -20, -40, -20, 40))
+        // 360 Reality: Strong spatial, balanced EQ
+        // Raw: +100, -50, 0, -50, 0 (sum = 0, already balanced)
+        applyImmersiveSettings(
+            eqBands = intArrayOf(100, -50, 0, -50, 0),
+            bassStrength = 150,  // Light bass
+            virtualizerStrength = 450  // Strong spatial effect
+        )
     }
     
     private fun applyModeGaming() {
-        // Zero-sum for gaming: enhanced highs for footsteps
-        // Sum: (-40) + (-60) + 20 + 40 + 40 = 0
-        applyZeroSumEQ(intArrayOf(-40, -60, 20, 40, 40))
+        // Gaming: Enhanced highs for footsteps/details, punchy bass
+        // Raw: -100, -100, 0, 100, 100 (sum = 0, already balanced)
+        applyImmersiveSettings(
+            eqBands = intArrayOf(-100, -100, 0, 100, 100),
+            bassStrength = 250,  // Punchy bass for explosions
+            virtualizerStrength = 350  // Good spatial for positioning
+        )
     }
     
     private fun applyModePodcast() {
-        // Zero-sum for voice: mid boost, bass/treble cut
-        // Sum: (-60) + (-20) + 80 + 40 + (-40) = 0
-        applyZeroSumEQ(intArrayOf(-60, -20, 80, 40, -40))
+        // Podcast: Voice clarity, reduced bass, no spatial
+        // Raw: -150, -50, 150, 100, -50 (sum = 0, already balanced)
+        applyImmersiveSettings(
+            eqBands = intArrayOf(-150, -50, 150, 100, -50),
+            bassStrength = 0,  // No bass boost for speech
+            virtualizerStrength = 0  // No spatial effect for mono content
+        )
     }
     
     private fun applyModeMovie() {
-        // Zero-sum for cinema: enhanced bass and highs
-        // Sum: 60 + (-20) + (-80) + (-20) + 60 = 0
-        applyZeroSumEQ(intArrayOf(60, -20, -80, -20, 60))
+        // Movie: Cinematic bass, wide soundstage
+        // Raw: +150, +50, -200, 0, 0 (sum = 0, already balanced)
+        applyImmersiveSettings(
+            eqBands = intArrayOf(150, 50, -200, 0, 0),
+            bassStrength = 350,  // Strong cinematic bass
+            virtualizerStrength = 400  // Wide soundstage
+        )
     }
     
     private fun getCurrentSettings(): Map<String, Any> {
         return mapOf(
             "equalizerEnabled" to (equalizer?.enabled ?: false),
-            "equalizerBandLevels" to getEqualizerBandLevels()
+            "equalizerBandLevels" to getEqualizerBandLevels(),
+            "bassBoostEnabled" to (bassBoost?.enabled ?: false),
+            "bassBoostStrength" to (bassBoost?.roundedStrength?.toInt() ?: 0),
+            "virtualizerEnabled" to (virtualizer?.enabled ?: false),
+            "virtualizerStrength" to (virtualizer?.roundedStrength?.toInt() ?: 0)
         )
     }
     
@@ -258,11 +347,25 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun release() {
         try {
+            bassBoost?.release()
+        } catch (e: Exception) {
+            // Ignore release errors
+        }
+        
+        try {
+            virtualizer?.release()
+        } catch (e: Exception) {
+            // Ignore release errors
+        }
+        
+        try {
             equalizer?.release()
         } catch (e: Exception) {
             // Ignore release errors
         }
         
+        bassBoost = null
+        virtualizer = null
         equalizer = null
         isAttached = false
         currentMode = MODE_OFF

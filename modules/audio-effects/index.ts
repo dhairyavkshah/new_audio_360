@@ -180,6 +180,10 @@ export interface ImmersiveModeInfo {
 export interface ImmersiveModeSettings {
   equalizerEnabled: boolean;
   equalizerBandLevels: number[];
+  bassBoostEnabled?: boolean;
+  bassBoostStrength?: number;
+  virtualizerEnabled?: boolean;
+  virtualizerStrength?: number;
 }
 
 export interface ImmersiveModeAttachResult {
