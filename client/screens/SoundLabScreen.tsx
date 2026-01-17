@@ -5,7 +5,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText, FluentButton } from "@/components/fluent";
-import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -404,16 +403,16 @@ export default function SoundLabScreen() {
           </View>
 
           {isEqualizerActive && selectedEQ && !isCustomEQ ? (
-            <GlassCard style={styles.presetInfo}>
+            <View style={styles.presetInfo}>
               <FluentText variant="body1Strong">{selectedEQ}</FluentText>
               <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
                 {EQ_PRESETS.find(p => p.name === selectedEQ)?.description}
               </FluentText>
-            </GlassCard>
+            </View>
           ) : null}
 
           {isEqualizerActive && isCustomEQ ? (
-            <GlassCard style={styles.customEQContainer}>
+            <View style={styles.customEQContainer}>
               <FluentText variant="body1Strong" style={{ marginBottom: FluentSpacing.m }}>
                 Custom Equalizer
               </FluentText>
@@ -480,7 +479,7 @@ export default function SoundLabScreen() {
                   ))}
                 </View>
               ) : null}
-            </GlassCard>
+            </View>
           ) : null}
         </View>
 
@@ -557,7 +556,7 @@ export default function SoundLabScreen() {
           </View>
         </View>
 
-        <GlassCard style={styles.infoCard}>
+        <View style={[styles.sectionCard, cardStyle, styles.infoCard]}>
           <View style={styles.infoContent}>
             <MaterialCommunityIcons name="information-outline" size={18} color={tokens.colors.primary} />
             <View style={styles.infoText}>
@@ -567,7 +566,7 @@ export default function SoundLabScreen() {
               </FluentText>
             </View>
           </View>
-        </GlassCard>
+        </View>
       </ScrollView>
 
       <Modal
