@@ -399,27 +399,47 @@ class TrackPlayerServiceClass {
 export const TrackPlayerService = new TrackPlayerServiceClass();
 
 export async function PlaybackService() {
-  TrackPlayer.addEventListener(Event.RemotePlay, () => {
+  // Remote events from notification controls - these MUST control playback directly
+  TrackPlayer.addEventListener(Event.RemotePlay, async () => {
+    console.log('[PlaybackService] RemotePlay event received');
+    await TrackPlayer.play();
     TrackPlayerService.handleRemotePlay();
   });
 
-  TrackPlayer.addEventListener(Event.RemotePause, () => {
+  TrackPlayer.addEventListener(Event.RemotePause, async () => {
+    console.log('[PlaybackService] RemotePause event received');
+    await TrackPlayer.pause();
     TrackPlayerService.handleRemotePause();
   });
 
-  TrackPlayer.addEventListener(Event.RemoteStop, () => {
+  TrackPlayer.addEventListener(Event.RemoteStop, async () => {
+    console.log('[PlaybackService] RemoteStop event received');
+    await TrackPlayer.stop();
     TrackPlayerService.handleRemoteStop();
   });
 
-  TrackPlayer.addEventListener(Event.RemoteNext, () => {
+  TrackPlayer.addEventListener(Event.RemoteNext, async () => {
+    console.log('[PlaybackService] RemoteNext event received');
+    const queue = await TrackPlayer.getQueue();
+    const currentIndex = await TrackPlayer.getActiveTrackIndex();
+    if (currentIndex !== undefined && currentIndex !== null && currentIndex < queue.length - 1) {
+      await TrackPlayer.skipToNext();
+    }
     TrackPlayerService.handleRemoteNext();
   });
 
-  TrackPlayer.addEventListener(Event.RemotePrevious, () => {
+  TrackPlayer.addEventListener(Event.RemotePrevious, async () => {
+    console.log('[PlaybackService] RemotePrevious event received');
+    const currentIndex = await TrackPlayer.getActiveTrackIndex();
+    if (currentIndex !== undefined && currentIndex !== null && currentIndex > 0) {
+      await TrackPlayer.skipToPrevious();
+    }
     TrackPlayerService.handleRemotePrevious();
   });
 
-  TrackPlayer.addEventListener(Event.RemoteSeek, ({ position }) => {
+  TrackPlayer.addEventListener(Event.RemoteSeek, async ({ position }) => {
+    console.log('[PlaybackService] RemoteSeek event received:', position);
+    await TrackPlayer.seekTo(position);
     TrackPlayerService.handleRemoteSeek(position);
   });
 

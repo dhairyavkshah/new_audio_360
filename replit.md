@@ -164,6 +164,7 @@ Current implementation uses development stubs for testing. Web platform uses loc
 - EQ preset controls appear when any preset is active, with level chips for easy adjustment
 - Fixed top gap spacing on all nested screens via isNestedScreen prop and proper navigator status bar config
 - Fixed music playback resume issue after switching to radio - now preserves queue and position
+- Fixed Android notification controls - RemotePlay/Pause/Next/Previous now properly control playback
 - UI sounds now disabled when music/radio is playing to prevent audio interruption
 - Updated Android adaptive icon config to use proper foreground image with branded blue (#1565C0) background
 - Splash screen uses branded blue background for both light (#1565C0) and dark (#0D47A1) modes
