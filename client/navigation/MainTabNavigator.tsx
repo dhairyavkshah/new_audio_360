@@ -88,7 +88,7 @@ export default function MainTabNavigator() {
   
   const safeBottom = Platform.OS === 'android' ? Math.max(insets.bottom, MIN_BOTTOM_PADDING) : insets.bottom;
   const tabBarHeight = TAB_BAR_HEIGHT + safeBottom;
-  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && currentTab !== "RadioTab" && !isNowPlayingVisible;
+  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && !isNowPlayingVisible;
 
   // No animation - just show/hide based on state
 
@@ -157,8 +157,7 @@ export default function MainTabNavigator() {
           ),
         }}
       />
-      {/* Online Radio disabled - streams need verification on native device */}
-      {/* <Tab.Screen
+      <Tab.Screen
         name="RadioTab"
         component={RadioStackNavigator}
         options={{
@@ -172,7 +171,7 @@ export default function MainTabNavigator() {
             />
           ),
         }}
-      /> */}
+      />
       <Tab.Screen
         name="SettingsTab"
         component={SettingsStackNavigator}
