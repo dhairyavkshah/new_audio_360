@@ -17,6 +17,7 @@ export interface FluentScreenLayoutProps {
   contentStyle?: ViewStyle;
   avoidKeyboard?: boolean;
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
+  hideStatusBar?: boolean;
 }
 
 const getBackgroundColor = (variant: BackgroundVariant, isDark: boolean): string => {
@@ -43,6 +44,7 @@ export function FluentScreenLayout({
   contentStyle,
   avoidKeyboard = true,
   edges = ['top'],
+  hideStatusBar = false,
 }: FluentScreenLayoutProps) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
@@ -79,11 +81,13 @@ export function FluentScreenLayout({
       style={[styles.container, { backgroundColor: bgColor }, style]} 
       edges={safeAreaEdges}
     >
-      <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={bgColor}
-        translucent={false}
-      />
+      {!hideStatusBar && (
+        <StatusBar
+          barStyle={isDark ? 'light-content' : 'dark-content'}
+          backgroundColor={bgColor}
+          translucent={false}
+        />
+      )}
       {header}
       {avoidKeyboard ? (
         <KeyboardAvoidingView

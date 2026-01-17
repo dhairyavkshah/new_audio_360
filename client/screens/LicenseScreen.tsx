@@ -85,7 +85,7 @@ export default function LicenseScreen() {
   };
 
   return (
-    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true} hideStatusBar>
       <ScrollView
         contentContainerStyle={[
           styles.content,

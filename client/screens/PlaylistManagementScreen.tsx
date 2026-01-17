@@ -6,7 +6,6 @@ import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
-import { FluentTopBar } from "@/components/FluentTopBar";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
@@ -113,7 +112,7 @@ export default function PlaylistManagementScreen() {
   };
 
   return (
-    <FluentScreenLayout header={<FluentTopBar title="Playlist Management" />} hasBottomNavigation={true}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true} hideStatusBar>
       <ScrollView
         contentContainerStyle={[
           styles.content,

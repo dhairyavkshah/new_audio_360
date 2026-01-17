@@ -185,7 +185,7 @@ export default function QueueScreen() {
   );
 
   return (
-    <FluentScreenLayout edges={[]} hasBottomNavigation={false}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={false} hideStatusBar>
       {selectionMode ? (
         <View style={[styles.selectionHeader, { backgroundColor: colors.colorNeutralBackground3 }]}>
           <Pressable 

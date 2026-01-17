@@ -6,7 +6,6 @@ import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
 import * as MediaLibrary from "expo-media-library";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
-import { FluentTopBar } from "@/components/FluentTopBar";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
@@ -316,7 +315,7 @@ export default function FolderSelectionScreen() {
     .reduce((sum, f) => sum + f.assetCount, 0);
 
   const renderWebContent = () => (
-    <FluentScreenLayout header={<FluentTopBar title="Music Folders" />} hasBottomNavigation={false}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={false} hideStatusBar>
       <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground2 }]}>
         <Pressable
           onPress={handleAddFolder}
@@ -484,7 +483,7 @@ export default function FolderSelectionScreen() {
   }
 
   return (
-    <FluentScreenLayout header={<FluentTopBar title="Music Folders" />} hasBottomNavigation={true}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true} hideStatusBar>
       <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground2 }]}>
         <Pressable
           onPress={selectAll}

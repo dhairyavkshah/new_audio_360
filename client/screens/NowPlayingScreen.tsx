@@ -117,12 +117,10 @@ export default function NowPlayingScreen() {
         contentContainerStyle={[
           styles.content, 
           { 
-            paddingTop: Platform.OS === 'ios' 
-              ? headerHeight + (isExtraCompact ? FluentSpacing.xxs : isCompact ? FluentSpacing.s : FluentSpacing.m)
-              : (isExtraCompact ? FluentSpacing.xxs : isCompact ? FluentSpacing.s : FluentSpacing.m), 
+            paddingTop: isExtraCompact ? FluentSpacing.xxs : isCompact ? FluentSpacing.s : FluentSpacing.m, 
             paddingBottom: tabBarHeight + (isExtraCompact ? FluentSpacing.xs : FluentSpacing.m), 
             paddingHorizontal: isExtraCompact ? FluentSpacing.s : isCompact ? FluentSpacing.m : HORIZONTAL_PADDING,
-            minHeight: Platform.OS === 'ios' ? availableHeight : availableHeight + headerHeight,
+            minHeight: availableHeight,
           }
         ]}
         showsVerticalScrollIndicator={false}

@@ -82,7 +82,7 @@ export default function AlbumDetailScreen() {
   );
 
   return (
-    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true} hideStatusBar>
       <FlatList
         data={albumSongs}
         renderItem={renderSong}
