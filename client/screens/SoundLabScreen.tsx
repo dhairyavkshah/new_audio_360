@@ -9,6 +9,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useToast } from "@/contexts/ToastContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
 import { FluentSpacing, FluentRadius } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
@@ -83,6 +84,7 @@ export default function SoundLabScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const tokens = useThemeTokens();
   const { isLicensed } = useSubscription();
+  const { showSuccess, showError, showWarning } = useToast();
   
   const cardStyle = getCardEffectStyle(tokens);
   
@@ -213,17 +215,14 @@ export default function SoundLabScreen() {
 
   const handleSavePreset = async () => {
     if (customPresets.length >= MAX_CUSTOM_PRESETS) {
-      Alert.alert(
-        "Limit Reached",
-        "Maximum 5 custom presets allowed. Delete an existing preset to add a new one."
-      );
+      showWarning("Maximum 5 custom presets allowed. Delete one first.");
       setShowSaveDialog(false);
       setNewPresetName("");
       return;
     }
 
     if (!newPresetName.trim()) {
-      Alert.alert("Error", "Please enter a preset name");
+      showError("Please enter a preset name");
       return;
     }
     
@@ -239,6 +238,7 @@ export default function SoundLabScreen() {
     setNewPresetName("");
     setShowSaveDialog(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    showSuccess(`Preset "${newPresetName.trim()}" saved!`);
   };
 
   const handleLoadPreset = async (preset: CustomEQPreset) => {
@@ -254,6 +254,7 @@ export default function SoundLabScreen() {
       setCustomPresets(updatedPresets);
       await saveCustomEQPresets(updatedPresets);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      showSuccess(`Preset "${preset.name}" deleted`);
     };
 
     if (Platform.OS === 'web') {
@@ -290,7 +291,7 @@ export default function SoundLabScreen() {
     if (!editingPreset) return;
     
     if (!editPresetName.trim()) {
-      Alert.alert("Error", "Please enter a preset name");
+      showError("Please enter a preset name");
       return;
     }
     
@@ -307,17 +308,14 @@ export default function SoundLabScreen() {
     setEditPresetName("");
     setShowEditDialog(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    showSuccess(`Preset "${editPresetName.trim()}" updated!`);
   };
 
   const handleImmersiveChange = async (modeId: ImmersiveMode) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     if (!isLicensed && modeId !== 'off') {
-      Alert.alert(
-        "License Required",
-        "A license is required to use Immersive Modes.",
-        [{ text: "OK", style: "default" }]
-      );
+      showWarning("A license is required to use Immersive Modes.");
       return;
     }
     
@@ -339,11 +337,7 @@ export default function SoundLabScreen() {
         await saveSoundMode(modeId);
         NativeEffectsManager.disableEQ();
       } else {
-        Alert.alert(
-          "Audio Error",
-          result.error || "Failed to set immersive mode. Please ensure audio is playing and try again.",
-          [{ text: "OK", style: "default" }]
-        );
+        showError(result.error || "Failed to set immersive mode. Please ensure audio is playing.");
       }
     }
   };
