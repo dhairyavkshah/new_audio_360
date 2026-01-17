@@ -194,9 +194,7 @@ class NativeEffectsManagerClass {
     EqualizerModule.setEnabled(true);
 
     const numBands = this.equalizerInfo?.numberOfBands || 5;
-    // Each user unit (-8 to +8) = 50 millibels = 0.5 dB
-    // This gives a range of -4dB to +4dB for user values
-    const MB_PER_UNIT = 50;
+    const MB_PER_UNIT = 35;
 
     const rawBands: number[] = [];
     
@@ -212,11 +210,13 @@ class NativeEffectsManagerClass {
       rawBands.push(0);
     }
 
-    // Zero-sum balancing happens in native module now
-    const bandValues = rawBands.map(v => {
-      const millibels = Math.round(v * MB_PER_UNIT);
-      // Allow wider range: -600mB to +400mB (-6dB to +4dB)
-      return Math.max(-600, Math.min(400, millibels));
+    const sum = rawBands.reduce((acc, v) => acc + v, 0);
+    const offset = sum / rawBands.length;
+    const balancedBands = rawBands.map(v => v - offset);
+
+    const bandValues = balancedBands.map(v => {
+      const millibels = v * MB_PER_UNIT;
+      return Math.max(-300, Math.min(150, millibels));
     });
 
     EqualizerModule.setCustomBands(bandValues);
@@ -267,8 +267,7 @@ class NativeEffectsManagerClass {
 
     EqualizerModule.setEnabled(true);
 
-    // Each user unit (-8 to +8) = 50 millibels = 0.5 dB
-    const MB_PER_UNIT = 50;
+    const MB_PER_UNIT = 35;
     const numBands = this.equalizerInfo?.numberOfBands || 5;
 
     // Copy and pad if needed
@@ -277,14 +276,18 @@ class NativeEffectsManagerClass {
       rawBands.push(0);
     }
 
-    // Convert to millibels (zero-sum balancing happens in native module)
-    const bandValues = rawBands.map(v => {
-      const millibels = Math.round(v * MB_PER_UNIT);
-      // Allow wider range: -600mB to +400mB (-6dB to +4dB)
-      return Math.max(-600, Math.min(400, millibels));
+    // Zero-sum balancing
+    const sum = rawBands.reduce((acc, v) => acc + v, 0);
+    const offset = sum / rawBands.length;
+    const balancedBands = rawBands.map(v => v - offset);
+
+    // Convert to millibels and clamp
+    const bandValues = balancedBands.map(v => {
+      const millibels = v * MB_PER_UNIT;
+      return Math.max(-300, Math.min(150, millibels));
     });
 
-    console.log('[NativeEffectsManager] Applying 5-band EQ:', { input: bands, millibels: bandValues });
+    console.log('[NativeEffectsManager] Applying 5-band EQ:', { input: bands, balanced: balancedBands, millibels: bandValues });
     EqualizerModule.setCustomBands(bandValues);
   }
 

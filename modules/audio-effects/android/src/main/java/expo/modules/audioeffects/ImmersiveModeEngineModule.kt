@@ -29,11 +29,6 @@ class ImmersiveModeEngineModule : Module() {
         const val MODE_GAMING = "gaming"
         const val MODE_PODCAST = "podcast"
         const val MODE_MOVIE = "movie"
-        
-        // Conservative limits for safe audio processing
-        const val MAX_BASS_BOOST = 600      // Reduced from 1000 to prevent distortion
-        const val MAX_VIRTUALIZER = 800     // Reduced from 1000 for cleaner spatial
-        const val MAX_LOUDNESS_GAIN = 500   // Reduced from 1000 to prevent clipping
     }
     
     override fun definition() = ModuleDefinition {
@@ -191,24 +186,21 @@ class ImmersiveModeEngineModule : Module() {
                     
                     bassBoost?.let {
                         if (it.strengthSupported) {
-                            val safeStrength = bassStrength.coerceIn(0, MAX_BASS_BOOST)
-                            it.setStrength(safeStrength.toShort())
-                            it.enabled = safeStrength > 0
+                            it.setStrength(bassStrength.toShort().coerceIn(0, 1000))
+                            it.enabled = bassStrength > 0
                         }
                     }
                     
                     virtualizer?.let {
                         if (it.strengthSupported) {
-                            val safeStrength = virtualizerStrength.coerceIn(0, MAX_VIRTUALIZER)
-                            it.setStrength(safeStrength.toShort())
-                            it.enabled = safeStrength > 0
+                            it.setStrength(virtualizerStrength.toShort().coerceIn(0, 1000))
+                            it.enabled = virtualizerStrength > 0
                         }
                     }
                     
                     loudnessEnhancer?.let {
-                        val safeGain = loudnessGain.coerceIn(-MAX_LOUDNESS_GAIN, MAX_LOUDNESS_GAIN)
-                        it.setTargetGain(safeGain)
-                        it.enabled = safeGain != 0
+                        it.setTargetGain(loudnessGain.coerceIn(-1000, 1000))
+                        it.enabled = loudnessGain != 0
                     }
                     
                     equalizer?.let { eq ->
@@ -254,37 +246,31 @@ class ImmersiveModeEngineModule : Module() {
         loudnessEnhancer?.enabled = false
     }
     
-    // Zero-sum EQ values to prevent volume boost
-    // All presets are balanced: sum of bands ≈ 0
     private fun applyModeMusic() {
         loudnessEnhancer?.enabled = false
         
-        // EQ: Slight bass boost, cut mids, presence boost
-        // Sum: 50 + 20 + (-50) + (-10) + (-10) = 0
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 50.toShort())    // 60Hz: +0.5dB
-                eq.setBandLevel(1, 20.toShort())    // 230Hz: +0.2dB
-                eq.setBandLevel(2, (-50).toShort()) // 910Hz: -0.5dB
-                eq.setBandLevel(3, (-10).toShort()) // 3.6kHz: -0.1dB
-                eq.setBandLevel(4, (-10).toShort()) // 14kHz: -0.1dB
+                eq.setBandLevel(0, 60.toShort())
+                eq.setBandLevel(1, 10.toShort())
+                eq.setBandLevel(2, (-60).toShort())
+                eq.setBandLevel(3, 10.toShort())
+                eq.setBandLevel(4, (-20).toShort())
             }
         }
         
-        // Moderate bass boost (reduced from 200)
         bassBoost?.let {
             if (it.strengthSupported) {
-                it.setStrength(150.toShort())
+                it.setStrength(200.toShort())
                 it.enabled = true
             }
         }
         
-        // Light virtualizer for width
         virtualizer?.let {
             if (it.strengthSupported) {
-                it.setStrength(100.toShort())
+                it.setStrength(150.toShort())
                 it.enabled = true
             }
         }
@@ -293,32 +279,28 @@ class ImmersiveModeEngineModule : Module() {
     private fun applyMode360Reality() {
         loudnessEnhancer?.enabled = false
         
-        // EQ: Balanced spatial - slight scoop with presence
-        // Sum: 20 + (-20) + (-30) + (-10) + 40 = 0
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 20.toShort())
-                eq.setBandLevel(1, (-20).toShort())
-                eq.setBandLevel(2, (-30).toShort())
-                eq.setBandLevel(3, (-10).toShort())
-                eq.setBandLevel(4, 40.toShort())
+                eq.setBandLevel(0, 18.toShort())
+                eq.setBandLevel(1, (-12).toShort())
+                eq.setBandLevel(2, (-32).toShort())
+                eq.setBandLevel(3, (-12).toShort())
+                eq.setBandLevel(4, 38.toShort())
             }
         }
         
-        // Light bass for depth
         bassBoost?.let {
             if (it.strengthSupported) {
-                it.setStrength(100.toShort())
+                it.setStrength(200.toShort())
                 it.enabled = true
             }
         }
         
-        // Strong virtualizer for 3D effect
         virtualizer?.let {
             if (it.strengthSupported) {
-                it.setStrength(350.toShort())
+                it.setStrength(400.toShort())
                 it.enabled = true
             }
         }
@@ -327,29 +309,25 @@ class ImmersiveModeEngineModule : Module() {
     private fun applyModeGaming() {
         loudnessEnhancer?.enabled = false
         
-        // EQ: Cut bass, boost mids for footsteps and effects
-        // Sum: (-20) + (-80) + 20 + 50 + 30 = 0
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, (-20).toShort())
-                eq.setBandLevel(1, (-80).toShort())
-                eq.setBandLevel(2, 20.toShort())
-                eq.setBandLevel(3, 50.toShort())
-                eq.setBandLevel(4, 30.toShort())
+                eq.setBandLevel(0, (-14).toShort())
+                eq.setBandLevel(1, (-94).toShort())
+                eq.setBandLevel(2, 16.toShort())
+                eq.setBandLevel(3, 56.toShort())
+                eq.setBandLevel(4, 36.toShort())
             }
         }
         
-        // Light bass
         bassBoost?.let {
             if (it.strengthSupported) {
-                it.setStrength(80.toShort())
+                it.setStrength(150.toShort())
                 it.enabled = true
             }
         }
         
-        // Strong virtualizer for positional audio
         virtualizer?.let {
             if (it.strengthSupported) {
                 it.setStrength(400.toShort())
@@ -361,27 +339,23 @@ class ImmersiveModeEngineModule : Module() {
     private fun applyModePodcast() {
         loudnessEnhancer?.enabled = false
         
-        // EQ: Voice clarity - cut bass, boost mids
-        // Sum: (-100) + (-30) + 40 + 60 + 30 = 0
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, (-100).toShort())
-                eq.setBandLevel(1, (-30).toShort())
-                eq.setBandLevel(2, 40.toShort())
-                eq.setBandLevel(3, 60.toShort())
-                eq.setBandLevel(4, 30.toShort())
+                eq.setBandLevel(0, (-140).toShort())
+                eq.setBandLevel(1, (-40).toShort())
+                eq.setBandLevel(2, 60.toShort())
+                eq.setBandLevel(3, 80.toShort())
+                eq.setBandLevel(4, 40.toShort())
             }
         }
         
-        // No bass boost for voice
         bassBoost?.enabled = false
         
-        // Light virtualizer for natural sound
         virtualizer?.let {
             if (it.strengthSupported) {
-                it.setStrength(50.toShort())
+                it.setStrength(80.toShort())
                 it.enabled = true
             }
         }
@@ -390,32 +364,28 @@ class ImmersiveModeEngineModule : Module() {
     private fun applyModeMovie() {
         loudnessEnhancer?.enabled = false
         
-        // EQ: Cinematic - bass punch with dialogue clarity
-        // Sum: 60 + (-20) + (-50) + (-10) + 20 = 0
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 60.toShort())
-                eq.setBandLevel(1, (-20).toShort())
-                eq.setBandLevel(2, (-50).toShort())
-                eq.setBandLevel(3, (-10).toShort())
-                eq.setBandLevel(4, 20.toShort())
+                eq.setBandLevel(0, 58.toShort())
+                eq.setBandLevel(1, (-12).toShort())
+                eq.setBandLevel(2, (-62).toShort())
+                eq.setBandLevel(3, (-12).toShort())
+                eq.setBandLevel(4, 28.toShort())
             }
         }
         
-        // Moderate bass for impact (reduced from 300)
         bassBoost?.let {
             if (it.strengthSupported) {
-                it.setStrength(200.toShort())
+                it.setStrength(300.toShort())
                 it.enabled = true
             }
         }
         
-        // Strong virtualizer for surround effect
         virtualizer?.let {
             if (it.strengthSupported) {
-                it.setStrength(350.toShort())
+                it.setStrength(400.toShort())
                 it.enabled = true
             }
         }
@@ -442,12 +412,6 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun release() {
         try {
-            // Disable all effects before releasing
-            equalizer?.enabled = false
-            bassBoost?.enabled = false
-            virtualizer?.enabled = false
-            loudnessEnhancer?.enabled = false
-            
             equalizer?.release()
             bassBoost?.release()
             virtualizer?.release()
