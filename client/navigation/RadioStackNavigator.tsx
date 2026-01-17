@@ -6,14 +6,14 @@ import RadioStationsScreen from "@/screens/RadioStationsScreen";
 
 export type RadioStackParamList = {
   RadioMain: undefined;
-  RadioStations: { mode?: 'fmam' | 'online' };
+  RadioStations: undefined;
   SoundLab: undefined;
 };
 
 const Stack = createNativeStackNavigator<RadioStackParamList>();
 
 export default function RadioStackNavigator() {
-  const screenOptions = useScreenOptions({ transparent: false });
+  const screenOptions = useScreenOptions();
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>
@@ -21,15 +21,14 @@ export default function RadioStackNavigator() {
         name="RadioMain"
         component={RadioScreen}
         options={{
-          headerShown: false,
+          headerTitle: "Radio",
         }}
       />
       <Stack.Screen
         name="RadioStations"
         component={RadioStationsScreen}
         options={{
-          headerTitle: "Browse Stations",
-          headerBackTitle: "Radio",
+          headerTitle: "Stations",
         }}
       />
     </Stack.Navigator>

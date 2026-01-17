@@ -1,6 +1,9 @@
 package expo.modules.audioeffects
 
+import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
+import android.media.audiofx.Virtualizer
+import android.media.audiofx.LoudnessEnhancer
 import android.os.Handler
 import android.os.Looper
 import expo.modules.kotlin.modules.Module
@@ -10,6 +13,9 @@ import expo.modules.kotlin.Promise
 class ImmersiveModeEngineModule : Module() {
     private var audioSessionId: Int = 0
     private var equalizer: Equalizer? = null
+    private var bassBoost: BassBoost? = null
+    private var virtualizer: Virtualizer? = null
+    private var loudnessEnhancer: LoudnessEnhancer? = null
     
     private var currentMode: String = "off"
     private var isAttached = false
@@ -39,9 +45,28 @@ class ImmersiveModeEngineModule : Module() {
                     
                     audioSessionId = sessionId
                     
-                    // Only create Equalizer - no other effects to prevent distortion
                     equalizer = Equalizer(0, sessionId).apply {
                         enabled = false
+                    }
+                    
+                    bassBoost = BassBoost(0, sessionId).apply {
+                        enabled = false
+                    }
+                    
+                    virtualizer = Virtualizer(0, sessionId).apply {
+                        enabled = false
+                        if (strengthSupported) {
+                            setStrength(0)
+                        }
+                    }
+                    
+                    try {
+                        loudnessEnhancer = LoudnessEnhancer(sessionId).apply {
+                            enabled = false
+                            setTargetGain(0)
+                        }
+                    } catch (e: Exception) {
+                        loudnessEnhancer = null
                     }
                     
                     isAttached = true
@@ -50,7 +75,10 @@ class ImmersiveModeEngineModule : Module() {
                     promise.resolve(mapOf(
                         "success" to true,
                         "audioSessionId" to sessionId,
-                        "equalizerBands" to (equalizer?.numberOfBands?.toInt() ?: 0)
+                        "equalizerBands" to (equalizer?.numberOfBands?.toInt() ?: 0),
+                        "bassBoostSupported" to (bassBoost?.strengthSupported ?: false),
+                        "virtualizerSupported" to (virtualizer?.strengthSupported ?: false),
+                        "loudnessEnhancerAvailable" to (loudnessEnhancer != null)
                     ))
                     
                 } catch (e: Exception) {
@@ -102,7 +130,6 @@ class ImmersiveModeEngineModule : Module() {
             )
         }
         
-        // SINGLE SOURCE OF TRUTH: SoundLabContext.tsx - these descriptions must match
         Function("getAvailableModes") {
             return@Function listOf(
                 mapOf(
@@ -114,40 +141,40 @@ class ImmersiveModeEngineModule : Module() {
                 mapOf(
                     "id" to MODE_MUSIC,
                     "name" to "Music",
-                    "description" to "Optimized for music listening",
+                    "description" to "Optimized for music listening with enhanced clarity and bass",
                     "icon" to "music"
                 ),
                 mapOf(
                     "id" to MODE_360_REALITY,
                     "name" to "360 Reality",
-                    "description" to "Immersive 3D spatial audio",
+                    "description" to "Immersive 3D spatial audio experience",
                     "icon" to "surround-sound"
                 ),
                 mapOf(
                     "id" to MODE_GAMING,
                     "name" to "Gaming",
-                    "description" to "Enhanced positional audio",
+                    "description" to "Enhanced positional audio for gaming with boosted footsteps and effects",
                     "icon" to "gamepad-variant"
                 ),
                 mapOf(
                     "id" to MODE_PODCAST,
                     "name" to "Podcast",
-                    "description" to "Voice clarity enhancement",
+                    "description" to "Voice clarity enhancement for podcasts and audiobooks",
                     "icon" to "podcast"
                 ),
                 mapOf(
                     "id" to MODE_MOVIE,
                     "name" to "Movie",
-                    "description" to "Cinematic audio enhancement",
+                    "description" to "Cinematic audio with enhanced dialogue and surround effects",
                     "icon" to "movie-open"
                 )
             )
         }
         
         AsyncFunction("setCustomParameters") { 
-            _bassStrength: Int, 
-            _virtualizerStrength: Int, 
-            _loudnessGain: Int,
+            bassStrength: Int, 
+            virtualizerStrength: Int, 
+            loudnessGain: Int,
             eqPreset: Int,
             promise: Promise ->
             mainHandler.post {
@@ -157,7 +184,25 @@ class ImmersiveModeEngineModule : Module() {
                         return@post
                     }
                     
-                    // Only apply EQ preset - no other effects
+                    bassBoost?.let {
+                        if (it.strengthSupported) {
+                            it.setStrength(bassStrength.toShort().coerceIn(0, 1000))
+                            it.enabled = bassStrength > 0
+                        }
+                    }
+                    
+                    virtualizer?.let {
+                        if (it.strengthSupported) {
+                            it.setStrength(virtualizerStrength.toShort().coerceIn(0, 1000))
+                            it.enabled = virtualizerStrength > 0
+                        }
+                    }
+                    
+                    loudnessEnhancer?.let {
+                        it.setTargetGain(loudnessGain.coerceIn(-1000, 1000))
+                        it.enabled = loudnessGain != 0
+                    }
+                    
                     equalizer?.let { eq ->
                         if (eqPreset >= 0 && eqPreset < eq.numberOfPresets) {
                             eq.usePreset(eqPreset.toShort())
@@ -194,91 +239,154 @@ class ImmersiveModeEngineModule : Module() {
         Events("onModeChanged")
     }
     
-    // ========================================================================
-    // SINGLE SOURCE OF TRUTH: EQ bands defined in client/contexts/SoundLabContext.tsx
-    // All values must match exactly between TypeScript and Kotlin
-    // ========================================================================
-    
     private fun applyModeOff() {
         equalizer?.enabled = false
+        bassBoost?.enabled = false
+        virtualizer?.enabled = false
+        loudnessEnhancer?.enabled = false
     }
     
     private fun applyModeMusic() {
-        // SINGLE SOURCE OF TRUTH: SoundLabContext.IMMERSIVE_MODES[music].eqBands = [40, 10, -40, 10, -20]
-        // Zero-sum: 40 + 10 + (-40) + 10 + (-20) = 0 millibels
+        loudnessEnhancer?.enabled = false
+        
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 40.toShort())
+                eq.setBandLevel(0, 60.toShort())
                 eq.setBandLevel(1, 10.toShort())
-                eq.setBandLevel(2, (-40).toShort())
+                eq.setBandLevel(2, (-60).toShort())
                 eq.setBandLevel(3, 10.toShort())
                 eq.setBandLevel(4, (-20).toShort())
+            }
+        }
+        
+        bassBoost?.let {
+            if (it.strengthSupported) {
+                it.setStrength(200.toShort())
+                it.enabled = true
+            }
+        }
+        
+        virtualizer?.let {
+            if (it.strengthSupported) {
+                it.setStrength(150.toShort())
+                it.enabled = true
             }
         }
     }
     
     private fun applyMode360Reality() {
-        // SINGLE SOURCE OF TRUTH: SoundLabContext.IMMERSIVE_MODES[360_reality].eqBands = [20, -10, -30, -10, 30]
-        // Zero-sum: 20 + (-10) + (-30) + (-10) + 30 = 0 millibels
+        loudnessEnhancer?.enabled = false
+        
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 20.toShort())
-                eq.setBandLevel(1, (-10).toShort())
-                eq.setBandLevel(2, (-30).toShort())
-                eq.setBandLevel(3, (-10).toShort())
-                eq.setBandLevel(4, 30.toShort())
+                eq.setBandLevel(0, 18.toShort())
+                eq.setBandLevel(1, (-12).toShort())
+                eq.setBandLevel(2, (-32).toShort())
+                eq.setBandLevel(3, (-12).toShort())
+                eq.setBandLevel(4, 38.toShort())
+            }
+        }
+        
+        bassBoost?.let {
+            if (it.strengthSupported) {
+                it.setStrength(200.toShort())
+                it.enabled = true
+            }
+        }
+        
+        virtualizer?.let {
+            if (it.strengthSupported) {
+                it.setStrength(400.toShort())
+                it.enabled = true
             }
         }
     }
     
     private fun applyModeGaming() {
-        // SINGLE SOURCE OF TRUTH: SoundLabContext.IMMERSIVE_MODES[gaming].eqBands = [-10, -60, 10, 35, 25]
-        // Zero-sum: (-10) + (-60) + 10 + 35 + 25 = 0 millibels
+        loudnessEnhancer?.enabled = false
+        
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, (-10).toShort())
-                eq.setBandLevel(1, (-60).toShort())
-                eq.setBandLevel(2, 10.toShort())
-                eq.setBandLevel(3, 35.toShort())
-                eq.setBandLevel(4, 25.toShort())
+                eq.setBandLevel(0, (-14).toShort())
+                eq.setBandLevel(1, (-94).toShort())
+                eq.setBandLevel(2, 16.toShort())
+                eq.setBandLevel(3, 56.toShort())
+                eq.setBandLevel(4, 36.toShort())
+            }
+        }
+        
+        bassBoost?.let {
+            if (it.strengthSupported) {
+                it.setStrength(150.toShort())
+                it.enabled = true
+            }
+        }
+        
+        virtualizer?.let {
+            if (it.strengthSupported) {
+                it.setStrength(400.toShort())
+                it.enabled = true
             }
         }
     }
     
     private fun applyModePodcast() {
-        // SINGLE SOURCE OF TRUTH: SoundLabContext.IMMERSIVE_MODES[podcast].eqBands = [-80, -30, 40, 50, 20]
-        // Zero-sum: (-80) + (-30) + 40 + 50 + 20 = 0 millibels
+        loudnessEnhancer?.enabled = false
+        
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, (-80).toShort())
-                eq.setBandLevel(1, (-30).toShort())
-                eq.setBandLevel(2, 40.toShort())
-                eq.setBandLevel(3, 50.toShort())
-                eq.setBandLevel(4, 20.toShort())
+                eq.setBandLevel(0, (-140).toShort())
+                eq.setBandLevel(1, (-40).toShort())
+                eq.setBandLevel(2, 60.toShort())
+                eq.setBandLevel(3, 80.toShort())
+                eq.setBandLevel(4, 40.toShort())
+            }
+        }
+        
+        bassBoost?.enabled = false
+        
+        virtualizer?.let {
+            if (it.strengthSupported) {
+                it.setStrength(80.toShort())
+                it.enabled = true
             }
         }
     }
     
     private fun applyModeMovie() {
-        // SINGLE SOURCE OF TRUTH: SoundLabContext.IMMERSIVE_MODES[movie].eqBands = [40, -10, -50, -10, 30]
-        // Zero-sum: 40 + (-10) + (-50) + (-10) + 30 = 0 millibels
+        loudnessEnhancer?.enabled = false
+        
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 40.toShort())
-                eq.setBandLevel(1, (-10).toShort())
-                eq.setBandLevel(2, (-50).toShort())
-                eq.setBandLevel(3, (-10).toShort())
-                eq.setBandLevel(4, 30.toShort())
+                eq.setBandLevel(0, 58.toShort())
+                eq.setBandLevel(1, (-12).toShort())
+                eq.setBandLevel(2, (-62).toShort())
+                eq.setBandLevel(3, (-12).toShort())
+                eq.setBandLevel(4, 28.toShort())
+            }
+        }
+        
+        bassBoost?.let {
+            if (it.strengthSupported) {
+                it.setStrength(300.toShort())
+                it.enabled = true
+            }
+        }
+        
+        virtualizer?.let {
+            if (it.strengthSupported) {
+                it.setStrength(400.toShort())
+                it.enabled = true
             }
         }
     }
@@ -286,6 +394,12 @@ class ImmersiveModeEngineModule : Module() {
     private fun getCurrentSettings(): Map<String, Any> {
         return mapOf(
             "equalizerEnabled" to (equalizer?.enabled ?: false),
+            "bassBoostEnabled" to (bassBoost?.enabled ?: false),
+            "bassBoostStrength" to (bassBoost?.roundedStrength?.toInt() ?: 0),
+            "virtualizerEnabled" to (virtualizer?.enabled ?: false),
+            "virtualizerStrength" to (virtualizer?.roundedStrength?.toInt() ?: 0),
+            "loudnessEnhancerEnabled" to (loudnessEnhancer?.enabled ?: false),
+            "loudnessGain" to (loudnessEnhancer?.targetGain ?: 0),
             "equalizerBandLevels" to getEqualizerBandLevels()
         )
     }
@@ -299,11 +413,18 @@ class ImmersiveModeEngineModule : Module() {
     private fun release() {
         try {
             equalizer?.release()
+            bassBoost?.release()
+            virtualizer?.release()
+            loudnessEnhancer?.release()
         } catch (e: Exception) {
             // Ignore release errors
         }
         
         equalizer = null
+        bassBoost = null
+        virtualizer = null
+        loudnessEnhancer = null
+        
         isAttached = false
         currentMode = MODE_OFF
         audioSessionId = 0

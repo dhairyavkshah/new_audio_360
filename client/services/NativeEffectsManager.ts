@@ -1,17 +1,26 @@
 import { Platform } from 'react-native';
 import { 
   EqualizerModule, 
+  BassBoostModule, 
+  VirtualizerModule,
   EqualizerAttachResult 
-} from 'audio-effects';
+} from '@/modules/audio-effects';
+import type { EQBands, SoundLabMode } from '@/contexts/SoundLabContext';
+
+interface ImmersiveEffect {
+  reverb: number;
+  delay: number;
+  stereoWidth: number;
+}
 
 export type AudioSessionSource = 'music' | 'radio' | 'none';
-
-const MB_PER_UNIT = 35;
 
 class NativeEffectsManagerClass {
   private isInitialized = false;
   private audioSessionId: number = 0;
   private equalizerAttached = false;
+  private bassBoostAttached = false;
+  private virtualizerAttached = false;
   private equalizerInfo: EqualizerAttachResult | null = null;
   private currentSource: AudioSessionSource = 'none';
   private musicSessionId: number = 0;
@@ -22,7 +31,7 @@ class NativeEffectsManagerClass {
   }
 
   async attach(audioSessionId: number): Promise<boolean> {
-    if (!this.isAvailable()) {
+    if (!this.isAvailable() || audioSessionId === 0) {
       return false;
     }
 
@@ -30,20 +39,28 @@ class NativeEffectsManagerClass {
     this.musicSessionId = audioSessionId;
     this.currentSource = 'music';
 
-    const eqResult = await EqualizerModule.attach(audioSessionId);
+    const [eqResult, bassResult, virtResult] = await Promise.all([
+      EqualizerModule.attach(audioSessionId),
+      BassBoostModule.attach(audioSessionId),
+      VirtualizerModule.attach(audioSessionId)
+    ]);
 
     this.equalizerAttached = eqResult.success;
+    this.bassBoostAttached = bassResult.success;
+    this.virtualizerAttached = virtResult.success;
     this.equalizerInfo = eqResult;
     this.isInitialized = true;
 
     console.log('[NativeEffectsManager] Attached effects:', {
       equalizer: this.equalizerAttached,
+      bassBoost: this.bassBoostAttached,
+      virtualizer: this.virtualizerAttached,
       bands: eqResult.numberOfBands,
       presets: eqResult.presets,
       source: this.currentSource
     });
 
-    return this.equalizerAttached;
+    return this.equalizerAttached || this.bassBoostAttached || this.virtualizerAttached;
   }
 
   async attachToRadioSession(sessionId: number): Promise<boolean> {
@@ -64,12 +81,20 @@ class NativeEffectsManagerClass {
     await this.releaseInternal();
 
     try {
-      const eqResult = await EqualizerModule.attach(sessionId);
+      const [eqResult, bassResult, virtResult] = await Promise.all([
+        EqualizerModule.attach(sessionId),
+        BassBoostModule.attach(sessionId),
+        VirtualizerModule.attach(sessionId)
+      ]);
 
       this.equalizerAttached = eqResult.success;
+      this.bassBoostAttached = bassResult.success;
+      this.virtualizerAttached = virtResult.success;
       this.equalizerInfo = eqResult;
 
-      if (this.equalizerAttached) {
+      const anyAttached = this.equalizerAttached || this.bassBoostAttached || this.virtualizerAttached;
+
+      if (anyAttached) {
         this.audioSessionId = sessionId;
         this.radioSessionId = sessionId;
         this.currentSource = 'radio';
@@ -78,17 +103,19 @@ class NativeEffectsManagerClass {
         console.log('[NativeEffectsManager] Attached to radio session:', {
           sessionId,
           equalizer: this.equalizerAttached,
+          bassBoost: this.bassBoostAttached,
+          virtualizer: this.virtualizerAttached,
           bands: eqResult.numberOfBands
         });
       } else {
-        console.log('[NativeEffectsManager] Failed to attach equalizer to radio session');
+        console.log('[NativeEffectsManager] Failed to attach any effects to radio session');
         this.audioSessionId = 0;
         this.radioSessionId = 0;
         this.currentSource = 'none';
         this.isInitialized = false;
       }
 
-      return this.equalizerAttached;
+      return anyAttached;
     } catch (error) {
       console.error('[NativeEffectsManager] Error attaching to radio session:', error);
       this.audioSessionId = 0;
@@ -96,6 +123,8 @@ class NativeEffectsManagerClass {
       this.currentSource = 'none';
       this.isInitialized = false;
       this.equalizerAttached = false;
+      this.bassBoostAttached = false;
+      this.virtualizerAttached = false;
       return false;
     }
   }
@@ -118,9 +147,15 @@ class NativeEffectsManagerClass {
   }
 
   private async releaseInternal(): Promise<void> {
-    await EqualizerModule.release();
+    await Promise.all([
+      EqualizerModule.release(),
+      BassBoostModule.release(),
+      VirtualizerModule.release()
+    ]);
     this.isInitialized = false;
     this.equalizerAttached = false;
+    this.bassBoostAttached = false;
+    this.virtualizerAttached = false;
     this.audioSessionId = 0;
   }
 
@@ -133,50 +168,132 @@ class NativeEffectsManagerClass {
   }
 
   isEffectsActive(): boolean {
-    return this.isInitialized && this.equalizerAttached;
+    return this.isInitialized && (this.equalizerAttached || this.bassBoostAttached || this.virtualizerAttached);
+  }
+
+  applySettings(mode: SoundLabMode, eqBands: EQBands, immersiveEffect: ImmersiveEffect): void {
+    if (!this.isInitialized || !this.isAvailable()) return;
+
+    if (mode === 'equalizer' && this.equalizerAttached) {
+      this.applyEqualizer(eqBands);
+      this.disableImmersive();
+    } else if (mode === 'immersive') {
+      this.applyImmersive(immersiveEffect);
+      this.disableEqualizer();
+    } else {
+      this.disableEqualizer();
+      this.disableImmersive();
+    }
+  }
+
+  private applyEqualizer(eqBands: EQBands): void {
+    if (!this.equalizerAttached) return;
+
+    EqualizerModule.setEnabled(true);
+
+    const numBands = this.equalizerInfo?.numberOfBands || 5;
+    const MB_PER_UNIT = 35;
+
+    const rawBands: number[] = [];
+    
+    if (numBands >= 5) {
+      rawBands.push((eqBands.sub + eqBands.bass) / 2);
+      rawBands.push(eqBands.lowMid);
+      rawBands.push(eqBands.mid);
+      rawBands.push(eqBands.highMid);
+      rawBands.push((eqBands.treble + eqBands.brilliance) / 2);
+    }
+
+    for (let i = 5; i < numBands; i++) {
+      rawBands.push(0);
+    }
+
+    const sum = rawBands.reduce((acc, v) => acc + v, 0);
+    const offset = sum / rawBands.length;
+    const balancedBands = rawBands.map(v => v - offset);
+
+    const bandValues = balancedBands.map(v => {
+      const millibels = v * MB_PER_UNIT;
+      return Math.max(-300, Math.min(150, millibels));
+    });
+
+    EqualizerModule.setCustomBands(bandValues);
+  }
+
+  private disableEqualizer(): void {
+    if (this.equalizerAttached) {
+      EqualizerModule.setEnabled(false);
+    }
+  }
+
+  private applyImmersive(effect: ImmersiveEffect): void {
+    if (this.bassBoostAttached) {
+      BassBoostModule.setEnabled(true);
+      const bassStrength = Math.round((effect.stereoWidth - 1.0) * 1000);
+      BassBoostModule.setStrength(Math.max(0, Math.min(1000, bassStrength)));
+    }
+
+    if (this.virtualizerAttached) {
+      VirtualizerModule.setEnabled(true);
+      const virtStrength = Math.round((effect.stereoWidth - 1.0) * 1666);
+      VirtualizerModule.setStrength(Math.max(0, Math.min(1000, virtStrength)));
+    }
+  }
+
+  private disableImmersive(): void {
+    if (this.bassBoostAttached) {
+      BassBoostModule.setEnabled(false);
+    }
+    if (this.virtualizerAttached) {
+      VirtualizerModule.setEnabled(false);
+    }
   }
 
   getEqualizerInfo(): EqualizerAttachResult | null {
     return this.equalizerInfo;
   }
 
+  /**
+   * Apply 5-band EQ values directly (for use with Sound Lab presets and custom EQ)
+   * Band values should be in range -8 to +8 (user units)
+   */
   applyFiveBandEQ(bands: number[]): void {
     if (!this.isAvailable() || !this.equalizerAttached) {
-      console.log('[NativeEffectsManager] Cannot apply EQ - not available or not attached');
+      console.log('[NativeEffectsManager] Cannot apply 5-band EQ - not available or not attached');
       return;
     }
 
     EqualizerModule.setEnabled(true);
 
+    const MB_PER_UNIT = 35;
     const numBands = this.equalizerInfo?.numberOfBands || 5;
 
-    const baseBands = [...bands];
-    while (baseBands.length < numBands) {
-      baseBands.push(0);
+    // Copy and pad if needed
+    const rawBands = [...bands];
+    while (rawBands.length < numBands) {
+      rawBands.push(0);
     }
 
-    const sum = baseBands.reduce((acc, v) => acc + v, 0);
-    const offset = sum / baseBands.length;
-    const balancedBands = baseBands.map(v => v - offset);
+    // Zero-sum balancing
+    const sum = rawBands.reduce((acc, v) => acc + v, 0);
+    const offset = sum / rawBands.length;
+    const balancedBands = rawBands.map(v => v - offset);
 
+    // Convert to millibels and clamp
     const bandValues = balancedBands.map(v => {
-      const millibels = Math.round(v * MB_PER_UNIT);
-      return Math.max(-200, Math.min(200, millibels));
+      const millibels = v * MB_PER_UNIT;
+      return Math.max(-300, Math.min(150, millibels));
     });
 
-    console.log('[NativeEffectsManager] Zero-sum EQ applied:', { 
-      baseBands: bands, 
-      balanced: balancedBands.map(v => v.toFixed(1)),
-      millibels: bandValues
-    });
-    
+    console.log('[NativeEffectsManager] Applying 5-band EQ:', { input: bands, balanced: balancedBands, millibels: bandValues });
     EqualizerModule.setCustomBands(bandValues);
   }
 
+  /**
+   * Disable the equalizer
+   */
   disableEQ(): void {
-    if (this.equalizerAttached) {
-      EqualizerModule.setEnabled(false);
-    }
+    this.disableEqualizer();
   }
 
   async release(): Promise<void> {

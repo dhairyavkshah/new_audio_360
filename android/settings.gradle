@@ -36,6 +36,4 @@ rootProject.name = 'New Audio 360'
 expoAutolinking.useExpoVersionCatalog()
 
 include ':app'
-include ':audio-effects'
-project(':audio-effects').projectDir = new File(rootProject.projectDir, '../modules/audio-effects/android')
 includeBuild(expoAutolinking.reactNativeGradlePlugin)

@@ -65,7 +65,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           },
         ]}
       >
-        <View style={styles.iconContainer}>
+        <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground }]}>
           <Image
             source={require("../../assets/images/icon.png")}
             style={styles.icon}
@@ -84,7 +84,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           By: Dhairya Shah (The Team 360)
         </FluentText>
         <FluentText variant="caption1" color="tertiary" align="center" style={{ marginTop: FluentSpacing.xs }}>
-          v1.0
+          v1.0.0
         </FluentText>
       </View>
     </View>
@@ -103,9 +103,11 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 120,
     height: 120,
+    borderRadius: FluentControlRadius.dialog,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: FluentSpacing.xxl,
+    overflow: "hidden",
   },
   icon: {
     width: 120,

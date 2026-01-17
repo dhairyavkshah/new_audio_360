@@ -8,12 +8,10 @@ import {
   Image,
   ScrollView,
   Dimensions,
-  Platform,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentText } from "@/components/fluent";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useThemeContext } from "@/contexts/ThemeContext";
@@ -47,14 +45,10 @@ type MenuView = "main" | "selectPlaylist" | "createPlaylist";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-const MIN_BOTTOM_PADDING = 24;
-
 export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong, showHideOption = false }: SongContextMenuProps) {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { playTapSound } = useUiSound();
-  const insets = useSafeAreaInsets();
-  const safeBottom = Platform.OS === 'android' ? Math.max(insets.bottom, MIN_BOTTOM_PADDING) : insets.bottom;
   const [menuView, setMenuView] = useState<MenuView>("main");
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [newPlaylistName, setNewPlaylistName] = useState("");
@@ -356,7 +350,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
       <Animated.View
         entering={SlideInDown.springify().damping(20).stiffness(200)}
         exiting={SlideOutDown.duration(200)}
-        style={[styles.menuContainer, { backgroundColor: colors.colorNeutralBackground1, paddingBottom: FluentSpacing.xl + safeBottom }]}
+        style={[styles.menuContainer, { backgroundColor: colors.colorNeutralBackground1 }]}
       >
         <View style={[styles.handle, { backgroundColor: colors.colorNeutralForeground3 + "40" }]} />
         {menuView === "main" && renderMainMenu()}
@@ -390,6 +384,7 @@ const styles = StyleSheet.create({
     right: 0,
     borderTopLeftRadius: FluentRadius.xLarge,
     borderTopRightRadius: FluentRadius.xLarge,
+    paddingBottom: FluentSpacing.xl + 20,
     maxHeight: SCREEN_HEIGHT * 0.75,
   },
   handle: {

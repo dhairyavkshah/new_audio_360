@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Pressable, TextInput, Alert, Modal, Platform } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, TextInput, Alert, Modal } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -13,14 +12,10 @@ import { Layout } from "@/constants/theme";
 import { Playlist, getPlaylists, addPlaylist, updatePlaylist, deletePlaylist } from "@/lib/storage";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 
-const MIN_BOTTOM_PADDING = 24;
-
 export default function PlaylistManagementScreen() {
   const tabBarHeight = useSafeTabBarHeight();
-  const insets = useSafeAreaInsets();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const safeBottom = Platform.OS === 'android' ? Math.max(insets.bottom, MIN_BOTTOM_PADDING) : insets.bottom;
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
@@ -222,7 +217,7 @@ export default function PlaylistManagementScreen() {
             contentContainerStyle={styles.modalScrollContent}
             keyboardShouldPersistTaps="handled"
           >
-            <View style={[styles.modalContent, { backgroundColor: colors.colorNeutralBackground1, paddingBottom: FluentSpacing.xxl + safeBottom }]}>
+            <View style={[styles.modalContent, { backgroundColor: colors.colorNeutralBackground1 }]}>
               <View style={styles.modalHeader}>
                 <FluentText variant="subtitle1" style={{ fontWeight: "700" }}>
                   {editingPlaylist ? "Edit Playlist" : "Create Playlist"}
@@ -375,6 +370,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: FluentControlRadius.bottomSheet,
     borderTopRightRadius: FluentControlRadius.bottomSheet,
     padding: FluentSpacing.l,
+    paddingBottom: FluentSpacing.xxl,
   },
   modalHeader: {
     flexDirection: "row",

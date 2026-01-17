@@ -3,7 +3,6 @@ import { View, StyleSheet, ScrollView, Pressable, TextInput, ActivityIndicator, 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
-import { useRoute, RouteProp } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText, FluentButton, FluentIconButton, FluentChip } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
@@ -13,7 +12,6 @@ import { useRadio, RadioStation } from "@/contexts/RadioContext";
 import { useOnlineRadio } from "@/contexts/OnlineRadioContext";
 import { OnlineRadioStation, OnlineRadioService } from "@/services/OnlineRadioService";
 import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentRadius, FluentIconSize, FluentTypography } from "@/constants/fluent2";
-import { RadioStackParamList } from "@/navigation/RadioStackNavigator";
 
 type BandFilter = "all" | "fm" | "am";
 type RadioMode = "fmam" | "online";
@@ -232,9 +230,6 @@ function LoadingState({ message }: { message: string }) {
 }
 
 export default function RadioStationsScreen() {
-  const route = useRoute<RouteProp<RadioStackParamList, 'RadioStations'>>();
-  const initialMode = route.params?.mode || 'fmam';
-  
   const tabBarHeight = useSafeTabBarHeight();
   const tokens = useThemeTokens();
   const { isDark } = useThemeContext();
@@ -270,38 +265,26 @@ export default function RadioStationsScreen() {
     clearError,
   } = useOnlineRadio();
   
-  const [radioMode, setRadioMode] = useState<RadioMode>(initialMode);
+  const [radioMode, setRadioMode] = useState<RadioMode>("fmam");
   const [bandFilter, setBandFilter] = useState<BandFilter>("all");
   const [genreFilter, setGenreFilter] = useState<GenreFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [displayedStationsCount, setDisplayedStationsCount] = useState(50);
+  const [displayedStationsCount, setDisplayedStationsCount] = useState(STATIONS_PER_PAGE);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filteredOnlineStations, setFilteredOnlineStations] = useState<OnlineRadioStation[]>([]);
   const [isLoadingGenre, setIsLoadingGenre] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<OnlineRadioStation[]>([]);
 
   useEffect(() => {
-    if (radioMode === "online") {
-      if (detectedCountryCode) {
-        loadStationsForCountry();
-      } else {
-        initOnlineMode();
-      }
+    if (radioMode === "online" && !detectedCountryCode) {
+      initOnlineMode();
     }
-  }, [radioMode, detectedCountryCode]);
+  }, [radioMode]);
 
   useEffect(() => {
     if (radioMode === "online" && detectedCountryCode && genreFilter === "all" && !searchQuery) {
-      setFilteredOnlineStations(onlineStations.slice(0, 50));
+      setFilteredOnlineStations(onlineStations);
     }
-  }, [onlineStations, radioMode, genreFilter, searchQuery, detectedCountryCode]);
-
-  const loadStationsForCountry = async () => {
-    if (detectedCountryCode) {
-      await loadStations(detectedCountryCode);
-    }
-  };
+  }, [onlineStations, radioMode, genreFilter, searchQuery]);
 
   const initOnlineMode = async () => {
     const result = await detectLocation();
@@ -384,24 +367,18 @@ export default function RadioStationsScreen() {
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
     if (query.trim().length >= 2) {
-      setDisplayedStationsCount(50);
-      setIsSearching(true);
+      setDisplayedStationsCount(STATIONS_PER_PAGE);
       try {
-        const results = await OnlineRadioService.searchStations(query, 100, detectedCountryCode || undefined);
-        setSearchResults(results);
-        setFilteredOnlineStations(results);
+        await searchStations(query);
+        setFilteredOnlineStations(onlineStations);
       } catch (err) {
         console.error("Search error:", err);
-        setFilteredOnlineStations([]);
-      } finally {
-        setIsSearching(false);
       }
     } else if (query.trim().length === 0 && detectedCountryCode) {
       setGenreFilter("all");
-      setSearchResults([]);
-      setFilteredOnlineStations(onlineStations.slice(0, 50));
+      setFilteredOnlineStations(onlineStations);
     }
-  }, [onlineStations, detectedCountryCode]);
+  }, [searchStations, onlineStations, detectedCountryCode]);
 
   const handlePlayOnlineStation = useCallback(async (station: OnlineRadioStation) => {
     if (currentStation?.stationuuid === station.stationuuid && isOnlinePlaying) {
@@ -529,8 +506,8 @@ export default function RadioStationsScreen() {
           ))}
         </ScrollView>
 
-        {isLoadingGenre || isSearching ? (
-          <LoadingState message={isSearching ? "Searching stations..." : "Loading genre stations..."} />
+        {isLoadingGenre ? (
+          <LoadingState message="Loading genre stations..." />
         ) : displayedOnlineStations.length === 0 ? (
           <GlassCard style={styles.sectionCard}>
             <EmptyState
@@ -697,10 +674,7 @@ export default function RadioStationsScreen() {
   };
 
   return (
-    <FluentScreenLayout 
-      edges={[]} 
-      hasBottomNavigation={true}
-    >
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,

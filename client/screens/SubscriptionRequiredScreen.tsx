@@ -1,67 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Pressable, Alert, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { FluentScreenLayout, FluentText } from '@/components/fluent';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscription, PRICING } from '@/contexts/SubscriptionContext';
 import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
-import { detectUserRegion } from '@/lib/payment';
+import { PRICING, SupportedCurrency } from '@/contexts/SubscriptionContext';
 
 export default function SubscriptionRequiredScreen() {
   const insets = useSafeAreaInsets();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const { user, signOut } = useAuth();
-  const { purchaseApp, restorePurchases, checkLicenseStatus, isLoading } = useSubscription();
+  const { user, signOut, checkSubscriptionStatus } = useAuth();
 
-  const [isIndian, setIsIndian] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const currency: SupportedCurrency = 'INR';
+  const pricing = PRICING[currency];
 
-  useEffect(() => {
-    detectUserRegion().then((result) => {
-      setIsIndian(result.isIndian);
-    });
-  }, []);
-
-  const pricing = isIndian ? PRICING.india : PRICING.international;
-
-  const handlePurchase = async () => {
-    setIsProcessing(true);
-    try {
-      const success = await purchaseApp();
-      if (success) {
-        Alert.alert("Success", "Lifetime license activated! All features are now unlocked.");
-      } else {
-        Alert.alert("Error", "Purchase could not be completed. Please try again.");
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to complete purchase. Please try again.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleRestore = async () => {
-    setIsProcessing(true);
-    try {
-      const success = await restorePurchases();
-      if (success) {
-        Alert.alert("Restored", "Your purchase has been restored successfully!");
-      } else {
-        Alert.alert("No Purchase Found", "No previous purchase was found for this account.");
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to restore purchases. Please try again.");
-    } finally {
-      setIsProcessing(false);
+  const handleSubscribe = async () => {
+    if (Platform.OS === 'android') {
+      await Linking.openURL('https://play.google.com/store/apps/details?id=com.newaudio360');
+    } else {
+      await Linking.openURL('https://newaudio360.com/subscribe');
     }
   };
 
   const handleRefresh = async () => {
-    await checkLicenseStatus();
+    await checkSubscriptionStatus();
   };
 
   const handleSignOut = async () => {
@@ -75,9 +41,9 @@ export default function SubscriptionRequiredScreen() {
           <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground + '15' }]}>
             <MaterialCommunityIcons name="crown" size={64} color={colors.colorBrandForeground1} />
           </View>
-          <FluentText variant="title1" align="center">License Required</FluentText>
+          <FluentText variant="title1" align="center">Subscription Required</FluentText>
           <FluentText variant="body1" color="secondary" align="center" style={styles.subtitle}>
-            A license is required to use New Audio 360
+            An active subscription is required to use New Audio 360
           </FluentText>
         </View>
 
@@ -92,20 +58,43 @@ export default function SubscriptionRequiredScreen() {
             </View>
           )}
 
-          <View style={styles.purchaseSection}>
-            <FluentText variant="subtitle1" align="center">Unlock All Features</FluentText>
+          <View style={styles.plansSection}>
+            <FluentText variant="subtitle1" align="center">Choose a Plan</FluentText>
 
-            <View style={[styles.licenseCard, styles.highlightedCard, { backgroundColor: colors.colorBrandBackground + '10', borderColor: colors.colorBrandForeground1 }]}>
-              <View style={[styles.oneTimeBadge, { backgroundColor: colors.colorBrandBackground }]}>
-                <FluentText variant="caption2" color="onBrand">ONE-TIME PURCHASE</FluentText>
-              </View>
-              <View style={styles.licenseHeader}>
-                <FluentText variant="title3">Lifetime License</FluentText>
+            <View style={[styles.planCard, { backgroundColor: colors.colorNeutralBackground2, borderColor: colors.colorNeutralStroke2 }]}>
+              <View style={styles.planHeader}>
+                <FluentText variant="title3">Standard</FluentText>
                 <FluentText variant="title2" style={{ color: colors.colorBrandForeground1 }}>
-                  {pricing.symbol}{pricing.amount}
+                  {pricing.symbol}{pricing.standard}
                 </FluentText>
               </View>
-              <View style={styles.licenseFeatures}>
+              <View style={styles.planFeatures}>
+                <View style={styles.featureRow}>
+                  <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
+                  <FluentText variant="caption1" color="secondary">5 Premium Themes</FluentText>
+                </View>
+                <View style={styles.featureRow}>
+                  <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
+                  <FluentText variant="caption1" color="secondary">Basic Equalizer</FluentText>
+                </View>
+                <View style={styles.featureRow}>
+                  <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
+                  <FluentText variant="caption1" color="secondary">Unlimited Playback</FluentText>
+                </View>
+              </View>
+            </View>
+
+            <View style={[styles.planCard, styles.recommendedPlan, { backgroundColor: colors.colorBrandBackground + '10', borderColor: colors.colorBrandForeground1 }]}>
+              <View style={[styles.recommendedBadge, { backgroundColor: colors.colorBrandBackground }]}>
+                <FluentText variant="caption2" color="onBrand">RECOMMENDED</FluentText>
+              </View>
+              <View style={styles.planHeader}>
+                <FluentText variant="title3">Premium</FluentText>
+                <FluentText variant="title2" style={{ color: colors.colorBrandForeground1 }}>
+                  {pricing.symbol}{pricing.premium}
+                </FluentText>
+              </View>
+              <View style={styles.planFeatures}>
                 <View style={styles.featureRow}>
                   <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
                   <FluentText variant="caption1" color="secondary">All 55 Themes</FluentText>
@@ -120,7 +109,7 @@ export default function SubscriptionRequiredScreen() {
                 </View>
                 <View style={styles.featureRow}>
                   <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
-                  <FluentText variant="caption1" color="secondary">Lifetime Access - Never Expires</FluentText>
+                  <FluentText variant="caption1" color="secondary">Priority Support</FluentText>
                 </View>
               </View>
             </View>
@@ -129,37 +118,20 @@ export default function SubscriptionRequiredScreen() {
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + FluentSpacing.m }]}>
           <Pressable
-            style={[styles.purchaseButton, { backgroundColor: colors.colorBrandBackground, opacity: isProcessing || isLoading ? 0.6 : 1 }]}
-            onPress={handlePurchase}
-            disabled={isProcessing || isLoading}
+            style={[styles.subscribeButton, { backgroundColor: colors.colorBrandBackground }]}
+            onPress={handleSubscribe}
           >
-            {isProcessing ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <MaterialCommunityIcons name="crown" size={20} color="#FFFFFF" />
-                <FluentText variant="subtitle1" color="onBrand">Purchase Now</FluentText>
-              </>
-            )}
+            <MaterialCommunityIcons name="google-play" size={20} color="#FFFFFF" />
+            <FluentText variant="subtitle1" color="onBrand">Subscribe on Google Play</FluentText>
           </Pressable>
 
           <View style={styles.footerButtons}>
             <Pressable
               style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
-              onPress={handleRestore}
-              disabled={isProcessing || isLoading}
-            >
-              <MaterialCommunityIcons name="restore" size={18} color={colors.colorNeutralForeground1} />
-              <FluentText variant="body2">Restore</FluentText>
-            </Pressable>
-
-            <Pressable
-              style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
               onPress={handleRefresh}
-              disabled={isProcessing || isLoading}
             >
               <MaterialCommunityIcons name="refresh" size={18} color={colors.colorNeutralForeground1} />
-              <FluentText variant="body2">Refresh</FluentText>
+              <FluentText variant="body2">Refresh Status</FluentText>
             </Pressable>
             
             <Pressable
@@ -211,20 +183,20 @@ const styles = StyleSheet.create({
   userInfo: {
     flex: 1,
   },
-  purchaseSection: {
+  plansSection: {
     gap: FluentSpacing.m,
   },
-  licenseCard: {
+  planCard: {
     padding: FluentSpacing.m,
     borderRadius: FluentControlRadius.card,
     borderWidth: 1,
     gap: FluentSpacing.s,
   },
-  highlightedCard: {
+  recommendedPlan: {
     borderWidth: 2,
     position: 'relative',
   },
-  oneTimeBadge: {
+  recommendedBadge: {
     position: 'absolute',
     top: -10,
     right: FluentSpacing.m,
@@ -232,12 +204,12 @@ const styles = StyleSheet.create({
     paddingVertical: FluentSpacing.xxs,
     borderRadius: FluentControlRadius.button,
   },
-  licenseHeader: {
+  planHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  licenseFeatures: {
+  planFeatures: {
     gap: FluentSpacing.xs,
     marginTop: FluentSpacing.xs,
   },
@@ -249,7 +221,7 @@ const styles = StyleSheet.create({
   footer: {
     gap: FluentSpacing.m,
   },
-  purchaseButton: {
+  subscribeButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

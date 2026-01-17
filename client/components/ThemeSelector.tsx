@@ -141,7 +141,7 @@ const categories = [
 export function ThemeSelector({ currentTheme, onThemeChange }: ThemeSelectorProps) {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const { isLicensed } = useSubscription();
+  const { isThemeUnlocked } = useSubscription();
 
   const themesByCategory = categories.map(cat => ({
     ...cat,
@@ -173,7 +173,7 @@ export function ThemeSelector({ currentTheme, onThemeChange }: ThemeSelectorProp
                 label={option.label}
                 description={option.description}
                 isSelected={currentTheme === option.name}
-                isLocked={!isLicensed}
+                isLocked={!isThemeUnlocked(option.name)}
                 previewIsDark={option.isDark}
                 onPress={() => onThemeChange(option.name)}
                 colors={colors}

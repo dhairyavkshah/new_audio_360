@@ -252,16 +252,16 @@ export default function SettingsScreen() {
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="crown" size={20} color={colors.colorPaletteYellowForeground1} />
             <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              License
+              Subscription
             </FluentText>
           </View>
           <View style={styles.menuGroup}>
             <MenuItem
               icon="crown-outline"
               iconColor={colors.colorPaletteYellowForeground1}
-              title="License"
-              subtitle="Manage your license"
-              onPress={() => navigation.navigate("License")}
+              title="Plan"
+              subtitle="Manage your subscription"
+              onPress={() => navigation.navigate("Plan")}
               isDark={isDark}
             />
           </View>
@@ -303,7 +303,7 @@ export default function SettingsScreen() {
 
         <View style={styles.footer}>
           <FluentText variant="caption1" style={{ color: colors.colorNeutralForeground3, textAlign: "center" }}>
-            New Audio 360 v1.0
+            New Audio 360 v1.0.0
           </FluentText>
           <FluentText
             variant="caption1"

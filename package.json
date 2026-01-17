@@ -3,7 +3,6 @@
   "main": "client/index.js",
   "version": "1.0.0",
   "scripts": {
-    "postinstall": "patch-package",
     "dev": "EXPO_PACKAGER_PROXY_URL=https://$REPLIT_DEV_DOMAIN REACT_NATIVE_PACKAGER_HOSTNAME=$REPLIT_DEV_DOMAIN npx expo start --localhost --web --port 5000",
     "lint": "npx expo lint",
     "lint:fix": "npx expo lint --fix",
@@ -22,18 +21,17 @@
     "@react-navigation/native": "^7.1.8",
     "@react-navigation/native-stack": "^7.3.16",
     "@tanstack/react-query": "^5.90.7",
-    "audio-effects": "file:modules/audio-effects",
+    "@types/jsonwebtoken": "^9.0.10",
+    "drizzle-orm": "^0.39.3",
+    "drizzle-zod": "^0.7.0",
     "expo": "~54.0.31",
-    "expo-asset": "~12.0.12",
     "expo-audio": "^1.1.1",
     "expo-auth-session": "^7.0.10",
     "expo-av": "^16.0.8",
     "expo-blur": "~15.0.8",
-    "expo-build-properties": "~1.0.10",
     "expo-clipboard": "^8.0.8",
     "expo-constants": "~18.0.9",
     "expo-crypto": "^15.0.8",
-    "expo-dev-client": "^6.0.20",
     "expo-font": "~14.0.9",
     "expo-glass-effect": "~0.1.8",
     "expo-haptics": "~15.0.8",
@@ -49,43 +47,41 @@
     "expo-symbols": "~1.0.8",
     "expo-system-ui": "~6.0.9",
     "expo-web-browser": "~15.0.10",
+    "express": "^4.21.2",
+    "google-auth-library": "^10.5.0",
+    "googleapis": "^170.0.0",
+    "http-proxy-middleware": "^3.0.5",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.16.3",
+    "postgres": "^3.4.8",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-keyboard-controller": "1.18.5",
-    "react-native-reanimated": "~3.16.0",
+    "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
-    "react-native-track-player": "^4.1.2",
     "react-native-web": "~0.21.0",
+    "react-native-worklets": "0.5.1",
+    "tsx": "^4.20.6",
+    "ws": "^8.18.0",
     "zod": "^3.24.2",
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
-    "@expo/ngrok": "^4.1.3",
+    "@types/express": "^4.17.21",
     "@types/node": "24.10.0",
     "@types/react": "~19.1.0",
     "babel-plugin-module-resolver": "^5.0.2",
+    "drizzle-kit": "^0.31.4",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-node": "^0.3.9",
     "eslint-plugin-prettier": "^5.5.4",
-    "patch-package": "^8.0.1",
     "prettier": "3.6.2",
     "typescript": "~5.9.2"
   },
-  "private": true,
-  "expo": {
-    "install": {},
-    "doctor": {
-      "reactNativeDirectoryCheck": {
-        "exclude": [
-          "audio-effects"
-        ],
-        "listUnknownPackages": false
-      }
-    }
-  }
+  "private": true
 }

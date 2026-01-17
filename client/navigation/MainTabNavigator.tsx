@@ -1,10 +1,13 @@
-import React, { useState, useCallback, memo } from "react";
+import React, { useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View } from "react-native";
 import Animated, { 
   FadeIn, 
   FadeOut,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -34,18 +37,32 @@ export type MainTabParamList = {
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const TabIcon = memo(function TabIcon({
+function TabIcon({
   iconKey,
   color,
   focused,
+  isDark,
 }: {
   iconKey: 'listen' | 'library' | 'radio' | 'settings';
   color: string;
   focused: boolean;
-  isDark?: boolean;
+  isDark: boolean;
 }) {
   const skin = useSkin();
   const tokens = useThemeTokens();
+  const indicatorScale = useSharedValue(focused ? 1 : 0);
+  const iconScale = useSharedValue(1);
+  
+  React.useEffect(() => {
+    indicatorScale.value = withSpring(focused ? 1 : 0, {
+      damping: 15,
+      stiffness: 200,
+    });
+    iconScale.value = withSpring(focused ? 1.05 : 1, {
+      damping: 15,
+      stiffness: 200,
+    });
+  }, [focused]);
   
   const iconMap = {
     listen: focused ? skin.icons.tabListenFocused : skin.icons.tabListen,
@@ -55,32 +72,43 @@ const TabIcon = memo(function TabIcon({
   };
   
   const iconName = iconMap[iconKey] as keyof typeof MaterialCommunityIcons.glyphMap;
+  
   const activeIndicatorColor = tokens.colors.primary;
   const activeIconColor = tokens.colors.onPrimary;
   
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scaleX: indicatorScale.value },
+      { scaleY: indicatorScale.value },
+    ],
+    opacity: indicatorScale.value,
+  }));
+  
+  const iconAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconScale.value }],
+  }));
+  
   return (
     <View style={styles.tabIconContainer}>
-      {focused && (
-        <View
-          style={[
-            styles.m3ActiveIndicator,
-            { backgroundColor: activeIndicatorColor },
-          ]}
-        />
-      )}
-      <View style={styles.tabIcon}>
+      <Animated.View
+        style={[
+          styles.m3ActiveIndicator,
+          { backgroundColor: activeIndicatorColor },
+          indicatorStyle,
+        ]}
+      />
+      <Animated.View style={[styles.tabIcon, iconAnimatedStyle]}>
         <MaterialCommunityIcons
           name={iconName}
           size={FluentIconSize.medium}
           color={focused ? activeIconColor : color}
         />
-      </View>
+      </Animated.View>
     </View>
   );
-});
+}
 
 const TAB_BAR_HEIGHT = 56;
-const MIN_BOTTOM_PADDING = 16;
 
 export default function MainTabNavigator() {
   const { isDark } = useThemeContext();
@@ -91,8 +119,7 @@ export default function MainTabNavigator() {
   const [currentTab, setCurrentTab] = useState<string>("ListenTab");
   const insets = useSafeAreaInsets();
   
-  const safeBottom = Platform.OS === 'android' ? Math.max(insets.bottom, MIN_BOTTOM_PADDING) : insets.bottom;
-  const tabBarHeight = TAB_BAR_HEIGHT + safeBottom;
+  const tabBarHeight = TAB_BAR_HEIGHT + insets.bottom;
   const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && currentTab !== "RadioTab" && !isNowPlayingVisible;
 
   return (
@@ -105,7 +132,7 @@ export default function MainTabNavigator() {
         tabBarStyle: {
           position: "absolute",
           height: tabBarHeight,
-          paddingBottom: safeBottom > 0 ? safeBottom : FluentSpacing.s,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : FluentSpacing.s,
           paddingTop: FluentSpacing.xs,
           ...getTabBarStyle(tokens),
         },

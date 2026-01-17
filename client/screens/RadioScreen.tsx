@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Platform, ActivityIndicator, TextInput, Modal, FlatList } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Platform, ActivityIndicator, TextInput } from "react-native";
 import Slider from "@react-native-community/slider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -8,11 +8,10 @@ import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText, FluentButton, FluentIconButton } from "@/components/fluent";
-import { FluentTopBar } from "@/components/FluentTopBar";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
-import { useRadio, RadioStation, RDSData, FMBandType } from "@/contexts/RadioContext";
+import { useRadio, RadioStation, RDSData } from "@/contexts/RadioContext";
 import { useOnlineRadio, OnlineRadioStation } from "@/contexts/OnlineRadioContext";
 import { useSoundLab } from "@/contexts/SoundLabContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
@@ -27,6 +26,7 @@ import {
   FluentTypography,
   FluentBorderWidth,
 } from "@/constants/fluent2";
+import { FMBandType } from "../../modules/audio-effects";
 
 const FM_MIN = 87.5;
 const FM_MAX = 108.0;
@@ -98,14 +98,11 @@ export default function RadioScreen() {
     error: onlineError,
     detectedCountry,
     detectedCountryCode,
-    availableCountries,
     popularStations,
     currentStation,
     isPlaying: isOnlinePlaying,
     isBuffering,
     detectLocation,
-    loadCountries,
-    setCountryManual,
     loadPopularStations,
     searchStations,
     playStation,
@@ -122,8 +119,6 @@ export default function RadioScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [hasLoadedOnline, setHasLoadedOnline] = useState(false);
   const [modeLoaded, setModeLoaded] = useState(false);
-  const [isCountryPickerVisible, setIsCountryPickerVisible] = useState(false);
-  const [countrySearchQuery, setCountrySearchQuery] = useState('');
 
   useEffect(() => {
     loadSavedMode();
@@ -349,40 +344,12 @@ export default function RadioScreen() {
     }
   }, [detectLocation, loadPopularStations]);
 
-  const handleOpenCountryPicker = useCallback(async () => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setCountrySearchQuery('');
-    setIsCountryPickerVisible(true);
-    await loadCountries();
-  }, [loadCountries]);
-
-  const handleSelectCountry = useCallback(async (countryCode: string, countryName: string) => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    setIsCountryPickerVisible(false);
-    await setCountryManual(countryCode, countryName);
-  }, [setCountryManual]);
-
-  const filteredCountries = useMemo(() => {
-    if (!countrySearchQuery.trim()) {
-      return availableCountries;
-    }
-    const query = countrySearchQuery.toLowerCase();
-    return availableCountries.filter(c => 
-      c.name.toLowerCase().includes(query) || 
-      c.iso_3166_1.toLowerCase().includes(query)
-    );
-  }, [availableCountries, countrySearchQuery]);
-
   const handleNavigateToStations = useCallback(() => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    navigation.navigate("RadioStations", { mode: radioMode });
-  }, [navigation, radioMode]);
+    navigation.navigate("RadioStations");
+  }, [navigation]);
 
   const formatFrequency = (freq: number, band: FMBandType): string => {
     if (band === "fm") {
@@ -455,92 +422,24 @@ export default function RadioScreen() {
     );
   };
 
-  const renderPersistentNowPlaying = () => {
-    if (!currentStation || !isOnlinePlaying || radioMode === 'online') return null;
-    
-    return (
-      <Pressable
-        style={[
-          styles.persistentNowPlaying,
-          {
-            backgroundColor: colors.colorBrandBackground,
-            borderRadius: FluentRadius.large,
-          },
-        ]}
-        onPress={() => handleModeChange('online')}
-        accessibilityLabel={`Now playing: ${currentStation.name}. Tap to view.`}
-        accessibilityRole="button"
-      >
-        <View style={styles.persistentNowPlayingContent}>
-          <View style={styles.persistentNowPlayingInfo}>
-            <View style={styles.persistentNowPlayingIcon}>
-              <MaterialCommunityIcons
-                name="radio"
-                size={FluentIconSize.regular}
-                color={colors.colorNeutralForegroundOnBrand}
-              />
-            </View>
-            <View style={styles.persistentNowPlayingText}>
-              <FluentText
-                variant="caption1"
-                style={{ color: colors.colorNeutralForegroundOnBrand + 'CC' }}
-              >
-                NOW PLAYING
-              </FluentText>
-              <FluentText
-                variant="body2Strong"
-                numberOfLines={1}
-                style={{ color: colors.colorNeutralForegroundOnBrand }}
-              >
-                {currentStation.name}
-              </FluentText>
-            </View>
-          </View>
-          <Pressable
-            style={[
-              styles.persistentStopButton,
-              { backgroundColor: colors.colorNeutralForegroundOnBrand + '20' },
-            ]}
-            onPress={(e) => {
-              e.stopPropagation();
-              onlineStop();
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            }}
-            accessibilityLabel="Stop playing"
-            accessibilityRole="button"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <MaterialCommunityIcons
-              name="stop"
-              size={24}
-              color={colors.colorNeutralForegroundOnBrand}
-            />
-          </Pressable>
-        </View>
-      </Pressable>
-    );
-  };
-
   const renderOnlineContent = () => {
     const error = onlineError;
 
     return (
       <>
-        <Pressable 
-          style={[styles.countryDropdown, { backgroundColor: colors.colorNeutralBackground3, borderColor: colors.colorNeutralStroke2 }]}
-          onPress={handleOpenCountryPicker}
-          accessibilityLabel="Select country"
-          accessibilityRole="button"
-        >
-          <FluentText variant="body1Strong" style={styles.countryDropdownText}>
-            {getCountryFlag(detectedCountryCode)} {detectedCountry || 'Select Country'}
+        <View style={styles.countryHeader}>
+          <FluentText variant="title3" style={styles.countryTitle}>
+            {getCountryFlag(detectedCountryCode)} {detectedCountry || 'Detecting location...'}
           </FluentText>
-          <MaterialCommunityIcons
-            name="chevron-down"
-            size={FluentIconSize.regular}
-            color={colors.colorNeutralForeground2}
+          <FluentIconButton
+            icon={<MaterialCommunityIcons name="refresh" />}
+            size="medium"
+            variant="subtle"
+            onPress={handleRetryLocation}
+            disabled={isOnlineLoading}
+            accessibilityLabel="Refresh location"
           />
-        </Pressable>
+        </View>
 
         <View style={[styles.searchContainer, { backgroundColor: colors.colorNeutralBackground3, borderColor: colors.colorNeutralStroke2 }]}>
           <MaterialCommunityIcons
@@ -1141,123 +1040,17 @@ export default function RadioScreen() {
   };
 
   return (
-    <FluentScreenLayout 
-      header={<FluentTopBar title="Radio" />}
-      contentPadding="l"
-    >
+    <FluentScreenLayout contentPadding="l">
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight + FluentSpacing.xxl }]}
         showsVerticalScrollIndicator={false}
       >
         {renderModeToggle()}
-        {renderPersistentNowPlaying()}
         {renderFmUnavailableNotice()}
         
         {radioMode === 'fmam' ? renderFmContent() : renderOnlineContent()}
       </ScrollView>
-
-      <Modal
-        visible={isCountryPickerVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setIsCountryPickerVisible(false)}
-      >
-        <View style={[styles.modalContainer, { backgroundColor: colors.colorNeutralBackground1 }]}>
-          <View style={styles.modalHeader}>
-            <FluentText variant="title2">Select Country</FluentText>
-            <Pressable
-              onPress={() => setIsCountryPickerVisible(false)}
-              style={styles.modalCloseButton}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <MaterialCommunityIcons name="close" size={24} color={colors.colorNeutralForeground1} />
-            </Pressable>
-          </View>
-
-          <View style={[styles.modalSearchContainer, { backgroundColor: colors.colorNeutralBackground3, borderColor: colors.colorNeutralStroke2 }]}>
-            <MaterialCommunityIcons
-              name="magnify"
-              size={FluentIconSize.regular}
-              color={colors.colorNeutralForeground3}
-            />
-            <TextInput
-              style={[
-                styles.modalSearchInput,
-                { color: colors.colorNeutralForeground1, fontSize: FluentTypography.body1.fontSize }
-              ]}
-              placeholder="Search countries..."
-              placeholderTextColor={colors.colorNeutralForeground3}
-              value={countrySearchQuery}
-              onChangeText={setCountrySearchQuery}
-              autoFocus={true}
-            />
-            {countrySearchQuery.length > 0 && (
-              <Pressable
-                onPress={() => setCountrySearchQuery('')}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <MaterialCommunityIcons name="close-circle" size={FluentIconSize.small} color={colors.colorNeutralForeground3} />
-              </Pressable>
-            )}
-          </View>
-
-          {availableCountries.length === 0 ? (
-            <View style={styles.modalLoadingContainer}>
-              <ActivityIndicator size="large" color={colors.colorBrandForeground1} />
-              <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.m }}>
-                Loading countries...
-              </FluentText>
-            </View>
-          ) : (
-            <FlatList
-              data={filteredCountries}
-              keyExtractor={(item) => item.iso_3166_1}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={[
-                    styles.countryItem,
-                    {
-                      backgroundColor: item.iso_3166_1 === detectedCountryCode
-                        ? colors.colorBrandBackgroundSelected
-                        : 'transparent',
-                    }
-                  ]}
-                  onPress={() => handleSelectCountry(item.iso_3166_1, item.name)}
-                >
-                  <FluentText variant="title3" style={styles.countryFlag}>
-                    {getCountryFlag(item.iso_3166_1)}
-                  </FluentText>
-                  <View style={styles.countryInfo}>
-                    <FluentText 
-                      variant="body1Strong"
-                      style={{
-                        color: item.iso_3166_1 === detectedCountryCode
-                          ? colors.colorBrandForeground1
-                          : colors.colorNeutralForeground1
-                      }}
-                    >
-                      {item.name}
-                    </FluentText>
-                    <FluentText variant="caption1" color="secondary">
-                      {item.stationcount.toLocaleString()} stations
-                    </FluentText>
-                  </View>
-                  {item.iso_3166_1 === detectedCountryCode && (
-                    <MaterialCommunityIcons
-                      name="check"
-                      size={FluentIconSize.regular}
-                      color={colors.colorBrandForeground1}
-                    />
-                  )}
-                </Pressable>
-              )}
-              contentContainerStyle={styles.countryList}
-              showsVerticalScrollIndicator={true}
-            />
-          )}
-        </View>
-      </Modal>
     </FluentScreenLayout>
   );
 }
@@ -1273,40 +1066,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     marginBottom: FluentSpacing.l,
-  },
-  persistentNowPlaying: {
-    padding: FluentSpacing.m,
-    marginBottom: FluentSpacing.l,
-  },
-  persistentNowPlayingContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  persistentNowPlayingInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: FluentSpacing.m,
-  },
-  persistentNowPlayingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: FluentSpacing.m,
-  },
-  persistentNowPlayingText: {
-    flex: 1,
-  },
-  persistentStopButton: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
-    borderRadius: FluentTouchTarget.minimum / 2,
-    justifyContent: "center",
-    alignItems: "center",
   },
   noticeCard: {
     flexDirection: "row",
@@ -1587,73 +1346,5 @@ const styles = StyleSheet.create({
   browseButton: {
     marginTop: FluentSpacing.m,
     marginBottom: FluentSpacing.l,
-  },
-  countryDropdown: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.s,
-    borderRadius: FluentControlRadius.input,
-    borderWidth: FluentBorderWidth.thin,
-    marginBottom: FluentSpacing.m,
-    minHeight: FluentTouchTarget.minimum,
-  },
-  countryDropdownText: {
-    flex: 1,
-  },
-  modalContainer: {
-    flex: 1,
-    paddingTop: FluentSpacing.l,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: FluentSpacing.l,
-    paddingBottom: FluentSpacing.m,
-  },
-  modalCloseButton: {
-    padding: FluentSpacing.xs,
-  },
-  modalSearchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.s,
-    borderRadius: FluentControlRadius.input,
-    borderWidth: FluentBorderWidth.thin,
-    marginHorizontal: FluentSpacing.l,
-    marginBottom: FluentSpacing.m,
-    minHeight: FluentTouchTarget.minimum,
-  },
-  modalSearchInput: {
-    flex: 1,
-    marginHorizontal: FluentSpacing.s,
-    paddingVertical: FluentSpacing.xs,
-  },
-  modalLoadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  countryList: {
-    paddingHorizontal: FluentSpacing.l,
-    paddingBottom: FluentSpacing.xxl,
-  },
-  countryItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: FluentSpacing.m,
-    paddingHorizontal: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
-    marginBottom: FluentSpacing.xs,
-    minHeight: FluentTouchTarget.minimum,
-  },
-  countryFlag: {
-    marginRight: FluentSpacing.m,
-  },
-  countryInfo: {
-    flex: 1,
   },
 });

@@ -5,9 +5,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  runOnJS,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { scheduleOnRN } from "react-native-worklets";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
 import { useThemeTokens } from "@/contexts/ThemeContext";
@@ -69,10 +69,10 @@ export function VolumeSlider({
       thumbPosition.value = newY;
       const newValue = Math.round(((TRACK_HEIGHT - newY) / TRACK_HEIGHT) * 100);
       const clampedValue = Math.max(0, Math.min(100, newValue));
-      runOnJS(handleValueChange)(clampedValue);
+      scheduleOnRN(handleValueChange, clampedValue);
     })
     .onEnd(() => {
-      runOnJS(triggerTickHaptic)();
+      scheduleOnRN(triggerTickHaptic);
     });
 
   const tapGesture = Gesture.Tap()
@@ -81,8 +81,8 @@ export function VolumeSlider({
       thumbPosition.value = withSpring(tapY, { damping: 15 });
       const newValue = Math.round(((TRACK_HEIGHT - tapY) / TRACK_HEIGHT) * 100);
       const clampedValue = Math.max(0, Math.min(100, newValue));
-      runOnJS(handleValueChange)(clampedValue);
-      runOnJS(triggerTickHaptic)();
+      scheduleOnRN(handleValueChange, clampedValue);
+      scheduleOnRN(triggerTickHaptic);
     });
 
   const composedGesture = Gesture.Race(panGesture, tapGesture);

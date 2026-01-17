@@ -1,11 +1,9 @@
 import { Platform } from "react-native";
 import { NativeStackNavigationOptions } from "@react-navigation/native-stack";
+import { isLiquidGlassAvailable } from "expo-glass-effect";
 
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { FluentLightColors, FluentDarkColors, FluentTypography } from "@/constants/fluent2";
-
-// Liquid glass is an iOS 26+ feature - not available yet
-const isLiquidGlassAvailable = () => false;
 
 interface UseScreenOptionsParams {
   transparent?: boolean;
@@ -19,14 +17,14 @@ export function useScreenOptions({
 
   return {
     headerTitleAlign: "left",
-    headerTransparent: Platform.OS === 'ios' ? transparent : false,
+    headerTransparent: transparent,
     headerBlurEffect: isDark ? "dark" : "light",
     headerTintColor: colors.colorNeutralForeground1,
     headerStyle: {
       backgroundColor: Platform.select({
-        ios: transparent ? undefined : colors.colorNeutralBackground2,
+        ios: undefined,
         android: colors.colorNeutralBackground2,
-        default: colors.colorNeutralBackground2,
+        web: colors.colorNeutralBackground2,
       }),
     },
     headerTitleStyle: {

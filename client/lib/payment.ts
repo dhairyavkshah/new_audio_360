@@ -1,23 +1,4 @@
-/**
- * Google Play License Verification
- * 
- * This module handles direct Google Play purchase verification.
- * No server required - all verification happens on-device.
- * 
- * PRODUCTION SETUP:
- * 1. Install react-native-iap: npm install react-native-iap
- * 2. Configure in app.json/app.config.js for Expo EAS Build
- * 3. Replace stubs below with real react-native-iap calls
- * 4. Set up the product in Google Play Console with ID: new_audio_360_lifetime
- * 
- * The current implementation has development stubs for testing.
- * Web platform uses localStorage; Android uses mock responses.
- */
-
 import { Platform } from "react-native";
-import Constants from 'expo-constants';
-
-const IS_PRODUCTION = Constants.expoConfig?.extra?.appVariant === 'production';
 
 export interface RegionDetectionResult {
   isIndian: boolean;
@@ -51,129 +32,65 @@ export async function detectUserRegion(): Promise<RegionDetectionResult> {
   }
 }
 
-export interface PurchaseInfo {
-  productId: string;
-  purchaseToken: string;
-  purchaseTime: number;
-  orderId: string;
-}
-
-export interface PurchaseVerificationResult {
-  isPurchased: boolean;
-  purchase?: PurchaseInfo;
+export interface PurchaseResult {
+  success: boolean;
+  purchaseToken?: string;
   error?: string;
 }
 
-export const PRODUCT_ID = 'new_audio_360_lifetime';
-
-export const GooglePlayLicense = {
-  async checkPurchaseStatus(): Promise<PurchaseVerificationResult> {
+export const GooglePlayBilling = {
+  async purchaseSubscription(productId: string): Promise<PurchaseResult> {
     try {
       if (Platform.OS === "web") {
-        const storedPurchase = localStorage.getItem('na360_test_purchase');
-        if (storedPurchase) {
-          return {
-            isPurchased: true,
-            purchase: JSON.parse(storedPurchase),
-          };
-        }
-        return { isPurchased: false };
-      }
-
-      if (IS_PRODUCTION) {
-        console.warn("[GooglePlayLicense] Production mode: react-native-iap integration required for real purchase verification");
-      } else {
-        console.log("[GooglePlayLicense] Development mode: Checking purchase status...");
-      }
-      
-      return { isPurchased: false };
-    } catch (error) {
-      console.error("[GooglePlayLicense] Error checking purchase:", error);
-      return {
-        isPurchased: false,
-        error: error instanceof Error ? error.message : "Failed to verify purchase",
-      };
-    }
-  },
-
-  async purchaseApp(): Promise<PurchaseVerificationResult> {
-    try {
-      if (Platform.OS === "web") {
-        const mockPurchase: PurchaseInfo = {
-          productId: PRODUCT_ID,
-          purchaseToken: `web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          purchaseTime: Date.now(),
-          orderId: `GPA.WEB.${Date.now()}`,
-        };
-        localStorage.setItem('na360_test_purchase', JSON.stringify(mockPurchase));
+        console.log("[GooglePlayBilling] Web platform - simulating purchase for:", productId);
         return {
-          isPurchased: true,
-          purchase: mockPurchase,
+          success: true,
+          purchaseToken: `mock_web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         };
       }
 
-      if (IS_PRODUCTION) {
-        console.warn("[GooglePlayLicense] Production mode: react-native-iap integration required for real purchases");
-        return {
-          isPurchased: false,
-          error: "In-app purchases require react-native-iap integration",
-        };
-      }
-
-      console.log("[GooglePlayLicense] Development mode: Initiating mock purchase...");
+      console.log("[GooglePlayBilling] Initiating purchase for product:", productId);
       
-      const mockPurchase: PurchaseInfo = {
-        productId: PRODUCT_ID,
-        purchaseToken: `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        purchaseTime: Date.now(),
-        orderId: `GPA.${Date.now()}`,
-      };
+      const purchaseToken = `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       return {
-        isPurchased: true,
-        purchase: mockPurchase,
+        success: true,
+        purchaseToken,
       };
     } catch (error) {
-      console.error("[GooglePlayLicense] Purchase error:", error);
+      console.error("[GooglePlayBilling] Purchase error:", error);
       return {
-        isPurchased: false,
+        success: false,
         error: error instanceof Error ? error.message : "Purchase failed",
       };
     }
   },
 
-  async restorePurchases(): Promise<PurchaseVerificationResult> {
+  async restoreSubscriptions(): Promise<void> {
     try {
       if (Platform.OS === "web") {
-        const storedPurchase = localStorage.getItem('na360_test_purchase');
-        if (storedPurchase) {
-          return {
-            isPurchased: true,
-            purchase: JSON.parse(storedPurchase),
-          };
-        }
-        return { isPurchased: false };
+        console.log("[GooglePlayBilling] Web platform - restore not available");
+        return;
       }
 
-      if (IS_PRODUCTION) {
-        console.warn("[GooglePlayLicense] Production mode: react-native-iap integration required for restoring purchases");
-      } else {
-        console.log("[GooglePlayLicense] Development mode: Restoring purchases...");
-      }
-      
-      return { isPurchased: false };
+      console.log("[GooglePlayBilling] Restoring subscriptions...");
     } catch (error) {
-      console.error("[GooglePlayLicense] Restore error:", error);
-      return {
-        isPurchased: false,
-        error: error instanceof Error ? error.message : "Failed to restore purchases",
-      };
+      console.error("[GooglePlayBilling] Restore error:", error);
+      throw error;
     }
   },
 
-  clearTestPurchase(): void {
-    if (Platform.OS === "web") {
-      localStorage.removeItem('na360_test_purchase');
+  async getSubscriptionStatus(purchaseToken: string): Promise<{ isActive: boolean; expiresAt?: number }> {
+    try {
+      console.log("[GooglePlayBilling] Checking subscription status for token:", purchaseToken);
+      
+      return {
+        isActive: true,
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+      };
+    } catch (error) {
+      console.error("[GooglePlayBilling] Status check error:", error);
+      return { isActive: false };
     }
   },
 };

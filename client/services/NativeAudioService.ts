@@ -4,6 +4,8 @@ import {
   WaveformAnalyzerModule, 
   ImmersiveModeEngineModule,
   EqualizerModule,
+  BassBoostModule,
+  VirtualizerModule,
   PlaybackStatus,
   WaveformData,
   FftData,
@@ -232,6 +234,12 @@ class NativeAudioServiceClass {
         success: true, 
         settings: {
           equalizerEnabled: mode !== 'off',
+          bassBoostEnabled: mode !== 'off',
+          bassBoostStrength: mode !== 'off' ? 500 : 0,
+          virtualizerEnabled: mode !== 'off',
+          virtualizerStrength: mode !== 'off' ? 500 : 0,
+          loudnessEnhancerEnabled: mode !== 'off',
+          loudnessGain: mode !== 'off' ? 300 : 0,
           equalizerBandLevels: []
         }
       };
@@ -245,9 +253,10 @@ class NativeAudioServiceClass {
         }
       }
 
-      // Use session ID 0 (global audio output) if no specific session available
-      // This allows effects to work with react-native-track-player which doesn't expose its session ID
-      const sessionId = this.getAudioSessionId() || 0;
+      const sessionId = this.getAudioSessionId();
+      if (!sessionId || sessionId === 0) {
+        return { success: false, error: 'No valid audio session available. Please start playback first.' };
+      }
 
       const currentMode = ImmersiveModeEngineModule.getCurrentMode();
       if (!currentMode.isAttached) {
@@ -275,6 +284,12 @@ class NativeAudioServiceClass {
         isAttached: true,
         settings: {
           equalizerEnabled: this.immersiveMode !== 'off',
+          bassBoostEnabled: this.immersiveMode !== 'off',
+          bassBoostStrength: this.immersiveMode !== 'off' ? 500 : 0,
+          virtualizerEnabled: this.immersiveMode !== 'off',
+          virtualizerStrength: this.immersiveMode !== 'off' ? 500 : 0,
+          loudnessEnhancerEnabled: this.immersiveMode !== 'off',
+          loudnessGain: this.immersiveMode !== 'off' ? 300 : 0,
           equalizerBandLevels: []
         }
       };
@@ -285,6 +300,12 @@ class NativeAudioServiceClass {
         isAttached: false,
         settings: {
           equalizerEnabled: false,
+          bassBoostEnabled: false,
+          bassBoostStrength: 0,
+          virtualizerEnabled: false,
+          virtualizerStrength: 0,
+          loudnessEnhancerEnabled: false,
+          loudnessGain: 0,
           equalizerBandLevels: []
         }
       };
@@ -304,6 +325,33 @@ class NativeAudioServiceClass {
       ];
     }
     return ImmersiveModeEngineModule.getAvailableModes();
+  }
+
+  async setCustomAudioParameters(
+    bassStrength: number,
+    virtualizerStrength: number,
+    loudnessGain: number,
+    eqPreset: number = -1
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.isImmersiveModeAvailable()) {
+      return { success: false, error: 'Immersive mode not available' };
+    }
+
+    try {
+      const result = await ImmersiveModeEngineModule.setCustomParameters(
+        bassStrength,
+        virtualizerStrength,
+        loudnessGain,
+        eqPreset
+      );
+      if (result.success) {
+        this.immersiveMode = 'custom';
+      }
+      return { success: result.success, error: result.error };
+    } catch (error) {
+      console.error('NativeAudioService.setCustomAudioParameters error:', error);
+      return { success: false, error: String(error) };
+    }
   }
 
   async startWaveformCapture(rateHz: number = 30): Promise<{ success: boolean; error?: string }> {
