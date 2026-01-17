@@ -135,23 +135,15 @@ export const OnlineRadioService = {
   ): Promise<OnlineRadioStation[]> {
     try {
       if (countryCode) {
-        const curatedStations = await this.getCuratedStations(countryCode, limit);
-        if (curatedStations.length >= limit) {
-          return curatedStations.slice(0, limit);
-        }
-        
-        const remainingLimit = limit - curatedStations.length;
-        const additionalStations = await fetchWithFallback<OnlineRadioStation[]>(
-          `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${remainingLimit * 3}&order=votes&reverse=true&hidebroken=true&lastcheckok=1`
+        // First, try to get top-voted stations for this country directly
+        // This is faster and more reliable than searching for curated stations
+        const topStations = await fetchWithFallback<OnlineRadioStation[]>(
+          `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${limit * 3}&order=votes&reverse=true&hidebroken=true&lastcheckok=1`
         );
         
-        const curatedUuids = new Set(curatedStations.map(s => s.stationuuid));
-        const filteredAdditional = additionalStations
-          .filter(isStreamSupported)
-          .filter(s => !curatedUuids.has(s.stationuuid))
-          .slice(0, remainingLimit);
-        
-        return [...curatedStations, ...filteredAdditional];
+        const validStations = topStations.filter(isStreamSupported).slice(0, limit);
+        console.log(`[OnlineRadioService] Found ${validStations.length} top stations for ${countryCode}`);
+        return validStations;
       }
       
       const stations = await fetchWithFallback<OnlineRadioStation[]>(
@@ -168,6 +160,8 @@ export const OnlineRadioService = {
     countryCode: string,
     limit: number = 20
   ): Promise<OnlineRadioStation[]> {
+    // Note: This function is kept for potential future use but is no longer 
+    // the primary way to get popular stations. Direct top-voted lookup is faster.
     const { getCuratedStationsForCountry } = await import('./CuratedStations');
     const curatedList = getCuratedStationsForCountry(countryCode);
     
@@ -178,29 +172,27 @@ export const OnlineRadioService = {
     const foundStations: OnlineRadioStation[] = [];
     const seenUuids = new Set<string>();
 
-    for (const curated of curatedList) {
+    // Only search for first 5 curated stations to reduce API calls
+    for (const curated of curatedList.slice(0, 5)) {
       if (foundStations.length >= limit) break;
       
-      for (const term of curated.searchTerms) {
-        if (foundStations.length >= limit) break;
+      const term = curated.searchTerms[0]; // Use first search term only
+      
+      try {
+        const stations = await fetchWithFallback<OnlineRadioStation[]>(
+          `/json/stations/search?name=${encodeURIComponent(term)}&countrycode=${countryCode.toUpperCase()}&limit=5&order=votes&reverse=true&hidebroken=true&lastcheckok=1`
+        );
         
-        try {
-          const stations = await fetchWithFallback<OnlineRadioStation[]>(
-            `/json/stations/search?name=${encodeURIComponent(term)}&countrycode=${countryCode.toUpperCase()}&limit=5&order=votes&reverse=true&hidebroken=true&lastcheckok=1`
-          );
-          
-          const validStation = stations.find(s => 
-            isStreamSupported(s) && !seenUuids.has(s.stationuuid)
-          );
-          
-          if (validStation) {
-            seenUuids.add(validStation.stationuuid);
-            foundStations.push(validStation);
-            break;
-          }
-        } catch (err) {
-          console.warn(`[OnlineRadioService] Failed to find curated station: ${curated.name}`);
+        const validStation = stations.find(s => 
+          isStreamSupported(s) && !seenUuids.has(s.stationuuid)
+        );
+        
+        if (validStation) {
+          seenUuids.add(validStation.stationuuid);
+          foundStations.push(validStation);
         }
+      } catch (err) {
+        console.warn(`[OnlineRadioService] Failed to find curated station: ${curated.name}`);
       }
     }
 

@@ -155,6 +155,8 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   const cleanupSound = async () => {
     if (soundRef.current) {
       try {
+        // Stop playback first, then unload
+        await soundRef.current.stopAsync();
         await soundRef.current.unloadAsync();
       } catch (err) {
         console.warn('[OnlineRadioContext] Error cleaning up sound:', err);
@@ -304,9 +306,17 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   }, [availableCountries.length]);
 
   const setCountryManual = useCallback(async (countryCode: string, countryName: string): Promise<void> => {
+    // Clear old popular stations immediately when country changes
+    setPopularStations([]);
     setDetectedCountryCode(countryCode);
     setDetectedCountry(countryName);
     await cacheCountry(countryCode, countryName);
+    // Clear cached popular stations to force refresh
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEY_POPULAR_CACHE);
+    } catch (err) {
+      console.warn('[OnlineRadioContext] Error clearing popular cache:', err);
+    }
     await loadPopularStations(countryCode);
   }, [loadPopularStations]);
 
