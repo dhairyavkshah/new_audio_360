@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -24,6 +24,7 @@ import PermissionOnboardingFlow from "@/screens/PermissionOnboardingFlow";
 import LoginScreen from "@/screens/LoginScreen";
 import BiometricLockScreen from "@/screens/BiometricLockScreen";
 import SubscriptionRequiredScreen from "@/screens/SubscriptionRequiredScreen";
+import { AudioTipNotification } from "@/components/AudioTipNotification";
 
 type AppState = "splash" | "loading" | "checkingOnboarding" | "onboarding" | "ready";
 
@@ -56,6 +57,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 function AppContent() {
   const [appState, setAppState] = useState<AppState>("splash");
+  const [showAudioTip, setShowAudioTip] = useState(false);
   const { isOnboardingComplete, isLoading, completeOnboarding, skipOnboarding } = useMediaLibraryContext();
 
   const handleSplashFinish = () => {
@@ -69,6 +71,7 @@ function AppContent() {
     if (appState === "checkingOnboarding") {
       if (isOnboardingComplete) {
         setAppState("ready");
+        setTimeout(() => setShowAudioTip(true), 500);
       } else {
         setAppState("onboarding");
       }
@@ -80,6 +83,7 @@ function AppContent() {
     await completeOnboarding();
     setTimeout(() => {
       setAppState("ready");
+      setTimeout(() => setShowAudioTip(true), 500);
     }, 500);
   };
 
@@ -88,6 +92,7 @@ function AppContent() {
     await skipOnboarding();
     setTimeout(() => {
       setAppState("ready");
+      setTimeout(() => setShowAudioTip(true), 500);
     }, 500);
   };
 
@@ -110,14 +115,18 @@ function AppContent() {
   }
 
   return (
-    <>
+    <View style={styles.appContainer}>
       <NavigationContainer>
         <NavigationProvider>
           <RootStackNavigator />
         </NavigationProvider>
       </NavigationContainer>
+      <AudioTipNotification
+        visible={showAudioTip}
+        onDismiss={() => setShowAudioTip(false)}
+      />
       <StatusBar style="auto" />
-    </>
+    </View>
   );
 }
 
@@ -157,6 +166,9 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: {
+    flex: 1,
+  },
+  appContainer: {
     flex: 1,
   },
 });

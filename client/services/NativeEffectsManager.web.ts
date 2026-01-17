@@ -91,6 +91,14 @@ class NativeEffectsManagerClass {
     return null;
   }
 
+  applyFiveBandEQ(bands: number[]): void {
+    console.log('[Web] applyFiveBandEQ (simulated):', bands);
+  }
+
+  disableEQ(): void {
+    console.log('[Web] disableEQ (simulated)');
+  }
+
   async release(): Promise<void> {
     console.log('[Web] NativeEffectsManager released');
   }
