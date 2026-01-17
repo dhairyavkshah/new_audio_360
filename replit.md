@@ -27,8 +27,8 @@ The application leverages React Native and Expo for the frontend. The UI/UX stri
 4.  **License Status**: If installed from Play Store, app is licensed. Otherwise, user is prompted to get it from Play Store.
 5.  **Offline Access**: License state is cached in SecureStorage for offline use
 
-### Splash Screen Audio Tip
-The splash screen displays a tip encouraging users to disable their phone's native EQ, Dolby, or audio effects from system settings for the purest audio experience with the app's built-in Sound Lab.
+### Audio Tip Notification
+On app launch, a dismissible notification card appears encouraging users to disable their phone's native EQ, Dolby, or audio effects from system settings for the purest audio experience with the app's built-in Sound Lab. The notification auto-dismisses after 5 seconds and can be swiped up to dismiss manually.
 
 ### Technical Implementations
 -   **Platform**: React Native with Expo SDK.
@@ -48,7 +48,7 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 
 ### Native Audio Modules (Android-specific)
 -   **PlaybackEngineModule**: ExoPlayer-based playback with queue, shuffle, repeat, speed control, and audio session management.
--   **Native Audio Effects**: Equalizer (5-band) with pure zero-sum balanced processing, BassBoost, Virtualizer, and WaveformAnalyzer. Audio processing uses zero-sum EQ plus conservative BassBoost/Virtualizer effects per immersive mode.
+-   **Native Audio Effects**: Equalizer (5-band) with headroom-safe normalization (max boost = 0 to prevent clipping), BassBoost, Virtualizer, and WaveformAnalyzer. Audio processing uses headroom-safe EQ plus conservative BassBoost/Virtualizer effects per immersive mode.
 -   **ImmersiveModeEngineModule**: Manages 6 immersive audio modes (Music, 360 Reality, Gaming, Podcast, Movie, Off) using native audio APIs with BassBoost and Virtualizer at conservative strengths.
 -   **NativeWaveformVisualizer**: Real-time 64-bar waveform visualization.
 -   **FMRadioModule**: FM/AM radio tuning using RadioManager/RadioTuner APIs with AudioRecord→AudioTrack pipeline for Sound Lab effects integration.
@@ -61,7 +61,7 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 
 ### Feature Specifications
 -   **Theming**: 55 themes with custom icons, shapes, and component variants, applying unique visual effects (glass, beveled, aero, etc.).
--   **Sound Lab**: Offers mutually exclusive Equalizer presets or Immersive modes. Uses pure zero-sum balanced EQ processing plus conservative BassBoost/Virtualizer effects per immersive mode.
+-   **Sound Lab**: Offers mutually exclusive Equalizer presets or Immersive modes. Uses headroom-safe EQ normalization (no frequency boosted above original level) plus conservative BassBoost/Virtualizer effects per immersive mode.
 -   **FM/AM Radio**: Native Android radio with scanning, tuning, favorite stations, and Sound Lab effects on live radio audio.
 -   **Online Radio Streaming**: Location-based internet radio with country detection, genre filtering, 48,000+ stations via Radio Browser API with curated stations for 36 countries, and streaming playback.
 -   **One-Time Purchase**: License model with ₹311 INR (India) / $13.11 USD (International) pricing. Lifetime access with no expiration.
