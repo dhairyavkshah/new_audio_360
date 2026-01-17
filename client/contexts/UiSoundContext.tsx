@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useAudioPlayer } from 'expo-audio';
 import { getUiSoundEnabled, setUiSoundEnabled as saveUiSoundEnabled } from '@/lib/storage';
-import { isMusicPlaying } from '@/lib/playbackState';
+import { isMusicPlaying, subscribeToPlaybackState } from '@/lib/playbackState';
 
 interface UiSoundContextValue {
   uiSoundEnabled: boolean;
+  isPlaybackActive: boolean;
   setUiSoundEnabled: (enabled: boolean) => void;
   playTickSound: () => void;
   playKeypressSound: () => void;
@@ -18,6 +19,7 @@ const keypressSound = require('@/assets/sounds/keypress.ogg');
 
 export function UiSoundProvider({ children }: { children: ReactNode }) {
   const [uiSoundEnabled, setUiSoundEnabledState] = useState(false);
+  const [isPlaybackActive, setIsPlaybackActive] = useState(isMusicPlaying());
   const tickPlayer = useAudioPlayer(tickSound);
   const keypressPlayer = useAudioPlayer(keypressSound);
 
@@ -25,32 +27,37 @@ export function UiSoundProvider({ children }: { children: ReactNode }) {
     getUiSoundEnabled().then(setUiSoundEnabledState);
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = subscribeToPlaybackState(setIsPlaybackActive);
+    return unsubscribe;
+  }, []);
+
   const setUiSoundEnabled = useCallback((enabled: boolean) => {
     setUiSoundEnabledState(enabled);
     saveUiSoundEnabled(enabled);
   }, []);
 
+  const effectivelyEnabled = uiSoundEnabled && !isPlaybackActive;
+
   const playTickSound = useCallback(() => {
-    if (uiSoundEnabled && tickPlayer && !isMusicPlaying()) {
+    if (effectivelyEnabled && tickPlayer) {
       try {
         tickPlayer.seekTo(0);
         tickPlayer.play();
       } catch (error) {
-        // Silently fail if sound can't play
       }
     }
-  }, [uiSoundEnabled, tickPlayer]);
+  }, [effectivelyEnabled, tickPlayer]);
 
   const playKeypressSound = useCallback(() => {
-    if (uiSoundEnabled && keypressPlayer && !isMusicPlaying()) {
+    if (effectivelyEnabled && keypressPlayer) {
       try {
         keypressPlayer.seekTo(0);
         keypressPlayer.play();
       } catch (error) {
-        // Silently fail if sound can't play
       }
     }
-  }, [uiSoundEnabled, keypressPlayer]);
+  }, [effectivelyEnabled, keypressPlayer]);
 
   const playTapSound = useCallback(() => {
     playKeypressSound();
@@ -59,6 +66,7 @@ export function UiSoundProvider({ children }: { children: ReactNode }) {
   return (
     <UiSoundContext.Provider value={{ 
       uiSoundEnabled, 
+      isPlaybackActive,
       setUiSoundEnabled, 
       playTickSound,
       playKeypressSound,

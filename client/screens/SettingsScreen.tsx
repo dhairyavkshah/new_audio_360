@@ -70,7 +70,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const { uiSoundEnabled, setUiSoundEnabled, playTapSound } = useUiSound();
+  const { uiSoundEnabled, isPlaybackActive, setUiSoundEnabled, playTapSound } = useUiSound();
   const { sleepTimerMinutes, setSleepTimer } = usePlayerContext();
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [showExitScreen, setShowExitScreen] = useState(false);
@@ -181,16 +181,24 @@ export default function SettingsScreen() {
               onValueChange={handleHapticToggle}
             />
           </View>
-          <View style={[styles.settingItem, { backgroundColor: colors.colorNeutralBackground2, marginTop: FluentSpacing.s }]}>
+          <View style={[styles.settingItem, { backgroundColor: colors.colorNeutralBackground2, marginTop: FluentSpacing.s, opacity: isPlaybackActive ? 0.5 : 1 }]}>
             <View style={styles.settingInfo}>
               <MaterialCommunityIcons name="volume-high" size={18} color={colors.colorNeutralForeground1} />
-              <FluentText variant="body1" style={styles.settingLabel}>
-                UI Sounds
-              </FluentText>
+              <View>
+                <FluentText variant="body1" style={styles.settingLabel}>
+                  UI Sounds
+                </FluentText>
+                {isPlaybackActive && (
+                  <FluentText variant="caption2" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
+                    Disabled during playback
+                  </FluentText>
+                )}
+              </View>
             </View>
             <FluentToggle
               value={uiSoundEnabled}
               onValueChange={handleUiSoundToggle}
+              disabled={isPlaybackActive}
             />
           </View>
         </View>
