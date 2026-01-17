@@ -157,6 +157,8 @@ Current implementation uses development stubs for testing. Web platform uses loc
 -   **react-native-iap** (production): Google Play Billing integration for license verification
 
 ## Recent Changes (January 17, 2026)
+- Added Bass Control, Treble Control, and Virtualizer settings to EQ presets (levels -3 to +3)
+- EQ preset controls appear when any preset is active, with level chips for easy adjustment
 - Fixed top gap spacing on settings screens (Sound Lab, Appearance, License, About)
 - UI sounds now disabled when music/radio is playing to prevent audio interruption
 - Updated Android adaptive icon config to use proper foreground image with branded blue (#1565C0) background
