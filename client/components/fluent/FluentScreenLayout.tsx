@@ -81,11 +81,13 @@ export function FluentScreenLayout({
       style={[styles.container, { backgroundColor: bgColor }, style]} 
       edges={safeAreaEdges}
     >
-      <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={bgColor}
-        translucent={false}
-      />
+      {!hideStatusBar && (
+        <StatusBar
+          barStyle={isDark ? 'light-content' : 'dark-content'}
+          backgroundColor={bgColor}
+          translucent={false}
+        />
+      )}
       {header}
       {avoidKeyboard ? (
         <KeyboardAvoidingView

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
+import { useAudioPlayer } from 'expo-audio';
 import { getUiSoundEnabled, setUiSoundEnabled as saveUiSoundEnabled } from '@/lib/storage';
 
 interface UiSoundContextValue {
@@ -11,8 +12,13 @@ interface UiSoundContextValue {
 
 const UiSoundContext = createContext<UiSoundContextValue | undefined>(undefined);
 
+const tickSound = require('@/assets/sounds/tick.ogg');
+const keypressSound = require('@/assets/sounds/keypress.ogg');
+
 export function UiSoundProvider({ children }: { children: ReactNode }) {
   const [uiSoundEnabled, setUiSoundEnabledState] = useState(false);
+  const tickPlayer = useAudioPlayer(tickSound);
+  const keypressPlayer = useAudioPlayer(keypressSound);
 
   useEffect(() => {
     getUiSoundEnabled().then(setUiSoundEnabledState);
@@ -24,19 +30,30 @@ export function UiSoundProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const playTickSound = useCallback(() => {
-    // UI sounds disabled on Android to prevent audio focus conflicts with track player
-    // Haptic feedback is used instead for tactile feedback
-  }, []);
+    if (uiSoundEnabled && tickPlayer) {
+      try {
+        tickPlayer.seekTo(0);
+        tickPlayer.play();
+      } catch (error) {
+        // Silently fail if sound can't play
+      }
+    }
+  }, [uiSoundEnabled, tickPlayer]);
 
   const playKeypressSound = useCallback(() => {
-    // UI sounds disabled on Android to prevent audio focus conflicts with track player
-    // Haptic feedback is used instead for tactile feedback
-  }, []);
+    if (uiSoundEnabled && keypressPlayer) {
+      try {
+        keypressPlayer.seekTo(0);
+        keypressPlayer.play();
+      } catch (error) {
+        // Silently fail if sound can't play
+      }
+    }
+  }, [uiSoundEnabled, keypressPlayer]);
 
   const playTapSound = useCallback(() => {
-    // UI sounds disabled on Android to prevent audio focus conflicts with track player
-    // Haptic feedback is used instead for tactile feedback
-  }, []);
+    playKeypressSound();
+  }, [playKeypressSound]);
 
   return (
     <UiSoundContext.Provider value={{ 
