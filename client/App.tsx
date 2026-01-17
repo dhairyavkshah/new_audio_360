@@ -2,8 +2,16 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+// Optional KeyboardProvider - falls back to Fragment if native module not available
+let KeyboardProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
+try {
+  const keyboardController = require("react-native-keyboard-controller");
+  KeyboardProvider = keyboardController.KeyboardProvider;
+} catch (e) {
+  KeyboardProvider = null;
+}
 import { StatusBar } from "expo-status-bar";
 
 import RootStackNavigator from "@/navigation/RootStackNavigator";
@@ -116,33 +124,39 @@ function AppContent() {
 }
 
 export default function App() {
+  const content = (
+    <ThemeProvider>
+      <UiSoundProvider>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <AuthGuard>
+              <MediaLibraryProvider>
+                <SoundLabProvider>
+                  <RadioProvider>
+                    <OnlineRadioProvider>
+                      <PlayerProvider>
+                        <AppContent />
+                      </PlayerProvider>
+                    </OnlineRadioProvider>
+                  </RadioProvider>
+                </SoundLabProvider>
+              </MediaLibraryProvider>
+            </AuthGuard>
+          </SubscriptionProvider>
+        </AuthProvider>
+      </UiSoundProvider>
+    </ThemeProvider>
+  );
+
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
         <GestureHandlerRootView style={styles.root}>
-          <KeyboardProvider>
-            <ThemeProvider>
-              <UiSoundProvider>
-                <AuthProvider>
-                  <SubscriptionProvider>
-                    <AuthGuard>
-                      <MediaLibraryProvider>
-                        <SoundLabProvider>
-                          <RadioProvider>
-                            <OnlineRadioProvider>
-                              <PlayerProvider>
-                                <AppContent />
-                              </PlayerProvider>
-                            </OnlineRadioProvider>
-                          </RadioProvider>
-                        </SoundLabProvider>
-                      </MediaLibraryProvider>
-                    </AuthGuard>
-                  </SubscriptionProvider>
-                </AuthProvider>
-              </UiSoundProvider>
-            </ThemeProvider>
-          </KeyboardProvider>
+          {KeyboardProvider ? (
+            <KeyboardProvider>{content}</KeyboardProvider>
+          ) : (
+            content
+          )}
         </GestureHandlerRootView>
       </SafeAreaProvider>
     </ErrorBoundary>
