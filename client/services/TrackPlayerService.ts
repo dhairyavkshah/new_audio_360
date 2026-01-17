@@ -391,27 +391,33 @@ class TrackPlayerServiceClass {
 export const TrackPlayerService = new TrackPlayerServiceClass();
 
 export async function PlaybackService() {
-  TrackPlayer.addEventListener(Event.RemotePlay, () => {
+  TrackPlayer.addEventListener(Event.RemotePlay, async () => {
+    await TrackPlayer.play();
     TrackPlayerService.handleRemotePlay();
   });
 
-  TrackPlayer.addEventListener(Event.RemotePause, () => {
+  TrackPlayer.addEventListener(Event.RemotePause, async () => {
+    await TrackPlayer.pause();
     TrackPlayerService.handleRemotePause();
   });
 
-  TrackPlayer.addEventListener(Event.RemoteStop, () => {
+  TrackPlayer.addEventListener(Event.RemoteStop, async () => {
+    await TrackPlayer.stop();
     TrackPlayerService.handleRemoteStop();
   });
 
-  TrackPlayer.addEventListener(Event.RemoteNext, () => {
+  TrackPlayer.addEventListener(Event.RemoteNext, async () => {
+    await TrackPlayerService.skipToNext();
     TrackPlayerService.handleRemoteNext();
   });
 
-  TrackPlayer.addEventListener(Event.RemotePrevious, () => {
+  TrackPlayer.addEventListener(Event.RemotePrevious, async () => {
+    await TrackPlayerService.skipToPrevious();
     TrackPlayerService.handleRemotePrevious();
   });
 
-  TrackPlayer.addEventListener(Event.RemoteSeek, ({ position }) => {
+  TrackPlayer.addEventListener(Event.RemoteSeek, async ({ position }) => {
+    await TrackPlayer.seekTo(position);
     TrackPlayerService.handleRemoteSeek(position);
   });
 

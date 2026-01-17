@@ -37,7 +37,7 @@ export default function AboutScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: FluentSpacing.m, paddingBottom: tabBarHeight + FluentSpacing.xl },
+          { paddingBottom: tabBarHeight + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
