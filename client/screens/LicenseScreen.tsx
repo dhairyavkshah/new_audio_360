@@ -89,7 +89,7 @@ export default function LicenseScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: FluentSpacing.l, paddingBottom: tabBarHeight + FluentSpacing.xl },
+          { paddingBottom: tabBarHeight + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
       >

@@ -9,6 +9,7 @@ import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule } from 
 import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
+import { setMusicPlaying } from '@/lib/playbackState';
 
 const EQ_FREQUENCIES: Record<keyof EQBands, number> = {
   sub: 32,
@@ -119,6 +120,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     repeatRef.current = repeat;
   }, [repeat]);
+
+  useEffect(() => {
+    setMusicPlaying(isPlaying);
+  }, [isPlaying]);
 
   useEffect(() => {
     setAudioModeAsync({

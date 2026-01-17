@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { useAudioPlayer } from 'expo-audio';
 import { getUiSoundEnabled, setUiSoundEnabled as saveUiSoundEnabled } from '@/lib/storage';
+import { isMusicPlaying } from '@/lib/playbackState';
 
 interface UiSoundContextValue {
   uiSoundEnabled: boolean;
@@ -30,7 +31,7 @@ export function UiSoundProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const playTickSound = useCallback(() => {
-    if (uiSoundEnabled && tickPlayer) {
+    if (uiSoundEnabled && tickPlayer && !isMusicPlaying()) {
       try {
         tickPlayer.seekTo(0);
         tickPlayer.play();
@@ -41,7 +42,7 @@ export function UiSoundProvider({ children }: { children: ReactNode }) {
   }, [uiSoundEnabled, tickPlayer]);
 
   const playKeypressSound = useCallback(() => {
-    if (uiSoundEnabled && keypressPlayer) {
+    if (uiSoundEnabled && keypressPlayer && !isMusicPlaying()) {
       try {
         keypressPlayer.seekTo(0);
         keypressPlayer.play();
