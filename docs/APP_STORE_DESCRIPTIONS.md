@@ -36,7 +36,8 @@ Express yourself with our extensive theme collection:
 
 **DUAL RADIO EXPERIENCE**
 - FM/AM Radio: Native tuning on supported devices
-- Online Radio: Access 48,000+ stations worldwide
+- Online Radio: Access 48,000+ stations worldwide via Radio Browser API
+- Only verified working streams with quality audio (MP3/OGG/AAC, >64kbps)
 - Location-based discovery finds local stations
 - Apply Sound Lab effects to live radio
 
@@ -75,7 +76,7 @@ Download now and elevate your music experience!
 - Sound Lab with 8 EQ presets and 6 immersive modes
 - Independent Bass, Treble, and Virtualizer controls
 - 55 themes to personalize your experience
-- FM/AM and Online Radio (48,000+ stations)
+- FM/AM and Online Radio (48,000+ verified stations)
 - Custom 5-band equalizer with save/load
 - Microsoft Fluent 2 design system
 
@@ -101,11 +102,11 @@ All ages
 ## Pricing
 
 ### India
-- Price: ₹299 INR
+- Price: ₹311 INR
 - Currency: Indian Rupee
 
 ### International
-- Price: $29 USD
+- Price: $13.11 USD
 - Currency: US Dollar
 
 ---
@@ -128,66 +129,32 @@ All ages
 
 ## Screenshot Suggestions
 
-### Phone Screenshots (9:16 ratio)
+### Phone Screenshots (Recommended Order)
+1. **Now Playing Screen** - Main player with album art and controls
+2. **Sound Lab** - Equalizer with frequency bands visible
+3. **Theme Gallery** - Showcase of multiple themes
+4. **Music Library** - Browse view with album grid
+5. **Online Radio** - Station list with country selection
+6. **Playlist View** - User playlists with cover art
+7. **Immersive Modes** - Sound Lab immersive mode selection
+8. **Settings** - App customization options
 
-1. **Listen Tab** - Main player with album art and controls
-2. **Now Playing** - Full-screen player with waveform
-3. **Sound Lab** - Equalizer and immersive mode selection
-4. **Theme Gallery** - Showcase of different themes
-5. **Library** - Music library with categories
-6. **Radio** - Online radio with station grid
-7. **Playlist** - Playlist management view
-8. **Settings** - Clean settings interface
-
-### Feature Callouts
-
-- "8 Pro Equalizer Presets"
-- "55 Stunning Themes"
-- "FM/AM + Online Radio"
-- "Real-time Waveform"
-- "Background Playback"
-- "Privacy-First Design"
+### Feature Graphic Design
+- App logo prominently displayed
+- "55 Themes | Pro Audio | 48,000+ Radio Stations"
+- Gradient background matching app branding
+- Sample theme screenshots in background
 
 ---
 
-## Localization
+## App Store Listing Tips
 
-### Supported Languages (Initial Release)
-- English (US) - Primary
-- English (India)
-
-### Planned Languages
-- Hindi
-- Spanish
-- Portuguese
-- German
-- French
-- Japanese
+1. **Title:** Keep it simple - "New Audio 360"
+2. **Icon:** Use the app's primary icon with clear branding
+3. **Screenshots:** Show the app in action with real content
+4. **Description:** Focus on unique selling points first
+5. **Keywords:** Include common search terms users would use
 
 ---
 
-## Developer Information
-
-- **Developer Name:** TheTeam360
-- **Website:** https://theteam360.com
-- **Email:** support@theteam360.com
-- **Privacy Policy URL:** https://theteam360.com/privacy
-- **Address:** [Developer Address]
-
----
-
-## Review Notes for App Review Team
-
-This is a music player application that:
-1. Requires one-time purchase to function (no free tier)
-2. Accesses device music library to play local audio files
-3. Streams online radio from Radio Browser API (free, public API)
-4. Uses Google Play Billing for license verification
-5. All user data is stored locally on device
-6. FM Radio feature requires compatible device hardware
-
-No backend servers are used. The app is fully functional offline after initial license verification.
-
----
-
-*Last Updated: January 16, 2026*
+*Last Updated: January 17, 2026*

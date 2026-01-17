@@ -4,7 +4,25 @@
 
 ---
 
-## Version 1.0 (January 16, 2026)
+## Google Play Store Release Note (Under 500 Characters)
+
+```
+New Audio 360 v1.0 - Premium Music Player
+
+Your music, your way:
+- Sound Lab with 8 EQ presets & 6 immersive modes
+- 55 stunning themes to personalize your experience
+- Online Radio: 48,000+ verified stations worldwide
+- Background playback with notification controls
+- Custom 5-band equalizer with save/load
+- FM/AM radio support (hardware required)
+
+One-time purchase. No ads. No subscriptions. Lifetime access.
+```
+
+---
+
+## Version 1.0 (January 17, 2026)
 
 **Initial Release - Version Code 1**
 
@@ -48,6 +66,10 @@
 #### Radio
 - **FM/AM Radio:** Native Android radio tuning (device hardware required)
 - **Online Radio:** 48,000+ internet radio stations via Radio Browser API
+  - Only verified working streams (lastcheckok=1)
+  - Quality codecs only: MP3, OGG, AAC
+  - Bitrate >64kbps for clear audio
+  - Max 50 stations per country, sorted by popularity
 - Country-based station discovery with location detection
 - Genre filtering
 - Favorite stations
@@ -74,7 +96,7 @@
 
 - **Version Name:** 1.0
 - **Version Code:** 1
-- **Platform:** React Native with Expo SDK
+- **Platform:** React Native with Expo SDK 53.0.0
 - **Minimum Android Version:** Android 8.0 (API 26)
 - **Target Android Version:** Android 14 (API 34)
 - **Architecture:** ARM64, ARM32, x86_64
@@ -88,8 +110,8 @@
 
 ### Pricing
 
-- **India:** ₹299 INR (one-time purchase)
-- **International:** $29 USD (one-time purchase)
+- **India:** ₹311 INR (one-time purchase)
+- **International:** $13.11 USD (one-time purchase)
 - Lifetime access with no subscription or expiration
 
 ---

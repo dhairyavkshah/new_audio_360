@@ -1,8 +1,8 @@
 # Privacy Policy
 
 **New Audio 360**  
-**Effective Date:** January 15, 2026  
-**Last Updated:** January 15, 2026
+**Effective Date:** January 17, 2026  
+**Last Updated:** January 17, 2026
 
 ## Introduction
 
@@ -36,15 +36,16 @@ New Audio 360 is designed with privacy in mind. **All data is stored locally on 
 ### Google Play Services
 
 For license verification and purchase processing, we integrate with Google Play:
-- Google Sign-In (for account authentication)
 - Google Play Billing (for one-time purchase verification)
+- Installation source verification to confirm Play Store purchase
 
 Google's handling of your data is governed by [Google's Privacy Policy](https://policies.google.com/privacy).
 
 ### Radio Browser API
 
 When using Online Radio features:
-- We query the Radio Browser API to fetch station information
+- We query the Radio Browser API (radio-browser.info) to fetch station information
+- Only verified working streams (lastcheckok=1) with quality codecs (MP3, OGG, AAC) and bitrate >64kbps are displayed
 - Your IP address may be visible to the Radio Browser service
 - No personal data is transmitted
 

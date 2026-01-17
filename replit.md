@@ -4,7 +4,7 @@
 New Audio 360 is a premium mobile music player application built with React Native and Expo, targeting audio enthusiasts. It offers robust playback, extensive music organization, professional sound customization, and deep personalization through 55 themes. The app requires a one-time purchase to function (no free tier). All data is stored locally on the device, with client-side license verification via Google Play.
 
 ## User Preferences
-I prefer concise and direct communication. When making changes, prioritize core functionality and architectural integrity. I value clear explanations for complex decisions. I prefer iterative development with clear justifications for each step.
+I prefer concise and direct communication. When making changes, prioritize core functionality and architectural integrity. I value clear explanations for complex decisions. I prefer iterative development with clear justifications for each step. No complex animations - use simple dissolve/appear effects only.
 
 ## System Architecture
 The application leverages React Native and Expo for the frontend. The UI/UX strictly adheres to the Microsoft Fluent 2 design system, implementing a 4px grid, Fluent typography, semantic color tokens, elevation shadows, and motion curves, ensuring 100% Android safe area compliance.
@@ -37,7 +37,7 @@ On app launch, a dismissible notification card appears encouraging users to disa
 -   **Design System**: Microsoft Fluent 2 tokens.
 -   **Audio Playback**: `react-native-track-player` for background playback with notification controls (Android), `expo-av` fallback for web.
 -   **Media Access**: `expo-media-library` for device audio files.
--   **Animations**: `react-native-reanimated` integrating Fluent 2 motion curves.
+-   **Animations**: Simple dissolve/appear effects only (no complex animations).
 
 ### Navigation Structure
 A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, and Settings tabs, with a persistent MiniPlayer.
@@ -63,11 +63,16 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 -   **Theming**: 55 themes with custom icons, shapes, and component variants, applying unique visual effects (glass, beveled, aero, etc.).
 -   **Sound Lab**: Offers mutually exclusive Equalizer presets or Immersive modes. Uses headroom-safe EQ normalization (no frequency boosted above original level) plus conservative BassBoost/Virtualizer effects per immersive mode.
 -   **FM/AM Radio**: Native Android radio with scanning, tuning, favorite stations, and Sound Lab effects on live radio audio.
--   **Online Radio Streaming**: 30 curated Indian music radio stations sourced from onlineradiofm.in with verified working stream URLs. Features AIR (All India Radio) regional channels, Zeno.fm Bollywood stations, Radio City, and community FM stations. Uses hardcoded reliable streaming URLs (Prasar Bharati CDN, Zeno.fm) instead of Radio Browser API for consistent, buffer-free playback.
+-   **Online Radio Streaming**: 48,000+ internet radio stations via Radio Browser API with quality filters:
+    - Only verified working streams (lastcheckok=1)
+    - Quality codecs only: MP3, OGG, AAC
+    - Bitrate >64kbps
+    - Max 50 stations per country, sorted by popularity
+    - Uses 3 API servers (de1, nl1, at1) with rotation for reliability
 -   **One-Time Purchase**: License model with ₹311 INR (India) / $13.11 USD (International) pricing. Lifetime access with no expiration.
--   **MiniPlayer**: Persistent, glassmorphism-effect mini-player.
+-   **MiniPlayer**: Persistent glassmorphism mini-player with prominent dismiss handle (tab-shaped with chevron icon).
 -   **Media Library Integration**: Onboarding for access, paginated loading, "Hide Song" feature.
--   **Playlist Management**: Full CRUD for local playlists.
+-   **Playlist Management**: Full CRUD for local playlists with modal-based delete confirmations.
 -   **Playback Features**: Favorites, Recently Played, Most Played, Queue Management, Sleep Timer.
 -   **Background Playback**: Music and radio continue playing when the app is closed, with Android notification controls (play/pause, next/previous, stop).
 -   **Music Folder Selection**: Users can select specific device folders for music sourcing.
@@ -84,7 +89,7 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 ### App Version
 -   **Version Name**: 1.0
 -   **Version Code**: 1 (Android)
--   **Release Date**: January 16, 2026
+-   **Release Date**: January 17, 2026
 -   **Package Name**: com.theteam360.newaudio360
 
 ### Environment Configuration
@@ -105,21 +110,20 @@ GitHub Actions workflows in `.github/workflows/`:
 | Workflow | Trigger | Output |
 |----------|---------|--------|
 | `build-dev-apk.yml` | Push to `develop` or manual | Development APK |
-| `build-prod-aab.yml` | Push to `main` or manual | Production AAB (Play Store) |
-| `build-prod-apk.yml` | Manual only | Production APK (direct distribution) |
+| `build-prod-aab.yml` | Manual dispatch | Production AAB (Play Store) |
+| `build-prod-apk.yml` | Manual dispatch | Production APK (direct distribution) |
 
 Required secrets in GitHub:
 -   `EXPO_TOKEN`: EAS Build authentication token
--   `EAS_PROJECT_ID`: Your Expo project ID (get from `eas project:info`)
 
 ### Documentation
 All documentation is in the `docs/` folder:
 -   `PRIVACY_POLICY.md`: Privacy policy for app stores
--   `RELEASE_NOTES.md`: Version history and changelog
+-   `RELEASE_NOTES.md`: Version history, changelog, and Google Play release note
 -   `TEST_PLAN.md`: Testing strategy and acceptance criteria
 -   `TEST_CASES.md`: Comprehensive 1000 test cases
 -   `TEST_REPORT.md`: Latest test execution report
--   `APP_STORE_DESCRIPTIONS.md`: Play Store listing content
+-   `APP_STORE_DESCRIPTIONS.md`: Play Store listing content with pricing
 -   `design_guidelines.md`: UI/UX design specifications
 
 ### Production License Verification
@@ -141,12 +145,18 @@ Current implementation uses development stubs for testing. Web platform uses loc
 -   **Expo SDK**: Development and build tooling
 -   **expo-av**: Audio playback (primarily web fallback)
 -   **expo-media-library**: Device media access
--   **react-native-reanimated**: Smooth animations
+-   **react-native-reanimated**: Simple animations
 -   **@react-navigation**: Navigation system
 -   **MaterialCommunityIcons**: Iconography
 -   **expo-notifications**: For now-playing controls and permission flow
--   **expo-auth-session**: Google Sign-In
 -   **expo-local-authentication**: Biometric/PIN authentication
 -   **expo-location**: Location detection for online radio country discovery
 -   **react-native-track-player**: Background audio playback with notification controls
 -   **react-native-iap** (production): Google Play Billing integration for license verification
+
+## Recent Changes (January 17, 2026)
+- Enhanced MiniPlayer dismiss handle with tab-shaped design and chevron icon
+- Online Radio uses Radio Browser API with quality filters (lastcheckok=1, MP3/OGG/AAC, >64kbps)
+- Modal-based delete confirmations for EQ presets and playlists
+- Updated pricing to ₹311 INR / $13.11 USD
+- GitHub Actions workflows ready for signed APK and AAB builds
