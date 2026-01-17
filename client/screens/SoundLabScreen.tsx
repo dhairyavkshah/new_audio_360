@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Alert, TextInput, Modal, Platform } from "react-native";
 import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -26,7 +26,9 @@ import {
   ImmersiveModeEngineModule, 
   IMMERSIVE_MODE_INFO, 
   ImmersiveMode,
-  ImmersiveModeInfo 
+  ImmersiveModeInfo,
+  BassBoostModule,
+  VirtualizerModule
 } from "../../modules/audio-effects";
 import NativeAudioService from "@/services/NativeAudioService";
 import { NativeEffectsManager } from "@/services/NativeEffectsManager";
@@ -150,6 +152,44 @@ export default function SoundLabScreen() {
     }));
   }, [availableModes]);
 
+  const applyAudioEffects = useCallback((bass: number, treble: number, virtualizer: number) => {
+    if (Platform.OS === 'web') {
+      console.log(`[Web Simulation] Applying effects - Bass: ${bass}, Treble: ${treble}, Virtualizer: ${virtualizer}`);
+      return;
+    }
+    
+    // Bass - use BassBoostModule
+    if (BassBoostModule.isAvailable()) {
+      try {
+        if (bass === 0) {
+          BassBoostModule.setEnabled(false);
+        } else {
+          BassBoostModule.setEnabled(true);
+          BassBoostModule.setStrength(Math.abs(bass) * 333);
+        }
+      } catch (error) {
+        console.warn('[SoundLab] BassBoostModule error:', error);
+      }
+    }
+    
+    // Virtualizer
+    if (VirtualizerModule.isAvailable()) {
+      try {
+        if (virtualizer === 0) {
+          VirtualizerModule.setEnabled(false);
+        } else {
+          VirtualizerModule.setEnabled(true);
+          VirtualizerModule.setStrength(Math.abs(virtualizer) * 333);
+        }
+      } catch (error) {
+        console.warn('[SoundLab] VirtualizerModule error:', error);
+      }
+    }
+    
+    // Treble - log for now, EQ-based in future
+    console.log(`[SoundLab] Treble effect level: ${treble}`);
+  }, []);
+
   useEffect(() => {
     const loadSettings = async () => {
       const modes = ImmersiveModeEngineModule.getAvailableModes();
@@ -244,8 +284,8 @@ export default function SoundLabScreen() {
             saveTrebleControlLevel(newTreble),
             saveVirtualizerLevel(newVirt)
           ]);
-          // TODO: Apply to native audio when methods are available
-          console.log('[SoundLab] Preset loaded - bass:', newBass, 'treble:', newTreble, 'virtualizer:', newVirt);
+          // Apply effects to native audio
+          applyAudioEffects(newBass, newTreble, newVirt);
         }
       }
     }
@@ -272,24 +312,63 @@ export default function SoundLabScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setBassControl(level);
     await saveBassControlLevel(level);
-    // TODO: Apply to native audio when NativeEffectsManager.setBassBoost() is implemented
-    console.log('[SoundLab] Bass control changed to:', level);
+    
+    if (Platform.OS === 'web') {
+      console.log(`[Web Simulation] Bass Control set to level ${level}`);
+    } else if (BassBoostModule.isAvailable()) {
+      try {
+        if (level === 0) {
+          BassBoostModule.setEnabled(false);
+          console.log('[SoundLab] Bass boost disabled');
+        } else {
+          BassBoostModule.setEnabled(true);
+          const strength = Math.abs(level) * 333;
+          BassBoostModule.setStrength(strength);
+          console.log('[SoundLab] Bass boost enabled with strength:', strength);
+        }
+      } catch (error) {
+        console.warn('[SoundLab] BassBoostModule error:', error);
+      }
+    }
   };
 
   const handleTrebleControlChange = async (level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setTrebleControl(level);
     await saveTrebleControlLevel(level);
-    // TODO: Apply to native audio when NativeEffectsManager.setTrebleBoost() is implemented
-    console.log('[SoundLab] Treble control changed to:', level);
+    
+    if (Platform.OS === 'web') {
+      console.log(`[Web Simulation] Treble Control set to level ${level}`);
+    } else {
+      // TODO: Implement treble control using EQ high-frequency bands
+      // For now, we can boost/cut the high-frequency EQ bands (3.6kHz and 14kHz)
+      // This would require modifying the EQ bands directly
+      console.log('[SoundLab] Treble control set to level:', level, '(EQ-based implementation pending)');
+    }
   };
 
   const handleVirtualizerLevelChange = async (level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setVirtualizerLevel(level);
     await saveVirtualizerLevel(level);
-    // TODO: Apply to native audio when NativeEffectsManager.setVirtualizer() is implemented
-    console.log('[SoundLab] Virtualizer level changed to:', level);
+    
+    if (Platform.OS === 'web') {
+      console.log(`[Web Simulation] Virtualizer set to level ${level}`);
+    } else if (VirtualizerModule.isAvailable()) {
+      try {
+        if (level === 0) {
+          VirtualizerModule.setEnabled(false);
+          console.log('[SoundLab] Virtualizer disabled');
+        } else {
+          VirtualizerModule.setEnabled(true);
+          const strength = Math.abs(level) * 333;
+          VirtualizerModule.setStrength(strength);
+          console.log('[SoundLab] Virtualizer enabled with strength:', strength);
+        }
+      } catch (error) {
+        console.warn('[SoundLab] VirtualizerModule error:', error);
+      }
+    }
   };
 
   const handleSavePreset = async () => {
@@ -340,6 +419,8 @@ export default function SoundLabScreen() {
       saveTrebleControlLevel(newTreble),
       saveVirtualizerLevel(newVirt)
     ]);
+    // Apply effects to native audio
+    applyAudioEffects(newBass, newTreble, newVirt);
   };
 
   const handleDeletePreset = (preset: CustomEQPreset) => {
@@ -497,11 +578,20 @@ export default function SoundLabScreen() {
           ) : null}
 
           {isEqualizerActive ? (
-            <View style={styles.effectControlsSection}>
+            <View style={[styles.effectControlsSection, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: FluentRadius.large }]}>
+              <FluentText variant="body2Strong" style={{ marginBottom: FluentSpacing.m }}>Audio Effects</FluentText>
+              
               <View style={styles.effectControlRow}>
-                <View style={styles.effectControlLabel}>
-                  <MaterialCommunityIcons name="speaker" size={16} color={tokens.colors.primary} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs }}>Bass Control</FluentText>
+                <View style={styles.effectControlHeader}>
+                  <View style={[styles.effectIconContainer, { backgroundColor: tokens.colors.primary + '20' }]}>
+                    <MaterialCommunityIcons name="speaker-wireless" size={20} color={tokens.colors.primary} />
+                  </View>
+                  <View style={styles.effectControlTextContainer}>
+                    <FluentText variant="body2Strong">Bass Control</FluentText>
+                    <FluentText variant="caption1" color="secondary">
+                      {bassControl === 0 ? "Off" : bassControl > 0 ? `Boost +${bassControl}` : `Cut ${bassControl}`}
+                    </FluentText>
+                  </View>
                 </View>
                 <View style={styles.effectLevelChips}>
                   {EFFECT_LEVELS.map((level) => (
@@ -510,8 +600,10 @@ export default function SoundLabScreen() {
                       style={[
                         styles.effectLevelChip,
                         {
-                          backgroundColor: bassControl === level ? tokens.colors.primary : tokens.colors.surfaceVariant,
-                          borderRadius: FluentRadius.circular,
+                          backgroundColor: bassControl === level ? tokens.colors.primary : tokens.colors.surface,
+                          borderRadius: FluentRadius.medium,
+                          borderWidth: bassControl === level ? 0 : 1,
+                          borderColor: tokens.colors.outline + '40',
                         }
                       ]}
                       onPress={() => handleBassControlChange(level)}
@@ -520,20 +612,29 @@ export default function SoundLabScreen() {
                         variant="caption1"
                         style={{
                           color: bassControl === level ? tokens.colors.onPrimary : tokens.colors.text,
-                          fontWeight: bassControl === level ? "600" : "400",
+                          fontWeight: bassControl === level ? "700" : "500",
                         }}
                       >
-                        {level === 0 ? "Off" : level > 0 ? `+${level}` : level}
+                        {level === 0 ? "0" : level > 0 ? `+${level}` : `${level}`}
                       </FluentText>
                     </Pressable>
                   ))}
                 </View>
               </View>
 
+              <View style={[styles.effectDivider, { backgroundColor: tokens.colors.outline }]} />
+
               <View style={styles.effectControlRow}>
-                <View style={styles.effectControlLabel}>
-                  <MaterialCommunityIcons name="music-note" size={16} color={tokens.colors.primary} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs }}>Treble Control</FluentText>
+                <View style={styles.effectControlHeader}>
+                  <View style={[styles.effectIconContainer, { backgroundColor: tokens.colors.primary + '20' }]}>
+                    <MaterialCommunityIcons name="tune-vertical" size={20} color={tokens.colors.primary} />
+                  </View>
+                  <View style={styles.effectControlTextContainer}>
+                    <FluentText variant="body2Strong">Treble Control</FluentText>
+                    <FluentText variant="caption1" color="secondary">
+                      {trebleControl === 0 ? "Off" : trebleControl > 0 ? `Boost +${trebleControl}` : `Cut ${trebleControl}`}
+                    </FluentText>
+                  </View>
                 </View>
                 <View style={styles.effectLevelChips}>
                   {EFFECT_LEVELS.map((level) => (
@@ -542,8 +643,10 @@ export default function SoundLabScreen() {
                       style={[
                         styles.effectLevelChip,
                         {
-                          backgroundColor: trebleControl === level ? tokens.colors.primary : tokens.colors.surfaceVariant,
-                          borderRadius: FluentRadius.circular,
+                          backgroundColor: trebleControl === level ? tokens.colors.primary : tokens.colors.surface,
+                          borderRadius: FluentRadius.medium,
+                          borderWidth: trebleControl === level ? 0 : 1,
+                          borderColor: tokens.colors.outline + '40',
                         }
                       ]}
                       onPress={() => handleTrebleControlChange(level)}
@@ -552,20 +655,29 @@ export default function SoundLabScreen() {
                         variant="caption1"
                         style={{
                           color: trebleControl === level ? tokens.colors.onPrimary : tokens.colors.text,
-                          fontWeight: trebleControl === level ? "600" : "400",
+                          fontWeight: trebleControl === level ? "700" : "500",
                         }}
                       >
-                        {level === 0 ? "Off" : level > 0 ? `+${level}` : level}
+                        {level === 0 ? "0" : level > 0 ? `+${level}` : `${level}`}
                       </FluentText>
                     </Pressable>
                   ))}
                 </View>
               </View>
 
+              <View style={[styles.effectDivider, { backgroundColor: tokens.colors.outline }]} />
+
               <View style={styles.effectControlRow}>
-                <View style={styles.effectControlLabel}>
-                  <MaterialCommunityIcons name="surround-sound" size={16} color={tokens.colors.primary} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs }}>Virtualizer</FluentText>
+                <View style={styles.effectControlHeader}>
+                  <View style={[styles.effectIconContainer, { backgroundColor: tokens.colors.primary + '20' }]}>
+                    <MaterialCommunityIcons name="surround-sound" size={20} color={tokens.colors.primary} />
+                  </View>
+                  <View style={styles.effectControlTextContainer}>
+                    <FluentText variant="body2Strong">Virtualizer</FluentText>
+                    <FluentText variant="caption1" color="secondary">
+                      {virtualizerLevel === 0 ? "Off" : virtualizerLevel > 0 ? `Level +${virtualizerLevel}` : `Level ${virtualizerLevel}`}
+                    </FluentText>
+                  </View>
                 </View>
                 <View style={styles.effectLevelChips}>
                   {EFFECT_LEVELS.map((level) => (
@@ -574,8 +686,10 @@ export default function SoundLabScreen() {
                       style={[
                         styles.effectLevelChip,
                         {
-                          backgroundColor: virtualizerLevel === level ? tokens.colors.primary : tokens.colors.surfaceVariant,
-                          borderRadius: FluentRadius.circular,
+                          backgroundColor: virtualizerLevel === level ? tokens.colors.primary : tokens.colors.surface,
+                          borderRadius: FluentRadius.medium,
+                          borderWidth: virtualizerLevel === level ? 0 : 1,
+                          borderColor: tokens.colors.outline + '40',
                         }
                       ]}
                       onPress={() => handleVirtualizerLevelChange(level)}
@@ -584,10 +698,10 @@ export default function SoundLabScreen() {
                         variant="caption1"
                         style={{
                           color: virtualizerLevel === level ? tokens.colors.onPrimary : tokens.colors.text,
-                          fontWeight: virtualizerLevel === level ? "600" : "400",
+                          fontWeight: virtualizerLevel === level ? "700" : "500",
                         }}
                       >
-                        {level === 0 ? "Off" : level > 0 ? `+${level}` : level}
+                        {level === 0 ? "0" : level > 0 ? `+${level}` : `${level}`}
                       </FluentText>
                     </Pressable>
                   ))}
@@ -957,13 +1071,27 @@ const styles = StyleSheet.create({
   },
   effectControlsSection: {
     marginTop: FluentSpacing.l,
-    paddingTop: FluentSpacing.m,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(128,128,128,0.2)",
+    padding: FluentSpacing.m,
     gap: FluentSpacing.m,
   },
   effectControlRow: {
-    gap: FluentSpacing.s,
+    gap: FluentSpacing.m,
+  },
+  effectControlHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: FluentSpacing.s,
+  },
+  effectIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: FluentRadius.medium,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  effectControlTextContainer: {
+    marginLeft: FluentSpacing.m,
+    flex: 1,
   },
   effectControlLabel: {
     flexDirection: "row",
@@ -978,8 +1106,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: FluentSpacing.s,
+    paddingVertical: FluentSpacing.m,
     paddingHorizontal: FluentSpacing.xs,
+    minHeight: 44,
+  },
+  effectDivider: {
+    height: 1,
+    opacity: 0.15,
+    marginVertical: FluentSpacing.xs,
   },
   customEQContainer: {
     marginTop: FluentSpacing.m,
