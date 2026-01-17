@@ -1,10 +1,12 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, StyleSheet, Animated, Platform } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { FluentSpacing, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+
+const appIcon = require("../../assets/images/icon.png");
 
 type SplashScreenProps = {
   onFinish: () => void;
@@ -17,13 +19,24 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [iconLoaded, setIconLoaded] = useState(false);
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver,
-    }).start();
+    if (iconLoaded) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver,
+      }).start();
+    }
+  }, [iconLoaded]);
+
+  useEffect(() => {
+    Image.prefetch(appIcon);
+  }, []);
+
+  useEffect(() => {
+    if (!iconLoaded) return;
 
     const fadeOutTimer = setTimeout(() => {
       Animated.timing(fadeAnim, {
@@ -43,7 +56,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       clearTimeout(fadeOutTimer);
       clearTimeout(fallbackTimer);
     };
-  }, []);
+  }, [iconLoaded]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.colorNeutralBackground1 }]}>
@@ -55,9 +68,12 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       >
         <View style={styles.iconContainer}>
           <Image
-            source={require("../../assets/images/icon.png")}
+            source={appIcon}
             style={styles.icon}
             contentFit="contain"
+            priority="high"
+            cachePolicy="memory-disk"
+            onLoad={() => setIconLoaded(true)}
           />
         </View>
         <FluentText variant="title1" align="center" style={styles.title}>

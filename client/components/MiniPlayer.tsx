@@ -108,14 +108,6 @@ export function MiniPlayer({ bottomOffset = 0, isDismissed = false, onDismiss, o
       cardEffectStyle,
       glowStyle,
     ]}>
-      <Pressable 
-        style={[styles.dismissHandle, { backgroundColor: tokens.colors.surfaceVariant }]}
-        onPress={handleSwipeDown}
-        hitSlop={{ top: 5, bottom: 5, left: 20, right: 20 }}
-      >
-        <MaterialCommunityIcons name="chevron-down" size={18} color={tokens.colors.textSecondary} />
-        <View style={[styles.dismissBar, { backgroundColor: tokens.colors.primary }]} />
-      </Pressable>
       <View style={[styles.progressTrack, { backgroundColor: tokens.colors.outline }]}>
         <View 
           style={[
@@ -167,6 +159,19 @@ export function MiniPlayer({ bottomOffset = 0, isDismissed = false, onDismiss, o
               color={tokens.colors.onPrimary} 
             />
           </Pressable>
+          <Pressable
+            onPress={handleSwipeDown}
+            style={[styles.dismissButton, { backgroundColor: tokens.colors.surfaceVariant }]}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Hide player"
+          >
+            <MaterialCommunityIcons 
+              name="chevron-down" 
+              size={FluentIconSize.medium} 
+              color={tokens.colors.text} 
+            />
+          </Pressable>
         </Pressable>
       </View>
     </View>
@@ -180,26 +185,13 @@ const styles = StyleSheet.create({
     right: FluentSpacing.l,
     overflow: "hidden",
   },
-  dismissHandle: {
-    position: "absolute",
-    top: -24,
-    left: "50%",
-    marginLeft: -36,
-    width: 72,
-    height: 24,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+  dismissButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 20,
-    flexDirection: "column",
-    paddingTop: 2,
-  },
-  dismissBar: {
-    width: 32,
-    height: 3,
-    borderRadius: 2,
-    marginTop: -2,
+    marginLeft: FluentSpacing.s,
   },
   restoreHandle: {
     position: "absolute",
