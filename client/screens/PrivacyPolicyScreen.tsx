@@ -53,91 +53,98 @@ export default function PrivacyPolicyScreen() {
             Privacy Policy
           </FluentText>
           <FluentText variant="caption2" color="secondary" align="center">
-            Last updated: January 2026
+            Effective Date: January 16, 2026
           </FluentText>
         </GlassCard>
 
         <GlassCard style={styles.introCard}>
           <FluentText variant="caption1" color="secondary" style={styles.introText}>
-            New Audio 360 is designed with your privacy as a top priority. This app operates 100% offline and does not collect, transmit, or share any personal data with external servers.
+            This Privacy Policy describes how New Audio 360, developed and operated by Dhairya Shah under The Team 360, handles information in connection with your use of the New Audio 360 mobile application. By installing or using the Application, you acknowledge that you have read and understood this Policy.
           </FluentText>
         </GlassCard>
 
         <View style={styles.sectionsContainer}>
           <PolicySection
             icon="database-off"
-            title="No Data Collection"
-            content="We do not collect any personal information, usage data, analytics, or tracking information. Your music listening habits and preferences remain entirely private on your device."
+            title="1. Information We Do Not Collect"
+            content="We do not collect, store, process, or transmit any personally identifiable information, usage analytics, behavioral data, device identifiers, or any other form of personal data. The Application is designed to operate entirely offline without any data collection mechanisms. Your music listening habits, preferences, playlists, and all user-generated content remain exclusively on your device."
             colors={colors}
           />
 
           <PolicySection
             icon="cellphone"
-            title="Local Storage Only"
-            content="All app data including playlists, favorites, settings, and preferences are stored locally on your device using secure storage mechanisms. No data is ever transmitted to external servers."
+            title="2. Local Data Storage"
+            content="All Application data, including but not limited to playlists, favorites, equalizer settings, theme preferences, and playback history, is stored locally on your device utilizing secure storage mechanisms provided by the operating system. This data never leaves your device and is not accessible to us or any third parties. You retain full control over this data and may delete it at any time by uninstalling the Application or clearing Application data through your device settings."
             colors={colors}
           />
 
           <PolicySection
             icon="music-box-multiple"
-            title="Media Library Access"
-            content="The app requests permission to access your device's music library to display and play your audio files. This access is used solely for playing music and is never used to upload or share your files."
-            colors={colors}
-          />
-
-          <PolicySection
-            icon="bell"
-            title="Notification Permission"
-            content="Notification permission is requested to display now-playing media controls in your notification bar. This is a standard feature for music players and does not involve sending any data externally."
-            colors={colors}
-          />
-
-          <PolicySection
-            icon="folder-image"
-            title="Photos & Videos Access"
-            content="If granted, this permission allows the app to access album artwork and media thumbnails to enhance your music browsing experience. No images are uploaded or shared."
-            colors={colors}
-          />
-
-          <PolicySection
-            icon="wifi-off"
-            title="No Internet Required"
-            content="New Audio 360 functions entirely offline. The app does not require an internet connection to operate, and no network requests are made during normal use."
+            title="3. Device Permissions"
+            content="The Application requests certain device permissions solely for functionality purposes: (a) Media Library Access - to read and display audio files stored on your device; (b) Storage Access - to access music files and save user preferences; (c) Notification Permission - to display media playback controls; (d) Location Permission - solely for online radio country detection, processed locally without transmission. These permissions are used exclusively for stated purposes and do not involve data transmission to external servers."
             colors={colors}
           />
 
           <PolicySection
             icon="google-play"
-            title="In-App Purchases"
-            content="Purchase transactions are handled securely through the Google Play Store. We do not store or have access to your payment information. Purchase verification is done locally on your device."
+            title="4. Purchase and Payment Information"
+            content="All purchase transactions are processed exclusively through Google Play Store's secure payment infrastructure. We do not have access to, collect, or store any payment information, credit card details, or financial data. License verification is performed locally on your device by checking the installation source through the operating system's package manager."
+            colors={colors}
+          />
+
+          <PolicySection
+            icon="wifi-off"
+            title="5. Network Communications"
+            content="The Application functions primarily offline and does not require internet connectivity for core music playback features. The only network communications occur when: (a) accessing online radio streaming services, where only publicly available station data is fetched; (b) the Radio Browser API is queried for station information. No personal data is transmitted during these communications."
             colors={colors}
           />
 
           <PolicySection
             icon="shield-check"
-            title="Data Security"
-            content="Your subscription data and preferences are protected using device-level encryption. The app includes integrity checks to ensure your data has not been tampered with."
+            title="6. Data Security"
+            content="We implement industry-standard security measures to protect locally stored data. Sensitive information such as license status is encrypted using device-level secure storage (Android Keystore). While we take reasonable precautions, no method of electronic storage is 100% secure, and we cannot guarantee absolute security of data stored on your device."
             colors={colors}
           />
 
           <PolicySection
             icon="account-child-circle"
-            title="Children's Privacy"
-            content="This app does not knowingly collect any information from children. The app is designed for general audiences and contains no advertising or tracking."
+            title="7. Children's Privacy"
+            content="The Application is not directed at children under the age of 13, and we do not knowingly collect any information from children. The Application contains no advertising, in-app tracking, or social features. If you believe a child has provided us with personal information, please contact us immediately."
+            colors={colors}
+          />
+
+          <PolicySection
+            icon="account-group"
+            title="8. Third-Party Services"
+            content="The Application utilizes open-source libraries and third-party services (such as the Radio Browser API for online radio). These services operate under their own privacy policies. We encourage you to review their respective policies. We are not responsible for the privacy practices of third-party services."
             colors={colors}
           />
 
           <PolicySection
             icon="update"
-            title="Policy Updates"
-            content="Any changes to this privacy policy will be reflected in app updates. We will never change the fundamental principle that your data stays on your device."
+            title="9. Changes to This Policy"
+            content="We reserve the right to modify this Privacy Policy at any time. Any changes will be reflected in updated versions of the Application with a revised 'Effective Date.' Continued use of the Application following any changes constitutes acceptance of the modified Policy. The fundamental principle that your data remains on your device will not change."
+            colors={colors}
+          />
+
+          <PolicySection
+            icon="scale-balance"
+            title="10. Your Rights"
+            content="As we do not collect personal data, traditional data subject rights (access, rectification, erasure, portability) are not applicable. However, you maintain complete control over all data stored locally on your device. You may delete all Application data by uninstalling the Application or clearing its data through your device settings."
+            colors={colors}
+          />
+
+          <PolicySection
+            icon="gavel"
+            title="11. Governing Law"
+            content="This Privacy Policy shall be governed by and construed in accordance with the laws of India, without regard to its conflict of law provisions. Any disputes arising under this Policy shall be subject to the exclusive jurisdiction of the courts located in India."
             colors={colors}
           />
         </View>
 
         <View style={styles.footer}>
-          <FluentText variant="caption2" color="secondary" align="center">
-            By: Dhairya Shah (The Team 360)
+          <FluentText variant="caption2" color="secondary" align="center" style={{ fontWeight: "600" }}>
+            Contact Information
           </FluentText>
           <FluentText
             variant="caption2"
@@ -145,7 +152,23 @@ export default function PrivacyPolicyScreen() {
             align="center"
             style={{ marginTop: FluentSpacing.xs }}
           >
-            Contact: team360@example.com
+            For questions or concerns regarding this Privacy Policy, please contact:
+          </FluentText>
+          <FluentText
+            variant="caption2"
+            color="secondary"
+            align="center"
+            style={{ marginTop: FluentSpacing.xs }}
+          >
+            Dhairya Shah (The Team 360)
+          </FluentText>
+          <FluentText
+            variant="caption2"
+            color="secondary"
+            align="center"
+            style={{ marginTop: FluentSpacing.xxs }}
+          >
+            Email: support@theteam360.com
           </FluentText>
         </View>
       </ScrollView>

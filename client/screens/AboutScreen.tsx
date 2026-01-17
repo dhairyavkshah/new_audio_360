@@ -27,6 +27,11 @@ export default function AboutScreen() {
     navigation.navigate("PrivacyPolicy");
   };
 
+  const handleOpenSourceLicensesPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("OpenSourceLicenses");
+  };
+
   return (
     <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
       <ScrollView
@@ -102,15 +107,6 @@ export default function AboutScreen() {
           <View style={styles.legalLinks}>
             <Pressable
               style={[styles.linkItem, { backgroundColor: colors.colorNeutralBackground2 }]}
-            >
-              <MaterialCommunityIcons name="file-document-outline" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
-              <FluentText variant="caption1" style={styles.linkText}>
-                Terms of Service
-              </FluentText>
-              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
-            </Pressable>
-            <Pressable
-              style={[styles.linkItem, { backgroundColor: colors.colorNeutralBackground2 }]}
               onPress={handlePrivacyPolicyPress}
             >
               <MaterialCommunityIcons name="shield-lock-outline" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
@@ -121,6 +117,7 @@ export default function AboutScreen() {
             </Pressable>
             <Pressable
               style={[styles.linkItem, { backgroundColor: colors.colorNeutralBackground2 }]}
+              onPress={handleOpenSourceLicensesPress}
             >
               <MaterialCommunityIcons name="license" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
               <FluentText variant="caption1" style={styles.linkText}>

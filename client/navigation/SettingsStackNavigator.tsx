@@ -7,6 +7,7 @@ import LicenseScreen from "@/screens/LicenseScreen";
 import AboutScreen from "@/screens/AboutScreen";
 import FolderSelectionScreen from "@/screens/FolderSelectionScreen";
 import PrivacyPolicyScreen from "@/screens/PrivacyPolicyScreen";
+import OpenSourceLicensesScreen from "@/screens/OpenSourceLicensesScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
 export type SettingsStackParamList = {
@@ -17,6 +18,7 @@ export type SettingsStackParamList = {
   About: undefined;
   FolderSelection: undefined;
   PrivacyPolicy: undefined;
+  OpenSourceLicenses: undefined;
 };
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
@@ -78,6 +80,14 @@ export default function SettingsStackNavigator() {
         component={PrivacyPolicyScreen}
         options={{
           headerTitle: "Privacy Policy",
+          headerBackTitle: "About",
+        }}
+      />
+      <Stack.Screen
+        name="OpenSourceLicenses"
+        component={OpenSourceLicensesScreen}
+        options={{
+          headerTitle: "Open Source Licenses",
           headerBackTitle: "About",
         }}
       />
