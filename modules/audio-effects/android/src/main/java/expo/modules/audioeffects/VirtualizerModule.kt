@@ -10,6 +10,11 @@ class VirtualizerModule : Module() {
     private var audioSessionId: Int = 0
     private var isEnabled = false
     
+    companion object {
+        // Conservative limit to prevent phasing artifacts
+        const val MAX_SAFE_STRENGTH = 800
+    }
+    
     override fun definition() = ModuleDefinition {
         Name("VirtualizerModule")
         
@@ -32,7 +37,7 @@ class VirtualizerModule : Module() {
                     "success" to true,
                     "strengthSupported" to strengthSupported,
                     "minStrength" to 0,
-                    "maxStrength" to 1000
+                    "maxStrength" to MAX_SAFE_STRENGTH
                 ))
                 
             } catch (e: Exception) {
@@ -52,7 +57,7 @@ class VirtualizerModule : Module() {
         
         Function("setStrength") { strength: Int ->
             try {
-                val clampedStrength = strength.coerceIn(0, 1000).toShort()
+                val clampedStrength = strength.coerceIn(0, MAX_SAFE_STRENGTH).toShort()
                 virtualizer?.setStrength(clampedStrength)
                 return@Function mapOf("success" to true, "strength" to clampedStrength.toInt())
             } catch (e: Exception) {
@@ -84,6 +89,7 @@ class VirtualizerModule : Module() {
     }
     
     private fun release() {
+        virtualizer?.enabled = false
         virtualizer?.release()
         virtualizer = null
         isEnabled = false

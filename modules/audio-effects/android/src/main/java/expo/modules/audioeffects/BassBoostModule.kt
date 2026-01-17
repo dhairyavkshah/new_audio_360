@@ -10,6 +10,12 @@ class BassBoostModule : Module() {
     private var audioSessionId: Int = 0
     private var isEnabled = false
     
+    companion object {
+        // Conservative limit to prevent distortion
+        // Full range is 0-1000, but high values cause muddiness
+        const val MAX_SAFE_STRENGTH = 600
+    }
+    
     override fun definition() = ModuleDefinition {
         Name("BassBoostModule")
         
@@ -32,7 +38,7 @@ class BassBoostModule : Module() {
                     "success" to true,
                     "strengthSupported" to strengthSupported,
                     "minStrength" to 0,
-                    "maxStrength" to 1000
+                    "maxStrength" to MAX_SAFE_STRENGTH
                 ))
                 
             } catch (e: Exception) {
@@ -52,7 +58,7 @@ class BassBoostModule : Module() {
         
         Function("setStrength") { strength: Int ->
             try {
-                val clampedStrength = strength.coerceIn(0, 1000).toShort()
+                val clampedStrength = strength.coerceIn(0, MAX_SAFE_STRENGTH).toShort()
                 bassBoost?.setStrength(clampedStrength)
                 return@Function mapOf("success" to true, "strength" to clampedStrength.toInt())
             } catch (e: Exception) {
@@ -84,6 +90,7 @@ class BassBoostModule : Module() {
     }
     
     private fun release() {
+        bassBoost?.enabled = false
         bassBoost?.release()
         bassBoost = null
         isEnabled = false

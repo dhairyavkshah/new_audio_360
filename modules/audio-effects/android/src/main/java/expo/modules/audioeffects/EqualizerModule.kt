@@ -10,6 +10,13 @@ class EqualizerModule : Module() {
     private var audioSessionId: Int = 0
     private var isEnabled = false
     
+    companion object {
+        // Use conservative limits to prevent distortion
+        // Android typically allows -1500 to +1500 mB, but we limit boost
+        const val MIN_LEVEL_MB = -1500  // -15 dB cut (safe)
+        const val MAX_LEVEL_MB = 600    // +6 dB boost (conservative to prevent clipping)
+    }
+    
     override fun definition() = ModuleDefinition {
         Name("EqualizerModule")
         
@@ -30,13 +37,17 @@ class EqualizerModule : Module() {
                 val bands = eq.numberOfBands.toInt()
                 val bandInfo = mutableListOf<Map<String, Any>>()
                 
+                // Get the actual device limits
+                val deviceMinLevel = eq.bandLevelRange[0].toInt()
+                val deviceMaxLevel = eq.bandLevelRange[1].toInt()
+                
                 for (i in 0 until bands) {
                     val band = i.toShort()
                     bandInfo.add(mapOf(
                         "band" to i,
                         "centerFreq" to eq.getCenterFreq(band),
-                        "minLevel" to eq.bandLevelRange[0].toInt(),
-                        "maxLevel" to eq.bandLevelRange[1].toInt()
+                        "minLevel" to maxOf(deviceMinLevel, MIN_LEVEL_MB),
+                        "maxLevel" to minOf(deviceMaxLevel, MAX_LEVEL_MB)
                     ))
                 }
                 
@@ -48,8 +59,8 @@ class EqualizerModule : Module() {
                 promise.resolve(mapOf(
                     "success" to true,
                     "numberOfBands" to bands,
-                    "minLevel" to eq.bandLevelRange[0].toInt(),
-                    "maxLevel" to eq.bandLevelRange[1].toInt(),
+                    "minLevel" to maxOf(deviceMinLevel, MIN_LEVEL_MB),
+                    "maxLevel" to minOf(deviceMaxLevel, MAX_LEVEL_MB),
                     "bands" to bandInfo,
                     "presets" to presetNames
                 ))
@@ -71,7 +82,8 @@ class EqualizerModule : Module() {
         
         Function("setBandLevel") { band: Int, level: Int ->
             try {
-                val safeLevel = level.coerceIn(-1500, 150)
+                // Clamp to safe range
+                val safeLevel = level.coerceIn(MIN_LEVEL_MB, MAX_LEVEL_MB)
                 equalizer?.setBandLevel(band.toShort(), safeLevel.toShort())
                 return@Function mapOf("success" to true, "band" to band, "level" to safeLevel)
             } catch (e: Exception) {
@@ -100,9 +112,15 @@ class EqualizerModule : Module() {
             try {
                 val eq = equalizer ?: return@Function mapOf("success" to false, "error" to "Not attached")
                 
+                // Apply zero-sum balancing to prevent overall volume change
+                val sum = levels.sum()
+                val offset = if (levels.isNotEmpty()) sum / levels.size else 0
+                
                 for ((band, level) in levels.withIndex()) {
                     if (band < eq.numberOfBands) {
-                        val safeLevel = level.coerceIn(-1500, 150)
+                        // Apply offset for zero-sum and clamp to safe range
+                        val balancedLevel = level - offset
+                        val safeLevel = balancedLevel.coerceIn(MIN_LEVEL_MB, MAX_LEVEL_MB)
                         eq.setBandLevel(band.toShort(), safeLevel.toShort())
                     }
                 }
@@ -128,8 +146,8 @@ class EqualizerModule : Module() {
                 "enabled" to eq.enabled,
                 "numberOfBands" to eq.numberOfBands.toInt(),
                 "currentPreset" to eq.currentPreset.toInt(),
-                "minLevel" to eq.bandLevelRange[0].toInt(),
-                "maxLevel" to eq.bandLevelRange[1].toInt()
+                "minLevel" to maxOf(eq.bandLevelRange[0].toInt(), MIN_LEVEL_MB),
+                "maxLevel" to minOf(eq.bandLevelRange[1].toInt(), MAX_LEVEL_MB)
             )
         }
         
@@ -144,6 +162,7 @@ class EqualizerModule : Module() {
     }
     
     private fun release() {
+        equalizer?.enabled = false
         equalizer?.release()
         equalizer = null
         isEnabled = false
