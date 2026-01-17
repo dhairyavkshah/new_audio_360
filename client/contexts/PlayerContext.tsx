@@ -10,15 +10,8 @@ import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
 
-const EQ_FREQUENCIES: Record<keyof EQBands, number> = {
-  sub: 32,
-  bass: 64,
-  lowMid: 250,
-  mid: 1000,
-  highMid: 4000,
-  treble: 8000,
-  brilliance: 16000,
-};
+// 5-band EQ frequencies matching SoundLabContext
+const EQ_FREQUENCIES = [60, 230, 910, 3600, 14000];
 
 export type PlayableSong = Song | DeviceSong;
 
@@ -466,22 +459,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     eqFiltersRef.current.forEach(f => { try { f.disconnect(); } catch {} });
     eqFiltersRef.current = [];
 
-    const bands = Object.keys(EQ_FREQUENCIES) as (keyof EQBands)[];
-    
-    bands.forEach((band, index) => {
+    // Create 5-band EQ chain matching SoundLabContext frequencies
+    EQ_FREQUENCIES.forEach((freq, index) => {
       const filter = ctx.createBiquadFilter();
       
       if (index === 0) {
         filter.type = 'lowshelf';
-      } else if (index === bands.length - 1) {
+      } else if (index === EQ_FREQUENCIES.length - 1) {
         filter.type = 'highshelf';
       } else {
         filter.type = 'peaking';
         filter.Q.value = 1.5;
       }
       
-      filter.frequency.value = EQ_FREQUENCIES[band];
-      filter.gain.value = soundLabMode === 'equalizer' ? eqBands[band] * 2 : 0;
+      filter.frequency.value = freq;
+      filter.gain.value = soundLabMode === 'equalizer' ? (eqBands[index] || 0) * 2 : 0;
       
       eqFiltersRef.current.push(filter);
     });
@@ -496,12 +488,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     
-    const bands = Object.keys(EQ_FREQUENCIES) as (keyof EQBands)[];
+    // Update 5-band EQ filters
     eqFiltersRef.current.forEach((filter, index) => {
-      const band = bands[index];
-      if (band) {
-        filter.gain.value = soundLabMode === 'equalizer' ? eqBands[band] * 2 : 0;
-      }
+      filter.gain.value = soundLabMode === 'equalizer' ? (eqBands[index] || 0) * 2 : 0;
     });
     
     if (stereoWidenerRef.current) {
@@ -516,11 +505,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [soundLabMode, eqBands, immersiveEffect]);
 
-  useEffect(() => {
-    if (Platform.OS === 'android' && nativeAudioSessionIdRef.current > 0) {
-      NativeEffectsManager.applySettings(soundLabMode, eqBands, immersiveEffect);
-    }
-  }, [soundLabMode, eqBands, immersiveEffect]);
+  // Note: EQ settings are now applied directly by SoundLabScreen via applyFiveBandEQ()
+  // This ensures proper 5-band zero-sum EQ without lossy 7-band conversion
 
   const loadAndPlaySong = useCallback(async (song: PlayableSong) => {
     setIsLoading(true);

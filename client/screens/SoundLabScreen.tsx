@@ -9,6 +9,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { EQ_PRESETS, EQ_BAND_LABELS } from "@/contexts/SoundLabContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
 import { FluentSpacing, FluentRadius } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
@@ -30,51 +31,6 @@ import NativeAudioService from "@/services/NativeAudioService";
 import { NativeEffectsManager } from "@/services/NativeEffectsManager";
 
 type SoundLabMode = "equalizer" | "immersive" | "off";
-
-const EQ_PRESETS = [
-  { 
-    name: "Flat", 
-    description: "Natural, unprocessed sound",
-    bands: [0, 0, 0, 0, 0]
-  },
-  { 
-    name: "Rock", 
-    description: "Punchy bass, crisp guitars",
-    bands: [2, 1, -2, 0, -1]
-  },
-  { 
-    name: "Pop", 
-    description: "Bright vocals, balanced bass",
-    bands: [1, 0, 1, 0, -2]
-  },
-  { 
-    name: "Jazz", 
-    description: "Warm mids, smooth highs",
-    bands: [1, 2, 1, -2, -2]
-  },
-  { 
-    name: "Classical", 
-    description: "Wide dynamics, clear separation",
-    bands: [1, 0, -2, 0, 1]
-  },
-  { 
-    name: "Electronic", 
-    description: "Deep bass, sparkling highs",
-    bands: [2, 1, -3, -1, 1]
-  },
-  { 
-    name: "Hip-Hop", 
-    description: "Heavy sub-bass, clear vocals",
-    bands: [3, 1, 0, -2, -2]
-  },
-  { 
-    name: "Acoustic", 
-    description: "Natural warmth, presence",
-    bands: [0, 1, 1, 0, -2]
-  },
-];
-
-const CUSTOM_EQ_BAND_LABELS = ["60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz"];
 
 const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
   'off', 'music', '360_reality', 'gaming', 'podcast', 'movie'
@@ -414,7 +370,7 @@ export default function SoundLabScreen() {
                 Custom Equalizer
               </FluentText>
               
-              {CUSTOM_EQ_BAND_LABELS.map((label, index) => (
+              {EQ_BAND_LABELS.map((label, index) => (
                 <View key={label} style={styles.bandRow}>
                   <FluentText variant="caption1" style={styles.bandLabel}>{label}</FluentText>
                   <Slider
@@ -647,7 +603,7 @@ export default function SoundLabScreen() {
             <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
               Adjust EQ bands and save changes
             </FluentText>
-            {CUSTOM_EQ_BAND_LABELS.map((label, index) => (
+            {EQ_BAND_LABELS.map((label, index) => (
               <View key={label} style={styles.bandRow}>
                 <FluentText variant="caption1" style={styles.bandLabel}>{label}</FluentText>
                 <Slider

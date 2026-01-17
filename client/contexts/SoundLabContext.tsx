@@ -10,40 +10,28 @@ import {
 import NativeAudioService from '@/services/NativeAudioService';
 import { NativeEffectsManager, AudioSessionSource } from '@/services/NativeEffectsManager';
 
-export type EQBands = {
-  sub: number;
-  bass: number;
-  lowMid: number;
-  mid: number;
-  highMid: number;
-  treble: number;
-  brilliance: number;
-};
+// 5-band EQ system - all presets are zero-sum (no volume change)
+export type EQBands = [number, number, number, number, number];
 
 export type SoundLabMode = 'equalizer' | 'immersive' | 'off';
 
 export { ImmersiveMode, ImmersiveModeSettings, ImmersiveModeInfo };
 
-const EQ_PRESETS: Record<string, EQBands> = {
-  Flat: { sub: 0, bass: 0, lowMid: 0, mid: 0, highMid: 0, treble: 0, brilliance: 0 },
-  Rock: { sub: +3, bass: +2, lowMid: -2, mid: -3, highMid: +1, treble: +3, brilliance: -4 },
-  Pop: { sub: +2, bass: +2, lowMid: -1, mid: -2, highMid: +1, treble: +2, brilliance: -4 },
-  Jazz: { sub: 0, bass: +2, lowMid: +1, mid: +1, highMid: -2, treble: -1, brilliance: -1 },
-  Classical: { sub: -1, bass: 0, lowMid: -1, mid: +2, highMid: +1, treble: +2, brilliance: -3 },
-  Electronic: { sub: +4, bass: +3, lowMid: -2, mid: -3, highMid: +1, treble: +3, brilliance: -6 },
-  'Hip-Hop': { sub: +4, bass: +3, lowMid: -2, mid: -3, highMid: +1, treble: +1, brilliance: -4 },
-  Acoustic: { sub: -2, bass: -1, lowMid: +2, mid: +2, highMid: +1, treble: -1, brilliance: -1 },
-};
+// 5-band zero-sum EQ presets (60Hz, 230Hz, 910Hz, 3.6kHz, 14kHz)
+// All presets sum to exactly 0 to prevent volume changes
+export const EQ_PRESETS: { name: string; description: string; bands: EQBands }[] = [
+  { name: 'Flat', description: 'Natural, unprocessed sound', bands: [0, 0, 0, 0, 0] },
+  { name: 'Rock', description: 'Punchy bass, crisp guitars', bands: [2, 1, -2, 0, -1] },
+  { name: 'Pop', description: 'Bright vocals, balanced bass', bands: [1, 0, 1, 0, -2] },
+  { name: 'Jazz', description: 'Warm mids, smooth highs', bands: [1, 2, 1, -2, -2] },
+  { name: 'Classical', description: 'Wide dynamics, clear separation', bands: [1, 0, -2, 0, 1] },
+  { name: 'Electronic', description: 'Deep bass, sparkling highs', bands: [2, 1, -3, -1, 1] },
+  { name: 'Hip-Hop', description: 'Heavy sub-bass, clear vocals', bands: [3, 1, 0, -2, -2] },
+  { name: 'Acoustic', description: 'Natural warmth, presence', bands: [0, 1, 1, 0, -2] },
+];
 
-const EQ_FREQUENCIES = {
-  sub: 32,
-  bass: 64,
-  lowMid: 250,
-  mid: 1000,
-  highMid: 4000,
-  treble: 8000,
-  brilliance: 16000,
-};
+export const EQ_FREQUENCIES = [60, 230, 910, 3600, 14000];
+export const EQ_BAND_LABELS = ['60Hz', '230Hz', '910Hz', '3.6kHz', '14kHz'];
 
 const VALID_IMMERSIVE_MODES: ImmersiveMode[] = ['off', 'music', '360_reality', 'gaming', 'podcast', 'movie'];
 
@@ -80,7 +68,7 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
   const [audioSource, setAudioSource] = useState<AudioSessionSource>('none');
   const [isEffectsActive, setIsEffectsActive] = useState(false);
 
-  const eqBands = EQ_PRESETS[eqPresetName] || EQ_PRESETS.Flat;
+  const eqBands = EQ_PRESETS.find(p => p.name === eqPresetName)?.bands || EQ_PRESETS[0].bands;
 
   const immersiveEffect: ImmersiveEffectSettings = useMemo(() => {
     if (mode !== 'immersive' || immersiveModeName === 'off') {
@@ -143,7 +131,7 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
       const eqPreset = await getEQPreset();
       const soundMode = await getSoundMode();
       
-      if (eqPreset && EQ_PRESETS[eqPreset]) {
+      if (eqPreset && EQ_PRESETS.some(p => p.name === eqPreset)) {
         setEqPresetName(eqPreset);
         setMode('equalizer');
       } else if (soundMode && VALID_IMMERSIVE_MODES.includes(soundMode as ImmersiveMode)) {

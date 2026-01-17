@@ -3,13 +3,6 @@ import {
   EqualizerModule, 
   EqualizerAttachResult 
 } from 'audio-effects';
-import type { EQBands, SoundLabMode } from '@/contexts/SoundLabContext';
-
-interface ImmersiveEffect {
-  reverb: number;
-  delay: number;
-  stereoWidth: number;
-}
 
 export type AudioSessionSource = 'music' | 'radio' | 'none';
 
@@ -143,55 +136,6 @@ class NativeEffectsManagerClass {
     return this.isInitialized && this.equalizerAttached;
   }
 
-  applySettings(mode: SoundLabMode, eqBands: EQBands, _immersiveEffect: ImmersiveEffect): void {
-    if (!this.isInitialized || !this.isAvailable()) return;
-
-    if (mode === 'equalizer' && this.equalizerAttached) {
-      this.applyEqualizer(eqBands);
-    } else {
-      this.disableEqualizer();
-    }
-  }
-
-  private applyEqualizer(eqBands: EQBands): void {
-    if (!this.equalizerAttached) return;
-
-    EqualizerModule.setEnabled(true);
-
-    const numBands = this.equalizerInfo?.numberOfBands || 5;
-
-    const rawBands: number[] = [];
-    
-    if (numBands >= 5) {
-      rawBands.push((eqBands.sub + eqBands.bass) / 2);
-      rawBands.push(eqBands.lowMid);
-      rawBands.push(eqBands.mid);
-      rawBands.push(eqBands.highMid);
-      rawBands.push((eqBands.treble + eqBands.brilliance) / 2);
-    }
-
-    for (let i = 5; i < numBands; i++) {
-      rawBands.push(0);
-    }
-
-    const sum = rawBands.reduce((acc, v) => acc + v, 0);
-    const offset = sum / rawBands.length;
-    const balancedBands = rawBands.map(v => v - offset);
-
-    const bandValues = balancedBands.map(v => {
-      const millibels = v * MB_PER_UNIT;
-      return Math.max(-150, Math.min(150, millibels));  // Symmetric clamping for zero-sum
-    });
-
-    EqualizerModule.setCustomBands(bandValues);
-  }
-
-  private disableEqualizer(): void {
-    if (this.equalizerAttached) {
-      EqualizerModule.setEnabled(false);
-    }
-  }
-
   getEqualizerInfo(): EqualizerAttachResult | null {
     return this.equalizerInfo;
   }
@@ -230,7 +174,9 @@ class NativeEffectsManagerClass {
   }
 
   disableEQ(): void {
-    this.disableEqualizer();
+    if (this.equalizerAttached) {
+      EqualizerModule.setEnabled(false);
+    }
   }
 
   async release(): Promise<void> {
