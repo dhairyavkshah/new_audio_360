@@ -771,7 +771,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             console.warn('[PlayerContext] TrackPlayer failed to initialize, falling back to expo-av');
             cleanupPlayer();
             
-            const newPlayer = createAudioPlayer(audioSource, { updateInterval: 0.1 });
+            const source = audioSource.startsWith('file://') || audioSource.startsWith('content://') 
+              ? { uri: audioSource } 
+              : audioSource;
+            const newPlayer = createAudioPlayer(source, { updateInterval: 0.1 });
             playerRef.current = newPlayer;
 
             statusListenerRef.current = newPlayer.addListener('playbackStatusUpdate', handleStatusUpdate);
@@ -920,7 +923,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       } else {
         cleanupPlayer();
         
-        const newPlayer = createAudioPlayer(audioSource, { updateInterval: 0.1 });
+        const source = audioSource.startsWith('file://') || audioSource.startsWith('content://') 
+          ? { uri: audioSource } 
+          : audioSource;
+        const newPlayer = createAudioPlayer(source, { updateInterval: 0.1 });
         playerRef.current = newPlayer;
 
         statusListenerRef.current = newPlayer.addListener('playbackStatusUpdate', handleStatusUpdate);
