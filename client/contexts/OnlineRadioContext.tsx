@@ -413,6 +413,8 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
       soundRef.current = sound;
       setCurrentStation(station);
+      setIsPlaying(true);
+      setIsBuffering(false);
       console.log('[OnlineRadioContext] Stream loaded successfully:', station.name);
       AudioCoordinator.notifyPlaybackStarted('radio');
 
