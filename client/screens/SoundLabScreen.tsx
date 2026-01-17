@@ -347,7 +347,7 @@ export default function SoundLabScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  // Bass Control - uses gain-staged approach to prevent distortion
+  // Bass Control - uses zero-sum EQ redistribution (no separate bass boost module)
   const handleBassControlChange = async (value: number) => {
     if (soundLabMode !== "equalizer") return;
     
@@ -355,15 +355,13 @@ export default function SoundLabScreen() {
     setBassControlLevel(newLevel);
     await saveBassControlLevel(newLevel);
     
-    // Apply bass control through NativeEffectsManager for proper gain staging
-    NativeEffectsManager.applyBassControl(newLevel);
-    
-    // Re-apply EQ with updated gain staging to compensate for bass boost
+    // Apply bass adjustment through EQ redistribution - this boosts bass bands
+    // and proportionally reduces treble bands to maintain zero-sum (no volume change)
     const currentBands = isCustomEQ ? customBands : (EQ_PRESETS.find(p => p.name === selectedEQ)?.bands || [0,0,0,0,0]);
     NativeEffectsManager.applyFiveBandEQWithGainStaging(currentBands, newLevel, trebleControlLevel);
   };
 
-  // Treble Control - uses gain-staged approach to prevent distortion
+  // Treble Control - uses zero-sum EQ redistribution (no separate treble module)
   const handleTrebleControlChange = async (value: number) => {
     if (soundLabMode !== "equalizer") return;
     

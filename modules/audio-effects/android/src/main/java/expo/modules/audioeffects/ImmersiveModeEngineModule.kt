@@ -247,8 +247,11 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModeMusic() {
+        // Disable gain-adding effects to prevent distortion
         loudnessEnhancer?.enabled = false
+        bassBoost?.enabled = false  // No separate bass - already in zero-sum EQ
         
+        // Zero-sum EQ: 60 + 10 + (-60) + 10 + (-20) = 0
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
@@ -261,13 +264,7 @@ class ImmersiveModeEngineModule : Module() {
             }
         }
         
-        bassBoost?.let {
-            if (it.strengthSupported) {
-                it.setStrength(200.toShort())
-                it.enabled = true
-            }
-        }
-        
+        // Virtualizer for spatial effect (no gain added)
         virtualizer?.let {
             if (it.strengthSupported) {
                 it.setStrength(150.toShort())
@@ -277,8 +274,11 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyMode360Reality() {
+        // Disable gain-adding effects to prevent distortion
         loudnessEnhancer?.enabled = false
+        bassBoost?.enabled = false  // No separate bass - already in zero-sum EQ
         
+        // Zero-sum EQ: 18 + (-12) + (-32) + (-12) + 38 = 0
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
@@ -291,13 +291,7 @@ class ImmersiveModeEngineModule : Module() {
             }
         }
         
-        bassBoost?.let {
-            if (it.strengthSupported) {
-                it.setStrength(200.toShort())
-                it.enabled = true
-            }
-        }
-        
+        // Stronger virtualizer for 360 spatial effect (no gain added)
         virtualizer?.let {
             if (it.strengthSupported) {
                 it.setStrength(400.toShort())
@@ -307,8 +301,11 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModeGaming() {
+        // Disable gain-adding effects to prevent distortion
         loudnessEnhancer?.enabled = false
+        bassBoost?.enabled = false  // No separate bass - already in zero-sum EQ
         
+        // Zero-sum EQ: (-14) + (-94) + 16 + 56 + 36 = 0
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
@@ -321,13 +318,7 @@ class ImmersiveModeEngineModule : Module() {
             }
         }
         
-        bassBoost?.let {
-            if (it.strengthSupported) {
-                it.setStrength(150.toShort())
-                it.enabled = true
-            }
-        }
-        
+        // Virtualizer for positional audio (no gain added)
         virtualizer?.let {
             if (it.strengthSupported) {
                 it.setStrength(400.toShort())
@@ -337,8 +328,11 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModePodcast() {
+        // Disable all gain-adding effects for clean voice clarity
         loudnessEnhancer?.enabled = false
+        bassBoost?.enabled = false
         
+        // Zero-sum EQ: (-140) + (-40) + 60 + 80 + 40 = 0
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
@@ -351,8 +345,7 @@ class ImmersiveModeEngineModule : Module() {
             }
         }
         
-        bassBoost?.enabled = false
-        
+        // Subtle virtualizer for voice presence
         virtualizer?.let {
             if (it.strengthSupported) {
                 it.setStrength(80.toShort())
@@ -362,8 +355,11 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModeMovie() {
+        // Disable gain-adding effects to prevent distortion
         loudnessEnhancer?.enabled = false
+        bassBoost?.enabled = false  // No separate bass - already in zero-sum EQ
         
+        // Zero-sum EQ: 58 + (-12) + (-62) + (-12) + 28 = 0
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
@@ -376,13 +372,7 @@ class ImmersiveModeEngineModule : Module() {
             }
         }
         
-        bassBoost?.let {
-            if (it.strengthSupported) {
-                it.setStrength(300.toShort())
-                it.enabled = true
-            }
-        }
-        
+        // Virtualizer for cinematic surround effect (no gain added)
         virtualizer?.let {
             if (it.strengthSupported) {
                 it.setStrength(400.toShort())
