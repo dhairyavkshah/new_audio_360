@@ -9,7 +9,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { EQ_PRESETS, EQ_BAND_LABELS } from "@/contexts/SoundLabContext";
+import { EQ_PRESETS, EQ_BAND_LABELS, IMMERSIVE_MODES, IMMERSIVE_MODE_INFO } from "@/contexts/SoundLabContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
 import { FluentSpacing, FluentRadius } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
@@ -23,7 +23,6 @@ import {
 import { EqualizerModule } from "../../modules/audio-effects";
 import { 
   ImmersiveModeEngineModule, 
-  IMMERSIVE_MODE_INFO, 
   ImmersiveMode,
   ImmersiveModeInfo 
 } from "../../modules/audio-effects";
@@ -32,9 +31,8 @@ import { NativeEffectsManager } from "@/services/NativeEffectsManager";
 
 type SoundLabMode = "equalizer" | "immersive" | "off";
 
-const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
-  'off', 'music', '360_reality', 'gaming', 'podcast', 'movie'
-];
+// Use immersive modes from single source of truth
+const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = IMMERSIVE_MODES.map(m => m.id);
 
 export default function SoundLabScreen() {
   const tabBarHeight = useSafeTabBarHeight();

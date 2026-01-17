@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { getEQPreset, getSoundMode } from '@/lib/storage';
 import { 
   ImmersiveModeEngineModule, 
-  IMMERSIVE_MODE_INFO, 
   ImmersiveMode, 
   ImmersiveModeSettings,
   ImmersiveModeInfo
@@ -10,15 +9,20 @@ import {
 import NativeAudioService from '@/services/NativeAudioService';
 import { NativeEffectsManager, AudioSessionSource } from '@/services/NativeEffectsManager';
 
+// ============================================================================
+// SINGLE SOURCE OF TRUTH - All audio configuration defined here
+// ============================================================================
+
 // 5-band EQ system - all presets are zero-sum (no volume change)
 export type EQBands = [number, number, number, number, number];
-
 export type SoundLabMode = 'equalizer' | 'immersive' | 'off';
-
 export { ImmersiveMode, ImmersiveModeSettings, ImmersiveModeInfo };
 
-// 5-band zero-sum EQ presets (60Hz, 230Hz, 910Hz, 3.6kHz, 14kHz)
-// All presets sum to exactly 0 to prevent volume changes
+// EQ Band Configuration
+export const EQ_FREQUENCIES = [60, 230, 910, 3600, 14000];
+export const EQ_BAND_LABELS = ['60Hz', '230Hz', '910Hz', '3.6kHz', '14kHz'];
+
+// 8 Zero-Sum EQ Presets (all bands sum to 0)
 export const EQ_PRESETS: { name: string; description: string; bands: EQBands }[] = [
   { name: 'Flat', description: 'Natural, unprocessed sound', bands: [0, 0, 0, 0, 0] },
   { name: 'Rock', description: 'Punchy bass, crisp guitars', bands: [2, 1, -2, 0, -1] },
@@ -30,10 +34,33 @@ export const EQ_PRESETS: { name: string; description: string; bands: EQBands }[]
   { name: 'Acoustic', description: 'Natural warmth, presence', bands: [0, 1, 1, 0, -2] },
 ];
 
-export const EQ_FREQUENCIES = [60, 230, 910, 3600, 14000];
-export const EQ_BAND_LABELS = ['60Hz', '230Hz', '910Hz', '3.6kHz', '14kHz'];
+// 6 Immersive Audio Modes - Pure EQ-based (zero-sum in millibels)
+// SINGLE SOURCE OF TRUTH - Native Kotlin module uses these exact values
+// All bands sum to exactly 0 millibels (no volume change)
+export const IMMERSIVE_MODES: { 
+  id: ImmersiveMode; 
+  name: string; 
+  description: string; 
+  icon: string; 
+  eqBands: [number, number, number, number, number];  // Values in millibels at [60Hz, 230Hz, 910Hz, 3.6kHz, 14kHz]
+}[] = [
+  { id: 'off', name: 'Off', description: 'No audio enhancement', icon: 'volume-off', eqBands: [0, 0, 0, 0, 0] },       // Sum: 0
+  { id: 'music', name: 'Music', description: 'Optimized for music listening', icon: 'music', eqBands: [40, 10, -40, 10, -20] },       // Sum: 0
+  { id: '360_reality', name: '360 Reality', description: 'Immersive 3D spatial audio', icon: 'surround-sound', eqBands: [20, -10, -30, -10, 30] },  // Sum: 0
+  { id: 'gaming', name: 'Gaming', description: 'Enhanced positional audio', icon: 'gamepad-variant', eqBands: [-10, -60, 10, 35, 25] },     // Sum: 0
+  { id: 'podcast', name: 'Podcast', description: 'Voice clarity enhancement', icon: 'podcast', eqBands: [-80, -30, 40, 50, 20] },    // Sum: 0
+  { id: 'movie', name: 'Movie', description: 'Cinematic audio enhancement', icon: 'movie-open', eqBands: [40, -10, -50, -10, 30] },  // Sum: 0
+  { id: 'custom', name: 'Custom', description: 'Custom EQ settings', icon: 'tune', eqBands: [0, 0, 0, 0, 0] },         // Sum: 0
+];
 
-const VALID_IMMERSIVE_MODES: ImmersiveMode[] = ['off', 'music', '360_reality', 'gaming', 'podcast', 'movie'];
+// Helper to get immersive mode info
+export const IMMERSIVE_MODE_INFO: Record<ImmersiveMode, { name: string; description: string; icon: string }> = 
+  IMMERSIVE_MODES.reduce((acc, mode) => {
+    acc[mode.id] = { name: mode.name, description: mode.description, icon: mode.icon };
+    return acc;
+  }, {} as Record<ImmersiveMode, { name: string; description: string; icon: string }>);
+
+const VALID_IMMERSIVE_MODES: ImmersiveMode[] = IMMERSIVE_MODES.map(m => m.id).filter(id => id !== 'off') as ImmersiveMode[];
 
 interface ImmersiveEffectSettings {
   reverb: number;

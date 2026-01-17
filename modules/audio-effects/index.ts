@@ -805,12 +805,14 @@ export const ImmersiveModeEngineModule = {
 };
 
 // Immersive Mode Presets Info
+// IMMERSIVE_MODE_INFO is now defined in client/contexts/SoundLabContext.tsx as single source of truth
+// Re-export placeholder for backwards compatibility - consumers should import from SoundLabContext
 export const IMMERSIVE_MODE_INFO: Record<ImmersiveMode, { name: string; description: string; icon: string }> = {
   off: { name: 'Off', description: 'No audio enhancement', icon: 'volume-off' },
-  music: { name: 'Music', description: 'Optimized for music listening with enhanced clarity', icon: 'music' },
-  '360_reality': { name: '360 Reality', description: 'Immersive 3D spatial audio experience', icon: 'surround-sound' },
-  gaming: { name: 'Gaming', description: 'Enhanced positional audio for gaming', icon: 'gamepad-variant' },
-  podcast: { name: 'Podcast', description: 'Voice clarity enhancement for podcasts and audiobooks', icon: 'podcast' },
-  movie: { name: 'Movie', description: 'Cinematic audio with enhanced dialogue', icon: 'movie-open' },
+  music: { name: 'Music', description: 'Optimized for music listening', icon: 'music' },
+  '360_reality': { name: '360 Reality', description: 'Immersive 3D spatial audio', icon: 'surround-sound' },
+  gaming: { name: 'Gaming', description: 'Enhanced positional audio', icon: 'gamepad-variant' },
+  podcast: { name: 'Podcast', description: 'Voice clarity enhancement', icon: 'podcast' },
+  movie: { name: 'Movie', description: 'Cinematic audio enhancement', icon: 'movie-open' },
   custom: { name: 'Custom', description: 'Custom EQ settings', icon: 'tune' }
 };

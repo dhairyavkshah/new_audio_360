@@ -102,6 +102,7 @@ class ImmersiveModeEngineModule : Module() {
             )
         }
         
+        // SINGLE SOURCE OF TRUTH: SoundLabContext.tsx - these descriptions must match
         Function("getAvailableModes") {
             return@Function listOf(
                 mapOf(
@@ -113,31 +114,31 @@ class ImmersiveModeEngineModule : Module() {
                 mapOf(
                     "id" to MODE_MUSIC,
                     "name" to "Music",
-                    "description" to "Optimized for music listening with enhanced clarity and bass",
+                    "description" to "Optimized for music listening",
                     "icon" to "music"
                 ),
                 mapOf(
                     "id" to MODE_360_REALITY,
                     "name" to "360 Reality",
-                    "description" to "Immersive 3D spatial audio experience",
+                    "description" to "Immersive 3D spatial audio",
                     "icon" to "surround-sound"
                 ),
                 mapOf(
                     "id" to MODE_GAMING,
                     "name" to "Gaming",
-                    "description" to "Enhanced positional audio for gaming with boosted footsteps and effects",
+                    "description" to "Enhanced positional audio",
                     "icon" to "gamepad-variant"
                 ),
                 mapOf(
                     "id" to MODE_PODCAST,
                     "name" to "Podcast",
-                    "description" to "Voice clarity enhancement for podcasts and audiobooks",
+                    "description" to "Voice clarity enhancement",
                     "icon" to "podcast"
                 ),
                 mapOf(
                     "id" to MODE_MOVIE,
                     "name" to "Movie",
-                    "description" to "Cinematic audio with enhanced dialogue and surround effects",
+                    "description" to "Cinematic audio enhancement",
                     "icon" to "movie-open"
                 )
             )
@@ -193,12 +194,18 @@ class ImmersiveModeEngineModule : Module() {
         Events("onModeChanged")
     }
     
+    // ========================================================================
+    // SINGLE SOURCE OF TRUTH: EQ bands defined in client/contexts/SoundLabContext.tsx
+    // All values must match exactly between TypeScript and Kotlin
+    // ========================================================================
+    
     private fun applyModeOff() {
         equalizer?.enabled = false
     }
     
     private fun applyModeMusic() {
-        // Pure zero-sum EQ: 40 + 10 + (-40) + 10 + (-20) = 0 millibels
+        // SINGLE SOURCE OF TRUTH: SoundLabContext.IMMERSIVE_MODES[music].eqBands = [40, 10, -40, 10, -20]
+        // Zero-sum: 40 + 10 + (-40) + 10 + (-20) = 0 millibels
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
@@ -213,7 +220,8 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyMode360Reality() {
-        // Pure zero-sum EQ: 20 + (-10) + (-30) + (-10) + 30 = 0 millibels
+        // SINGLE SOURCE OF TRUTH: SoundLabContext.IMMERSIVE_MODES[360_reality].eqBands = [20, -10, -30, -10, 30]
+        // Zero-sum: 20 + (-10) + (-30) + (-10) + 30 = 0 millibels
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
@@ -228,7 +236,8 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModeGaming() {
-        // Pure zero-sum EQ: (-10) + (-60) + 10 + 35 + 25 = 0 millibels
+        // SINGLE SOURCE OF TRUTH: SoundLabContext.IMMERSIVE_MODES[gaming].eqBands = [-10, -60, 10, 35, 25]
+        // Zero-sum: (-10) + (-60) + 10 + 35 + 25 = 0 millibels
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
@@ -243,7 +252,8 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModePodcast() {
-        // Pure zero-sum EQ: (-80) + (-30) + 40 + 50 + 20 = 0 millibels
+        // SINGLE SOURCE OF TRUTH: SoundLabContext.IMMERSIVE_MODES[podcast].eqBands = [-80, -30, 40, 50, 20]
+        // Zero-sum: (-80) + (-30) + 40 + 50 + 20 = 0 millibels
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
@@ -258,7 +268,8 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModeMovie() {
-        // Pure zero-sum EQ: 40 + (-10) + (-50) + (-10) + 30 = 0 millibels
+        // SINGLE SOURCE OF TRUTH: SoundLabContext.IMMERSIVE_MODES[movie].eqBands = [40, -10, -50, -10, 30]
+        // Zero-sum: 40 + (-10) + (-50) + (-10) + 30 = 0 millibels
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
