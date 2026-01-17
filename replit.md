@@ -45,8 +45,8 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 
 ### Native Audio Modules (Android-specific)
 -   **PlaybackEngineModule**: ExoPlayer-based playback with queue, shuffle, repeat, speed control, and audio session management.
--   **Native Audio Effects**: Equalizer (5-band) with pure zero-sum balanced processing and WaveformAnalyzer. Audio processing uses simple zero-sum EQ only - no gain control, headroom logic, or stacking effects.
--   **ImmersiveModeEngineModule**: Manages 7 immersive audio modes using native audio APIs with gain staging.
+-   **Native Audio Effects**: Equalizer (5-band) with pure zero-sum balanced processing, BassBoost, Virtualizer, and WaveformAnalyzer. Audio processing uses zero-sum EQ plus conservative BassBoost/Virtualizer effects per immersive mode.
+-   **ImmersiveModeEngineModule**: Manages 6 immersive audio modes (Music, 360 Reality, Gaming, Podcast, Movie, Off) using native audio APIs with BassBoost and Virtualizer at conservative strengths.
 -   **NativeWaveformVisualizer**: Real-time 64-bar waveform visualization.
 -   **FMRadioModule**: FM/AM radio tuning using RadioManager/RadioTuner APIs with AudioRecord→AudioTrack pipeline for Sound Lab effects integration.
 -   **StudioAudioEngine**: TypeScript service bridging native modules on Android with `expo-av` fallback.
@@ -57,9 +57,9 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 
 ### Feature Specifications
 -   **Theming**: 55 themes with custom icons, shapes, and component variants, applying unique visual effects (glass, beveled, aero, etc.).
--   **Sound Lab**: Offers mutually exclusive Equalizer presets or Immersive modes. Uses pure zero-sum balanced EQ processing only (no stacking effects, no gain control, no BassBoost/Virtualizer/LoudnessEnhancer).
+-   **Sound Lab**: Offers mutually exclusive Equalizer presets or Immersive modes. Uses pure zero-sum balanced EQ processing plus conservative BassBoost/Virtualizer effects per immersive mode.
 -   **FM/AM Radio**: Native Android radio with scanning, tuning, favorite stations, and Sound Lab effects on live radio audio.
--   **Online Radio Streaming**: Location-based internet radio with country detection, genre filtering, 48,000+ stations via Radio Browser API, and streaming playback.
+-   **Online Radio Streaming**: Location-based internet radio with country detection, genre filtering, 48,000+ stations via Radio Browser API with curated stations for 36 countries, and streaming playback.
 -   **One-Time Purchase**: License model with ₹311 INR (India) / $13.11 USD (International) pricing. Lifetime access with no expiration.
 -   **MiniPlayer**: Persistent, glassmorphism-effect mini-player.
 -   **Media Library Integration**: Onboarding for access, paginated loading, "Hide Song" feature.
