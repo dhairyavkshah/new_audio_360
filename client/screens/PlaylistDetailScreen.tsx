@@ -182,7 +182,7 @@ export default function PlaylistDetailScreen() {
       >
         <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground3 }]}>
           <View style={[styles.coverArt, { backgroundColor: colors.colorBrandBackground + "30" }]}>
-            <MaterialCommunityIcons name="playlist-music" size={56} color={colors.colorBrandForeground1} />
+            <MaterialCommunityIcons name="playlist-music" size={40} color={colors.colorBrandForeground1} />
           </View>
           <FluentText variant="title2" style={styles.playlistTitle}>
             {playlist.name}
@@ -318,17 +318,18 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    padding: FluentSpacing.xl,
+    padding: FluentSpacing.m,
+    paddingTop: FluentSpacing.s,
     borderRadius: FluentControlRadius.card,
-    marginBottom: FluentSpacing.xl,
+    marginBottom: FluentSpacing.m,
   },
   coverArt: {
-    width: 120,
-    height: 120,
+    width: 80,
+    height: 80,
     borderRadius: FluentControlRadius.card,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: FluentSpacing.l,
+    marginBottom: FluentSpacing.s,
   },
   playlistTitle: {
     fontSize: 20,
@@ -338,7 +339,7 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: FluentSpacing.xl,
+    marginTop: FluentSpacing.m,
     gap: FluentSpacing.m,
   },
   playButton: {

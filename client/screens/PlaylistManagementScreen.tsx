@@ -26,6 +26,8 @@ export default function PlaylistManagementScreen() {
   const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
   const [playlistName, setPlaylistName] = useState("");
   const [playlistDescription, setPlaylistDescription] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [playlistToDelete, setPlaylistToDelete] = useState<Playlist | null>(null);
 
   const loadPlaylists = useCallback(async () => {
     const data = await getPlaylists();
@@ -56,22 +58,17 @@ export default function PlaylistManagementScreen() {
 
   const handleDelete = (playlist: Playlist) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(
-      "Delete Playlist",
-      `Are you sure you want to delete "${playlist.name}"? This action cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            await deletePlaylist(playlist.id);
-            await loadPlaylists();
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          },
-        },
-      ]
-    );
+    setPlaylistToDelete(playlist);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!playlistToDelete) return;
+    await deletePlaylist(playlistToDelete.id);
+    await loadPlaylists();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowDeleteModal(false);
+    setPlaylistToDelete(null);
   };
 
   const handleSave = async () => {
@@ -288,6 +285,42 @@ export default function PlaylistManagementScreen() {
           </KeyboardAwareScrollViewCompat>
         </View>
       </Modal>
+
+      <Modal
+        visible={showDeleteModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View style={[styles.modalOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
+          <View style={[styles.deleteModalContent, { backgroundColor: colors.colorNeutralBackground1 }]}>
+            <MaterialCommunityIcons name="delete-alert" size={48} color={colors.colorPaletteRedForeground1} style={{ alignSelf: "center", marginBottom: FluentSpacing.m }} />
+            <FluentText variant="subtitle1" style={{ textAlign: "center", marginBottom: FluentSpacing.s, fontWeight: "700" }}>
+              Delete Playlist
+            </FluentText>
+            <FluentText variant="body1" color="secondary" style={{ textAlign: "center", marginBottom: FluentSpacing.l }}>
+              Are you sure you want to delete "{playlistToDelete?.name}"? This action cannot be undone.
+            </FluentText>
+            <View style={styles.modalActions}>
+              <Pressable
+                onPress={() => {
+                  setShowDeleteModal(false);
+                  setPlaylistToDelete(null);
+                }}
+                style={[styles.modalButton, { backgroundColor: colors.colorNeutralBackground2 }]}
+              >
+                <FluentText variant="body1Strong">Cancel</FluentText>
+              </Pressable>
+              <Pressable
+                onPress={confirmDelete}
+                style={[styles.modalButton, { backgroundColor: colors.colorPaletteRedForeground1 }]}
+              >
+                <FluentText variant="body1Strong" style={{ color: "#FFFFFF" }}>Delete</FluentText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </FluentScreenLayout>
   );
 }
@@ -365,7 +398,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: "flex-end",
+    justifyContent: "center",
   },
   modalScrollContent: {
     flexGrow: 1,
@@ -375,6 +408,11 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: FluentControlRadius.bottomSheet,
     borderTopRightRadius: FluentControlRadius.bottomSheet,
     padding: FluentSpacing.l,
+  },
+  deleteModalContent: {
+    margin: FluentSpacing.l,
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
   },
   modalHeader: {
     flexDirection: "row",

@@ -100,6 +100,8 @@ export default function SoundLabScreen() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingPreset, setEditingPreset] = useState<CustomEQPreset | null>(null);
   const [editPresetName, setEditPresetName] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [presetToDelete, setPresetToDelete] = useState<CustomEQPreset | null>(null);
 
   const MAX_CUSTOM_PRESETS = 5;
 
@@ -247,34 +249,21 @@ export default function SoundLabScreen() {
     NativeEffectsManager.applyFiveBandEQ(preset.bands);
   };
 
-  const handleDeletePreset = async (preset: CustomEQPreset) => {
-    const performDelete = async () => {
-      const updatedPresets = customPresets.filter(p => p.id !== preset.id);
-      setCustomPresets(updatedPresets);
-      await saveCustomEQPresets(updatedPresets);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      showSuccess(`Preset "${preset.name}" deleted`);
-    };
+  const handleDeletePreset = (preset: CustomEQPreset) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setPresetToDelete(preset);
+    setShowDeleteDialog(true);
+  };
 
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm(`Are you sure you want to delete "${preset.name}"? This action cannot be undone.`);
-      if (confirmed) {
-        await performDelete();
-      }
-    } else {
-      Alert.alert(
-        "Delete Preset",
-        `Are you sure you want to delete "${preset.name}"? This action cannot be undone.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: performDelete
-          }
-        ]
-      );
-    }
+  const confirmDeletePreset = async () => {
+    if (!presetToDelete) return;
+    const updatedPresets = customPresets.filter(p => p.id !== presetToDelete.id);
+    setCustomPresets(updatedPresets);
+    await saveCustomEQPresets(updatedPresets);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    showSuccess(`Preset "${presetToDelete.name}" deleted`);
+    setShowDeleteDialog(false);
+    setPresetToDelete(null);
   };
 
   const handleEditPreset = (preset: CustomEQPreset) => {
@@ -685,6 +674,42 @@ export default function SoundLabScreen() {
                 onPress={handleUpdatePreset}
               >
                 <FluentText variant="body2" style={{ color: tokens.colors.onPrimary }}>Save Changes</FluentText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showDeleteDialog}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDeleteDialog(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: tokens.colors.backgroundDefault, borderRadius: tokens.shapes.cardBorderRadius }]}>
+            <MaterialCommunityIcons name="delete-alert" size={48} color={tokens.colors.error} style={{ alignSelf: "center", marginBottom: FluentSpacing.m }} />
+            <FluentText variant="subtitle1" style={{ textAlign: "center", marginBottom: FluentSpacing.s }}>
+              Delete Preset
+            </FluentText>
+            <FluentText variant="body2" color="secondary" style={{ textAlign: "center", marginBottom: FluentSpacing.l }}>
+              Are you sure you want to delete "{presetToDelete?.name}"? This action cannot be undone.
+            </FluentText>
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
+                onPress={() => {
+                  setShowDeleteDialog(false);
+                  setPresetToDelete(null);
+                }}
+              >
+                <FluentText variant="body2">Cancel</FluentText>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, { backgroundColor: tokens.colors.error, borderRadius: tokens.shapes.buttonBorderRadius }]}
+                onPress={confirmDeletePreset}
+              >
+                <FluentText variant="body2" style={{ color: "#FFFFFF" }}>Delete</FluentText>
               </Pressable>
             </View>
           </View>
