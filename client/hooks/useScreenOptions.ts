@@ -38,6 +38,5 @@ export function useScreenOptions({
     },
     // Disable all navigation animations
     animation: "none",
-    animationDuration: 0,
   };
 }

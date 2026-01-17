@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from "react";
-import { View, StyleSheet, Image, Dimensions, ImageBackground, Platform, Pressable, ActivityIndicator, ScrollView, useWindowDimensions } from "react-native";
+import { View, StyleSheet, Image, ImageBackground, Platform, Pressable, ActivityIndicator, ScrollView, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
