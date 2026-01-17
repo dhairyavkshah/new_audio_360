@@ -15,17 +15,11 @@ import { Layout } from "@/constants/theme";
 import { 
   getEQPreset, saveEQPreset, clearEQPreset, 
   getSoundMode, saveSoundMode, clearSoundMode,
-  getBassBoostEnabled, saveBassBoostEnabled,
-  getVirtualizerEnabled, saveVirtualizerEnabled,
-  getBassBoostStrength, saveBassBoostStrength,
-  getVirtualizerStrength, saveVirtualizerStrength,
   getCustomEQBands, saveCustomEQBands,
   getCustomEQPresets, saveCustomEQPresets,
-  getBassControlLevel, saveBassControlLevel,
-  getTrebleControlLevel, saveTrebleControlLevel,
   CustomEQPreset
 } from "@/lib/storage";
-import { BassBoostModule, VirtualizerModule, EqualizerModule, TrebleModule } from "../../modules/audio-effects";
+import { EqualizerModule } from "../../modules/audio-effects";
 import { 
   ImmersiveModeEngineModule, 
   IMMERSIVE_MODE_INFO, 
@@ -46,42 +40,41 @@ const EQ_PRESETS = [
   { 
     name: "Rock", 
     description: "Punchy bass, crisp guitars",
-    bands: [3, 2, -1, 2, 3]
+    bands: [2, 1, -2, 0, -1]
   },
   { 
     name: "Pop", 
     description: "Bright vocals, balanced bass",
-    bands: [2, 1, 2, 3, 2]
+    bands: [1, 0, 1, 0, -2]
   },
   { 
     name: "Jazz", 
     description: "Warm mids, smooth highs",
-    bands: [2, 3, 1, -1, 0]
+    bands: [1, 2, 1, -2, -2]
   },
   { 
     name: "Classical", 
     description: "Wide dynamics, clear separation",
-    bands: [1, 1, 0, 2, 3]
+    bands: [1, 0, -2, 0, 1]
   },
   { 
     name: "Electronic", 
     description: "Deep bass, sparkling highs",
-    bands: [4, 3, -1, 2, 4]
+    bands: [2, 1, -3, -1, 1]
   },
   { 
     name: "Hip-Hop", 
     description: "Heavy sub-bass, clear vocals",
-    bands: [5, 3, 1, 2, 1]
+    bands: [3, 1, 0, -2, -2]
   },
   { 
     name: "Acoustic", 
     description: "Natural warmth, presence",
-    bands: [1, 2, 2, 1, 1]
+    bands: [0, 1, 1, 0, -2]
   },
 ];
 
 const CUSTOM_EQ_BAND_LABELS = ["60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz"];
-const VIRTUALIZER_STRENGTH_OPTIONS = [1, 2, 3, 4, 5];
 
 const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
   'off', 'music', '360_reality', 'gaming', 'podcast', 'movie'
@@ -101,13 +94,6 @@ export default function SoundLabScreen() {
   const [customPresets, setCustomPresets] = useState<CustomEQPreset[]>([]);
   const [selectedImmersive, setSelectedImmersive] = useState<ImmersiveMode>("off");
   const [availableModes, setAvailableModes] = useState<ImmersiveModeInfo[]>([]);
-  
-  const [bassBoostEnabled, setBassBoostEnabled] = useState(false);
-  const [bassBoostStrength, setBassBoostStrength] = useState(200);
-  const [virtualizerEnabled, setVirtualizerEnabled] = useState(false);
-  const [virtualizerStrength, setVirtualizerStrength] = useState(200);
-  const [bassControlLevel, setBassControlLevel] = useState(0);
-  const [trebleControlLevel, setTrebleControlLevel] = useState(0);
   
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [newPresetName, setNewPresetName] = useState("");
@@ -134,27 +120,15 @@ export default function SoundLabScreen() {
       const modes = ImmersiveModeEngineModule.getAvailableModes();
       setAvailableModes(modes);
 
-      const [eqPreset, soundMode, bassBoost, virtualizer, bbStrength, virStrength, bands, presets, bassLevel, trebleLevel] = await Promise.all([
+      const [eqPreset, soundMode, bands, presets] = await Promise.all([
         getEQPreset(),
         getSoundMode(),
-        getBassBoostEnabled(),
-        getVirtualizerEnabled(),
-        getBassBoostStrength(),
-        getVirtualizerStrength(),
         getCustomEQBands(),
-        getCustomEQPresets(),
-        getBassControlLevel(),
-        getTrebleControlLevel()
+        getCustomEQPresets()
       ]);
       
-      setBassBoostEnabled(bassBoost);
-      setVirtualizerEnabled(virtualizer);
-      setBassBoostStrength(bbStrength);
-      setVirtualizerStrength(virStrength);
       setCustomBands(bands);
       setCustomPresets(presets);
-      setBassControlLevel(bassLevel);
-      setTrebleControlLevel(trebleLevel);
       
       if (eqPreset) {
         if (eqPreset === "Custom") {
@@ -179,23 +153,6 @@ export default function SoundLabScreen() {
     loadSettings();
   }, [isLicensed]);
 
-  const disableAudioEnhancements = useCallback(async () => {
-    setBassBoostEnabled(false);
-    setVirtualizerEnabled(false);
-    setBassControlLevel(0);
-    setTrebleControlLevel(0);
-    await saveBassBoostEnabled(false);
-    await saveVirtualizerEnabled(false);
-    await saveBassControlLevel(0);
-    await saveTrebleControlLevel(0);
-    if (BassBoostModule.isAvailable()) {
-      BassBoostModule.setEnabled(false);
-    }
-    if (VirtualizerModule.isAvailable()) {
-      VirtualizerModule.setEnabled(false);
-    }
-  }, []);
-
   const handleEQChange = async (preset: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
@@ -204,7 +161,6 @@ export default function SoundLabScreen() {
         setSoundLabMode("off");
         setIsCustomEQ(false);
         await clearEQPreset();
-        await disableAudioEnhancements();
         await NativeAudioService.setImmersiveMode('off');
         NativeEffectsManager.disableEQ();
       } else {
@@ -214,15 +170,13 @@ export default function SoundLabScreen() {
         await clearSoundMode();
         await saveEQPreset("Custom");
         await NativeAudioService.setImmersiveMode('off');
-        // Apply with gain staging, passing current bass/treble levels
-        NativeEffectsManager.applyFiveBandEQWithGainStaging(customBands, bassControlLevel, trebleControlLevel);
+        NativeEffectsManager.applyFiveBandEQ(customBands);
       }
     } else {
       if (soundLabMode === "equalizer" && selectedEQ === preset && !isCustomEQ) {
         setSoundLabMode("off");
         setSelectedEQ("");
         await clearEQPreset();
-        await disableAudioEnhancements();
         await NativeAudioService.setImmersiveMode('off');
         NativeEffectsManager.disableEQ();
       } else {
@@ -232,10 +186,9 @@ export default function SoundLabScreen() {
         await clearSoundMode();
         await saveEQPreset(preset);
         await NativeAudioService.setImmersiveMode('off');
-        // Apply the preset's EQ bands with gain staging
         const presetData = EQ_PRESETS.find(p => p.name === preset);
         if (presetData) {
-          NativeEffectsManager.applyFiveBandEQWithGainStaging(presetData.bands, bassControlLevel, trebleControlLevel);
+          NativeEffectsManager.applyFiveBandEQ(presetData.bands);
         }
       }
     }
@@ -246,8 +199,7 @@ export default function SoundLabScreen() {
     newBands[index] = Math.round(value);
     setCustomBands(newBands);
     await saveCustomEQBands(newBands);
-    // Apply to native equalizer with gain staging
-    NativeEffectsManager.applyFiveBandEQWithGainStaging(newBands, bassControlLevel, trebleControlLevel);
+    NativeEffectsManager.applyFiveBandEQ(newBands);
   };
 
   const handleResetBands = async () => {
@@ -255,7 +207,7 @@ export default function SoundLabScreen() {
     const resetBands = [0, 0, 0, 0, 0];
     setCustomBands(resetBands);
     await saveCustomEQBands(resetBands);
-    NativeEffectsManager.applyFiveBandEQWithGainStaging(resetBands, bassControlLevel, trebleControlLevel);
+    NativeEffectsManager.applyFiveBandEQ(resetBands);
   };
 
   const handleSavePreset = async () => {
@@ -292,7 +244,7 @@ export default function SoundLabScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setCustomBands(preset.bands);
     await saveCustomEQBands(preset.bands);
-    NativeEffectsManager.applyFiveBandEQWithGainStaging(preset.bands, bassControlLevel, trebleControlLevel);
+    NativeEffectsManager.applyFiveBandEQ(preset.bands);
   };
 
   const handleDeletePreset = async (preset: CustomEQPreset) => {
@@ -320,7 +272,7 @@ export default function SoundLabScreen() {
     setEditingPreset(preset);
     setEditPresetName(preset.name);
     setCustomBands(preset.bands);
-    NativeEffectsManager.applyFiveBandEQWithGainStaging(preset.bands, bassControlLevel, trebleControlLevel);
+    NativeEffectsManager.applyFiveBandEQ(preset.bands);
     setShowEditDialog(true);
   };
 
@@ -345,65 +297,6 @@ export default function SoundLabScreen() {
     setEditPresetName("");
     setShowEditDialog(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  };
-
-  // Bass Control - uses zero-sum EQ redistribution (no separate bass boost module)
-  const handleBassControlChange = async (value: number) => {
-    if (soundLabMode !== "equalizer") return;
-    
-    const newLevel = Math.round(value);
-    setBassControlLevel(newLevel);
-    await saveBassControlLevel(newLevel);
-    
-    // Apply bass adjustment through EQ redistribution - this boosts bass bands
-    // and proportionally reduces treble bands to maintain zero-sum (no volume change)
-    const currentBands = isCustomEQ ? customBands : (EQ_PRESETS.find(p => p.name === selectedEQ)?.bands || [0,0,0,0,0]);
-    NativeEffectsManager.applyFiveBandEQWithGainStaging(currentBands, newLevel, trebleControlLevel);
-  };
-
-  // Treble Control - uses zero-sum EQ redistribution (no separate treble module)
-  const handleTrebleControlChange = async (value: number) => {
-    if (soundLabMode !== "equalizer") return;
-    
-    const newLevel = Math.round(value);
-    setTrebleControlLevel(newLevel);
-    await saveTrebleControlLevel(newLevel);
-    
-    // Apply treble control through NativeEffectsManager for proper gain staging
-    NativeEffectsManager.applyTrebleControl(newLevel);
-    
-    // Re-apply EQ with updated gain staging to compensate for treble boost
-    const currentBands = isCustomEQ ? customBands : (EQ_PRESETS.find(p => p.name === selectedEQ)?.bands || [0,0,0,0,0]);
-    NativeEffectsManager.applyFiveBandEQWithGainStaging(currentBands, bassControlLevel, newLevel);
-  };
-
-  const handleVirtualizerToggle = async () => {
-    if (soundLabMode !== "equalizer") return;
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const newValue = !virtualizerEnabled;
-    setVirtualizerEnabled(newValue);
-    await saveVirtualizerEnabled(newValue);
-    
-    if (VirtualizerModule.isAvailable()) {
-      VirtualizerModule.setEnabled(newValue);
-      if (newValue) {
-        VirtualizerModule.setStrength(virtualizerStrength);
-      }
-    }
-  };
-
-  const handleVirtualizerStrengthChange = async (displayValue: number) => {
-    if (soundLabMode !== "equalizer") return;
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const internalStrength = displayValue * 100;
-    setVirtualizerStrength(internalStrength);
-    await saveVirtualizerStrength(internalStrength);
-    
-    if (VirtualizerModule.isAvailable() && virtualizerEnabled) {
-      VirtualizerModule.setStrength(internalStrength);
-    }
   };
 
   const handleImmersiveChange = async (modeId: ImmersiveMode) => {
@@ -434,7 +327,6 @@ export default function SoundLabScreen() {
         setSelectedEQ("");
         await clearEQPreset();
         await saveSoundMode(modeId);
-        await disableAudioEnhancements();
         NativeEffectsManager.disableEQ();
       } else {
         Alert.alert(
@@ -587,171 +479,6 @@ export default function SoundLabScreen() {
             </GlassCard>
           ) : null}
         </View>
-
-        {isEqualizerActive ? (
-          <View style={[styles.sectionCard, cardStyle]}>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons name="speaker" size={18} color={tokens.colors.primary} />
-              <FluentText variant="subtitle1" style={styles.sectionTitle}>
-                Audio Enhancements
-              </FluentText>
-            </View>
-            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
-              Fine-tune bass, treble, and spatial audio effects
-            </FluentText>
-            
-            <View style={styles.enhancementsContainer}>
-              <View style={styles.enhancementItem}>
-                <View style={styles.enhancementHeader}>
-                  <View style={[styles.enhancementIconContainer, { backgroundColor: bassControlLevel !== 0 ? tokens.colors.primary + "20" : tokens.colors.surfaceVariant }]}>
-                    <MaterialCommunityIcons
-                      name="speaker"
-                      size={22}
-                      color={bassControlLevel !== 0 ? tokens.colors.primary : tokens.colors.textSecondary}
-                    />
-                  </View>
-                  <View style={styles.enhancementText}>
-                    <FluentText variant="body1Strong">Bass Control</FluentText>
-                    <FluentText variant="caption1" color="secondary">Adjust low frequencies</FluentText>
-                  </View>
-                  <View style={[styles.levelBadge, { backgroundColor: bassControlLevel !== 0 ? tokens.colors.primary : tokens.colors.surfaceVariant }]}>
-                    <FluentText
-                      variant="body2"
-                      style={{
-                        color: bassControlLevel !== 0 ? tokens.colors.onPrimary : tokens.colors.textSecondary,
-                        fontWeight: "700",
-                      }}
-                    >
-                      {bassControlLevel > 0 ? `+${bassControlLevel}` : bassControlLevel}
-                    </FluentText>
-                  </View>
-                </View>
-                
-                <View style={styles.sliderContainer}>
-                  <FluentText variant="caption1" color="secondary" style={styles.sliderLabel}>-5</FluentText>
-                  <Slider
-                    style={styles.controlSlider}
-                    minimumValue={-5}
-                    maximumValue={5}
-                    step={1}
-                    value={bassControlLevel}
-                    onValueChange={handleBassControlChange}
-                    minimumTrackTintColor={tokens.colors.primary}
-                    maximumTrackTintColor={tokens.colors.outline}
-                    thumbTintColor={tokens.colors.primary}
-                  />
-                  <FluentText variant="caption1" color="secondary" style={styles.sliderLabel}>+5</FluentText>
-                </View>
-              </View>
-
-              <View style={[styles.enhancementDivider, { backgroundColor: tokens.colors.outline }]} />
-
-              <View style={styles.enhancementItem}>
-                <View style={styles.enhancementHeader}>
-                  <View style={[styles.enhancementIconContainer, { backgroundColor: trebleControlLevel !== 0 ? tokens.colors.primary + "20" : tokens.colors.surfaceVariant }]}>
-                    <MaterialCommunityIcons
-                      name="tune"
-                      size={22}
-                      color={trebleControlLevel !== 0 ? tokens.colors.primary : tokens.colors.textSecondary}
-                    />
-                  </View>
-                  <View style={styles.enhancementText}>
-                    <FluentText variant="body1Strong">Treble Control</FluentText>
-                    <FluentText variant="caption1" color="secondary">Adjust high frequencies</FluentText>
-                  </View>
-                  <View style={[styles.levelBadge, { backgroundColor: trebleControlLevel !== 0 ? tokens.colors.primary : tokens.colors.surfaceVariant }]}>
-                    <FluentText
-                      variant="body2"
-                      style={{
-                        color: trebleControlLevel !== 0 ? tokens.colors.onPrimary : tokens.colors.textSecondary,
-                        fontWeight: "700",
-                      }}
-                    >
-                      {trebleControlLevel > 0 ? `+${trebleControlLevel}` : trebleControlLevel}
-                    </FluentText>
-                  </View>
-                </View>
-                
-                <View style={styles.sliderContainer}>
-                  <FluentText variant="caption1" color="secondary" style={styles.sliderLabel}>-5</FluentText>
-                  <Slider
-                    style={styles.controlSlider}
-                    minimumValue={-5}
-                    maximumValue={5}
-                    step={1}
-                    value={trebleControlLevel}
-                    onValueChange={handleTrebleControlChange}
-                    minimumTrackTintColor={tokens.colors.primary}
-                    maximumTrackTintColor={tokens.colors.outline}
-                    thumbTintColor={tokens.colors.primary}
-                  />
-                  <FluentText variant="caption1" color="secondary" style={styles.sliderLabel}>+5</FluentText>
-                </View>
-              </View>
-
-              <View style={[styles.enhancementDivider, { backgroundColor: tokens.colors.outline }]} />
-
-              <View style={styles.enhancementItem}>
-                <Pressable onPress={handleVirtualizerToggle} style={styles.enhancementHeader}>
-                  <View style={[styles.enhancementIconContainer, { backgroundColor: virtualizerEnabled ? tokens.colors.primary + "20" : tokens.colors.surfaceVariant }]}>
-                    <MaterialCommunityIcons
-                      name="surround-sound"
-                      size={22}
-                      color={virtualizerEnabled ? tokens.colors.primary : tokens.colors.textSecondary}
-                    />
-                  </View>
-                  <View style={styles.enhancementText}>
-                    <FluentText variant="body1Strong">Virtualizer</FluentText>
-                    <FluentText variant="caption1" color="secondary">Spatial audio effect</FluentText>
-                  </View>
-                  <View style={[
-                    styles.toggleIndicator,
-                    { backgroundColor: virtualizerEnabled ? tokens.colors.primary : tokens.colors.surfaceVariant }
-                  ]}>
-                    <FluentText variant="caption1" style={{ color: virtualizerEnabled ? tokens.colors.onPrimary : tokens.colors.textSecondary }}>
-                      {virtualizerEnabled ? "ON" : "OFF"}
-                    </FluentText>
-                  </View>
-                </Pressable>
-                
-                {virtualizerEnabled ? (
-                  <View style={styles.strengthSelector}>
-                    <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.xs }}>
-                      Strength
-                    </FluentText>
-                    <View style={styles.strengthChips}>
-                      {VIRTUALIZER_STRENGTH_OPTIONS.map((displayValue) => (
-                        <Pressable
-                          key={displayValue}
-                          style={[
-                            styles.strengthChip,
-                            {
-                              backgroundColor: virtualizerStrength === displayValue * 100 
-                                ? tokens.colors.primary 
-                                : tokens.colors.surfaceVariant,
-                              borderRadius: tokens.shapes.buttonBorderRadius,
-                            }
-                          ]}
-                          onPress={() => handleVirtualizerStrengthChange(displayValue)}
-                        >
-                          <FluentText
-                            variant="caption1"
-                            style={{
-                              color: virtualizerStrength === displayValue * 100 ? tokens.colors.onPrimary : tokens.colors.text,
-                              fontWeight: "600"
-                            }}
-                          >
-                            {displayValue}
-                          </FluentText>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </View>
-                ) : null}
-              </View>
-            </View>
-          </View>
-        ) : null}
 
         <View style={[styles.sectionCard, cardStyle]}>
           <View style={styles.sectionHeader}>
@@ -1058,86 +785,13 @@ const styles = StyleSheet.create({
   actionIconButton: {
     padding: FluentSpacing.xs,
   },
-  enhancementsContainer: {
-    gap: 0,
-  },
-  enhancementItem: {
-    paddingVertical: FluentSpacing.m,
-  },
-  enhancementDivider: {
-    height: 1,
-    opacity: 0.3,
-  },
-  enhancementSection: {
-    padding: FluentSpacing.l,
-    borderWidth: 1,
-    borderColor: "rgba(128,128,128,0.15)",
-  },
-  enhancementHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  enhancementText: {
-    flex: 1,
-    marginLeft: FluentSpacing.m,
-  },
-  enhancementIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  levelBadge: {
-    minWidth: 40,
-    paddingHorizontal: FluentSpacing.s,
-    paddingVertical: FluentSpacing.xs,
-    borderRadius: FluentRadius.circular,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sliderLabel: {
-    width: 24,
-    textAlign: "center",
-  },
-  toggleIndicator: {
-    paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.xs,
-    borderRadius: FluentRadius.circular,
-  },
-  strengthSelector: {
-    marginTop: FluentSpacing.m,
-    paddingTop: FluentSpacing.m,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(128,128,128,0.2)",
-  },
-  strengthChips: {
-    flexDirection: "row",
-    gap: FluentSpacing.s,
-  },
-  strengthChip: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: FluentSpacing.s,
-  },
-  sliderContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: FluentSpacing.m,
-    paddingTop: FluentSpacing.m,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(128,128,128,0.2)",
-    gap: FluentSpacing.s,
-  },
-  controlSlider: {
-    flex: 1,
-    height: 40,
-  },
   modesContainer: {
     gap: FluentSpacing.s,
   },
   modeCard: {
     padding: FluentSpacing.m,
+    borderWidth: 1,
+    borderColor: "rgba(128,128,128,0.15)",
   },
   modeCardContent: {
     flexDirection: "row",
@@ -1148,7 +802,7 @@ const styles = StyleSheet.create({
     marginLeft: FluentSpacing.m,
   },
   infoCard: {
-    marginTop: FluentSpacing.m,
+    marginTop: FluentSpacing.s,
   },
   infoContent: {
     flexDirection: "row",
@@ -1160,7 +814,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
     padding: FluentSpacing.xl,
@@ -1171,19 +825,19 @@ const styles = StyleSheet.create({
     padding: FluentSpacing.xl,
   },
   textInput: {
-    paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.m,
+    padding: FluentSpacing.m,
     borderWidth: 1,
     fontSize: 16,
+    marginBottom: FluentSpacing.m,
   },
   modalButtons: {
     flexDirection: "row",
     gap: FluentSpacing.s,
-    marginTop: FluentSpacing.l,
+    marginTop: FluentSpacing.m,
   },
   modalButton: {
     flex: 1,
+    padding: FluentSpacing.m,
     alignItems: "center",
-    paddingVertical: FluentSpacing.m,
   },
 });

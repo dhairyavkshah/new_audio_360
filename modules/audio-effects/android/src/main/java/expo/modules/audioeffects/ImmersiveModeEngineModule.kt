@@ -249,134 +249,105 @@ class ImmersiveModeEngineModule : Module() {
     private fun applyModeMusic() {
         // Disable gain-adding effects to prevent distortion
         loudnessEnhancer?.enabled = false
-        bassBoost?.enabled = false  // No separate bass - already in zero-sum EQ
+        bassBoost?.enabled = false
         
-        // Zero-sum EQ: 60 + 10 + (-60) + 10 + (-20) = 0
+        // Conservative zero-sum EQ: 40 + 10 + (-40) + 10 + (-20) = 0 millibels
+        // Max ±40mb = ±0.4dB - very safe headroom
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 60.toShort())
+                eq.setBandLevel(0, 40.toShort())
                 eq.setBandLevel(1, 10.toShort())
-                eq.setBandLevel(2, (-60).toShort())
+                eq.setBandLevel(2, (-40).toShort())
                 eq.setBandLevel(3, 10.toShort())
                 eq.setBandLevel(4, (-20).toShort())
             }
         }
         
-        // Virtualizer for spatial effect (no gain added)
-        virtualizer?.let {
-            if (it.strengthSupported) {
-                it.setStrength(150.toShort())
-                it.enabled = true
-            }
-        }
+        // Virtualizer disabled - pure zero-sum EQ only
+        virtualizer?.enabled = false
     }
     
     private fun applyMode360Reality() {
-        // Disable gain-adding effects to prevent distortion
+        // Disable all gain-adding effects - pure zero-sum EQ only
         loudnessEnhancer?.enabled = false
-        bassBoost?.enabled = false  // No separate bass - already in zero-sum EQ
+        bassBoost?.enabled = false
+        virtualizer?.enabled = false
         
-        // Zero-sum EQ: 18 + (-12) + (-32) + (-12) + 38 = 0
+        // Conservative zero-sum EQ: 20 + (-10) + (-30) + (-10) + 30 = 0 millibels
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 18.toShort())
-                eq.setBandLevel(1, (-12).toShort())
-                eq.setBandLevel(2, (-32).toShort())
-                eq.setBandLevel(3, (-12).toShort())
-                eq.setBandLevel(4, 38.toShort())
-            }
-        }
-        
-        // Stronger virtualizer for 360 spatial effect (no gain added)
-        virtualizer?.let {
-            if (it.strengthSupported) {
-                it.setStrength(400.toShort())
-                it.enabled = true
+                eq.setBandLevel(0, 20.toShort())
+                eq.setBandLevel(1, (-10).toShort())
+                eq.setBandLevel(2, (-30).toShort())
+                eq.setBandLevel(3, (-10).toShort())
+                eq.setBandLevel(4, 30.toShort())
             }
         }
     }
     
     private fun applyModeGaming() {
-        // Disable gain-adding effects to prevent distortion
+        // Disable all gain-adding effects - pure zero-sum EQ only
         loudnessEnhancer?.enabled = false
-        bassBoost?.enabled = false  // No separate bass - already in zero-sum EQ
+        bassBoost?.enabled = false
+        virtualizer?.enabled = false
         
-        // Zero-sum EQ: (-14) + (-94) + 16 + 56 + 36 = 0
+        // Conservative zero-sum EQ: (-10) + (-60) + 10 + 35 + 25 = 0 millibels
+        // Emphasizes mids/highs for footsteps, cuts bass for clarity
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, (-14).toShort())
-                eq.setBandLevel(1, (-94).toShort())
-                eq.setBandLevel(2, 16.toShort())
-                eq.setBandLevel(3, 56.toShort())
-                eq.setBandLevel(4, 36.toShort())
-            }
-        }
-        
-        // Virtualizer for positional audio (no gain added)
-        virtualizer?.let {
-            if (it.strengthSupported) {
-                it.setStrength(400.toShort())
-                it.enabled = true
+                eq.setBandLevel(0, (-10).toShort())
+                eq.setBandLevel(1, (-60).toShort())
+                eq.setBandLevel(2, 10.toShort())
+                eq.setBandLevel(3, 35.toShort())
+                eq.setBandLevel(4, 25.toShort())
             }
         }
     }
     
     private fun applyModePodcast() {
-        // Disable all gain-adding effects for clean voice clarity
+        // Disable all gain-adding effects - pure zero-sum EQ only
         loudnessEnhancer?.enabled = false
         bassBoost?.enabled = false
+        virtualizer?.enabled = false
         
-        // Zero-sum EQ: (-140) + (-40) + 60 + 80 + 40 = 0
+        // Conservative zero-sum EQ: (-80) + (-30) + 40 + 50 + 20 = 0 millibels
+        // Cuts bass rumble, boosts vocal clarity frequencies
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, (-140).toShort())
-                eq.setBandLevel(1, (-40).toShort())
-                eq.setBandLevel(2, 60.toShort())
-                eq.setBandLevel(3, 80.toShort())
-                eq.setBandLevel(4, 40.toShort())
-            }
-        }
-        
-        // Subtle virtualizer for voice presence
-        virtualizer?.let {
-            if (it.strengthSupported) {
-                it.setStrength(80.toShort())
-                it.enabled = true
+                eq.setBandLevel(0, (-80).toShort())
+                eq.setBandLevel(1, (-30).toShort())
+                eq.setBandLevel(2, 40.toShort())
+                eq.setBandLevel(3, 50.toShort())
+                eq.setBandLevel(4, 20.toShort())
             }
         }
     }
     
     private fun applyModeMovie() {
-        // Disable gain-adding effects to prevent distortion
+        // Disable all gain-adding effects - pure zero-sum EQ only
         loudnessEnhancer?.enabled = false
-        bassBoost?.enabled = false  // No separate bass - already in zero-sum EQ
+        bassBoost?.enabled = false
+        virtualizer?.enabled = false
         
-        // Zero-sum EQ: 58 + (-12) + (-62) + (-12) + 28 = 0
+        // Conservative zero-sum EQ: 40 + (-10) + (-50) + (-10) + 30 = 0 millibels
+        // Adds cinematic bass punch and treble sparkle
         equalizer?.let { eq ->
             eq.enabled = true
             val numBands = eq.numberOfBands.toInt()
             if (numBands >= 5) {
-                eq.setBandLevel(0, 58.toShort())
-                eq.setBandLevel(1, (-12).toShort())
-                eq.setBandLevel(2, (-62).toShort())
-                eq.setBandLevel(3, (-12).toShort())
-                eq.setBandLevel(4, 28.toShort())
-            }
-        }
-        
-        // Virtualizer for cinematic surround effect (no gain added)
-        virtualizer?.let {
-            if (it.strengthSupported) {
-                it.setStrength(400.toShort())
-                it.enabled = true
+                eq.setBandLevel(0, 40.toShort())
+                eq.setBandLevel(1, (-10).toShort())
+                eq.setBandLevel(2, (-50).toShort())
+                eq.setBandLevel(3, (-10).toShort())
+                eq.setBandLevel(4, 30.toShort())
             }
         }
     }

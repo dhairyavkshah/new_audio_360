@@ -55,14 +55,12 @@ class NativeEffectsManagerClass {
     return false;
   }
 
-  applySettings(mode: SoundLabMode, eqBands: EQBands, immersiveEffect: ImmersiveEffect): void {
+  applySettings(mode: SoundLabMode, eqBands: EQBands, _immersiveEffect: ImmersiveEffect): void {
     this.currentMode = mode;
     
     if (mode === 'equalizer') {
       const bands = this.balanceEQBands(eqBands);
       console.log('[Web] EQ Preset applied (simulated):', bands);
-    } else if (mode === 'immersive') {
-      console.log('[Web] Immersive mode applied (simulated):', immersiveEffect);
     }
   }
 
@@ -91,39 +89,12 @@ class NativeEffectsManagerClass {
     return null;
   }
 
-  /**
-   * Apply 5-band EQ with gain staging (web stub)
-   */
-  applyFiveBandEQWithGainStaging(bands: number[], bassControlLevel: number = 0, trebleControlLevel: number = 0): void {
-    console.log('[Web] applyFiveBandEQWithGainStaging (simulated):', { bands, bassControlLevel, trebleControlLevel });
-  }
-
-  /**
-   * Apply 5-band EQ (web stub)
-   */
   applyFiveBandEQ(bands: number[]): void {
     console.log('[Web] applyFiveBandEQ (simulated):', bands);
   }
 
-  /**
-   * Disable EQ (web stub)
-   */
   disableEQ(): void {
     console.log('[Web] disableEQ (simulated)');
-  }
-
-  /**
-   * Apply bass control (web stub)
-   */
-  applyBassControl(level: number): void {
-    console.log('[Web] applyBassControl (simulated):', level);
-  }
-
-  /**
-   * Apply treble control (web stub)
-   */
-  applyTrebleControl(level: number): void {
-    console.log('[Web] applyTrebleControl (simulated):', level);
   }
 
   async release(): Promise<void> {
