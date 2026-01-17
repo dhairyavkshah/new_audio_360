@@ -109,11 +109,12 @@ export function MiniPlayer({ bottomOffset = 0, isDismissed = false, onDismiss, o
       glowStyle,
     ]}>
       <Pressable 
-        style={styles.dismissHandle} 
+        style={[styles.dismissHandle, { backgroundColor: tokens.colors.surfaceVariant }]}
         onPress={handleSwipeDown}
-        hitSlop={{ top: 10, bottom: 5, left: 20, right: 20 }}
+        hitSlop={{ top: 5, bottom: 5, left: 20, right: 20 }}
       >
-        <View style={[styles.dismissBar, { backgroundColor: tokens.colors.textSecondary }]} />
+        <MaterialCommunityIcons name="chevron-down" size={18} color={tokens.colors.textSecondary} />
+        <View style={[styles.dismissBar, { backgroundColor: tokens.colors.primary }]} />
       </Pressable>
       <View style={[styles.progressTrack, { backgroundColor: tokens.colors.outline }]}>
         <View 
@@ -181,19 +182,24 @@ const styles = StyleSheet.create({
   },
   dismissHandle: {
     position: "absolute",
-    top: -12,
-    left: 0,
-    right: 0,
-    height: 20,
+    top: -24,
+    left: "50%",
+    marginLeft: -36,
+    width: 72,
+    height: 24,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 20,
+    flexDirection: "column",
+    paddingTop: 2,
   },
   dismissBar: {
-    width: 40,
-    height: 4,
+    width: 32,
+    height: 3,
     borderRadius: 2,
-    opacity: 0.6,
+    marginTop: -2,
   },
   restoreHandle: {
     position: "absolute",
