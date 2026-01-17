@@ -1,10 +1,11 @@
-import React, { useState, useCallback, memo } from "react";
+import React, { useState, useCallback, memo, useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View } from "react-native";
 import Animated, { 
-  FadeIn, 
-  FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,7 +23,6 @@ import {
   FluentSpacing,
   FluentIconSize,
   FluentTypography,
-  FluentDuration,
 } from "@/constants/fluent2";
 
 export type MainTabParamList = {
@@ -94,6 +94,17 @@ export default function MainTabNavigator() {
   const safeBottom = Platform.OS === 'android' ? Math.max(insets.bottom, MIN_BOTTOM_PADDING) : insets.bottom;
   const tabBarHeight = TAB_BAR_HEIGHT + safeBottom;
   const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && currentTab !== "RadioTab" && !isNowPlayingVisible;
+
+  // Use animated opacity for MiniPlayer to avoid touch issues with mount/unmount animations
+  const miniPlayerOpacity = useSharedValue(showMiniPlayer ? 1 : 0);
+  
+  useEffect(() => {
+    miniPlayerOpacity.value = withTiming(showMiniPlayer ? 1 : 0, { duration: 200 });
+  }, [showMiniPlayer]);
+  
+  const miniPlayerAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: miniPlayerOpacity.value,
+  }));
 
   return (
     <View style={{ flex: 1 }}>
@@ -192,10 +203,10 @@ export default function MainTabNavigator() {
         }}
       />
     </Tab.Navigator>
-    {showMiniPlayer ? (
+    {currentSong && currentTab !== "SettingsTab" && currentTab !== "RadioTab" ? (
       <Animated.View 
-        entering={FadeIn.duration(FluentDuration.normal)}
-        exiting={FadeOut.duration(FluentDuration.normal)}
+        style={miniPlayerAnimatedStyle}
+        pointerEvents={showMiniPlayer ? 'auto' : 'none'}
       >
         <MiniPlayer bottomOffset={tabBarHeight} />
       </Animated.View>
