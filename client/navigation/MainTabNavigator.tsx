@@ -13,25 +13,25 @@ import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ListenStackNavigator from "@/navigation/ListenStackNavigator";
 import LibraryStackNavigator from "@/navigation/LibraryStackNavigator";
-import RadioStackNavigator from "@/navigation/RadioStackNavigator";
 import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
 import { MiniPlayer } from "@/components/MiniPlayer";
-import { useThemeContext, useSkin, useThemeTokens } from "@/contexts/ThemeContext";
+import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
-import { getTabBarStyle } from "@/lib/themeUtils";
 import {
   FluentSpacing,
   FluentIconSize,
   FluentTypography,
   FluentDuration,
+  FluentLightColors,
+  FluentDarkColors,
+  getShadowStyle,
 } from "@/constants/fluent2";
 
 export type MainTabParamList = {
   ListenTab: undefined;
   LibraryTab: undefined;
-  RadioTab: undefined;
   SettingsTab: undefined;
 };
 
@@ -43,13 +43,13 @@ function TabIcon({
   focused,
   isDark,
 }: {
-  iconKey: 'listen' | 'library' | 'radio' | 'settings';
+  iconKey: 'listen' | 'library' | 'settings';
   color: string;
   focused: boolean;
   isDark: boolean;
 }) {
   const skin = useSkin();
-  const tokens = useThemeTokens();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   const indicatorScale = useSharedValue(focused ? 1 : 0);
   const iconScale = useSharedValue(1);
   
@@ -67,14 +67,13 @@ function TabIcon({
   const iconMap = {
     listen: focused ? skin.icons.tabListenFocused : skin.icons.tabListen,
     library: focused ? skin.icons.tabLibraryFocused : skin.icons.tabLibrary,
-    radio: focused ? skin.icons.tabRadioFocused : skin.icons.tabRadio,
     settings: focused ? skin.icons.tabSettingsFocused : skin.icons.tabSettings,
   };
   
   const iconName = iconMap[iconKey] as keyof typeof MaterialCommunityIcons.glyphMap;
   
-  const activeIndicatorColor = tokens.colors.primary;
-  const activeIconColor = tokens.colors.onPrimary;
+  const activeIndicatorColor = fluentColors.colorBrandBackground;
+  const activeIconColor = fluentColors.colorNeutralForegroundOnBrand;
   
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [
@@ -112,29 +111,32 @@ const TAB_BAR_HEIGHT = 56;
 
 export default function MainTabNavigator() {
   const { isDark } = useThemeContext();
-  const tokens = useThemeTokens();
   const { playTapSound } = useUiSound();
   const { currentSong } = usePlayerContext();
   const { isNowPlayingVisible } = useNavigationContext();
   const [currentTab, setCurrentTab] = useState<string>("ListenTab");
   const insets = useSafeAreaInsets();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   
   const tabBarHeight = TAB_BAR_HEIGHT + insets.bottom;
-  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && currentTab !== "RadioTab" && !isNowPlayingVisible;
+  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && !isNowPlayingVisible;
 
   return (
     <View style={{ flex: 1 }}>
     <Tab.Navigator
       initialRouteName="ListenTab"
       screenOptions={{
-        tabBarActiveTintColor: tokens.colors.primary,
-        tabBarInactiveTintColor: tokens.colors.textSecondary,
+        tabBarActiveTintColor: fluentColors.colorBrandForeground1,
+        tabBarInactiveTintColor: fluentColors.colorNeutralForeground3,
         tabBarStyle: {
           position: "absolute",
+          backgroundColor: fluentColors.colorNeutralBackground1,
+          borderTopWidth: 1,
+          borderTopColor: fluentColors.colorNeutralStroke2,
           height: tabBarHeight,
           paddingBottom: insets.bottom > 0 ? insets.bottom : FluentSpacing.s,
           paddingTop: FluentSpacing.xs,
-          ...getTabBarStyle(tokens),
+          ...getShadowStyle('shadow4', isDark),
         },
         headerShown: false,
         tabBarLabelStyle: {
@@ -180,21 +182,6 @@ export default function MainTabNavigator() {
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               iconKey="library"
-              color={color}
-              focused={focused}
-              isDark={isDark}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="RadioTab"
-        component={RadioStackNavigator}
-        options={{
-          title: "Radio",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              iconKey="radio"
               color={color}
               focused={focused}
               isDark={isDark}

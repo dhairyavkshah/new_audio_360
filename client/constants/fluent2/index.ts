@@ -1,23 +1,6 @@
 export { FluentSpacing, FluentGap, FluentPadding, FluentIconSize } from './spacing';
 export type { SpacingToken, GapToken, PaddingToken, IconSizeToken } from './spacing';
 
-export { 
-  FluentControlHeight, 
-  FluentControlMinWidth, 
-  FluentSliderSize, 
-  FluentBorderWidth, 
-  FluentTouchTarget, 
-  FluentLayoutSize 
-} from './controls';
-export type { 
-  ControlHeightToken, 
-  ControlMinWidthToken, 
-  SliderSizeToken, 
-  BorderWidthToken, 
-  TouchTargetToken, 
-  LayoutSizeToken 
-} from './controls';
-
 export { FluentTypography, FluentFontWeight } from './typography';
 export type { TypographyVariant } from './typography';
 

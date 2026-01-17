@@ -12,8 +12,7 @@
       "expo.modules.audioeffects.BassBoostModule",
       "expo.modules.audioeffects.VirtualizerModule",
       "expo.modules.audioeffects.WaveformAnalyzerModule",
-      "expo.modules.audioeffects.ImmersiveModeEngineModule",
-      "expo.modules.audioeffects.FMRadioModule"
+      "expo.modules.audioeffects.ImmersiveModeEngineModule"
     ]
   }
 }

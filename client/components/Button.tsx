@@ -18,9 +18,6 @@ import {
   getShadowStyle,
   FluentLightColors,
   FluentDarkColors,
-  FluentControlHeight,
-  FluentControlMinWidth,
-  FluentBorderWidth,
 } from "@/constants/fluent2";
 
 type ButtonVariant = 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'subtle';
@@ -33,26 +30,25 @@ interface ButtonProps {
   disabled?: boolean;
   variant?: ButtonVariant;
   size?: ButtonSize;
-  accessibilityLabel?: string;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const sizeStyles = {
   sm: { 
-    height: FluentControlHeight.small,
+    height: 32,
     paddingHorizontal: FluentSpacing.s,
-    minWidth: FluentControlMinWidth.small,
+    minWidth: 64,
   },
   default: { 
-    height: FluentControlHeight.medium,
+    height: 36,
     paddingHorizontal: FluentSpacing.m,
-    minWidth: FluentControlMinWidth.medium,
+    minWidth: 96,
   },
   lg: { 
-    height: FluentControlHeight.large,
+    height: 44,
     paddingHorizontal: FluentSpacing.l,
-    minWidth: FluentControlMinWidth.large,
+    minWidth: 120,
   },
 };
 
@@ -63,7 +59,6 @@ export function Button({
   disabled = false,
   variant = 'default',
   size = 'default',
-  accessibilityLabel,
 }: ButtonProps) {
   const { isDark } = useThemeContext();
   const { playKeypressSound } = useUiSound();
@@ -198,11 +193,11 @@ export function Button({
 
   const focusRingStyle = isFocused ? Platform.select({
     web: {
-      outline: `${FluentBorderWidth.thick}px solid ${getFocusRingColor()}`,
+      outline: `2px solid ${getFocusRingColor()}`,
       outlineOffset: 2,
     },
     default: {
-      borderWidth: FluentBorderWidth.thick,
+      borderWidth: 2,
       borderColor: getFocusRingColor(),
     },
   }) : {};
@@ -223,7 +218,6 @@ export function Button({
       disabled={disabled}
       accessibilityRole="button"
       accessibilityState={{ disabled }}
-      accessibilityLabel={accessibilityLabel}
       style={[
         styles.button,
         sizeStyles[size],

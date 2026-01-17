@@ -21,7 +21,6 @@ import {
   FluentControlRadius,
   FluentSpring,
   IconSizeToken,
-  FluentTouchTarget,
 } from '@/constants/fluent2';
 
 type IconButtonVariant = 'subtle' | 'transparent' | 'outline' | 'primary';
@@ -63,21 +62,6 @@ export function FluentIconButton({
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const scale = useSharedValue(1);
-
-  // Calculate hitSlop to ensure minimum touch target of 44px
-  const calculateHitSlop = () => {
-    const minTouchTarget = FluentTouchTarget.minimum;
-    const extraSpace = Math.max(0, (minTouchTarget - config.containerSize) / 2);
-    return {
-      top: extraSpace,
-      bottom: extraSpace,
-      left: extraSpace,
-      right: extraSpace,
-    };
-  };
-
-  // Provide default accessibility label if none provided
-  const finalAccessibilityLabel = accessibilityLabel || 'Icon button';
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -170,9 +154,8 @@ export function FluentIconButton({
       onPressOut={handlePressOut}
       onHoverIn={() => setIsHovered(true)}
       onHoverOut={() => setIsHovered(false)}
-      hitSlop={calculateHitSlop()}
       accessibilityRole="button"
-      accessibilityLabel={finalAccessibilityLabel}
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled: disabled || undefined, selected: selected || undefined }}
       {...props}
     >

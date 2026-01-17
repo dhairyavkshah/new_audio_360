@@ -71,8 +71,6 @@ export interface IconPack {
   tabLibraryFocused: string;
   tabSettings: string;
   tabSettingsFocused: string;
-  tabRadio: string;
-  tabRadioFocused: string;
   tabStudio: string;
   tabStudioFocused: string;
 }
@@ -188,8 +186,6 @@ const fluentIcons: IconPack = {
   tabLibraryFocused: 'folder-music',
   tabSettings: 'cog-outline',
   tabSettingsFocused: 'cog',
-  tabRadio: 'radio-tower',
-  tabRadioFocused: 'radio-tower',
   tabStudio: 'microphone-variant',
   tabStudioFocused: 'microphone',
 };
@@ -221,8 +217,6 @@ const winampIcons: IconPack = {
   tabLibraryFocused: 'folder-music',
   tabSettings: 'cog-outline',
   tabSettingsFocused: 'cog',
-  tabRadio: 'radio',
-  tabRadioFocused: 'radio',
 };
 
 const itunesIcons: IconPack = {
@@ -249,8 +243,6 @@ const itunesIcons: IconPack = {
   tabLibraryFocused: 'music-box-multiple',
   tabSettings: 'cog-outline',
   tabSettingsFocused: 'cog',
-  tabRadio: 'radio-tower',
-  tabRadioFocused: 'radio-tower',
 };
 
 const iosIcons: IconPack = {
@@ -279,8 +271,6 @@ const iosIcons: IconPack = {
   tabLibraryFocused: 'music-box',
   tabSettings: 'cog-outline',
   tabSettingsFocused: 'cog',
-  tabRadio: 'radio-tower',
-  tabRadioFocused: 'radio-tower',
 };
 
 const windowsIcons: IconPack = {
@@ -307,8 +297,6 @@ const windowsIcons: IconPack = {
   tabLibraryFocused: 'library',
   tabSettings: 'cog-outline',
   tabSettingsFocused: 'cog',
-  tabRadio: 'radio-tower',
-  tabRadioFocused: 'radio-tower',
 };
 
 const zuneIcons: IconPack = {
@@ -336,8 +324,6 @@ const zuneIcons: IconPack = {
   tabLibraryFocused: 'view-grid',
   tabSettings: 'menu',
   tabSettingsFocused: 'menu',
-  tabRadio: 'radio',
-  tabRadioFocused: 'radio',
 };
 
 const materialIcons: IconPack = {
@@ -367,8 +353,6 @@ const materialIcons: IconPack = {
   tabLibraryFocused: 'library',
   tabSettings: 'cog-outline',
   tabSettingsFocused: 'cog',
-  tabRadio: 'radio',
-  tabRadioFocused: 'radio',
 };
 
 const samsungIcons: IconPack = {
@@ -396,8 +380,6 @@ const samsungIcons: IconPack = {
   tabLibraryFocused: 'folder-music',
   tabSettings: 'cog-outline',
   tabSettingsFocused: 'cog',
-  tabRadio: 'radio-tower',
-  tabRadioFocused: 'radio-tower',
 };
 
 const powerampIcons: IconPack = {
@@ -426,8 +408,6 @@ const powerampIcons: IconPack = {
   tabLibraryFocused: 'folder-music',
   tabSettings: 'tune',
   tabSettingsFocused: 'tune',
-  tabRadio: 'radio-tower',
-  tabRadioFocused: 'radio-tower',
 };
 
 const minimalIcons: IconPack = {
@@ -456,8 +436,6 @@ const minimalIcons: IconPack = {
   tabLibraryFocused: 'view-grid',
   tabSettings: 'dots-horizontal',
   tabSettingsFocused: 'dots-horizontal',
-  tabRadio: 'radio-tower',
-  tabRadioFocused: 'radio-tower',
 };
 
 const iconPacks: Record<IconStyle, IconPack> = {

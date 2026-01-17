@@ -10,9 +10,12 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
-import { useThemeTokens } from "@/contexts/ThemeContext";
-import { getProgressBarStyle, getSliderThumbStyle, getGlowStyle } from "@/lib/themeUtils";
-import { FluentSpacing, FluentSliderSize } from "@/constants/fluent2";
+import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
+import {
+  FluentSpacing,
+  FluentLightColors,
+  FluentDarkColors,
+} from "@/constants/fluent2";
 
 interface VolumeSliderProps {
   label: string;
@@ -25,7 +28,7 @@ interface VolumeSliderProps {
 
 const SLIDER_HEIGHT = 160;
 const SLIDER_WIDTH = 48;
-const THUMB_SIZE = FluentSliderSize.thumbLarge;
+const THUMB_SIZE = 24;
 const TRACK_HEIGHT = SLIDER_HEIGHT - THUMB_SIZE;
 
 export function VolumeSlider({
@@ -36,15 +39,12 @@ export function VolumeSlider({
   showValue = false,
   vertical = true,
 }: VolumeSliderProps) {
-  const tokens = useThemeTokens();
-  const { colors, shapes, components, icons } = tokens;
+  const { isDark } = useThemeContext();
+  const { icons, shapes, components } = useSkin();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const thumbPosition = useSharedValue(TRACK_HEIGHT - (value / 100) * TRACK_HEIGHT);
 
-  const volumeIcon = icon || (value === 0 ? icons.volumeMute : value < 50 ? icons.volumeLow : icons.volumeHigh);
-  
-  const { trackStyle, progressStyle, trackRadius } = getProgressBarStyle(tokens);
-  const sliderThumbTokenStyle = getSliderThumbStyle(tokens);
-  const glowEffect = getGlowStyle(tokens);
+  const volumeIcon = icon || icons.volumeHigh;
 
   useEffect(() => {
     thumbPosition.value = withSpring(TRACK_HEIGHT - (value / 100) * TRACK_HEIGHT, {
@@ -103,12 +103,19 @@ export function VolumeSlider({
     borderRightColor: 'rgba(255,255,255,0.15)',
   } : {};
 
+  const glowStyle = components.useGlow && components.glowColor ? {
+    shadowColor: components.glowColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: components.glowIntensity * 0.6,
+    shadowRadius: 8,
+  } : {};
+
   return (
     <View style={styles.container}>
       <View style={[
         styles.labelContainer, 
         { 
-          backgroundColor: colors.surfaceVariant,
+          backgroundColor: colors.colorNeutralBackground3,
           borderRadius: shapes.controlSize / 2,
           width: shapes.controlSize,
           height: shapes.controlSize,
@@ -117,17 +124,17 @@ export function VolumeSlider({
         <MaterialCommunityIcons 
           name={volumeIcon as keyof typeof MaterialCommunityIcons.glyphMap} 
           size={20} 
-          color={colors.primary} 
+          color={colors.colorBrandForeground1} 
         />
       </View>
       <GestureDetector gesture={composedGesture}>
         <Animated.View
           style={[
             styles.sliderTrack,
-            trackStyle,
             {
+              backgroundColor: colors.colorNeutralBackground3,
               height: SLIDER_HEIGHT,
-              borderRadius: trackRadius,
+              borderRadius: shapes.sliderTrackRadius,
             },
             bevelStyle,
           ]}
@@ -135,16 +142,21 @@ export function VolumeSlider({
           <Animated.View
             style={[
               styles.sliderFill,
-              progressStyle,
-              glowEffect,
+              { 
+                backgroundColor: colors.colorCompoundBrandBackground,
+                borderRadius: shapes.sliderTrackRadius,
+              },
+              glowStyle,
               fillStyle,
             ]}
           />
           <Animated.View
             style={[
               styles.sliderThumb,
-              sliderThumbTokenStyle,
               { 
+                backgroundColor: "#FFFFFF", 
+                borderColor: colors.colorCompoundBrandBackground,
+                borderRadius: shapes.sliderThumbRadius,
                 width: THUMB_SIZE,
                 height: THUMB_SIZE,
               },

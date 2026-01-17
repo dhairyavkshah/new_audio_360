@@ -32,7 +32,6 @@ import {
   getShadowStyle,
   FluentLightColors,
   FluentDarkColors,
-  FluentLayoutSize,
 } from "@/constants/fluent2";
 
 interface BottomSheetProps {
@@ -44,6 +43,7 @@ interface BottomSheetProps {
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const HANDLE_HEIGHT = 24;
 
 export function BottomSheet({
   visible,
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     minHeight: 200,
   },
   handleContainer: {
-    height: FluentLayoutSize.bottomSheetHandleHeight,
+    height: HANDLE_HEIGHT,
     alignItems: "center",
     justifyContent: "center",
     paddingTop: FluentSpacing.s,

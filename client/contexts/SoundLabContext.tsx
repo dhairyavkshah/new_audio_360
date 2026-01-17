@@ -8,7 +8,6 @@ import {
   ImmersiveModeInfo
 } from '../../modules/audio-effects';
 import NativeAudioService from '@/services/NativeAudioService';
-import { NativeEffectsManager, AudioSessionSource } from '@/services/NativeEffectsManager';
 
 export type EQBands = {
   sub: number;
@@ -62,8 +61,6 @@ interface SoundLabContextType {
   eqBands: EQBands;
   frequencies: typeof EQ_FREQUENCIES;
   availableImmersiveModes: ImmersiveModeInfo[];
-  audioSource: AudioSessionSource;
-  isEffectsActive: boolean;
   getImmersiveModeInfo: (modeId: ImmersiveMode) => { name: string; description: string; icon: string };
   setImmersiveMode: (mode: ImmersiveMode) => Promise<{ success: boolean; error?: string }>;
   refreshSettings: () => Promise<void>;
@@ -77,8 +74,6 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
   const [immersiveModeName, setImmersiveModeName] = useState<ImmersiveMode>('off');
   const [immersiveModeSettings, setImmersiveModeSettings] = useState<ImmersiveModeSettings | null>(null);
   const [availableImmersiveModes, setAvailableImmersiveModes] = useState<ImmersiveModeInfo[]>([]);
-  const [audioSource, setAudioSource] = useState<AudioSessionSource>('none');
-  const [isEffectsActive, setIsEffectsActive] = useState(false);
 
   const eqBands = EQ_PRESETS[eqPresetName] || EQ_PRESETS.Flat;
 
@@ -145,9 +140,6 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
         setImmersiveModeSettings(currentImmersiveMode.settings);
       }
 
-      setAudioSource(NativeEffectsManager.getCurrentSource());
-      setIsEffectsActive(NativeEffectsManager.isEffectsActive());
-
       const eqPreset = await getEQPreset();
       const soundMode = await getSoundMode();
       
@@ -181,8 +173,6 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
       eqBands,
       frequencies: EQ_FREQUENCIES,
       availableImmersiveModes,
-      audioSource,
-      isEffectsActive,
       getImmersiveModeInfo,
       setImmersiveMode,
       refreshSettings,

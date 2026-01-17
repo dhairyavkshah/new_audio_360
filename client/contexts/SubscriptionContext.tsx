@@ -2,46 +2,91 @@ import React, { createContext, useContext, useState, useCallback, useEffect, Rea
 import { ThemeName } from '@/constants/theme';
 import { IntegrityService } from '@/services/IntegrityService';
 import { SecureStorage } from '@/services/SecureStorage';
-import { GooglePlayBilling } from '@/lib/payment';
 
-export type SubscriptionPlan = 'free' | 'premium';
-export type SubscriptionType = 'monthly' | 'annual' | null;
+export type SubscriptionPlan = 'free' | 'standard' | 'premium';
 
 export interface SubscriptionState {
   plan: SubscriptionPlan;
-  subscriptionType: SubscriptionType;
   purchaseToken: string | null;
   productId: string | null;
   purchaseTime: number | null;
-  expiresAt: number | null;
   checksum?: string;
 }
 
 const SECURE_STORAGE_KEY = 'subscription_data';
 
+const STANDARD_THEMES: ThemeName[] = [
+  'fluent',
+  'fluentDark',
+  'nightAmoled',
+  'warmNeutral',
+  'coolBlue',
+];
+
+const STANDARD_NOISE_REDUCTION = ['Off', 'Light'];
+const STANDARD_REVERB = ['None', 'Small Studio'];
+
 export const PRODUCT_IDS = {
-  monthly: 'new_audio_360_premium_monthly',
-  annual: 'new_audio_360_premium_annual',
+  standard: 'new_audio_360_standard',
+  premium: 'new_audio_360_premium',
+  upgrade: 'new_audio_360_upgrade_premium',
 };
 
 export const PRICING = {
-  india: {
-    monthly: 30,
-    annual: 300,
-    annualSavings: 60,
+  INR: {
+    standard: 100,
+    premium: 299,
+    upgrade: 199,
     symbol: '₹',
   },
-  international: {
-    monthly: 1,
-    annual: 10,
-    annualSavings: 2,
+  USD: {
+    standard: 10,
+    premium: 30,
+    upgrade: 20,
     symbol: '$',
+  },
+  EUR: {
+    standard: 9,
+    premium: 27,
+    upgrade: 18,
+    symbol: '€',
+  },
+  GBP: {
+    standard: 8,
+    premium: 24,
+    upgrade: 16,
+    symbol: '£',
+  },
+  AUD: {
+    standard: 15,
+    premium: 45,
+    upgrade: 30,
+    symbol: 'A$',
+  },
+  CAD: {
+    standard: 14,
+    premium: 42,
+    upgrade: 28,
+    symbol: 'C$',
+  },
+  JPY: {
+    standard: 1500,
+    premium: 4500,
+    upgrade: 3000,
+    symbol: '¥',
+  },
+  BRL: {
+    standard: 50,
+    premium: 150,
+    upgrade: 100,
+    symbol: 'R$',
   },
 } as const;
 
+export type SupportedCurrency = keyof typeof PRICING;
+
 interface SubscriptionContextType {
   plan: SubscriptionPlan;
-  subscriptionType: SubscriptionType;
   isLoading: boolean;
   isLocked: boolean;
   lockoutRemaining: number | null;
@@ -50,9 +95,11 @@ interface SubscriptionContextType {
   isNoiseReductionUnlocked: (level: string) => boolean;
   isReverbUnlocked: (reverb: string) => boolean;
   getAvailableThemes: () => ThemeName[];
-  purchaseSubscription: (type: 'monthly' | 'annual') => Promise<boolean>;
+  purchaseStandard: () => Promise<boolean>;
+  purchasePremium: () => Promise<boolean>;
+  upgradeToPremiun: () => Promise<boolean>;
   restorePurchases: () => Promise<void>;
-  setPlanForTesting: (plan: SubscriptionPlan, type?: SubscriptionType) => void;
+  setPlanForTesting: (plan: SubscriptionPlan) => void;
   runIntegrityCheck: () => Promise<void>;
 }
 
@@ -61,11 +108,9 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<SubscriptionState>({
     plan: 'free',
-    subscriptionType: null,
     purchaseToken: null,
     productId: null,
     purchaseTime: null,
-    expiresAt: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
@@ -105,13 +150,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       if (integrityState.isLocked) {
         setIsLocked(true);
         setLockoutRemaining(IntegrityService.getLockoutRemaining());
-        setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+        setState({ plan: 'free', purchaseToken: null, productId: null, purchaseTime: null });
         setIsLoading(false);
         return;
       }
 
       if (integrityState.isCompromised) {
-        setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+        setState({ plan: 'free', purchaseToken: null, productId: null, purchaseTime: null });
         setIsLoading(false);
         return;
       }
@@ -119,7 +164,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       await loadSubscriptionState();
     } catch (error) {
       console.error('Initialization error:', error);
-      setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+      setState({ plan: 'free', purchaseToken: null, productId: null, purchaseTime: null });
     } finally {
       setIsLoading(false);
     }
@@ -137,9 +182,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       if (integrityState.isLocked) {
         setIsLocked(true);
         setLockoutRemaining(IntegrityService.getLockoutRemaining());
-        setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+        setState({ plan: 'free', purchaseToken: null, productId: null, purchaseTime: null });
       } else if (integrityState.isCompromised) {
-        setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+        setState({ plan: 'free', purchaseToken: null, productId: null, purchaseTime: null });
       }
     } catch (error) {
       console.warn('Periodic integrity check failed:', error);
@@ -166,28 +211,22 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           
           if (parsed.checksum !== expectedChecksum) {
             console.warn('Subscription data tampering detected');
-            setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+            setState({ plan: 'free', purchaseToken: null, productId: null, purchaseTime: null });
             return;
           }
-        }
-        
-        if (parsed.expiresAt && parsed.expiresAt < Date.now()) {
-          console.log('[SUB] Subscription expired');
-          setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
-          return;
         }
         
         setState(parsed);
       }
     } catch (error) {
       console.error('Error loading subscription state:', error);
-      setState({ plan: 'free', subscriptionType: null, purchaseToken: null, productId: null, purchaseTime: null, expiresAt: null });
+      setState({ plan: 'free', purchaseToken: null, productId: null, purchaseTime: null });
     }
   };
 
   const saveSubscriptionState = async (newState: SubscriptionState) => {
     try {
-      console.log('[SUB] saveSubscriptionState called with plan:', newState.plan, 'type:', newState.subscriptionType);
+      console.log('[SUB] saveSubscriptionState called with plan:', newState.plan);
       
       const isTestSubscription = newState.purchaseToken?.startsWith('test_');
       
@@ -216,15 +255,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const isThemeUnlocked = useCallback((themeId: ThemeName): boolean => {
     if (isLocked) return false;
-    return state.plan === 'premium';
+    if (state.plan === 'premium') return true;
+    if (state.plan === 'standard') return STANDARD_THEMES.includes(themeId);
+    return STANDARD_THEMES.includes(themeId);
   }, [state.plan, isLocked]);
 
   const getAvailableThemes = useCallback((): ThemeName[] => {
-    if (isLocked) return [];
+    if (isLocked) return STANDARD_THEMES.slice(0, 1);
     if (state.plan === 'premium') {
       return [];
     }
-    return [];
+    return STANDARD_THEMES;
   }, [state.plan, isLocked]);
 
   const isImmersiveModeUnlocked = useCallback((): boolean => {
@@ -235,15 +276,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const isNoiseReductionUnlocked = useCallback((level: string): boolean => {
     if (isLocked) return level === 'Off';
-    return state.plan === 'premium';
+    if (state.plan === 'premium') return true;
+    return STANDARD_NOISE_REDUCTION.includes(level);
   }, [state.plan, isLocked]);
 
   const isReverbUnlocked = useCallback((reverb: string): boolean => {
     if (isLocked) return reverb === 'None';
-    return state.plan === 'premium';
+    if (state.plan === 'premium') return true;
+    return STANDARD_REVERB.includes(reverb);
   }, [state.plan, isLocked]);
 
-  const purchaseSubscription = useCallback(async (type: 'monthly' | 'annual'): Promise<boolean> => {
+  const purchaseStandard = useCallback(async (): Promise<boolean> => {
     try {
       const integrityState = await IntegrityService.runIntegrityCheck(true);
       if (integrityState.isLocked || integrityState.isCompromised) {
@@ -251,34 +294,67 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      const productId = type === 'monthly' ? PRODUCT_IDS.monthly : PRODUCT_IDS.annual;
-      const result = await GooglePlayBilling.purchaseSubscription(productId);
-      
-      if (!result.success) {
-        console.error('Purchase failed');
-        return false;
-      }
-
       const purchaseTime = Date.now();
-      const expiresAt = type === 'monthly' 
-        ? purchaseTime + 30 * 24 * 60 * 60 * 1000
-        : purchaseTime + 365 * 24 * 60 * 60 * 1000;
-
       const newState: SubscriptionState = {
-        plan: 'premium',
-        subscriptionType: type,
-        purchaseToken: result.purchaseToken || `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        productId,
+        plan: 'standard',
+        purchaseToken: `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        productId: PRODUCT_IDS.standard,
         purchaseTime,
-        expiresAt,
       };
       await saveSubscriptionState(newState);
       return true;
     } catch (error) {
-      console.error('Error purchasing subscription:', error);
+      console.error('Error purchasing standard:', error);
       return false;
     }
   }, []);
+
+  const purchasePremium = useCallback(async (): Promise<boolean> => {
+    try {
+      const integrityState = await IntegrityService.runIntegrityCheck(true);
+      if (integrityState.isLocked || integrityState.isCompromised) {
+        console.warn('Purchase blocked due to integrity issues');
+        return false;
+      }
+
+      const purchaseTime = Date.now();
+      const newState: SubscriptionState = {
+        plan: 'premium',
+        purchaseToken: `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        productId: PRODUCT_IDS.premium,
+        purchaseTime,
+      };
+      await saveSubscriptionState(newState);
+      return true;
+    } catch (error) {
+      console.error('Error purchasing premium:', error);
+      return false;
+    }
+  }, []);
+
+  const upgradeToPremiun = useCallback(async (): Promise<boolean> => {
+    if (state.plan !== 'standard') return false;
+    try {
+      const integrityState = await IntegrityService.runIntegrityCheck(true);
+      if (integrityState.isLocked || integrityState.isCompromised) {
+        console.warn('Upgrade blocked due to integrity issues');
+        return false;
+      }
+
+      const purchaseTime = Date.now();
+      const newState: SubscriptionState = {
+        plan: 'premium',
+        purchaseToken: `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        productId: PRODUCT_IDS.upgrade,
+        purchaseTime,
+      };
+      await saveSubscriptionState(newState);
+      return true;
+    } catch (error) {
+      console.error('Error upgrading to premium:', error);
+      return false;
+    }
+  }, [state.plan]);
 
   const restorePurchases = useCallback(async (): Promise<void> => {
     setIsLoading(true);
@@ -289,27 +365,19 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         setLockoutRemaining(IntegrityService.getLockoutRemaining());
         return;
       }
-      
-      await GooglePlayBilling.restoreSubscriptions();
       await loadSubscriptionState();
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const setPlanForTesting = useCallback((plan: SubscriptionPlan, type: SubscriptionType = 'monthly') => {
+  const setPlanForTesting = useCallback((plan: SubscriptionPlan) => {
     const purchaseTime = Date.now();
-    const expiresAt = type === 'monthly' 
-      ? purchaseTime + 30 * 24 * 60 * 60 * 1000
-      : purchaseTime + 365 * 24 * 60 * 60 * 1000;
-    
     const newState: SubscriptionState = {
       plan,
-      subscriptionType: plan === 'free' ? null : type,
       purchaseToken: plan === 'free' ? null : `test_${Date.now()}`,
-      productId: plan === 'free' ? null : (type === 'monthly' ? PRODUCT_IDS.monthly : PRODUCT_IDS.annual),
+      productId: plan === 'free' ? null : plan === 'standard' ? PRODUCT_IDS.standard : PRODUCT_IDS.premium,
       purchaseTime: plan === 'free' ? null : purchaseTime,
-      expiresAt: plan === 'free' ? null : expiresAt,
     };
     saveSubscriptionState(newState);
   }, []);
@@ -318,7 +386,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     <SubscriptionContext.Provider
       value={{
         plan: isLocked ? 'free' : state.plan,
-        subscriptionType: isLocked ? null : state.subscriptionType,
         isLoading,
         isLocked,
         lockoutRemaining,
@@ -327,7 +394,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         isNoiseReductionUnlocked,
         isReverbUnlocked,
         getAvailableThemes,
-        purchaseSubscription,
+        purchaseStandard,
+        purchasePremium,
+        upgradeToPremiun,
         restorePurchases,
         setPlanForTesting,
         runIntegrityCheck,

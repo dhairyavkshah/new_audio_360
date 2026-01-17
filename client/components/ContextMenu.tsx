@@ -29,7 +29,6 @@ import {
   getShadowStyle,
   FluentLightColors,
   FluentDarkColors,
-  FluentLayoutSize,
 } from "@/constants/fluent2";
 
 interface MenuItem {
@@ -48,6 +47,8 @@ interface ContextMenuProps {
   anchorPosition?: { x: number; y: number };
 }
 
+const MENU_WIDTH = 240;
+const ITEM_HEIGHT = 48;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MENU_MARGIN = FluentSpacing.l;
 
@@ -133,15 +134,15 @@ export function ContextMenu({
       return { alignSelf: "center" as const };
     }
 
-    const menuHeight = Math.min(items.length * FluentLayoutSize.menuItemHeight + FluentSpacing.s * 2, FluentLayoutSize.menuItemHeight * 8);
+    const menuHeight = Math.min(items.length * ITEM_HEIGHT + FluentSpacing.s * 2, ITEM_HEIGHT * 8);
     const safeTop = insets.top + MENU_MARGIN;
     const safeBottom = SCREEN_HEIGHT - insets.bottom - MENU_MARGIN;
     
     let left = anchorPosition.x;
     let top = anchorPosition.y;
 
-    if (left + FluentLayoutSize.menuWidth > SCREEN_WIDTH - MENU_MARGIN) {
-      left = SCREEN_WIDTH - FluentLayoutSize.menuWidth - MENU_MARGIN;
+    if (left + MENU_WIDTH > SCREEN_WIDTH - MENU_MARGIN) {
+      left = SCREEN_WIDTH - MENU_WIDTH - MENU_MARGIN;
     }
     if (left < MENU_MARGIN) {
       left = MENU_MARGIN;
@@ -183,7 +184,7 @@ export function ContextMenu({
             styles.menu,
             {
               backgroundColor: colors.colorNeutralBackground1,
-              width: FluentLayoutSize.menuWidth,
+              width: MENU_WIDTH,
             },
             getShadowStyle('shadow16', isDark),
             getMenuPosition(),
@@ -268,7 +269,7 @@ const styles = StyleSheet.create({
   menu: {
     borderRadius: FluentControlRadius.card,
     overflow: "hidden",
-    maxHeight: FluentLayoutSize.menuItemHeight * 8,
+    maxHeight: ITEM_HEIGHT * 8,
   },
   scrollView: {
     flex: 1,
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    height: FluentLayoutSize.menuItemHeight,
+    height: ITEM_HEIGHT,
     paddingHorizontal: FluentSpacing.l,
   },
   firstItem: {

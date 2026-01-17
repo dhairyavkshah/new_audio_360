@@ -9,13 +9,14 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
-import { getProgressBarStyle } from "@/lib/themeUtils";
+import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
+  FluentRadius,
   FluentDuration,
   FluentCurve,
-  FluentSliderSize,
+  FluentLightColors,
+  FluentDarkColors,
 } from "@/constants/fluent2";
 
 interface ProgressBarProps {
@@ -28,9 +29,9 @@ interface ProgressBarProps {
   showTextShadow?: boolean;
 }
 
-const THUMB_SIZE = FluentSliderSize.thumbSmall;
-const TRACK_HEIGHT = FluentSliderSize.trackThin;
-const ACTIVE_TRACK_HEIGHT = FluentSliderSize.trackMedium;
+const THUMB_SIZE = 16;
+const TRACK_HEIGHT = 4;
+const ACTIVE_TRACK_HEIGHT = 6;
 
 export function ProgressBar({
   progress,
@@ -42,8 +43,8 @@ export function ProgressBar({
   showTextShadow = false,
 }: ProgressBarProps) {
   const { isDark } = useThemeContext();
-  const tokens = useThemeTokens();
-  const { trackStyle, progressStyle, trackRadius } = getProgressBarStyle(tokens);
+  const { shapes, components } = useSkin();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
 
   const textShadowStyle = showTextShadow ? {
     textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
@@ -53,7 +54,7 @@ export function ProgressBar({
   
   const translateX = useSharedValue(progress * (width - THUMB_SIZE));
   const isDragging = useSharedValue(false);
-  const trackHeight = useSharedValue<number>(TRACK_HEIGHT);
+  const trackHeight = useSharedValue(TRACK_HEIGHT);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -132,14 +133,20 @@ export function ProgressBar({
           <Animated.View
             style={[
               styles.track,
-              trackStyle,
+              {
+                borderRadius: FluentRadius.small,
+                backgroundColor: fluentColors.colorNeutralBackground5,
+              },
               trackAnimatedStyle,
             ]}
           >
             <Animated.View
               style={[
                 styles.fill,
-                progressStyle,
+                {
+                  borderRadius: FluentRadius.small,
+                  backgroundColor: fluentColors.colorCompoundBrandBackground,
+                },
                 fillStyle,
               ]}
             />
@@ -151,13 +158,13 @@ export function ProgressBar({
                 width: THUMB_SIZE,
                 height: THUMB_SIZE,
                 borderRadius: THUMB_SIZE / 2,
-                backgroundColor: tokens.colors.primary,
+                backgroundColor: fluentColors.colorCompoundBrandBackground,
                 ...Platform.select({
                   ios: {
-                    shadowColor: progressStyle.shadowColor || tokens.colors.primary,
-                    shadowOffset: progressStyle.shadowOffset || { width: 0, height: 2 },
-                    shadowOpacity: progressStyle.shadowOpacity || 0.25,
-                    shadowRadius: progressStyle.shadowRadius || 4,
+                    shadowColor: fluentColors.colorCompoundBrandBackground,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 4,
                   },
                   android: {
                     elevation: 4,
