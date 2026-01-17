@@ -58,7 +58,7 @@ class NativeEffectsManagerClass {
     
     const sum = rawBands.reduce((acc, v) => acc + v, 0);
     const offset = sum / rawBands.length;
-    return rawBands.map(v => Math.round((v - offset) * 35));
+    return rawBands.map(v => Math.round(v - offset));
   }
 
   getEqualizerInfo(): null {

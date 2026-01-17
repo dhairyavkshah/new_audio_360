@@ -76,7 +76,6 @@ class NativeEffectsManagerClass {
     EqualizerModule.setEnabled(true);
 
     const numBands = this.equalizerInfo?.numberOfBands || 5;
-    const MB_PER_UNIT = 35;
 
     const rawBands: number[] = [];
     
@@ -94,12 +93,7 @@ class NativeEffectsManagerClass {
 
     const sum = rawBands.reduce((acc, v) => acc + v, 0);
     const offset = sum / rawBands.length;
-    const balancedBands = rawBands.map(v => v - offset);
-
-    const bandValues = balancedBands.map(v => {
-      const millibels = v * MB_PER_UNIT;
-      return Math.max(-300, Math.min(150, millibels));
-    });
+    const bandValues = rawBands.map(v => Math.round(v - offset));
 
     EqualizerModule.setCustomBands(bandValues);
   }
