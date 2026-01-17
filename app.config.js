@@ -40,7 +40,8 @@ export default {
         backgroundImage: './assets/images/android-icon-background.png',
         monochromeImage: './assets/images/android-icon-monochrome.png',
       },
-      edgeToEdgeEnabled: false,
+      edgeToEdgeEnabled: true,
+      predictiveBackGestureEnabled: false,
       package: getAppIdentifier(),
       versionCode: 1, // v1.0
       permissions: [
@@ -64,9 +65,6 @@ export default {
     },
     plugins: [
       'expo-asset',
-      'expo-font',
-      'expo-secure-store',
-      'expo-audio',
       [
         'expo-build-properties',
         {

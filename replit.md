@@ -70,9 +70,8 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 -   **Multi-Step Permission Onboarding**: Guides users through necessary permissions.
 
 ### Build Configuration
--   **Expo SDK**: 53.0.0 with React Native 0.79.2
--   **Architecture**: Legacy (Old) Architecture - New Architecture disabled for react-native-track-player compatibility.
--   **Reanimated**: Version 3.17.x (compatible with Old Architecture and RN 0.79).
+-   **Architecture**: React Native New Architecture (TurboModules + Fabric) enabled via `expo-build-properties`.
+-   **Reanimated**: Version 4.x with `react-native-worklets` for New Architecture support.
 -   Native audio modules are in `modules/audio-effects/` with platform-specific implementations.
 -   Requires an **Expo Development Build** for full native module functionality.
 -   Native audio effects are Android-only.
