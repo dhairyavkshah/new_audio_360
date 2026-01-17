@@ -13,12 +13,12 @@ const SECURE_STORAGE_KEY = 'license_data';
 
 export const PRICING = {
   india: {
-    amount: 299,
+    amount: 311,
     symbol: '₹',
     currency: 'INR',
   },
   international: {
-    amount: 29,
+    amount: 13.11,
     symbol: '$',
     currency: 'USD',
   },

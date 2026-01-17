@@ -71,9 +71,9 @@ const fetchWithFallback = async <T>(
     try {
       const response = await fetch(`${server}${endpoint}`, {
         ...options,
+        mode: 'cors',
         headers: {
-          'User-Agent': 'NewAudio360/1.0',
-          'Content-Type': 'application/json',
+          'Accept': 'application/json',
           ...options?.headers,
         },
       });
@@ -85,7 +85,7 @@ const fetchWithFallback = async <T>(
       return await response.json();
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.warn(`[OnlineRadioService] Server ${server} failed, rotating...`);
+      console.warn(`[OnlineRadioService] Server ${server} failed:`, lastError.message);
       rotateServer();
     }
   }
