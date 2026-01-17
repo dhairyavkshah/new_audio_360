@@ -946,8 +946,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     } catch (e) {
       console.error('Error loading song:', e);
-      setError('Failed to load audio');
+      // In Expo Go, audio may not work but UI should still be usable
+      setError('Audio unavailable - use development build for playback');
       setIsLoading(false);
+      // Still set the song so UI displays correctly
+      setCurrentSong(song);
     }
   }, [cleanupPlayer, handleStatusUpdate, createEQChain, handleTrackEnd, soundLabMode, immersiveEffect, convertSongToTrackMetadata]);
 
