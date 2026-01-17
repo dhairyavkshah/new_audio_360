@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 
 type SplashScreenProps = {
   onFinish: () => void;
@@ -17,27 +17,18 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 8,
-        tension: 40,
-        useNativeDriver,
-      }),
-    ]).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver,
+    }).start();
 
     const fadeOutTimer = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 400,
+        duration: 300,
         useNativeDriver,
       }).start(() => {
         onFinish();
@@ -46,7 +37,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
     const fallbackTimer = setTimeout(() => {
       onFinish();
-    }, 2100);
+    }, 2000);
 
     return () => {
       clearTimeout(fadeOutTimer);
@@ -59,10 +50,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       <Animated.View
         style={[
           styles.content,
-          {
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          },
+          { opacity: fadeAnim },
         ]}
       >
         <View style={styles.iconContainer}>

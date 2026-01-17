@@ -15,22 +15,13 @@ export default function ExitScreen({ onCancel, onConfirm }: ExitScreenProps) {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 8,
-        tension: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const handleConfirmExit = () => {
@@ -50,13 +41,10 @@ export default function ExitScreen({ onCancel, onConfirm }: ExitScreenProps) {
   return (
     <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
       <View style={[styles.backdrop, { backgroundColor: colors.colorNeutralBackgroundInverted + '80' }]} />
-      <Animated.View
+      <View
         style={[
           styles.dialog,
-          {
-            backgroundColor: colors.colorNeutralBackground1,
-            transform: [{ scale: scaleAnim }],
-          },
+          { backgroundColor: colors.colorNeutralBackground1 },
         ]}
       >
         <View style={[styles.iconContainer, { backgroundColor: colors.colorPaletteRedBackground1 }]}>
@@ -84,7 +72,7 @@ export default function ExitScreen({ onCancel, onConfirm }: ExitScreenProps) {
             Close App
           </Button>
         </View>
-      </Animated.View>
+      </View>
     </Animated.View>
   );
 }
