@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { Platform, StatusBar } from "react-native";
 import { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 
 import { useThemeContext } from "@/contexts/ThemeContext";
@@ -36,7 +36,9 @@ export function useScreenOptions({
     contentStyle: {
       backgroundColor: colors.colorNeutralBackground1,
     },
-    // Disable all navigation animations
+    statusBarStyle: isDark ? "light" : "dark",
+    statusBarBackgroundColor: colors.colorNeutralBackground2,
+    statusBarTranslucent: false,
     animation: "none",
   };
 }

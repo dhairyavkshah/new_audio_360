@@ -185,7 +185,7 @@ export default function QueueScreen() {
   );
 
   return (
-    <FluentScreenLayout hasBottomNavigation={false}>
+    <FluentScreenLayout hasBottomNavigation={false} isNestedScreen={true}>
       {selectionMode ? (
         <View style={[styles.selectionHeader, { backgroundColor: colors.colorNeutralBackground3 }]}>
           <Pressable 

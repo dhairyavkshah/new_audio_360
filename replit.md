@@ -158,11 +158,11 @@ Current implementation uses development stubs for testing. Web platform uses loc
 
 ## Recent Changes (January 17, 2026)
 - Audio Effects UI changed from numeric chips to slider-based controls
-- Bass Control, Treble Control, and Virtualizer all use -3 to +3 slider range
+- Bass Control, Treble Control, and Virtualizer all use -5 to +5 slider range (zero-sum rule maintained)
 - Audio effects apply immediately when changed or when presets are loaded
 - Added module availability checks and try-catch error handling for native audio effects
 - EQ preset controls appear when any preset is active, with level chips for easy adjustment
-- Fixed top gap spacing on settings screens (Sound Lab, Appearance, License, About)
+- Fixed top gap spacing on all nested screens via isNestedScreen prop and proper navigator status bar config
 - UI sounds now disabled when music/radio is playing to prevent audio interruption
 - Updated Android adaptive icon config to use proper foreground image with branded blue (#1565C0) background
 - Splash screen uses branded blue background for both light (#1565C0) and dark (#0D47A1) modes

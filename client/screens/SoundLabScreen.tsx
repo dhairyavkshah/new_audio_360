@@ -157,28 +157,28 @@ export default function SoundLabScreen() {
       return;
     }
     
-    // Bass - use BassBoostModule
+    // Bass - use BassBoostModule (level -5 to +5 maps to strength 0-1000)
     if (BassBoostModule.isAvailable()) {
       try {
         if (bass === 0) {
           BassBoostModule.setEnabled(false);
         } else {
           BassBoostModule.setEnabled(true);
-          BassBoostModule.setStrength(Math.abs(bass) * 333);
+          BassBoostModule.setStrength(Math.abs(bass) * 200);
         }
       } catch (error) {
         console.warn('[SoundLab] BassBoostModule error:', error);
       }
     }
     
-    // Virtualizer
+    // Virtualizer (level -5 to +5 maps to strength 0-1000)
     if (VirtualizerModule.isAvailable()) {
       try {
         if (virtualizer === 0) {
           VirtualizerModule.setEnabled(false);
         } else {
           VirtualizerModule.setEnabled(true);
-          VirtualizerModule.setStrength(Math.abs(virtualizer) * 333);
+          VirtualizerModule.setStrength(Math.abs(virtualizer) * 200);
         }
       } catch (error) {
         console.warn('[SoundLab] VirtualizerModule error:', error);
@@ -321,7 +321,7 @@ export default function SoundLabScreen() {
           console.log('[SoundLab] Bass boost disabled');
         } else {
           BassBoostModule.setEnabled(true);
-          const strength = Math.abs(level) * 333;
+          const strength = Math.abs(level) * 200;
           BassBoostModule.setStrength(strength);
           console.log('[SoundLab] Bass boost enabled with strength:', strength);
         }
@@ -360,7 +360,7 @@ export default function SoundLabScreen() {
           console.log('[SoundLab] Virtualizer disabled');
         } else {
           VirtualizerModule.setEnabled(true);
-          const strength = Math.abs(level) * 333;
+          const strength = Math.abs(level) * 200;
           VirtualizerModule.setStrength(strength);
           console.log('[SoundLab] Virtualizer enabled with strength:', strength);
         }
@@ -524,7 +524,7 @@ export default function SoundLabScreen() {
   const isImmersiveActive = soundLabMode === "immersive";
 
   return (
-    <FluentScreenLayout hasBottomNavigation={true}>
+    <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -589,11 +589,11 @@ export default function SoundLabScreen() {
                   </FluentText>
                 </View>
                 <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">-3</FluentText>
+                  <FluentText variant="caption1" color="secondary">-5</FluentText>
                   <CrossPlatformSlider
                     style={styles.effectSlider}
-                    minimumValue={-3}
-                    maximumValue={3}
+                    minimumValue={-5}
+                    maximumValue={5}
                     step={1}
                     value={bassControl}
                     onValueChange={(value) => handleBassControlChange(value)}
@@ -601,7 +601,7 @@ export default function SoundLabScreen() {
                     maximumTrackTintColor={tokens.colors.outline}
                     thumbTintColor={tokens.colors.primary}
                   />
-                  <FluentText variant="caption1" color="secondary">+3</FluentText>
+                  <FluentText variant="caption1" color="secondary">+5</FluentText>
                 </View>
               </View>
 
@@ -614,11 +614,11 @@ export default function SoundLabScreen() {
                   </FluentText>
                 </View>
                 <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">-3</FluentText>
+                  <FluentText variant="caption1" color="secondary">-5</FluentText>
                   <CrossPlatformSlider
                     style={styles.effectSlider}
-                    minimumValue={-3}
-                    maximumValue={3}
+                    minimumValue={-5}
+                    maximumValue={5}
                     step={1}
                     value={trebleControl}
                     onValueChange={(value) => handleTrebleControlChange(value)}
@@ -626,7 +626,7 @@ export default function SoundLabScreen() {
                     maximumTrackTintColor={tokens.colors.outline}
                     thumbTintColor={tokens.colors.primary}
                   />
-                  <FluentText variant="caption1" color="secondary">+3</FluentText>
+                  <FluentText variant="caption1" color="secondary">+5</FluentText>
                 </View>
               </View>
 
@@ -639,11 +639,11 @@ export default function SoundLabScreen() {
                   </FluentText>
                 </View>
                 <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">-3</FluentText>
+                  <FluentText variant="caption1" color="secondary">-5</FluentText>
                   <CrossPlatformSlider
                     style={styles.effectSlider}
-                    minimumValue={-3}
-                    maximumValue={3}
+                    minimumValue={-5}
+                    maximumValue={5}
                     step={1}
                     value={virtualizerLevel}
                     onValueChange={(value) => handleVirtualizerLevelChange(value)}
@@ -651,7 +651,7 @@ export default function SoundLabScreen() {
                     maximumTrackTintColor={tokens.colors.outline}
                     thumbTintColor={tokens.colors.primary}
                   />
-                  <FluentText variant="caption1" color="secondary">+3</FluentText>
+                  <FluentText variant="caption1" color="secondary">+5</FluentText>
                 </View>
               </View>
             </View>

@@ -51,7 +51,7 @@ export default function OpenSourceLicensesScreen() {
   const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   return (
-    <FluentScreenLayout hasBottomNavigation={true}>
+    <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,

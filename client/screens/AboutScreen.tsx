@@ -33,7 +33,7 @@ export default function AboutScreen() {
   };
 
   return (
-    <FluentScreenLayout hasBottomNavigation={true}>
+    <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,

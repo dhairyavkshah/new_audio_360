@@ -135,7 +135,7 @@ export default function RecordingsScreen() {
   );
 
   return (
-    <FluentScreenLayout hasBottomNavigation={false}>
+    <FluentScreenLayout hasBottomNavigation={false} isNestedScreen={true}>
       <FlatList
         data={recordings}
         renderItem={renderRecording}

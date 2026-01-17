@@ -109,7 +109,7 @@ export default function PlaylistManagementScreen() {
   };
 
   return (
-    <FluentScreenLayout hasBottomNavigation={true}>
+    <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,

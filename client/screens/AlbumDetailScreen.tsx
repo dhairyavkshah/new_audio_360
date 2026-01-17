@@ -82,7 +82,7 @@ export default function AlbumDetailScreen() {
   );
 
   return (
-    <FluentScreenLayout hasBottomNavigation={true}>
+    <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>
       <FlatList
         data={albumSongs}
         renderItem={renderSong}

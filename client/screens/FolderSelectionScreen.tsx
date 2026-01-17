@@ -315,7 +315,7 @@ export default function FolderSelectionScreen() {
     .reduce((sum, f) => sum + f.assetCount, 0);
 
   const renderWebContent = () => (
-    <FluentScreenLayout hasBottomNavigation={false}>
+    <FluentScreenLayout hasBottomNavigation={false} isNestedScreen={true}>
       <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground2 }]}>
         <Pressable
           onPress={handleAddFolder}
@@ -483,7 +483,7 @@ export default function FolderSelectionScreen() {
   }
 
   return (
-    <FluentScreenLayout hasBottomNavigation={true}>
+    <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>
       <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground2 }]}>
         <Pressable
           onPress={selectAll}

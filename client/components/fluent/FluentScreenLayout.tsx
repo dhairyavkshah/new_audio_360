@@ -18,6 +18,7 @@ export interface FluentScreenLayoutProps {
   avoidKeyboard?: boolean;
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
   hideStatusBar?: boolean;
+  isNestedScreen?: boolean;
 }
 
 const getBackgroundColor = (variant: BackgroundVariant, isDark: boolean): string => {
@@ -45,6 +46,7 @@ export function FluentScreenLayout({
   avoidKeyboard = true,
   edges = ['top'],
   hideStatusBar = false,
+  isNestedScreen = false,
 }: FluentScreenLayoutProps) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
@@ -53,9 +55,10 @@ export function FluentScreenLayout({
   const bgColor = getBackgroundColor(backgroundColor, isDark);
   const paddingValue = FluentPadding[contentPadding];
 
-  // On Android with non-translucent status bar, we don't need top safe area edge
-  // as the StatusBar component already reserves that space
-  const safeAreaEdges = Platform.OS === 'android' 
+  // For nested screens (inside stack navigators with headers), don't add top safe area
+  // The navigator header already handles the status bar spacing
+  // On Android, we never need top edge as the navigator manages status bar space
+  const safeAreaEdges = (Platform.OS === 'android' || isNestedScreen)
     ? edges.filter(e => e !== 'top') 
     : edges;
 
@@ -76,12 +79,15 @@ export function FluentScreenLayout({
     </View>
   );
 
+  // For nested screens, the navigator handles the status bar, so we skip rendering it
+  const shouldRenderStatusBar = !hideStatusBar && !isNestedScreen && Platform.OS !== 'android';
+
   return (
     <SafeAreaView 
       style={[styles.container, { backgroundColor: bgColor }, style]} 
       edges={safeAreaEdges}
     >
-      {!hideStatusBar && (
+      {shouldRenderStatusBar && (
         <StatusBar
           barStyle={isDark ? 'light-content' : 'dark-content'}
           backgroundColor={bgColor}

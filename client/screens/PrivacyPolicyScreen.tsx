@@ -36,7 +36,7 @@ export default function PrivacyPolicyScreen() {
   const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   return (
-    <FluentScreenLayout hasBottomNavigation={true}>
+    <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
