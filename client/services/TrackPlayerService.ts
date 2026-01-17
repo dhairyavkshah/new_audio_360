@@ -215,6 +215,29 @@ class TrackPlayerServiceClass {
     return playbackState.state;
   }
 
+  async isPlayerActive(): Promise<boolean> {
+    if (!this.isInitialized) return false;
+    try {
+      const state = await TrackPlayer.getPlaybackState();
+      return state !== null && state !== undefined;
+    } catch (error: any) {
+      const errorMessage = error?.message || String(error);
+      const isServiceDeath = errorMessage.includes('not been initialized') ||
+                            errorMessage.includes('Player is not initialized') ||
+                            errorMessage.includes('Service not found') ||
+                            errorMessage.includes('service is not running');
+      
+      if (isServiceDeath) {
+        console.log('[TrackPlayerService] Player service appears dead, marking as uninitialized');
+        this.isInitialized = false;
+        return false;
+      }
+      
+      console.warn('[TrackPlayerService] Transient error checking player state:', errorMessage);
+      return true;
+    }
+  }
+
   async getQueue(): Promise<Track[]> {
     if (!this.isInitialized) return [];
     return await TrackPlayer.getQueue();

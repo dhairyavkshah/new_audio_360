@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator, Platform, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
 import * as MediaLibrary from "expo-media-library";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
@@ -74,6 +75,7 @@ async function scanDirectoryForAudio(dirHandle: FileSystemDirectoryHandle, baseP
 
 export default function FolderSelectionScreen() {
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useSafeTabBarHeight();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { refreshSongs, setSelectedFolders: updateContextFolders, setWebAudioFiles } = useMediaLibraryContext();
@@ -469,7 +471,7 @@ export default function FolderSelectionScreen() {
   }
 
   return (
-    <FluentScreenLayout edges={[]} hasBottomNavigation={false}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
       <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground2 }]}>
         <Pressable
           onPress={selectAll}
@@ -582,7 +584,7 @@ export default function FolderSelectionScreen() {
         styles.footer, 
         { 
           backgroundColor: colors.colorNeutralBackground1, 
-          paddingBottom: insets.bottom + FluentSpacing.m,
+          paddingBottom: Platform.OS === 'android' ? tabBarHeight + FluentSpacing.m : insets.bottom + FluentSpacing.m,
           borderTopColor: colors.colorNeutralStroke2,
         }
       ]}>

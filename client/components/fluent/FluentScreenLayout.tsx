@@ -51,8 +51,9 @@ export function FluentScreenLayout({
   const bgColor = getBackgroundColor(backgroundColor, isDark);
   const paddingValue = FluentPadding[contentPadding];
 
-  // On Android with non-translucent status bar, don't add top safe area padding
+  // On Android with non-translucent status bar, we don't need top safe area edge
   // as the StatusBar component already reserves that space
+  // For screens with native stack headers (edges=[]), no top padding is needed
   const safeAreaEdges = Platform.OS === 'android' 
     ? edges.filter(e => e !== 'top') 
     : edges;

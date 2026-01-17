@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
-import { Platform } from 'react-native';
+import { Platform, AppState, AppStateStatus } from 'react-native';
 import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from 'expo-audio';
 import { mockSongs, Song } from '@/lib/data';
 import { DeviceSong } from '@/contexts/MediaLibraryContext';
@@ -99,6 +99,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const trackPlayerInitializedRef = useRef(false);
   const nativeAudioSessionIdRef = useRef<number>(0);
   const progressPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastKnownPositionRef = useRef<number>(0);
+  const wasPlayingBeforeBackgroundRef = useRef<boolean>(false);
+  const handleNextInternalRef = useRef<() => void>(() => {});
+  const handlePreviousInternalRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     currentSongRef.current = currentSong;
@@ -145,6 +149,128 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const setupTrackPlayerCallbacks = useCallback(() => {
+    TrackPlayerService.setCallbacks({
+      onPlay: () => {
+        if (TrackPlayerService.getPlaybackSource() === 'music') {
+          setIsPlaying(true);
+        }
+      },
+      onPause: () => {
+        if (TrackPlayerService.getPlaybackSource() === 'music') {
+          setIsPlaying(false);
+        }
+      },
+      onStop: () => {
+        if (TrackPlayerService.getPlaybackSource() === 'music') {
+          setIsPlaying(false);
+          setCurrentTime(0);
+        }
+      },
+      onNext: () => {
+        if (TrackPlayerService.getPlaybackSource() === 'music') {
+          handleNextInternalRef.current();
+        }
+      },
+      onPrevious: () => {
+        if (TrackPlayerService.getPlaybackSource() === 'music') {
+          handlePreviousInternalRef.current();
+        }
+      },
+      onSeek: (position) => {
+        if (TrackPlayerService.getPlaybackSource() === 'music') {
+          setCurrentTime(position);
+        }
+      },
+      onTrackChange: async (trackIndex) => {
+        if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+        if (trackIndex !== null && trackIndex >= 0) {
+          const currentQueue = queueRef.current;
+          if (currentQueue[trackIndex]) {
+            setCurrentSong(currentQueue[trackIndex]);
+            const track = await TrackPlayerService.getCurrentTrack();
+            if (track?.duration) {
+              setDuration(track.duration);
+            }
+          }
+        }
+      },
+      onProgress: (progress) => {
+        if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+        setCurrentTime(progress.position);
+        if (progress.duration > 0) {
+          setDuration(progress.duration);
+        }
+        setIsBuffering(progress.buffered < progress.position);
+      },
+      onStateChange: (state) => {
+        if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+        if (state === State.Playing) {
+          setIsPlaying(true);
+          setIsBuffering(false);
+        } else if (state === State.Paused) {
+          setIsPlaying(false);
+          setIsBuffering(false);
+        } else if (state === State.Buffering || state === State.Loading) {
+          setIsBuffering(true);
+        } else if (state === State.Stopped) {
+          setIsPlaying(false);
+          setCurrentTime(0);
+        }
+      },
+    });
+  }, []);
+
+  const restoreTrackPlayerQueue = useCallback(async (savedPosition?: number, wasPlaying?: boolean) => {
+    const queue = queueRef.current;
+    const currentSongId = currentSongRef.current?.id;
+    
+    if (queue.length === 0) return;
+    
+    const trackMetadataList = queue
+      .map(song => convertSongToTrackMetadata(song))
+      .filter((t): t is TrackMetadata => t !== null);
+    
+    if (trackMetadataList.length === 0) return;
+    
+    await TrackPlayerService.reset();
+    await TrackPlayerService.addTracks(trackMetadataList);
+    
+    if (currentSongId) {
+      const currentIndex = queue.findIndex(s => s.id === currentSongId);
+      if (currentIndex > 0) {
+        await TrackPlayerService.skipToTrack(currentIndex);
+      }
+    }
+    
+    if (savedPosition !== undefined && savedPosition > 0) {
+      await TrackPlayerService.seekTo(savedPosition);
+    }
+    
+    if (wasPlaying) {
+      const waitForReady = async (maxAttempts = 10): Promise<boolean> => {
+        for (let i = 0; i < maxAttempts; i++) {
+          try {
+            const state = await TrackPlayerService.getState();
+            if (state === State.Ready || state === State.Paused || state === State.Playing) {
+              return true;
+            }
+          } catch {
+            // Service not ready
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        return false;
+      };
+      
+      const isReady = await waitForReady();
+      if (isReady) {
+        await TrackPlayerService.play();
+        setIsPlaying(true);
+      }
+    }
+  }, [convertSongToTrackMetadata]);
+
   useEffect(() => {
     if (useTrackPlayerRef.current && !trackPlayerInitializedRef.current) {
       TrackPlayerService.initialize().then(async (initialized) => {
@@ -152,82 +278,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           trackPlayerInitializedRef.current = true;
           console.log('[PlayerContext] TrackPlayerService initialized');
           
-          TrackPlayerService.setCallbacks({
-            onPlay: () => {
-              if (TrackPlayerService.getPlaybackSource() === 'music') {
-                setIsPlaying(true);
-              }
-            },
-            onPause: () => {
-              if (TrackPlayerService.getPlaybackSource() === 'music') {
-                setIsPlaying(false);
-              }
-            },
-            onStop: () => {
-              if (TrackPlayerService.getPlaybackSource() === 'music') {
-                setIsPlaying(false);
-                setCurrentTime(0);
-              }
-            },
-            onNext: () => {
-              if (TrackPlayerService.getPlaybackSource() === 'music') {
-                handleNextInternal();
-              }
-            },
-            onPrevious: () => {
-              if (TrackPlayerService.getPlaybackSource() === 'music') {
-                handlePreviousInternal();
-              }
-            },
-            onSeek: (position) => {
-              if (TrackPlayerService.getPlaybackSource() === 'music') {
-                setCurrentTime(position);
-              }
-            },
-            onTrackChange: async (trackIndex) => {
-              if (TrackPlayerService.getPlaybackSource() !== 'music') return;
-              if (trackIndex !== null && trackIndex >= 0) {
-                const currentQueue = queueRef.current;
-                if (currentQueue[trackIndex]) {
-                  setCurrentSong(currentQueue[trackIndex]);
-                  const track = await TrackPlayerService.getCurrentTrack();
-                  if (track?.duration) {
-                    setDuration(track.duration);
-                  }
-                }
-              }
-            },
-            onProgress: (progress) => {
-              if (TrackPlayerService.getPlaybackSource() !== 'music') return;
-              setCurrentTime(progress.position);
-              if (progress.duration > 0) {
-                setDuration(progress.duration);
-              }
-              setIsBuffering(progress.buffered < progress.position);
-            },
-            onStateChange: (state) => {
-              if (TrackPlayerService.getPlaybackSource() !== 'music') return;
-              if (state === State.Playing) {
-                setIsPlaying(true);
-                setIsBuffering(false);
-              } else if (state === State.Paused) {
-                setIsPlaying(false);
-                setIsBuffering(false);
-              } else if (state === State.Buffering || state === State.Loading) {
-                setIsBuffering(true);
-              } else if (state === State.Stopped) {
-                setIsPlaying(false);
-                setCurrentTime(0);
-              }
-            },
-          });
-
+          setupTrackPlayerCallbacks();
           TrackPlayerService.setRepeatMode(repeat);
           
-          // Initialize native audio effects with global audio session (0) for TrackPlayer
           if (Platform.OS === 'android' && NativeEffectsManager.isAvailable()) {
             try {
-              // Use global audio output session (0) to apply effects to all audio
               const attached = await NativeEffectsManager.attach(0);
               if (attached) {
                 console.log('[PlayerContext] NativeEffectsManager attached to global audio session');
@@ -235,7 +290,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 console.log('[PlayerContext] NativeEffectsManager attachment returned false - effects may not work');
               }
               
-              // Also attach ImmersiveModeEngineModule to global session
               if (ImmersiveModeEngineModule.isAvailable()) {
                 const immersiveResult = await ImmersiveModeEngineModule.attach(0);
                 if (immersiveResult.success) {
@@ -260,7 +314,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         trackPlayerInitializedRef.current = false;
       }
     };
-  }, []);
+  }, [setupTrackPlayerCallbacks]);
 
   useEffect(() => {
     if (useNativePlaybackRef.current && !useTrackPlayerRef.current) {
@@ -309,6 +363,92 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       TrackPlayerService.setRepeatMode(repeat);
     }
   }, [repeat]);
+
+  useEffect(() => {
+    const appStateRef = { current: AppState.currentState };
+    
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (nextAppState.match(/inactive|background/) && appStateRef.current === 'active') {
+        console.log('[PlayerContext] App going to background - saving state');
+        if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
+          try {
+            const progress = await TrackPlayerService.getProgress();
+            const state = await TrackPlayerService.getState();
+            if (progress) {
+              lastKnownPositionRef.current = progress.position;
+            }
+            wasPlayingBeforeBackgroundRef.current = state === State.Playing;
+          } catch {
+            lastKnownPositionRef.current = currentTime;
+            wasPlayingBeforeBackgroundRef.current = isPlaying;
+          }
+        } else {
+          lastKnownPositionRef.current = currentTime;
+          wasPlayingBeforeBackgroundRef.current = isPlaying;
+        }
+      }
+      
+      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        console.log('[PlayerContext] App returned to foreground - syncing state');
+        
+        if (useTrackPlayerRef.current) {
+          try {
+            const isAlive = await TrackPlayerService.isPlayerActive();
+            
+            if (!isAlive && trackPlayerInitializedRef.current) {
+              console.log('[PlayerContext] TrackPlayer was killed - reinitializing');
+              trackPlayerInitializedRef.current = false;
+              
+              const reinitialized = await TrackPlayerService.initialize();
+              if (reinitialized) {
+                trackPlayerInitializedRef.current = true;
+                
+                setupTrackPlayerCallbacks();
+                TrackPlayerService.setRepeatMode(repeatRef.current);
+                
+                const savedPosition = lastKnownPositionRef.current;
+                const wasPlaying = wasPlayingBeforeBackgroundRef.current;
+                
+                await restoreTrackPlayerQueue(savedPosition, wasPlaying);
+                
+                console.log('[PlayerContext] TrackPlayer reinitialized and queue restored');
+              }
+            } else {
+              setupTrackPlayerCallbacks();
+            }
+            
+            if (trackPlayerInitializedRef.current) {
+              const state = await TrackPlayerService.getState();
+              const progress = await TrackPlayerService.getProgress();
+              
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                const isCurrentlyPlaying = state === State.Playing;
+                setIsPlaying(isCurrentlyPlaying);
+                
+                if (progress) {
+                  setCurrentTime(progress.position);
+                  if (progress.duration > 0) {
+                    setDuration(progress.duration);
+                  }
+                }
+                
+                setIsBuffering(state === State.Buffering || state === State.Loading);
+              }
+            }
+          } catch (err) {
+            console.warn('[PlayerContext] Failed to sync state on foreground:', err);
+          }
+        }
+      }
+      appStateRef.current = nextAppState;
+    };
+    
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription.remove();
+    };
+  }, [setupTrackPlayerCallbacks, restoreTrackPlayerQueue, currentTime, isPlaying]);
 
   useEffect(() => {
     if (useTrackPlayerRef.current) return;
@@ -885,6 +1025,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       loadAndPlaySong(prevSong);
     }
   }, [loadAndPlaySong]);
+
+  useEffect(() => {
+    handleNextInternalRef.current = handleNextInternal;
+  }, [handleNextInternal]);
+
+  useEffect(() => {
+    handlePreviousInternalRef.current = handlePreviousInternal;
+  }, [handlePreviousInternal]);
 
   const togglePlayPause = useCallback(() => {
     if (Platform.OS === 'web' && audioElementRef.current) {
