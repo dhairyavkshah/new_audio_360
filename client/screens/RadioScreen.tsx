@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Platform, ActivityIndicator, TextInput, Modal, FlatList } from "react-native";
-import Slider from "@react-native-community/slider";
+import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -852,7 +852,7 @@ export default function RadioScreen() {
             {bandType === "fm" ? `${FM_MIN} MHz` : `${AM_MIN} kHz`}
           </FluentText>
           <View style={styles.sliderWrapper}>
-            <Slider
+            <CrossPlatformSlider
               style={styles.slider}
               minimumValue={bandType === "fm" ? FM_MIN : AM_MIN}
               maximumValue={bandType === "fm" ? FM_MAX : AM_MAX}

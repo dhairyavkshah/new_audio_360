@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Alert, TextInput, Modal, Platform } from "react-native";
-import Slider from "@react-native-community/slider";
+import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
@@ -427,7 +427,7 @@ export default function SoundLabScreen() {
               {CUSTOM_EQ_BAND_LABELS.map((label, index) => (
                 <View key={label} style={styles.bandRow}>
                   <FluentText variant="caption1" style={styles.bandLabel}>{label}</FluentText>
-                  <Slider
+                  <CrossPlatformSlider
                     style={styles.slider}
                     minimumValue={-8}
                     maximumValue={8}
@@ -660,7 +660,7 @@ export default function SoundLabScreen() {
             {CUSTOM_EQ_BAND_LABELS.map((label, index) => (
               <View key={label} style={styles.bandRow}>
                 <FluentText variant="caption1" style={styles.bandLabel}>{label}</FluentText>
-                <Slider
+                <CrossPlatformSlider
                   style={styles.slider}
                   minimumValue={-8}
                   maximumValue={8}
