@@ -9,7 +9,6 @@ import { FluentTopBar } from "@/components/FluentTopBar";
 import { FluentToggle } from "@/components/FluentToggle";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 import { getHapticEnabled, setHapticEnabled as saveHapticEnabled } from "@/lib/storage";
@@ -73,16 +72,8 @@ export default function SettingsScreen() {
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { uiSoundEnabled, setUiSoundEnabled, playTapSound } = useUiSound();
   const { sleepTimerMinutes, setSleepTimer } = usePlayerContext();
-  const { signOut } = useAuth();
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [showExitScreen, setShowExitScreen] = useState(false);
-
-  const handleSignOut = async () => {
-    if (hapticEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    await signOut();
-  };
 
   useEffect(() => {
     getHapticEnabled().then(setHapticEnabled);
@@ -280,14 +271,6 @@ export default function SettingsScreen() {
               title="About New Audio 360"
               subtitle="Version, legal, and more"
               onPress={() => navigation.navigate("About")}
-              isDark={isDark}
-            />
-            <MenuItem
-              icon="logout"
-              iconColor={colors.colorPaletteRedForeground1}
-              title="Sign Out"
-              subtitle="Log out of your account"
-              onPress={handleSignOut}
               isDark={isDark}
             />
             <MenuItem
