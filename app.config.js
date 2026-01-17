@@ -35,9 +35,8 @@ export default {
     },
     android: {
       adaptiveIcon: {
+        foregroundImage: './assets/images/icon.png',
         backgroundColor: '#0078D4',
-        foregroundImage: './assets/images/android-icon-foreground.png',
-        backgroundImage: './assets/images/android-icon-background.png',
         monochromeImage: './assets/images/android-icon-monochrome.png',
       },
       edgeToEdgeEnabled: false,
@@ -81,8 +80,11 @@ export default {
       [
         'expo-splash-screen',
         {
+          image: './assets/images/splash-icon.png',
+          imageWidth: 200,
           backgroundColor: '#0057A0',
           dark: {
+            image: './assets/images/splash-icon.png',
             backgroundColor: '#003366',
           },
         },
