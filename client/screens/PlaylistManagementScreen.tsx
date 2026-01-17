@@ -109,7 +109,7 @@ export default function PlaylistManagementScreen() {
   };
 
   return (
-    <FluentScreenLayout edges={[]} hasBottomNavigation={true} hideStatusBar>
+    <FluentScreenLayout hasBottomNavigation={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,

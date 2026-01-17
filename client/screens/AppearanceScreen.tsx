@@ -18,7 +18,7 @@ export default function AppearanceScreen() {
   };
 
   return (
-    <FluentScreenLayout edges={[]} hasBottomNavigation={true} hideStatusBar>
+    <FluentScreenLayout hasBottomNavigation={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,

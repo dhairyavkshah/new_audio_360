@@ -524,7 +524,7 @@ export default function SoundLabScreen() {
   const isImmersiveActive = soundLabMode === "immersive";
 
   return (
-    <FluentScreenLayout edges={[]} hasBottomNavigation={true} hideStatusBar>
+    <FluentScreenLayout hasBottomNavigation={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,

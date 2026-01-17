@@ -697,10 +697,7 @@ export default function RadioStationsScreen() {
   };
 
   return (
-    <FluentScreenLayout 
-      edges={[]} 
-      hasBottomNavigation={true}
-    >
+    <FluentScreenLayout hasBottomNavigation={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,

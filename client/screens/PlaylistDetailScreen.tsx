@@ -160,7 +160,7 @@ export default function PlaylistDetailScreen() {
 
   if (!playlist) {
     return (
-      <FluentScreenLayout edges={[]} hasBottomNavigation={false} hideStatusBar>
+      <FluentScreenLayout hasBottomNavigation={false}>
         <View style={[styles.loadingContainer, { paddingTop: headerHeight }]}>
           <MaterialCommunityIcons name="playlist-music" size={48} color={colors.colorNeutralForeground2} />
           <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.l }}>
@@ -172,7 +172,7 @@ export default function PlaylistDetailScreen() {
   }
 
   return (
-    <FluentScreenLayout edges={[]} hasBottomNavigation={false} hideStatusBar>
+    <FluentScreenLayout hasBottomNavigation={false}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
