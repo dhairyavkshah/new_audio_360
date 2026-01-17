@@ -31,8 +31,6 @@ interface LicenseContextType {
   isLoading: boolean;
   purchase: PurchaseInfo | null;
   isLicensed: boolean;
-  purchaseApp: () => Promise<boolean>;
-  restorePurchases: () => Promise<boolean>;
   checkLicenseStatus: () => Promise<void>;
   setLicenseForTesting: (status: LicenseStatus) => void;
 }
@@ -104,60 +102,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const purchaseApp = useCallback(async (): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const result = await GooglePlayLicense.purchaseApp();
-      
-      if (result.isPurchased && result.purchase) {
-        const newState: LicenseState = {
-          status: 'licensed',
-          purchase: result.purchase,
-        };
-        await SecureStorage.setSecureItem(SECURE_STORAGE_KEY, JSON.stringify(newState));
-        setState(newState);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Purchase error:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const restorePurchases = useCallback(async (): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const result = await GooglePlayLicense.restorePurchases();
-      
-      if (result.isPurchased && result.purchase) {
-        const newState: LicenseState = {
-          status: 'licensed',
-          purchase: result.purchase,
-        };
-        await SecureStorage.setSecureItem(SECURE_STORAGE_KEY, JSON.stringify(newState));
-        setState(newState);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Restore error:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   const setLicenseForTesting = useCallback((status: LicenseStatus) => {
     const newState: LicenseState = {
       status,
       purchase: status === 'licensed' ? {
         productId: PRODUCT_ID,
-        purchaseToken: `test_${Date.now()}`,
-        purchaseTime: Date.now(),
-        orderId: `TEST.${Date.now()}`,
+        installSource: 'test',
+        installTime: Date.now(),
       } : null,
     };
     SecureStorage.setSecureItem(SECURE_STORAGE_KEY, JSON.stringify(newState));
@@ -173,8 +124,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         isLoading,
         purchase: state.purchase,
         isLicensed,
-        purchaseApp,
-        restorePurchases,
         checkLicenseStatus,
         setLicenseForTesting,
       }}

@@ -1110,3 +1110,67 @@ export const IMMERSIVE_MODE_INFO: Record<ImmersiveMode, { name: string; descript
   movie: { name: 'Movie', description: 'Cinematic audio with enhanced dialogue and surround effects', icon: 'movie-open' },
   custom: { name: 'Custom', description: 'Custom audio settings', icon: 'tune' }
 };
+
+// License Verification Module Types
+export interface InstallerInfo {
+  installerPackageName: string;
+  packageName?: string;
+  error?: string;
+}
+
+export interface PlayStoreCheckResult {
+  isPlayStoreInstall: boolean;
+  installerPackageName: string;
+  error?: string;
+}
+
+interface LicenseVerificationModuleInterface extends NativeModule {
+  isAvailable(): boolean;
+  getInstallerPackageName(): Promise<InstallerInfo>;
+  isPlayStoreInstall(): Promise<PlayStoreCheckResult>;
+}
+
+let LicenseVerificationModuleNative: LicenseVerificationModuleInterface | null = null;
+
+if (Platform.OS === 'android') {
+  try {
+    LicenseVerificationModuleNative = requireNativeModule<LicenseVerificationModuleInterface>('LicenseVerificationModule');
+  } catch (error) {
+    console.warn('LicenseVerificationModule not available:', error);
+  }
+}
+
+export const LicenseVerificationModule = {
+  isAvailable: (): boolean => {
+    if (!LicenseVerificationModuleNative) return false;
+    try {
+      return LicenseVerificationModuleNative.isAvailable();
+    } catch (error) {
+      return false;
+    }
+  },
+
+  getInstallerPackageName: async (): Promise<InstallerInfo> => {
+    if (!LicenseVerificationModuleNative) {
+      return { installerPackageName: 'not_available' };
+    }
+    try {
+      return await LicenseVerificationModuleNative.getInstallerPackageName();
+    } catch (error) {
+      console.error('LicenseVerificationModule.getInstallerPackageName error:', error);
+      return { installerPackageName: 'error', error: String(error) };
+    }
+  },
+
+  isPlayStoreInstall: async (): Promise<PlayStoreCheckResult> => {
+    if (!LicenseVerificationModuleNative) {
+      return { isPlayStoreInstall: false, installerPackageName: 'not_available' };
+    }
+    try {
+      return await LicenseVerificationModuleNative.isPlayStoreInstall();
+    } catch (error) {
+      console.error('LicenseVerificationModule.isPlayStoreInstall error:', error);
+      return { isPlayStoreInstall: false, installerPackageName: 'error', error: String(error) };
+    }
+  }
+};

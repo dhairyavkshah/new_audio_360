@@ -78,6 +78,14 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         <FluentText variant="body1" color="secondary" align="center">
           Your personal music experience
         </FluentText>
+        <View style={styles.audioTip}>
+          <FluentText variant="caption1" color="tertiary" align="center" style={styles.tipText}>
+            For the purest audio experience, disable your phone's
+          </FluentText>
+          <FluentText variant="caption1" color="tertiary" align="center" style={styles.tipText}>
+            native EQ, Dolby, or audio effects from system settings
+          </FluentText>
+        </View>
       </Animated.View>
       <View style={[styles.footer, { bottom: insets.bottom + FluentSpacing.xxxl }]}>
         <FluentText variant="caption1" color="tertiary" align="center">
@@ -113,6 +121,14 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: FluentSpacing.s,
+  },
+  audioTip: {
+    marginTop: FluentSpacing.xxl,
+    paddingHorizontal: FluentSpacing.xxl,
+    opacity: 0.8,
+  },
+  tipText: {
+    lineHeight: 18,
   },
   footer: {
     position: "absolute",

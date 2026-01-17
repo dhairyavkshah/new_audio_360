@@ -16,16 +16,19 @@ The application leverages React Native and Expo for the frontend. The UI/UX stri
 - License state cached locally after initial Google Play verification
 
 **No backend required:**
-- Google Sign-In handled by expo-auth-session
-- License verification done directly with Google Play Billing API (client-side)
+- No Google Sign-In required - simple one-time purchase model
+- License verification via Play Store installation check (expo-application)
 - No server infrastructure, database, or admin panel needed
 
-### License Verification Flow
-1.  **App Launch**: User opens the app
-2.  **Google Sign-In**: User signs in with their Google/Play Store account
-3.  **Purchase Check**: App queries Google Play directly via react-native-iap
-4.  **License Status**: If valid purchase exists, app unlocks. If not, user is prompted to purchase.
+### License Verification Flow (Simplified)
+1.  **Google Play Purchase**: User purchases app on Google Play Store (paid app, one-time)
+2.  **App Download**: User downloads and installs from Play Store
+3.  **Installation Verification**: App checks it was installed from Play Store (com.android.vending)
+4.  **License Status**: If installed from Play Store, app is licensed. Otherwise, user is prompted to get it from Play Store.
 5.  **Offline Access**: License state is cached in SecureStorage for offline use
+
+### Splash Screen Audio Tip
+The splash screen displays a tip encouraging users to disable their phone's native EQ, Dolby, or audio effects from system settings for the purest audio experience with the app's built-in Sound Lab.
 
 ### Technical Implementations
 -   **Platform**: React Native with Expo SDK.
@@ -49,6 +52,7 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 -   **ImmersiveModeEngineModule**: Manages 6 immersive audio modes (Music, 360 Reality, Gaming, Podcast, Movie, Off) using native audio APIs with BassBoost and Virtualizer at conservative strengths.
 -   **NativeWaveformVisualizer**: Real-time 64-bar waveform visualization.
 -   **FMRadioModule**: FM/AM radio tuning using RadioManager/RadioTuner APIs with AudioRecord→AudioTrack pipeline for Sound Lab effects integration.
+-   **LicenseVerificationModule**: Native Kotlin module for Play Store license verification using PackageManager.getInstallerPackageName(). Only accepts "com.android.vending" as valid installer; sideloaded APKs are rejected.
 -   **StudioAudioEngine**: TypeScript service bridging native modules on Android with `expo-av` fallback.
 
 ### Design Language (Microsoft Fluent 2)

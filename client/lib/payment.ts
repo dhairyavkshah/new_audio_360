@@ -1,23 +1,178 @@
 /**
- * Google Play License Verification
+ * Google Play Store License Verification
  * 
- * This module handles direct Google Play purchase verification.
- * No server required - all verification happens on-device.
+ * Simple one-time purchase model:
+ * - App is a PAID app on Google Play Store (₹311 / $13.11)
+ * - User purchases and downloads from Play Store
+ * - Since the app is PAID, anyone who downloads from Play Store has already paid
  * 
- * PRODUCTION SETUP:
- * 1. Install react-native-iap: npm install react-native-iap
- * 2. Configure in app.json/app.config.js for Expo EAS Build
- * 3. Replace stubs below with real react-native-iap calls
- * 4. Set up the product in Google Play Console with ID: new_audio_360_lifetime
+ * No sign-in required - purchase happens at download time on Play Store.
  * 
- * The current implementation has development stubs for testing.
- * Web platform uses localStorage; Android uses mock responses.
+ * License verification uses native module to check installer package name:
+ * - Play Store installs have installer = "com.android.vending"
+ * - Sideloaded APKs have different or null installer
+ * 
+ * For development builds:
+ * - Auto-licensed for testing
  */
 
 import { Platform } from "react-native";
 import Constants from 'expo-constants';
+import { LicenseVerificationModule } from '../../modules/audio-effects';
 
-const IS_PRODUCTION = Constants.expoConfig?.extra?.appVariant === 'production';
+const APP_VARIANT = Constants.expoConfig?.extra?.appVariant;
+const IS_PRODUCTION = APP_VARIANT === 'production';
+const IS_DEVELOPMENT = APP_VARIANT === 'development' || APP_VARIANT === 'preview' || __DEV__;
+
+export interface PurchaseInfo {
+  productId: string;
+  installSource: string;
+  installTime: number;
+}
+
+export interface InstallVerificationResult {
+  isValidInstall: boolean;
+  installSource: string;
+  purchase?: PurchaseInfo;
+  error?: string;
+}
+
+export const PRODUCT_ID = 'new_audio_360_lifetime';
+
+export const PlayStoreVerification = {
+  async verifyInstallSource(): Promise<InstallVerificationResult> {
+    try {
+      if (Platform.OS === "web") {
+        const isTestMode = typeof window !== 'undefined' && 
+          (localStorage.getItem('na360_test_mode') === 'true' || IS_DEVELOPMENT);
+        
+        return {
+          isValidInstall: isTestMode,
+          installSource: 'web',
+          purchase: isTestMode ? {
+            productId: PRODUCT_ID,
+            installSource: 'web_test',
+            installTime: Date.now(),
+          } : undefined,
+        };
+      }
+
+      if (Platform.OS === 'ios') {
+        return {
+          isValidInstall: true,
+          installSource: 'app_store',
+          purchase: {
+            productId: PRODUCT_ID,
+            installSource: 'app_store',
+            installTime: Date.now(),
+          },
+        };
+      }
+
+      if (IS_DEVELOPMENT) {
+        console.log("[PlayStoreVerification] Development mode - auto-licensing for testing");
+        return {
+          isValidInstall: true,
+          installSource: 'development',
+          purchase: {
+            productId: PRODUCT_ID,
+            installSource: 'development',
+            installTime: Date.now(),
+          },
+        };
+      }
+
+      // Use native module to verify Play Store installation
+      if (LicenseVerificationModule.isAvailable()) {
+        console.log("[PlayStoreVerification] Using native installer verification");
+        const result = await LicenseVerificationModule.isPlayStoreInstall();
+        
+        if (result.isPlayStoreInstall) {
+          console.log("[PlayStoreVerification] Verified Play Store install:", result.installerPackageName);
+          return {
+            isValidInstall: true,
+            installSource: result.installerPackageName,
+            purchase: {
+              productId: PRODUCT_ID,
+              installSource: 'play_store',
+              installTime: Date.now(),
+            },
+          };
+        } else {
+          console.log("[PlayStoreVerification] Not a Play Store install:", result.installerPackageName);
+          return {
+            isValidInstall: false,
+            installSource: result.installerPackageName,
+            error: 'App not installed from Google Play Store',
+          };
+        }
+      }
+
+      // Fallback if native module not available (shouldn't happen in production)
+      console.log("[PlayStoreVerification] Native module not available, build variant:", APP_VARIANT);
+      return {
+        isValidInstall: false,
+        installSource: 'native_module_unavailable',
+        error: 'License verification not available',
+      };
+    } catch (error) {
+      console.error("[PlayStoreVerification] Error:", error);
+      
+      if (IS_DEVELOPMENT) {
+        return {
+          isValidInstall: true,
+          installSource: 'error_dev_fallback',
+          purchase: {
+            productId: PRODUCT_ID,
+            installSource: 'error_fallback',
+            installTime: Date.now(),
+          },
+        };
+      }
+      
+      return {
+        isValidInstall: false,
+        installSource: 'error',
+        error: error instanceof Error ? error.message : "Failed to verify installation",
+      };
+    }
+  },
+
+  enableTestMode(): void {
+    if (Platform.OS === "web" && typeof window !== 'undefined') {
+      localStorage.setItem('na360_test_mode', 'true');
+    }
+  },
+
+  disableTestMode(): void {
+    if (Platform.OS === "web" && typeof window !== 'undefined') {
+      localStorage.removeItem('na360_test_mode');
+    }
+  },
+};
+
+export const GooglePlayLicense = {
+  async checkPurchaseStatus(): Promise<{ isPurchased: boolean; purchase?: PurchaseInfo; error?: string }> {
+    const result = await PlayStoreVerification.verifyInstallSource();
+    return {
+      isPurchased: result.isValidInstall,
+      purchase: result.purchase,
+      error: result.error,
+    };
+  },
+
+  async purchaseApp(): Promise<{ isPurchased: boolean; purchase?: PurchaseInfo; error?: string }> {
+    return this.checkPurchaseStatus();
+  },
+
+  async restorePurchases(): Promise<{ isPurchased: boolean; purchase?: PurchaseInfo; error?: string }> {
+    return this.checkPurchaseStatus();
+  },
+
+  clearTestPurchase(): void {
+    PlayStoreVerification.disableTestMode();
+  },
+};
 
 export interface RegionDetectionResult {
   isIndian: boolean;
@@ -50,130 +205,3 @@ export async function detectUserRegion(): Promise<RegionDetectionResult> {
     };
   }
 }
-
-export interface PurchaseInfo {
-  productId: string;
-  purchaseToken: string;
-  purchaseTime: number;
-  orderId: string;
-}
-
-export interface PurchaseVerificationResult {
-  isPurchased: boolean;
-  purchase?: PurchaseInfo;
-  error?: string;
-}
-
-export const PRODUCT_ID = 'new_audio_360_lifetime';
-
-export const GooglePlayLicense = {
-  async checkPurchaseStatus(): Promise<PurchaseVerificationResult> {
-    try {
-      if (Platform.OS === "web") {
-        const storedPurchase = localStorage.getItem('na360_test_purchase');
-        if (storedPurchase) {
-          return {
-            isPurchased: true,
-            purchase: JSON.parse(storedPurchase),
-          };
-        }
-        return { isPurchased: false };
-      }
-
-      if (IS_PRODUCTION) {
-        console.warn("[GooglePlayLicense] Production mode: react-native-iap integration required for real purchase verification");
-      } else {
-        console.log("[GooglePlayLicense] Development mode: Checking purchase status...");
-      }
-      
-      return { isPurchased: false };
-    } catch (error) {
-      console.error("[GooglePlayLicense] Error checking purchase:", error);
-      return {
-        isPurchased: false,
-        error: error instanceof Error ? error.message : "Failed to verify purchase",
-      };
-    }
-  },
-
-  async purchaseApp(): Promise<PurchaseVerificationResult> {
-    try {
-      if (Platform.OS === "web") {
-        const mockPurchase: PurchaseInfo = {
-          productId: PRODUCT_ID,
-          purchaseToken: `web_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          purchaseTime: Date.now(),
-          orderId: `GPA.WEB.${Date.now()}`,
-        };
-        localStorage.setItem('na360_test_purchase', JSON.stringify(mockPurchase));
-        return {
-          isPurchased: true,
-          purchase: mockPurchase,
-        };
-      }
-
-      if (IS_PRODUCTION) {
-        console.warn("[GooglePlayLicense] Production mode: react-native-iap integration required for real purchases");
-        return {
-          isPurchased: false,
-          error: "In-app purchases require react-native-iap integration",
-        };
-      }
-
-      console.log("[GooglePlayLicense] Development mode: Initiating mock purchase...");
-      
-      const mockPurchase: PurchaseInfo = {
-        productId: PRODUCT_ID,
-        purchaseToken: `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        purchaseTime: Date.now(),
-        orderId: `GPA.${Date.now()}`,
-      };
-      
-      return {
-        isPurchased: true,
-        purchase: mockPurchase,
-      };
-    } catch (error) {
-      console.error("[GooglePlayLicense] Purchase error:", error);
-      return {
-        isPurchased: false,
-        error: error instanceof Error ? error.message : "Purchase failed",
-      };
-    }
-  },
-
-  async restorePurchases(): Promise<PurchaseVerificationResult> {
-    try {
-      if (Platform.OS === "web") {
-        const storedPurchase = localStorage.getItem('na360_test_purchase');
-        if (storedPurchase) {
-          return {
-            isPurchased: true,
-            purchase: JSON.parse(storedPurchase),
-          };
-        }
-        return { isPurchased: false };
-      }
-
-      if (IS_PRODUCTION) {
-        console.warn("[GooglePlayLicense] Production mode: react-native-iap integration required for restoring purchases");
-      } else {
-        console.log("[GooglePlayLicense] Development mode: Restoring purchases...");
-      }
-      
-      return { isPurchased: false };
-    } catch (error) {
-      console.error("[GooglePlayLicense] Restore error:", error);
-      return {
-        isPurchased: false,
-        error: error instanceof Error ? error.message : "Failed to restore purchases",
-      };
-    }
-  },
-
-  clearTestPurchase(): void {
-    if (Platform.OS === "web") {
-      localStorage.removeItem('na360_test_purchase');
-    }
-  },
-};

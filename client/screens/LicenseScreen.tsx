@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
+import React from "react";
+import { View, StyleSheet, ScrollView, Pressable, Linking } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { useSubscription, PRICING } from "@/contexts/SubscriptionContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
-import { detectUserRegion } from "@/lib/payment";
+
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.theteam360.newaudio360';
 
 type FeatureItem = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
@@ -32,50 +33,16 @@ export default function LicenseScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const { licenseStatus, isLoading, purchaseApp, restorePurchases } = useSubscription();
+  const { licenseStatus, isLoading, checkLicenseStatus } = useSubscription();
 
-  const [isIndian, setIsIndian] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  useEffect(() => {
-    detectUserRegion().then((result) => {
-      setIsIndian(result.isIndian);
-    });
-  }, []);
-
-  const pricing = isIndian ? PRICING.india : PRICING.international;
-
-  const handlePurchase = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setIsProcessing(true);
-    
-    try {
-      const success = await purchaseApp();
-      if (success) {
-        Alert.alert(
-          "Success", 
-          "Lifetime license activated! All features are now unlocked forever."
-        );
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to complete purchase. Please try again.");
-    } finally {
-      setIsProcessing(false);
-    }
+  const handleVerifyInstallation = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await checkLicenseStatus();
   };
 
-  const handleRestore = async () => {
+  const handleOpenPlayStore = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setIsProcessing(true);
-    
-    try {
-      await restorePurchases();
-      Alert.alert("Restored", "Your purchases have been restored.");
-    } catch (error) {
-      Alert.alert("Error", "Failed to restore purchases.");
-    } finally {
-      setIsProcessing(false);
-    }
+    Linking.openURL(PLAY_STORE_URL);
   };
 
   const getLicenseBadge = () => {
@@ -141,6 +108,11 @@ export default function LicenseScreen() {
               All features unlocked forever
             </FluentText>
           )}
+          {licenseStatus === "unlicensed" && (
+            <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
+              Install from Google Play to activate
+            </FluentText>
+          )}
         </GlassCard>
 
         <View style={styles.comparisonSection}>
@@ -177,7 +149,7 @@ export default function LicenseScreen() {
 
         <View style={styles.pricingSection}>
           <FluentText variant="subtitle1" style={styles.sectionTitle}>
-            One-Time Purchase
+            How to Get Licensed
           </FluentText>
           
           <View style={{
@@ -187,61 +159,61 @@ export default function LicenseScreen() {
             marginBottom: FluentSpacing.m,
           }}>
             <FluentText variant="body2" color="secondary" style={{ marginBottom: FluentSpacing.l }}>
-              Pay once, unlock forever. No subscriptions, no renewals.
+              New Audio 360 is a paid app available on Google Play Store. Purchase and install the app from Google Play to unlock all features.
             </FluentText>
 
             {licenseStatus !== "licensed" && (
               <>
                 <View style={[
-                  styles.priceCard,
+                  styles.infoCard,
                   { 
-                    backgroundColor: colors.colorPaletteYellowForeground1 + "15",
-                    borderColor: colors.colorPaletteYellowForeground1,
-                    borderWidth: 2,
+                    backgroundColor: colors.colorBrandBackground + "10",
+                    borderColor: colors.colorBrandForeground1,
+                    borderWidth: 1,
                   },
                 ]}>
-                  <View style={styles.priceCardContent}>
-                    <View>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: FluentSpacing.s }}>
-                        <FluentText variant="body1" style={{ fontWeight: "600" }}>
-                          Lifetime License
-                        </FluentText>
-                        <View style={[styles.bestValueBadge, { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
-                          <FluentText variant="caption2" style={{ color: "#FFFFFF", fontWeight: "700" }}>
-                            ONE-TIME
-                          </FluentText>
-                        </View>
-                      </View>
-                      <FluentText variant="caption1" color="secondary">
-                        All features, forever
-                      </FluentText>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <FluentText variant="title2" style={{ fontWeight: "700" }}>
-                        {pricing.symbol}{pricing.amount}
-                      </FluentText>
-                      <FluentText variant="caption1" color="secondary">
-                        one-time
-                      </FluentText>
-                    </View>
+                  <MaterialCommunityIcons name="google-play" size={32} color={colors.colorBrandForeground1} />
+                  <View style={{ flex: 1, marginLeft: FluentSpacing.m }}>
+                    <FluentText variant="body1" style={{ fontWeight: "600" }}>
+                      Available on Google Play
+                    </FluentText>
+                    <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xxs }}>
+                      One-time purchase, lifetime access
+                    </FluentText>
                   </View>
                 </View>
 
                 <Pressable
-                  onPress={handlePurchase}
-                  disabled={isProcessing}
+                  onPress={handleVerifyInstallation}
+                  disabled={isLoading}
                   style={[
-                    styles.purchaseButton,
+                    styles.verifyButton,
                     { 
-                      backgroundColor: colors.colorPaletteYellowForeground1,
-                      opacity: isProcessing ? 0.6 : 1,
+                      backgroundColor: colors.colorBrandBackground,
+                      opacity: isLoading ? 0.6 : 1,
                       marginTop: FluentSpacing.l,
                     },
                   ]}
                 >
-                  <MaterialCommunityIcons name="crown" size={20} color="#FFFFFF" />
+                  <MaterialCommunityIcons name="refresh" size={20} color="#FFFFFF" />
                   <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.s }}>
-                    {isProcessing ? "Processing..." : "Unlock Now"}
+                    {isLoading ? "Verifying..." : "Verify Installation"}
+                  </FluentText>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleOpenPlayStore}
+                  style={[
+                    styles.playStoreButton,
+                    { 
+                      backgroundColor: colors.colorNeutralBackground3,
+                      marginTop: FluentSpacing.m,
+                    },
+                  ]}
+                >
+                  <MaterialCommunityIcons name="google-play" size={20} color={colors.colorNeutralForeground1} />
+                  <FluentText variant="body1" style={{ marginLeft: FluentSpacing.s }}>
+                    Get it on Google Play
                   </FluentText>
                 </Pressable>
               </>
@@ -261,17 +233,6 @@ export default function LicenseScreen() {
           </View>
         </View>
 
-        <Pressable
-          onPress={handleRestore}
-          disabled={isProcessing}
-          style={[styles.restoreButton, { backgroundColor: colors.colorNeutralBackground2 }]}
-        >
-          <MaterialCommunityIcons name="refresh" size={20} color={colors.colorNeutralForeground2} />
-          <FluentText variant="body1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
-            Restore Purchases
-          </FluentText>
-        </Pressable>
-
         <View style={{
           backgroundColor: colors.colorNeutralBackground2,
           borderRadius: 12,
@@ -282,7 +243,7 @@ export default function LicenseScreen() {
             <View style={styles.infoRow}>
               <MaterialCommunityIcons name="shield-check" size={16} color={colors.colorPaletteGreenForeground1} />
               <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
-                Secure payment via Google Play
+                Secure purchase via Google Play
               </FluentText>
             </View>
             <View style={styles.infoRow}>
@@ -375,21 +336,20 @@ const styles = StyleSheet.create({
   pricingSection: {
     marginBottom: FluentSpacing.xl,
   },
-  priceCard: {
+  infoCard: {
+    flexDirection: "row",
+    alignItems: "center",
     padding: FluentSpacing.l,
     borderRadius: FluentControlRadius.dialog,
   },
-  priceCardContent: {
+  verifyButton: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.dialog,
   },
-  bestValueBadge: {
-    paddingHorizontal: FluentSpacing.s,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  purchaseButton: {
+  playStoreButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -400,14 +360,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: FluentSpacing.xl,
     borderRadius: FluentControlRadius.dialog,
-  },
-  restoreButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: FluentSpacing.l,
-    borderRadius: FluentControlRadius.dialog,
-    marginBottom: FluentSpacing.xl,
   },
   infoSection: {
     gap: FluentSpacing.s,
