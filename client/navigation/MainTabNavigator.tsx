@@ -157,7 +157,8 @@ export default function MainTabNavigator() {
           ),
         }}
       />
-      <Tab.Screen
+      {/* Online Radio disabled - streams need verification on native device */}
+      {/* <Tab.Screen
         name="RadioTab"
         component={RadioStackNavigator}
         options={{
@@ -171,7 +172,7 @@ export default function MainTabNavigator() {
             />
           ),
         }}
-      />
+      /> */}
       <Tab.Screen
         name="SettingsTab"
         component={SettingsStackNavigator}
