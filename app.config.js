@@ -64,6 +64,9 @@ export default {
     },
     plugins: [
       'expo-asset',
+      'expo-font',
+      'expo-secure-store',
+      'expo-audio',
       [
         'expo-build-properties',
         {
