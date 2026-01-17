@@ -157,6 +157,11 @@ Current implementation uses development stubs for testing. Web platform uses loc
 -   **react-native-iap** (production): Google Play Billing integration for license verification
 
 ## Recent Changes (January 17, 2026)
+- Fixed top gap spacing on settings screens (Sound Lab, Appearance, License, About)
+- UI sounds now disabled when music/radio is playing to prevent audio interruption
+- Updated Android adaptive icon config to use proper foreground image with branded blue (#1565C0) background
+- Splash screen uses branded blue background for both light (#1565C0) and dark (#0D47A1) modes
+- Global playback state tracker implemented in client/lib/playbackState.ts
 - Enhanced MiniPlayer dismiss handle with tab-shaped design and chevron icon
 - Online Radio uses Radio Browser API with quality filters (lastcheckok=1, MP3/OGG/AAC, >64kbps)
 - Modal-based delete confirmations for EQ presets and playlists
