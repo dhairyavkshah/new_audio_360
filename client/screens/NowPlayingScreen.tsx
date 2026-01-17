@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { View, StyleSheet, Image, Dimensions, ImageBackground, Platform, Pressable, ActivityIndicator, ScrollView, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -7,11 +7,8 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
+// Animation disabled to prevent overlay issues
+// import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 import { FluentText } from "@/components/fluent";
 import { PlaybackControls } from "@/components/PlaybackControls";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -60,7 +57,6 @@ export default function NowPlayingScreen() {
   } = usePlayer();
 
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const artworkScale = useSharedValue(1);
   const visitCountRef = useRef(0);
   
   const isCompact = screenWidth <= 375 || screenHeight <= 700;
@@ -85,17 +81,7 @@ export default function NowPlayingScreen() {
     }, [setNowPlayingVisible])
   );
 
-  useEffect(() => {
-    if (isPlaying) {
-      artworkScale.value = withSpring(1.02, { damping: 20, stiffness: 100 });
-    } else {
-      artworkScale.value = withSpring(1, { damping: 20, stiffness: 100 });
-    }
-  }, [isPlaying]);
-
-  const artworkStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: artworkScale.value }],
-  }));
+  // Animation disabled to prevent overlay issues
 
   const textShadowStyle = {
     textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
@@ -143,7 +129,7 @@ export default function NowPlayingScreen() {
         bounces={false}
       >
         <View style={[styles.artworkContainer, { marginTop: isExtraCompact ? 0 : isVeryCompact ? FluentSpacing.xxs : isCompact ? FluentSpacing.s : FluentSpacing.l }]}>
-          <Animated.View style={[styles.artworkWrapper, artworkStyle]}>
+          <View style={styles.artworkWrapper}>
             <Image
               source={{ uri: currentSong.artwork }}
               style={[styles.artwork, { width: artworkSize, height: artworkSize }]}
@@ -156,7 +142,7 @@ export default function NowPlayingScreen() {
                 </FluentText>
               </View>
             ) : null}
-          </Animated.View>
+          </View>
           {error ? (
             <View style={[styles.errorBadge, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)' }]}>
               <MaterialCommunityIcons name="alert-circle" size={14} color={colors.colorPaletteRedForeground1} />

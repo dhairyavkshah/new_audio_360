@@ -1,12 +1,7 @@
-import React, { useState, useCallback, memo, useEffect } from "react";
+import React, { useState, memo } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View } from "react-native";
-import Animated, { 
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ListenStackNavigator from "@/navigation/ListenStackNavigator";
@@ -95,16 +90,7 @@ export default function MainTabNavigator() {
   const tabBarHeight = TAB_BAR_HEIGHT + safeBottom;
   const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && currentTab !== "RadioTab" && !isNowPlayingVisible;
 
-  // Use animated opacity for MiniPlayer to avoid touch issues with mount/unmount animations
-  const miniPlayerOpacity = useSharedValue(showMiniPlayer ? 1 : 0);
-  
-  useEffect(() => {
-    miniPlayerOpacity.value = withTiming(showMiniPlayer ? 1 : 0, { duration: 200 });
-  }, [showMiniPlayer]);
-  
-  const miniPlayerAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: miniPlayerOpacity.value,
-  }));
+  // No animation - just show/hide based on state
 
   return (
     <View style={{ flex: 1 }}>
@@ -203,13 +189,8 @@ export default function MainTabNavigator() {
         }}
       />
     </Tab.Navigator>
-    {currentSong && currentTab !== "SettingsTab" && currentTab !== "RadioTab" ? (
-      <Animated.View 
-        style={miniPlayerAnimatedStyle}
-        pointerEvents={showMiniPlayer ? 'auto' : 'none'}
-      >
-        <MiniPlayer bottomOffset={tabBarHeight} />
-      </Animated.View>
+    {showMiniPlayer ? (
+      <MiniPlayer bottomOffset={tabBarHeight} />
     ) : null}
     </View>
   );

@@ -36,5 +36,8 @@ export function useScreenOptions({
     contentStyle: {
       backgroundColor: colors.colorNeutralBackground1,
     },
+    // Disable all navigation animations
+    animation: "none",
+    animationDuration: 0,
   };
 }
