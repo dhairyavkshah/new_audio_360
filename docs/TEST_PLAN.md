@@ -388,9 +388,12 @@ For each theme, verify:
 - Custom EQ band adjustment (5 bands)
 - Save custom EQ preset
 - Delete custom EQ preset (with modal confirmation)
-- Bass control adjustment
-- Treble control adjustment
-- Virtualizer toggle
+- Bass Control slider adjustment (-3 to +3 range)
+- Treble Control slider adjustment (-3 to +3 range)
+- Virtualizer slider adjustment (-3 to +3 range)
+- Audio effects apply immediately when slider is changed
+- Preset loading applies audio effects automatically
+- Native module availability checks for audio effects
 - Waveform visualization
 - Effects apply to music playback
 - Effects apply to radio playback

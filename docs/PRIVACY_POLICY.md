@@ -93,7 +93,7 @@ We may update this Privacy Policy periodically. Changes will be reflected in the
 ## Contact Us
 
 For privacy-related questions or concerns:
-- Email: privacy@theteam360.com
+- Email: support@theteam360.com
 - Website: https://theteam360.com/privacy
 
 ## Legal Compliance

@@ -20,9 +20,10 @@ Premium music player with pro audio, 55 themes, radio, and studio-grade sound.
 Transform your music with our Sound Lab featuring:
 - 8 Equalizer Presets: Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic
 - 6 Immersive Audio Modes: Music, 360 Reality, Gaming, Podcast, Movie, Custom
-- Independent Bass Control with native BassBoost
-- Independent Treble Control for precise tuning
-- Virtualizer for spatial audio experience
+- Independent Bass Control with slider (-3 to +3 range)
+- Independent Treble Control with slider (-3 to +3 range)
+- Virtualizer with slider (-3 to +3 range) for spatial audio
+- All audio effects apply immediately when adjusted
 - Custom 5-band EQ with save/load presets
 - Real-time waveform visualization
 
@@ -74,7 +75,7 @@ Download now and elevate your music experience!
 
 - Complete music player with background playback
 - Sound Lab with 8 EQ presets and 6 immersive modes
-- Independent Bass, Treble, and Virtualizer controls
+- Slider-based Bass, Treble, and Virtualizer controls (-3 to +3)
 - 55 themes to personalize your experience
 - FM/AM and Online Radio (48,000+ verified stations)
 - Custom 5-band equalizer with save/load

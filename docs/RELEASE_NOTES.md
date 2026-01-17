@@ -10,7 +10,7 @@
 New Audio 360 v1.0 - Premium Music Player
 
 Your music, your way:
-- Sound Lab with 8 EQ presets & 6 immersive modes
+- Sound Lab with 8 EQ presets & slider-based audio effects
 - 55 stunning themes to personalize your experience
 - Online Radio: 48,000+ verified stations worldwide
 - Background playback with notification controls
@@ -55,10 +55,13 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 #### Sound Lab
 - **8 Equalizer Presets:** Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic
 - **6 Immersive Audio Modes:** Music, 360 Reality, Gaming, Podcast, Movie, Custom
-- **Independent Audio Effects:**
-  - Bass Control with native BassBoost module (works independently from EQ)
-  - Treble Control with software-based adjustment (works independently from EQ)
-  - Virtualizer for spatial audio (works independently from EQ)
+- **Slider-Based Audio Effects Controls:**
+  - Bass Control with slider (-3 to +3 range) using native BassBoost module
+  - Treble Control with slider (-3 to +3 range) for precise tuning
+  - Virtualizer with slider (-3 to +3 range) for spatial audio
+  - All effects apply immediately when changed
+  - Effects automatically apply when presets are loaded
+  - Module availability checks for native audio effects
 - All effects stack additively on top of selected EQ preset
 - Real-time 64-bar waveform visualization
 - Custom 5-band EQ with save/load presets (up to 5 custom presets)
