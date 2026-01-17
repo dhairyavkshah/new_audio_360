@@ -40,8 +40,7 @@ export default {
         backgroundImage: './assets/images/android-icon-background.png',
         monochromeImage: './assets/images/android-icon-monochrome.png',
       },
-      edgeToEdgeEnabled: true,
-      predictiveBackGestureEnabled: false,
+      edgeToEdgeEnabled: false,
       package: getAppIdentifier(),
       versionCode: 1, // v1.0
       permissions: [
