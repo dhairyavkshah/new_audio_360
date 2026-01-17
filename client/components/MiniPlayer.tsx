@@ -5,19 +5,15 @@ import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
+import { useThemeContext, useSkin, useThemeTokens } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import { Layout } from "@/constants/theme";
+import { getCardEffectStyle, getGlowStyle } from "@/lib/themeUtils";
 import {
   FluentSpacing,
   FluentIconSize,
   FluentTypography,
-  FluentControlRadius,
-  FluentDuration,
-  FluentLightColors,
-  FluentDarkColors,
-  getShadowStyle,
+  FluentLayoutSize,
 } from "@/constants/fluent2";
 
 interface MiniPlayerProps {
@@ -28,10 +24,13 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
   const navigation = useNavigation<any>();
   const { isDark } = useThemeContext();
   const { icons } = useSkin();
+  const tokens = useThemeTokens();
   const { playTapSound } = useUiSound();
   const { currentSong, isPlaying, togglePlayPause, progress } = usePlayerContext();
   const insets = useSafeAreaInsets();
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  
+  const cardEffectStyle = getCardEffectStyle(tokens, 2);
+  const glowStyle = getGlowStyle(tokens);
 
   if (!currentSong) {
     return null;
@@ -63,19 +62,24 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
   const containerBottom = bottomOffset + FluentSpacing.s + (insets.bottom > 0 ? 0 : FluentSpacing.s);
 
   return (
-    <View style={[styles.container, { bottom: containerBottom }, getShadowStyle('shadow8', isDark)]}>
-      <View style={styles.progressTrack}>
+    <View style={[
+      styles.container, 
+      { bottom: containerBottom, borderRadius: tokens.shapes.cardBorderRadius }, 
+      cardEffectStyle,
+      glowStyle,
+    ]}>
+      <View style={[styles.progressTrack, { backgroundColor: tokens.colors.outline }]}>
         <View 
           style={[
             styles.progressFill, 
             { 
               width: `${(progress || 0) * 100}%`,
-              backgroundColor: fluentColors.colorBrandForeground1,
+              backgroundColor: tokens.colors.primary,
             }
           ]} 
         />
       </View>
-      <View style={styles.background}>
+      <View style={[styles.background, { borderRadius: tokens.shapes.cardBorderRadius }]}>
         <Image 
           source={{ uri: currentSong.artwork }} 
           style={StyleSheet.absoluteFill}
@@ -93,18 +97,18 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
           ]} 
         />
         <Pressable style={styles.content} onPress={handlePress}>
-          <Image source={{ uri: currentSong.artwork }} style={styles.artwork} />
+          <Image source={{ uri: currentSong.artwork }} style={[styles.artwork, { borderRadius: tokens.shapes.buttonBorderRadius }]} />
           <View style={styles.info}>
-            <Text style={[FluentTypography.body1Strong, { color: fluentColors.colorNeutralForeground1 }]} numberOfLines={1}>
+            <Text style={[FluentTypography.body1Strong, { color: tokens.colors.text }]} numberOfLines={1}>
               {currentSong.title}
             </Text>
-            <Text style={[FluentTypography.caption1, { color: fluentColors.colorNeutralForeground3 }]} numberOfLines={1}>
+            <Text style={[FluentTypography.caption1, { color: tokens.colors.textSecondary }]} numberOfLines={1}>
               {currentSong.artist}
             </Text>
           </View>
           <Pressable
             onPress={handlePlayPause}
-            style={[styles.playButton, { backgroundColor: fluentColors.colorBrandBackground }]}
+            style={[styles.playButton, { backgroundColor: tokens.colors.primary }]}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityRole="button"
             accessibilityLabel={isPlaying ? "Pause" : "Play"}
@@ -112,7 +116,7 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
             <MaterialCommunityIcons 
               name={(isPlaying ? icons.pause : icons.play) as keyof typeof MaterialCommunityIcons.glyphMap} 
               size={FluentIconSize.medium} 
-              color={fluentColors.colorNeutralForegroundOnBrand} 
+              color={tokens.colors.onPrimary} 
             />
           </Pressable>
         </Pressable>
@@ -121,14 +125,11 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
   );
 }
 
-const MINI_PLAYER_HEIGHT = 64;
-
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
     left: FluentSpacing.l,
     right: FluentSpacing.l,
-    borderRadius: FluentControlRadius.card,
     overflow: "hidden",
   },
   progressTrack: {
@@ -137,27 +138,24 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: "rgba(255,255,255,0.2)",
     zIndex: 10,
   },
   progressFill: {
     height: "100%",
   },
   background: {
-    borderRadius: FluentControlRadius.card,
     overflow: "hidden",
   },
   content: {
     flexDirection: "row",
     alignItems: "center",
-    height: MINI_PLAYER_HEIGHT,
+    height: FluentLayoutSize.miniPlayerHeight,
     paddingVertical: FluentSpacing.m,
     paddingHorizontal: FluentSpacing.l,
   },
   artwork: {
     width: 48,
     height: 48,
-    borderRadius: FluentControlRadius.button,
   },
   info: {
     flex: 1,

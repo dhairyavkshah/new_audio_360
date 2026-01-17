@@ -15,6 +15,7 @@ import {
   FluentLightColors,
   FluentDarkColors,
   FluentIconSize,
+  FluentBorderWidth,
 } from "@/constants/fluent2";
 
 interface EffectChipProps {
@@ -82,14 +83,14 @@ export function EffectChip({
         {
           backgroundColor,
           borderColor,
-          borderWidth: 1.5,
+          borderWidth: FluentBorderWidth.medium,
           opacity: disabled ? 0.5 : 1,
         },
         animatedStyle,
       ]}
     >
       <FluentText
-        variant="body2"
+        variant="body1Strong"
         style={[styles.label, { color: textColor }]}
       >
         {label}
@@ -112,14 +113,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: FluentSpacing.l,
+    paddingHorizontal: FluentSpacing.xl,
     paddingVertical: FluentSpacing.m,
     borderRadius: FluentRadius.circular,
-    marginRight: FluentSpacing.s,
-    marginBottom: FluentSpacing.s,
   },
   label: {
-    fontWeight: "500",
+    fontWeight: "600",
   },
   premiumIndicator: {
     width: 6,

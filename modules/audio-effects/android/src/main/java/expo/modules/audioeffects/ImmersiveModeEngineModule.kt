@@ -26,7 +26,6 @@ class ImmersiveModeEngineModule : Module() {
         const val MODE_OFF = "off"
         const val MODE_MUSIC = "music"
         const val MODE_360_REALITY = "360_reality"
-        const val MODE_SIGNATURE_360 = "signature_360"
         const val MODE_GAMING = "gaming"
         const val MODE_PODCAST = "podcast"
         const val MODE_MOVIE = "movie"
@@ -100,7 +99,6 @@ class ImmersiveModeEngineModule : Module() {
                         MODE_OFF -> applyModeOff()
                         MODE_MUSIC -> applyModeMusic()
                         MODE_360_REALITY -> applyMode360Reality()
-                        MODE_SIGNATURE_360 -> applyModeSignature360()
                         MODE_GAMING -> applyModeGaming()
                         MODE_PODCAST -> applyModePodcast()
                         MODE_MOVIE -> applyModeMovie()
@@ -151,12 +149,6 @@ class ImmersiveModeEngineModule : Module() {
                     "name" to "360 Reality",
                     "description" to "Immersive 3D spatial audio experience",
                     "icon" to "surround-sound"
-                ),
-                mapOf(
-                    "id" to MODE_SIGNATURE_360,
-                    "name" to "Signature 360",
-                    "description" to "Balanced combination of Music clarity and 360 Reality immersion",
-                    "icon" to "music-circle"
                 ),
                 mapOf(
                     "id" to MODE_GAMING,
@@ -255,10 +247,7 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModeMusic() {
-        loudnessEnhancer?.let {
-            it.setTargetGain(-300)
-            it.enabled = true
-        }
+        loudnessEnhancer?.enabled = false
         
         equalizer?.let { eq ->
             eq.enabled = true
@@ -288,10 +277,7 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyMode360Reality() {
-        loudnessEnhancer?.let {
-            it.setTargetGain(-400)
-            it.enabled = true
-        }
+        loudnessEnhancer?.enabled = false
         
         equalizer?.let { eq ->
             eq.enabled = true
@@ -320,44 +306,8 @@ class ImmersiveModeEngineModule : Module() {
         }
     }
     
-    private fun applyModeSignature360() {
-        loudnessEnhancer?.let {
-            it.setTargetGain(-500)
-            it.enabled = true
-        }
-        
-        equalizer?.let { eq ->
-            eq.enabled = true
-            val numBands = eq.numberOfBands.toInt()
-            if (numBands >= 5) {
-                eq.setBandLevel(0, 52.toShort())
-                eq.setBandLevel(1, 2.toShort())
-                eq.setBandLevel(2, (-68).toShort())
-                eq.setBandLevel(3, (-18).toShort())
-                eq.setBandLevel(4, 32.toShort())
-            }
-        }
-        
-        bassBoost?.let {
-            if (it.strengthSupported) {
-                it.setStrength(300.toShort())
-                it.enabled = true
-            }
-        }
-        
-        virtualizer?.let {
-            if (it.strengthSupported) {
-                it.setStrength(350.toShort())
-                it.enabled = true
-            }
-        }
-    }
-    
     private fun applyModeGaming() {
-        loudnessEnhancer?.let {
-            it.setTargetGain(-400)
-            it.enabled = true
-        }
+        loudnessEnhancer?.enabled = false
         
         equalizer?.let { eq ->
             eq.enabled = true
@@ -387,10 +337,7 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModePodcast() {
-        loudnessEnhancer?.let {
-            it.setTargetGain(-200)
-            it.enabled = true
-        }
+        loudnessEnhancer?.enabled = false
         
         equalizer?.let { eq ->
             eq.enabled = true
@@ -415,10 +362,7 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyModeMovie() {
-        loudnessEnhancer?.let {
-            it.setTargetGain(-600)
-            it.enabled = true
-        }
+        loudnessEnhancer?.enabled = false
         
         equalizer?.let { eq ->
             eq.enabled = true

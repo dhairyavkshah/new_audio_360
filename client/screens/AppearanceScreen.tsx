@@ -27,7 +27,10 @@ export default function AppearanceScreen() {
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
-        <FluentText variant="caption2" color="secondary" style={styles.sectionDesc}>
+        <FluentText variant="subtitle1" style={styles.sectionHeader}>
+          Themes
+        </FluentText>
+        <FluentText variant="body2" color="secondary" style={styles.sectionDesc}>
           Choose a theme that matches your style. Your selection is saved automatically.
         </FluentText>
 
@@ -40,6 +43,9 @@ export default function AppearanceScreen() {
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: FluentSpacing.l,
+  },
+  sectionHeader: {
+    marginBottom: FluentSpacing.xs,
   },
   sectionDesc: {
     marginBottom: FluentSpacing.m,

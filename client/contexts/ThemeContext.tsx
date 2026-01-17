@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeColors, ThemeName, themeRegistry } from '@/constants/theme';
 import { SkinDefinition, IconPack, ShapeTokens, ComponentStyles, getSkin } from '@/constants/skins';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { ThemeTokens, getThemeTokens } from '@/lib/themeUtils';
 
 interface ThemeContextValue {
   themeName: ThemeName;
@@ -13,6 +14,7 @@ interface ThemeContextValue {
   icons: IconPack;
   shapes: ShapeTokens;
   components: ComponentStyles;
+  tokens: ThemeTokens;
 }
 
 export const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
@@ -44,6 +46,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const currentSkin = useMemo(() => getSkin(themeName), [themeName]);
 
+  const tokens = useMemo(() => getThemeTokens(themeName, isDark), [themeName, isDark]);
+
   return (
     <ThemeContext.Provider value={{ 
       themeName, 
@@ -54,6 +58,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       icons: currentSkin.icons,
       shapes: currentSkin.shapes,
       components: currentSkin.components,
+      tokens,
     }}>
       {children}
     </ThemeContext.Provider>
@@ -86,4 +91,9 @@ export function useShapes() {
 export function useComponentStyles() {
   const { components } = useThemeContext();
   return components;
+}
+
+export function useThemeTokens() {
+  const { tokens } = useThemeContext();
+  return tokens;
 }

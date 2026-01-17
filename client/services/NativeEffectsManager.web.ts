@@ -6,10 +6,11 @@ interface ImmersiveEffect {
   stereoWidth: number;
 }
 
+export type AudioSessionSource = 'music' | 'radio' | 'none';
+
 const IMMERSIVE_MODE_EQ_BANDS: Record<string, number[]> = {
   music: [60, 10, -60, 10, -20],
   '360_reality': [18, -12, -32, -12, 38],
-  signature_360: [52, 2, -68, -18, 32],
   gaming: [-14, -94, 16, 56, 36],
   podcast: [-140, -40, 60, 80, 40],
   movie: [58, -12, -62, -12, 28],
@@ -19,6 +20,7 @@ const IMMERSIVE_MODE_EQ_BANDS: Record<string, number[]> = {
 class NativeEffectsManagerClass {
   private currentMode: SoundLabMode = 'off';
   private currentImmersiveMode: string = 'off';
+  private currentSource: AudioSessionSource = 'none';
 
   isAvailable(): boolean {
     return false;
@@ -26,6 +28,30 @@ class NativeEffectsManagerClass {
 
   async attach(_audioSessionId: number): Promise<boolean> {
     console.log('[Web] NativeEffectsManager attach (simulated)');
+    this.currentSource = 'music';
+    return false;
+  }
+
+  async attachToRadioSession(_sessionId: number): Promise<boolean> {
+    console.log('[Web] NativeEffectsManager attachToRadioSession (simulated)');
+    this.currentSource = 'radio';
+    return false;
+  }
+
+  async detachFromRadioSession(): Promise<void> {
+    console.log('[Web] NativeEffectsManager detachFromRadioSession (simulated)');
+    this.currentSource = 'none';
+  }
+
+  getCurrentSource(): AudioSessionSource {
+    return this.currentSource;
+  }
+
+  isAttachedToRadio(): boolean {
+    return this.currentSource === 'radio';
+  }
+
+  isEffectsActive(): boolean {
     return false;
   }
 
@@ -58,7 +84,7 @@ class NativeEffectsManagerClass {
     
     const sum = rawBands.reduce((acc, v) => acc + v, 0);
     const offset = sum / rawBands.length;
-    return rawBands.map(v => Math.round(v - offset));
+    return rawBands.map(v => Math.round((v - offset) * 35));
   }
 
   getEqualizerInfo(): null {

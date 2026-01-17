@@ -2,11 +2,6 @@
   "platforms": ["android"],
   "android": {
     "modules": [
-      "expo.modules.audioeffects.ReverbModule",
-      "expo.modules.audioeffects.NoiseReductionModule",
-      "expo.modules.audioeffects.AudioMixerModule",
-      "expo.modules.audioeffects.LiveRecordingModule",
-      "expo.modules.audioeffects.BackingTrackModule",
       "expo.modules.audioeffects.PlaybackEngineModule",
       "expo.modules.audioeffects.EqualizerModule",
       "expo.modules.audioeffects.BassBoostModule",

@@ -1,0 +1,54 @@
+name: Build Production AAB (Play Store)
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Release message'
+        required: false
+        default: 'Production release'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build Signed AAB for Play Store
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Expo & EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Signed Production AAB
+        run: eas build --platform android --profile production --non-interactive --clear-cache
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Complete
+        run: |
+          echo "================================================"
+          echo "Production AAB build submitted to EAS!"
+          echo "================================================"
+          echo ""
+          echo "Download your signed AAB from:"
+          echo "https://expo.dev/accounts/shahdhairyavk/projects/new-audio-360/builds"
+          echo ""
+          echo "Upload the AAB to Google Play Console:"
+          echo "1. Go to Google Play Console"
+          echo "2. Select your app"
+          echo "3. Go to Release > Production"
+          echo "4. Create new release and upload the AAB"
+          echo "================================================"

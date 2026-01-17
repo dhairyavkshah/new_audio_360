@@ -14,13 +14,13 @@ import { PlayerProvider } from "@/contexts/PlayerContext";
 import { MediaLibraryProvider, useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { NavigationProvider } from "@/contexts/NavigationContext";
 import { SoundLabProvider } from "@/contexts/SoundLabContext";
-import { StudioProvider } from "@/contexts/StudioContext";
+import { RadioProvider } from "@/contexts/RadioContext";
+import { OnlineRadioProvider } from "@/contexts/OnlineRadioContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import SplashScreen from "@/screens/SplashScreen";
 import LoadingScreen from "@/screens/LoadingScreen";
 import PermissionOnboardingFlow from "@/screens/PermissionOnboardingFlow";
-import LockoutScreen from "@/screens/LockoutScreen";
 import LoginScreen from "@/screens/LoginScreen";
 import BiometricLockScreen from "@/screens/BiometricLockScreen";
 import SubscriptionRequiredScreen from "@/screens/SubscriptionRequiredScreen";
@@ -28,7 +28,8 @@ import SubscriptionRequiredScreen from "@/screens/SubscriptionRequiredScreen";
 type AppState = "splash" | "loading" | "checkingOnboarding" | "onboarding" | "ready";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, requiresReauth, hasActiveSubscription } = useAuth();
+  const { isAuthenticated, isLoading, requiresReauth } = useAuth();
+  const { isLicensed, isLoading: isLicenseLoading } = useSubscription();
 
   if (isLoading) {
     return <LoadingScreen message="Checking authentication..." />;
@@ -42,22 +43,12 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     return <BiometricLockScreen />;
   }
 
-  if (!hasActiveSubscription()) {
+  if (isLicenseLoading) {
+    return <LoadingScreen message="Checking license..." />;
+  }
+
+  if (!isLicensed) {
     return <SubscriptionRequiredScreen />;
-  }
-
-  return <>{children}</>;
-}
-
-function LockoutGuard({ children }: { children: React.ReactNode }) {
-  const { isLocked, isLoading } = useSubscription();
-
-  if (isLoading) {
-    return <LoadingScreen message="Verifying app integrity..." />;
-  }
-
-  if (isLocked) {
-    return <LockoutScreen />;
   }
 
   return <>{children}</>;
@@ -141,17 +132,17 @@ export default function App() {
                 <AuthProvider>
                   <SubscriptionProvider>
                     <AuthGuard>
-                      <LockoutGuard>
-                        <MediaLibraryProvider>
-                          <SoundLabProvider>
-                            <StudioProvider>
+                      <MediaLibraryProvider>
+                        <SoundLabProvider>
+                          <RadioProvider>
+                            <OnlineRadioProvider>
                               <PlayerProvider>
                                 <AppContent />
                               </PlayerProvider>
-                            </StudioProvider>
-                          </SoundLabProvider>
-                        </MediaLibraryProvider>
-                      </LockoutGuard>
+                            </OnlineRadioProvider>
+                          </RadioProvider>
+                        </SoundLabProvider>
+                      </MediaLibraryProvider>
                     </AuthGuard>
                   </SubscriptionProvider>
                 </AuthProvider>

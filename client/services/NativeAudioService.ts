@@ -253,10 +253,9 @@ class NativeAudioServiceClass {
         }
       }
 
-      const sessionId = this.getAudioSessionId();
-      if (!sessionId || sessionId === 0) {
-        return { success: false, error: 'No valid audio session available. Please start playback first.' };
-      }
+      // Use session ID 0 (global audio output) if no specific session available
+      // This allows effects to work with react-native-track-player which doesn't expose its session ID
+      const sessionId = this.getAudioSessionId() || 0;
 
       const currentMode = ImmersiveModeEngineModule.getCurrentMode();
       if (!currentMode.isAttached) {
@@ -319,7 +318,6 @@ class NativeAudioServiceClass {
         { id: 'off', name: 'Off', description: 'No audio enhancement', icon: 'volume-off' },
         { id: 'music', name: 'Music', description: 'Balanced for music listening', icon: 'music' },
         { id: '360_reality', name: '360 Reality', description: 'Immersive spatial audio', icon: 'surround-sound' },
-        { id: 'signature_360', name: 'Signature 360', description: 'Premium spatial experience', icon: 'music-circle' },
         { id: 'gaming', name: 'Gaming', description: 'Enhanced for gaming audio', icon: 'gamepad-variant' },
         { id: 'podcast', name: 'Podcast', description: 'Optimized for voice clarity', icon: 'podcast' },
         { id: 'movie', name: 'Movie', description: 'Cinematic audio experience', icon: 'movie-open' },

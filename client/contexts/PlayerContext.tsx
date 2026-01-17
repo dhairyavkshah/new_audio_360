@@ -5,8 +5,10 @@ import { mockSongs, Song } from '@/lib/data';
 import { DeviceSong } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
 import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
-import { PlaybackEngineModule, PlaybackStatus } from '@/modules/audio-effects';
+import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule } from 'audio-effects';
 import { NativeEffectsManager } from '@/services/NativeEffectsManager';
+import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
+import { AudioCoordinator } from '@/services/AudioCoordinator';
 
 const EQ_FREQUENCIES: Record<keyof EQBands, number> = {
   sub: 32,
@@ -93,6 +95,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const delayGainRef = useRef<GainNode | null>(null);
 
   const useNativePlaybackRef = useRef(Platform.OS === 'android' && PlaybackEngineModule.isAvailable());
+  const useTrackPlayerRef = useRef(TrackPlayerService.isAvailable());
+  const trackPlayerInitializedRef = useRef(false);
   const nativeAudioSessionIdRef = useRef<number>(0);
   const progressPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -119,8 +123,147 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }).catch(console.error);
   }, []);
 
+  const convertSongToTrackMetadata = useCallback((song: PlayableSong): TrackMetadata | null => {
+    let url: string | undefined;
+    
+    if (isDeviceSong(song) && song.uri) {
+      url = song.uri;
+    } else if ('audioUrl' in song && song.audioUrl) {
+      url = song.audioUrl;
+    }
+    
+    if (!url) return null;
+    
+    return {
+      id: song.id,
+      url: url,
+      title: song.title,
+      artist: song.artist,
+      album: song.album,
+      artwork: song.artwork,
+      duration: song.duration,
+    };
+  }, []);
+
   useEffect(() => {
-    if (useNativePlaybackRef.current) {
+    if (useTrackPlayerRef.current && !trackPlayerInitializedRef.current) {
+      TrackPlayerService.initialize().then(async (initialized) => {
+        if (initialized) {
+          trackPlayerInitializedRef.current = true;
+          console.log('[PlayerContext] TrackPlayerService initialized');
+          
+          TrackPlayerService.setCallbacks({
+            onPlay: () => {
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                setIsPlaying(true);
+              }
+            },
+            onPause: () => {
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                setIsPlaying(false);
+              }
+            },
+            onStop: () => {
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                setIsPlaying(false);
+                setCurrentTime(0);
+              }
+            },
+            onNext: () => {
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                handleNextInternal();
+              }
+            },
+            onPrevious: () => {
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                handlePreviousInternal();
+              }
+            },
+            onSeek: (position) => {
+              if (TrackPlayerService.getPlaybackSource() === 'music') {
+                setCurrentTime(position);
+              }
+            },
+            onTrackChange: async (trackIndex) => {
+              if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+              if (trackIndex !== null && trackIndex >= 0) {
+                const currentQueue = queueRef.current;
+                if (currentQueue[trackIndex]) {
+                  setCurrentSong(currentQueue[trackIndex]);
+                  const track = await TrackPlayerService.getCurrentTrack();
+                  if (track?.duration) {
+                    setDuration(track.duration);
+                  }
+                }
+              }
+            },
+            onProgress: (progress) => {
+              if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+              setCurrentTime(progress.position);
+              if (progress.duration > 0) {
+                setDuration(progress.duration);
+              }
+              setIsBuffering(progress.buffered < progress.position);
+            },
+            onStateChange: (state) => {
+              if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+              if (state === State.Playing) {
+                setIsPlaying(true);
+                setIsBuffering(false);
+              } else if (state === State.Paused) {
+                setIsPlaying(false);
+                setIsBuffering(false);
+              } else if (state === State.Buffering || state === State.Loading) {
+                setIsBuffering(true);
+              } else if (state === State.Stopped) {
+                setIsPlaying(false);
+                setCurrentTime(0);
+              }
+            },
+          });
+
+          TrackPlayerService.setRepeatMode(repeat);
+          
+          // Initialize native audio effects with global audio session (0) for TrackPlayer
+          if (Platform.OS === 'android' && NativeEffectsManager.isAvailable()) {
+            try {
+              // Use global audio output session (0) to apply effects to all audio
+              const attached = await NativeEffectsManager.attach(0);
+              if (attached) {
+                console.log('[PlayerContext] NativeEffectsManager attached to global audio session');
+              } else {
+                console.log('[PlayerContext] NativeEffectsManager attachment returned false - effects may not work');
+              }
+              
+              // Also attach ImmersiveModeEngineModule to global session
+              if (ImmersiveModeEngineModule.isAvailable()) {
+                const immersiveResult = await ImmersiveModeEngineModule.attach(0);
+                if (immersiveResult.success) {
+                  console.log('[PlayerContext] ImmersiveModeEngineModule attached to global audio session');
+                }
+              }
+            } catch (err) {
+              console.warn('[PlayerContext] Failed to attach audio effects:', err);
+            }
+          }
+        }
+      });
+    }
+    
+    return () => {
+      if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
+        TrackPlayerService.destroy();
+        NativeEffectsManager.release();
+        if (Platform.OS === 'android' && ImmersiveModeEngineModule.isAvailable()) {
+          ImmersiveModeEngineModule.release();
+        }
+        trackPlayerInitializedRef.current = false;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (useNativePlaybackRef.current && !useTrackPlayerRef.current) {
       PlaybackEngineModule.initialize().then(async (initResult) => {
         if (initResult.success && initResult.audioSessionId) {
           nativeAudioSessionIdRef.current = initResult.audioSessionId;
@@ -137,7 +280,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     
     return () => {
-      if (useNativePlaybackRef.current) {
+      if (useNativePlaybackRef.current && !useTrackPlayerRef.current) {
         NativeEffectsManager.release();
         PlaybackEngineModule.release();
       }
@@ -162,6 +305,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
+      TrackPlayerService.setRepeatMode(repeat);
+    }
+  }, [repeat]);
+
+  useEffect(() => {
+    if (useTrackPlayerRef.current) return;
     if (!useNativePlaybackRef.current) return;
 
     if (isPlaying && currentSong) {
@@ -209,7 +359,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!song) return;
 
     if (currentRepeat === 'one') {
-      if (useNativePlaybackRef.current) {
+      if (useTrackPlayerRef.current) {
+        TrackPlayerService.seekTo(0).then(() => {
+          TrackPlayerService.play();
+        });
+      } else if (useNativePlaybackRef.current) {
         PlaybackEngineModule.seekTo(0).then(() => {
           PlaybackEngineModule.play();
         });
@@ -263,7 +417,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       progressPollingRef.current = null;
     }
     
-    if (useNativePlaybackRef.current) {
+    if (useTrackPlayerRef.current) {
+      TrackPlayerService.stop().catch(console.error);
+    } else if (useNativePlaybackRef.current) {
       PlaybackEngineModule.stop().catch(console.error);
     }
     
@@ -293,7 +449,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (delayNodeRef.current) { try { delayNodeRef.current.disconnect(); } catch {} }
       if (delayGainRef.current) { try { delayGainRef.current.disconnect(); } catch {} }
     }
+    AudioCoordinator.notifyPlaybackStopped('music');
   }, []);
+
+  const stopMusicForCoordinator = useCallback(async (): Promise<void> => {
+    cleanupPlayer();
+    setIsPlaying(false);
+    setCurrentTime(0);
+  }, [cleanupPlayer]);
+
+  useEffect(() => {
+    AudioCoordinator.registerMusicStopCallback(stopMusicForCoordinator);
+  }, [stopMusicForCoordinator]);
   
   const createEQChain = useCallback((ctx: AudioContext): BiquadFilterNode[] => {
     eqFiltersRef.current.forEach(f => { try { f.disconnect(); } catch {} });
@@ -362,9 +529,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setDuration(song.duration || 0);
     setCurrentSong(song);
 
-    cleanupPlayer();
-
     try {
+      await AudioCoordinator.requestPlayback('music');
+
       let audioSource: string | null = null;
 
       if (isDeviceSong(song) && song.uri) {
@@ -388,6 +555,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
 
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        cleanupPlayer();
+        
         if (!audioContextRef.current) {
           audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
@@ -454,7 +623,132 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         await audio.play();
         setIsPlaying(true);
         setIsLoading(false);
+        AudioCoordinator.notifyPlaybackStarted('music');
+      } else if (useTrackPlayerRef.current) {
+        if (!trackPlayerInitializedRef.current) {
+          const initialized = await TrackPlayerService.initialize();
+          if (!initialized) {
+            console.warn('[PlayerContext] TrackPlayer failed to initialize, falling back to expo-av');
+            cleanupPlayer();
+            
+            const newPlayer = createAudioPlayer(audioSource, { updateInterval: 0.1 });
+            playerRef.current = newPlayer;
+
+            statusListenerRef.current = newPlayer.addListener('playbackStatusUpdate', handleStatusUpdate);
+
+            newPlayer.play();
+            setIsPlaying(true);
+            setIsLoading(false);
+            return;
+          }
+          trackPlayerInitializedRef.current = true;
+        }
+
+        // Stop any current playback first (radio or previous music)
+        await TrackPlayerService.stop();
+
+        // Set source to music
+        TrackPlayerService.setPlaybackSource('music');
+        
+        // Register music callbacks fresh to prevent overwrites from other contexts
+        TrackPlayerService.setCallbacks({
+          onPlay: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              setIsPlaying(true);
+            }
+          },
+          onPause: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              setIsPlaying(false);
+            }
+          },
+          onStop: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              setIsPlaying(false);
+              setCurrentTime(0);
+            }
+          },
+          onNext: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              handleNextInternal();
+            }
+          },
+          onPrevious: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              handlePreviousInternal();
+            }
+          },
+          onSeek: (position) => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              setCurrentTime(position);
+            }
+          },
+          onTrackChange: async (trackIndex) => {
+            if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+            if (trackIndex !== null && trackIndex >= 0) {
+              const currentQueue = queueRef.current;
+              if (currentQueue[trackIndex]) {
+                setCurrentSong(currentQueue[trackIndex]);
+                const track = await TrackPlayerService.getCurrentTrack();
+                if (track?.duration) {
+                  setDuration(track.duration);
+                }
+              }
+            }
+          },
+          onProgress: (progress) => {
+            if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+            setCurrentTime(progress.position);
+            if (progress.duration > 0) {
+              setDuration(progress.duration);
+            }
+            setIsBuffering(progress.buffered < progress.position);
+          },
+          onStateChange: (state) => {
+            if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+            if (state === State.Playing) {
+              setIsPlaying(true);
+              setIsBuffering(false);
+            } else if (state === State.Paused) {
+              setIsPlaying(false);
+              setIsBuffering(false);
+            } else if (state === State.Buffering || state === State.Loading) {
+              setIsBuffering(true);
+            } else if (state === State.Stopped) {
+              setIsPlaying(false);
+              setCurrentTime(0);
+            }
+          },
+        });
+        
+        const currentQueue = queueRef.current;
+        const songIndex = currentQueue.findIndex(s => s.id === song.id);
+        
+        const trackMetadataList: TrackMetadata[] = currentQueue
+          .map(s => convertSongToTrackMetadata(s))
+          .filter((t): t is TrackMetadata => t !== null);
+        
+        if (trackMetadataList.length === 0) {
+          setError('No valid tracks in queue');
+          setIsLoading(false);
+          return;
+        }
+
+        await TrackPlayerService.setQueue(trackMetadataList);
+        
+        const trackIndex = trackMetadataList.findIndex(t => t.id === song.id);
+        if (trackIndex >= 0) {
+          await TrackPlayerService.skipToTrack(trackIndex);
+        }
+        
+        await TrackPlayerService.play();
+        
+        setIsPlaying(true);
+        setIsLoading(false);
+        AudioCoordinator.notifyPlaybackStarted('music');
       } else if (useNativePlaybackRef.current) {
+        cleanupPlayer();
+        
         const loadResult = await PlaybackEngineModule.loadTrack(audioSource);
         
         if (!loadResult.success) {
@@ -482,7 +776,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
         setIsPlaying(true);
         setIsLoading(false);
+        AudioCoordinator.notifyPlaybackStarted('music');
       } else {
+        cleanupPlayer();
+        
         const newPlayer = createAudioPlayer(audioSource, { updateInterval: 0.1 });
         playerRef.current = newPlayer;
 
@@ -491,6 +788,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         newPlayer.play();
         setIsPlaying(true);
         setIsLoading(false);
+        AudioCoordinator.notifyPlaybackStarted('music');
       }
 
       addToRecentlyPlayed(song.id).then(() => {
@@ -505,7 +803,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setError('Failed to load audio');
       setIsLoading(false);
     }
-  }, [cleanupPlayer, handleStatusUpdate, createEQChain, handleTrackEnd, soundLabMode, immersiveEffect]);
+  }, [cleanupPlayer, handleStatusUpdate, createEQChain, handleTrackEnd, soundLabMode, immersiveEffect, convertSongToTrackMetadata]);
 
   useEffect(() => {
     return () => {
@@ -545,6 +843,49 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     saveFavorites(newFavorites);
   }, [favorites]);
 
+  const handleNextInternal = useCallback(() => {
+    const song = currentSongRef.current;
+    const currentQueue = queueRef.current;
+    const currentShuffle = shuffleRef.current;
+    const currentRepeat = repeatRef.current;
+    
+    if (!song) return;
+
+    const currentIndex = currentQueue.findIndex((s) => s.id === song.id);
+    let nextIndex: number;
+
+    if (currentShuffle) {
+      nextIndex = Math.floor(Math.random() * currentQueue.length);
+    } else {
+      nextIndex = (currentIndex + 1) % currentQueue.length;
+    }
+
+    if (nextIndex === 0 && currentRepeat === 'off' && !currentShuffle) {
+      setIsPlaying(false);
+      setCurrentTime(0);
+      return;
+    }
+
+    const nextSong = currentQueue[nextIndex];
+    if (nextSong) {
+      loadAndPlaySong(nextSong);
+    }
+  }, [loadAndPlaySong]);
+
+  const handlePreviousInternal = useCallback(() => {
+    const song = currentSongRef.current;
+    const currentQueue = queueRef.current;
+    
+    if (!song) return;
+
+    const currentIndex = currentQueue.findIndex((s) => s.id === song.id);
+    const prevIndex = currentIndex === 0 ? currentQueue.length - 1 : currentIndex - 1;
+    const prevSong = currentQueue[prevIndex];
+    if (prevSong) {
+      loadAndPlaySong(prevSong);
+    }
+  }, [loadAndPlaySong]);
+
   const togglePlayPause = useCallback(() => {
     if (Platform.OS === 'web' && audioElementRef.current) {
       if (isPlaying) {
@@ -556,6 +897,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
         audioElementRef.current.play().catch(console.error);
         setIsPlaying(true);
+      }
+      return;
+    }
+
+    if (useTrackPlayerRef.current) {
+      if (isPlaying) {
+        TrackPlayerService.pause().then(() => {
+          setIsPlaying(false);
+        });
+      } else {
+        if (!currentSong) return;
+        TrackPlayerService.play().then(() => {
+          setIsPlaying(true);
+        });
       }
       return;
     }
@@ -597,6 +952,31 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const handleNext = useCallback(() => {
     if (!currentSong) return;
 
+    if (useTrackPlayerRef.current) {
+      const currentQueue = queueRef.current;
+      const currentIndex = currentQueue.findIndex((s) => s.id === currentSong.id);
+      const currentShuffle = shuffleRef.current;
+      const currentRepeat = repeatRef.current;
+      
+      let nextIndex: number;
+      if (currentShuffle) {
+        nextIndex = Math.floor(Math.random() * currentQueue.length);
+      } else {
+        nextIndex = (currentIndex + 1) % currentQueue.length;
+      }
+
+      if (nextIndex === 0 && currentRepeat === 'off' && !currentShuffle) {
+        setIsPlaying(false);
+        setCurrentTime(0);
+        return;
+      }
+
+      TrackPlayerService.skipToTrack(nextIndex).then(() => {
+        TrackPlayerService.play();
+      });
+      return;
+    }
+
     const currentIndex = queue.findIndex((s) => s.id === currentSong.id);
     let nextIndex: number;
 
@@ -625,6 +1005,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (Platform.OS === 'web' && audioElementRef.current) {
         audioElementRef.current.currentTime = 0;
         setCurrentTime(0);
+      } else if (useTrackPlayerRef.current) {
+        TrackPlayerService.seekTo(0);
+        setCurrentTime(0);
       } else if (useNativePlaybackRef.current) {
         PlaybackEngineModule.seekTo(0);
         setCurrentTime(0);
@@ -632,6 +1015,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         playerRef.current.seekTo(0);
         setCurrentTime(0);
       }
+      return;
+    }
+
+    if (useTrackPlayerRef.current) {
+      const currentQueue = queueRef.current;
+      const currentIndex = currentQueue.findIndex((s) => s.id === currentSong.id);
+      const prevIndex = currentIndex === 0 ? currentQueue.length - 1 : currentIndex - 1;
+      
+      TrackPlayerService.skipToTrack(prevIndex).then(() => {
+        TrackPlayerService.play();
+      });
       return;
     }
 
@@ -648,6 +1042,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setCurrentTime(targetTime);
     if (Platform.OS === 'web' && audioElementRef.current) {
       audioElementRef.current.currentTime = targetTime;
+    } else if (useTrackPlayerRef.current) {
+      TrackPlayerService.seekTo(targetTime);
     } else if (useNativePlaybackRef.current) {
       PlaybackEngineModule.seekTo(targetTime * 1000);
     } else if (playerRef.current) {
@@ -705,7 +1101,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setSleepTimerMinutesState(minutes);
     
     sleepTimerRef.current = setTimeout(() => {
-      if (useNativePlaybackRef.current) {
+      if (useTrackPlayerRef.current) {
+        TrackPlayerService.pause();
+      } else if (useNativePlaybackRef.current) {
         PlaybackEngineModule.pause();
       } else if (Platform.OS === 'web' && audioElementRef.current) {
         audioElementRef.current.pause();

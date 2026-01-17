@@ -1,0 +1,29 @@
+# Ignore unnecessary files for EAS build
+.git
+.github
+docs
+*.md
+!README.md
+.env*
+.replit
+replit.nix
+replit.md
+dist
+*.log
+.expo
+.idea
+.vscode
+__tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+coverage
+attached_assets
+generated-icon.png
+
+# Large folders - EAS will run npm install, don't upload node_modules
+node_modules
+
+# Test audio files - not needed for build
+public/audio

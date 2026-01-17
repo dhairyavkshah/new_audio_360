@@ -4,11 +4,9 @@ import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import { SecureStorage } from '@/services/SecureStorage';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
 const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '';
 const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '';
 
@@ -16,8 +14,6 @@ const STORAGE_KEYS = {
   ACCESS_TOKEN: 'auth_access_token',
   REFRESH_TOKEN: 'auth_refresh_token',
   USER_PROFILE: 'auth_user_profile',
-  SUBSCRIPTION: 'auth_subscription',
-  ENTITLEMENT: 'auth_entitlement',
   BIOMETRIC_ENABLED: 'auth_biometric_enabled',
   LAST_AUTH_TIME: 'auth_last_time',
 };
@@ -32,17 +28,10 @@ interface UserProfile {
   photoUrl: string | null;
 }
 
-interface SubscriptionState {
-  plan: 'free' | 'standard' | 'premium';
-  isActive: boolean;
-  expiresAt: string | null;
-}
-
 interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: UserProfile | null;
-  subscription: SubscriptionState | null;
   biometricEnabled: boolean;
   biometricAvailable: boolean;
   requiresReauth: boolean;
@@ -56,9 +45,6 @@ interface AuthContextType extends AuthState {
   enableBiometric: () => Promise<boolean>;
   disableBiometric: () => Promise<void>;
   authenticateWithBiometric: () => Promise<boolean>;
-  verifyPurchase: (purchaseToken: string, productId: string, packageName: string) => Promise<boolean>;
-  checkSubscriptionStatus: () => Promise<void>;
-  hasActiveSubscription: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,7 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: false,
     isLoading: true,
     user: null,
-    subscription: null,
     biometricEnabled: false,
     biometricAvailable: false,
     requiresReauth: false,
@@ -144,12 +129,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const accessToken = await secureGet(STORAGE_KEYS.ACCESS_TOKEN);
       const userJson = await secureGet(STORAGE_KEYS.USER_PROFILE);
-      const subscriptionJson = await secureGet(STORAGE_KEYS.SUBSCRIPTION);
       const lastAuthTime = await secureGet(STORAGE_KEYS.LAST_AUTH_TIME);
 
       console.log('[INIT AUTH] accessToken:', accessToken ? 'present' : 'missing');
       console.log('[INIT AUTH] userJson:', userJson ? 'present' : 'missing');
-      console.log('[INIT AUTH] subscriptionJson:', subscriptionJson ? 'present' : 'missing');
 
       if (!accessToken || !userJson) {
         console.log('[INIT AUTH] No token or user, staying on login screen');
@@ -163,7 +146,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const user = JSON.parse(userJson) as UserProfile;
-      const subscription = subscriptionJson ? JSON.parse(subscriptionJson) as SubscriptionState : null;
 
       const lastAuth = lastAuthTime ? parseInt(lastAuthTime, 10) : 0;
       const now = Date.now();
@@ -171,17 +153,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const biometricExpired = now - lastAuth > BIOMETRIC_CACHE_DURATION;
 
       if (authExpired) {
-        const refreshed = await refreshSessionInternal();
-        if (!refreshed) {
-          setState(prev => ({
-            ...prev,
-            isLoading: false,
-            biometricAvailable,
-            biometricEnabled,
-            requiresReauth: true,
-          }));
-          return;
-        }
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          biometricAvailable,
+          biometricEnabled,
+          requiresReauth: true,
+        }));
+        return;
       }
 
       const requiresBiometric = biometricEnabled && biometricExpired;
@@ -190,7 +169,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !requiresBiometric,
         isLoading: false,
         user,
-        subscription,
         biometricEnabled,
         biometricAvailable,
         requiresReauth: requiresBiometric,
@@ -209,30 +187,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setState(prev => ({ ...prev, isLoading: true }));
 
-      const apiResponse = await fetch(`${API_BASE_URL}/api/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: response.params.id_token }),
-      });
+      const idToken = response.params.id_token;
+      const payload = JSON.parse(atob(idToken.split('.')[1]));
+      
+      const user: UserProfile = {
+        id: payload.sub,
+        email: payload.email,
+        displayName: payload.name || null,
+        photoUrl: payload.picture || null,
+      };
 
-      if (!apiResponse.ok) {
-        throw new Error('Authentication failed');
-      }
-
-      const data = await apiResponse.json();
-
-      await secureSet(STORAGE_KEYS.ACCESS_TOKEN, data.tokens.accessToken);
-      await secureSet(STORAGE_KEYS.REFRESH_TOKEN, data.tokens.refreshToken);
-      await secureSet(STORAGE_KEYS.USER_PROFILE, JSON.stringify(data.user));
-      await secureSet(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(data.subscription));
+      await secureSet(STORAGE_KEYS.ACCESS_TOKEN, idToken);
+      await secureSet(STORAGE_KEYS.USER_PROFILE, JSON.stringify(user));
       await secureSet(STORAGE_KEYS.LAST_AUTH_TIME, Date.now().toString());
 
       setState(prev => ({
         ...prev,
         isAuthenticated: true,
         isLoading: false,
-        user: data.user,
-        subscription: data.subscription,
+        user,
         requiresReauth: false,
       }));
     } catch (error) {
@@ -266,38 +239,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         photoUrl: null,
       };
 
-      const testSubscription: SubscriptionState = {
-        plan: 'premium',
-        isActive: true,
-        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-      };
-
-      const purchaseTime = Date.now();
-      const subscriptionData = {
-        plan: 'premium',
-        purchaseToken: `test_${purchaseTime}`,
-        productId: 'com.newaudio360.premium',
-        purchaseTime,
-      };
-
       console.log('[TEST AUTH] Saving auth data...');
       await secureSet(STORAGE_KEYS.ACCESS_TOKEN, 'test-access-token');
-      await secureSet(STORAGE_KEYS.REFRESH_TOKEN, 'test-refresh-token');
       await secureSet(STORAGE_KEYS.USER_PROFILE, JSON.stringify(testUser));
-      await secureSet(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(testSubscription));
       await secureSet(STORAGE_KEYS.LAST_AUTH_TIME, Date.now().toString());
-      await SecureStorage.setSecureItem('subscription_data', JSON.stringify(subscriptionData));
-      console.log('[TEST AUTH] Auth data saved successfully (plan: premium)');
+      console.log('[TEST AUTH] Auth data saved successfully');
 
       setState(prev => ({
         ...prev,
         isAuthenticated: true,
         isLoading: false,
         user: testUser,
-        subscription: testSubscription,
         requiresReauth: false,
       }));
-      console.log('[TEST AUTH] State updated successfully with premium access');
+      console.log('[TEST AUTH] State updated successfully');
 
       return true;
     } catch (error) {
@@ -307,38 +262,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const refreshSessionInternal = async (): Promise<boolean> => {
-    try {
-      const refreshToken = await secureGet(STORAGE_KEYS.REFRESH_TOKEN);
-      if (!refreshToken) return false;
-
-      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
-      });
-
-      if (!response.ok) return false;
-
-      const data = await response.json();
-
-      await secureSet(STORAGE_KEYS.ACCESS_TOKEN, data.tokens.accessToken);
-      await secureSet(STORAGE_KEYS.USER_PROFILE, JSON.stringify(data.user));
-      await secureSet(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(data.subscription));
-      await secureSet(STORAGE_KEYS.LAST_AUTH_TIME, Date.now().toString());
-
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
   const refreshSession = useCallback(async (): Promise<boolean> => {
-    const success = await refreshSessionInternal();
-    if (success) {
-      await initializeAuth();
-    }
-    return success;
+    await secureSet(STORAGE_KEYS.LAST_AUTH_TIME, Date.now().toString());
+    return true;
   }, []);
 
   const signOut = useCallback(async (): Promise<void> => {
@@ -346,17 +272,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       secureDelete(STORAGE_KEYS.ACCESS_TOKEN),
       secureDelete(STORAGE_KEYS.REFRESH_TOKEN),
       secureDelete(STORAGE_KEYS.USER_PROFILE),
-      secureDelete(STORAGE_KEYS.SUBSCRIPTION),
-      secureDelete(STORAGE_KEYS.ENTITLEMENT),
       secureDelete(STORAGE_KEYS.LAST_AUTH_TIME),
-      SecureStorage.removeSecureItem('subscription_data'),
     ]);
 
     setState({
       isAuthenticated: false,
       isLoading: false,
       user: null,
-      subscription: null,
       biometricEnabled: state.biometricEnabled,
       biometricAvailable: state.biometricAvailable,
       requiresReauth: false,
@@ -418,78 +340,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [state.biometricEnabled]);
 
-  const verifyPurchase = useCallback(async (
-    purchaseToken: string,
-    productId: string,
-    packageName: string
-  ): Promise<boolean> => {
-    try {
-      const accessToken = await secureGet(STORAGE_KEYS.ACCESS_TOKEN);
-      if (!accessToken) return false;
-
-      const response = await fetch(`${API_BASE_URL}/api/subscription/verify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ purchaseToken, productId, packageName }),
-      });
-
-      if (!response.ok) return false;
-
-      const data = await response.json();
-
-      await secureSet(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(data.subscription));
-      if (data.entitlement) {
-        await secureSet(STORAGE_KEYS.ENTITLEMENT, data.entitlement);
-      }
-
-      setState(prev => ({
-        ...prev,
-        subscription: data.subscription,
-      }));
-
-      return true;
-    } catch {
-      return false;
-    }
-  }, []);
-
-  const checkSubscriptionStatus = useCallback(async (): Promise<void> => {
-    try {
-      const accessToken = await secureGet(STORAGE_KEYS.ACCESS_TOKEN);
-      if (!accessToken) return;
-
-      const response = await fetch(`${API_BASE_URL}/api/subscription/status`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!response.ok) return;
-
-      const data = await response.json();
-
-      await secureSet(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(data.subscription));
-      if (data.entitlement) {
-        await secureSet(STORAGE_KEYS.ENTITLEMENT, data.entitlement);
-      }
-
-      setState(prev => ({
-        ...prev,
-        subscription: data.subscription,
-      }));
-    } catch (error) {
-      console.error('Subscription check error:', error);
-    }
-  }, []);
-
-  const hasActiveSubscription = useCallback((): boolean => {
-    if (!state.subscription) return false;
-    return state.subscription.isActive && state.subscription.plan !== 'free';
-  }, [state.subscription]);
-
   return (
     <AuthContext.Provider
       value={{
@@ -501,9 +351,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         enableBiometric,
         disableBiometric,
         authenticateWithBiometric,
-        verifyPurchase,
-        checkSubscriptionStatus,
-        hasActiveSubscription,
       }}
     >
       {children}

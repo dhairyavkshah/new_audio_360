@@ -4,19 +4,18 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  runOnJS,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { scheduleOnRN } from "react-native-worklets";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext, useSkin } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
+import { getProgressBarStyle } from "@/lib/themeUtils";
 import {
   FluentSpacing,
-  FluentRadius,
   FluentDuration,
   FluentCurve,
-  FluentLightColors,
-  FluentDarkColors,
+  FluentSliderSize,
 } from "@/constants/fluent2";
 
 interface ProgressBarProps {
@@ -29,9 +28,9 @@ interface ProgressBarProps {
   showTextShadow?: boolean;
 }
 
-const THUMB_SIZE = 16;
-const TRACK_HEIGHT = 4;
-const ACTIVE_TRACK_HEIGHT = 6;
+const THUMB_SIZE = FluentSliderSize.thumbSmall;
+const TRACK_HEIGHT = FluentSliderSize.trackThin;
+const ACTIVE_TRACK_HEIGHT = FluentSliderSize.trackMedium;
 
 export function ProgressBar({
   progress,
@@ -43,8 +42,8 @@ export function ProgressBar({
   showTextShadow = false,
 }: ProgressBarProps) {
   const { isDark } = useThemeContext();
-  const { shapes, components } = useSkin();
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const tokens = useThemeTokens();
+  const { trackStyle, progressStyle, trackRadius } = getProgressBarStyle(tokens);
 
   const textShadowStyle = showTextShadow ? {
     textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
@@ -54,7 +53,7 @@ export function ProgressBar({
   
   const translateX = useSharedValue(progress * (width - THUMB_SIZE));
   const isDragging = useSharedValue(false);
-  const trackHeight = useSharedValue(TRACK_HEIGHT);
+  const trackHeight = useSharedValue<number>(TRACK_HEIGHT);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -91,8 +90,8 @@ export function ProgressBar({
         easing: FluentCurve.decelerateMid,
       });
       const seekTime = (translateX.value / (width - THUMB_SIZE)) * duration;
-      scheduleOnRN(handleSeek, seekTime);
-      scheduleOnRN(triggerHaptic);
+      runOnJS(handleSeek)(seekTime);
+      runOnJS(triggerHaptic)();
     });
 
   const tapGesture = Gesture.Tap()
@@ -103,8 +102,8 @@ export function ProgressBar({
         easing: FluentCurve.decelerateMid,
       });
       const seekTime = (tapX / (width - THUMB_SIZE)) * duration;
-      scheduleOnRN(handleSeek, seekTime);
-      scheduleOnRN(triggerHaptic);
+      runOnJS(handleSeek)(seekTime);
+      runOnJS(triggerHaptic)();
     });
 
   const composedGesture = Gesture.Race(panGesture, tapGesture);
@@ -133,20 +132,14 @@ export function ProgressBar({
           <Animated.View
             style={[
               styles.track,
-              {
-                borderRadius: FluentRadius.small,
-                backgroundColor: fluentColors.colorNeutralBackground5,
-              },
+              trackStyle,
               trackAnimatedStyle,
             ]}
           >
             <Animated.View
               style={[
                 styles.fill,
-                {
-                  borderRadius: FluentRadius.small,
-                  backgroundColor: fluentColors.colorCompoundBrandBackground,
-                },
+                progressStyle,
                 fillStyle,
               ]}
             />
@@ -158,13 +151,13 @@ export function ProgressBar({
                 width: THUMB_SIZE,
                 height: THUMB_SIZE,
                 borderRadius: THUMB_SIZE / 2,
-                backgroundColor: fluentColors.colorCompoundBrandBackground,
+                backgroundColor: tokens.colors.primary,
                 ...Platform.select({
                   ios: {
-                    shadowColor: fluentColors.colorCompoundBrandBackground,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
+                    shadowColor: progressStyle.shadowColor || tokens.colors.primary,
+                    shadowOffset: progressStyle.shadowOffset || { width: 0, height: 2 },
+                    shadowOpacity: progressStyle.shadowOpacity || 0.25,
+                    shadowRadius: progressStyle.shadowRadius || 4,
                   },
                   android: {
                     elevation: 4,

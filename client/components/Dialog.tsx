@@ -25,6 +25,7 @@ import {
   getShadowStyle,
   FluentLightColors,
   FluentDarkColors,
+  FluentLayoutSize,
 } from "@/constants/fluent2";
 
 interface DialogAction {
@@ -43,7 +44,7 @@ interface DialogProps {
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const DIALOG_WIDTH = Math.min(SCREEN_WIDTH * 0.9, 400);
+const DIALOG_WIDTH = Math.min(SCREEN_WIDTH * 0.9, FluentLayoutSize.dialogMaxWidth);
 
 export function Dialog({
   visible,

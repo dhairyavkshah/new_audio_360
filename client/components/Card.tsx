@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Pressable, ViewStyle, Platform } from "react-native";
+import { StyleSheet, Pressable, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -8,17 +8,13 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { useSkin } from "@/contexts/ThemeContext";
+import { useThemeTokens } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
-  FluentControlRadius,
   FluentDuration,
   FluentEasingValues,
-  getShadowStyle,
-  FluentLightColors,
-  FluentDarkColors,
 } from "@/constants/fluent2";
+import { getCardEffectStyle } from "@/lib/themeUtils";
 
 interface CardProps {
   elevation?: number;
@@ -28,34 +24,6 @@ interface CardProps {
   onPress?: () => void;
   style?: ViewStyle;
 }
-
-const getBackgroundColorForElevation = (
-  elevation: number,
-  fluentColors: typeof FluentLightColors,
-): string => {
-  switch (elevation) {
-    case 0:
-      return fluentColors.colorNeutralBackground1;
-    case 1:
-      return fluentColors.colorNeutralBackground2;
-    case 2:
-      return fluentColors.colorNeutralBackground3;
-    case 3:
-      return fluentColors.colorNeutralBackground4;
-    case 4:
-      return fluentColors.colorNeutralBackground5;
-    default:
-      return fluentColors.colorNeutralBackground1;
-  }
-};
-
-const getShadowForElevation = (elevation: number, isDark: boolean) => {
-  if (elevation === 0) return {};
-  if (elevation <= 1) return getShadowStyle('shadow2', isDark);
-  if (elevation <= 2) return getShadowStyle('shadow4', isDark);
-  if (elevation <= 3) return getShadowStyle('shadow8', isDark);
-  return getShadowStyle('shadow16', isDark);
-};
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -67,13 +35,11 @@ export function Card({
   onPress,
   style,
 }: CardProps) {
-  const { isDark } = useThemeContext();
-  const { components } = useSkin();
+  const tokens = useThemeTokens();
   const scale = useSharedValue(1);
   const bgOpacity = useSharedValue(1);
 
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const cardBackgroundColor = getBackgroundColorForElevation(elevation, colors);
+  const cardEffectStyle = getCardEffectStyle(tokens, elevation);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -114,11 +80,6 @@ export function Card({
     }
   };
 
-  const getCardShadowStyle = () => {
-    if (!components.useShadow) return {};
-    return getShadowForElevation(elevation, isDark);
-  };
-
   return (
     <AnimatedPressable
       onPress={onPress}
@@ -128,12 +89,7 @@ export function Card({
       accessibilityRole={onPress ? "button" : undefined}
       style={[
         styles.card,
-        {
-          backgroundColor: cardBackgroundColor,
-          borderRadius: FluentControlRadius.card,
-          borderColor: colors.colorNeutralStroke2,
-        },
-        getCardShadowStyle(),
+        cardEffectStyle,
         animatedStyle,
         style,
       ]}
@@ -174,12 +130,11 @@ interface OutlinedCardProps {
 }
 
 export function OutlinedCard({ children, onPress, style }: OutlinedCardProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const tokens = useThemeTokens();
   
   const outlinedStyle: ViewStyle = {
     borderWidth: 1, 
-    borderColor: colors.colorNeutralStroke1,
+    borderColor: tokens.colors.outline,
   };
   
   const mergedStyle: ViewStyle = style 
