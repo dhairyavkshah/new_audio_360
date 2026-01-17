@@ -3,6 +3,7 @@ import { StyleSheet, ScrollView } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
+import { FluentTopBar } from "@/components/FluentTopBar";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { ThemeName } from "@/constants/theme";
@@ -18,7 +19,7 @@ export default function AppearanceScreen() {
   };
 
   return (
-    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
+    <FluentScreenLayout header={<FluentTopBar title="Appearance" />} hasBottomNavigation={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,

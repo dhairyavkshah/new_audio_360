@@ -114,7 +114,7 @@ export function FluentTopBar({
     onSearchChange?.("");
   };
 
-  const topPadding = Platform.OS === 'android' ? FluentSpacing.s : insets.top + FluentSpacing.s;
+  const topPadding = insets.top + FluentSpacing.s;
 
   return (
     <View

@@ -6,9 +6,10 @@ import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
 import * as MediaLibrary from "expo-media-library";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
+import { FluentTopBar } from "@/components/FluentTopBar";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { 
   getSelectedFolders, 
@@ -85,6 +86,7 @@ export default function FolderSelectionScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [webFolders, setWebFolders] = useState<WebFolderData[]>(getSessionWebFolders());
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const loadFolders = useCallback(async () => {
     if (Platform.OS === "web") {
@@ -305,6 +307,8 @@ export default function FolderSelectionScreen() {
     }
     
     setIsSaving(false);
+    setSuccessMessage("Folder selection saved successfully");
+    setTimeout(() => setSuccessMessage(null), 3000);
   }, [selectedFolderIds, refreshSongs, updateContextFolders, webFolders, setWebAudioFiles]);
 
   const totalSongsSelected = folders
@@ -312,7 +316,7 @@ export default function FolderSelectionScreen() {
     .reduce((sum, f) => sum + f.assetCount, 0);
 
   const renderWebContent = () => (
-    <FluentScreenLayout edges={[]} hasBottomNavigation={false}>
+    <FluentScreenLayout header={<FluentTopBar title="Music Folders" />} hasBottomNavigation={false}>
       <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground2 }]}>
         <Pressable
           onPress={handleAddFolder}
@@ -463,6 +467,15 @@ export default function FolderSelectionScreen() {
           </Pressable>
         </View>
       )}
+
+      {successMessage ? (
+        <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
+          <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
+          <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
+            {successMessage}
+          </FluentText>
+        </View>
+      ) : null}
     </FluentScreenLayout>
   );
 
@@ -471,7 +484,7 @@ export default function FolderSelectionScreen() {
   }
 
   return (
-    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
+    <FluentScreenLayout header={<FluentTopBar title="Music Folders" />} hasBottomNavigation={true}>
       <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground2 }]}>
         <Pressable
           onPress={selectAll}
@@ -611,6 +624,15 @@ export default function FolderSelectionScreen() {
           )}
         </Pressable>
       </View>
+
+      {successMessage ? (
+        <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
+          <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
+          <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
+            {successMessage}
+          </FluentText>
+        </View>
+      ) : null}
     </FluentScreenLayout>
   );
 }
@@ -732,5 +754,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: FluentSpacing.m,
     borderRadius: FluentControlRadius.button,
+  },
+  successToast: {
+    position: "absolute",
+    bottom: 100,
+    left: FluentSpacing.l,
+    right: FluentSpacing.l,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: FluentSpacing.l,
+    paddingVertical: FluentSpacing.l,
+    borderRadius: FluentRadius.large,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
 });
