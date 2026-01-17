@@ -17,6 +17,9 @@ import {
   getSoundMode, saveSoundMode, clearSoundMode,
   getCustomEQBands, saveCustomEQBands,
   getCustomEQPresets, saveCustomEQPresets,
+  getBassControlLevel, saveBassControlLevel,
+  getTrebleControlLevel, saveTrebleControlLevel,
+  getVirtualizerLevel, saveVirtualizerLevel,
   CustomEQPreset
 } from "@/lib/storage";
 import { 
@@ -34,44 +37,70 @@ const EQ_PRESETS = [
   { 
     name: "Flat", 
     description: "Natural, unprocessed sound",
-    bands: [0, 0, 0, 0, 0]
+    bands: [0, 0, 0, 0, 0],
+    bassControl: 0,
+    trebleControl: 0,
+    virtualizer: 0
   },
   { 
     name: "Rock", 
     description: "Punchy bass, crisp guitars",
-    bands: [3, 2, -1, 2, 3]
+    bands: [3, 2, -1, 2, 3],
+    bassControl: 0,
+    trebleControl: 0,
+    virtualizer: 0
   },
   { 
     name: "Pop", 
     description: "Bright vocals, balanced bass",
-    bands: [2, 1, 2, 3, 2]
+    bands: [2, 1, 2, 3, 2],
+    bassControl: 0,
+    trebleControl: 0,
+    virtualizer: 0
   },
   { 
     name: "Jazz", 
     description: "Warm mids, smooth highs",
-    bands: [2, 3, 1, -1, 0]
+    bands: [2, 3, 1, -1, 0],
+    bassControl: 0,
+    trebleControl: 0,
+    virtualizer: 0
   },
   { 
     name: "Classical", 
     description: "Wide dynamics, clear separation",
-    bands: [1, 1, 0, 2, 3]
+    bands: [1, 1, 0, 2, 3],
+    bassControl: 0,
+    trebleControl: 0,
+    virtualizer: 0
   },
   { 
     name: "Electronic", 
     description: "Deep bass, sparkling highs",
-    bands: [4, 3, -1, 2, 4]
+    bands: [4, 3, -1, 2, 4],
+    bassControl: 0,
+    trebleControl: 0,
+    virtualizer: 0
   },
   { 
     name: "Hip-Hop", 
     description: "Heavy sub-bass, clear vocals",
-    bands: [5, 3, 1, 2, 1]
+    bands: [5, 3, 1, 2, 1],
+    bassControl: 0,
+    trebleControl: 0,
+    virtualizer: 0
   },
   { 
     name: "Acoustic", 
     description: "Natural warmth, presence",
-    bands: [1, 2, 2, 1, 1]
+    bands: [1, 2, 2, 1, 1],
+    bassControl: 0,
+    trebleControl: 0,
+    virtualizer: 0
   },
 ];
+
+const EFFECT_LEVELS = [-3, -2, -1, 0, 1, 2, 3];
 
 const CUSTOM_EQ_BAND_LABELS = ["60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz"];
 
@@ -102,6 +131,10 @@ export default function SoundLabScreen() {
   const [editPresetName, setEditPresetName] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [presetToDelete, setPresetToDelete] = useState<CustomEQPreset | null>(null);
+  
+  const [bassControl, setBassControl] = useState(0);
+  const [trebleControl, setTrebleControl] = useState(0);
+  const [virtualizerLevel, setVirtualizerLevel] = useState(0);
 
   const MAX_CUSTOM_PRESETS = 5;
 
@@ -122,15 +155,21 @@ export default function SoundLabScreen() {
       const modes = ImmersiveModeEngineModule.getAvailableModes();
       setAvailableModes(modes);
 
-      const [eqPreset, soundMode, bands, presets] = await Promise.all([
+      const [eqPreset, soundMode, bands, presets, bassLvl, trebleLvl, virtLvl] = await Promise.all([
         getEQPreset(),
         getSoundMode(),
         getCustomEQBands(),
-        getCustomEQPresets()
+        getCustomEQPresets(),
+        getBassControlLevel(),
+        getTrebleControlLevel(),
+        getVirtualizerLevel()
       ]);
       
       setCustomBands(bands);
       setCustomPresets(presets);
+      setBassControl(bassLvl);
+      setTrebleControl(trebleLvl);
+      setVirtualizerLevel(virtLvl);
       
       if (eqPreset) {
         if (eqPreset === "Custom") {
@@ -188,10 +227,25 @@ export default function SoundLabScreen() {
         await clearSoundMode();
         await saveEQPreset(preset);
         await NativeAudioService.setImmersiveMode('off');
-        // Apply the preset's EQ bands
+        // Apply the preset's EQ bands and load bass/treble/virtualizer values
         const presetData = EQ_PRESETS.find(p => p.name === preset);
         if (presetData) {
           NativeEffectsManager.applyFiveBandEQ(presetData.bands);
+          // Load bass/treble/virtualizer values from preset into state
+          const newBass = presetData.bassControl ?? 0;
+          const newTreble = presetData.trebleControl ?? 0;
+          const newVirt = presetData.virtualizer ?? 0;
+          setBassControl(newBass);
+          setTrebleControl(newTreble);
+          setVirtualizerLevel(newVirt);
+          // Persist to storage
+          await Promise.all([
+            saveBassControlLevel(newBass),
+            saveTrebleControlLevel(newTreble),
+            saveVirtualizerLevel(newVirt)
+          ]);
+          // TODO: Apply to native audio when methods are available
+          console.log('[SoundLab] Preset loaded - bass:', newBass, 'treble:', newTreble, 'virtualizer:', newVirt);
         }
       }
     }
@@ -214,6 +268,30 @@ export default function SoundLabScreen() {
     NativeEffectsManager.applyFiveBandEQ(resetBands);
   };
 
+  const handleBassControlChange = async (level: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setBassControl(level);
+    await saveBassControlLevel(level);
+    // TODO: Apply to native audio when NativeEffectsManager.setBassBoost() is implemented
+    console.log('[SoundLab] Bass control changed to:', level);
+  };
+
+  const handleTrebleControlChange = async (level: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setTrebleControl(level);
+    await saveTrebleControlLevel(level);
+    // TODO: Apply to native audio when NativeEffectsManager.setTrebleBoost() is implemented
+    console.log('[SoundLab] Treble control changed to:', level);
+  };
+
+  const handleVirtualizerLevelChange = async (level: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setVirtualizerLevel(level);
+    await saveVirtualizerLevel(level);
+    // TODO: Apply to native audio when NativeEffectsManager.setVirtualizer() is implemented
+    console.log('[SoundLab] Virtualizer level changed to:', level);
+  };
+
   const handleSavePreset = async () => {
     if (customPresets.length >= MAX_CUSTOM_PRESETS) {
       showWarning("Maximum 5 custom presets allowed. Delete one first.");
@@ -230,7 +308,10 @@ export default function SoundLabScreen() {
     const newPreset: CustomEQPreset = {
       id: Date.now().toString(),
       name: newPresetName.trim(),
-      bands: [...customBands]
+      bands: [...customBands],
+      bassControl,
+      trebleControl,
+      virtualizer: virtualizerLevel
     };
     
     const updatedPresets = [...customPresets, newPreset];
@@ -247,6 +328,18 @@ export default function SoundLabScreen() {
     setCustomBands(preset.bands);
     await saveCustomEQBands(preset.bands);
     NativeEffectsManager.applyFiveBandEQ(preset.bands);
+    
+    const newBass = preset.bassControl ?? 0;
+    const newTreble = preset.trebleControl ?? 0;
+    const newVirt = preset.virtualizer ?? 0;
+    setBassControl(newBass);
+    setTrebleControl(newTreble);
+    setVirtualizerLevel(newVirt);
+    await Promise.all([
+      saveBassControlLevel(newBass),
+      saveTrebleControlLevel(newTreble),
+      saveVirtualizerLevel(newVirt)
+    ]);
   };
 
   const handleDeletePreset = (preset: CustomEQPreset) => {
@@ -271,6 +364,9 @@ export default function SoundLabScreen() {
     setEditingPreset(preset);
     setEditPresetName(preset.name);
     setCustomBands(preset.bands);
+    setBassControl(preset.bassControl ?? 0);
+    setTrebleControl(preset.trebleControl ?? 0);
+    setVirtualizerLevel(preset.virtualizer ?? 0);
     NativeEffectsManager.applyFiveBandEQ(preset.bands);
     setShowEditDialog(true);
   };
@@ -285,7 +381,7 @@ export default function SoundLabScreen() {
     
     const updatedPresets = customPresets.map(p => 
       p.id === editingPreset.id 
-        ? { ...p, name: editPresetName.trim(), bands: [...customBands] }
+        ? { ...p, name: editPresetName.trim(), bands: [...customBands], bassControl, trebleControl, virtualizer: virtualizerLevel }
         : p
     );
     
@@ -397,6 +493,106 @@ export default function SoundLabScreen() {
               <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
                 {EQ_PRESETS.find(p => p.name === selectedEQ)?.description}
               </FluentText>
+            </View>
+          ) : null}
+
+          {isEqualizerActive ? (
+            <View style={styles.effectControlsSection}>
+              <View style={styles.effectControlRow}>
+                <View style={styles.effectControlLabel}>
+                  <MaterialCommunityIcons name="speaker" size={16} color={tokens.colors.primary} />
+                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs }}>Bass Control</FluentText>
+                </View>
+                <View style={styles.effectLevelChips}>
+                  {EFFECT_LEVELS.map((level) => (
+                    <Pressable
+                      key={`bass-${level}`}
+                      style={[
+                        styles.effectLevelChip,
+                        {
+                          backgroundColor: bassControl === level ? tokens.colors.primary : tokens.colors.surfaceVariant,
+                          borderRadius: FluentRadius.circular,
+                        }
+                      ]}
+                      onPress={() => handleBassControlChange(level)}
+                    >
+                      <FluentText
+                        variant="caption1"
+                        style={{
+                          color: bassControl === level ? tokens.colors.onPrimary : tokens.colors.text,
+                          fontWeight: bassControl === level ? "600" : "400",
+                        }}
+                      >
+                        {level === 0 ? "Off" : level > 0 ? `+${level}` : level}
+                      </FluentText>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.effectControlRow}>
+                <View style={styles.effectControlLabel}>
+                  <MaterialCommunityIcons name="music-note" size={16} color={tokens.colors.primary} />
+                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs }}>Treble Control</FluentText>
+                </View>
+                <View style={styles.effectLevelChips}>
+                  {EFFECT_LEVELS.map((level) => (
+                    <Pressable
+                      key={`treble-${level}`}
+                      style={[
+                        styles.effectLevelChip,
+                        {
+                          backgroundColor: trebleControl === level ? tokens.colors.primary : tokens.colors.surfaceVariant,
+                          borderRadius: FluentRadius.circular,
+                        }
+                      ]}
+                      onPress={() => handleTrebleControlChange(level)}
+                    >
+                      <FluentText
+                        variant="caption1"
+                        style={{
+                          color: trebleControl === level ? tokens.colors.onPrimary : tokens.colors.text,
+                          fontWeight: trebleControl === level ? "600" : "400",
+                        }}
+                      >
+                        {level === 0 ? "Off" : level > 0 ? `+${level}` : level}
+                      </FluentText>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.effectControlRow}>
+                <View style={styles.effectControlLabel}>
+                  <MaterialCommunityIcons name="surround-sound" size={16} color={tokens.colors.primary} />
+                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs }}>Virtualizer</FluentText>
+                </View>
+                <View style={styles.effectLevelChips}>
+                  {EFFECT_LEVELS.map((level) => (
+                    <Pressable
+                      key={`virt-${level}`}
+                      style={[
+                        styles.effectLevelChip,
+                        {
+                          backgroundColor: virtualizerLevel === level ? tokens.colors.primary : tokens.colors.surfaceVariant,
+                          borderRadius: FluentRadius.circular,
+                        }
+                      ]}
+                      onPress={() => handleVirtualizerLevelChange(level)}
+                    >
+                      <FluentText
+                        variant="caption1"
+                        style={{
+                          color: virtualizerLevel === level ? tokens.colors.onPrimary : tokens.colors.text,
+                          fontWeight: virtualizerLevel === level ? "600" : "400",
+                        }}
+                      >
+                        {level === 0 ? "Off" : level > 0 ? `+${level}` : level}
+                      </FluentText>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
             </View>
           ) : null}
 
@@ -758,6 +954,32 @@ const styles = StyleSheet.create({
   },
   presetInfo: {
     marginTop: FluentSpacing.m,
+  },
+  effectControlsSection: {
+    marginTop: FluentSpacing.l,
+    paddingTop: FluentSpacing.m,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(128,128,128,0.2)",
+    gap: FluentSpacing.m,
+  },
+  effectControlRow: {
+    gap: FluentSpacing.s,
+  },
+  effectControlLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: FluentSpacing.xs,
+  },
+  effectLevelChips: {
+    flexDirection: "row",
+    gap: FluentSpacing.xs,
+  },
+  effectLevelChip: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: FluentSpacing.s,
+    paddingHorizontal: FluentSpacing.xs,
   },
   customEQContainer: {
     marginTop: FluentSpacing.m,

@@ -26,12 +26,16 @@ const STORAGE_KEYS = {
   CUSTOM_EQ_PRESETS: '@new_audio_360_custom_eq_presets',
   BASS_CONTROL_LEVEL: '@new_audio_360_bass_control_level',
   TREBLE_CONTROL_LEVEL: '@new_audio_360_treble_control_level',
+  VIRTUALIZER_LEVEL: '@new_audio_360_virtualizer_level',
 };
 
 export interface CustomEQPreset {
   id: string;
   name: string;
   bands: number[];
+  bassControl?: number;
+  trebleControl?: number;
+  virtualizer?: number;
 }
 
 export interface WebFolderSong {
@@ -573,6 +577,24 @@ export async function getTrebleControlLevel(): Promise<number> {
     return data ? JSON.parse(data) : 0;
   } catch (error) {
     console.error('Error getting treble control level:', error);
+    return 0;
+  }
+}
+
+export async function saveVirtualizerLevel(level: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.VIRTUALIZER_LEVEL, JSON.stringify(level));
+  } catch (error) {
+    console.error('Error saving virtualizer level:', error);
+  }
+}
+
+export async function getVirtualizerLevel(): Promise<number> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.VIRTUALIZER_LEVEL);
+    return data ? JSON.parse(data) : 0;
+  } catch (error) {
+    console.error('Error getting virtualizer level:', error);
     return 0;
   }
 }
