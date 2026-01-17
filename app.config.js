@@ -66,6 +66,17 @@ export default {
     plugins: [
       'expo-asset',
       [
+        'expo-build-properties',
+        {
+          android: {
+            newArchEnabled: false,
+          },
+          ios: {
+            newArchEnabled: false,
+          },
+        },
+      ],
+      [
         'expo-splash-screen',
         {
           backgroundColor: '#0057A0',
