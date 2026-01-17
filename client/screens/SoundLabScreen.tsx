@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Alert, TextInput, Modal } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Alert, TextInput, Modal, Platform } from "react-native";
 import Slider from "@react-native-community/slider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
@@ -249,23 +249,32 @@ export default function SoundLabScreen() {
   };
 
   const handleDeletePreset = async (preset: CustomEQPreset) => {
-    Alert.alert(
-      "Delete Preset",
-      `Are you sure you want to delete "${preset.name}"? This action cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            const updatedPresets = customPresets.filter(p => p.id !== preset.id);
-            setCustomPresets(updatedPresets);
-            await saveCustomEQPresets(updatedPresets);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const performDelete = async () => {
+      const updatedPresets = customPresets.filter(p => p.id !== preset.id);
+      setCustomPresets(updatedPresets);
+      await saveCustomEQPresets(updatedPresets);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(`Are you sure you want to delete "${preset.name}"? This action cannot be undone.`);
+      if (confirmed) {
+        await performDelete();
+      }
+    } else {
+      Alert.alert(
+        "Delete Preset",
+        `Are you sure you want to delete "${preset.name}"? This action cannot be undone.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: performDelete
           }
-        }
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const handleEditPreset = (preset: CustomEQPreset) => {
