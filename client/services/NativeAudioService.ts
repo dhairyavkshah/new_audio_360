@@ -306,33 +306,6 @@ class NativeAudioServiceClass {
     return ImmersiveModeEngineModule.getAvailableModes();
   }
 
-  async setCustomAudioParameters(
-    bassStrength: number,
-    virtualizerStrength: number,
-    loudnessGain: number,
-    eqPreset: number = -1
-  ): Promise<{ success: boolean; error?: string }> {
-    if (!this.isImmersiveModeAvailable()) {
-      return { success: false, error: 'Immersive mode not available' };
-    }
-
-    try {
-      const result = await ImmersiveModeEngineModule.setCustomParameters(
-        bassStrength,
-        virtualizerStrength,
-        loudnessGain,
-        eqPreset
-      );
-      if (result.success) {
-        this.immersiveMode = 'custom';
-      }
-      return { success: result.success, error: result.error };
-    } catch (error) {
-      console.error('NativeAudioService.setCustomAudioParameters error:', error);
-      return { success: false, error: String(error) };
-    }
-  }
-
   async startWaveformCapture(rateHz: number = 30): Promise<{ success: boolean; error?: string }> {
     if (!this.isWaveformAvailable()) {
       return { success: false, error: 'Waveform analyzer not available on this platform' };

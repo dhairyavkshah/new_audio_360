@@ -38,18 +38,6 @@ export interface EqualizerAttachResult {
   presets?: string[];
 }
 
-export interface BassBoostAttachResult {
-  success: boolean;
-  error?: string;
-  strengthSupported?: boolean;
-}
-
-export interface VirtualizerAttachResult {
-  success: boolean;
-  error?: string;
-  strengthSupported?: boolean;
-}
-
 export interface WaveformData {
   waveform: number[];
   rms: number;
@@ -122,28 +110,6 @@ export const EqualizerModule = {
   release: async () => ({ success: true }),
 };
 
-// Web stub for BassBoostModule
-export const BassBoostModule = {
-  isAvailable: () => false,
-  attach: async (): Promise<BassBoostAttachResult> => ({ success: false, error: 'Not available on web' }),
-  setEnabled: () => ({ success: false, error: 'Not available on web' }),
-  setStrength: () => ({ success: false, error: 'Not available on web' }),
-  getStrength: () => 0,
-  getProperties: () => ({ enabled: false, strengthSupported: false, strength: 0 }),
-  release: async () => ({ success: true }),
-};
-
-// Web stub for VirtualizerModule
-export const VirtualizerModule = {
-  isAvailable: () => false,
-  attach: async (): Promise<VirtualizerAttachResult> => ({ success: false, error: 'Not available on web' }),
-  setEnabled: () => ({ success: false, error: 'Not available on web' }),
-  setStrength: () => ({ success: false, error: 'Not available on web' }),
-  getStrength: () => 0,
-  getProperties: () => ({ enabled: false, strengthSupported: false, strength: 0 }),
-  release: async () => ({ success: true }),
-};
-
 // Web stub for WaveformAnalyzerModule
 export const WaveformAnalyzerModule = {
   isAvailable: () => false,
@@ -177,12 +143,6 @@ export interface ImmersiveModeInfo {
 
 export interface ImmersiveModeSettings {
   equalizerEnabled: boolean;
-  bassBoostEnabled: boolean;
-  bassBoostStrength: number;
-  virtualizerEnabled: boolean;
-  virtualizerStrength: number;
-  loudnessEnhancerEnabled: boolean;
-  loudnessGain: number;
   equalizerBandLevels: number[];
 }
 
@@ -191,9 +151,6 @@ export interface ImmersiveModeAttachResult {
   error?: string;
   audioSessionId?: number;
   equalizerBands?: number;
-  bassBoostSupported?: boolean;
-  virtualizerSupported?: boolean;
-  loudnessEnhancerAvailable?: boolean;
 }
 
 export interface ImmersiveModeResult {
@@ -213,12 +170,6 @@ export const ImmersiveModeEngineModule = {
     isAttached: false,
     settings: {
       equalizerEnabled: false,
-      bassBoostEnabled: false,
-      bassBoostStrength: 0,
-      virtualizerEnabled: false,
-      virtualizerStrength: 0,
-      loudnessEnhancerEnabled: false,
-      loudnessGain: 0,
       equalizerBandLevels: []
     }
   }),
@@ -229,18 +180,17 @@ export const ImmersiveModeEngineModule = {
     { id: 'gaming', name: 'Gaming', description: 'Enhanced positional audio for gaming', icon: 'gamepad-variant' },
     { id: 'podcast', name: 'Podcast', description: 'Voice clarity enhancement', icon: 'podcast' },
     { id: 'movie', name: 'Movie', description: 'Cinematic audio enhancement', icon: 'movie-open' },
-    { id: 'custom', name: 'Custom', description: 'Custom audio settings', icon: 'tune' }
+    { id: 'custom', name: 'Custom', description: 'Custom EQ settings', icon: 'tune' }
   ],
-  setCustomParameters: async (): Promise<ImmersiveModeResult> => ({ success: false, error: 'Not available on web' }),
   release: async () => ({ success: true }),
 };
 
 export const IMMERSIVE_MODE_INFO: Record<ImmersiveMode, { name: string; description: string; icon: string }> = {
   off: { name: 'Off', description: 'No audio enhancement', icon: 'volume-off' },
-  music: { name: 'Music', description: 'Optimized for music listening with enhanced clarity and bass', icon: 'music' },
+  music: { name: 'Music', description: 'Optimized for music listening with enhanced clarity', icon: 'music' },
   '360_reality': { name: '360 Reality', description: 'Immersive 3D spatial audio experience', icon: 'surround-sound' },
-  gaming: { name: 'Gaming', description: 'Enhanced positional audio for gaming with boosted footsteps and effects', icon: 'gamepad-variant' },
+  gaming: { name: 'Gaming', description: 'Enhanced positional audio for gaming', icon: 'gamepad-variant' },
   podcast: { name: 'Podcast', description: 'Voice clarity enhancement for podcasts and audiobooks', icon: 'podcast' },
-  movie: { name: 'Movie', description: 'Cinematic audio with enhanced dialogue and surround effects', icon: 'movie-open' },
-  custom: { name: 'Custom', description: 'Custom audio settings', icon: 'tune' }
+  movie: { name: 'Movie', description: 'Cinematic audio with enhanced dialogue', icon: 'movie-open' },
+  custom: { name: 'Custom', description: 'Custom EQ settings', icon: 'tune' }
 };

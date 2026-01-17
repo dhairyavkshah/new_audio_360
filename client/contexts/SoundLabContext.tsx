@@ -86,17 +86,9 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
     if (mode !== 'immersive' || immersiveModeName === 'off') {
       return { reverb: 0, delay: 0, stereoWidth: 1 };
     }
-    const settings = immersiveModeSettings;
-    if (settings?.virtualizerStrength !== undefined) {
-      const spatialFactor = settings.virtualizerStrength / 1000;
-      return {
-        reverb: spatialFactor * 0.3,
-        delay: 20 + spatialFactor * 30,
-        stereoWidth: 1 + spatialFactor * 0.5,
-      };
-    }
+    // Pure EQ-based immersive modes - no separate spatial effects
     return { reverb: 0.15, delay: 25, stereoWidth: 1.2 };
-  }, [mode, immersiveModeName, immersiveModeSettings]);
+  }, [mode, immersiveModeName]);
 
   const getImmersiveModeInfo = useCallback((modeId: ImmersiveMode) => {
     return IMMERSIVE_MODE_INFO[modeId] || IMMERSIVE_MODE_INFO.off;

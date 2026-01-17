@@ -84,44 +84,6 @@ interface EqualizerModuleInterface extends NativeModule {
   release(): Promise<{ success: boolean }>;
 }
 
-// BassBoost Module Types
-export interface BassBoostAttachResult {
-  success: boolean;
-  error?: string;
-  strengthSupported?: boolean;
-  minStrength?: number;
-  maxStrength?: number;
-}
-
-interface BassBoostModuleInterface extends NativeModule {
-  isAvailable(): boolean;
-  attach(sessionId: number): Promise<BassBoostAttachResult>;
-  setEnabled(enabled: boolean): { success: boolean; enabled?: boolean; error?: string };
-  setStrength(strength: number): { success: boolean; strength?: number; error?: string };
-  getStrength(): number;
-  getProperties(): { enabled: boolean; strengthSupported: boolean; strength: number };
-  release(): Promise<{ success: boolean }>;
-}
-
-// Virtualizer Module Types
-export interface VirtualizerAttachResult {
-  success: boolean;
-  error?: string;
-  strengthSupported?: boolean;
-  minStrength?: number;
-  maxStrength?: number;
-}
-
-interface VirtualizerModuleInterface extends NativeModule {
-  isAvailable(): boolean;
-  attach(sessionId: number): Promise<VirtualizerAttachResult>;
-  setEnabled(enabled: boolean): { success: boolean; enabled?: boolean; error?: string };
-  setStrength(strength: number): { success: boolean; strength?: number; error?: string };
-  getStrength(): number;
-  getProperties(): { enabled: boolean; strengthSupported: boolean; strength: number };
-  release(): Promise<{ success: boolean }>;
-}
-
 // Waveform Analyzer Module Types
 export interface WaveformData {
   waveform: number[];
@@ -202,20 +164,12 @@ interface ImmersiveModeEngineModuleInterface extends NativeModule {
   setMode(mode: string): Promise<ImmersiveModeResult>;
   getCurrentMode(): { mode: ImmersiveMode; isAttached: boolean; settings: ImmersiveModeSettings };
   getAvailableModes(): ImmersiveModeInfo[];
-  setCustomParameters(
-    bassStrength: number,
-    virtualizerStrength: number,
-    loudnessGain: number,
-    eqPreset: number
-  ): Promise<ImmersiveModeResult>;
   release(): Promise<{ success: boolean }>;
 }
 
 // Native Module Instances
 let PlaybackEngineModuleNative: PlaybackEngineModuleInterface | null = null;
 let EqualizerModuleNative: EqualizerModuleInterface | null = null;
-let BassBoostModuleNative: BassBoostModuleInterface | null = null;
-let VirtualizerModuleNative: VirtualizerModuleInterface | null = null;
 let WaveformAnalyzerModuleNative: WaveformAnalyzerModuleInterface | null = null;
 let ImmersiveModeEngineModuleNative: ImmersiveModeEngineModuleInterface | null = null;
 
@@ -230,18 +184,6 @@ if (Platform.OS === 'android') {
     EqualizerModuleNative = requireNativeModule<EqualizerModuleInterface>('EqualizerModule');
   } catch (e) {
     console.warn('EqualizerModule not available:', e);
-  }
-  
-  try {
-    BassBoostModuleNative = requireNativeModule<BassBoostModuleInterface>('BassBoostModule');
-  } catch (e) {
-    console.warn('BassBoostModule not available:', e);
-  }
-  
-  try {
-    VirtualizerModuleNative = requireNativeModule<VirtualizerModuleInterface>('VirtualizerModule');
-  } catch (e) {
-    console.warn('VirtualizerModule not available:', e);
   }
   
   try {
@@ -643,218 +585,6 @@ export const EqualizerModule = {
   }
 };
 
-// BassBoost Module Export
-export const BassBoostModule = {
-  isAvailable: (): boolean => {
-    return Platform.OS === 'android' && BassBoostModuleNative !== null;
-  },
-
-  attach: async (audioSessionId: number): Promise<BassBoostAttachResult> => {
-    if (!BassBoostModuleNative) {
-      return { success: false, error: 'BassBoost not available on this platform' };
-    }
-    try {
-      return await BassBoostModuleNative.attach(audioSessionId);
-    } catch (error) {
-      console.error('BassBoostModule.attach error:', error);
-      return { success: false, error: String(error) };
-    }
-  },
-
-  setEnabled: (enabled: boolean): { success: boolean; error?: string } => {
-    if (!BassBoostModuleNative) {
-      return { success: false, error: 'BassBoost not available' };
-    }
-    try {
-      return BassBoostModuleNative.setEnabled(enabled);
-    } catch (error) {
-      console.error('BassBoostModule.setEnabled error:', error);
-      return { success: false, error: String(error) };
-    }
-  },
-
-  setStrength: (strength: number): { success: boolean; error?: string } => {
-    if (!BassBoostModuleNative) {
-      return { success: false, error: 'BassBoost not available' };
-    }
-    try {
-      return BassBoostModuleNative.setStrength(strength);
-    } catch (error) {
-      console.error('BassBoostModule.setStrength error:', error);
-      return { success: false, error: String(error) };
-    }
-  },
-
-  getStrength: (): number => {
-    if (!BassBoostModuleNative) {
-      return 0;
-    }
-    try {
-      return BassBoostModuleNative.getStrength();
-    } catch (error) {
-      console.error('BassBoostModule.getStrength error:', error);
-      return 0;
-    }
-  },
-
-  getProperties: (): { enabled: boolean; strengthSupported: boolean; strength: number } => {
-    if (!BassBoostModuleNative) {
-      return { enabled: false, strengthSupported: false, strength: 0 };
-    }
-    try {
-      return BassBoostModuleNative.getProperties();
-    } catch (error) {
-      console.error('BassBoostModule.getProperties error:', error);
-      return { enabled: false, strengthSupported: false, strength: 0 };
-    }
-  },
-
-  release: async (): Promise<{ success: boolean }> => {
-    if (!BassBoostModuleNative) {
-      return { success: true };
-    }
-    try {
-      return await BassBoostModuleNative.release();
-    } catch (error) {
-      console.error('BassBoostModule.release error:', error);
-      return { success: false };
-    }
-  }
-};
-
-// Virtualizer Module Export
-export const VirtualizerModule = {
-  isAvailable: (): boolean => {
-    return Platform.OS === 'android' && VirtualizerModuleNative !== null;
-  },
-
-  attach: async (audioSessionId: number): Promise<VirtualizerAttachResult> => {
-    if (!VirtualizerModuleNative) {
-      return { success: false, error: 'Virtualizer not available on this platform' };
-    }
-    try {
-      return await VirtualizerModuleNative.attach(audioSessionId);
-    } catch (error) {
-      console.error('VirtualizerModule.attach error:', error);
-      return { success: false, error: String(error) };
-    }
-  },
-
-  setEnabled: (enabled: boolean): { success: boolean; error?: string } => {
-    if (!VirtualizerModuleNative) {
-      return { success: false, error: 'Virtualizer not available' };
-    }
-    try {
-      return VirtualizerModuleNative.setEnabled(enabled);
-    } catch (error) {
-      console.error('VirtualizerModule.setEnabled error:', error);
-      return { success: false, error: String(error) };
-    }
-  },
-
-  setStrength: (strength: number): { success: boolean; error?: string } => {
-    if (!VirtualizerModuleNative) {
-      return { success: false, error: 'Virtualizer not available' };
-    }
-    try {
-      return VirtualizerModuleNative.setStrength(strength);
-    } catch (error) {
-      console.error('VirtualizerModule.setStrength error:', error);
-      return { success: false, error: String(error) };
-    }
-  },
-
-  getStrength: (): number => {
-    if (!VirtualizerModuleNative) {
-      return 0;
-    }
-    try {
-      return VirtualizerModuleNative.getStrength();
-    } catch (error) {
-      console.error('VirtualizerModule.getStrength error:', error);
-      return 0;
-    }
-  },
-
-  getProperties: (): { enabled: boolean; strengthSupported: boolean; strength: number } => {
-    if (!VirtualizerModuleNative) {
-      return { enabled: false, strengthSupported: false, strength: 0 };
-    }
-    try {
-      return VirtualizerModuleNative.getProperties();
-    } catch (error) {
-      console.error('VirtualizerModule.getProperties error:', error);
-      return { enabled: false, strengthSupported: false, strength: 0 };
-    }
-  },
-
-  release: async (): Promise<{ success: boolean }> => {
-    if (!VirtualizerModuleNative) {
-      return { success: true };
-    }
-    try {
-      return await VirtualizerModuleNative.release();
-    } catch (error) {
-      console.error('VirtualizerModule.release error:', error);
-      return { success: false };
-    }
-  }
-};
-
-// Treble Module Export (Software-based using high-frequency EQ adjustment)
-// Note: Android doesn't have a native Treble effect, so this uses internal state
-// and works independently from the main EQ bands
-let trebleEnabled = false;
-let trebleStrength = 500; // 0-1000 range, 500 = neutral
-
-export const TrebleModule = {
-  isAvailable: (): boolean => {
-    // Treble is always available as it's software-based
-    return Platform.OS === 'android';
-  },
-
-  attach: async (_audioSessionId: number): Promise<{ success: boolean; error?: string }> => {
-    // No native attachment needed - treble is software-based
-    console.log('[TrebleModule] Attached (software-based treble control)');
-    return { success: true };
-  },
-
-  setEnabled: (enabled: boolean): { success: boolean; error?: string } => {
-    trebleEnabled = enabled;
-    console.log('[TrebleModule] Enabled:', enabled);
-    return { success: true };
-  },
-
-  setStrength: (strength: number): { success: boolean; error?: string } => {
-    // Clamp to 0-1000 range
-    trebleStrength = Math.max(0, Math.min(1000, strength));
-    console.log('[TrebleModule] Strength set to:', trebleStrength);
-    return { success: true };
-  },
-
-  getStrength: (): number => {
-    return trebleStrength;
-  },
-
-  isEnabled: (): boolean => {
-    return trebleEnabled;
-  },
-
-  getProperties: (): { enabled: boolean; strengthSupported: boolean; strength: number } => {
-    return { 
-      enabled: trebleEnabled, 
-      strengthSupported: true, 
-      strength: trebleStrength 
-    };
-  },
-
-  release: async (): Promise<{ success: boolean }> => {
-    trebleEnabled = false;
-    trebleStrength = 500;
-    return { success: true };
-  }
-};
-
 // WaveformAnalyzer Module Export
 export const WaveformAnalyzerModule = {
   isAvailable: (): boolean => {
@@ -1061,28 +791,6 @@ export const ImmersiveModeEngineModule = {
     }
   },
 
-  setCustomParameters: async (
-    bassStrength: number,
-    virtualizerStrength: number,
-    loudnessGain: number,
-    eqPreset: number = -1
-  ): Promise<ImmersiveModeResult> => {
-    if (!ImmersiveModeEngineModuleNative) {
-      return { success: false, error: 'Immersive mode engine not available' };
-    }
-    try {
-      return await ImmersiveModeEngineModuleNative.setCustomParameters(
-        bassStrength,
-        virtualizerStrength,
-        loudnessGain,
-        eqPreset
-      );
-    } catch (error) {
-      console.error('ImmersiveModeEngineModule.setCustomParameters error:', error);
-      return { success: false, error: String(error) };
-    }
-  },
-
   release: async (): Promise<{ success: boolean }> => {
     if (!ImmersiveModeEngineModuleNative) {
       return { success: true };
@@ -1099,10 +807,10 @@ export const ImmersiveModeEngineModule = {
 // Immersive Mode Presets Info
 export const IMMERSIVE_MODE_INFO: Record<ImmersiveMode, { name: string; description: string; icon: string }> = {
   off: { name: 'Off', description: 'No audio enhancement', icon: 'volume-off' },
-  music: { name: 'Music', description: 'Optimized for music listening with enhanced clarity and bass', icon: 'music' },
+  music: { name: 'Music', description: 'Optimized for music listening with enhanced clarity', icon: 'music' },
   '360_reality': { name: '360 Reality', description: 'Immersive 3D spatial audio experience', icon: 'surround-sound' },
-  gaming: { name: 'Gaming', description: 'Enhanced positional audio for gaming with boosted footsteps and effects', icon: 'gamepad-variant' },
+  gaming: { name: 'Gaming', description: 'Enhanced positional audio for gaming', icon: 'gamepad-variant' },
   podcast: { name: 'Podcast', description: 'Voice clarity enhancement for podcasts and audiobooks', icon: 'podcast' },
-  movie: { name: 'Movie', description: 'Cinematic audio with enhanced dialogue and surround effects', icon: 'movie-open' },
-  custom: { name: 'Custom', description: 'Custom audio settings', icon: 'tune' }
+  movie: { name: 'Movie', description: 'Cinematic audio with enhanced dialogue', icon: 'movie-open' },
+  custom: { name: 'Custom', description: 'Custom EQ settings', icon: 'tune' }
 };
