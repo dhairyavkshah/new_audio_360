@@ -151,12 +151,7 @@ class NativeEffectsManagerClass {
   private applyEqualizer(eqBands: EQBands): void {
     if (!this.equalizerAttached) return;
 
-    EqualizerModule.setEnabled(true);
-
     const numBands = this.equalizerInfo?.numberOfBands || 5;
-    // Conservative conversion: user units (-8 to +8) to millibels
-    // Using 40 millibels per unit for gentler processing
-    const MB_PER_UNIT = 40;
 
     const rawBands: number[] = [];
     
@@ -172,21 +167,37 @@ class NativeEffectsManagerClass {
       rawBands.push(0);
     }
 
-    // HEADROOM-SAFE NORMALIZATION: 
-    // Shift all bands so the maximum becomes 0, preventing any boost above original level
-    const maxValue = Math.max(...rawBands);
-    const headroomBands = rawBands.map(v => v - maxValue);
+    // Check if all bands are zero - disable EQ entirely for pure passthrough
+    const allZero = rawBands.every(v => v === 0);
+    if (allZero) {
+      EqualizerModule.setEnabled(false);
+      console.log('[NativeEffectsManager] All EQ bands at 0 - EQ disabled (pure passthrough)');
+      return;
+    }
+
+    EqualizerModule.setEnabled(true);
+
+    // ZERO-SUM BALANCE RULE:
+    // Subtract the average from each band so the total sum equals zero
+    // This ensures no net volume change - only frequency balance adjustment
+    const sum = rawBands.reduce((acc, v) => acc + v, 0);
+    const average = sum / rawBands.length;
+    const zeroSumBands = rawBands.map(v => v - average);
+
+    // Conservative conversion: user units to millibels
+    // Using 40 millibels per unit for gentler processing
+    const MB_PER_UNIT = 40;
 
     // Convert to millibels with clamping using hardware limits
     const minLevel = this.equalizerInfo?.minLevel ?? -1500;
     const maxLevel = this.equalizerInfo?.maxLevel ?? 1500;
     
-    const bandValues = headroomBands.map(v => {
+    const bandValues = zeroSumBands.map(v => {
       const millibels = Math.round(v * MB_PER_UNIT);
       return Math.max(minLevel, Math.min(maxLevel, millibels));
     });
 
-    console.log('[NativeEffectsManager] Applying EQ (headroom-safe):', { input: rawBands, adjusted: headroomBands, millibels: bandValues });
+    console.log('[NativeEffectsManager] Applying EQ (zero-sum balanced):', { input: rawBands, zeroSum: zeroSumBands, millibels: bandValues });
     EqualizerModule.setCustomBands(bandValues);
   }
 
@@ -203,7 +214,8 @@ class NativeEffectsManagerClass {
   /**
    * Apply 5-band EQ values directly (for use with Sound Lab presets and custom EQ)
    * Band values should be in range -8 to +8 (user units)
-   * Uses headroom-safe normalization to prevent clipping/distortion
+   * Uses ZERO-SUM BALANCE rule: sum of all bands equals zero (no net volume change)
+   * No other audio processing is applied - pure EQ only
    */
   applyFiveBandEQ(bands: number[]): void {
     if (!this.isAvailable() || !this.equalizerAttached) {
@@ -211,11 +223,6 @@ class NativeEffectsManagerClass {
       return;
     }
 
-    EqualizerModule.setEnabled(true);
-
-    // Conservative conversion: user units (-8 to +8) to millibels
-    // Using 40 millibels per unit (reduced from 50) for gentler processing
-    const MB_PER_UNIT = 40;
     const numBands = this.equalizerInfo?.numberOfBands || 5;
 
     // Copy and pad if needed
@@ -224,26 +231,40 @@ class NativeEffectsManagerClass {
       rawBands.push(0);
     }
 
-    // HEADROOM-SAFE NORMALIZATION: 
-    // Instead of zero-sum, shift all bands so the maximum becomes 0
-    // This ensures we never boost any frequency above the original level,
-    // only cut frequencies - preventing clipping and distortion
-    const maxValue = Math.max(...rawBands);
-    const headroomBands = rawBands.map(v => v - maxValue);
+    // Check if all bands are zero - disable EQ entirely for pure passthrough
+    const allZero = rawBands.every(v => v === 0);
+    if (allZero) {
+      EqualizerModule.setEnabled(false);
+      console.log('[NativeEffectsManager] All EQ bands at 0 - EQ disabled (pure passthrough)');
+      return;
+    }
+
+    EqualizerModule.setEnabled(true);
+
+    // ZERO-SUM BALANCE RULE:
+    // Subtract the average from each band so the total sum equals zero
+    // This ensures no net volume change - only frequency balance adjustment
+    const sum = rawBands.reduce((acc, v) => acc + v, 0);
+    const average = sum / rawBands.length;
+    const zeroSumBands = rawBands.map(v => v - average);
+
+    // Conservative conversion: user units to millibels
+    // Using 40 millibels per unit for gentler processing
+    const MB_PER_UNIT = 40;
 
     // Convert to millibels with clamping using hardware limits
     const minLevel = this.equalizerInfo?.minLevel ?? -1500;
     const maxLevel = this.equalizerInfo?.maxLevel ?? 1500;
     
-    const bandValues = headroomBands.map(v => {
+    const bandValues = zeroSumBands.map(v => {
       const millibels = Math.round(v * MB_PER_UNIT);
       return Math.max(minLevel, Math.min(maxLevel, millibels));
     });
 
-    console.log('[NativeEffectsManager] Applying 5-band EQ (headroom-safe):', { 
+    console.log('[NativeEffectsManager] Applying 5-band EQ (zero-sum balanced):', { 
       input: bands, 
-      headroomShift: -maxValue,
-      adjusted: headroomBands, 
+      average: average.toFixed(2),
+      zeroSum: zeroSumBands.map(v => v.toFixed(2)), 
       millibels: bandValues 
     });
     EqualizerModule.setCustomBands(bandValues);
