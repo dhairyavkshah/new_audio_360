@@ -166,7 +166,7 @@ All theme hooks properly integrated:
 | Splash screen displays | PASS |
 | Logo renders correctly | PASS |
 | App name "New Audio 360" visible | PASS |
-| Tagline "Studio-grade audio, crafted for you" | PASS |
+| Tagline "Top-grade music experience crafted for you" | PASS |
 | Developer attribution visible | PASS |
 | Version "v1.0" visible | PASS |
 

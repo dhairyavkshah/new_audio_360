@@ -80,7 +80,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           New Audio 360
         </FluentText>
         <FluentText variant="body1" color="secondary" align="center">
-          Studio-grade audio, crafted for you
+          Top-grade music experience crafted for you
         </FluentText>
       </Animated.View>
       <View style={[styles.footer, { bottom: insets.bottom + FluentSpacing.xxxl }]}>

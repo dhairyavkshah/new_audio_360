@@ -3,7 +3,6 @@ import { View, StyleSheet, ScrollView, Pressable, Linking } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
-import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
@@ -93,7 +92,7 @@ export default function LicenseScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <GlassCard style={styles.currentPlanCard}>
+        <View style={styles.currentPlanSection}>
           <View style={[styles.planBadge, { backgroundColor: badge.color + "20" }]}>
             <MaterialCommunityIcons name={badge.icon} size={24} color={badge.color} />
           </View>
@@ -113,7 +112,7 @@ export default function LicenseScreen() {
               Install from Google Play to activate
             </FluentText>
           )}
-        </GlassCard>
+        </View>
 
         <View style={styles.comparisonSection}>
           <FluentText variant="subtitle1" style={styles.sectionTitle}>
@@ -275,9 +274,10 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Layout.horizontalPadding,
   },
-  currentPlanCard: {
+  currentPlanSection: {
     alignItems: "center",
     marginBottom: FluentSpacing.xl,
+    paddingTop: FluentSpacing.m,
   },
   planBadge: {
     width: 56,
