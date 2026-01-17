@@ -176,7 +176,7 @@ export default function PlaylistDetailScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: headerHeight + FluentSpacing.m, paddingBottom: insets.bottom + FluentSpacing.xl },
+          { paddingTop: headerHeight, paddingBottom: insets.bottom + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
       >
