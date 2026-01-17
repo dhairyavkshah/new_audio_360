@@ -420,20 +420,25 @@ export async function PlaybackService() {
 
   TrackPlayer.addEventListener(Event.RemoteNext, async () => {
     console.log('[PlaybackService] RemoteNext event received');
-    const queue = await TrackPlayer.getQueue();
-    const currentIndex = await TrackPlayer.getActiveTrackIndex();
-    if (currentIndex !== undefined && currentIndex !== null && currentIndex < queue.length - 1) {
+    // Use TrackPlayer's native skip for notification controls (standard linear navigation)
+    try {
       await TrackPlayer.skipToNext();
+    } catch (e) {
+      console.log('[PlaybackService] No next track available');
     }
+    // Callback updates UI state - note: onTrackChange will handle the actual UI update
     TrackPlayerService.handleRemoteNext();
   });
 
   TrackPlayer.addEventListener(Event.RemotePrevious, async () => {
     console.log('[PlaybackService] RemotePrevious event received');
-    const currentIndex = await TrackPlayer.getActiveTrackIndex();
-    if (currentIndex !== undefined && currentIndex !== null && currentIndex > 0) {
+    // Use TrackPlayer's native skip for notification controls (standard linear navigation)
+    try {
       await TrackPlayer.skipToPrevious();
+    } catch (e) {
+      console.log('[PlaybackService] No previous track available');
     }
+    // Callback updates UI state - note: onTrackChange will handle the actual UI update
     TrackPlayerService.handleRemotePrevious();
   });
 

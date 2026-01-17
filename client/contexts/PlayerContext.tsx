@@ -173,14 +173,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
       },
       onNext: () => {
-        if (TrackPlayerService.getPlaybackSource() === 'music') {
-          handleNextInternalRef.current();
-        }
+        // PlaybackService already called skipToNext - onTrackChange handles UI update
+        console.log('[PlayerContext] Remote next callback - UI will update via onTrackChange');
       },
       onPrevious: () => {
-        if (TrackPlayerService.getPlaybackSource() === 'music') {
-          handlePreviousInternalRef.current();
-        }
+        // PlaybackService already called skipToPrevious - onTrackChange handles UI update
+        console.log('[PlayerContext] Remote previous callback - UI will update via onTrackChange');
       },
       onSeek: (position) => {
         if (TrackPlayerService.getPlaybackSource() === 'music') {
@@ -836,14 +834,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             }
           },
           onNext: () => {
-            if (TrackPlayerService.getPlaybackSource() === 'music') {
-              handleNextInternal();
-            }
+            // PlaybackService already called skipToNext - onTrackChange handles UI update
+            console.log('[PlayerContext] Remote next callback - UI will update via onTrackChange');
           },
           onPrevious: () => {
-            if (TrackPlayerService.getPlaybackSource() === 'music') {
-              handlePreviousInternal();
-            }
+            // PlaybackService already called skipToPrevious - onTrackChange handles UI update
+            console.log('[PlayerContext] Remote previous callback - UI will update via onTrackChange');
           },
           onSeek: (position) => {
             if (TrackPlayerService.getPlaybackSource() === 'music') {
