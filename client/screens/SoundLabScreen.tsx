@@ -635,14 +635,14 @@ export default function SoundLabScreen() {
                   <MaterialCommunityIcons name="surround-sound" size={18} color={tokens.colors.primary} />
                   <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Virtualizer</FluentText>
                   <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
-                    {virtualizerLevel === 0 ? "Off" : `${virtualizerLevel}`}
+                    {virtualizerLevel === 0 ? "Off" : virtualizerLevel > 0 ? `+${virtualizerLevel}` : `${virtualizerLevel}`}
                   </FluentText>
                 </View>
                 <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">0</FluentText>
+                  <FluentText variant="caption1" color="secondary">-3</FluentText>
                   <CrossPlatformSlider
                     style={styles.effectSlider}
-                    minimumValue={0}
+                    minimumValue={-3}
                     maximumValue={3}
                     step={1}
                     value={virtualizerLevel}
@@ -651,7 +651,7 @@ export default function SoundLabScreen() {
                     maximumTrackTintColor={tokens.colors.outline}
                     thumbTintColor={tokens.colors.primary}
                   />
-                  <FluentText variant="caption1" color="secondary">3</FluentText>
+                  <FluentText variant="caption1" color="secondary">+3</FluentText>
                 </View>
               </View>
             </View>
