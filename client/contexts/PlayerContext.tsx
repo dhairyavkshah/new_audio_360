@@ -598,10 +598,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const stopMusicForCoordinator = useCallback(async (): Promise<void> => {
-    cleanupPlayer();
+    // Stop playback but preserve the queue and position for resumption
+    // This allows resuming playback when switching back from radio
+    if (useTrackPlayerRef.current) {
+      try {
+        const progress = await TrackPlayerService.getProgress();
+        if (progress) {
+          lastKnownPositionRef.current = progress.position;
+        }
+        await TrackPlayerService.stopPreservingQueue();
+      } catch (error) {
+        console.warn('[PlayerContext] Failed to stop for coordinator:', error);
+      }
+    } else if (useNativePlaybackRef.current) {
+      PlaybackEngineModule.pause().catch(console.error);
+    } else if (Platform.OS === 'web' && audioElementRef.current) {
+      audioElementRef.current.pause();
+    } else if (playerRef.current) {
+      playerRef.current.pause();
+    }
+    
     setIsPlaying(false);
-    setCurrentTime(0);
-  }, [cleanupPlayer]);
+    AudioCoordinator.notifyPlaybackStopped('music');
+  }, []);
 
   useEffect(() => {
     AudioCoordinator.registerMusicStopCallback(stopMusicForCoordinator);
@@ -1048,17 +1067,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     handlePreviousInternalRef.current = handlePreviousInternal;
   }, [handlePreviousInternal]);
 
-  const togglePlayPause = useCallback(() => {
+  const togglePlayPause = useCallback(async () => {
     if (Platform.OS === 'web' && audioElementRef.current) {
       if (isPlaying) {
         audioElementRef.current.pause();
         setIsPlaying(false);
       } else {
+        // Request playback to stop any playing radio first
+        await AudioCoordinator.requestPlayback('music');
         if (audioContextRef.current?.state === 'suspended') {
           audioContextRef.current.resume();
         }
         audioElementRef.current.play().catch(console.error);
         setIsPlaying(true);
+        AudioCoordinator.notifyPlaybackStarted('music');
       }
       return;
     }
@@ -1070,9 +1092,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         });
       } else {
         if (!currentSong) return;
-        TrackPlayerService.play().then(() => {
+        // Request playback to stop any playing radio first
+        await AudioCoordinator.requestPlayback('music');
+        // Restore playback source before playing so callbacks work correctly
+        TrackPlayerService.setPlaybackSource('music');
+        try {
+          await TrackPlayerService.play();
           setIsPlaying(true);
-        });
+          AudioCoordinator.notifyPlaybackStarted('music');
+        } catch (error) {
+          console.warn('[PlayerContext] Failed to resume playback:', error);
+        }
       }
       return;
     }
@@ -1086,9 +1116,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         });
       } else {
         if (!currentSong) return;
+        // Request playback to stop any playing radio first
+        await AudioCoordinator.requestPlayback('music');
         PlaybackEngineModule.play().then((playResult) => {
           if (playResult.success) {
             setIsPlaying(true);
+            AudioCoordinator.notifyPlaybackStarted('music');
           }
         });
       }
@@ -1106,8 +1139,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playerRef.current.pause();
       setIsPlaying(false);
     } else {
+      // Request playback to stop any playing radio first
+      await AudioCoordinator.requestPlayback('music');
       playerRef.current.play();
       setIsPlaying(true);
+      AudioCoordinator.notifyPlaybackStarted('music');
     }
   }, [isPlaying, currentSong, loadAndPlaySong]);
 

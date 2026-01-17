@@ -200,6 +200,14 @@ class TrackPlayerServiceClass {
     await TrackPlayer.reset();
   }
 
+  async stopPreservingQueue(): Promise<void> {
+    // Stop playback but keep the queue intact for resumption
+    if (!this.isInitialized) return;
+    await TrackPlayer.pause();
+    // Clear playback source so coordinator knows music is stopped
+    this.playbackSource = null;
+  }
+
   async skipToNext(): Promise<void> {
     if (!this.isInitialized) return;
     
