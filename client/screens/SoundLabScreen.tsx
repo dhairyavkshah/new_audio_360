@@ -102,7 +102,6 @@ const EQ_PRESETS = [
   },
 ];
 
-const EFFECT_LEVELS = [-3, -2, -1, 0, 1, 2, 3];
 
 const CUSTOM_EQ_BAND_LABELS = ["60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz"];
 
@@ -579,132 +578,80 @@ export default function SoundLabScreen() {
 
           {isEqualizerActive ? (
             <View style={[styles.effectControlsSection, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: FluentRadius.large }]}>
-              <FluentText variant="body2Strong" style={{ marginBottom: FluentSpacing.m }}>Audio Effects</FluentText>
+              <FluentText variant="body2Strong" style={{ marginBottom: FluentSpacing.s }}>Audio Effects</FluentText>
               
-              <View style={styles.effectControlRow}>
-                <View style={styles.effectControlHeader}>
-                  <View style={[styles.effectIconContainer, { backgroundColor: tokens.colors.primary + '20' }]}>
-                    <MaterialCommunityIcons name="speaker-wireless" size={20} color={tokens.colors.primary} />
-                  </View>
-                  <View style={styles.effectControlTextContainer}>
-                    <FluentText variant="body2Strong">Bass Control</FluentText>
-                    <FluentText variant="caption1" color="secondary">
-                      {bassControl === 0 ? "Off" : bassControl > 0 ? `Boost +${bassControl}` : `Cut ${bassControl}`}
-                    </FluentText>
-                  </View>
+              <View style={styles.effectSliderRow}>
+                <View style={styles.effectSliderHeader}>
+                  <MaterialCommunityIcons name="speaker-wireless" size={18} color={tokens.colors.primary} />
+                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Bass</FluentText>
+                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
+                    {bassControl === 0 ? "Off" : bassControl > 0 ? `+${bassControl}` : `${bassControl}`}
+                  </FluentText>
                 </View>
-                <View style={styles.effectLevelChips}>
-                  {EFFECT_LEVELS.map((level) => (
-                    <Pressable
-                      key={`bass-${level}`}
-                      style={[
-                        styles.effectLevelChip,
-                        {
-                          backgroundColor: bassControl === level ? tokens.colors.primary : tokens.colors.surface,
-                          borderRadius: FluentRadius.medium,
-                          borderWidth: bassControl === level ? 0 : 1,
-                          borderColor: tokens.colors.outline + '40',
-                        }
-                      ]}
-                      onPress={() => handleBassControlChange(level)}
-                    >
-                      <FluentText
-                        variant="caption1"
-                        style={{
-                          color: bassControl === level ? tokens.colors.onPrimary : tokens.colors.text,
-                          fontWeight: bassControl === level ? "700" : "500",
-                        }}
-                      >
-                        {level === 0 ? "0" : level > 0 ? `+${level}` : `${level}`}
-                      </FluentText>
-                    </Pressable>
-                  ))}
+                <View style={styles.effectSliderContainer}>
+                  <FluentText variant="caption1" color="secondary">-3</FluentText>
+                  <CrossPlatformSlider
+                    style={styles.effectSlider}
+                    minimumValue={-3}
+                    maximumValue={3}
+                    step={1}
+                    value={bassControl}
+                    onValueChange={(value) => handleBassControlChange(value)}
+                    minimumTrackTintColor={tokens.colors.primary}
+                    maximumTrackTintColor={tokens.colors.outline}
+                    thumbTintColor={tokens.colors.primary}
+                  />
+                  <FluentText variant="caption1" color="secondary">+3</FluentText>
                 </View>
               </View>
 
-              <View style={[styles.effectDivider, { backgroundColor: tokens.colors.outline }]} />
-
-              <View style={styles.effectControlRow}>
-                <View style={styles.effectControlHeader}>
-                  <View style={[styles.effectIconContainer, { backgroundColor: tokens.colors.primary + '20' }]}>
-                    <MaterialCommunityIcons name="tune-vertical" size={20} color={tokens.colors.primary} />
-                  </View>
-                  <View style={styles.effectControlTextContainer}>
-                    <FluentText variant="body2Strong">Treble Control</FluentText>
-                    <FluentText variant="caption1" color="secondary">
-                      {trebleControl === 0 ? "Off" : trebleControl > 0 ? `Boost +${trebleControl}` : `Cut ${trebleControl}`}
-                    </FluentText>
-                  </View>
+              <View style={styles.effectSliderRow}>
+                <View style={styles.effectSliderHeader}>
+                  <MaterialCommunityIcons name="tune-vertical" size={18} color={tokens.colors.primary} />
+                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Treble</FluentText>
+                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
+                    {trebleControl === 0 ? "Off" : trebleControl > 0 ? `+${trebleControl}` : `${trebleControl}`}
+                  </FluentText>
                 </View>
-                <View style={styles.effectLevelChips}>
-                  {EFFECT_LEVELS.map((level) => (
-                    <Pressable
-                      key={`treble-${level}`}
-                      style={[
-                        styles.effectLevelChip,
-                        {
-                          backgroundColor: trebleControl === level ? tokens.colors.primary : tokens.colors.surface,
-                          borderRadius: FluentRadius.medium,
-                          borderWidth: trebleControl === level ? 0 : 1,
-                          borderColor: tokens.colors.outline + '40',
-                        }
-                      ]}
-                      onPress={() => handleTrebleControlChange(level)}
-                    >
-                      <FluentText
-                        variant="caption1"
-                        style={{
-                          color: trebleControl === level ? tokens.colors.onPrimary : tokens.colors.text,
-                          fontWeight: trebleControl === level ? "700" : "500",
-                        }}
-                      >
-                        {level === 0 ? "0" : level > 0 ? `+${level}` : `${level}`}
-                      </FluentText>
-                    </Pressable>
-                  ))}
+                <View style={styles.effectSliderContainer}>
+                  <FluentText variant="caption1" color="secondary">-3</FluentText>
+                  <CrossPlatformSlider
+                    style={styles.effectSlider}
+                    minimumValue={-3}
+                    maximumValue={3}
+                    step={1}
+                    value={trebleControl}
+                    onValueChange={(value) => handleTrebleControlChange(value)}
+                    minimumTrackTintColor={tokens.colors.primary}
+                    maximumTrackTintColor={tokens.colors.outline}
+                    thumbTintColor={tokens.colors.primary}
+                  />
+                  <FluentText variant="caption1" color="secondary">+3</FluentText>
                 </View>
               </View>
 
-              <View style={[styles.effectDivider, { backgroundColor: tokens.colors.outline }]} />
-
-              <View style={styles.effectControlRow}>
-                <View style={styles.effectControlHeader}>
-                  <View style={[styles.effectIconContainer, { backgroundColor: tokens.colors.primary + '20' }]}>
-                    <MaterialCommunityIcons name="surround-sound" size={20} color={tokens.colors.primary} />
-                  </View>
-                  <View style={styles.effectControlTextContainer}>
-                    <FluentText variant="body2Strong">Virtualizer</FluentText>
-                    <FluentText variant="caption1" color="secondary">
-                      {virtualizerLevel === 0 ? "Off" : virtualizerLevel > 0 ? `Level +${virtualizerLevel}` : `Level ${virtualizerLevel}`}
-                    </FluentText>
-                  </View>
+              <View style={styles.effectSliderRow}>
+                <View style={styles.effectSliderHeader}>
+                  <MaterialCommunityIcons name="surround-sound" size={18} color={tokens.colors.primary} />
+                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Virtualizer</FluentText>
+                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
+                    {virtualizerLevel === 0 ? "Off" : `${virtualizerLevel}`}
+                  </FluentText>
                 </View>
-                <View style={styles.effectLevelChips}>
-                  {EFFECT_LEVELS.map((level) => (
-                    <Pressable
-                      key={`virt-${level}`}
-                      style={[
-                        styles.effectLevelChip,
-                        {
-                          backgroundColor: virtualizerLevel === level ? tokens.colors.primary : tokens.colors.surface,
-                          borderRadius: FluentRadius.medium,
-                          borderWidth: virtualizerLevel === level ? 0 : 1,
-                          borderColor: tokens.colors.outline + '40',
-                        }
-                      ]}
-                      onPress={() => handleVirtualizerLevelChange(level)}
-                    >
-                      <FluentText
-                        variant="caption1"
-                        style={{
-                          color: virtualizerLevel === level ? tokens.colors.onPrimary : tokens.colors.text,
-                          fontWeight: virtualizerLevel === level ? "700" : "500",
-                        }}
-                      >
-                        {level === 0 ? "0" : level > 0 ? `+${level}` : `${level}`}
-                      </FluentText>
-                    </Pressable>
-                  ))}
+                <View style={styles.effectSliderContainer}>
+                  <FluentText variant="caption1" color="secondary">0</FluentText>
+                  <CrossPlatformSlider
+                    style={styles.effectSlider}
+                    minimumValue={0}
+                    maximumValue={3}
+                    step={1}
+                    value={virtualizerLevel}
+                    onValueChange={(value) => handleVirtualizerLevelChange(value)}
+                    minimumTrackTintColor={tokens.colors.primary}
+                    maximumTrackTintColor={tokens.colors.outline}
+                    thumbTintColor={tokens.colors.primary}
+                  />
+                  <FluentText variant="caption1" color="secondary">3</FluentText>
                 </View>
               </View>
             </View>
@@ -1070,50 +1017,25 @@ const styles = StyleSheet.create({
     marginTop: FluentSpacing.m,
   },
   effectControlsSection: {
-    marginTop: FluentSpacing.l,
+    marginTop: FluentSpacing.m,
     padding: FluentSpacing.m,
-    gap: FluentSpacing.m,
+    gap: FluentSpacing.s,
   },
-  effectControlRow: {
-    gap: FluentSpacing.m,
-  },
-  effectControlHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: FluentSpacing.s,
-  },
-  effectIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: FluentRadius.medium,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  effectControlTextContainer: {
-    marginLeft: FluentSpacing.m,
-    flex: 1,
-  },
-  effectControlLabel: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: FluentSpacing.xs,
-  },
-  effectLevelChips: {
-    flexDirection: "row",
+  effectSliderRow: {
     gap: FluentSpacing.xs,
   },
-  effectLevelChip: {
-    flex: 1,
+  effectSliderHeader: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: FluentSpacing.m,
-    paddingHorizontal: FluentSpacing.xs,
-    minHeight: 44,
   },
-  effectDivider: {
-    height: 1,
-    opacity: 0.15,
-    marginVertical: FluentSpacing.xs,
+  effectSliderContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: FluentSpacing.xs,
+  },
+  effectSlider: {
+    flex: 1,
+    height: 36,
   },
   customEQContainer: {
     marginTop: FluentSpacing.m,
