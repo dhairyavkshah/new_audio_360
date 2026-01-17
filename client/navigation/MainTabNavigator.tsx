@@ -84,11 +84,12 @@ export default function MainTabNavigator() {
   const { currentSong } = usePlayerContext();
   const { isNowPlayingVisible } = useNavigationContext();
   const [currentTab, setCurrentTab] = useState<string>("ListenTab");
+  const [isMiniPlayerDismissed, setIsMiniPlayerDismissed] = useState(false);
   const insets = useSafeAreaInsets();
   
   const safeBottom = Platform.OS === 'android' ? Math.max(insets.bottom, MIN_BOTTOM_PADDING) : insets.bottom;
   const tabBarHeight = TAB_BAR_HEIGHT + safeBottom;
-  const showMiniPlayer = currentSong && currentTab !== "SettingsTab" && !isNowPlayingVisible;
+  const showMiniPlayer = currentSong && !isNowPlayingVisible;
 
   // No animation - just show/hide based on state
 
@@ -190,7 +191,12 @@ export default function MainTabNavigator() {
       />
     </Tab.Navigator>
     {showMiniPlayer ? (
-      <MiniPlayer bottomOffset={tabBarHeight} />
+      <MiniPlayer 
+        bottomOffset={tabBarHeight} 
+        isDismissed={isMiniPlayerDismissed}
+        onDismiss={() => setIsMiniPlayerDismissed(true)}
+        onRestore={() => setIsMiniPlayerDismissed(false)}
+      />
     ) : null}
     </View>
   );

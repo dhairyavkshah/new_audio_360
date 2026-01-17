@@ -18,9 +18,12 @@ import {
 
 interface MiniPlayerProps {
   bottomOffset?: number;
+  isDismissed?: boolean;
+  onDismiss?: () => void;
+  onRestore?: () => void;
 }
 
-export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
+export function MiniPlayer({ bottomOffset = 0, isDismissed = false, onDismiss, onRestore }: MiniPlayerProps) {
   const navigation = useNavigation<any>();
   const { isDark } = useThemeContext();
   const { icons } = useSkin();
@@ -59,7 +62,44 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
     togglePlayPause();
   };
 
+  const handleSwipeDown = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    onDismiss?.();
+  };
+
+  const handleSwipeUp = () => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    onRestore?.();
+  };
+
   const containerBottom = bottomOffset + FluentSpacing.s + (insets.bottom > 0 ? 0 : FluentSpacing.s);
+
+  if (isDismissed) {
+    return (
+      <Pressable 
+        style={[
+          styles.restoreHandle, 
+          { 
+            bottom: containerBottom,
+            backgroundColor: tokens.colors.primary,
+          }
+        ]}
+        onPress={handleSwipeUp}
+      >
+        <MaterialCommunityIcons name="chevron-up" size={20} color={tokens.colors.onPrimary} />
+        <MaterialCommunityIcons 
+          name={isPlaying ? "music" : "music-off"} 
+          size={16} 
+          color={tokens.colors.onPrimary} 
+          style={{ marginLeft: 4 }}
+        />
+      </Pressable>
+    );
+  }
 
   return (
     <View style={[
@@ -68,6 +108,13 @@ export function MiniPlayer({ bottomOffset = 0 }: MiniPlayerProps) {
       cardEffectStyle,
       glowStyle,
     ]}>
+      <Pressable 
+        style={styles.dismissHandle} 
+        onPress={handleSwipeDown}
+        hitSlop={{ top: 10, bottom: 5, left: 20, right: 20 }}
+      >
+        <View style={[styles.dismissBar, { backgroundColor: tokens.colors.textSecondary }]} />
+      </Pressable>
       <View style={[styles.progressTrack, { backgroundColor: tokens.colors.outline }]}>
         <View 
           style={[
@@ -131,6 +178,38 @@ const styles = StyleSheet.create({
     left: FluentSpacing.l,
     right: FluentSpacing.l,
     overflow: "hidden",
+  },
+  dismissHandle: {
+    position: "absolute",
+    top: -12,
+    left: 0,
+    right: 0,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 20,
+  },
+  dismissBar: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    opacity: 0.6,
+  },
+  restoreHandle: {
+    position: "absolute",
+    left: "50%",
+    marginLeft: -40,
+    width: 80,
+    height: 32,
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
   progressTrack: {
     position: "absolute",
