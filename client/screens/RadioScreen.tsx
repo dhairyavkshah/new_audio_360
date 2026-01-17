@@ -176,9 +176,15 @@ export default function RadioScreen() {
 
   const loadOnlineData = async () => {
     setHasLoadedOnline(true);
-    const result = await detectLocation();
-    if (result.countryCode) {
-      await loadPopularStations(result.countryCode);
+    // If there's already a cached country from context, use it directly
+    // Only detect location if no country is cached
+    if (detectedCountryCode) {
+      await loadPopularStations(detectedCountryCode);
+    } else {
+      const result = await detectLocation();
+      if (result.countryCode) {
+        await loadPopularStations(result.countryCode);
+      }
     }
   };
 
