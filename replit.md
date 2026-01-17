@@ -63,7 +63,7 @@ A 4-tab navigation system (`MainTabNavigator`) includes Listen, Library, Radio, 
 -   **Theming**: 55 themes with custom icons, shapes, and component variants, applying unique visual effects (glass, beveled, aero, etc.).
 -   **Sound Lab**: Offers mutually exclusive Equalizer presets or Immersive modes. Uses headroom-safe EQ normalization (no frequency boosted above original level) plus conservative BassBoost/Virtualizer effects per immersive mode.
 -   **FM/AM Radio**: Native Android radio with scanning, tuning, favorite stations, and Sound Lab effects on live radio audio.
--   **Online Radio Streaming**: Location-based internet radio with country detection, genre filtering, 48,000+ stations via Radio Browser API with curated stations for 36 countries, and streaming playback.
+-   **Online Radio Streaming**: Curated international radio with 150+ verified stations across 50 countries. Uses hardcoded reliable streaming URLs instead of Radio Browser API for consistent, buffer-free playback. Supports location-based country detection and genre filtering.
 -   **One-Time Purchase**: License model with ₹311 INR (India) / $13.11 USD (International) pricing. Lifetime access with no expiration.
 -   **MiniPlayer**: Persistent, glassmorphism-effect mini-player.
 -   **Media Library Integration**: Onboarding for access, paginated loading, "Hide Song" feature.

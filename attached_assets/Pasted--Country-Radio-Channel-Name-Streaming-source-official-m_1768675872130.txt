@@ -1,0 +1,151 @@
+#	Country	Radio Channel Name	Streaming source (official / most reliable)
+1	India	All India Radio — Vividh Bharati	https://akashvani.gov.in/radio/live.php (Akashvani)
+2	India	All India Radio — FM Rainbow	https://akashvani.gov.in/radio/live.php (Akashvani)
+3	India	All India Radio — FM Gold	https://akashvani.gov.in/radio/live.php (Akashvani)
+4	India	All India Radio — Raagam (classical)	https://akashvani.gov.in/radio/live.php (Akashvani)
+5	India	Radio Mirchi (Nationwide / Mirchi)	https://mirchi.in/
+6	India	Radio City (91.1 FM network)	https://www.radiocity.in/
+7	India	Red FM (93.5)	https://www.redfmindia.in/
+8	India	Big FM (92.7)	https://bigfmindia.com/
+9	India	Fever FM (104 FM network)	https://www.fever.fm/
+10	India	Radio Nasha (107.4)	https://www.radionasha.com/
+11	India	Radio One (94.3 / English urban)	https://www.radioone.fm/
+12	India	Radio Indigo (91.9)	https://www.indigomusic.com/
+13	India	Ishq FM (104.8)	https://www.ishqfm.in/
+14	India	Suryan FM (Sun Network — Tamil)	https://www.sunnetwork.in/suryanfm/
+15	India	Club FM (Kerala)	https://www.clubfm.in/
+16	India	Radio Mango (Kerala)	https://www.radiomango.fm/
+17	India	Radio Mirchi — Regional (Mirchi South / Mirchi Telugu etc.)	https://mirchi.in/ (regional pages)
+18	India	Radio Dhoom / Dance (network feeds)	https://www.radiodhoom.in/ (official network page where available)
+19	India	Radio City — City Beats / special channels	https://www.radiocity.in/ (city portals)
+20	India	Radio Udaan / Community Music Channels (select cities)	(official city pages; e.g., https://www.radioudaanchannel.example/) — check specific city page
+21	India	AIR — Vividh Bharati (regional Delhi feed)	https://akashvani.gov.in/radio/live.php (Akashvani)
+22	India	BIG FM — Mumbai / City feed	https://bigfmindia.com/
+23	India	Red FM — Mumbai / City feed	https://www.redfmindia.in/
+24	India	Radio Mirchi — Mumbai (Mirchi 98.3 Mumbai)	https://mirchi.in/
+25	India	Radio Mirchi — Delhi (Mirchi Delhi)	https://mirchi.in/
+26	India	Radio City — Bengaluru (Radio City Bengaluru)	https://www.radiocity.in/
+27	India	Radio City — Kolkata	https://www.radiocity.in/
+28	India	Radio Nasha — Mumbai feed	https://www.radionasha.com/
+29	India	All India Radio — Regional (e.g., AIR Chennai)	https://akashvani.gov.in/radio/live.php (Akashvani)
+30	India	JioSaavn — JioSaavn Radio (official streaming channels & radio-like streams)	https://www.jiosaavn.com/
+31	United States	SiriusXM Hits 1 (SiriusXM)	https://www.siriusxm.com/
+32	United States	iHeart — KIIS-FM (Los Angeles)	https://www.iheart.com/
+33	United States	KEXP (Seattle)	https://www.kexp.org/
+34	United States	KROQ (Los Angeles)	https://kroq.radio.com/
+35	United States	Hot 97 (WQHT, New York)	https://www.hot97.com/
+36	United States	NPR Music / All Songs Considered	https://www.npr.org/sections/music/
+37	United States	WNYC (New York) — Music Programs	https://www.wnyc.org/
+38	United States	WXPN (Philadelphia)	https://xpn.org/
+39	United States	WAMU — Music Blocks	https://www.wamu.org/
+40	United States	KCRW (Los Angeles)	https://www.kcrw.com/
+41	United Kingdom	BBC Radio 1	https://www.bbc.co.uk/sounds/
+42	United Kingdom	BBC Radio 2	https://www.bbc.co.uk/sounds/
+43	United Kingdom	Capital FM	https://www.globalplayer.com/
+44	United Kingdom	Kiss FM (UK)	https://www.globalplayer.com/
+45	United Kingdom	Absolute Radio	https://absoluteradio.co.uk/
+46	United Kingdom	BBC Radio 3	https://www.bbc.co.uk/sounds/
+47	Japan	J-WAVE (81.3 FM Tokyo)	https://www.j-wave.co.jp/
+48	Japan	NHK-FM	https://www.nhk.or.jp/radio/
+49	Japan	Tokyo FM	https://www.tfm.co.jp/
+50	Japan	InterFM897	https://www.interfm.co.jp/
+51	Japan	FM802 (Osaka)	https://funky802.com/
+52	Germany	1LIVE (WDR)	https://www1.wdr.de/radio/1live/
+53	Germany	Antenne Bayern	https://www.antenne.de/
+54	Germany	NDR 2	https://www.ndr.de/ndr2/
+55	Germany	Bayern 3	https://www.br.de/radio/bayern3/
+56	Germany	Deutschlandfunk Kultur	https://www.deutschlandfunkkultur.de/
+57	France	France Inter	https://www.radiofrance.fr/
+58	France	NRJ France	https://www.nrj.fr/
+59	France	France Musique	https://www.radiofrance.fr/francemusique/
+60	France	FIP	https://www.radiofrance.fr/fip
+61	Australia	triple j (ABC)	https://www.abc.net.au/triplej/
+62	Australia	ABC Classic	https://www.abc.net.au/classic/
+63	Australia	KIIS 1065 Sydney	https://www.kiis1065.com.au/
+64	Canada	CBC Music / CBC Listen	https://www.cbc.ca/listen/live-radio
+65	Canada	CHUM-FM (Virgin Radio Toronto)	https://www.iheartradio.ca/stations/virginradiotoronto
+66	Canada	102.1 The Edge (CFNY)	https://www.theedge.ca/
+67	Brazil	Jovem Pan FM	https://jovempan.com.br/
+68	Brazil	Rádio Globo	https://globoplay.globo.com/radio/
+69	Brazil	Rádio Transamérica	https://www.transamerica.com.br/
+70	Mexico	Los 40 México	https://los40.com.mx/
+71	Mexico	Exa FM	https://www.exafm.com/
+72	Spain	Los 40 España	https://los40.com/
+73	Spain	Cadena SER	https://cadenaser.com/
+74	Spain	Cadena 100	https://www.cadena100.es/
+75	Italy	Radio Italia	https://www.radioitalia.it/
+76	Italy	Radio Deejay	https://www.radio.deejay.it/
+77	Italy	RTL 102.5	https://www.rtl.it/rtl1025/
+78	Netherlands	Radio 538	https://www.radio538.nl/
+79	Netherlands	NPO Radio 2	https://www.nporadio2.nl/
+80	Netherlands	Qmusic NL	https://www.qmusic.nl/
+81	Sweden	SR P3	https://sverigesradio.se/p3
+82	Sweden	NRJ Sweden	https://www.nrj.se/
+83	Belgium	Studio Brussel	https://www.vrt.be/enz/studio-brussel/
+84	Belgium	Qmusic Belgium	https://www.qmusic.be/
+85	Russia	Europa Plus	https://www.europaplus.ru/
+86	Russia	Russkoe Radio	https://rusradio.ru/
+87	South Korea	KBS Cool FM	https://world.kbs.co.kr/
+88	South Korea	MBC FM4U	https://www.imbc.com/broad/radio/fm4u/
+89	China	CNR Music Radio	http://www.cnr.cn/
+90	China	China Radio International (Music)	http://english.cri.cn/
+91	Argentina	Radio Mitre	https://www.radiomitre.cienradios.com/
+92	Argentina	La 100	https://www.la100.com/
+93	Poland	RMF FM	https://www.rmf.fm/
+94	Poland	Radio Zet	https://www.radiozet.pl/
+95	Portugal	RFM	https://www.rfm.pt/
+96	Switzerland	SRF 3	https://www.srf.ch/radio-srf-3
+97	Norway	NRK P3	https://radio.nrk.no/kanal/nrk_p3
+98	Denmark	DR P3	https://www.dr.dk/radio/p3
+99	Finland	YleX	https://areena.yle.fi/radio/ylex
+100	Greece	ERA (Hellenic Broadcasting)	https://www.hrad.gr/
+101	Turkey	Kral FM	https://www.kralmuzik.com.tr/
+102	Turkey	TRT Radyo	https://www.trt.net.tr/
+103	Israel	Galgalatz	https://glz.co.il/
+104	South Africa	Metro FM	https://www.metrofm.co.za/
+105	South Africa	5FM	https://www.5fm.co.za/
+106	Nigeria	Cool FM Lagos	https://www.coolfm.ng/
+107	Kenya	Homeboyz Radio	https://www.homeboyzradio.co.ke/
+108	Egypt	Nogoum FM	https://nogoum.fm/
+109	UAE	Dubai 92	https://www.dubai92.com/
+110	UAE	Virgin Radio Dubai	https://virginradiodubai.com/
+111	Indonesia	Prambors FM	https://www.pramborsfm.com/
+112	Indonesia	RRI Pro 2	https://rri.co.id/
+113	Thailand	Fat Radio	https://fatradio.fm/
+114	Philippines	MOR Philippines	https://mor.abs-cbn.com/
+115	Vietnam	Voice of Vietnam (Music)	https://vov.vn/
+116	New Zealand	RNZ National	https://www.rnz.co.nz/
+117	New Zealand	The Edge NZ	https://www.theedge.co.nz/
+118	Chile	Radio Cooperativa	https://www.cooperativa.cl/
+119	Colombia	La Mega	https://www.lamega.com.co/
+120	Colombia	Caracol Radio	https://caracol.com.co/
+121	Peru	Radio Capital	https://www.radiocapitalperu.com.pe/
+122	Czechia	Radiožurnál	https://www.rozhlas.cz/
+123	Hungary	Rádió 1	https://www.radio1.hu/
+124	Romania	Radio ZU	https://www.radiozu.ro/
+125	Slovakia	Rádio Expres	https://www.expres.sk/radio/
+126	Slovenia	Val 202	https://www.rtvslo.si/radio
+127	Ireland	RTÉ 2FM	https://www.rte.ie/radio/2fm/
+128	Iceland	RÚV Rás 2	https://www.ruv.is/radiosjon/ras-2
+129	Luxembourg	RTL Radio Luxembourg	https://www.rtl.lu/radio/
+130	Lithuania	LRT Radijas	https://www.lrt.lt/
+131	Latvia	Latvijas Radio / Radio SWH	https://www.latvijasradio.lv/
+132	Estonia	Vikerraadio	https://vikerraadio.err.ee/
+133	Bangladesh	Radio Foorti	https://www.radiofoorti.com/
+134	Pakistan	FM 100 Pakistan	https://www.fm100pakistan.com/
+135	Nepal	Radio Kantipur	https://radiokantipur.com/
+136	Sri Lanka	Sirasa FM	https://www.sirasafm.lk/
+137	Bangladesh	Bangladesh Betar	http://www.bbc.gov.bd/
+138	Saudi Arabia	MBC FM	https://www.mbc.net/
+139	Iran	IRIB Radio	https://radio.irib.ir/
+140	Iraq	Radio Sawa	https://www.radiosawa.com/
+141	Morocco	Medi 1 Radio	https://www.medi1.com/
+142	Algeria	Radio Algérienne	https://www.radioalgerie.dz/
+143	Tunisia	RTCI	https://www.rtci.tn/
+144	Belarus	Radio Belarus	https://www.tvr.by/
+145	Kazakhstan	Qazaq Radiosy	https://qazaqradio.kz/
+146	Uzbekistan	Oʻzbekiston Radio	https://uza.uz/
+147	Azerbaijan	Ictimai Radio	https://www.ictimai.az/
+148	Armenia	Public Radio of Armenia	https://www.armradio.am/
+149	Malta	One Radio	https://www.one.com.mt/
+150	Cyprus	CyBC Radio (RIK)	https://www.cybc.com.cy/

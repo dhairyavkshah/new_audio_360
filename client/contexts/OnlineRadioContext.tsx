@@ -394,18 +394,26 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
         shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
       });
 
+      console.log('[OnlineRadioContext] Loading stream:', streamUrl);
+      
       const { sound } = await Audio.Sound.createAsync(
         { uri: streamUrl },
-        { shouldPlay: true, volume },
+        { 
+          shouldPlay: true, 
+          volume,
+          progressUpdateIntervalMillis: 1000,
+          positionMillis: 0,
+          isLooping: false,
+        },
         onPlaybackStatusUpdate
       );
 
       soundRef.current = sound;
       setCurrentStation(station);
-      setIsPlaying(true);
-      setIsBuffering(false);
+      console.log('[OnlineRadioContext] Stream loaded successfully:', station.name);
       AudioCoordinator.notifyPlaybackStarted('radio');
 
       OnlineRadioService.reportStationClick(station.stationuuid).catch(() => {});

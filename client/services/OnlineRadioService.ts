@@ -1,3 +1,11 @@
+import {
+  CuratedRadioStation,
+  getCuratedStationsByCountry,
+  getAllCuratedStations,
+  getCuratedCountries,
+  searchCuratedStations,
+} from './CuratedRadioStations';
+
 export interface OnlineRadioStation {
   stationuuid: string;
   name: string;
@@ -19,81 +27,36 @@ export interface OnlineRadioStation {
   hls: number;
 }
 
-const isStreamSupported = (station: OnlineRadioStation): boolean => {
-  if (!station.url_resolved || !station.name) return false;
-  if (station.lastcheckok !== 1) return false;
-  
-  const codec = station.codec?.toUpperCase() || '';
-  const supportedCodecs = ['MP3', 'AAC', 'AAC+', 'OGG', 'OPUS', 'FLAC', 'UNKNOWN'];
-  const unsupportedCodecs = ['WMA', 'ASF'];
-  
-  if (unsupportedCodecs.some(c => codec.includes(c))) return false;
-  
-  const url = station.url_resolved.toLowerCase();
-  if (url.includes('.asx') || url.includes('.wma') || url.includes('.asf')) return false;
-  
-  return true;
-};
-
 export interface OnlineRadioCountry {
   name: string;
   iso_3166_1: string;
   stationcount: number;
 }
 
-const API_SERVERS = [
-  'https://de1.api.radio-browser.info',
-  'https://nl1.api.radio-browser.info',
-  'https://at1.api.radio-browser.info',
-];
-
 const NOMINATIM_API = 'https://nominatim.openstreetmap.org';
 
-let currentServerIndex = 0;
-
-const getApiServer = (): string => {
-  return API_SERVERS[currentServerIndex];
-};
-
-const rotateServer = (): void => {
-  currentServerIndex = (currentServerIndex + 1) % API_SERVERS.length;
-};
-
-const fetchWithFallback = async <T>(
-  endpoint: string,
-  options?: RequestInit
-): Promise<T> => {
-  const maxRetries = API_SERVERS.length;
-  let lastError: Error | null = null;
-
-  for (let i = 0; i < maxRetries; i++) {
-    const server = getApiServer();
-    try {
-      const response = await fetch(`${server}${endpoint}`, {
-        ...options,
-        mode: 'cors',
-        headers: {
-          'Accept': 'application/json',
-          ...options?.headers,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      console.warn(`[OnlineRadioService] Server ${server} failed:`, lastError.message);
-      rotateServer();
-    }
-  }
-
-  throw new Error(
-    `All Radio Browser API servers failed. Last error: ${lastError?.message || 'Unknown error'}`
-  );
-};
+function curatedToOnlineStation(curated: CuratedRadioStation): OnlineRadioStation {
+  return {
+    stationuuid: curated.id,
+    name: curated.name,
+    url: curated.streamUrl,
+    url_resolved: curated.streamUrl,
+    homepage: curated.website,
+    favicon: curated.favicon,
+    country: curated.country,
+    countrycode: curated.countryCode,
+    state: '',
+    language: curated.language,
+    languagecodes: curated.language.toLowerCase(),
+    tags: curated.genre,
+    codec: 'MP3',
+    bitrate: curated.bitrate,
+    votes: 100,
+    clickcount: 1000,
+    lastcheckok: 1,
+    hls: curated.streamUrl.includes('.m3u8') ? 1 : 0,
+  };
+}
 
 export const OnlineRadioService = {
   async getStationsByCountryCode(
@@ -101,13 +64,13 @@ export const OnlineRadioService = {
     limit: number = 100
   ): Promise<OnlineRadioStation[]> {
     try {
-      const stations = await fetchWithFallback<OnlineRadioStation[]>(
-        `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${limit * 2}&order=votes&reverse=true&hidebroken=true&lastcheckok=1`
-      );
-      return stations.filter(isStreamSupported).slice(0, limit);
+      const curatedStations = getCuratedStationsByCountry(countryCode);
+      const stations = curatedStations.map(curatedToOnlineStation);
+      console.log(`[OnlineRadioService] Found ${stations.length} curated stations for ${countryCode}`);
+      return stations.slice(0, limit);
     } catch (error) {
       console.error('[OnlineRadioService] getStationsByCountryCode error:', error);
-      throw new Error('Failed to fetch stations for your country. Please check your internet connection.');
+      throw new Error('Failed to fetch stations for your country.');
     }
   },
 
@@ -117,15 +80,20 @@ export const OnlineRadioService = {
     countryCode?: string
   ): Promise<OnlineRadioStation[]> {
     try {
-      let endpoint = `/json/stations/search?name=${encodeURIComponent(query)}&limit=${limit * 2}&order=votes&reverse=true&hidebroken=true&lastcheckok=1`;
+      let results = searchCuratedStations(query);
+      
       if (countryCode) {
-        endpoint += `&countrycode=${countryCode.toUpperCase()}`;
+        results = results.filter(
+          (s) => s.countryCode.toUpperCase() === countryCode.toUpperCase()
+        );
       }
-      const stations = await fetchWithFallback<OnlineRadioStation[]>(endpoint);
-      return stations.filter(isStreamSupported).slice(0, limit);
+      
+      const stations = results.map(curatedToOnlineStation);
+      console.log(`[OnlineRadioService] Search found ${stations.length} stations for "${query}"`);
+      return stations.slice(0, limit);
     } catch (error) {
       console.error('[OnlineRadioService] searchStations error:', error);
-      throw new Error('Failed to search stations. Please check your internet connection.');
+      throw new Error('Failed to search stations.');
     }
   },
 
@@ -134,25 +102,20 @@ export const OnlineRadioService = {
     limit: number = 50
   ): Promise<OnlineRadioStation[]> {
     try {
+      let curatedStations: CuratedRadioStation[];
+      
       if (countryCode) {
-        // First, try to get top-voted stations for this country directly
-        // This is faster and more reliable than searching for curated stations
-        const topStations = await fetchWithFallback<OnlineRadioStation[]>(
-          `/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?limit=${limit * 3}&order=votes&reverse=true&hidebroken=true&lastcheckok=1`
-        );
-        
-        const validStations = topStations.filter(isStreamSupported).slice(0, limit);
-        console.log(`[OnlineRadioService] Found ${validStations.length} top stations for ${countryCode}`);
-        return validStations;
+        curatedStations = getCuratedStationsByCountry(countryCode);
+      } else {
+        curatedStations = getAllCuratedStations();
       }
       
-      const stations = await fetchWithFallback<OnlineRadioStation[]>(
-        `/json/stations/topvote/${limit * 2}?hidebroken=true&lastcheckok=1`
-      );
-      return stations.filter(isStreamSupported).slice(0, limit);
+      const stations = curatedStations.map(curatedToOnlineStation);
+      console.log(`[OnlineRadioService] Found ${stations.length} popular stations${countryCode ? ` for ${countryCode}` : ''}`);
+      return stations.slice(0, limit);
     } catch (error) {
       console.error('[OnlineRadioService] getPopularStations error:', error);
-      throw new Error('Failed to fetch popular stations. Please check your internet connection.');
+      throw new Error('Failed to fetch popular stations.');
     }
   },
 
@@ -160,43 +123,7 @@ export const OnlineRadioService = {
     countryCode: string,
     limit: number = 20
   ): Promise<OnlineRadioStation[]> {
-    // Note: This function is kept for potential future use but is no longer 
-    // the primary way to get popular stations. Direct top-voted lookup is faster.
-    const { getCuratedStationsForCountry } = await import('./CuratedStations');
-    const curatedList = getCuratedStationsForCountry(countryCode);
-    
-    if (curatedList.length === 0) {
-      return [];
-    }
-
-    const foundStations: OnlineRadioStation[] = [];
-    const seenUuids = new Set<string>();
-
-    // Only search for first 5 curated stations to reduce API calls
-    for (const curated of curatedList.slice(0, 5)) {
-      if (foundStations.length >= limit) break;
-      
-      const term = curated.searchTerms[0]; // Use first search term only
-      
-      try {
-        const stations = await fetchWithFallback<OnlineRadioStation[]>(
-          `/json/stations/search?name=${encodeURIComponent(term)}&countrycode=${countryCode.toUpperCase()}&limit=5&order=votes&reverse=true&hidebroken=true&lastcheckok=1`
-        );
-        
-        const validStation = stations.find(s => 
-          isStreamSupported(s) && !seenUuids.has(s.stationuuid)
-        );
-        
-        if (validStation) {
-          seenUuids.add(validStation.stationuuid);
-          foundStations.push(validStation);
-        }
-      } catch (err) {
-        console.warn(`[OnlineRadioService] Failed to find curated station: ${curated.name}`);
-      }
-    }
-
-    return foundStations;
+    return this.getStationsByCountryCode(countryCode, limit);
   },
 
   async getStationsByGenre(
@@ -205,38 +132,40 @@ export const OnlineRadioService = {
     limit: number = 50
   ): Promise<OnlineRadioStation[]> {
     try {
-      let endpoint = `/json/stations/bytag/${encodeURIComponent(genre)}?limit=${limit * 2}&order=votes&reverse=true&hidebroken=true&lastcheckok=1`;
+      let curatedStations = getAllCuratedStations().filter(
+        (s) => s.genre.toLowerCase().includes(genre.toLowerCase())
+      );
+      
       if (countryCode) {
-        endpoint += `&countrycode=${countryCode.toUpperCase()}`;
+        curatedStations = curatedStations.filter(
+          (s) => s.countryCode.toUpperCase() === countryCode.toUpperCase()
+        );
       }
-      const stations = await fetchWithFallback<OnlineRadioStation[]>(endpoint);
-      return stations.filter(isStreamSupported).slice(0, limit);
+      
+      const stations = curatedStations.map(curatedToOnlineStation);
+      return stations.slice(0, limit);
     } catch (error) {
       console.error('[OnlineRadioService] getStationsByGenre error:', error);
-      throw new Error('Failed to fetch stations by genre. Please check your internet connection.');
+      throw new Error('Failed to fetch stations by genre.');
     }
   },
 
   async getCountries(): Promise<OnlineRadioCountry[]> {
     try {
-      const countries = await fetchWithFallback<OnlineRadioCountry[]>(
-        '/json/countries?order=stationcount&reverse=true'
-      );
-      return countries.filter((c) => c.stationcount > 0);
+      const curatedCountries = getCuratedCountries();
+      return curatedCountries.map(({ countryCode, country, stationCount }) => ({
+        name: country,
+        iso_3166_1: countryCode,
+        stationcount: stationCount,
+      }));
     } catch (error) {
       console.error('[OnlineRadioService] getCountries error:', error);
-      throw new Error('Failed to fetch countries. Please check your internet connection.');
+      throw new Error('Failed to fetch countries.');
     }
   },
 
   async reportStationClick(stationUuid: string): Promise<void> {
-    try {
-      await fetchWithFallback<{ ok: boolean }>(
-        `/json/url/${stationUuid}`
-      );
-    } catch (error) {
-      console.warn('[OnlineRadioService] reportStationClick failed:', error);
-    }
+    console.log(`[OnlineRadioService] Station clicked: ${stationUuid}`);
   },
 
   async getCountryFromCoords(
