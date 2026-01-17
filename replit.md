@@ -90,7 +90,7 @@ A 3-tab navigation system (`MainTabNavigator`) includes Listen, Library, and Set
 
 - **2026-01-09**: **Zero-Sum Balanced Audio System**:
   - **EQ Presets**: All 8 presets redesigned so band values sum to zero - positive boosts balanced by negative cuts
-  - **Immersive Modes**: All 5 native modes (Music, 360 Reality, Gaming, Podcast, Movie) use zero-sum EQ bands
+  - **Immersive Modes**: All 6 native modes (Music, 360 Reality, Signature 360, Gaming, Podcast, Movie) use zero-sum EQ bands
   - **Auto-Balancing**: NativeEffectsManager subtracts mean offset from 5-band mapping to maintain zero-sum after 7→5 conversion
   - **EQ Preset Examples**: Rock [+3,+2,-2,-3,+1,+3,-4], Electronic [+4,+3,-2,-3,+1,+3,-6], Hip-Hop [+4,+3,-2,-3,+1,+1,-4]
   - **Immersive Mode EQ (mB)**: Music [60,10,-60,10,-20], Gaming [-14,-94,16,56,36], Movie [58,-12,-62,-12,28]

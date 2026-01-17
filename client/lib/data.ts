@@ -38,15 +38,6 @@ export interface PlayerState {
 
 export const mockSongs: Song[] = [
   {
-    id: 'london-thumakda',
-    title: 'London Thumakda',
-    artist: 'Labh Janjua, Sonu Kakkar, Neha Kakkar',
-    album: 'Queen (2014)',
-    duration: 227,
-    artwork: 'https://picsum.photos/seed/londonthumakda/400/400',
-    audioUrl: '/audio/london_thumakda.mp3',
-  },
-  {
     id: 'o-maahi',
     title: 'O Maahi',
     artist: 'Arijit Singh',
@@ -63,15 +54,6 @@ export const mockSongs: Song[] = [
     duration: 195,
     artwork: 'https://picsum.photos/seed/dhurandhar/400/400',
     audioUrl: '/audio/dhurandhar.mp3',
-  },
-  {
-    id: 'yeh-hum-aa-gaye',
-    title: 'Yeh Hum Aa Gaye Hain Kahaan',
-    artist: 'Udit Narayan, Kavita Krishnamurthy',
-    album: 'Veer-Zaara (2004)',
-    duration: 338,
-    artwork: 'https://picsum.photos/seed/veerzaara/400/400',
-    audioUrl: '/audio/yeh_hum_aa_gaye_hain_kahaan.mp3',
   },
   {
     id: '1',

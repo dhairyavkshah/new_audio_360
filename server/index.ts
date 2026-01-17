@@ -5,12 +5,9 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import { users, subscriptions } from './schema';
 import { eq } from 'drizzle-orm';
-import path from 'path';
 
 const app = express();
 app.use(express.json());
-
-app.use('/attached_assets', express.static(path.join(__dirname, '../attached_assets')));
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';

@@ -9,6 +9,7 @@ interface ImmersiveEffect {
 const IMMERSIVE_MODE_EQ_BANDS: Record<string, number[]> = {
   music: [60, 10, -60, 10, -20],
   '360_reality': [18, -12, -32, -12, 38],
+  signature_360: [52, 2, -68, -18, 32],
   gaming: [-14, -94, 16, 56, 36],
   podcast: [-140, -40, 60, 80, 40],
   movie: [58, -12, -62, -12, 28],

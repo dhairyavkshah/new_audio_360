@@ -44,7 +44,7 @@ const EQ_FREQUENCIES = {
   brilliance: 16000,
 };
 
-const VALID_IMMERSIVE_MODES: ImmersiveMode[] = ['off', 'music', '360_reality', 'gaming', 'podcast', 'movie'];
+const VALID_IMMERSIVE_MODES: ImmersiveMode[] = ['off', 'music', '360_reality', 'signature_360', 'gaming', 'podcast', 'movie'];
 
 interface ImmersiveEffectSettings {
   reverb: number;
