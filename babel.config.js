@@ -14,7 +14,7 @@ module.exports = function (api) {
           extensions: [".web.ts", ".web.tsx", ".ios.js", ".android.js", ".js", ".ts", ".tsx", ".json"],
         },
       ],
-      "react-native-worklets/plugin",
+      "react-native-reanimated/plugin",
     ],
   };
 };
