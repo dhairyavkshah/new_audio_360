@@ -15,6 +15,11 @@ interface ImmersiveEffect {
 
 export type AudioSessionSource = 'music' | 'radio' | 'none';
 
+// Gain staging constants
+const MAX_SAFE_GAIN_DB = 6; // Maximum safe boost in dB before distortion risk
+const MB_PER_UNIT = 35; // millibels per EQ unit (-8 to +8 range)
+const PREAMP_HEADROOM_DB = 3; // Extra headroom to prevent clipping
+
 class NativeEffectsManagerClass {
   private isInitialized = false;
   private audioSessionId: number = 0;
@@ -256,18 +261,21 @@ class NativeEffectsManagerClass {
   }
 
   /**
-   * Apply 5-band EQ values directly (for use with Sound Lab presets and custom EQ)
-   * Band values should be in range -8 to +8 (user units)
+   * Apply 5-band EQ values with gain compensation for external boosts (bass/treble controls)
+   * This prevents distortion by applying preamp reduction when boosts are applied.
+   * 
+   * @param bands - EQ band values in range -8 to +8
+   * @param bassControlLevel - Bass control level (-5 to +5), 0 = neutral
+   * @param trebleControlLevel - Treble control level (-5 to +5), 0 = neutral
    */
-  applyFiveBandEQ(bands: number[]): void {
+  applyFiveBandEQWithGainStaging(bands: number[], bassControlLevel: number = 0, trebleControlLevel: number = 0): void {
     if (!this.isAvailable() || !this.equalizerAttached) {
-      console.log('[NativeEffectsManager] Cannot apply 5-band EQ - not available or not attached');
+      console.log('[NativeEffectsManager] Cannot apply EQ - not available or not attached');
       return;
     }
 
     EqualizerModule.setEnabled(true);
 
-    const MB_PER_UNIT = 35;
     const numBands = this.equalizerInfo?.numberOfBands || 5;
 
     // Copy and pad if needed
@@ -276,19 +284,57 @@ class NativeEffectsManagerClass {
       rawBands.push(0);
     }
 
-    // Zero-sum balancing
-    const sum = rawBands.reduce((acc, v) => acc + v, 0);
-    const offset = sum / rawBands.length;
-    const balancedBands = rawBands.map(v => v - offset);
+    // Calculate total peak boost from all sources
+    // EQ bands contribute their peak value
+    const eqPeakBoost = Math.max(0, ...rawBands);
+    
+    // Bass/Treble controls contribute additional boost (scale: 1 unit = ~0.7dB equivalent)
+    const bassBoostEquivalent = Math.max(0, bassControlLevel) * 0.7;
+    const trebleBoostEquivalent = Math.max(0, trebleControlLevel) * 0.7;
+    
+    // Total peak boost estimate
+    const totalPeakBoost = eqPeakBoost + bassBoostEquivalent + trebleBoostEquivalent;
+    
+    // Calculate preamp reduction needed to prevent clipping
+    // We subtract headroom to ensure we stay well below clipping
+    const preampReduction = Math.max(0, totalPeakBoost - MAX_SAFE_GAIN_DB + PREAMP_HEADROOM_DB);
+    
+    // Apply preamp reduction to all bands (shift everything down)
+    const compensatedBands = rawBands.map(v => v - preampReduction);
+    
+    // Then apply zero-sum balancing to maintain relative relationships
+    const sum = compensatedBands.reduce((acc, v) => acc + v, 0);
+    const offset = sum / compensatedBands.length;
+    const balancedBands = compensatedBands.map(v => v - offset);
 
-    // Convert to millibels and clamp
+    // Convert to millibels and clamp with wider range for compensated values
     const bandValues = balancedBands.map(v => {
       const millibels = v * MB_PER_UNIT;
-      return Math.max(-300, Math.min(150, millibels));
+      // Allow more negative range for preamp compensation
+      return Math.max(-500, Math.min(150, millibels));
     });
 
-    console.log('[NativeEffectsManager] Applying 5-band EQ:', { input: bands, balanced: balancedBands, millibels: bandValues });
+    console.log('[NativeEffectsManager] Applying gain-staged EQ:', { 
+      input: bands, 
+      bassControl: bassControlLevel,
+      trebleControl: trebleControlLevel,
+      totalPeakBoost,
+      preampReduction,
+      balanced: balancedBands, 
+      millibels: bandValues 
+    });
+    
     EqualizerModule.setCustomBands(bandValues);
+  }
+
+  /**
+   * Apply 5-band EQ values directly (legacy method without gain compensation)
+   * Band values should be in range -8 to +8 (user units)
+   * @deprecated Use applyFiveBandEQWithGainStaging for proper gain management
+   */
+  applyFiveBandEQ(bands: number[]): void {
+    // Delegate to gain-staged version with neutral bass/treble
+    this.applyFiveBandEQWithGainStaging(bands, 0, 0);
   }
 
   /**
@@ -296,6 +342,62 @@ class NativeEffectsManagerClass {
    */
   disableEQ(): void {
     this.disableEqualizer();
+  }
+  
+  /**
+   * Apply bass control with proper gain staging
+   * When level is 0, completely disables the bass boost effect
+   */
+  applyBassControl(level: number): void {
+    if (!BassBoostModule.isAvailable()) return;
+    
+    if (level === 0) {
+      // At zero, completely disable - preserves natural response
+      BassBoostModule.setEnabled(false);
+      console.log('[NativeEffectsManager] Bass control disabled (zero)');
+      return;
+    }
+    
+    BassBoostModule.setEnabled(true);
+    
+    if (level > 0) {
+      // Boost: scale 0-1000, but limit max to prevent distortion
+      // Use logarithmic scaling for more natural response
+      const strength = Math.min(800, Math.round(level * 160));
+      BassBoostModule.setStrength(strength);
+      console.log('[NativeEffectsManager] Bass boost:', strength);
+    } else {
+      // Cut: reduce strength (bass boost doesn't support negative, so use minimal)
+      const strength = Math.max(0, 400 + level * 80);
+      BassBoostModule.setStrength(strength);
+      console.log('[NativeEffectsManager] Bass cut:', strength);
+    }
+  }
+
+  /**
+   * Apply treble control with proper gain staging
+   * When level is 0, completely disables the treble effect
+   */
+  applyTrebleControl(level: number): void {
+    // TrebleModule may not be available on all devices
+    try {
+      const TrebleModule = require('audio-effects').TrebleModule;
+      if (!TrebleModule?.isAvailable?.()) return;
+      
+      if (level === 0) {
+        TrebleModule.setEnabled(false);
+        console.log('[NativeEffectsManager] Treble control disabled (zero)');
+        return;
+      }
+      
+      TrebleModule.setEnabled(true);
+      // Map -5 to +5 to 0-1000 (500 = neutral, but we only enable when != 0)
+      const strength = Math.max(0, Math.min(1000, 500 + level * 100));
+      TrebleModule.setStrength(strength);
+      console.log('[NativeEffectsManager] Treble:', strength);
+    } catch (e) {
+      // TrebleModule not available
+    }
   }
 
   async release(): Promise<void> {

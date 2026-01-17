@@ -214,7 +214,8 @@ export default function SoundLabScreen() {
         await clearSoundMode();
         await saveEQPreset("Custom");
         await NativeAudioService.setImmersiveMode('off');
-        NativeEffectsManager.applyFiveBandEQ(customBands);
+        // Apply with gain staging, passing current bass/treble levels
+        NativeEffectsManager.applyFiveBandEQWithGainStaging(customBands, bassControlLevel, trebleControlLevel);
       }
     } else {
       if (soundLabMode === "equalizer" && selectedEQ === preset && !isCustomEQ) {
@@ -231,10 +232,10 @@ export default function SoundLabScreen() {
         await clearSoundMode();
         await saveEQPreset(preset);
         await NativeAudioService.setImmersiveMode('off');
-        // Apply the preset's EQ bands
+        // Apply the preset's EQ bands with gain staging
         const presetData = EQ_PRESETS.find(p => p.name === preset);
         if (presetData) {
-          NativeEffectsManager.applyFiveBandEQ(presetData.bands);
+          NativeEffectsManager.applyFiveBandEQWithGainStaging(presetData.bands, bassControlLevel, trebleControlLevel);
         }
       }
     }
@@ -245,8 +246,8 @@ export default function SoundLabScreen() {
     newBands[index] = Math.round(value);
     setCustomBands(newBands);
     await saveCustomEQBands(newBands);
-    // Apply to native equalizer in real-time
-    NativeEffectsManager.applyFiveBandEQ(newBands);
+    // Apply to native equalizer with gain staging
+    NativeEffectsManager.applyFiveBandEQWithGainStaging(newBands, bassControlLevel, trebleControlLevel);
   };
 
   const handleResetBands = async () => {
@@ -254,7 +255,7 @@ export default function SoundLabScreen() {
     const resetBands = [0, 0, 0, 0, 0];
     setCustomBands(resetBands);
     await saveCustomEQBands(resetBands);
-    NativeEffectsManager.applyFiveBandEQ(resetBands);
+    NativeEffectsManager.applyFiveBandEQWithGainStaging(resetBands, bassControlLevel, trebleControlLevel);
   };
 
   const handleSavePreset = async () => {
@@ -291,7 +292,7 @@ export default function SoundLabScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setCustomBands(preset.bands);
     await saveCustomEQBands(preset.bands);
-    NativeEffectsManager.applyFiveBandEQ(preset.bands);
+    NativeEffectsManager.applyFiveBandEQWithGainStaging(preset.bands, bassControlLevel, trebleControlLevel);
   };
 
   const handleDeletePreset = async (preset: CustomEQPreset) => {
@@ -319,7 +320,7 @@ export default function SoundLabScreen() {
     setEditingPreset(preset);
     setEditPresetName(preset.name);
     setCustomBands(preset.bands);
-    NativeEffectsManager.applyFiveBandEQ(preset.bands);
+    NativeEffectsManager.applyFiveBandEQWithGainStaging(preset.bands, bassControlLevel, trebleControlLevel);
     setShowEditDialog(true);
   };
 
@@ -346,7 +347,7 @@ export default function SoundLabScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  // Bass Control - works independently using native BassBoost module
+  // Bass Control - uses gain-staged approach to prevent distortion
   const handleBassControlChange = async (value: number) => {
     if (soundLabMode !== "equalizer") return;
     
@@ -354,25 +355,15 @@ export default function SoundLabScreen() {
     setBassControlLevel(newLevel);
     await saveBassControlLevel(newLevel);
     
-    if (BassBoostModule.isAvailable()) {
-      if (newLevel > 0) {
-        BassBoostModule.setEnabled(true);
-        // Strong multiplier for significant effect
-        BassBoostModule.setStrength(Math.min(1000, newLevel * 200));
-        console.log('[SoundLab] Bass boost:', newLevel * 200);
-      } else if (newLevel < 0) {
-        // For bass cut, use negative strength (native module handles it)
-        BassBoostModule.setEnabled(true);
-        BassBoostModule.setStrength(Math.max(0, 500 + newLevel * 100));
-        console.log('[SoundLab] Bass cut:', 500 + newLevel * 100);
-      } else {
-        BassBoostModule.setEnabled(false);
-        console.log('[SoundLab] Bass disabled');
-      }
-    }
+    // Apply bass control through NativeEffectsManager for proper gain staging
+    NativeEffectsManager.applyBassControl(newLevel);
+    
+    // Re-apply EQ with updated gain staging to compensate for bass boost
+    const currentBands = isCustomEQ ? customBands : (EQ_PRESETS.find(p => p.name === selectedEQ)?.bands || [0,0,0,0,0]);
+    NativeEffectsManager.applyFiveBandEQWithGainStaging(currentBands, newLevel, trebleControlLevel);
   };
 
-  // Treble Control - works independently using native Treble module
+  // Treble Control - uses gain-staged approach to prevent distortion
   const handleTrebleControlChange = async (value: number) => {
     if (soundLabMode !== "equalizer") return;
     
@@ -380,19 +371,12 @@ export default function SoundLabScreen() {
     setTrebleControlLevel(newLevel);
     await saveTrebleControlLevel(newLevel);
     
-    // Use TrebleModule for independent treble control
-    if (TrebleModule.isAvailable()) {
-      if (newLevel !== 0) {
-        TrebleModule.setEnabled(true);
-        // Map -5 to +5 range to 0-1000 strength (500 = neutral)
-        const strength = Math.max(0, Math.min(1000, 500 + newLevel * 100));
-        TrebleModule.setStrength(strength);
-        console.log('[SoundLab] Treble:', strength);
-      } else {
-        TrebleModule.setEnabled(false);
-        console.log('[SoundLab] Treble disabled');
-      }
-    }
+    // Apply treble control through NativeEffectsManager for proper gain staging
+    NativeEffectsManager.applyTrebleControl(newLevel);
+    
+    // Re-apply EQ with updated gain staging to compensate for treble boost
+    const currentBands = isCustomEQ ? customBands : (EQ_PRESETS.find(p => p.name === selectedEQ)?.bands || [0,0,0,0,0]);
+    NativeEffectsManager.applyFiveBandEQWithGainStaging(currentBands, bassControlLevel, newLevel);
   };
 
   const handleVirtualizerToggle = async () => {
