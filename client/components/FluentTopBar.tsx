@@ -114,12 +114,14 @@ export function FluentTopBar({
     onSearchChange?.("");
   };
 
+  const topPadding = Platform.OS === 'android' ? FluentSpacing.s : insets.top + FluentSpacing.s;
+
   return (
     <View
       style={[
         styles.container,
         {
-          paddingTop: insets.top + FluentSpacing.s,
+          paddingTop: topPadding,
           backgroundColor: fluentColors.colorNeutralBackground1,
           borderBottomColor: fluentColors.colorNeutralStroke2,
         },

@@ -53,12 +53,11 @@ export function FluentScreenLayout({
 
   // On Android with non-translucent status bar, we don't need top safe area edge
   // as the StatusBar component already reserves that space
-  // For screens with native stack headers (edges=[]), no top padding is needed
   const safeAreaEdges = Platform.OS === 'android' 
     ? edges.filter(e => e !== 'top') 
     : edges;
 
-  const bottomPadding = hasBottomNavigation ? tabBarHeight + FluentSpacing.l : insets.bottom + FluentSpacing.l;
+  const bottomPadding = hasBottomNavigation ? tabBarHeight + FluentSpacing.s : insets.bottom + FluentSpacing.s;
 
   const content = (
     <View

@@ -17,32 +17,17 @@ import { SoundLabProvider } from "@/contexts/SoundLabContext";
 import { RadioProvider } from "@/contexts/RadioContext";
 import { OnlineRadioProvider } from "@/contexts/OnlineRadioContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import SplashScreen from "@/screens/SplashScreen";
 import LoadingScreen from "@/screens/LoadingScreen";
 import PermissionOnboardingFlow from "@/screens/PermissionOnboardingFlow";
-import LoginScreen from "@/screens/LoginScreen";
-import BiometricLockScreen from "@/screens/BiometricLockScreen";
 import SubscriptionRequiredScreen from "@/screens/SubscriptionRequiredScreen";
 import { AudioTipNotification } from "@/components/AudioTipNotification";
 
 type AppState = "splash" | "loading" | "checkingOnboarding" | "onboarding" | "ready";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, requiresReauth } = useAuth();
   const { isLicensed, isLoading: isLicenseLoading } = useSubscription();
-
-  if (isLoading) {
-    return <LoadingScreen message="Checking authentication..." />;
-  }
-
-  if (!isAuthenticated && !requiresReauth) {
-    return <LoginScreen />;
-  }
-
-  if (requiresReauth) {
-    return <BiometricLockScreen />;
-  }
 
   if (isLicenseLoading) {
     return <LoadingScreen message="Checking license..." />;

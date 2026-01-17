@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useRef } from "react";
 import { View, StyleSheet, Image, Dimensions, ImageBackground, Platform, Pressable, ActivityIndicator, ScrollView, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -61,6 +61,7 @@ export default function NowPlayingScreen() {
 
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const artworkScale = useSharedValue(1);
+  const visitCountRef = useRef(0);
   
   const isCompact = screenWidth <= 375 || screenHeight <= 700;
   const isVeryCompact = screenHeight <= 667;
@@ -76,6 +77,7 @@ export default function NowPlayingScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      visitCountRef.current += 1;
       setNowPlayingVisible(true);
       return () => {
         setNowPlayingVisible(false);
