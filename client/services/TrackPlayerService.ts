@@ -1,14 +1,52 @@
-import TrackPlayer, {
-  Event,
-  State,
-  Capability,
-  RepeatMode,
-  AppKilledPlaybackBehavior,
-  Track,
-  Progress,
-  PlaybackState,
-} from 'react-native-track-player';
 import { Platform } from 'react-native';
+
+// Dynamically import TrackPlayer to handle cases where native module isn't linked
+let TrackPlayer: any = null;
+let Event: any = null;
+let State: any = null;
+let Capability: any = null;
+let RepeatMode: any = null;
+let AppKilledPlaybackBehavior: any = null;
+let isTrackPlayerModuleAvailable = false;
+
+try {
+  const trackPlayerModule = require('react-native-track-player');
+  TrackPlayer = trackPlayerModule.default;
+  Event = trackPlayerModule.Event;
+  State = trackPlayerModule.State;
+  Capability = trackPlayerModule.Capability;
+  RepeatMode = trackPlayerModule.RepeatMode;
+  AppKilledPlaybackBehavior = trackPlayerModule.AppKilledPlaybackBehavior;
+  
+  // Check if Capability enum is properly available
+  isTrackPlayerModuleAvailable = Capability != null && Capability.Play != null;
+} catch (e) {
+  console.log('[TrackPlayerService] Native module not available:', e);
+  isTrackPlayerModuleAvailable = false;
+}
+
+export { State, RepeatMode };
+
+export type Track = {
+  id: string;
+  url: string;
+  title: string;
+  artist: string;
+  album?: string;
+  artwork?: string;
+  duration?: number;
+  isLiveStream?: boolean;
+};
+
+export type Progress = {
+  position: number;
+  duration: number;
+  buffered: number;
+};
+
+export type PlaybackState = {
+  state: any;
+};
 
 export interface TrackMetadata {
   id: string;
@@ -43,6 +81,12 @@ class TrackPlayerServiceClass {
 
     if (Platform.OS === 'web') {
       console.log('[TrackPlayerService] Web platform - using fallback');
+      return false;
+    }
+
+    // Check if native module is available
+    if (!isTrackPlayerModuleAvailable) {
+      console.log('[TrackPlayerService] Native module not available - using fallback');
       return false;
     }
 
