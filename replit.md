@@ -6,6 +6,8 @@ New Audio 360 is a premium mobile music player application built with React Nati
 ## User Preferences
 I prefer concise and direct communication. When making changes, prioritize core functionality and architectural integrity. I value clear explanations for complex decisions. I prefer iterative development with clear justifications for each step. No complex animations - use simple dissolve/appear effects only.
 
+**Git Workflow**: Replit is always the source of truth. Never merge changes from GitHub to Replit. When pushing to GitHub, use `git push --force` if needed to overwrite remote changes.
+
 ## System Architecture
 The application leverages React Native and Expo for the frontend. The UI/UX strictly adheres to the Microsoft Fluent 2 design system, implementing a 4px grid, Fluent typography, semantic color tokens, elevation shadows, and motion curves, ensuring 100% Android safe area compliance.
 
