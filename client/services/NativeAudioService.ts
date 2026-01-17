@@ -4,8 +4,6 @@ import {
   WaveformAnalyzerModule, 
   ImmersiveModeEngineModule,
   EqualizerModule,
-  BassBoostModule,
-  VirtualizerModule,
   PlaybackStatus,
   WaveformData,
   FftData,
