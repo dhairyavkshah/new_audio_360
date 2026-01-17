@@ -4,8 +4,6 @@ import {
   WaveformAnalyzerModule, 
   ImmersiveModeEngineModule,
   EqualizerModule,
-  BassBoostModule,
-  VirtualizerModule,
   PlaybackStatus,
   WaveformData,
   FftData,
@@ -234,12 +232,6 @@ class NativeAudioServiceClass {
         success: true, 
         settings: {
           equalizerEnabled: mode !== 'off',
-          bassBoostEnabled: mode !== 'off',
-          bassBoostStrength: mode !== 'off' ? 500 : 0,
-          virtualizerEnabled: mode !== 'off',
-          virtualizerStrength: mode !== 'off' ? 500 : 0,
-          loudnessEnhancerEnabled: mode !== 'off',
-          loudnessGain: mode !== 'off' ? 300 : 0,
           equalizerBandLevels: []
         }
       };
@@ -283,12 +275,6 @@ class NativeAudioServiceClass {
         isAttached: true,
         settings: {
           equalizerEnabled: this.immersiveMode !== 'off',
-          bassBoostEnabled: this.immersiveMode !== 'off',
-          bassBoostStrength: this.immersiveMode !== 'off' ? 500 : 0,
-          virtualizerEnabled: this.immersiveMode !== 'off',
-          virtualizerStrength: this.immersiveMode !== 'off' ? 500 : 0,
-          loudnessEnhancerEnabled: this.immersiveMode !== 'off',
-          loudnessGain: this.immersiveMode !== 'off' ? 300 : 0,
           equalizerBandLevels: []
         }
       };
@@ -299,12 +285,6 @@ class NativeAudioServiceClass {
         isAttached: false,
         settings: {
           equalizerEnabled: false,
-          bassBoostEnabled: false,
-          bassBoostStrength: 0,
-          virtualizerEnabled: false,
-          virtualizerStrength: 0,
-          loudnessEnhancerEnabled: false,
-          loudnessGain: 0,
           equalizerBandLevels: []
         }
       };

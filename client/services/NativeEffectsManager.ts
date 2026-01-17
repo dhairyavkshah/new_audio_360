@@ -180,7 +180,7 @@ class NativeEffectsManagerClass {
 
     const bandValues = balancedBands.map(v => {
       const millibels = v * MB_PER_UNIT;
-      return Math.max(-300, Math.min(150, millibels));
+      return Math.max(-150, Math.min(150, millibels));  // Symmetric clamping for zero-sum
     });
 
     EqualizerModule.setCustomBands(bandValues);

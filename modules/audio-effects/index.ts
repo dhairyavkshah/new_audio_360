@@ -179,12 +179,6 @@ export interface ImmersiveModeInfo {
 
 export interface ImmersiveModeSettings {
   equalizerEnabled: boolean;
-  bassBoostEnabled: boolean;
-  bassBoostStrength: number;
-  virtualizerEnabled: boolean;
-  virtualizerStrength: number;
-  loudnessEnhancerEnabled: boolean;
-  loudnessGain: number;
   equalizerBandLevels: number[];
 }
 
@@ -193,9 +187,6 @@ export interface ImmersiveModeAttachResult {
   error?: string;
   audioSessionId?: number;
   equalizerBands?: number;
-  bassBoostSupported?: boolean;
-  virtualizerSupported?: boolean;
-  loudnessEnhancerAvailable?: boolean;
 }
 
 export interface ImmersiveModeResult {
@@ -1031,12 +1022,6 @@ export const ImmersiveModeEngineModule = {
         isAttached: false,
         settings: {
           equalizerEnabled: false,
-          bassBoostEnabled: false,
-          bassBoostStrength: 0,
-          virtualizerEnabled: false,
-          virtualizerStrength: 0,
-          loudnessEnhancerEnabled: false,
-          loudnessGain: 0,
           equalizerBandLevels: []
         }
       };
@@ -1050,12 +1035,6 @@ export const ImmersiveModeEngineModule = {
         isAttached: false,
         settings: {
           equalizerEnabled: false,
-          bassBoostEnabled: false,
-          bassBoostStrength: 0,
-          virtualizerEnabled: false,
-          virtualizerStrength: 0,
-          loudnessEnhancerEnabled: false,
-          loudnessGain: 0,
           equalizerBandLevels: []
         }
       };
