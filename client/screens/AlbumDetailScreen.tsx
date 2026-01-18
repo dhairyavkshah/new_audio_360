@@ -33,6 +33,9 @@ export default function AlbumDetailScreen() {
         duration: s.duration,
         artwork: s.artwork,
         uri: s.uri || '',
+        filename: s.filename || `${s.title}.mp3`,
+        modificationTime: s.modificationTime || Date.now(),
+        isFromDevice: s.isFromDevice !== undefined ? s.isFromDevice : true,
       }));
     }
     
@@ -44,6 +47,9 @@ export default function AlbumDetailScreen() {
         duration: s.duration,
         artwork: s.artwork || "https://placehold.co/300x300/1a1a2e/ffffff?text=🎵",
         uri: s.uri,
+        filename: s.filename,
+        modificationTime: s.modificationTime,
+        isFromDevice: s.isFromDevice,
       }));
 
     return allSongs.filter((song) => 
