@@ -239,8 +239,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     
     if (trackMetadataList.length === 0) return;
     
-    await TrackPlayerService.reset();
-    await TrackPlayerService.addTracks(trackMetadataList);
+    await TrackPlayerService.setQueue(trackMetadataList);
     
     if (currentSongId) {
       const currentIndex = queue.findIndex(s => s.id === currentSongId);
@@ -768,7 +767,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (Platform.OS === 'android' && nativeAudioSessionIdRef.current > 0) {
-      NativeEffectsManager.applySettings(soundLabMode, eqBands, immersiveEffect);
+      NativeEffectsManager.applySettings(soundLabMode, eqBands);
     }
   }, [soundLabMode, eqBands, immersiveEffect]);
 
@@ -912,7 +911,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             const source = audioSource.startsWith('file://') || audioSource.startsWith('content://') 
               ? { uri: audioSource } 
               : audioSource;
-            const newPlayer = createAudioPlayer(source, { updateInterval: 0.1 });
+            const newPlayer = createAudioPlayer(source);
             playerRef.current = newPlayer;
 
             statusListenerRef.current = newPlayer.addListener('playbackStatusUpdate', handleStatusUpdate);
@@ -1062,7 +1061,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const source = audioSource.startsWith('file://') || audioSource.startsWith('content://') 
           ? { uri: audioSource } 
           : audioSource;
-        const newPlayer = createAudioPlayer(source, { updateInterval: 0.1 });
+        const newPlayer = createAudioPlayer(source);
         playerRef.current = newPlayer;
 
         statusListenerRef.current = newPlayer.addListener('playbackStatusUpdate', handleStatusUpdate);
