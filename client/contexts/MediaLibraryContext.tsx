@@ -343,11 +343,22 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         
         try {
           if (index < 3) console.log('[MediaLibrary] Processing asset', index, ':', asset.filename);
-          const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
-          if (index < 3) console.log('[MediaLibrary] Got assetInfo for', index, ', localUri:', assetInfo.localUri?.substring(0, 50));
           
-          if (assetInfo.localUri) {
-            const metadata = await getMusicMetadata(assetInfo.localUri);
+          // Try to get localUri from assetInfo, but fall back to asset.uri if not available
+          let fileUri = asset.uri;
+          try {
+            const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
+            if (assetInfo.localUri) {
+              fileUri = assetInfo.localUri;
+            }
+          } catch {
+            // Use asset.uri as fallback
+          }
+          
+          if (index < 3) console.log('[MediaLibrary] Using URI for', index, ':', fileUri?.substring(0, 60));
+          
+          if (fileUri) {
+            const metadata = await getMusicMetadata(fileUri);
             
             if (metadata) {
               if (index < 3) console.log('[MediaLibrary] Got metadata for', index, ':', {
@@ -363,7 +374,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
               if (index < 3) console.log('[MediaLibrary] No metadata returned for', index);
             }
           } else {
-            if (index < 3) console.log('[MediaLibrary] No localUri for', index);
+            if (index < 3) console.log('[MediaLibrary] No URI available for', index);
           }
         } catch (err) {
           console.warn('[MediaLibrary] Error extracting metadata for:', asset.filename, err);
