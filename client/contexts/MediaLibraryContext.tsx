@@ -182,6 +182,8 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
   }, []);
 
   const fetchAudioFiles = useCallback(async (hiddenIds: string[], folderIds: string[]) => {
+    console.log('[MediaLibrary] fetchAudioFiles called', { platform: Platform.OS, folderCount: folderIds.length });
+    
     if (Platform.OS === 'web') {
       const sessionFolders = getSessionWebFolders();
       const webFolders = sessionFolders.length > 0 ? sessionFolders : await getWebFolderData();
@@ -248,6 +250,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
       return;
     }
 
+    console.log('[MediaLibrary] Android: Starting audio file scan...');
     setIsLoading(true);
     setError(null);
     setProgress({ loaded: 0, total: 0 });
@@ -296,7 +299,10 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         }
       }
 
+      console.log('[MediaLibrary] Android: Found', allAssets.length, 'audio assets');
+      
       if (allAssets.length === 0) {
+        console.log('[MediaLibrary] Android: No assets found, clearing songs');
         setSongs([]);
         setAllSongsIncludingHidden([]);
         setUsingMockData(false);
@@ -403,15 +409,20 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
   }, []);
 
   const refreshSongs = useCallback(async () => {
+    console.log('[MediaLibrary] refreshSongs called', { platform: Platform.OS });
+    
     if (Platform.OS === 'web') {
       await fetchAudioFiles(hiddenSongIds, []);
       return;
     }
     
     const granted = await checkPermission();
+    console.log('[MediaLibrary] Permission check result:', granted);
+    
     if (granted) {
       await fetchAudioFiles(hiddenSongIds, selectedFolders);
     } else {
+      console.log('[MediaLibrary] Permission not granted, clearing songs');
       setSongs([]);
       setAllSongsIncludingHidden([]);
       setUsingMockData(false);
@@ -481,6 +492,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
 
   useEffect(() => {
     const initialize = async () => {
+      console.log('[MediaLibrary] Starting initialization...');
       await loadHiddenSongs();
       await loadOnboardingStatus();
       await loadSelectedFolders();
@@ -488,12 +500,15 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
       // Validate that onboarding complete matches actual permission status
       await validateOnboardingStatus();
       setInitialized(true);
+      console.log('[MediaLibrary] Initialization complete');
     };
     initialize();
   }, [loadHiddenSongs, loadOnboardingStatus, loadSelectedFolders, checkPermission, validateOnboardingStatus]);
 
   useEffect(() => {
+    console.log('[MediaLibrary] Check refresh trigger:', { initialized, isOnboardingComplete });
     if (initialized && isOnboardingComplete) {
+      console.log('[MediaLibrary] Triggering refreshSongs...');
       refreshSongs();
     }
   }, [initialized, isOnboardingComplete]);
