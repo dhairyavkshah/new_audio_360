@@ -14,7 +14,7 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
 import { FluentSpacing, FluentRadius, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
-import { mockSongs, mockAlbums, mockArtists, Song } from "@/lib/data";
+import { mockSongs, Song } from "@/lib/data";
 import { Album } from "@/navigation/LibraryStackNavigator";
 
 interface DerivedAlbum extends Album {
@@ -90,13 +90,6 @@ export default function LibraryScreen() {
   }, [deviceSongs]);
 
   const derivedAlbums = useMemo((): DerivedAlbum[] => {
-    if (usingMockData) {
-      return mockAlbums.map(album => ({
-        ...album,
-        songs: [],
-      }));
-    }
-    
     const albumMap = new Map<string, DerivedAlbum>();
     
     allSongs.forEach(song => {
@@ -117,16 +110,9 @@ export default function LibraryScreen() {
     });
     
     return Array.from(albumMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [allSongs, usingMockData]);
+  }, [allSongs]);
 
   const derivedArtists = useMemo((): DerivedArtist[] => {
-    if (usingMockData) {
-      return mockArtists.map(artist => ({
-        ...artist,
-        songs: [],
-      }));
-    }
-    
     const artistMap = new Map<string, DerivedArtist>();
     
     allSongs.forEach(song => {
@@ -146,7 +132,7 @@ export default function LibraryScreen() {
     });
     
     return Array.from(artistMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [allSongs, usingMockData]);
+  }, [allSongs]);
 
   const filteredData = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
