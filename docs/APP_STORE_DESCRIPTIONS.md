@@ -37,7 +37,7 @@ Express yourself with our extensive theme collection:
 
 **DUAL RADIO EXPERIENCE**
 - FM/AM Radio: Native tuning on supported devices
-- Online Radio: Access 48,000+ stations worldwide via Radio Browser API
+- Online Radio: Access hundreds of verified stations worldwide
 - Only verified working streams with quality audio (MP3/OGG/AAC, >64kbps)
 - Location-based discovery finds local stations
 - Apply Sound Lab effects to live radio
@@ -77,7 +77,7 @@ Download now and elevate your music experience!
 - Sound Lab with 8 EQ presets and 6 immersive modes
 - Slider-based Bass, Treble, and Virtualizer controls (-3 to +3)
 - 55 themes to personalize your experience
-- FM/AM and Online Radio (48,000+ verified stations)
+- FM/AM and Online Radio (hundreds of verified stations)
 - Custom 5-band equalizer with save/load
 - Microsoft Fluent 2 design system
 
@@ -142,7 +142,7 @@ All ages
 
 ### Feature Graphic Design
 - App logo prominently displayed
-- "55 Themes | Pro Audio | 48,000+ Radio Stations"
+- "55 Themes | Pro Audio | Hundreds of Radio Stations"
 - Gradient background matching app branding
 - Sample theme screenshots in background
 

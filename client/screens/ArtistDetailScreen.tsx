@@ -13,20 +13,20 @@ import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors
 import { mockSongs } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 
-type AlbumDetailRouteProp = RouteProp<LibraryStackParamList, "AlbumDetail">;
+type ArtistDetailRouteProp = RouteProp<LibraryStackParamList, "ArtistDetail">;
 
-export default function AlbumDetailScreen() {
-  const route = useRoute<AlbumDetailRouteProp>();
-  const { album } = route.params;
+export default function ArtistDetailScreen() {
+  const route = useRoute<ArtistDetailRouteProp>();
+  const { artist } = route.params;
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const { playSong, currentSong, queue, setQueue } = usePlayerContext();
+  const { playSong, currentSong, setQueue } = usePlayerContext();
   const { songs: deviceSongs, isOnboardingComplete } = useMediaLibraryContext();
   const tabBarHeight = useSafeTabBarHeight();
 
-  const albumSongs: PlayableSong[] = useMemo(() => {
-    if (album.songs && album.songs.length > 0) {
-      return album.songs.map((s: any) => ({
+  const artistSongs: PlayableSong[] = useMemo(() => {
+    if (artist.songs && artist.songs.length > 0) {
+      return artist.songs.map((s: any) => ({
         id: s.id,
         title: s.title,
         artist: s.artist || 'Unknown Artist',
@@ -58,16 +58,15 @@ export default function AlbumDetailScreen() {
         }));
 
     return allSongs.filter((song) => 
-      song.album.toLowerCase() === album.name.toLowerCase() ||
-      song.artist.toLowerCase() === album.artist.toLowerCase()
+      song.artist.toLowerCase() === artist.name.toLowerCase()
     );
-  }, [deviceSongs, isOnboardingComplete, album]);
+  }, [deviceSongs, isOnboardingComplete, artist]);
 
   const navigation = useNavigation();
 
   const handlePlaySong = useCallback((song: PlayableSong) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setQueue(albumSongs);
+    setQueue(artistSongs);
     playSong(song);
     navigation.dispatch(
       CommonActions.navigate({
@@ -78,20 +77,17 @@ export default function AlbumDetailScreen() {
         },
       })
     );
-  }, [albumSongs, setQueue, playSong, navigation]);
+  }, [artistSongs, setQueue, playSong, navigation]);
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <Image source={{ uri: album.artwork }} style={styles.artwork} />
+      <Image source={{ uri: artist.artwork }} style={styles.artwork} />
       <View style={styles.headerInfo}>
-        <FluentText variant="title2" style={styles.albumTitle}>
-          {album.name}
-        </FluentText>
-        <FluentText variant="body2" color="secondary">
-          {album.artist}
+        <FluentText variant="title2" style={styles.artistName}>
+          {artist.name}
         </FluentText>
         <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
-          {albumSongs.length} {albumSongs.length === 1 ? "song" : "songs"}
+          {artistSongs.length} {artistSongs.length === 1 ? "song" : "songs"}
         </FluentText>
       </View>
     </View>
@@ -109,7 +105,7 @@ export default function AlbumDetailScreen() {
   return (
     <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>
       <FlatList
-        data={albumSongs}
+        data={artistSongs}
         renderItem={renderSong}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
@@ -117,7 +113,7 @@ export default function AlbumDetailScreen() {
           <EmptyState
             icon="music-off"
             title="No songs found"
-            description="This album doesn't have any songs yet."
+            description="This artist doesn't have any songs yet."
           />
         }
         contentContainerStyle={[
@@ -145,14 +141,14 @@ const styles = StyleSheet.create({
   artwork: {
     width: 120,
     height: 120,
-    borderRadius: FluentControlRadius.card,
+    borderRadius: 60,
   },
   headerInfo: {
     flex: 1,
     marginLeft: FluentSpacing.l,
     justifyContent: "center",
   },
-  albumTitle: {
+  artistName: {
     fontWeight: "700",
     marginBottom: FluentSpacing.xs,
   },

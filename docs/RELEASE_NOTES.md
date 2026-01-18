@@ -12,7 +12,7 @@ New Audio 360 v1.0 - Premium Music Player
 Your music, your way:
 - Sound Lab with 8 EQ presets & slider-based audio effects
 - 55 stunning themes to personalize your experience
-- Online Radio: 48,000+ verified stations worldwide
+- Online Radio: Hundreds of verified music streams worldwide
 - Background playback with notification controls
 - Custom 5-band equalizer with save/load
 - FM/AM radio support (hardware required)
@@ -68,7 +68,7 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 
 #### Radio
 - **FM/AM Radio:** Native Android radio tuning (device hardware required)
-- **Online Radio:** 48,000+ internet radio stations via Radio Browser API
+- **Online Radio:** Hundreds of internet radio stations via Radio Browser API
   - Only verified working streams (lastcheckok=1)
   - Quality codecs only: MP3, OGG, AAC
   - Bitrate >64kbps for clear audio

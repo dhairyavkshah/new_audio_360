@@ -390,23 +390,26 @@ export default function LibraryScreen() {
     }
     return (
       <FlatList
-        key="artists-list"
+        key="artists-grid"
         data={filteredData.artists}
+        numColumns={2}
         renderItem={({ item: artist }) => (
-          <Pressable
-            style={[styles.artistItem, { backgroundColor: colors.colorNeutralBackground2 }]}
-            onPress={() => navigation.navigate("ArtistDetail" as any, { artist })}
+          <AnimatedCard
+            style={styles.artistCard}
+            borderRadius={FluentRadius.large}
+            onPress={() => navigation.navigate("ArtistDetail", { artist })}
+            accessibilityLabel={`${artist.name}, ${artist.songCount} songs`}
           >
-            <Image source={{ uri: artist.artwork }} style={styles.artistArtwork} />
-            <View style={styles.artistInfo}>
-              <FluentText variant="body1">{artist.name}</FluentText>
-              <FluentText variant="caption1" color="tertiary">{artist.songCount} songs</FluentText>
+            <View style={styles.artistAvatarContainer}>
+              <Image source={{ uri: artist.artwork }} style={styles.artistAvatar} />
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={24} color={colors.colorNeutralForeground3} />
-          </Pressable>
+            <FluentText variant="body1" numberOfLines={1} style={styles.artistName}>{artist.name}</FluentText>
+            <FluentText variant="caption1" color="tertiary" numberOfLines={1}>{artist.songCount} {artist.songCount === 1 ? 'song' : 'songs'}</FluentText>
+          </AnimatedCard>
         )}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + FluentSpacing.m }]}
+        contentContainerStyle={[styles.gridContent, { paddingBottom: tabBarHeight + 80 + FluentSpacing.m }]}
+        columnWrapperStyle={styles.artistRow}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
         maxToRenderPerBatch={10}
@@ -582,20 +585,30 @@ const styles = StyleSheet.create({
   albumName: {
     fontWeight: "600",
   },
-  artistItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: FluentSpacing.m,
-    borderRadius: FluentRadius.large,
+  artistRow: {
     gap: FluentSpacing.m,
+    marginBottom: FluentSpacing.m,
   },
-  artistArtwork: {
-    width: 56,
-    height: 56,
-    borderRadius: FluentControlRadius.fab,
-  },
-  artistInfo: {
+  artistCard: {
     flex: 1,
+    padding: FluentSpacing.s,
+    alignItems: "center",
+  },
+  artistAvatarContainer: {
+    width: "100%",
+    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: FluentSpacing.s,
+  },
+  artistAvatar: {
+    width: "80%",
+    aspectRatio: 1,
+    borderRadius: 1000,
+  },
+  artistName: {
+    fontWeight: "600",
+    textAlign: "center",
   },
   playlistItem: {
     flexDirection: "row",

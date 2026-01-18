@@ -6,11 +6,20 @@ import RecordingsScreen from "@/screens/RecordingsScreen";
 import PlaylistManagementScreen from "@/screens/PlaylistManagementScreen";
 import PlaylistDetailScreen from "@/screens/PlaylistDetailScreen";
 import AlbumDetailScreen from "@/screens/AlbumDetailScreen";
+import ArtistDetailScreen from "@/screens/ArtistDetailScreen";
 
 export interface Album {
   id: string;
   name: string;
   artist: string;
+  artwork: string;
+  songCount: number;
+  songs?: any[];
+}
+
+export interface Artist {
+  id: string;
+  name: string;
   artwork: string;
   songCount: number;
   songs?: any[];
@@ -22,6 +31,7 @@ export type LibraryStackParamList = {
   PlaylistManagement: undefined;
   PlaylistDetail: { playlistId: string; playlistName: string };
   AlbumDetail: { album: Album };
+  ArtistDetail: { artist: Artist };
 };
 
 const Stack = createNativeStackNavigator<LibraryStackParamList>();
@@ -66,6 +76,14 @@ export default function LibraryStackNavigator() {
         component={AlbumDetailScreen}
         options={({ route }) => ({
           headerTitle: route.params.album.name,
+          headerBackTitle: "Library",
+        })}
+      />
+      <Stack.Screen
+        name="ArtistDetail"
+        component={ArtistDetailScreen}
+        options={({ route }) => ({
+          headerTitle: route.params.artist.name,
           headerBackTitle: "Library",
         })}
       />
