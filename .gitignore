@@ -51,3 +51,6 @@ google-service-account.json
 
 # Test songs (development only - not for production builds)
 public/test-songs/
+
+# Attached assets (user uploads, not for production)
+attached_assets/
