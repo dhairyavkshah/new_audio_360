@@ -230,7 +230,7 @@ export const ImmersiveModeEngineModule = {
     { id: 'gaming', name: 'Gaming', description: 'Enhanced positional audio for gaming', icon: 'gamepad-variant' },
     { id: 'podcast', name: 'Podcast', description: 'Voice clarity enhancement', icon: 'podcast' },
     { id: 'movie', name: 'Movie', description: 'Cinematic audio enhancement', icon: 'movie-open' },
-    { id: 'sports', name: 'Sports', description: 'Stadium broadcast clarity', icon: 'soccer' },
+    { id: 'sports', name: 'Sports', description: 'Stadium broadcast clarity', icon: 'stadium' },
     { id: 'custom', name: 'Custom', description: 'Custom audio settings', icon: 'tune' }
   ],
   setCustomParameters: async (): Promise<ImmersiveModeResult> => ({ success: false, error: 'Not available on web' }),
@@ -244,6 +244,6 @@ export const IMMERSIVE_MODE_INFO: Record<ImmersiveMode, { name: string; descript
   gaming: { name: 'Gaming', description: 'Enhanced positional audio for gaming with boosted footsteps and effects', icon: 'gamepad-variant' },
   podcast: { name: 'Podcast', description: 'Voice clarity enhancement for podcasts and audiobooks', icon: 'podcast' },
   movie: { name: 'Movie', description: 'Cinematic audio with enhanced dialogue and surround effects', icon: 'movie-open' },
-  sports: { name: 'Sports', description: 'Stadium broadcast clarity with enhanced commentary', icon: 'soccer' },
+  sports: { name: 'Sports', description: 'Stadium broadcast clarity with enhanced commentary', icon: 'stadium' },
   custom: { name: 'Custom', description: 'Custom audio settings', icon: 'tune' }
 };
