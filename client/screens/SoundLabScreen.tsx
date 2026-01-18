@@ -142,16 +142,15 @@ function SoundLabScreen() {
   const MAX_CUSTOM_PRESETS = 5;
 
   const immersiveModes = useMemo(() => {
-    if (availableModes.length > 0) {
-      return availableModes.filter(mode => DISPLAY_IMMERSIVE_MODES.includes(mode.id));
-    }
+    // Always use the static DISPLAY_IMMERSIVE_MODES list with IMMERSIVE_MODE_INFO
+    // This ensures Sports mode is always included
     return DISPLAY_IMMERSIVE_MODES.map(modeId => ({
       id: modeId,
       name: IMMERSIVE_MODE_INFO[modeId].name,
       description: IMMERSIVE_MODE_INFO[modeId].description,
       icon: IMMERSIVE_MODE_INFO[modeId].icon
     }));
-  }, [availableModes]);
+  }, []);
 
   const applyAudioEffects = useCallback((bass: number, treble: number, virtualizer: number) => {
     if (Platform.OS === 'web') {
