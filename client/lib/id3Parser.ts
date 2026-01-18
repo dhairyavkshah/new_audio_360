@@ -43,35 +43,32 @@ async function parseID3Web(url: string): Promise<ID3Metadata | null> {
 
 async function parseID3Native(uri: string): Promise<ID3Metadata | null> {
   try {
-    console.log('[ID3Parser] parseID3Native called with URI:', uri);
+    console.warn('[ID3Parser] parseID3Native uri=' + uri?.substring(0, 60));
     
     // Handle different URI formats
     let fileUri = uri;
     if (uri.startsWith('content://')) {
-      // content:// URIs need special handling - expo-file-system may not support them directly
-      console.log('[ID3Parser] content:// URI detected, attempting to read...');
+      console.warn('[ID3Parser] content:// URI - expo-file-system may not support');
     } else if (!uri.startsWith('file://')) {
       fileUri = `file://${uri}`;
     }
     
-    console.log('[ID3Parser] Checking file info for:', fileUri);
     const fileInfo = await FileSystem.getInfoAsync(fileUri);
-    console.log('[ID3Parser] File info:', JSON.stringify(fileInfo));
+    console.warn('[ID3Parser] fileInfo exists=' + fileInfo.exists + ' size=' + (fileInfo as any).size);
     
     if (!fileInfo.exists) {
-      console.warn('[ID3Parser] File does not exist:', fileUri);
+      console.warn('[ID3Parser] File not found: ' + fileUri);
       return null;
     }
     
-    console.log('[ID3Parser] Reading file as base64...');
     const base64Content = await FileSystem.readAsStringAsync(fileUri, {
-      encoding: 'base64' as any,
+      encoding: 'base64',
     });
     
-    console.log('[ID3Parser] Read', base64Content.length, 'chars of base64');
+    console.warn('[ID3Parser] Read ' + base64Content.length + ' base64 chars');
     
-    // Only use first 512KB for ID3 parsing
-    const truncatedBase64 = base64Content.substring(0, 700000); // ~512KB in base64
+    // Only use first 512KB for ID3 parsing (ID3 tags are at the start)
+    const truncatedBase64 = base64Content.substring(0, 700000);
     
     const binaryString = atob(truncatedBase64);
     const bytes = new Uint8Array(binaryString.length);
@@ -79,13 +76,13 @@ async function parseID3Native(uri: string): Promise<ID3Metadata | null> {
       bytes[i] = binaryString.charCodeAt(i);
     }
     
-    console.log('[ID3Parser] Converted to', bytes.length, 'bytes, parsing ID3 tags...');
+    console.warn('[ID3Parser] Parsing ' + bytes.length + ' bytes...');
     const result = parseID3Tags(bytes);
-    console.log('[ID3Parser] Parse result:', result ? Object.keys(result) : 'null');
+    console.warn('[ID3Parser] Result: ' + (result ? Object.keys(result).join(',') : 'null'));
     
     return result;
   } catch (error) {
-    console.error('[ID3Parser] Native parse error:', error);
+    console.warn('[ID3Parser] Error: ' + String(error));
     return null;
   }
 }

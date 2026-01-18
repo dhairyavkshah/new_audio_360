@@ -1,9 +1,4 @@
-import { Platform } from 'react-native';
-import { MetadataExtractorModule } from '@/modules/audio-effects';
 import { parseID3FromUri } from './id3Parser';
-
-// Use console.warn for production visibility (console.log may be stripped)
-console.warn('=== musicInfo.ts module loaded (v3) ===');
 
 export interface MusicMetadata {
   title?: string;
@@ -17,72 +12,8 @@ export interface MusicMetadata {
 }
 
 export async function getMusicMetadata(localUri: string): Promise<MusicMetadata | null> {
-  console.warn('[getMusicMetadata] START uri=' + localUri?.substring(0, 50) + ' platform=' + Platform.OS);
-  
-  if (Platform.OS === 'web') {
-    console.warn('[getMusicMetadata] Using web ID3 parser');
-    return await getMetadataFromID3Parser(localUri);
-  }
-  
-  if (Platform.OS !== 'android') {
-    console.warn('[getMusicMetadata] Platform not supported: ' + Platform.OS);
-    return null;
-  }
-  
-  // Check native module availability
-  const moduleExists = !!MetadataExtractorModule;
-  const hasIsAvailable = typeof MetadataExtractorModule?.isAvailable === 'function';
-  console.warn('[getMusicMetadata] moduleExists=' + moduleExists + ' hasIsAvailable=' + hasIsAvailable);
-  
-  let isNativeAvailable = false;
-  try {
-    isNativeAvailable = MetadataExtractorModule?.isAvailable?.() ?? false;
-    console.warn('[getMusicMetadata] isAvailable() returned: ' + isNativeAvailable);
-  } catch (e) {
-    console.warn('[getMusicMetadata] isAvailable() threw: ' + String(e));
-  }
-  
-  if (isNativeAvailable) {
-    try {
-      console.warn('[getMusicMetadata] Calling native extractMetadata...');
-      const result = await MetadataExtractorModule.extractMetadata(localUri);
-      console.warn('[getMusicMetadata] Native result success=' + result?.success + ' error=' + result?.error);
-      
-      if (result && result.success) {
-        const metadata: MusicMetadata = {};
-        
-        if (result.title) metadata.title = result.title;
-        if (result.artist) metadata.artist = result.artist;
-        if (result.album) metadata.album = result.album;
-        if (result.duration) metadata.duration = result.duration;
-        if (result.year) metadata.year = result.year;
-        if (result.genre) metadata.genre = result.genre;
-        if (result.trackNumber) metadata.trackNumber = result.trackNumber;
-        
-        if (result.albumArt) {
-          metadata.albumArt = `data:image/jpeg;base64,${result.albumArt}`;
-        }
-        
-        console.warn('[getMusicMetadata] Extracted: ' + Object.keys(metadata).join(','));
-        if (Object.keys(metadata).length > 0) {
-          return metadata;
-        }
-      }
-    } catch (error) {
-      console.warn('[getMusicMetadata] Native error: ' + String(error));
-    }
-  }
-  
-  // Fallback to JS ID3 parser
-  console.warn('[getMusicMetadata] Trying JS ID3 parser fallback...');
-  try {
-    const jsResult = await getMetadataFromID3Parser(localUri);
-    console.warn('[getMusicMetadata] JS result: ' + (jsResult ? Object.keys(jsResult).join(',') : 'null'));
-    return jsResult;
-  } catch (jsError) {
-    console.warn('[getMusicMetadata] JS parser error: ' + String(jsError));
-    return null;
-  }
+  // Use JavaScript ID3 parser for all platforms (works on web and Android)
+  return await getMetadataFromID3Parser(localUri);
 }
 
 async function getMetadataFromID3Parser(localUri: string): Promise<MusicMetadata | null> {
@@ -107,24 +38,12 @@ async function getMetadataFromID3Parser(localUri: string): Promise<MusicMetadata
 }
 
 export async function getAlbumArt(localUri: string): Promise<string | null> {
-  if (Platform.OS !== 'android') {
-    return null;
-  }
-  
-  if (!MetadataExtractorModule.isAvailable()) {
-    return null;
-  }
-  
+  // Use JS ID3 parser to extract album art
   try {
-    const result = await MetadataExtractorModule.extractAlbumArt(localUri);
-    
-    if (result.success && result.albumArt) {
-      return `data:image/jpeg;base64,${result.albumArt}`;
-    }
-    
-    return null;
+    const metadata = await getMusicMetadata(localUri);
+    return metadata?.albumArt || null;
   } catch (error) {
-    console.error('[getAlbumArt] Error:', error);
+    console.warn('[getAlbumArt] Error:', error);
     return null;
   }
 }
