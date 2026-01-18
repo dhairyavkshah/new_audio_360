@@ -15,7 +15,7 @@ Studio-grade audio experience:
 - Pure software DSP with 7-band parametric EQ
 - Bass & Treble controls: ±12 dB range
 - Intelligent limiter prevents distortion
-- 8 EQ presets + 5 immersive audio modes
+- 8 EQ presets + 6 immersive audio modes
 - 55 stunning themes
 - Online Radio: Hundreds of verified stations
 
@@ -63,15 +63,16 @@ Source → Gain → 7-Band EQ → Bass Shelf Filter → Treble Shelf Filter → 
 - **Distortion Prevention**: Preserves loudness while eliminating clipping
 
 #### Immersive Audio Modes
-6 preset modes optimized for different content, each with independent settings:
+7 preset modes (6 active + Off) optimized for different content, each with independent settings:
 
 | Mode | Description | Bass | Treble | Spatial |
 |------|-------------|------|--------|---------|
-| **Music** | Balanced enhancement for general listening | +2 | +1 | 30% |
-| **360 Reality** | Spatial audio simulation | +1 | +2 | 60% |
-| **Gaming** | Enhanced directional cues and bass impact | +3 | +2 | 50% |
-| **Podcast** | Voice clarity optimization | -1 | 0 | 0% |
-| **Movie** | Cinematic surround simulation | +3 | +2 | 40% |
+| **Music** | Balanced enhancement for general listening | +4.8 dB | +3.6 dB | 35% |
+| **360 Reality** | Spatial audio simulation | +1.2 dB | +3.6 dB | 70% |
+| **Gaming** | Enhanced directional cues and clarity | -2.4 dB | +6 dB | 50% |
+| **Podcast** | Voice clarity optimization | -3.6 dB | -1.2 dB | 0% |
+| **Movie** | Cinematic surround simulation | +8.4 dB | +4.8 dB | 45% |
+| **Sports** | Stadium broadcast clarity | +2.4 dB | -1.2 dB | 40% |
 | **Off** | Pure, unprocessed audio | 0 | 0 | 0% |
 
 Each immersive mode has its own dedicated EQ curve, bass boost, treble boost, and virtualizer settings applied directly without zero-sum normalization. The intelligent limiter remains active to prevent distortion.

@@ -27,7 +27,7 @@ Experience professional audio control with our pure software DSP engine:
 - **Bass Control**: ±12 dB adjustment via dedicated lowshelf filter at 150Hz
 - **Treble Control**: ±12 dB adjustment via dedicated highshelf filter at 6kHz
 - **Intelligent Limiter**: Prevents distortion at any boost level
-- **5 Immersive Modes**: Music, 360 Reality, Gaming, Podcast, Movie (plus Off to disable)
+- **6 Immersive Modes**: Music, 360 Reality, Gaming, Podcast, Movie, Sports (plus Off to disable)
 - **Independent Mode Settings**: Each immersive mode has its own EQ, bass, treble, and virtualizer
 - **Custom EQ Editor**: Create and save up to 5 personal presets
 - **Zero-Sum Normalization**: Presets stay balanced without volume jumps
@@ -105,7 +105,7 @@ Download now and elevate your music experience!
 - Bass & Treble controls with ±12 dB range
 - Intelligent limiter prevents distortion at any boost level
 - 8 EQ presets with zero-sum normalization
-- 5 immersive audio modes
+- 6 immersive audio modes
 - 55 themes across 6 categories
 - Online Radio with hundreds of verified stations
 - Background playback with notification controls
@@ -164,7 +164,7 @@ One-time purchase for lifetime access. Pricing configured separately on Google P
 4. **Theme Gallery** - Showcase of multiple themes
 5. **Music Library** - Browse view with album grid
 6. **Online Radio** - Station list with country selection
-7. **Immersive Modes** - 5 audio mode selection
+7. **Immersive Modes** - 6 audio mode selection
 8. **Playlist View** - User playlists with cover art
 
 ### Feature Graphic Design

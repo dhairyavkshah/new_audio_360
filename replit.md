@@ -52,8 +52,8 @@ Source → Gain → 7-Band EQ → Bass Shelf Filter → Treble Shelf Filter → 
 Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic
 - Zero-sum normalization applied to prevent volume jumps
 
-**Immersive Modes** (5 total, plus Off to disable):
-Music, 360 Reality, Gaming, Podcast, Movie
+**Immersive Modes** (6 total, plus Off to disable):
+Music, 360 Reality, Gaming, Podcast, Movie, Sports
 - Each mode has its own independent EQ curve, bass boost, treble boost, and virtualizer (spatial width)
 - NO zero-sum normalization (creative curves applied directly)
 - Limiter remains active for distortion prevention
@@ -67,6 +67,7 @@ Music, 360 Reality, Gaming, Podcast, Movie
 | Gaming | -2.4 dB | +6 dB | 50% | Footstep clarity (2-6kHz boost) - Pro gaming standards |
 | Podcast | -3.6 dB | -1.2 dB | 0% | Voice clarity, reduced rumble/sibilance |
 | Movie | +8.4 dB | +4.8 dB | 45% | THX-inspired cinematic impact |
+| Sports | +2.4 dB | -1.2 dB | 40% | Stadium broadcast clarity - enhanced commentary |
 
 ### Navigation Structure
 4-tab system with persistent MiniPlayer:

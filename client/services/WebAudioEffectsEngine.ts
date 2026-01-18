@@ -70,6 +70,16 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     trebleBoost: 2.0,  // +4.8 dB (effects detail and sparkle)
     spatialWidth: 0.45, // 45% - surround-like experience
   },
+  sports: {
+    // Stadium/broadcast mode - enhanced commentary clarity with crowd atmosphere
+    // Boosted 500Hz-4kHz for commentator voices, moderate bass for stadium ambiance
+    // Slight treble reduction to minimize whistle/crowd harshness
+    name: 'Sports',
+    eqPreset: [1.0, 0.5, 0.5, 2.0, 2.5, 2.0, 0.5, 0, -0.5, -0.5],
+    bassBoost: 1.0,    // +2.4 dB (stadium atmosphere without overwhelming)
+    trebleBoost: -0.5, // -1.2 dB (reduce whistle/crowd peak harshness)
+    spatialWidth: 0.4, // 40% - stadium-like spatial experience
+  },
 };
 
 class WebAudioEffectsEngineClass {

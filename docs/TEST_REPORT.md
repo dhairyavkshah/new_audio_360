@@ -199,7 +199,7 @@ All theme hooks properly integrated:
 | Item | Result |
 |------|--------|
 | 8 Equalizer presets available | PASS |
-| 5 Immersive modes available | PASS |
+| 6 Immersive modes available | PASS |
 | Mutual exclusivity (EQ vs Immersive) | PASS |
 | Bass control adjusts independently | PASS |
 | Treble control adjusts independently | PASS |

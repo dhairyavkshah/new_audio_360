@@ -25,6 +25,7 @@ class ImmersiveModeEngineModule : Module() {
         const val MODE_GAMING = "gaming"
         const val MODE_PODCAST = "podcast"
         const val MODE_MOVIE = "movie"
+        const val MODE_SPORTS = "sports"
     }
     
     override fun definition() = ModuleDefinition {
@@ -77,6 +78,7 @@ class ImmersiveModeEngineModule : Module() {
                         MODE_GAMING -> applyModeGaming()
                         MODE_PODCAST -> applyModePodcast()
                         MODE_MOVIE -> applyModeMovie()
+                        MODE_SPORTS -> applyModeSports()
                         else -> {
                             promise.reject("INVALID_MODE", "Unknown mode: $mode", null)
                             return@post
@@ -144,6 +146,12 @@ class ImmersiveModeEngineModule : Module() {
                     "name" to "Movie",
                     "description" to "Cinematic audio experience",
                     "icon" to "movie-open"
+                ),
+                mapOf(
+                    "id" to MODE_SPORTS,
+                    "name" to "Sports",
+                    "description" to "Stadium broadcast clarity",
+                    "icon" to "soccer"
                 )
             )
         }
@@ -278,6 +286,18 @@ class ImmersiveModeEngineModule : Module() {
             bassGainUnits = 3.5f,      // +8.4 dB (cinematic impact and rumble)
             trebleGainUnits = 2.0f,    // +4.8 dB (effects detail and sparkle)
             virtualizerStrength = 450  // 45% - surround-like experience
+        )
+    }
+    
+    private fun applyModeSports() {
+        // Stadium/broadcast mode - enhanced commentary clarity with crowd atmosphere
+        // Boosted 500Hz-4kHz for commentator voices, moderate bass for stadium ambiance
+        // Slight treble reduction to minimize whistle/crowd harshness
+        applyImmersiveSettings(
+            eqGains = listOf(1.0, 0.5, 0.5, 2.0, 2.5, 0.5, -0.3),
+            bassGainUnits = 1.0f,      // +2.4 dB (stadium atmosphere)
+            trebleGainUnits = -0.5f,   // -1.2 dB (reduce whistle harshness)
+            virtualizerStrength = 400  // 40% - stadium-like spatial experience
         )
     }
     
