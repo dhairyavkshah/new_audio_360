@@ -54,3 +54,13 @@ public/test-songs/
 
 # Attached assets (user uploads, not for production)
 attached_assets/
+
+# Cache directories
+.cache/
+
+# Android generated (expo prebuild regenerates these)
+/android/
+
+# Temporary/log files
+*.log
+/tmp/
