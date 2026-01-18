@@ -4,6 +4,7 @@ import * as MediaLibrary from 'expo-media-library';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMusicMetadata } from '@/lib/musicInfo';
 import { Song } from '@/lib/data';
+import { testSongs } from '@/lib/testSongs';
 import { 
   getSelectedFolders as loadSelectedFoldersFromStorage, 
   setSelectedFolders as saveSelectedFoldersToStorage,
@@ -218,9 +219,11 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         return;
       }
       
-      setSongs([]);
-      setAllSongsIncludingHidden([]);
+      const filtered = testSongs.filter(s => !hiddenIds.includes(s.id));
+      setSongs(filtered);
+      setAllSongsIncludingHidden(testSongs);
       setUsingMockData(false);
+      setProgress({ loaded: filtered.length, total: testSongs.length });
       return;
     }
 
