@@ -1,7 +1,7 @@
 import React, { useState, memo } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View, TouchableOpacity } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ListenStackNavigator from "@/navigation/ListenStackNavigator";
@@ -117,6 +117,37 @@ export default function MainTabNavigator() {
         tabBarItemStyle: {
           paddingVertical: FluentSpacing.xs,
         },
+        tabBarButton: ({ 
+          children, 
+          onPress, 
+          onLongPress,
+          onPressIn,
+          onPressOut,
+          style, 
+          accessibilityLabel, 
+          accessibilityRole, 
+          accessibilityState,
+          accessibilityHint,
+          disabled,
+          testID 
+        }) => (
+          <TouchableOpacity
+            onPress={onPress ?? undefined}
+            onLongPress={onLongPress ?? undefined}
+            onPressIn={onPressIn ?? undefined}
+            onPressOut={onPressOut ?? undefined}
+            style={style}
+            activeOpacity={1}
+            accessibilityLabel={accessibilityLabel}
+            accessibilityRole={accessibilityRole}
+            accessibilityState={accessibilityState}
+            accessibilityHint={accessibilityHint}
+            disabled={disabled ?? undefined}
+            testID={testID}
+          >
+            {children}
+          </TouchableOpacity>
+        ),
       }}
       screenListeners={{
         tabPress: (e) => {
