@@ -1294,3 +1294,74 @@ export const LicenseVerificationModule = {
     }
   }
 };
+
+// Metadata Extractor Module Types
+export interface ExtractedMetadata {
+  success: boolean;
+  title?: string | null;
+  artist?: string | null;
+  album?: string | null;
+  duration?: number | null;
+  year?: string | null;
+  genre?: string | null;
+  trackNumber?: string | null;
+  albumArt?: string | null;
+  error?: string;
+}
+
+export interface ExtractedAlbumArt {
+  success: boolean;
+  albumArt?: string | null;
+  error?: string;
+}
+
+interface MetadataExtractorModuleInterface {
+  isAvailable(): boolean;
+  extractMetadata(uri: string): Promise<ExtractedMetadata>;
+  extractAlbumArt(uri: string): Promise<ExtractedAlbumArt>;
+}
+
+let MetadataExtractorModuleNative: MetadataExtractorModuleInterface | null = null;
+
+if (Platform.OS === 'android') {
+  try {
+    MetadataExtractorModuleNative = requireNativeModule<MetadataExtractorModuleInterface>('MetadataExtractorModule');
+  } catch (error) {
+    console.warn('MetadataExtractorModule not available:', error);
+  }
+}
+
+export const MetadataExtractorModule = {
+  isAvailable: (): boolean => {
+    if (!MetadataExtractorModuleNative) return false;
+    try {
+      return MetadataExtractorModuleNative.isAvailable();
+    } catch (error) {
+      return false;
+    }
+  },
+
+  extractMetadata: async (uri: string): Promise<ExtractedMetadata> => {
+    if (!MetadataExtractorModuleNative) {
+      return { success: false, error: 'Module not available' };
+    }
+    try {
+      return await MetadataExtractorModuleNative.extractMetadata(uri);
+    } catch (error) {
+      console.error('MetadataExtractorModule.extractMetadata error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  extractAlbumArt: async (uri: string): Promise<ExtractedAlbumArt> => {
+    if (!MetadataExtractorModuleNative) {
+      return { success: false, error: 'Module not available' };
+    }
+    try {
+      return await MetadataExtractorModuleNative.extractAlbumArt(uri);
+    } catch (error) {
+      console.error('MetadataExtractorModule.extractAlbumArt error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+};

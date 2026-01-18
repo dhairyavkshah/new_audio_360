@@ -8,7 +8,9 @@
       "expo.modules.audioeffects.VirtualizerModule",
       "expo.modules.audioeffects.WaveformAnalyzerModule",
       "expo.modules.audioeffects.ImmersiveModeEngineModule",
-      "expo.modules.audioeffects.LicenseVerificationModule"
+      "expo.modules.audioeffects.LicenseVerificationModule",
+      "expo.modules.audioeffects.AudioSessionBridgeModule",
+      "expo.modules.audioeffects.MetadataExtractorModule"
     ]
   }
 }

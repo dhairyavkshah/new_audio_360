@@ -99,6 +99,7 @@ Music, 360 Reality, Gaming, Podcast, Movie, Sports
 - **WaveformAnalyzerModule**: Real-time waveform/FFT visualization (uses android.media.audiofx.Visualizer for read-only audio data)
 - **FMRadioModule**: FM/AM radio tuning (device hardware required)
 - **LicenseVerificationModule**: Google Play Store license verification
+- **MetadataExtractorModule**: ID3 metadata extraction (title, artist, album, album art) using MediaMetadataRetriever
 
 **Note**: No Android hardware audio effects (android.media.audiofx.Equalizer, BassBoost, Virtualizer) are used for audio processing. Only the Visualizer class is used for read-only waveform analysis.
 
@@ -186,6 +187,16 @@ Music, 360 Reality, Gaming, Podcast, Movie, Sports
 - react-native-iap (Google Play Billing)
 
 ## Recent Changes
+
+### January 18, 2026 - Metadata Extraction Module
+- **Created MetadataExtractorModule.kt** for proper ID3 metadata extraction on Android
+  - Uses `MediaMetadataRetriever` to extract title, artist, album, year, genre, track number
+  - Extracts embedded album art and converts to base64-encoded JPEG
+  - Handles both content:// and file:// URIs with proper URL decoding for spaces/special characters
+  - Downscales album art to 400px max for memory efficiency
+- **Updated getMusicMetadata** in musicInfo.ts to use native module
+- **Updated MediaLibraryContext** to use real album art from metadata instead of placeholder images
+- **Made Song.artwork optional** to support songs without embedded album art
 
 ### January 18, 2026 - MAJOR: 100% Pure Software DSP Architecture
 - **Achieved 100% software-based audio processing on Android**

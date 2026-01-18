@@ -331,8 +331,8 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         let artist = 'Unknown Artist';
         let album = 'Unknown Album';
         let title = extractTitle(asset.filename);
+        let artwork: string | undefined = undefined;
         
-        // Try ID3 extraction on native platforms
         if (Platform.OS !== 'web') {
           try {
             const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
@@ -344,20 +344,18 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
                 if (metadata.title) title = metadata.title;
                 if (metadata.artist) artist = metadata.artist;
                 if (metadata.album) album = metadata.album;
+                if (metadata.albumArt) artwork = metadata.albumArt;
               }
             }
           } catch {
-            // Metadata extraction failed - will use fallbacks below
           }
         }
         
-        // Apply fallbacks only if ID3 extraction didn't provide data
         if (artist === 'Unknown Artist') {
           const parsedArtist = parseArtistFromFilename(asset.filename);
           if (parsedArtist) artist = parsedArtist;
         }
         
-        // Get folder name as album fallback (single call via promise cache)
         if (album === 'Unknown Album') {
           const albumName = await getAlbumName(asset.albumId);
           if (albumName && albumName !== 'Unknown Album') {
@@ -375,7 +373,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
           artist,
           album,
           duration: Math.floor(asset.duration),
-          artwork: `https://picsum.photos/seed/${asset.id}/400/400`,
+          artwork: artwork || undefined,
           uri: asset.uri,
           filename: asset.filename,
           modificationTime: asset.modificationTime,
