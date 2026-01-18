@@ -67,7 +67,7 @@ function extractID3Picture(data: Uint8Array): string | null {
     if (majorVersion === 4) {
       const extSize = ((data[10] & 0x7f) << 21) | ((data[11] & 0x7f) << 14) |
                       ((data[12] & 0x7f) << 7) | (data[13] & 0x7f);
-      offset += extSize;
+      offset += 4 + extSize;
     } else {
       const extSize = (data[10] << 24) | (data[11] << 16) | (data[12] << 8) | data[13];
       offset += 4 + extSize;
