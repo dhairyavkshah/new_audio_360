@@ -736,7 +736,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
         await new Promise<void>((resolve, reject) => {
           audio.onloadedmetadata = () => resolve();
-          audio.onerror = () => reject(new Error('Failed to load audio'));
+          audio.onerror = (e) => {
+            const errorCode = audio.error?.code;
+            const errorMessage = audio.error?.message || 'Unknown error';
+            console.error('[PlayerContext] Audio load error:', errorCode, errorMessage, 'URL:', webAudioSource);
+            reject(new Error(`Failed to load audio: ${errorMessage} (code: ${errorCode})`));
+          };
           audio.load();
         });
 
@@ -965,10 +970,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         getMostPlayed(10).then(setMostPlayed);
       });
 
-    } catch (e) {
-      console.error('Error loading song:', e);
-      // In Expo Go, audio may not work but UI should still be usable
-      setError('Audio unavailable - use development build for playback');
+    } catch (e: any) {
+      console.error('Error loading song:', e?.message || e);
+      setError(e?.message || 'Audio unavailable - use development build for playback');
       setIsLoading(false);
       // Still set the song so UI displays correctly
       setCurrentSong(song);
