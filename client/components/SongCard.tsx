@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useRef, useMemo, memo } from "react";
 import { View, StyleSheet, Pressable, Image, Platform, GestureResponderEvent, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
@@ -69,7 +69,7 @@ interface SongCardProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function SongCard({ 
+function SongCardComponent({ 
   song, 
   onPress, 
   onContextMenu, 
@@ -86,7 +86,17 @@ export function SongCard({
   const bgOpacity = useSharedValue(0);
   const longPressTriggered = useRef(false);
   const favorite = isFavorite(song.id);
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const fluentColors = useMemo(() => isDark ? FluentDarkColors : FluentLightColors, [isDark]);
+  
+  const artworkSource = useMemo(() => ({ uri: song.artwork }), [song.artwork]);
+  
+  const formatDuration = useCallback((seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  }, []);
+  
+  const formattedDuration = useMemo(() => formatDuration(song.duration), [formatDuration, song.duration]);
 
   const handleFavoritePress = useCallback((e: any) => {
     e.stopPropagation?.();
@@ -165,13 +175,7 @@ export function SongCard({
     [onContextMenu, song]
   );
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const containerProps = Platform.OS === "web" ? { onContextMenu: handleContextMenuWeb } : {};
+  const containerProps = useMemo(() => Platform.OS === "web" ? { onContextMenu: handleContextMenuWeb } : {}, [handleContextMenuWeb]);
 
   return (
     <AnimatedPressable
@@ -213,7 +217,7 @@ export function SongCard({
         ]} 
       />
       <View style={styles.artworkContainer}>
-        <Image source={{ uri: song.artwork }} style={styles.artwork} />
+        <Image source={artworkSource} style={styles.artwork} />
         {isPlaying ? (
           <View style={[styles.playingIndicator, { backgroundColor: fluentColors.colorBrandBackground, borderColor: fluentColors.colorNeutralBackground1 }]}>
             <MaterialCommunityIcons name="volume-high" size={FluentIconSize.tiny} color="#FFFFFF" />
@@ -242,7 +246,7 @@ export function SongCard({
           color="tertiary"
           style={styles.duration}
         >
-          {formatDuration(song.duration)}
+          {formattedDuration}
         </FluentText>
       ) : null}
       {showAddToPlaylist ? (
@@ -310,3 +314,5 @@ const styles = StyleSheet.create({
     marginRight: FluentSpacing.s,
   },
 });
+
+export const SongCard = memo(SongCardComponent);

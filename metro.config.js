@@ -1,6 +1,13 @@
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
+let wrapWithAudioAPIMetroConfig;
+try {
+  wrapWithAudioAPIMetroConfig = require('react-native-audio-api/metro-config').wrapWithAudioAPIMetroConfig;
+} catch (e) {
+  wrapWithAudioAPIMetroConfig = (config) => config;
+}
+
 const config = getDefaultConfig(__dirname);
 
 config.resolver.assetExts.push('ogg');
@@ -21,4 +28,4 @@ config.resolver.extraNodeModules = {
   'audio-effects': path.resolve(__dirname, 'modules/audio-effects'),
 };
 
-module.exports = config;
+module.exports = wrapWithAudioAPIMetroConfig(config);

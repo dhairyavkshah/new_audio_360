@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Alert, TextInput, Modal, Platform } from "react-native";
 import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -109,7 +109,7 @@ const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
   'off', 'music', '360_reality', 'gaming', 'podcast', 'movie'
 ];
 
-export default function SoundLabScreen() {
+function SoundLabScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const tokens = useThemeTokens();
   const { isLicensed } = useSubscription();
@@ -153,11 +153,9 @@ export default function SoundLabScreen() {
 
   const applyAudioEffects = useCallback((bass: number, treble: number, virtualizer: number) => {
     if (Platform.OS === 'web') {
-      console.log(`[Web Simulation] Applying effects - Bass: ${bass}, Treble: ${treble}, Virtualizer: ${virtualizer}`);
       return;
     }
     
-    // Bass - use BassBoostModule (level -5 to +5 maps to strength 0-1000)
     if (BassBoostModule.isAvailable()) {
       try {
         if (bass === 0) {
@@ -167,11 +165,10 @@ export default function SoundLabScreen() {
           BassBoostModule.setStrength(Math.abs(bass) * 200);
         }
       } catch (error) {
-        console.warn('[SoundLab] BassBoostModule error:', error);
+        // Silently handle error in production
       }
     }
     
-    // Virtualizer (level -5 to +5 maps to strength 0-1000)
     if (VirtualizerModule.isAvailable()) {
       try {
         if (virtualizer === 0) {
@@ -181,12 +178,9 @@ export default function SoundLabScreen() {
           VirtualizerModule.setStrength(Math.abs(virtualizer) * 200);
         }
       } catch (error) {
-        console.warn('[SoundLab] VirtualizerModule error:', error);
+        // Silently handle error in production
       }
     }
-    
-    // Treble - log for now, EQ-based in future
-    console.log(`[SoundLab] Treble effect level: ${treble}`);
   }, []);
 
   useEffect(() => {
@@ -312,21 +306,17 @@ export default function SoundLabScreen() {
     setBassControl(level);
     await saveBassControlLevel(level);
     
-    if (Platform.OS === 'web') {
-      console.log(`[Web Simulation] Bass Control set to level ${level}`);
-    } else if (BassBoostModule.isAvailable()) {
+    if (Platform.OS !== 'web' && BassBoostModule.isAvailable()) {
       try {
         if (level === 0) {
           BassBoostModule.setEnabled(false);
-          console.log('[SoundLab] Bass boost disabled');
         } else {
           BassBoostModule.setEnabled(true);
           const strength = Math.abs(level) * 200;
           BassBoostModule.setStrength(strength);
-          console.log('[SoundLab] Bass boost enabled with strength:', strength);
         }
       } catch (error) {
-        console.warn('[SoundLab] BassBoostModule error:', error);
+        // Silently handle error in production
       }
     }
   };
@@ -335,15 +325,6 @@ export default function SoundLabScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setTrebleControl(level);
     await saveTrebleControlLevel(level);
-    
-    if (Platform.OS === 'web') {
-      console.log(`[Web Simulation] Treble Control set to level ${level}`);
-    } else {
-      // TODO: Implement treble control using EQ high-frequency bands
-      // For now, we can boost/cut the high-frequency EQ bands (3.6kHz and 14kHz)
-      // This would require modifying the EQ bands directly
-      console.log('[SoundLab] Treble control set to level:', level, '(EQ-based implementation pending)');
-    }
   };
 
   const handleVirtualizerLevelChange = async (level: number) => {
@@ -351,21 +332,17 @@ export default function SoundLabScreen() {
     setVirtualizerLevel(level);
     await saveVirtualizerLevel(level);
     
-    if (Platform.OS === 'web') {
-      console.log(`[Web Simulation] Virtualizer set to level ${level}`);
-    } else if (VirtualizerModule.isAvailable()) {
+    if (Platform.OS !== 'web' && VirtualizerModule.isAvailable()) {
       try {
         if (level === 0) {
           VirtualizerModule.setEnabled(false);
-          console.log('[SoundLab] Virtualizer disabled');
         } else {
           VirtualizerModule.setEnabled(true);
           const strength = Math.abs(level) * 200;
           VirtualizerModule.setStrength(strength);
-          console.log('[SoundLab] Virtualizer enabled with strength:', strength);
         }
       } catch (error) {
-        console.warn('[SoundLab] VirtualizerModule error:', error);
+        // Silently handle error in production
       }
     }
   };
@@ -1220,3 +1197,5 @@ const styles = StyleSheet.create({
     paddingVertical: FluentSpacing.m,
   },
 });
+
+export default memo(SoundLabScreen);

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useMemo, memo } from "react";
 import { View, StyleSheet, Pressable, Image, Platform, Text } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -25,7 +25,7 @@ interface MiniPlayerProps {
   onRestore?: () => void;
 }
 
-export function MiniPlayer({ bottomOffset = 0, isDismissed = false, onDismiss, onRestore }: MiniPlayerProps) {
+function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss, onRestore }: MiniPlayerProps) {
   const navigation = useNavigation<any>();
   const { isDark } = useThemeContext();
   const { icons } = useSkin();
@@ -34,51 +34,57 @@ export function MiniPlayer({ bottomOffset = 0, isDismissed = false, onDismiss, o
   const { currentSong, isPlaying, togglePlayPause, progress } = usePlayerContext();
   const insets = useSafeAreaInsets();
   
-  const cardEffectStyle = getCardEffectStyle(tokens, 2);
-  const glowStyle = getGlowStyle(tokens);
+  const cardEffectStyle = useMemo(() => getCardEffectStyle(tokens, 2), [tokens]);
+  const glowStyle = useMemo(() => getGlowStyle(tokens), [tokens]);
+  
+  const artworkSource = useMemo(() => currentSong ? { uri: currentSong.artwork } : undefined, [currentSong?.artwork]);
+  
+  const containerBottom = useMemo(() => bottomOffset + FluentSpacing.s + (insets.bottom > 0 ? 0 : FluentSpacing.s), [bottomOffset, insets.bottom]);
+  
+  const progressWidth = useMemo(() => `${(progress || 0) * 100}%` as const, [progress]);
 
-  if (!currentSong) {
-    return null;
-  }
-
-  const handlePress = () => {
+  const handlePress = useCallback(() => {
     playTapSound();
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    navigation.navigate("Main", {
-      screen: "ListenTab",
-      params: {
-        screen: "NowPlaying",
-        params: { songId: currentSong.id },
-      },
-    });
-  };
+    if (currentSong) {
+      navigation.navigate("Main", {
+        screen: "ListenTab",
+        params: {
+          screen: "NowPlaying",
+          params: { songId: currentSong.id },
+        },
+      });
+    }
+  }, [playTapSound, navigation, currentSong]);
 
-  const handlePlayPause = (event: any) => {
+  const handlePlayPause = useCallback((event: any) => {
     event.stopPropagation();
     playTapSound();
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     togglePlayPause();
-  };
+  }, [playTapSound, togglePlayPause]);
 
-  const handleSwipeDown = () => {
+  const handleSwipeDown = useCallback(() => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     onDismiss?.();
-  };
+  }, [onDismiss]);
 
-  const handleSwipeUp = () => {
+  const handleSwipeUp = useCallback(() => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     onRestore?.();
-  };
+  }, [onRestore]);
 
-  const containerBottom = bottomOffset + FluentSpacing.s + (insets.bottom > 0 ? 0 : FluentSpacing.s);
+  if (!currentSong) {
+    return null;
+  }
 
   if (isDismissed) {
     return (
@@ -115,7 +121,7 @@ export function MiniPlayer({ bottomOffset = 0, isDismissed = false, onDismiss, o
           style={[
             styles.progressFill, 
             { 
-              width: `${(progress || 0) * 100}%`,
+              width: progressWidth,
               backgroundColor: tokens.colors.primary,
             }
           ]} 
@@ -123,7 +129,7 @@ export function MiniPlayer({ bottomOffset = 0, isDismissed = false, onDismiss, o
       </View>
       <View style={[styles.background, { borderRadius: tokens.shapes.cardBorderRadius }]}>
         <Image 
-          source={{ uri: currentSong.artwork }} 
+          source={artworkSource} 
           style={StyleSheet.absoluteFill}
         />
         <BlurView 
@@ -139,7 +145,7 @@ export function MiniPlayer({ bottomOffset = 0, isDismissed = false, onDismiss, o
           ]} 
         />
         <Pressable style={styles.content} onPress={handlePress}>
-          <Image source={{ uri: currentSong.artwork }} style={[styles.artwork, { borderRadius: tokens.shapes.buttonBorderRadius }]} />
+          <Image source={artworkSource} style={[styles.artwork, { borderRadius: tokens.shapes.buttonBorderRadius }]} />
           <View style={styles.info}>
             <Text style={[FluentTypography.body1Strong, { color: tokens.colors.text }]} numberOfLines={1}>
               {currentSong.title}
@@ -249,3 +255,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+
+export const MiniPlayer = memo(MiniPlayerComponent);

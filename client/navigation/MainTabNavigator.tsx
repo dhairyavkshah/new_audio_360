@@ -1,4 +1,4 @@
-import React, { useState, memo } from "react";
+import React, { useState, memo, useCallback, useMemo } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View, TouchableOpacity } from "react-native";
@@ -79,7 +79,7 @@ const TabIcon = memo(function TabIcon({
 const TAB_BAR_HEIGHT = FluentLayoutSize.bottomNavHeight;
 const MIN_BOTTOM_PADDING = FluentSpacing.l;
 
-export default function MainTabNavigator() {
+function MainTabNavigator() {
   const { isDark } = useThemeContext();
   const tokens = useThemeTokens();
   const { playTapSound } = useUiSound();
@@ -89,9 +89,12 @@ export default function MainTabNavigator() {
   const [isMiniPlayerDismissed, setIsMiniPlayerDismissed] = useState(false);
   const insets = useSafeAreaInsets();
   
-  const safeBottom = Platform.OS === 'android' ? Math.max(insets.bottom, MIN_BOTTOM_PADDING) : insets.bottom;
-  const tabBarHeight = TAB_BAR_HEIGHT + safeBottom;
-  const showMiniPlayer = currentSong && !isNowPlayingVisible;
+  const safeBottom = useMemo(() => Platform.OS === 'android' ? Math.max(insets.bottom, MIN_BOTTOM_PADDING) : insets.bottom, [insets.bottom]);
+  const tabBarHeight = useMemo(() => TAB_BAR_HEIGHT + safeBottom, [safeBottom]);
+  const showMiniPlayer = useMemo(() => currentSong && !isNowPlayingVisible, [currentSong, isNowPlayingVisible]);
+  
+  const handleMiniPlayerDismiss = useCallback(() => setIsMiniPlayerDismissed(true), []);
+  const handleMiniPlayerRestore = useCallback(() => setIsMiniPlayerDismissed(false), []);
 
   // No animation - just show/hide based on state
 
@@ -227,8 +230,8 @@ export default function MainTabNavigator() {
       <MiniPlayer 
         bottomOffset={tabBarHeight} 
         isDismissed={isMiniPlayerDismissed}
-        onDismiss={() => setIsMiniPlayerDismissed(true)}
-        onRestore={() => setIsMiniPlayerDismissed(false)}
+        onDismiss={handleMiniPlayerDismiss}
+        onRestore={handleMiniPlayerRestore}
       />
     ) : null}
     </View>
@@ -254,3 +257,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+
+export default memo(MainTabNavigator);

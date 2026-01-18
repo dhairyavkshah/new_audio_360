@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, memo } from "react";
 import { View, StyleSheet, FlatList, Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
@@ -18,7 +18,7 @@ import { PlayableSong } from "@/contexts/PlayerContext";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 
-export default function ListenScreen() {
+function ListenScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { isDark } = useThemeContext();
@@ -71,16 +71,16 @@ export default function ListenScreen() {
     return result;
   }, [allSongs, searchQuery, sortBy]);
 
-  const handleSongPress = (song: PlayableSong) => {
+  const handleSongPress = useCallback((song: PlayableSong) => {
     setQueue(filteredAndSortedSongs);
     playSong(song);
     navigation.navigate("NowPlaying", { songId: song.id });
-  };
+  }, [filteredAndSortedSongs, setQueue, playSong, navigation]);
 
-  const handleSortChange = (option: SortOption) => {
+  const handleSortChange = useCallback((option: SortOption) => {
     setSortBy(option);
     setShowSortOptions(false);
-  };
+  }, []);
 
   const handleSongContextMenu = useCallback((song: PlayableSong) => {
     setContextMenuSong(song);
@@ -97,23 +97,23 @@ export default function ListenScreen() {
     setTimeout(() => setSuccessMessage(null), 3000);
   }, []);
 
-  const renderSong = ({ item }: { item: Song }) => (
+  const renderSong = useCallback(({ item }: { item: Song }) => (
     <SongCard
       song={item}
       onPress={() => handleSongPress(item)}
       onContextMenu={handleSongContextMenu}
       isPlaying={currentSong?.id === item.id && isPlaying}
     />
-  );
+  ), [handleSongPress, handleSongContextMenu, currentSong?.id, isPlaying]);
 
-  const renderEmptyList = () => (
+  const renderEmptyList = useCallback(() => (
     <View style={styles.emptyContainer}>
       <MaterialCommunityIcons name="music-note-off" size={FluentIconSize.xxlarge} color={colors.colorNeutralForeground2} />
       <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.l, textAlign: "center" }}>
         No songs found matching "{searchQuery}"
       </FluentText>
     </View>
-  );
+  ), [colors.colorNeutralForeground2, searchQuery]);
 
   const SONG_ITEM_HEIGHT = 72;
 
@@ -204,3 +204,5 @@ const styles = StyleSheet.create({
     borderRadius: FluentRadius.large,
   },
 });
+
+export default memo(ListenScreen);

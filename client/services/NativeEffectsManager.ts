@@ -185,8 +185,8 @@ class NativeEffectsManagerClass {
     const zeroSumBands = rawBands.map(v => v - average);
 
     // Conservative conversion: user units to millibels
-    // Using 40 millibels per unit for gentler processing
-    const MB_PER_UNIT = 40;
+    // Using 100 millibels per unit for stronger, more noticeable effect (2.5x increase)
+    const MB_PER_UNIT = 100;
 
     // Convert to millibels with clamping using hardware limits
     const minLevel = this.equalizerInfo?.minLevel ?? -1500;
@@ -197,7 +197,7 @@ class NativeEffectsManagerClass {
       return Math.max(minLevel, Math.min(maxLevel, millibels));
     });
 
-    console.log('[NativeEffectsManager] Applying EQ (zero-sum balanced):', { input: rawBands, zeroSum: zeroSumBands, millibels: bandValues });
+    console.log('[NativeEffectsManager] Applying EQ (zero-sum balanced, 2.5x strength increase):', { input: rawBands, zeroSum: zeroSumBands, millibels: bandValues });
     EqualizerModule.setCustomBands(bandValues);
   }
 
@@ -249,8 +249,8 @@ class NativeEffectsManagerClass {
     const zeroSumBands = rawBands.map(v => v - average);
 
     // Conservative conversion: user units to millibels
-    // Using 40 millibels per unit for gentler processing
-    const MB_PER_UNIT = 40;
+    // Using 100 millibels per unit for stronger, more noticeable effect (2.5x increase)
+    const MB_PER_UNIT = 100;
 
     // Convert to millibels with clamping using hardware limits
     const minLevel = this.equalizerInfo?.minLevel ?? -1500;
@@ -261,7 +261,7 @@ class NativeEffectsManagerClass {
       return Math.max(minLevel, Math.min(maxLevel, millibels));
     });
 
-    console.log('[NativeEffectsManager] Applying 5-band EQ (zero-sum balanced):', { 
+    console.log('[NativeEffectsManager] Applying 5-band EQ (zero-sum balanced, 2.5x strength increase):', { 
       input: bands, 
       average: average.toFixed(2),
       zeroSum: zeroSumBands.map(v => v.toFixed(2)), 

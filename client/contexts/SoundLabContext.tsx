@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
+import { Platform } from 'react-native';
 import { getEQPreset, getSoundMode } from '@/lib/storage';
 import { 
   ImmersiveModeEngineModule, 
@@ -9,6 +10,7 @@ import {
 } from '../../modules/audio-effects';
 import NativeAudioService from '@/services/NativeAudioService';
 import { NativeEffectsManager, AudioSessionSource } from '@/services/NativeEffectsManager';
+import { WebAudioEffectsEngine } from '@/services/WebAudioEffectsEngine';
 
 export type EQBands = {
   sub: number;
@@ -79,8 +81,22 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
   const [availableImmersiveModes, setAvailableImmersiveModes] = useState<ImmersiveModeInfo[]>([]);
   const [audioSource, setAudioSource] = useState<AudioSessionSource>('none');
   const [isEffectsActive, setIsEffectsActive] = useState(false);
+  const [webAudioInitialized, setWebAudioInitialized] = useState(false);
 
   const eqBands = EQ_PRESETS[eqPresetName] || EQ_PRESETS.Flat;
+
+  useEffect(() => {
+    if ((Platform.OS === 'web' || Platform.OS === 'ios') && !webAudioInitialized) {
+      WebAudioEffectsEngine.initialize().then((success) => {
+        setWebAudioInitialized(success);
+      });
+    }
+    return () => {
+      if (Platform.OS === 'web' || Platform.OS === 'ios') {
+        WebAudioEffectsEngine.release();
+      }
+    };
+  }, [webAudioInitialized]);
 
   // Immersive modes now only use zero-sum EQ - no spatial effects
   const immersiveEffect: ImmersiveEffectSettings = useMemo(() => {
@@ -91,12 +107,50 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
     return IMMERSIVE_MODE_INFO[modeId] || IMMERSIVE_MODE_INFO.off;
   }, []);
 
+  const applyEffectsToEngine = useCallback((currentMode: SoundLabMode, currentEqBands: EQBands, currentImmersiveMode: ImmersiveMode) => {
+    if (Platform.OS === 'android') {
+      if (currentMode === 'equalizer') {
+        const fiveBand = [
+          (currentEqBands.sub + currentEqBands.bass) / 2,
+          currentEqBands.lowMid,
+          currentEqBands.mid,
+          currentEqBands.highMid,
+          (currentEqBands.treble + currentEqBands.brilliance) / 2,
+        ];
+        NativeEffectsManager.applyFiveBandEQ(fiveBand);
+      } else {
+        NativeEffectsManager.disableEQ();
+      }
+    } else if ((Platform.OS === 'web' || Platform.OS === 'ios') && webAudioInitialized) {
+      if (currentMode === 'equalizer') {
+        WebAudioEffectsEngine.applySevenBandEQ(currentEqBands);
+      } else if (currentMode === 'immersive' && currentImmersiveMode !== 'off') {
+        WebAudioEffectsEngine.applyImmersiveMode(currentImmersiveMode);
+      } else {
+        WebAudioEffectsEngine.resetEQ();
+      }
+    }
+  }, [webAudioInitialized]);
+
   const setImmersiveMode = useCallback(async (newMode: ImmersiveMode): Promise<{ success: boolean; error?: string }> => {
     const previousMode = immersiveModeName;
     const previousSettings = immersiveModeSettings;
     const previousLabMode = mode;
 
     try {
+      if (Platform.OS === 'web' && webAudioInitialized) {
+        if (newMode !== 'off') {
+          WebAudioEffectsEngine.applyImmersiveMode(newMode);
+          setImmersiveModeName(newMode);
+          setMode('immersive');
+        } else {
+          WebAudioEffectsEngine.resetEQ();
+          setImmersiveModeName('off');
+          setMode('off');
+        }
+        return { success: true };
+      }
+
       const result = await NativeAudioService.setImmersiveMode(newMode);
       if (result.success) {
         setImmersiveModeName(newMode);
@@ -118,10 +172,9 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
       setImmersiveModeName(previousMode);
       setImmersiveModeSettings(previousSettings);
       setMode(previousLabMode);
-      console.error('Error setting immersive mode:', error);
       return { success: false, error: String(error) };
     }
-  }, [immersiveModeName, immersiveModeSettings, mode]);
+  }, [immersiveModeName, immersiveModeSettings, mode, webAudioInitialized]);
 
   const refreshSettings = useCallback(async () => {
     try {
@@ -135,7 +188,7 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
       }
 
       setAudioSource(NativeEffectsManager.getCurrentSource());
-      setIsEffectsActive(NativeEffectsManager.isEffectsActive());
+      setIsEffectsActive(NativeEffectsManager.isEffectsActive() || webAudioInitialized);
 
       const eqPreset = await getEQPreset();
       const soundMode = await getSoundMode();
@@ -150,9 +203,13 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
         setMode('off');
       }
     } catch (error) {
-      console.error('Error loading sound lab settings:', error);
+      // Silent error handling in production
     }
-  }, []);
+  }, [webAudioInitialized]);
+
+  useEffect(() => {
+    applyEffectsToEngine(mode, eqBands, immersiveModeName);
+  }, [mode, eqBands, immersiveModeName, applyEffectsToEngine]);
 
   useEffect(() => {
     refreshSettings();

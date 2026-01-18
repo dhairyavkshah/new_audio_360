@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Platform, ActivityIndicator, TextInput, Modal, FlatList } from "react-native";
 import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -59,7 +59,7 @@ const getCountryFlag = (countryCode: string | null): string => {
   return COUNTRY_FLAGS[countryCode.toUpperCase()] || '🌍';
 };
 
-export default function RadioScreen() {
+function RadioScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const tabBarHeight = useSafeTabBarHeight();
   const tokens = useThemeTokens();
@@ -159,7 +159,6 @@ export default function RadioScreen() {
         setRadioMode('online');
       }
     } catch (err) {
-      console.warn('Error loading radio mode:', err);
       if (!isFmAvailable) {
         setRadioMode('online');
       }
@@ -171,7 +170,7 @@ export default function RadioScreen() {
     try {
       await AsyncStorage.setItem(STORAGE_KEY_RADIO_MODE, mode);
     } catch (err) {
-      console.warn('Error saving radio mode:', err);
+      // Silently handle error in production
     }
   };
 
@@ -1664,3 +1663,5 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+export default memo(RadioScreen);

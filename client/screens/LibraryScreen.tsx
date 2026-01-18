@@ -102,7 +102,7 @@ const ArtistCard = memo(function ArtistCard({ artist, onPress }: ArtistCardProps
   );
 });
 
-export default function LibraryScreen() {
+function LibraryScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { isDark } = useThemeContext();
@@ -273,20 +273,20 @@ export default function LibraryScreen() {
     playlists: playlists.length,
   }), [favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists, playlists]);
 
-  const handleCategoryChange = (category: CategoryType) => {
+  const handleCategoryChange = useCallback((category: CategoryType) => {
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setActiveCategory(category);
     setSearchQuery("");
     setShowSortOptions(false);
     setShowCategoryDropdown(false);
-  };
+  }, [playTapSound]);
 
-  const handleManagePlaylists = () => {
+  const handleManagePlaylists = useCallback(() => {
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate("PlaylistManagement");
-  };
+  }, [playTapSound, navigation]);
 
   const handleSongPress = useCallback((song: PlayableSong, songList: PlayableSong[]) => {
     playTapSound();
@@ -304,18 +304,18 @@ export default function LibraryScreen() {
     );
   }, [playTapSound, setQueue, playSong, navigation]);
 
-  const handlePlaylistPress = (playlist: Playlist) => {
+  const handlePlaylistPress = useCallback((playlist: Playlist) => {
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate("PlaylistDetail", { playlistId: playlist.id, playlistName: playlist.name });
-  };
+  }, [playTapSound, navigation]);
 
-  const handleSortPress = (option: SortOption) => {
+  const handleSortPress = useCallback((option: SortOption) => {
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSortBy(option);
     setShowSortOptions(false);
-  };
+  }, [playTapSound]);
 
   const handleSongContextMenu = useCallback((song: PlayableSong) => {
     setContextMenuSong(song);
@@ -708,3 +708,5 @@ const styles = StyleSheet.create({
     ...getShadowStyle('shadow4'),
   },
 });
+
+export default memo(LibraryScreen);

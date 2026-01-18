@@ -37,15 +37,21 @@ A 4-tab system (`MainTabNavigator`) with a persistent MiniPlayer:
 -   **RadioTab**: FM/AM native radio and Online streaming radio.
 -   **SettingsTab**: General settings, Sound Lab, Appearance, License, About.
 
+### Audio Effects Architecture (Hybrid Approach)
+-   **Android Platform**: Uses native `android.media.audiofx.Equalizer` with 2.5x effect strength (100 millibels per unit) for noticeable EQ changes. Native effects attached via priority 1000 for global audio session support.
+-   **Web/iOS Platform**: Uses `react-native-audio-api` (Web Audio API implementation) with BiquadFilter-based 10-band EQ. WebAudioEffectsEngine provides consistent effects across platforms.
+-   **Immersive Modes**: 6 preset modes (Music, 360 Reality, Gaming, Podcast, Movie, Off) with custom EQ curves applied via platform-appropriate engine.
+
 ### Native Audio Modules (Android-specific)
 -   **PlaybackEngineModule**: ExoPlayer-based playback with queue, shuffle, repeat, speed, and audio session management.
--   **Native Audio Effects**: 5-band Equalizer, BassBoost, Virtualizer, WaveformAnalyzer, all with headroom-safe processing (priority 1000 for global session support).
+-   **Native Audio Effects**: 5-band Equalizer with 100mb/unit strength for noticeable effect. Headroom-safe processing with priority 1000.
 -   **ImmersiveModeEngineModule**: Manages 6 immersive audio modes (Music, 360 Reality, Gaming, Podcast, Movie, Off).
--   **AudioSessionBridgeModule**: Bridges audio session IDs between react-native-track-player and native effects, attempts to get TrackPlayer's audio session via reflection.
+-   **AudioSessionBridgeModule**: Bridges audio session IDs between react-native-track-player and native effects.
 -   **NativeWaveformVisualizer**: Real-time 64-bar waveform visualization.
 -   **FMRadioModule**: FM/AM radio tuning with Sound Lab effects integration.
 -   **LicenseVerificationModule**: Native Kotlin module for Play Store license verification.
--   **StudioAudioEngine**: TypeScript service bridging native modules.
+-   **NativeEffectsManager**: TypeScript service for Android native EQ with zero-sum balancing.
+-   **WebAudioEffectsEngine**: TypeScript service using react-native-audio-api for Web/iOS EQ processing.
 
 ### Design Language (Microsoft Fluent 2)
 Adheres to Fluent 2 token system for Spacing (4px grid), Typography, Semantic Colors, Radii, Elevation Shadows, and Motion. Utilizes custom Fluent 2 primitive UI components.

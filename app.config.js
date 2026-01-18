@@ -67,6 +67,19 @@ export default {
       'expo-secure-store',
       'expo-audio',
       [
+        'react-native-audio-api',
+        {
+          iosBackgroundMode: true,
+          androidPermissions: [
+            'android.permission.MODIFY_AUDIO_SETTINGS',
+            'android.permission.FOREGROUND_SERVICE',
+            'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+          ],
+          androidForegroundService: true,
+          androidFSTypes: ['mediaPlayback'],
+        },
+      ],
+      [
         'expo-build-properties',
         {
           android: {
