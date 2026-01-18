@@ -68,7 +68,7 @@ Source → Gain → 7-Band EQ → Bass Shelf Filter → Treble Shelf Filter → 
 | Mode | Description | Bass | Treble | Spatial |
 |------|-------------|------|--------|---------|
 | **Music** | Balanced enhancement for general listening | +4.8 dB | +3.6 dB | 35% |
-| **360 Reality** | Spatial audio simulation | 0 dB | +1.2 dB | 75% |
+| **360 Reality** | Spatial audio simulation | +1.2 dB | +1.2 dB | 75% |
 | **Gaming** | Enhanced directional cues and clarity | -2.4 dB | +6 dB | 50% |
 | **Podcast** | Voice clarity optimization | -3.6 dB | -1.2 dB | 0% |
 | **Movie** | Cinematic surround simulation | +8.4 dB | +4.8 dB | 45% |

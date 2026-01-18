@@ -107,7 +107,7 @@ const EQ_PRESETS = [
 const CUSTOM_EQ_BAND_LABELS = ["60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz"];
 
 const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
-  'off', 'music', '360_reality', 'gaming', 'podcast', 'movie'
+  'off', 'music', '360_reality', 'gaming', 'podcast', 'movie', 'sports'
 ];
 
 function SoundLabScreen() {

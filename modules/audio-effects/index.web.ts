@@ -166,6 +166,7 @@ export type ImmersiveMode =
   | 'gaming'
   | 'podcast'
   | 'movie'
+  | 'sports'
   | 'custom';
 
 export interface ImmersiveModeInfo {
@@ -242,5 +243,6 @@ export const IMMERSIVE_MODE_INFO: Record<ImmersiveMode, { name: string; descript
   gaming: { name: 'Gaming', description: 'Enhanced positional audio for gaming with boosted footsteps and effects', icon: 'gamepad-variant' },
   podcast: { name: 'Podcast', description: 'Voice clarity enhancement for podcasts and audiobooks', icon: 'podcast' },
   movie: { name: 'Movie', description: 'Cinematic audio with enhanced dialogue and surround effects', icon: 'movie-open' },
+  sports: { name: 'Sports', description: 'Stadium broadcast clarity with enhanced commentary', icon: 'soccer' },
   custom: { name: 'Custom', description: 'Custom audio settings', icon: 'tune' }
 };

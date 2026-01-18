@@ -40,7 +40,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     // Reference: Sony MDR-MV1 professional monitoring standard (5Hz-80kHz flat response)
     name: '360 Reality',
     eqPreset: [0, 0, 0, 0, 0, 0.3, 0.5, 0.3, 0, 0],
-    bassBoost: 0,      // 0 dB - neutral bass to preserve spatial cues and avoid masking
+    bassBoost: 0.5,    // +1.2 dB - subtle warmth while preserving spatial cues
     trebleBoost: 0.5,  // +1.2 dB (subtle air for enhanced location perception)
     spatialWidth: 0.75, // 75% - maximum spatial width for immersive 360° soundfield
   },

@@ -251,7 +251,7 @@ class ImmersiveModeEngineModule : Module() {
         // Reference: Sony MDR-MV1 professional monitoring standard (5Hz-80kHz flat response)
         applyImmersiveSettings(
             eqGains = listOf(0.0, 0.0, 0.0, 0.0, 0.3, 0.3, 0.0),
-            bassGainUnits = 0.0f,      // 0 dB - neutral bass to preserve spatial cues
+            bassGainUnits = 0.5f,      // +1.2 dB - subtle warmth while preserving spatial cues
             trebleGainUnits = 0.5f,    // +1.2 dB (subtle air for enhanced location perception)
             virtualizerStrength = 750  // 75% - maximum spatial width for immersive 360° soundfield
         )
