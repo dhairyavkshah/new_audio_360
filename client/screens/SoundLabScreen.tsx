@@ -505,6 +505,7 @@ function SoundLabScreen() {
       'gamepad-variant': 'gamepad-variant',
       'podcast': 'podcast',
       'movie-open': 'movie-open',
+      'stadium': 'stadium',
       'tune': 'tune',
     };
     return iconMap[iconName] || 'music';
