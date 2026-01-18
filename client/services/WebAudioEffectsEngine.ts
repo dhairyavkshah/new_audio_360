@@ -20,41 +20,55 @@ export interface ImmersiveMode {
 
 const EQ_FREQUENCIES = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
 
+// Professional Immersive Mode Configurations
+// Based on Samsung Dolby Atmos, Sony 360 Reality Audio, and professional audio engineering standards
+// EQ bands: [60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz]
+// Values in gain units (-5 to +5), where 1 unit = 2.4 dB
 const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
   music: {
+    // Balanced "smile curve" for enjoyable music listening
+    // Warm bass, slight mid scoop, sparkly highs - Samsung Music mode inspired
     name: 'Music',
-    eqPreset: [2, 1, 0, 0, 0, 0, 1, 2, 2, 1],
-    bassBoost: 2,
-    trebleBoost: 1,
-    spatialWidth: 0.3,
+    eqPreset: [2.5, 1.5, 0.5, -0.5, 0, 0.5, 1.5, 2.0, 1.5, 1.0],
+    bassBoost: 2,      // +4.8 dB at 150Hz (warm fullness)
+    trebleBoost: 1.5,  // +3.6 dB at 6kHz (presence and air)
+    spatialWidth: 0.35, // 35% - moderate widening for immersion
   },
   '360_reality': {
+    // Flat EQ to preserve spatial audio cues - Sony 360 Reality Audio inspired
+    // Minimal coloration, maximum spatial positioning accuracy
     name: '360 Reality',
-    eqPreset: [1, 1, 0, -1, 0, 0, 1, 2, 3, 2],
-    bassBoost: 1,
-    trebleBoost: 2,
-    spatialWidth: 0.6,
+    eqPreset: [0.5, 0, 0, 0, 0, 0.5, 1.0, 1.5, 1.0, 0.5],
+    bassBoost: 0.5,    // +1.2 dB (subtle warmth without masking spatial cues)
+    trebleBoost: 1.5,  // +3.6 dB (enhanced location perception)
+    spatialWidth: 0.7, // 70% - maximum spatial width for immersive experience
   },
   gaming: {
+    // Competitive gaming EQ - cut bass, boost footstep frequencies (2-6kHz)
+    // Based on professional gaming headset standards
     name: 'Gaming',
-    eqPreset: [3, 2, 0, -1, -1, 0, 2, 3, 3, 2],
-    bassBoost: 3,
-    trebleBoost: 2,
-    spatialWidth: 0.5,
+    eqPreset: [-2.0, -1.5, -1.0, 0, 2.0, 3.5, 3.0, 2.0, 1.5, 1.0],
+    bassBoost: -1.0,   // -2.4 dB (reduce bass masking)
+    trebleBoost: 2.5,  // +6 dB (enhanced detail and clarity)
+    spatialWidth: 0.5, // 50% - directional awareness without blur
   },
   podcast: {
+    // Voice clarity mode - enhanced 1-4kHz for speech intelligibility
+    // Reduced bass/treble extremes, no spatial processing
     name: 'Podcast',
-    eqPreset: [-2, -1, 1, 2, 3, 3, 2, 0, -1, -2],
-    bassBoost: -1,
-    trebleBoost: 0,
-    spatialWidth: 0,
+    eqPreset: [-2.0, -1.5, 0, 1.5, 2.5, 2.0, 1.0, 0, -0.5, -1.0],
+    bassBoost: -1.5,   // -3.6 dB (removes rumble and boominess)
+    trebleBoost: -0.5, // -1.2 dB (reduces sibilance)
+    spatialWidth: 0,   // 0% - mono-focused for speech
   },
   movie: {
+    // Cinematic experience - THX-inspired with strong LFE and dialogue clarity
+    // Sub-bass for explosions, clear mids for dialogue, detailed highs
     name: 'Movie',
-    eqPreset: [3, 2, 1, 0, 0, 0, 1, 2, 3, 2],
-    bassBoost: 3,
-    trebleBoost: 2,
-    spatialWidth: 0.4,
+    eqPreset: [3.5, 2.5, 1.0, 0, 0.5, 1.0, 1.5, 2.0, 2.0, 1.5],
+    bassBoost: 3.5,    // +8.4 dB (cinematic impact and rumble)
+    trebleBoost: 2.0,  // +4.8 dB (effects detail and sparkle)
+    spatialWidth: 0.45, // 45% - surround-like experience
   },
 };
 

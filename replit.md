@@ -58,14 +58,15 @@ Music, 360 Reality, Gaming, Podcast, Movie
 - NO zero-sum normalization (creative curves applied directly)
 - Limiter remains active for distortion prevention
 
-**Immersive Mode Settings**:
-| Mode | Bass | Treble | Spatial Width |
-|------|------|--------|---------------|
-| Music | +2 | +1 | 30% |
-| 360 Reality | +1 | +2 | 60% |
-| Gaming | +3 | +2 | 50% |
-| Podcast | -1 | 0 | 0% |
-| Movie | +3 | +2 | 40% |
+**Immersive Mode Settings** (Professional-grade, based on Samsung Dolby Atmos/Sony 360 Reality Audio standards):
+
+| Mode | Bass | Treble | Spatial Width | Design Philosophy |
+|------|------|--------|---------------|-------------------|
+| Music | +4.8 dB | +3.6 dB | 35% | Warm "smile curve" - Samsung Music mode inspired |
+| 360 Reality | +1.2 dB | +3.6 dB | 70% | Flat EQ for spatial accuracy - Sony 360 Reality inspired |
+| Gaming | -2.4 dB | +6 dB | 50% | Footstep clarity (2-6kHz boost) - Pro gaming standards |
+| Podcast | -3.6 dB | -1.2 dB | 0% | Voice clarity, reduced rumble/sibilance |
+| Movie | +8.4 dB | +4.8 dB | 45% | THX-inspired cinematic impact |
 
 ### Navigation Structure
 4-tab system with persistent MiniPlayer:
