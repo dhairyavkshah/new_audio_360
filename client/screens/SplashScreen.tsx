@@ -20,9 +20,11 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [iconLoaded, setIconLoaded] = useState(false);
+  const iconLoadedRef = useRef(false);
 
   useEffect(() => {
     if (iconLoaded) {
+      iconLoadedRef.current = true;
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 300,
@@ -33,28 +35,36 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
   useEffect(() => {
     Image.prefetch(appIcon);
+    
+    // Fallback: Force iconLoaded after 500ms if onLoad doesn't fire (web compatibility)
+    const fallback = setTimeout(() => {
+      if (!iconLoadedRef.current) {
+        setIconLoaded(true);
+      }
+    }, 500);
+    return () => clearTimeout(fallback);
   }, []);
 
   useEffect(() => {
     if (!iconLoaded) return;
 
+    // Start fade out after display period
     const fadeOutTimer = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 300,
         useNativeDriver,
-      }).start(() => {
-        onFinish();
-      });
+      }).start();
     }, 1500);
 
-    const fallbackTimer = setTimeout(() => {
+    // Force finish regardless of animation callback (web compatibility)
+    const finishTimer = setTimeout(() => {
       onFinish();
-    }, 2000);
+    }, 1900);
 
     return () => {
       clearTimeout(fadeOutTimer);
-      clearTimeout(fallbackTimer);
+      clearTimeout(finishTimer);
     };
   }, [iconLoaded]);
 
