@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, Pressable, Image, Platform, ActivityIndicator, FlatList } from "react-native";
+import React, { useState, useCallback, useMemo, memo } from "react";
+import { View, StyleSheet, Pressable, Image, Platform, ActivityIndicator, FlatList, ImageSourcePropType } from "react-native";
 import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -54,6 +54,53 @@ const categories: CategoryConfig[] = [
   { key: "playlists", label: "Playlists", icon: "playlist-music", color: "#673AB7" },
 ];
 
+interface AlbumCardProps {
+  album: DerivedAlbum;
+  onPress: (album: DerivedAlbum) => void;
+}
+
+const AlbumCard = memo(function AlbumCard({ album, onPress }: AlbumCardProps) {
+  const imageSource = useMemo(() => ({ uri: album.artwork }), [album.artwork]);
+  const handlePress = useCallback(() => onPress(album), [onPress, album]);
+  
+  return (
+    <AnimatedCard
+      style={styles.albumCard}
+      borderRadius={FluentRadius.large}
+      onPress={handlePress}
+      accessibilityLabel={`${album.name} by ${album.artist}`}
+    >
+      <Image source={imageSource} style={styles.albumArtwork} />
+      <FluentText variant="body1" numberOfLines={1} style={styles.albumName}>{album.name}</FluentText>
+      <FluentText variant="caption1" color="tertiary" numberOfLines={1}>{album.artist}</FluentText>
+    </AnimatedCard>
+  );
+});
+
+interface ArtistCardProps {
+  artist: DerivedArtist;
+  onPress: (artist: DerivedArtist) => void;
+}
+
+const ArtistCard = memo(function ArtistCard({ artist, onPress }: ArtistCardProps) {
+  const imageSource = useMemo(() => ({ uri: artist.artwork }), [artist.artwork]);
+  const handlePress = useCallback(() => onPress(artist), [onPress, artist]);
+  
+  return (
+    <AnimatedCard
+      style={styles.artistCard}
+      borderRadius={FluentRadius.large}
+      onPress={handlePress}
+      accessibilityLabel={`${artist.name}, ${artist.songCount} songs`}
+    >
+      <View style={styles.artistAvatarContainer}>
+        <Image source={imageSource} style={styles.artistAvatar} />
+      </View>
+      <FluentText variant="body1" numberOfLines={1} style={styles.artistName}>{artist.name}</FluentText>
+      <FluentText variant="caption1" color="tertiary" numberOfLines={1}>{artist.songCount} {artist.songCount === 1 ? 'song' : 'songs'}</FluentText>
+    </AnimatedCard>
+  );
+});
 
 export default function LibraryScreen() {
   const tabBarHeight = useSafeTabBarHeight();
@@ -349,6 +396,14 @@ export default function LibraryScreen() {
     );
   };
 
+  const handleAlbumPress = useCallback((album: DerivedAlbum) => {
+    navigation.navigate("AlbumDetail", { album });
+  }, [navigation]);
+
+  const renderAlbumItem = useCallback(({ item: album }: { item: DerivedAlbum }) => (
+    <AlbumCard album={album} onPress={handleAlbumPress} />
+  ), [handleAlbumPress]);
+
   const renderAlbumsList = () => {
     if (filteredData.albums.length === 0) {
       return renderEmptyState("album", "No albums found");
@@ -358,31 +413,28 @@ export default function LibraryScreen() {
         key="albums-grid"
         data={filteredData.albums}
         numColumns={2}
-        renderItem={({ item: album }) => (
-          <AnimatedCard
-            style={styles.albumCard}
-            borderRadius={FluentRadius.large}
-            onPress={() => navigation.navigate("AlbumDetail", { album })}
-            accessibilityLabel={`${album.name} by ${album.artist}`}
-          >
-            <Image source={{ uri: album.artwork }} style={styles.albumArtwork} />
-            <FluentText variant="body1" numberOfLines={1} style={styles.albumName}>{album.name}</FluentText>
-            <FluentText variant="caption1" color="tertiary" numberOfLines={1}>{album.artist}</FluentText>
-          </AnimatedCard>
-        )}
+        renderItem={renderAlbumItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.gridContent, { paddingBottom: tabBarHeight + 80 + FluentSpacing.m }]}
         columnWrapperStyle={styles.albumRow}
         showsVerticalScrollIndicator={false}
-        initialNumToRender={15}
-        maxToRenderPerBatch={10}
-        windowSize={10}
+        initialNumToRender={10}
+        maxToRenderPerBatch={8}
+        windowSize={5}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
         keyboardShouldPersistTaps="handled"
       />
     );
   };
+
+  const handleArtistPress = useCallback((artist: DerivedArtist) => {
+    navigation.navigate("ArtistDetail", { artist });
+  }, [navigation]);
+
+  const renderArtistItem = useCallback(({ item: artist }: { item: DerivedArtist }) => (
+    <ArtistCard artist={artist} onPress={handleArtistPress} />
+  ), [handleArtistPress]);
 
   const renderArtistsList = () => {
     if (filteredData.artists.length === 0) {
@@ -393,27 +445,14 @@ export default function LibraryScreen() {
         key="artists-grid"
         data={filteredData.artists}
         numColumns={2}
-        renderItem={({ item: artist }) => (
-          <AnimatedCard
-            style={styles.artistCard}
-            borderRadius={FluentRadius.large}
-            onPress={() => navigation.navigate("ArtistDetail", { artist })}
-            accessibilityLabel={`${artist.name}, ${artist.songCount} songs`}
-          >
-            <View style={styles.artistAvatarContainer}>
-              <Image source={{ uri: artist.artwork }} style={styles.artistAvatar} />
-            </View>
-            <FluentText variant="body1" numberOfLines={1} style={styles.artistName}>{artist.name}</FluentText>
-            <FluentText variant="caption1" color="tertiary" numberOfLines={1}>{artist.songCount} {artist.songCount === 1 ? 'song' : 'songs'}</FluentText>
-          </AnimatedCard>
-        )}
+        renderItem={renderArtistItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.gridContent, { paddingBottom: tabBarHeight + 80 + FluentSpacing.m }]}
         columnWrapperStyle={styles.artistRow}
         showsVerticalScrollIndicator={false}
-        initialNumToRender={15}
-        maxToRenderPerBatch={10}
-        windowSize={10}
+        initialNumToRender={10}
+        maxToRenderPerBatch={8}
+        windowSize={5}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
         keyboardShouldPersistTaps="handled"
