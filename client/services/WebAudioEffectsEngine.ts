@@ -145,10 +145,10 @@ class WebAudioEffectsEngineClass {
       if (this.eqFilters[index]) {
         let dbValue = value * DB_PER_UNIT;
         
-        if (index <= 1) {
+        if (index <= 2) {
           dbValue += bassBoost * DB_PER_UNIT;
         }
-        if (index >= 8) {
+        if (index >= 7) {
           dbValue += trebleBoost * DB_PER_UNIT;
         }
         
@@ -204,9 +204,8 @@ class WebAudioEffectsEngineClass {
       return;
     }
 
-    this.applyEQ(mode.eqPreset);
+    this.applyEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost);
     this.currentMode = modeName;
-    console.log('[WebAudioEffectsEngine] Applied immersive mode:', modeName);
   }
 
   setMasterVolume(volume: number): void {

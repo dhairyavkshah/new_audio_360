@@ -670,8 +670,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       
       if (soundLabMode === 'equalizer') {
         let dbValue = zeroSumBands[index] * DB_PER_UNIT;
-        if (index <= 1) dbValue += bassBoost * DB_PER_UNIT;
-        if (index >= bands.length - 2) dbValue += trebleBoost * DB_PER_UNIT;
+        if (index <= 2) dbValue += bassBoost * DB_PER_UNIT;
+        if (index >= bands.length - 3) dbValue += trebleBoost * DB_PER_UNIT;
         filter.gain.value = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
       } else {
         filter.gain.value = 0;
@@ -702,8 +702,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     eqFiltersRef.current.forEach((filter, index) => {
       if (soundLabMode === 'equalizer') {
         let dbValue = zeroSumBands[index] * DB_PER_UNIT;
-        if (index <= 1) dbValue += bassBoost * DB_PER_UNIT;
-        if (index >= bands.length - 2) dbValue += trebleBoost * DB_PER_UNIT;
+        if (index <= 2) dbValue += bassBoost * DB_PER_UNIT;
+        if (index >= bands.length - 3) dbValue += trebleBoost * DB_PER_UNIT;
         filter.gain.value = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
       } else {
         filter.gain.value = 0;
