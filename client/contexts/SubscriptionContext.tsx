@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import Constants from 'expo-constants';
 import { SecureStorage } from '@/services/SecureStorage';
 import { GooglePlayLicense, PurchaseInfo, PRODUCT_ID } from '@/lib/payment';
+
+const APP_ENV = Constants.expoConfig?.extra?.APP_ENV || process.env.APP_ENV || 'production';
+const DEV_MODE_BYPASS_LICENSE = __DEV__ || APP_ENV !== 'production';
 
 export type LicenseStatus = 'checking' | 'unlicensed' | 'licensed';
 
@@ -50,6 +54,21 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const initializeLicense = async () => {
     try {
+      if (DEV_MODE_BYPASS_LICENSE) {
+        console.log('[License] Development mode - bypassing license check');
+        const devState: LicenseState = {
+          status: 'licensed',
+          purchase: {
+            productId: PRODUCT_ID,
+            installSource: 'development',
+            installTime: Date.now(),
+          },
+        };
+        setState(devState);
+        setIsLoading(false);
+        return;
+      }
+
       const stored = await SecureStorage.getSecureItem(SECURE_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as LicenseState;
