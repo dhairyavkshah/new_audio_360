@@ -277,6 +277,63 @@ class NativeEffectsManagerClass {
     this.disableEqualizer();
   }
 
+  /**
+   * Apply 7-band EQ values directly (for use with software DSP)
+   * Band order: Sub (32Hz), Bass (64Hz), Low-Mid (125Hz), Mid (500Hz), High-Mid (2kHz), Treble (8kHz), Brilliance (16kHz)
+   * Uses the new software DSP which applies biquad filters directly
+   */
+  applySevenBandEQ(bands: { sub: number; bass: number; lowMid: number; mid: number; highMid: number; treble: number; brilliance: number }): void {
+    if (!this.isAvailable() || !this.equalizerAttached) {
+      console.log('[NativeEffectsManager] Cannot apply 7-band EQ - not available or not attached');
+      return;
+    }
+
+    const bandArray = [
+      bands.sub,
+      bands.bass,
+      bands.lowMid,
+      bands.mid,
+      bands.highMid,
+      bands.treble,
+      bands.brilliance
+    ];
+
+    const allZero = bandArray.every(v => v === 0);
+    if (allZero) {
+      EqualizerModule.setEnabled(false);
+      console.log('[NativeEffectsManager] All EQ bands at 0 - EQ disabled (pure passthrough)');
+      return;
+    }
+
+    EqualizerModule.setEnabled(true);
+    EqualizerModule.setEqBands(bandArray);
+    console.log('[NativeEffectsManager] Applied 7-band EQ via software DSP:', bandArray);
+  }
+
+  /**
+   * Set bass boost using software DSP shelf filter at 150Hz
+   * @param gain Gain in user units (-5 to +5)
+   */
+  setBassBoost(gain: number): void {
+    if (!this.isAvailable() || !this.equalizerAttached) {
+      return;
+    }
+    EqualizerModule.setBassBoost(gain);
+    console.log('[NativeEffectsManager] Set bass boost:', gain);
+  }
+
+  /**
+   * Set treble boost using software DSP shelf filter at 6kHz
+   * @param gain Gain in user units (-5 to +5)
+   */
+  setTrebleBoost(gain: number): void {
+    if (!this.isAvailable() || !this.equalizerAttached) {
+      return;
+    }
+    EqualizerModule.setTrebleBoost(gain);
+    console.log('[NativeEffectsManager] Set treble boost:', gain);
+  }
+
   async release(): Promise<void> {
     await this.releaseInternal();
     this.musicSessionId = 0;

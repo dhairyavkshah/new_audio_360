@@ -1,4 +1,4 @@
-import { NativeModule, requireNativeModule } from 'expo-modules-core';
+import { requireNativeModule } from 'expo-modules-core';
 import { Platform } from 'react-native';
 
 // Playback Engine Module Types
@@ -29,7 +29,7 @@ export interface PlaybackResult {
   reason?: string;
 }
 
-interface PlaybackEngineModuleInterface extends NativeModule {
+interface PlaybackEngineModuleInterface {
   isAvailable(): boolean;
   initialize(): Promise<PlaybackResult>;
   setQueue(uris: string[], startIndex: number): Promise<PlaybackResult>;
@@ -70,7 +70,7 @@ export interface EqualizerAttachResult {
   presets?: string[];
 }
 
-interface EqualizerModuleInterface extends NativeModule {
+interface EqualizerModuleInterface {
   isAvailable(): boolean;
   attach(sessionId: number): Promise<EqualizerAttachResult>;
   setEnabled(enabled: boolean): { success: boolean; enabled?: boolean; error?: string };
@@ -80,7 +80,10 @@ interface EqualizerModuleInterface extends NativeModule {
   getCurrentPreset(): number;
   setCustomBands(levels: number[]): { success: boolean; error?: string };
   getAllBandLevels(): number[];
-  getProperties(): { enabled: boolean; numberOfBands: number; currentPreset: number; minLevel: number; maxLevel: number };
+  getProperties(): { enabled: boolean; numberOfBands: number; currentPreset: number; minLevel: number; maxLevel: number; isSoftwareDSP?: boolean };
+  setEqBands(bands: number[]): { success: boolean; error?: string };
+  setBassBoost(gain: number): { success: boolean; gain?: number; error?: string };
+  setTrebleBoost(gain: number): { success: boolean; gain?: number; error?: string };
   release(): Promise<{ success: boolean }>;
 }
 
@@ -93,7 +96,7 @@ export interface BassBoostAttachResult {
   maxStrength?: number;
 }
 
-interface BassBoostModuleInterface extends NativeModule {
+interface BassBoostModuleInterface {
   isAvailable(): boolean;
   attach(sessionId: number): Promise<BassBoostAttachResult>;
   setEnabled(enabled: boolean): { success: boolean; enabled?: boolean; error?: string };
@@ -112,7 +115,7 @@ export interface VirtualizerAttachResult {
   maxStrength?: number;
 }
 
-interface VirtualizerModuleInterface extends NativeModule {
+interface VirtualizerModuleInterface {
   isAvailable(): boolean;
   attach(sessionId: number): Promise<VirtualizerAttachResult>;
   setEnabled(enabled: boolean): { success: boolean; enabled?: boolean; error?: string };
@@ -147,7 +150,7 @@ export interface WaveformAttachResult {
   maxCaptureRate?: number;
 }
 
-interface WaveformAnalyzerModuleInterface extends NativeModule {
+interface WaveformAnalyzerModuleInterface {
   isAvailable(): boolean;
   attach(sessionId: number): Promise<WaveformAttachResult>;
   startCapture(rateHz: number): Promise<{ success: boolean; captureRate?: number }>;
@@ -200,7 +203,7 @@ export interface ImmersiveModeResult {
   settings?: ImmersiveModeSettings;
 }
 
-interface ImmersiveModeEngineModuleInterface extends NativeModule {
+interface ImmersiveModeEngineModuleInterface {
   isAvailable(): boolean;
   attach(sessionId: number): Promise<ImmersiveModeAttachResult>;
   setMode(mode: string): Promise<ImmersiveModeResult>;
@@ -631,6 +634,42 @@ export const EqualizerModule = {
     } catch (error) {
       console.error('EqualizerModule.getProperties error:', error);
       return { enabled: false, numberOfBands: 0, currentPreset: -1, minLevel: 0, maxLevel: 0 };
+    }
+  },
+
+  setEqBands: (bands: number[]): { success: boolean; error?: string } => {
+    if (!EqualizerModuleNative) {
+      return { success: false, error: 'Equalizer not available' };
+    }
+    try {
+      return EqualizerModuleNative.setEqBands(bands);
+    } catch (error) {
+      console.error('EqualizerModule.setEqBands error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setBassBoost: (gain: number): { success: boolean; gain?: number; error?: string } => {
+    if (!EqualizerModuleNative) {
+      return { success: false, error: 'Equalizer not available' };
+    }
+    try {
+      return EqualizerModuleNative.setBassBoost(gain);
+    } catch (error) {
+      console.error('EqualizerModule.setBassBoost error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setTrebleBoost: (gain: number): { success: boolean; gain?: number; error?: string } => {
+    if (!EqualizerModuleNative) {
+      return { success: false, error: 'Equalizer not available' };
+    }
+    try {
+      return EqualizerModuleNative.setTrebleBoost(gain);
+    } catch (error) {
+      console.error('EqualizerModule.setTrebleBoost error:', error);
+      return { success: false, error: String(error) };
     }
   },
 
@@ -1118,7 +1157,7 @@ export interface AudioSessionResult {
   error?: string;
 }
 
-interface AudioSessionBridgeModuleInterface extends NativeModule {
+interface AudioSessionBridgeModuleInterface {
   isAvailable(): boolean;
   generateAudioSessionId(): number;
   getGeneratedSessionId(): number;
@@ -1203,7 +1242,7 @@ export interface PlayStoreCheckResult {
   error?: string;
 }
 
-interface LicenseVerificationModuleInterface extends NativeModule {
+interface LicenseVerificationModuleInterface {
   isAvailable(): boolean;
   getInstallerPackageName(): Promise<InstallerInfo>;
   isPlayStoreInstall(): Promise<PlayStoreCheckResult>;

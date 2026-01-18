@@ -13,6 +13,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.Promise
@@ -24,6 +25,7 @@ class PlaybackEngineModule : Module() {
     private var progressHandler: Handler? = null
     private var progressRunnable: Runnable? = null
     private var progressCallback: ((Map<String, Any>) -> Unit)? = null
+    private var dspProcessor: SoftwareDSPAudioProcessor? = null
     
     private val mainHandler = Handler(Looper.getMainLooper())
     
@@ -44,9 +46,22 @@ class PlaybackEngineModule : Module() {
                     
                     val context = appContext.reactContext ?: throw Exception("Context not available")
                     
-                    val renderersFactory = DefaultRenderersFactory(context)
-                        .setEnableAudioFloatOutput(true)
-                        .setEnableDecoderFallback(true)
+                    dspProcessor = SoftwareDSPAudioProcessor.getInstance()
+                    
+                    val audioSink = DefaultAudioSink.Builder(context)
+                        .setAudioProcessors(arrayOf(dspProcessor!!))
+                        .build()
+                    
+                    val renderersFactory = object : DefaultRenderersFactory(context) {
+                        override fun buildAudioSink(
+                            context: Context,
+                            enableFloatOutput: Boolean,
+                            enableAudioTrackPlaybackParams: Boolean
+                        ): androidx.media3.exoplayer.audio.AudioSink {
+                            return audioSink
+                        }
+                    }.setEnableAudioFloatOutput(true)
+                     .setEnableDecoderFallback(true)
                     
                     val audioAttributes = ExoAudioAttributes.Builder()
                         .setUsage(C.USAGE_MEDIA)

@@ -25,7 +25,11 @@ New Audio 360 is a premium mobile music player application built with React Nati
 
 ### Audio Effects Architecture (Pure Software DSP)
 
-The app uses **pure software-based DSP** via `react-native-audio-api` (Web Audio API implementation) across all platforms (Android, iOS, Web). No hardware audio effects are used.
+The app uses **pure software-based DSP** across all platforms. No Android hardware audio effects (android.media.audiofx.*) are used.
+
+**Platform Implementations**:
+- **Web**: `react-native-audio-api` (Web Audio API with BiquadFilterNode, DynamicsCompressorNode)
+- **Android**: Custom ExoPlayer `AudioProcessor` with biquad filter algorithms (same formulas as Web Audio API)
 
 **Audio Signal Chain**:
 ```
@@ -71,7 +75,11 @@ Music, 360 Reality, Gaming, Podcast, Movie, Off
 - **SettingsTab**: General, Sound Lab, Appearance, License, About
 
 ### Native Modules (Android-specific)
-- **PlaybackEngineModule**: ExoPlayer-based playback
+- **PlaybackEngineModule**: ExoPlayer-based playback with custom AudioProcessor for DSP
+- **SoftwareDSPAudioProcessor**: Biquad filter chain (7-band EQ, bass/treble shelves, limiter)
+- **BiquadFilter**: Peaking and shelf filter implementation using Web Audio API cookbook algorithms
+- **Limiter**: Brickwall limiter with envelope follower
+- **EqualizerModule**: Interface to SoftwareDSPAudioProcessor (no hardware effects)
 - **ImmersiveModeEngineModule**: Immersive audio mode management
 - **AudioSessionBridgeModule**: Audio session bridging
 - **NativeWaveformVisualizer**: 64-bar real-time visualization
@@ -164,10 +172,14 @@ Music, 360 Reality, Gaming, Podcast, Movie, Off
 ## Recent Changes
 
 ### January 18, 2026
-- Implemented intelligent brickwall limiter for distortion prevention
-- Replaced fixed 50% gain compensation with dynamic limiting
-- Connected Bass/Treble UI sliders to audio engine
-- Extended bass/treble sync to preset loading and editing flows
+- **Implemented pure software DSP for Android using ExoPlayer AudioProcessor**
+  - Created BiquadFilter.kt with peaking and shelf filter algorithms (Web Audio API cookbook formulas)
+  - Created Limiter.kt with brickwall limiting (threshold -1dB, ratio 20:1, attack 1ms, release 100ms)
+  - Created SoftwareDSPAudioProcessor.kt integrating 7-band EQ, bass/treble shelves, and limiter
+  - Updated PlaybackEngineModule.kt to inject custom AudioProcessor via DefaultAudioSink
+  - Removed all android.media.audiofx.Equalizer usage from EqualizerModule.kt
+- Fixed LSP errors in PlayerContext.tsx (createAudioPlayer signature, setQueue usage)
+- Fixed TypeScript interface definitions in audio-effects module
 
 ### January 17, 2026
 - Implemented pure software-based DSP using react-native-audio-api

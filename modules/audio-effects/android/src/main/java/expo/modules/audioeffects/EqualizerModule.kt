@@ -1,14 +1,21 @@
 package expo.modules.audioeffects
 
-import android.media.audiofx.Equalizer
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.Promise
 
 class EqualizerModule : Module() {
-    private var equalizer: Equalizer? = null
     private var audioSessionId: Int = 0
     private var isEnabled = false
+    private var isAttached = false
+    
+    private fun getDspProcessor(): SoftwareDSPAudioProcessor? {
+        return try {
+            SoftwareDSPAudioProcessor.getInstance()
+        } catch (e: Exception) {
+            null
+        }
+    }
     
     override fun definition() = ModuleDefinition {
         Name("EqualizerModule")
@@ -19,42 +26,39 @@ class EqualizerModule : Module() {
         
         AsyncFunction("attach") { sessionId: Int, promise: Promise ->
             try {
-                release()
-                
                 audioSessionId = sessionId
-                android.util.Log.d("EqualizerModule", "Attaching to audio session: $sessionId")
+                android.util.Log.d("EqualizerModule", "Attaching software DSP to audio session: $sessionId")
                 
-                // Priority 1000 (high) helps effects work with session 0 (global audio output)
-                equalizer = Equalizer(1000, sessionId).apply {
-                    enabled = false
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    promise.reject("ATTACH_ERROR", "Software DSP not initialized", null)
+                    return@AsyncFunction
                 }
                 
-                val eq = equalizer!!
-                val bands = eq.numberOfBands.toInt()
+                isAttached = true
+                
+                val frequencies = dsp.getEqFrequencies()
+                val bandNames = dsp.getEqBandNames()
                 val bandInfo = mutableListOf<Map<String, Any>>()
                 
-                for (i in 0 until bands) {
-                    val band = i.toShort()
+                for (i in frequencies.indices) {
                     bandInfo.add(mapOf(
                         "band" to i,
-                        "centerFreq" to eq.getCenterFreq(band),
-                        "minLevel" to eq.bandLevelRange[0].toInt(),
-                        "maxLevel" to eq.bandLevelRange[1].toInt()
+                        "centerFreq" to (frequencies[i] * 1000).toInt(),
+                        "name" to bandNames[i],
+                        "minLevel" to -1200,
+                        "maxLevel" to 1200
                     ))
-                }
-                
-                val presetNames = mutableListOf<String>()
-                for (i in 0 until eq.numberOfPresets) {
-                    presetNames.add(eq.getPresetName(i.toShort()))
                 }
                 
                 promise.resolve(mapOf(
                     "success" to true,
-                    "numberOfBands" to bands,
-                    "minLevel" to eq.bandLevelRange[0].toInt(),
-                    "maxLevel" to eq.bandLevelRange[1].toInt(),
+                    "numberOfBands" to 7,
+                    "minLevel" to -1200,
+                    "maxLevel" to 1200,
                     "bands" to bandInfo,
-                    "presets" to presetNames
+                    "presets" to listOf("Flat", "Bass Boost", "Treble Boost", "Vocal", "Electronic", "Rock", "Pop", "Jazz"),
+                    "isSoftwareDSP" to true
                 ))
                 
             } catch (e: Exception) {
@@ -64,7 +68,8 @@ class EqualizerModule : Module() {
         
         Function("setEnabled") { enabled: Boolean ->
             try {
-                equalizer?.enabled = enabled
+                val dsp = getDspProcessor()
+                dsp?.setEnabled(enabled)
                 isEnabled = enabled
                 return@Function mapOf("success" to true, "enabled" to enabled)
             } catch (e: Exception) {
@@ -74,21 +79,48 @@ class EqualizerModule : Module() {
         
         Function("setBandLevel") { band: Int, level: Int ->
             try {
-                val safeLevel = level.coerceIn(-1500, 150)
-                equalizer?.setBandLevel(band.toShort(), safeLevel.toShort())
-                return@Function mapOf("success" to true, "band" to band, "level" to safeLevel)
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
+                }
+                
+                val gainUnits = level.toFloat() / 100f
+                dsp.setEqBandGain(band, gainUnits)
+                return@Function mapOf("success" to true, "band" to band, "level" to level)
             } catch (e: Exception) {
                 return@Function mapOf("success" to false, "error" to e.message)
             }
         }
         
         Function("getBandLevel") { band: Int ->
-            return@Function equalizer?.getBandLevel(band.toShort())?.toInt() ?: 0
+            val dsp = getDspProcessor()
+            val gains = dsp?.getEqBandGains() ?: return@Function 0
+            if (band in gains.indices) {
+                return@Function (gains[band] / SoftwareDSPAudioProcessor.DB_PER_UNIT * 100).toInt()
+            }
+            return@Function 0
         }
         
         Function("usePreset") { preset: Int ->
             try {
-                equalizer?.usePreset(preset.toShort())
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
+                }
+                
+                val presetGains = when (preset) {
+                    0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+                    1 -> listOf(4.0, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0)
+                    2 -> listOf(0.0, 0.0, 0.0, 0.0, 2.0, 3.0, 4.0)
+                    3 -> listOf(-1.0, 0.0, 2.0, 3.0, 2.0, 0.0, -1.0)
+                    4 -> listOf(3.0, 2.0, 0.0, -1.0, 0.0, 2.0, 3.0)
+                    5 -> listOf(3.0, 2.0, 1.0, 0.0, 1.0, 2.0, 3.0)
+                    6 -> listOf(1.0, 2.0, 2.0, 1.0, 0.0, 1.0, 2.0)
+                    7 -> listOf(2.0, 1.0, 0.0, 1.0, 2.0, 2.0, 1.0)
+                    else -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+                }
+                
+                dsp.setAllEqBandGains(presetGains)
                 return@Function mapOf("success" to true, "preset" to preset)
             } catch (e: Exception) {
                 return@Function mapOf("success" to false, "error" to e.message)
@@ -96,19 +128,18 @@ class EqualizerModule : Module() {
         }
         
         Function("getCurrentPreset") {
-            return@Function equalizer?.currentPreset?.toInt() ?: -1
+            return@Function -1
         }
         
         Function("setCustomBands") { levels: List<Int> ->
             try {
-                val eq = equalizer ?: return@Function mapOf("success" to false, "error" to "Not attached")
-                
-                for ((band, level) in levels.withIndex()) {
-                    if (band < eq.numberOfBands) {
-                        val safeLevel = level.coerceIn(-1500, 150)
-                        eq.setBandLevel(band.toShort(), safeLevel.toShort())
-                    }
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
                 }
+                
+                val gains = levels.map { it.toDouble() / 100.0 }
+                dsp.setAllEqBandGains(gains)
                 
                 return@Function mapOf("success" to true)
             } catch (e: Exception) {
@@ -117,39 +148,76 @@ class EqualizerModule : Module() {
         }
         
         Function("getAllBandLevels") {
-            val eq = equalizer ?: return@Function emptyList<Int>()
-            val levels = mutableListOf<Int>()
-            for (i in 0 until eq.numberOfBands) {
-                levels.add(eq.getBandLevel(i.toShort()).toInt())
-            }
-            return@Function levels
+            val dsp = getDspProcessor() ?: return@Function emptyList<Int>()
+            val gains = dsp.getEqBandGains()
+            return@Function gains.map { (it / SoftwareDSPAudioProcessor.DB_PER_UNIT * 100).toInt() }
         }
         
         Function("getProperties") {
-            val eq = equalizer ?: return@Function mapOf<String, Any>()
+            val dsp = getDspProcessor()
             return@Function mapOf(
-                "enabled" to eq.enabled,
-                "numberOfBands" to eq.numberOfBands.toInt(),
-                "currentPreset" to eq.currentPreset.toInt(),
-                "minLevel" to eq.bandLevelRange[0].toInt(),
-                "maxLevel" to eq.bandLevelRange[1].toInt()
+                "enabled" to (dsp?.getIsEnabled() ?: false),
+                "numberOfBands" to 7,
+                "currentPreset" to -1,
+                "minLevel" to -1200,
+                "maxLevel" to 1200,
+                "isSoftwareDSP" to true
             )
+        }
+        
+        Function("setEqBands") { bands: List<Double> ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
+                }
+                
+                dsp.setAllEqBandGains(bands)
+                return@Function mapOf("success" to true)
+            } catch (e: Exception) {
+                return@Function mapOf("success" to false, "error" to e.message)
+            }
+        }
+        
+        Function("setBassBoost") { gain: Double ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
+                }
+                
+                dsp.setBassBoost(gain.toFloat())
+                return@Function mapOf("success" to true, "gain" to gain)
+            } catch (e: Exception) {
+                return@Function mapOf("success" to false, "error" to e.message)
+            }
+        }
+        
+        Function("setTrebleBoost") { gain: Double ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
+                }
+                
+                dsp.setTrebleBoost(gain.toFloat())
+                return@Function mapOf("success" to true, "gain" to gain)
+            } catch (e: Exception) {
+                return@Function mapOf("success" to false, "error" to e.message)
+            }
         }
         
         AsyncFunction("release") { promise: Promise ->
             try {
-                release()
+                val dsp = getDspProcessor()
+                dsp?.resetAll()
+                isAttached = false
+                isEnabled = false
+                audioSessionId = 0
                 promise.resolve(mapOf("success" to true))
             } catch (e: Exception) {
                 promise.reject("RELEASE_ERROR", e.message, e)
             }
         }
-    }
-    
-    private fun release() {
-        equalizer?.release()
-        equalizer = null
-        isEnabled = false
-        audioSessionId = 0
     }
 }
