@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
-import { MusicInfo } from 'expo-music-info';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getMusicMetadata } from '@/lib/musicInfo';
 import { Song, mockSongs } from '@/lib/data';
 import { 
   getSelectedFolders as loadSelectedFoldersFromStorage, 
@@ -332,17 +332,13 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         let album = 'Unknown Album';
         let title = extractTitle(asset.filename);
         
-        // Try ID3 extraction on native platforms only
+        // Try ID3 extraction on native platforms
         if (Platform.OS !== 'web') {
           try {
             const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
             
             if (assetInfo.localUri) {
-              const metadata = await MusicInfo.getMusicInfoAsync(assetInfo.localUri, {
-                title: true,
-                artist: true,
-                album: true,
-              });
+              const metadata = await getMusicMetadata(assetInfo.localUri);
               
               if (metadata) {
                 if (metadata.title) title = metadata.title;
@@ -351,7 +347,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
               }
             }
           } catch {
-            // MusicInfo failed - will use fallbacks below
+            // Metadata extraction failed - will use fallbacks below
           }
         }
         

@@ -164,6 +164,12 @@ Current implementation uses development stubs for testing. Web platform uses loc
   - Circular elements properly use avatar token for full circular geometry
 - Updated app icon with new glassmorphic blue/purple gradient audio waveform design
 - About screen now displays the actual app icon instead of generic icon
+- **Album/Artist Metadata Detection Improvements**:
+  - Added expo-music-info for ID3 tag extraction (title, artist, album)
+  - Library screen now groups songs dynamically using actual metadata
+  - Promise-based album name caching prevents duplicate API calls
+  - Fallback chain: ID3 tags → filename parsing → folder names
+  - Filename patterns supported: "Artist - Title", "(Artist) Title"
 
 ## Recent Changes (January 17, 2026)
 - Audio Effects UI changed from numeric chips to slider-based controls
