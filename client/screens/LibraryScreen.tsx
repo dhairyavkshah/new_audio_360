@@ -14,7 +14,7 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
 import { FluentSpacing, FluentRadius, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
-import { mockSongs, Song } from "@/lib/data";
+import { Song } from "@/lib/data";
 import { Album } from "@/navigation/LibraryStackNavigator";
 
 interface DerivedAlbum extends Album {
@@ -133,7 +133,7 @@ export default function LibraryScreen() {
   );
 
   const allSongs = useMemo(() => {
-    return deviceSongs.length > 0 ? deviceSongs : mockSongs;
+    return deviceSongs;
   }, [deviceSongs]);
 
   const derivedAlbums = useMemo((): DerivedAlbum[] => {

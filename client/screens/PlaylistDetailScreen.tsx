@@ -11,10 +11,10 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { PlayableSong } from "@/contexts/PlayerContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
+import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
 import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors, FluentTypography } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
-import { mockSongs, Song } from "@/lib/data";
+import { Song } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 import { Playlist, getPlaylists, removeSongFromPlaylist, reorderPlaylistSongs } from "@/lib/storage";
 
@@ -45,16 +45,11 @@ export default function PlaylistDetailScreen() {
     }, [loadPlaylist])
   );
 
-  const songs = useMemo((): PlayableSong[] => {
+  const songs = useMemo((): DeviceSong[] => {
     if (!playlist) return [];
     return playlist.songIds
-      .map(id => {
-        const mockSong = mockSongs.find(s => s.id === id);
-        if (mockSong) return mockSong as PlayableSong;
-        const deviceSong = deviceSongs.find(s => s.id === id);
-        return deviceSong || null;
-      })
-      .filter((s): s is PlayableSong => s !== null);
+      .map(id => deviceSongs.find(s => s.id === id))
+      .filter((s): s is DeviceSong => s !== undefined);
   }, [playlist, deviceSongs]);
 
   const formatDuration = (seconds: number) => {

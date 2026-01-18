@@ -10,7 +10,6 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
-import { mockSongs } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 
 type AlbumDetailRouteProp = RouteProp<LibraryStackParamList, "AlbumDetail">;
@@ -37,25 +36,15 @@ export default function AlbumDetailScreen() {
       }));
     }
     
-    const allSongs: PlayableSong[] = isOnboardingComplete && deviceSongs.length > 0
-      ? deviceSongs.map((s) => ({
-          id: s.id,
-          title: s.title || s.filename.replace(/\.[^/.]+$/, ""),
-          artist: s.artist || "Unknown Artist",
-          album: s.album || "Unknown Album",
-          duration: s.duration,
-          artwork: s.artwork || "https://placehold.co/300x300/1a1a2e/ffffff?text=🎵",
-          uri: s.uri,
-        }))
-      : mockSongs.map((s) => ({
-          id: s.id,
-          title: s.title,
-          artist: s.artist,
-          album: s.album,
-          duration: s.duration,
-          artwork: s.artwork,
-          uri: "",
-        }));
+    const allSongs: PlayableSong[] = deviceSongs.map((s) => ({
+        id: s.id,
+        title: s.title || s.filename.replace(/\.[^/.]+$/, ""),
+        artist: s.artist || "Unknown Artist",
+        album: s.album || "Unknown Album",
+        duration: s.duration,
+        artwork: s.artwork || "https://placehold.co/300x300/1a1a2e/ffffff?text=🎵",
+        uri: s.uri,
+      }));
 
     return allSongs.filter((song) => 
       song.album.toLowerCase() === album.name.toLowerCase() ||

@@ -8,15 +8,16 @@ import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
+import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { getRecordings, deleteRecording, Recording } from "@/lib/storage";
-import { mockSongs } from "@/lib/data";
 
 export default function RecordingsScreen() {
   const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const { songs: deviceSongs } = useMediaLibraryContext();
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -78,8 +79,8 @@ export default function RecordingsScreen() {
   };
 
   const getArtwork = (songId: string) => {
-    const song = mockSongs.find((s) => s.id === songId);
-    return song?.artwork || "https://picsum.photos/seed/default/400/400";
+    const song = deviceSongs.find((s) => s.id === songId);
+    return song?.artwork || "https://placehold.co/300x300/1a1a2e/ffffff?text=🎵";
   };
 
   const renderRecording = ({ item }: { item: Recording }) => (

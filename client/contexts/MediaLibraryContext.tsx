@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMusicMetadata } from '@/lib/musicInfo';
-import { Song, mockSongs } from '@/lib/data';
+import { Song } from '@/lib/data';
 import { 
   getSelectedFolders as loadSelectedFoldersFromStorage, 
   setSelectedFolders as saveSelectedFoldersToStorage,
@@ -189,17 +189,9 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         const playableSongs = allWebSongs.filter(song => song.blobUrl);
         
         if (playableSongs.length === 0) {
-          setUsingMockData(true);
-          const mockDeviceSongs: DeviceSong[] = mockSongs.map(song => ({
-            ...song,
-            uri: '',
-            filename: `${song.title}.mp3`,
-            modificationTime: Date.now(),
-            isFromDevice: false,
-          }));
-          const filtered = mockDeviceSongs.filter(s => !hiddenIds.includes(s.id));
-          setSongs(filtered);
-          setAllSongsIncludingHidden(mockDeviceSongs);
+          setUsingMockData(false);
+          setSongs([]);
+          setAllSongsIncludingHidden([]);
           return;
         }
         
@@ -226,17 +218,9 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         return;
       }
       
-      const mockDeviceSongs: DeviceSong[] = mockSongs.map(song => ({
-        ...song,
-        uri: '',
-        filename: `${song.title}.mp3`,
-        modificationTime: Date.now(),
-        isFromDevice: false,
-      }));
-      const filtered = mockDeviceSongs.filter(s => !hiddenIds.includes(s.id));
-      setSongs(filtered);
-      setAllSongsIncludingHidden(mockDeviceSongs);
-      setUsingMockData(true);
+      setSongs([]);
+      setAllSongsIncludingHidden([]);
+      setUsingMockData(false);
       return;
     }
 
@@ -289,18 +273,10 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
       }
 
       if (allAssets.length === 0) {
-        const mockDeviceSongs: DeviceSong[] = mockSongs.map(song => ({
-          ...song,
-          uri: '',
-          filename: `${song.title}.mp3`,
-          modificationTime: Date.now(),
-          isFromDevice: false,
-        }));
-        const filtered = mockDeviceSongs.filter(s => !hiddenIds.includes(s.id));
-        setSongs(filtered);
-        setAllSongsIncludingHidden(mockDeviceSongs);
-        setUsingMockData(true);
-        setProgress({ loaded: mockDeviceSongs.length, total: mockDeviceSongs.length });
+        setSongs([]);
+        setAllSongsIncludingHidden([]);
+        setUsingMockData(false);
+        setProgress({ loaded: 0, total: 0 });
         return;
       }
 
@@ -391,17 +367,9 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     } catch (err) {
       console.error('Error fetching audio files:', err);
       setError('Failed to fetch audio files from device');
-      const mockDeviceSongs: DeviceSong[] = mockSongs.map(song => ({
-        ...song,
-        uri: '',
-        filename: `${song.title}.mp3`,
-        modificationTime: Date.now(),
-        isFromDevice: false,
-      }));
-      const filtered = mockDeviceSongs.filter(s => !hiddenIds.includes(s.id));
-      setSongs(filtered);
-      setAllSongsIncludingHidden(mockDeviceSongs);
-      setUsingMockData(true);
+      setSongs([]);
+      setAllSongsIncludingHidden([]);
+      setUsingMockData(false);
     } finally {
       setIsLoading(false);
     }
@@ -417,17 +385,9 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     if (granted) {
       await fetchAudioFiles(hiddenSongIds, selectedFolders);
     } else {
-      const mockDeviceSongs: DeviceSong[] = mockSongs.map(song => ({
-        ...song,
-        uri: '',
-        filename: `${song.title}.mp3`,
-        modificationTime: Date.now(),
-        isFromDevice: false,
-      }));
-      const filtered = mockDeviceSongs.filter(s => !hiddenSongIds.includes(s.id));
-      setSongs(filtered);
-      setAllSongsIncludingHidden(mockDeviceSongs);
-      setUsingMockData(true);
+      setSongs([]);
+      setAllSongsIncludingHidden([]);
+      setUsingMockData(false);
     }
   }, [checkPermission, fetchAudioFiles, hiddenSongIds, selectedFolders]);
 
@@ -462,21 +422,13 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     try {
       await AsyncStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
       setIsOnboardingComplete(true);
-      const mockDeviceSongs: DeviceSong[] = mockSongs.map(song => ({
-        ...song,
-        uri: '',
-        filename: `${song.title}.mp3`,
-        modificationTime: Date.now(),
-        isFromDevice: false,
-      }));
-      const filtered = mockDeviceSongs.filter(s => !hiddenSongIds.includes(s.id));
-      setSongs(filtered);
-      setAllSongsIncludingHidden(mockDeviceSongs);
-      setUsingMockData(true);
+      setSongs([]);
+      setAllSongsIncludingHidden([]);
+      setUsingMockData(false);
     } catch (err) {
       console.error('Error skipping onboarding:', err);
     }
-  }, [hiddenSongIds]);
+  }, []);
 
   // Reset onboarding if permissions were revoked
   const validateOnboardingStatus = useCallback(async () => {

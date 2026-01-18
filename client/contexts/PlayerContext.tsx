@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import { Platform, AppState, AppStateStatus } from 'react-native';
 import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from 'expo-audio';
-import { mockSongs, Song } from '@/lib/data';
+import { Song } from '@/lib/data';
 import { DeviceSong } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
 import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
@@ -69,7 +69,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState<'off' | 'one' | 'all'>('off');
-  const [queue, setQueueState] = useState<PlayableSong[]>(mockSongs);
+  const [queue, setQueueState] = useState<PlayableSong[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [recentlyPlayed, setRecentlyPlayed] = useState<string[]>([]);
   const [mostPlayed, setMostPlayed] = useState<string[]>([]);
@@ -82,7 +82,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const statusListenerRef = useRef<{ remove: () => void } | null>(null);
   const currentSongRef = useRef<PlayableSong | null>(null);
-  const queueRef = useRef<PlayableSong[]>(mockSongs);
+  const queueRef = useRef<PlayableSong[]>([]);
   const shuffleRef = useRef(false);
   const repeatRef = useRef<'off' | 'one' | 'all'>('off');
   
@@ -346,14 +346,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     getPlayerState().then((state) => {
-      if (state && state.currentSongId) {
-        const song = mockSongs.find(s => s.id === state.currentSongId);
-        if (song) {
-          setCurrentSong(song);
-          setCurrentTime(state.currentTime || 0);
-          setShuffle(state.shuffle || false);
-          setRepeat(state.repeat || 'off');
-        }
+      if (state) {
+        setCurrentTime(state.currentTime || 0);
+        setShuffle(state.shuffle || false);
+        setRepeat(state.repeat || 'off');
       }
     });
     getFavorites().then(setFavorites);
@@ -1259,16 +1255,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const removeFromQueue = useCallback((songIds: string[]) => {
     setQueueState((prev) => {
-      const newQueue = prev.filter(s => !songIds.includes(s.id));
-      if (newQueue.length === 0) {
-        return mockSongs;
-      }
-      return newQueue;
+      return prev.filter(s => !songIds.includes(s.id));
     });
   }, []);
 
   const clearQueue = useCallback(() => {
-    setQueueState(mockSongs);
+    setQueueState([]);
     setCurrentSong(null);
     setIsPlaying(false);
     setCurrentTime(0);

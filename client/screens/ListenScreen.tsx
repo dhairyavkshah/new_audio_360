@@ -12,7 +12,7 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { usePlayer } from "@/hooks/usePlayer";
 import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
-import { mockSongs, Song } from "@/lib/data";
+import { Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import { PlayableSong } from "@/contexts/PlayerContext";
 
@@ -35,7 +35,7 @@ export default function ListenScreen() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const allSongs: PlayableSong[] = useMemo(() => {
-    return deviceSongs.length > 0 ? deviceSongs : mockSongs;
+    return deviceSongs;
   }, [deviceSongs]);
 
   const filteredAndSortedSongs = useMemo(() => {
