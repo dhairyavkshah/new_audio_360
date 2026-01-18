@@ -4,7 +4,7 @@ import { SecureStorage } from '@/services/SecureStorage';
 import { GooglePlayLicense, PurchaseInfo, PRODUCT_ID } from '@/lib/payment';
 
 const APP_ENV = Constants.expoConfig?.extra?.APP_ENV || process.env.APP_ENV || 'production';
-const DEV_MODE_BYPASS_LICENSE = true; // TEMP: Bypass license for testing
+const DEV_MODE_BYPASS_LICENSE = false; // Production: Real license verification enabled
 
 export type LicenseStatus = 'checking' | 'unlicensed' | 'licensed';
 
