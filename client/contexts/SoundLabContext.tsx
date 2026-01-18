@@ -64,6 +64,10 @@ interface SoundLabContextType {
   availableImmersiveModes: ImmersiveModeInfo[];
   audioSource: AudioSessionSource;
   isEffectsActive: boolean;
+  bassBoost: number;
+  trebleBoost: number;
+  setBassBoost: (value: number) => void;
+  setTrebleBoost: (value: number) => void;
   getImmersiveModeInfo: (modeId: ImmersiveMode) => { name: string; description: string; icon: string };
   setImmersiveMode: (mode: ImmersiveMode) => Promise<{ success: boolean; error?: string }>;
   refreshSettings: () => Promise<void>;
@@ -80,6 +84,16 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
   const [audioSource, setAudioSource] = useState<AudioSessionSource>('none');
   const [isEffectsActive, setIsEffectsActive] = useState(false);
   const [webAudioInitialized, setWebAudioInitialized] = useState(false);
+  const [bassBoost, setBassBoostState] = useState(0);
+  const [trebleBoost, setTrebleBoostState] = useState(0);
+
+  const setBassBoost = useCallback((value: number) => {
+    setBassBoostState(Math.max(-5, Math.min(5, value)));
+  }, []);
+
+  const setTrebleBoost = useCallback((value: number) => {
+    setTrebleBoostState(Math.max(-5, Math.min(5, value)));
+  }, []);
 
   const eqBands = EQ_PRESETS[eqPresetName] || EQ_PRESETS.Flat;
 
@@ -183,6 +197,10 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
       availableImmersiveModes,
       audioSource,
       isEffectsActive,
+      bassBoost,
+      trebleBoost,
+      setBassBoost,
+      setTrebleBoost,
       getImmersiveModeInfo,
       setImmersiveMode,
       refreshSettings,

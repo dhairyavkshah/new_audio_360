@@ -61,7 +61,7 @@ interface PlayerContextType {
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
-  const { mode: soundLabMode, eqBands, immersiveEffect } = useSoundLab();
+  const { mode: soundLabMode, eqBands, immersiveEffect, bassBoost, trebleBoost } = useSoundLab();
   
   const [currentSong, setCurrentSong] = useState<PlayableSong | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -646,6 +646,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     eqFiltersRef.current = [];
 
     const bands = Object.keys(EQ_FREQUENCIES) as (keyof EQBands)[];
+    const bandValues = bands.map(band => eqBands[band]);
+    const sum = bandValues.reduce((acc, v) => acc + v, 0);
+    const average = sum / bandValues.length;
+    const zeroSumBands = bandValues.map(v => v - average);
+    
+    const DB_PER_UNIT = 2.4;
+    const MAX_DB = 12;
     
     bands.forEach((band, index) => {
       const filter = ctx.createBiquadFilter();
@@ -660,7 +667,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       
       filter.frequency.value = EQ_FREQUENCIES[band];
-      filter.gain.value = soundLabMode === 'equalizer' ? eqBands[band] * 2.4 : 0;
+      
+      if (soundLabMode === 'equalizer') {
+        let dbValue = zeroSumBands[index] * DB_PER_UNIT;
+        if (index <= 1) dbValue += bassBoost * DB_PER_UNIT;
+        if (index >= bands.length - 2) dbValue += trebleBoost * DB_PER_UNIT;
+        filter.gain.value = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
+      } else {
+        filter.gain.value = 0;
+      }
       
       eqFiltersRef.current.push(filter);
     });
@@ -670,16 +685,28 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
 
     return eqFiltersRef.current;
-  }, [soundLabMode, eqBands]);
+  }, [soundLabMode, eqBands, bassBoost, trebleBoost]);
   
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     
     const bands = Object.keys(EQ_FREQUENCIES) as (keyof EQBands)[];
+    const bandValues = bands.map(band => eqBands[band]);
+    const sum = bandValues.reduce((acc, v) => acc + v, 0);
+    const average = sum / bandValues.length;
+    const zeroSumBands = bandValues.map(v => v - average);
+    
+    const DB_PER_UNIT = 2.4;
+    const MAX_DB = 12;
+    
     eqFiltersRef.current.forEach((filter, index) => {
-      const band = bands[index];
-      if (band) {
-        filter.gain.value = soundLabMode === 'equalizer' ? eqBands[band] * 2.4 : 0;
+      if (soundLabMode === 'equalizer') {
+        let dbValue = zeroSumBands[index] * DB_PER_UNIT;
+        if (index <= 1) dbValue += bassBoost * DB_PER_UNIT;
+        if (index >= bands.length - 2) dbValue += trebleBoost * DB_PER_UNIT;
+        filter.gain.value = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
+      } else {
+        filter.gain.value = 0;
       }
     });
     
@@ -693,7 +720,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (delayNodeRef.current && soundLabMode === 'immersive') {
       delayNodeRef.current.delayTime.value = immersiveEffect.delay / 1000;
     }
-  }, [soundLabMode, eqBands, immersiveEffect]);
+  }, [soundLabMode, eqBands, immersiveEffect, bassBoost, trebleBoost]);
 
   useEffect(() => {
     if (Platform.OS === 'android' && nativeAudioSessionIdRef.current > 0) {

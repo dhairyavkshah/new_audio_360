@@ -123,7 +123,7 @@ class WebAudioEffectsEngineClass {
     return this.eqFilters[0] || null;
   }
 
-  applyEQ(bands: number[]): void {
+  applyEQ(bands: number[], bassBoost: number = 0, trebleBoost: number = 0): void {
     if (!this.isInitialized || this.eqFilters.length === 0) {
       console.log('[WebAudioEffectsEngine] Not initialized, cannot apply EQ');
       return;
@@ -134,34 +134,30 @@ class WebAudioEffectsEngineClass {
       paddedBands.push(0);
     }
 
-    const allZero = paddedBands.every(v => v === 0);
-    if (allZero) {
-      this.eqFilters.forEach(filter => {
-        filter.gain.value = 0;
-      });
-      console.log('[WebAudioEffectsEngine] All bands zero - EQ bypassed');
-      return;
-    }
-
     const sum = paddedBands.reduce((acc, v) => acc + v, 0);
     const average = sum / paddedBands.length;
     const zeroSumBands = paddedBands.map(v => v - average);
 
     const DB_PER_UNIT = 2.4;
+    const MAX_DB = 12;
 
     zeroSumBands.forEach((value, index) => {
       if (this.eqFilters[index]) {
-        const dbValue = Math.max(-12, Math.min(12, value * DB_PER_UNIT));
-        this.eqFilters[index].gain.value = dbValue;
+        let dbValue = value * DB_PER_UNIT;
+        
+        if (index <= 1) {
+          dbValue += bassBoost * DB_PER_UNIT;
+        }
+        if (index >= 8) {
+          dbValue += trebleBoost * DB_PER_UNIT;
+        }
+        
+        const clampedDb = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
+        this.eqFilters[index].gain.value = clampedDb;
       }
     });
 
     this.currentEQValues = paddedBands;
-    console.log('[WebAudioEffectsEngine] Applied EQ:', { 
-      input: bands, 
-      zeroSum: zeroSumBands.map(v => v.toFixed(2)),
-      dbValues: zeroSumBands.map(v => (v * DB_PER_UNIT).toFixed(1))
-    });
   }
 
   applyFiveBandEQ(bands: number[]): void {
