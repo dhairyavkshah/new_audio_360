@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 100,
     height: 100,
-    borderRadius: 50,
+    borderRadius: FluentControlRadius.avatar,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: FluentSpacing.s,

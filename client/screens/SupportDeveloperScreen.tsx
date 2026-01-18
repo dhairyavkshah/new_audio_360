@@ -27,7 +27,7 @@ import Animated, {
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors, FluentTypography } from "@/constants/fluent2";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import {
   PaymentHandler,
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
   tierIconHalo: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: FluentControlRadius.fab,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: FluentSpacing.s,
@@ -707,7 +707,7 @@ const styles = StyleSheet.create({
   customInput: {
     flex: 1,
     marginLeft: FluentSpacing.s,
-    fontSize: 16,
+    fontSize: FluentTypography.body1.fontSize,
   },
   payButton: {
     flexDirection: "row",
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
   sheetHandle: {
     width: 40,
     height: 4,
-    borderRadius: 2,
+    borderRadius: FluentControlRadius.checkbox,
     marginBottom: FluentSpacing.xl,
   },
   confirmationTitle: {

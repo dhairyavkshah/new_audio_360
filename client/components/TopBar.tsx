@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     right: -4,
     minWidth: 18,
     height: 18,
-    borderRadius: 9,
+    borderRadius: FluentControlRadius.card,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: FluentSpacing.xs,

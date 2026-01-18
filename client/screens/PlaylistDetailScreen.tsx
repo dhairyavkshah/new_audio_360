@@ -12,7 +12,7 @@ import { useUiSound } from "@/contexts/UiSoundContext";
 import { PlayableSong } from "@/contexts/PlayerContext";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
-import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors, FluentTypography } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { mockSongs, Song } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.s,
   },
   playlistTitle: {
-    fontSize: 20,
+    fontSize: FluentTypography.title1.fontSize,
     fontWeight: "700",
     textAlign: "center",
   },
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   shuffleButton: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: FluentControlRadius.fab,
     justifyContent: "center",
     alignItems: "center",
   },

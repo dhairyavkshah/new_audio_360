@@ -292,9 +292,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   playingBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 32,
+    height: 32,
+    borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
     marginLeft: FluentSpacing.m,

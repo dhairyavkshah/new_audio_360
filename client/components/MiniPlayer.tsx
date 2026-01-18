@@ -14,6 +14,7 @@ import {
   FluentIconSize,
   FluentTypography,
   FluentLayoutSize,
+  FluentControlRadius,
 } from "@/constants/fluent2";
 
 interface MiniPlayerProps {
@@ -188,7 +189,7 @@ const styles = StyleSheet.create({
   dismissButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: FluentControlRadius.fab,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: FluentSpacing.s,
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
     marginLeft: -40,
     width: 80,
     height: 32,
-    borderRadius: 16,
+    borderRadius: FluentControlRadius.fab,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
   playButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: FluentControlRadius.fab,
     justifyContent: "center",
     alignItems: "center",
   },

@@ -121,7 +121,7 @@ export default function LicenseScreen() {
           
           <View style={{
             backgroundColor: colors.colorNeutralBackground2,
-            borderRadius: 12,
+            borderRadius: FluentControlRadius.dialog,
             padding: FluentSpacing.l,
             marginBottom: FluentSpacing.m,
           }}>
@@ -153,7 +153,7 @@ export default function LicenseScreen() {
           
           <View style={{
             backgroundColor: colors.colorNeutralBackground2,
-            borderRadius: 12,
+            borderRadius: FluentControlRadius.dialog,
             padding: FluentSpacing.l,
             marginBottom: FluentSpacing.m,
           }}>
@@ -234,7 +234,7 @@ export default function LicenseScreen() {
 
         <View style={{
           backgroundColor: colors.colorNeutralBackground2,
-          borderRadius: 12,
+          borderRadius: FluentControlRadius.dialog,
           padding: FluentSpacing.l,
           marginBottom: FluentSpacing.m,
         }}>
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   planBadge: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: FluentSpacing.m,

@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   colorSwatch: {
     width: 18,
     height: 18,
-    borderRadius: 9,
+    borderRadius: FluentControlRadius.card,
   },
   themeInfo: {
     flex: 1,
@@ -244,14 +244,14 @@ const styles = StyleSheet.create({
   checkmark: {
     width: 22,
     height: 22,
-    borderRadius: 11,
+    borderRadius: FluentControlRadius.dialog,
     justifyContent: "center",
     alignItems: "center",
   },
   lockBadge: {
     width: 22,
     height: 22,
-    borderRadius: 11,
+    borderRadius: FluentControlRadius.dialog,
     justifyContent: "center",
     alignItems: "center",
   },

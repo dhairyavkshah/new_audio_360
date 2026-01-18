@@ -8,7 +8,7 @@ import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentTypography } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { Playlist, getPlaylists, addPlaylist, updatePlaylist, deletePlaylist } from "@/lib/storage";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   playlistIcon: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: FluentControlRadius.fab,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
   textInput: {
     padding: FluentSpacing.m,
     borderRadius: FluentControlRadius.card,
-    fontSize: 16,
+    fontSize: FluentTypography.body1.fontSize,
   },
   textArea: {
     minHeight: 80,

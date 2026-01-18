@@ -16,6 +16,7 @@ import {
   FluentLightColors,
   FluentDarkColors,
   FluentIconSize,
+  FluentTypography,
 } from "@/constants/fluent2";
 
 export type ErrorFallbackProps = {
@@ -171,18 +172,18 @@ const styles = StyleSheet.create({
     maxWidth: 600,
   },
   title: {
-    fontSize: 28,
+    fontSize: FluentTypography.title1.fontSize,
     fontWeight: "600",
     lineHeight: 40,
     textAlign: "center",
   },
   message: {
-    fontSize: 16,
+    fontSize: FluentTypography.body1.fontSize,
     lineHeight: 24,
     textAlign: "center",
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: FluentTypography.title3.fontSize,
     fontWeight: "600",
   },
   topButton: {
@@ -214,7 +215,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: "600",
     textAlign: "center",
-    fontSize: 16,
+    fontSize: FluentTypography.body1.fontSize,
   },
   modalOverlay: {
     flex: 1,
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
     padding: FluentSpacing.l,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: FluentTypography.caption1.fontSize,
     lineHeight: 18,
     width: "100%",
   },

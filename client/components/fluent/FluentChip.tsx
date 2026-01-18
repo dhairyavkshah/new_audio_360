@@ -42,7 +42,7 @@ const sizeStyles = {
   small: {
     paddingHorizontal: FluentSpacing.s,
     paddingVertical: FluentSpacing.xxs,
-    minHeight: 24,
+    minHeight: 32,
     typography: FluentTypography.caption1,
     iconSize: FluentIconSize.tiny,
     dismissSize: 14,

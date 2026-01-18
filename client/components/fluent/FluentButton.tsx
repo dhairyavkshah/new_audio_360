@@ -43,14 +43,14 @@ const sizeStyles = {
   small: {
     paddingHorizontal: FluentSpacing.m,
     paddingVertical: FluentSpacing.xs,
-    minHeight: 28,
+    minHeight: 36,
     typography: FluentTypography.caption1Strong,
     iconSize: 14,
   },
   medium: {
     paddingHorizontal: FluentSpacing.l,
     paddingVertical: FluentSpacing.s,
-    minHeight: 36,
+    minHeight: 44,
     typography: FluentTypography.body1Strong,
     iconSize: 18,
   },

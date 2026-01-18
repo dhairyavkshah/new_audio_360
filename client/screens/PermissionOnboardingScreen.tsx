@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: FluentControlRadius.avatar,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: FluentSpacing.l,
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   permissionIcon: {
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: FluentControlRadius.fab,
     alignItems: 'center',
     justifyContent: 'center',
   },

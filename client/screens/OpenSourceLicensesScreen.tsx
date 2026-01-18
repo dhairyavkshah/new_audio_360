@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: FluentControlRadius.fab,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: FluentSpacing.m,
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   warningIcon: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: FluentControlRadius.fab,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",

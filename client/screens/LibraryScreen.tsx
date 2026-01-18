@@ -13,7 +13,7 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { mockSongs, mockAlbums, mockArtists, Song } from "@/lib/data";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 import { Playlist, getPlaylists } from "@/lib/storage";
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   artistArtwork: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: FluentControlRadius.fab,
   },
   artistInfo: {
     flex: 1,
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
   addButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: FluentControlRadius.fab,
     alignItems: "center",
     justifyContent: "center",
   },

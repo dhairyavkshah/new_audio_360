@@ -12,6 +12,7 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
   FluentRadius,
+  FluentControlRadius,
   FluentLightColors,
   FluentDarkColors,
   FluentIconSize,
@@ -123,7 +124,7 @@ const styles = StyleSheet.create({
   premiumIndicator: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: FluentControlRadius.button,
     marginLeft: FluentSpacing.s,
   },
   lockIcon: {

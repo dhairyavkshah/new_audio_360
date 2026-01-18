@@ -1298,7 +1298,7 @@ const styles = StyleSheet.create({
   persistentNowPlayingIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: FluentControlRadius.fab,
     backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     alignItems: "center",
@@ -1360,7 +1360,7 @@ const styles = StyleSheet.create({
   signalBar: {
     width: 6,
     marginHorizontal: 2,
-    borderRadius: 2,
+    borderRadius: FluentControlRadius.checkbox,
   },
   sliderContainer: {
     flexDirection: "row",
@@ -1397,7 +1397,7 @@ const styles = StyleSheet.create({
   playButton: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1448,7 +1448,7 @@ const styles = StyleSheet.create({
   unavailableIconContainer: {
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: FluentSpacing.xl,

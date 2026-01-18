@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     right: -2,
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: FluentControlRadius.card,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,

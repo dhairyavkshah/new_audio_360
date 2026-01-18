@@ -18,6 +18,7 @@ import {
   FluentSpacing,
   FluentIconSize,
   FluentTypography,
+  FluentControlRadius,
 } from "@/constants/fluent2";
 
 export type MainTabParamList = {
@@ -213,7 +214,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: 64,
     height: 32,
-    borderRadius: 16,
+    borderRadius: FluentControlRadius.fab,
   },
   tabIcon: {
     zIndex: 1,

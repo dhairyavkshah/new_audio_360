@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
   },
   signalBar: {
     width: 4,
-    borderRadius: 2,
+    borderRadius: FluentControlRadius.checkbox,
   },
   emptyState: {
     alignItems: "center",

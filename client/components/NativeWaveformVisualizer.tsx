@@ -10,6 +10,7 @@ import Animated, {
 import { useThemeContext } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
+  FluentControlRadius,
   FluentLightColors,
   FluentDarkColors,
 } from "@/constants/fluent2";
@@ -427,12 +428,12 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 4,
     backgroundColor: "rgba(128, 128, 128, 0.2)",
-    borderRadius: 2,
+    borderRadius: FluentControlRadius.checkbox,
     overflow: "hidden",
   },
   levelBar: {
     height: "100%",
-    borderRadius: 2,
+    borderRadius: FluentControlRadius.checkbox,
   },
   levelValue: {
     fontSize: 10,

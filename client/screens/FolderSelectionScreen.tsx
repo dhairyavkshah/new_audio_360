@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   sectionCard: {
-    borderRadius: 12,
+    borderRadius: FluentControlRadius.dialog,
     padding: FluentSpacing.l,
     marginBottom: FluentSpacing.m,
   },

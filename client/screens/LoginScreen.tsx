@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 140,
     height: 140,
-    borderRadius: 70,
+    borderRadius: FluentControlRadius.avatar,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: FluentSpacing.m,

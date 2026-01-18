@@ -1,6 +1,7 @@
 import React from 'react';
 import { Platform, View, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
+import { FluentControlRadius } from '@/constants/fluent2';
 
 interface CrossPlatformSliderProps {
   style?: any;
@@ -55,7 +56,7 @@ export function CrossPlatformSlider({
       appearance: 'none' as const,
       WebkitAppearance: 'none',
       background: `linear-gradient(${vertical ? 'to top' : 'to right'}, ${minimumTrackTintColor} ${percentage}%, ${maximumTrackTintColor} ${percentage}%)`,
-      borderRadius: 4,
+      borderRadius: FluentControlRadius.button,
       cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.5 : 1,
       transform: vertical ? 'rotate(-90deg)' : undefined,

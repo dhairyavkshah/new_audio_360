@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   dot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: FluentControlRadius.button,
   },
   content: {
     flex: 1,
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: FluentControlRadius.avatar,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: FluentSpacing.m,

@@ -10,7 +10,7 @@ import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useToast } from "@/contexts/ToastContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
-import { FluentSpacing, FluentRadius } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentControlRadius, FluentTypography } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { 
   getEQPreset, saveEQPreset, clearEQPreset, 
@@ -1117,7 +1117,7 @@ const styles = StyleSheet.create({
   enhancementIconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: FluentControlRadius.fab,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1207,7 +1207,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.m,
     paddingVertical: FluentSpacing.m,
     borderWidth: 1,
-    fontSize: 16,
+    fontSize: FluentTypography.body1.fontSize,
   },
   modalButtons: {
     flexDirection: "row",

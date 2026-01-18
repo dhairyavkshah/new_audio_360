@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    borderRadius: 2,
+    borderRadius: FluentControlRadius.checkbox,
   },
   title: {
     paddingHorizontal: FluentSpacing.l,

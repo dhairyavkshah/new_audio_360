@@ -21,6 +21,7 @@ import { useUiSound } from "@/contexts/UiSoundContext";
 import {
   FluentSpacing,
   FluentRadius,
+  FluentControlRadius,
   FluentTypography,
   FluentLightColors,
   FluentDarkColors,
@@ -395,7 +396,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 36,
     height: 4,
-    borderRadius: 2,
+    borderRadius: FluentControlRadius.checkbox,
     alignSelf: "center",
     marginTop: FluentSpacing.s,
     marginBottom: FluentSpacing.m,
