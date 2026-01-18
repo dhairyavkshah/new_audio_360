@@ -147,7 +147,7 @@ class WebAudioEffectsEngineClass {
     const average = sum / paddedBands.length;
     const zeroSumBands = paddedBands.map(v => v - average);
 
-    const DB_PER_UNIT = 1.5;
+    const DB_PER_UNIT = 2.4;
 
     zeroSumBands.forEach((value, index) => {
       if (this.eqFilters[index]) {
