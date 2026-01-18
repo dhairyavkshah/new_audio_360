@@ -60,8 +60,18 @@ interface PlayerContextType {
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
+// Immersive mode audio settings for bass, treble, and virtualizer
+const IMMERSIVE_MODE_SETTINGS: Record<string, { bassBoost: number; trebleBoost: number; stereoWidth: number }> = {
+  music: { bassBoost: 2, trebleBoost: 1, stereoWidth: 0.3 },
+  '360_reality': { bassBoost: 1, trebleBoost: 2, stereoWidth: 0.6 },
+  gaming: { bassBoost: 3, trebleBoost: 2, stereoWidth: 0.5 },
+  podcast: { bassBoost: -1, trebleBoost: 0, stereoWidth: 0 },
+  movie: { bassBoost: 3, trebleBoost: 2, stereoWidth: 0.4 },
+  off: { bassBoost: 0, trebleBoost: 0, stereoWidth: 0 },
+};
+
 export function PlayerProvider({ children }: { children: ReactNode }) {
-  const { mode: soundLabMode, eqBands, immersiveEffect, bassBoost, trebleBoost } = useSoundLab();
+  const { mode: soundLabMode, eqBands, immersiveEffect, bassBoost, trebleBoost, immersiveModeName } = useSoundLab();
   
   const [currentSong, setCurrentSong] = useState<PlayableSong | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -727,6 +737,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const DB_PER_UNIT = 2.4;
     const MAX_DB = 12;
     
+    // Get immersive mode settings if in immersive mode
+    const immersiveModeSettings = soundLabMode === 'immersive' 
+      ? (IMMERSIVE_MODE_SETTINGS[immersiveModeName] || IMMERSIVE_MODE_SETTINGS.off)
+      : null;
+    
     // Update EQ band filters (preset only, no bass/treble boost)
     eqFiltersRef.current.forEach((filter, index) => {
       if (soundLabMode === 'equalizer') {
@@ -740,31 +755,46 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     // Limiter is used instead of fixed gain compensation
     // The DynamicsCompressorNode configured as a limiter handles distortion prevention intelligently
     
+    // Calculate bass boost: use equalizer settings OR immersive mode settings
+    let effectiveBassBoost = 0;
+    let effectiveTrebleBoost = 0;
+    let effectiveStereoWidth = 0;
+    
+    if (soundLabMode === 'equalizer') {
+      effectiveBassBoost = bassBoost;
+      effectiveTrebleBoost = trebleBoost;
+      effectiveStereoWidth = 0;
+    } else if (soundLabMode === 'immersive' && immersiveModeSettings) {
+      effectiveBassBoost = immersiveModeSettings.bassBoost;
+      effectiveTrebleBoost = immersiveModeSettings.trebleBoost;
+      effectiveStereoWidth = immersiveModeSettings.stereoWidth;
+    }
+    
     // Update dedicated Bass Boost filter
     if (bassBoostFilterRef.current) {
-      bassBoostFilterRef.current.gain.value = soundLabMode === 'equalizer' 
-        ? Math.max(-MAX_DB, Math.min(MAX_DB, bassBoost * DB_PER_UNIT)) 
-        : 0;
+      bassBoostFilterRef.current.gain.value = Math.max(-MAX_DB, Math.min(MAX_DB, effectiveBassBoost * DB_PER_UNIT));
     }
     
     // Update dedicated Treble Boost filter
     if (trebleBoostFilterRef.current) {
-      trebleBoostFilterRef.current.gain.value = soundLabMode === 'equalizer' 
-        ? Math.max(-MAX_DB, Math.min(MAX_DB, trebleBoost * DB_PER_UNIT)) 
-        : 0;
+      trebleBoostFilterRef.current.gain.value = Math.max(-MAX_DB, Math.min(MAX_DB, effectiveTrebleBoost * DB_PER_UNIT));
     }
     
+    // Update Stereo Widener (virtualizer effect)
     if (stereoWidenerRef.current) {
-      const pan = soundLabMode === 'immersive' ? (immersiveEffect.stereoWidth - 1) * 0.3 : 0;
+      // stereoWidth 0 = mono, 0.3-0.6 = wider stereo
+      const pan = effectiveStereoWidth * 0.5; // Scale to reasonable pan range
       stereoWidenerRef.current.pan.value = Math.max(-1, Math.min(1, pan));
     }
+    
+    // Update delay/reverb for immersive modes
     if (delayGainRef.current) {
-      delayGainRef.current.gain.value = soundLabMode === 'immersive' ? immersiveEffect.reverb * 0.3 : 0;
+      delayGainRef.current.gain.value = soundLabMode === 'immersive' ? 0.15 : 0;
     }
     if (delayNodeRef.current && soundLabMode === 'immersive') {
-      delayNodeRef.current.delayTime.value = immersiveEffect.delay / 1000;
+      delayNodeRef.current.delayTime.value = 0.02; // 20ms for subtle spatial effect
     }
-  }, [soundLabMode, eqBands, immersiveEffect, bassBoost, trebleBoost]);
+  }, [soundLabMode, eqBands, immersiveEffect, bassBoost, trebleBoost, immersiveModeName]);
 
   useEffect(() => {
     if (Platform.OS === 'android' && nativeAudioSessionIdRef.current > 0) {
