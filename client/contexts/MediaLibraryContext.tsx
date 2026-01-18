@@ -333,6 +333,8 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         return promise;
       };
 
+      console.log('[MediaLibrary] Starting metadata extraction for', allAssets.length, 'assets...');
+      
       const deviceSongs: DeviceSong[] = await Promise.all(allAssets.map(async (asset, index) => {
         let artist = 'Unknown Artist';
         let album = 'Unknown Album';
@@ -340,26 +342,31 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         let artwork: string | undefined = undefined;
         
         try {
+          if (index < 3) console.log('[MediaLibrary] Processing asset', index, ':', asset.filename);
           const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
+          if (index < 3) console.log('[MediaLibrary] Got assetInfo for', index, ', localUri:', assetInfo.localUri?.substring(0, 50));
           
           if (assetInfo.localUri) {
             const metadata = await getMusicMetadata(assetInfo.localUri);
             
             if (metadata) {
-              console.log('[MediaLibrary] Extracted metadata for:', asset.filename, {
+              if (index < 3) console.log('[MediaLibrary] Got metadata for', index, ':', {
                 title: metadata.title,
                 artist: metadata.artist,
-                album: metadata.album,
                 hasArt: !!metadata.albumArt
               });
               if (metadata.title) title = metadata.title;
               if (metadata.artist) artist = metadata.artist;
               if (metadata.album) album = metadata.album;
               if (metadata.albumArt) artwork = metadata.albumArt;
+            } else {
+              if (index < 3) console.log('[MediaLibrary] No metadata returned for', index);
             }
+          } else {
+            if (index < 3) console.log('[MediaLibrary] No localUri for', index);
           }
         } catch (err) {
-          console.warn('[MediaLibrary] Error extracting metadata for:', asset.filename);
+          console.warn('[MediaLibrary] Error extracting metadata for:', asset.filename, err);
         }
         
         if (artist === 'Unknown Artist') {
