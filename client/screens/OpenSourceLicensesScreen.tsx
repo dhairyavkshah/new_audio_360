@@ -32,6 +32,8 @@ const OPEN_SOURCE_LIBRARIES = [
   { name: "React Navigation", license: "MIT License" },
   { name: "React Native Reanimated", license: "MIT License" },
   { name: "React Native Track Player", license: "Apache 2.0 License" },
+  { name: "React Native Audio API", license: "MIT License" },
+  { name: "React Native IAP", license: "MIT License" },
   { name: "Expo AV", license: "MIT License" },
   { name: "Expo Media Library", license: "MIT License" },
   { name: "Expo Haptics", license: "MIT License" },

@@ -1,98 +1,163 @@
 # New Audio 360
 
 ## Overview
-New Audio 360 is a premium mobile music player application built with React Native and Expo, targeting audio enthusiasts. It offers robust playback, extensive music organization, professional sound customization, and deep personalization through 55 themes. The app requires a one-time purchase to function, with local data storage and client-side license verification via Google Play. Its business vision is to provide a high-quality, ad-free, and privacy-focused audio experience for users who value superior sound and extensive customization.
+New Audio 360 is a premium mobile music player application built with React Native and Expo, targeting audio enthusiasts. It delivers studio-quality audio processing through pure software-based DSP, 55 stunning themes, and comprehensive music organization. The app requires a one-time purchase (₹311 India / $13.11 International) for lifetime access, with all data stored locally and no backend required.
+
+**Tagline**: "Top-grade music experience crafted for you"
 
 ## User Preferences
-I prefer concise and direct communication. When making changes, prioritize core functionality and architectural integrity. I value clear explanations for complex decisions. I prefer iterative development with clear justifications for each step. No complex animations - use simple dissolve/appear effects only.
+- Concise and direct communication
+- Prioritize core functionality and architectural integrity
+- Clear explanations for complex decisions
+- Iterative development with justifications
+- No complex animations - use simple dissolve/appear effects only
 
-**Git Workflow**: Replit is always the source of truth. Never merge changes from GitHub to Replit. When pushing to GitHub, use `git push --force` if needed to overwrite remote changes.
+**Git Workflow**: Replit is always the source of truth. Never merge changes from GitHub to Replit. Use `git push --force` if needed.
 
 ## System Architecture
-The application leverages React Native and Expo for the frontend, strictly adhering to the Microsoft Fluent 2 design system (4px grid, Fluent typography, semantic color tokens, elevation shadows, motion curves, 100% Android safe area compliance). All data is stored locally on the device (music library, user settings, playlists, preferences) using AsyncStorage/SecureStorage, requiring no backend. License verification is performed client-side via Google Play installation checks.
 
-### Client-Side Architecture
--   **Local Data Storage**: Device-local music playback, media library access, user settings, playlists, and preferences.
--   **No Backend**: No server infrastructure, database, or admin panel needed. License verification is solely via Play Store installation.
+### Platform & Framework
+- **Framework**: React Native with Expo SDK 53.0.0
+- **React Native**: 0.79.2 (Legacy Architecture for react-native-track-player compatibility)
+- **State Management**: React Context API with custom hooks
+- **Design System**: Microsoft Fluent 2 (4px grid, semantic tokens, elevation shadows)
+- **Data Persistence**: AsyncStorage/SecureStorage (all local, no backend)
 
-### License Verification Flow
-The app checks if it was installed from Google Play (com.android.vending). If so, it's licensed; otherwise, the user is prompted to acquire it from the Play Store. The license state is cached locally for offline use.
+### Audio Effects Architecture (Pure Software DSP)
 
-### Audio Tip Notification
-On launch, a dismissible notification card advises users to disable native phone audio effects for optimal sound with the app's Sound Lab.
+The app uses **pure software-based DSP** via `react-native-audio-api` (Web Audio API implementation) across all platforms (Android, iOS, Web). No hardware audio effects are used.
 
-### Technical Implementations
--   **Platform**: React Native with Expo SDK (Legacy Architecture for `react-native-track-player` compatibility).
--   **State Management**: React Context API with custom hooks.
--   **Data Persistence**: AsyncStorage for local storage.
--   **Design System**: Microsoft Fluent 2 tokens.
--   **Audio Playback**: `react-native-track-player` for background playback (Android), `expo-av` for web fallback.
--   **Media Access**: `expo-media-library` for device audio files.
--   **Animations**: Simple dissolve/appear effects only.
+**Audio Signal Chain**:
+```
+Source → Gain → 7-Band EQ → Bass Shelf Filter → Treble Shelf Filter → Stereo Widener → Limiter → Output
+```
+
+**Key Components**:
+- **7-Band Parametric EQ**: Sub, Bass, Low-Mid, Mid, High-Mid, Treble, Brilliance
+- **Zero-Sum Normalization**: EQ presets automatically balanced to prevent overall volume change
+- **Bass Boost Filter**: Lowshelf at 150Hz, affects all frequencies below
+- **Treble Boost Filter**: Highshelf at 6kHz, affects all frequencies above
+- **Bass/Treble Range**: ±12 dB (slider range -5 to +5, DB_PER_UNIT = 2.4)
+- **Intelligent Limiter**: DynamicsCompressorNode configured as brickwall limiter
+  - Threshold: -1 dB (catches peaks before clipping)
+  - Ratio: 20:1 (hard limiting)
+  - Attack: 1ms (catches transients)
+  - Release: 100ms (smooth recovery)
+
+**EQ Presets** (8 total):
+Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic
+
+**Immersive Modes** (6 total):
+Music, 360 Reality, Gaming, Podcast, Movie, Off
 
 ### Navigation Structure
-A 4-tab system (`MainTabNavigator`) with a persistent MiniPlayer:
--   **ListenTab**: Main player, Now Playing, Sound Lab, Queue.
--   **LibraryTab**: Music organization with Quick Access Category Grid.
--   **RadioTab**: FM/AM native radio and Online streaming radio.
--   **SettingsTab**: General settings, Sound Lab, Appearance, License, About.
+4-tab system with persistent MiniPlayer:
+- **ListenTab**: Main player, Now Playing, Sound Lab, Queue
+- **LibraryTab**: Music organization, Quick Access Category Grid
+- **RadioTab**: FM/AM native radio, Online streaming radio
+- **SettingsTab**: General, Sound Lab, Appearance, License, About
 
-### Audio Effects Architecture (Software DSP)
--   **All Platforms**: Uses `react-native-audio-api` (Web Audio API implementation) with BiquadFilter-based 10-band software EQ. This provides consistent, device-independent audio processing across Android, iOS, and Web.
--   **WebAudioEffectsEngine**: Implements 10-band parametric EQ with peaking filters at standard frequencies (60Hz to 16kHz), plus low-shelf and high-shelf filters for bass/treble enhancement.
--   **Immersive Modes**: 6 preset modes (Music, 360 Reality, Gaming, Podcast, Movie, Off) with custom EQ curves applied via software DSP.
+### Native Modules (Android-specific)
+- **PlaybackEngineModule**: ExoPlayer-based playback
+- **ImmersiveModeEngineModule**: Immersive audio mode management
+- **AudioSessionBridgeModule**: Audio session bridging
+- **NativeWaveformVisualizer**: 64-bar real-time visualization
+- **FMRadioModule**: FM/AM radio tuning
+- **LicenseVerificationModule**: Play Store verification
 
-### Native Audio Modules (Android-specific)
--   **PlaybackEngineModule**: ExoPlayer-based playback with queue, shuffle, repeat, speed, and audio session management.
--   **ImmersiveModeEngineModule**: Manages 6 immersive audio modes (Music, 360 Reality, Gaming, Podcast, Movie, Off).
--   **AudioSessionBridgeModule**: Bridges audio session IDs between react-native-track-player and native effects.
--   **NativeWaveformVisualizer**: Real-time 64-bar waveform visualization.
--   **FMRadioModule**: FM/AM radio tuning with Sound Lab effects integration.
--   **LicenseVerificationModule**: Native Kotlin module for Play Store license verification.
--   **NativeEffectsManager**: TypeScript service for Android native EQ with zero-sum balancing.
--   **WebAudioEffectsEngine**: TypeScript service using react-native-audio-api for Web/iOS EQ processing.
+### License Verification
+- Checks if installed from Google Play (com.android.vending)
+- Licensed: Full access granted
+- Unlicensed: Prompt to purchase from Play Store
+- License state cached locally for offline use
+- Production uses `react-native-iap` with product ID `new_audio_360_lifetime`
 
-### Design Language (Microsoft Fluent 2)
-Adheres to Fluent 2 token system for Spacing (4px grid), Typography, Semantic Colors, Radii, Elevation Shadows, and Motion. Utilizes custom Fluent 2 primitive UI components.
+## Feature Specifications
 
-### Feature Specifications
--   **Theming**: 55 themes with custom icons, shapes, and component variants (glass, beveled, aero effects).
--   **Sound Lab**: Mutually exclusive Equalizer presets or Immersive modes with headroom-safe normalization.
--   **FM/AM Radio**: Native Android radio with scanning, tuning, favorite stations, and Sound Lab effects.
--   **Online Radio Streaming**: Hundreds of verified internet radio stations via Radio Browser API, with quality filters (verified working, MP3/OGG/AAC, >64kbps bitrate).
--   **One-Time Purchase**: Lifetime access.
--   **MiniPlayer**: Persistent glassmorphism mini-player.
--   **Media Library Integration**: Onboarding, paginated loading, "Hide Song."
--   **Playlist Management**: Full CRUD for local playlists.
--   **Playback Features**: Favorites, Recently Played, Most Played, Queue Management, Sleep Timer.
--   **Background Playback**: Music and radio continue playing when app is closed, with Android notification controls.
--   **Music Folder Selection**: Users can select specific device folders for music.
--   **Multi-Step Permission Onboarding**: Guides users through necessary permissions.
+### Sound Lab
+- **Equalizer Mode**: 8 presets with custom 5-band EQ editor (up to 5 saved presets)
+- **Immersive Mode**: 6 audio enhancement modes
+- **Bass Control**: Slider -5 to +5 (±12 dB via lowshelf filter at 150Hz)
+- **Treble Control**: Slider -5 to +5 (±12 dB via highshelf filter at 6kHz)
+- **Distortion Prevention**: Intelligent brickwall limiter (no fixed gain reduction)
 
-### Build Configuration
--   **Expo SDK**: 53.0.0 with React Native 0.79.2.
--   **Reanimated**: Version 3.17.x.
--   Requires an **Expo Development Build** for full native module functionality.
--   Native audio effects are Android-only.
--   Four EAS Build profiles: `development`, `preview`, `production`, `production-apk`.
+### Theming
+55 themes across 6 categories:
+- System (5): Fluent Light, Dark, Night AMOLED, Warm Neutral, Cool Blue
+- Winamp (10): Classic, Modern, Bento, Foxpro, and more
+- Retro (10): VHS, Cassette, Vaporwave, Cyberpunk, and more
+- Nature (10): Forest, Ocean, Sunset, Aurora, and more
+- Professional (10): Midnight, Corporate, Slate, Graphite, and more
+- Special (10): Neon, Holographic, Candy, Galaxy, and more
 
-### CI/CD Pipeline
-GitHub Actions workflows (`.github/workflows/`) for building development APKs and production AAB/APKs. Requires `EXPO_TOKEN` secret.
+### Radio
+- **FM/AM**: Native Android radio (device hardware required)
+- **Online Radio**: Radio Browser API with quality filters
+  - Only verified working streams (lastcheckok=1)
+  - Quality codecs: MP3, OGG, AAC
+  - Bitrate >64kbps
+  - Max 50 stations per country, sorted by popularity
 
-### Production License Verification
-Uses `react-native-iap` for Google Play Billing integration to check and request purchases with product ID `new_audio_360_lifetime`.
+### Playback Features
+- Background playback with notification controls
+- Queue management with drag-to-reorder
+- Shuffle and repeat modes
+- Playback speed (0.5x to 2.0x)
+- Sleep timer
+- Favorites, Recently Played, Most Played
+
+### Library Management
+- Music folder selection
+- Paginated loading for large libraries
+- "Hide Song" feature
+- Full playlist CRUD
+
+## Build Configuration
+
+### EAS Build Profiles
+- `development`: Development build with debugging
+- `preview`: Internal testing build
+- `production`: Production AAB for Play Store
+- `production-apk`: Production APK for direct distribution
+
+### Requirements
+- Minimum Android: 8.0 (API 26)
+- Target Android: 14 (API 34)
+- Architectures: ARM64, ARM32, x86_64
+- Package Name: com.theteam360.newaudio360
 
 ## External Dependencies
 
--   **React Native**: Core cross-platform mobile framework.
--   **Expo SDK**: Development and build tooling.
--   **expo-av**: Audio playback (web fallback).
--   **expo-media-library**: Device media access.
--   **react-native-reanimated**: Simple animations.
--   **@react-navigation**: Navigation system.
--   **MaterialCommunityIcons**: Iconography.
--   **expo-notifications**: For now-playing controls and permission flow.
--   **expo-local-authentication**: Biometric/PIN authentication.
--   **expo-location**: Location detection for online radio.
--   **react-native-track-player**: Background audio playback with notification controls.
--   **react-native-iap** (production): Google Play Billing integration.
+### Core
+- react-native, expo (SDK 53.0.0)
+- react-native-track-player (background playback)
+- expo-av (web fallback)
+- expo-media-library (device media access)
+
+### Audio Processing
+- react-native-audio-api (Web Audio API for software DSP)
+
+### UI & Navigation
+- @react-navigation (navigation system)
+- react-native-reanimated (simple animations)
+- MaterialCommunityIcons (iconography)
+
+### Platform Services
+- expo-notifications (playback controls)
+- expo-local-authentication (biometric auth)
+- expo-location (online radio location)
+- react-native-iap (Google Play Billing)
+
+## Recent Changes
+
+### January 18, 2026
+- Implemented intelligent brickwall limiter for distortion prevention
+- Replaced fixed 50% gain compensation with dynamic limiting
+- Connected Bass/Treble UI sliders to audio engine
+- Extended bass/treble sync to preset loading and editing flows
+
+### January 17, 2026
+- Implemented pure software-based DSP using react-native-audio-api
+- Added dedicated shelf filters for Bass (150Hz) and Treble (6kHz)
+- Implemented zero-sum normalization for EQ presets
+- Created 7-band EQ architecture with proper frequency distribution

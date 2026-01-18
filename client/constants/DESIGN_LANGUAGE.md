@@ -2,9 +2,11 @@
 
 ## Overview
 
-This document establishes the official design language for New Audio 360, organized by UI component region. All screens must follow these specifications for visual consistency.
+This document establishes the official design language for New Audio 360, a premium music player application. All screens must follow these specifications for visual consistency, accessibility, and brand alignment.
 
-**Base Unit**: 4px (all values are multiples of 4)
+**Design System**: Microsoft Fluent 2  
+**Base Unit**: 4px (all values are multiples of 4)  
+**Tagline**: "Top-grade music experience crafted for you"
 
 ---
 
@@ -70,12 +72,6 @@ Header bar for all screens other than the main home tabs (Now Playing, Settings 
 | Back Icon Color | `theme.text` | - |
 | Shadow | Optional `M3Elevation.level2` | - |
 
-### Example Structure
-```
-[56px height]
-├── [16px] [Back 48x48] [8px] ─── Page Title (centered) ─── [Action 48x48] [16px]
-```
-
 ---
 
 ## 3. BAR 1 BELOW TOP BAR (Search/Filter Bar)
@@ -108,14 +104,6 @@ The primary utility bar directly below the top bar, typically containing search 
 | Placeholder Color | `theme.textSecondary` | - |
 | Input Text | `ThemedText type="body"` (14px) | - |
 
-### Example Structure
-```
-[64px total]
-├── [8px top padding]
-├── [48px content] [20px] [Search Input ─────────────────] [8px] [Sort 48x48] [20px]
-├── [8px bottom padding]
-```
-
 ---
 
 ## 4. BAR 2 BELOW TOP BAR (Category/Tab Bar)
@@ -147,12 +135,6 @@ Secondary filter bar with horizontal scrolling chips or tabs.
 | Chip Text (inactive) | `theme.textSecondary` | - |
 | Chip Text (active) | `theme.primary` | - |
 | Chip Border Radius | 9999px (pill) | `BorderRadius.pill` |
-
-### Example Structure
-```
-[48px height]
-├── [scroll] [20px] [Chip 36px] [8px] [Chip 36px] [8px] [Chip 36px] ... [20px]
-```
 
 ---
 
@@ -188,21 +170,7 @@ The primary scrollable content region between bars.
 | Artwork Border Radius | 8px | `BorderRadius.medium` |
 | Artwork-to-Text Gap | 12px | `Spacing.contentBlock` |
 
-#### Compact List Item
-| Property | Value | Token |
-|----------|-------|-------|
-| Height | 48px | `Layout.listItemCompact` |
-| Vertical Padding | 8px | `Spacing.s` |
-
-### List Item Typography
-| Element | Style | Size |
-|---------|-------|------|
-| Primary Text | `ThemedText type="body"` | 14px |
-| Secondary Text | `ThemedText type="caption"` | 12px |
-| Title-to-Subtitle Gap | 4px | `Spacing.titleToSubtitle` |
-
 ### Cards
-
 | Property | Value | Token |
 |----------|-------|-------|
 | Padding | 16px | `CardPadding.standard` |
@@ -211,29 +179,47 @@ The primary scrollable content region between bars.
 | Border | 1px `theme.cardBorder` | - |
 | Gap Between Cards | 12px | `Layout.cardGap` |
 
-### Section Headers
-| Element | Style |
-|---------|-------|
-| Section Title | `ThemedText type="h2"` (16px, weight 600) |
-| Section Title Margin Bottom | 12px | `Spacing.contentBlock` |
+---
 
-### Example Structure
-```
-[Main Content Area]
-├── [16px top padding]
-├── Section Title (h2)
-├── [12px gap]
-├── [Card or List Items]
-├── [24px section gap]
-├── Section Title (h2)
-├── [12px gap]
-├── [Card or List Items]
-├── [156px bottom padding for nav/player]
-```
+## 6. SOUND LAB COMPONENTS
+
+Specialized UI components for the audio effects interface.
+
+### Slider Controls (Bass/Treble)
+| Property | Value | Token |
+|----------|-------|-------|
+| Track Height | 6px | `FluentSliderSize.trackMedium` |
+| Thumb Size | 20px | `FluentSliderSize.thumbMedium` |
+| Slider Width | Full width - 40px padding | - |
+| Label Position | Above slider, centered | - |
+| Value Display | Below slider, centered | - |
+
+### Slider Value Range
+| Control | Slider Range | dB Range | Filter Type |
+|---------|--------------|----------|-------------|
+| Bass | -5 to +5 | ±12 dB | Lowshelf @ 150Hz |
+| Treble | -5 to +5 | ±12 dB | Highshelf @ 6kHz |
+
+### EQ Preset Chips
+| Property | Value | Token |
+|----------|-------|-------|
+| Height | 36px | `FluentControlHeight.medium` |
+| Padding | 16px horizontal | `Spacing.l` |
+| Border Radius | 18px (pill) | `BorderRadius.pill` |
+| Gap | 8px | `Spacing.s` |
+
+### Immersive Mode Cards
+| Property | Value | Token |
+|----------|-------|-------|
+| Height | 80px | - |
+| Width | Full width | - |
+| Icon Size | 32px | - |
+| Border Radius | 12px | `BorderRadius.card` |
+| Selected Border | 2px primary | - |
 
 ---
 
-## 6. FLOATING BAR (MINI PLAYER)
+## 7. FLOATING BAR (MINI PLAYER)
 
 The persistent mini player floating above the bottom navigation.
 
@@ -265,18 +251,10 @@ The persistent mini player floating above the bottom navigation.
 | Background | Glassmorphism blur OR `theme.surfaceContainer` | - |
 | Blur Intensity | 20-40 (iOS), 15-25 (Android) | - |
 | Shadow | `M3Elevation.level3` | - |
-| Text Color | `theme.text` | - |
-| Icon Color | `theme.text` | - |
-
-### Example Structure
-```
-[68px height, 16px margins]
-├── [12px] [Art 44x44] [12px] [Title/Artist ───] [Play 44x44] [4px] [Next 44x44] [12px]
-```
 
 ---
 
-## 7. MODAL / OVERLAY
+## 8. MODAL / OVERLAY
 
 Full-screen or partial overlays including dialogs, sheets, and context menus.
 
@@ -289,7 +267,6 @@ Full-screen or partial overlays including dialogs, sheets, and context menus.
 | Bottom Padding | 24px + safe area | `Spacing.xxl` |
 | Handle Bar Width | 40px | - |
 | Handle Bar Height | 4px | - |
-| Handle Bar Margin | 8px bottom | `Spacing.s` |
 
 ### Dialog/Modal
 | Property | Value | Token |
@@ -297,50 +274,10 @@ Full-screen or partial overlays including dialogs, sheets, and context menus.
 | Width | 90% of screen, max 400px | - |
 | Border Radius | 16px | `BorderRadius.dialog` |
 | Padding | 24px | `Spacing.xxl` |
-| Title | `ThemedText type="h2"` (16px, weight 600) |
-| Body Text | `ThemedText type="body"` (14px) |
-| Title-to-Body Gap | 12px | `Spacing.contentBlock` |
-| Body-to-Buttons Gap | 24px | `Spacing.xxl` |
-| Button Gap | 12px | `Spacing.m` |
-
-### Context Menu
-| Property | Value | Token |
-|----------|-------|-------|
-| Width | 200-280px | - |
-| Border Radius | 12px | `BorderRadius.card` |
-| Item Height | 48px | `Layout.listItemCompact` |
-| Item Padding | 16px horizontal | `Spacing.l` |
-| Icon Size | 20px | - |
-| Icon-to-Text Gap | 12px | `Spacing.contentBlock` |
-
-### Overlay Background
-| Property | Value | Token |
-|----------|-------|-------|
-| Scrim Color | `theme.scrim` (rgba black 40-70%) | - |
-
-### Styling
-| Property | Value | Token |
-|----------|-------|-------|
-| Background | `theme.surface` | - |
-| Shadow | `M3Elevation.level4` | - |
-| Handle Bar Color | `theme.outline` | - |
-
-### Example Structure (Bottom Sheet)
-```
-[Bottom Sheet]
-├── [Scrim Overlay 40% black]
-├── [Sheet with 16px top radius]
-│   ├── [16px top padding]
-│   ├── [Handle Bar 40x4px, centered]
-│   ├── [8px gap]
-│   ├── Content Area
-│   │   ├── [Menu Item 48px height] × N
-│   ├── [24px + safe area bottom padding]
-```
 
 ---
 
-## 8. BOTTOM BAR (Tab Navigation)
+## 9. BOTTOM BAR (Tab Navigation)
 
 The persistent bottom tab bar for primary navigation.
 
@@ -356,11 +293,10 @@ The persistent bottom tab bar for primary navigation.
 ### Content Layout
 | Element | Specification |
 |---------|---------------|
-| Tab Count | 3 (Listen, Library, Settings) |
+| Tab Count | 4 (Listen, Library, Radio, Settings) |
 | Tab Distribution | Equal width |
 | Icon Position | Centered horizontally |
 | Label Position | Below icon, centered |
-| Active Indicator | Pill background behind icon (optional) |
 
 ### Styling
 | Property | Value | Token |
@@ -370,19 +306,6 @@ The persistent bottom tab bar for primary navigation.
 | Icon (active) | `theme.primary` | - |
 | Label (inactive) | `theme.onSurfaceVariant` | - |
 | Label (active) | `theme.primary` | - |
-| Active Pill Color | `theme.primary` with 15% opacity | - |
-| Active Pill Radius | 16px | - |
-| Top Border | None (use shadow) | - |
-| Shadow | `M3Elevation.level2` (inverted) | - |
-
-### Example Structure
-```
-[64px height + safe area]
-├── [Tab 1: Listen]     [Tab 2: Library]    [Tab 3: Settings]
-│   ├── [Icon 24px]     ├── [Icon 24px]     ├── [Icon 24px]
-│   ├── [4px gap]       ├── [4px gap]       ├── [4px gap]
-│   └── [Label 10px]    └── [Label 10px]    └── [Label 10px]
-```
 
 ---
 
@@ -427,6 +350,7 @@ The persistent bottom tab bar for primary navigation.
 | Chips/Tags | 36px height, 48px if standalone |
 | Tab Bar Tabs | Full width × 64px |
 | Mini Player | Full width × 68px |
+| Sliders | 20px thumb with 48px touch area |
 
 ---
 
@@ -440,11 +364,10 @@ The application uses a comprehensive token system from `@/constants/fluent2` for
 |----------|--------|---------|
 | `FluentSpacing` | spacing.ts | Base spacing scale (4px increments) |
 | `FluentControlHeight` | controls.ts | Interactive element heights |
-| `FluentControlMinWidth` | controls.ts | Button minimum widths |
 | `FluentSliderSize` | controls.ts | Slider thumb and track dimensions |
 | `FluentBorderWidth` | controls.ts | Border thickness tokens |
 | `FluentTouchTarget` | controls.ts | Accessibility minimum touch sizes |
-| `FluentLayoutSize` | controls.ts | Component dimensions (dialogs, menus, etc.) |
+| `FluentLayoutSize` | controls.ts | Component dimensions |
 | `FluentControlRadius` | radii.ts | Corner radii for controls |
 | `FluentTypography` | typography.ts | Text styles and sizes |
 
@@ -462,21 +385,11 @@ The application uses a comprehensive token system from `@/constants/fluent2` for
 | Token | Value | Use Case |
 |-------|-------|----------|
 | `thumbSmall` | 16px | Compact sliders |
-| `thumbMedium` | 20px | Default volume sliders |
+| `thumbMedium` | 20px | Default volume/EQ sliders |
 | `thumbLarge` | 24px | Large sliders |
 | `trackThin` | 4px | Inactive/subtle tracks |
 | `trackMedium` | 6px | Active/highlighted tracks |
 | `trackThick` | 8px | Prominent tracks |
-
-### Border Widths (FluentBorderWidth)
-
-| Token | Value | Use Case |
-|-------|-------|----------|
-| `none` | 0 | No border |
-| `thin` | 1px | Subtle borders (cards, dividers) |
-| `medium` | 1.5px | Standard borders (chips, inputs) |
-| `thick` | 2px | Emphasis borders (focus rings) |
-| `thicker` | 3px | Heavy emphasis |
 
 ### Touch Target (FluentTouchTarget)
 
@@ -484,27 +397,6 @@ The application uses a comprehensive token system from `@/constants/fluent2` for
 |-------|-------|-------------|
 | `minimum` | 44px | WCAG AA minimum touch target |
 | `recommended` | 48px | Preferred touch target size |
-
-### Layout Sizes (FluentLayoutSize)
-
-| Token | Value | Component |
-|-------|-------|-----------|
-| `topBarHeight` | 48px | Top navigation bar |
-| `bottomNavHeight` | 64px | Bottom tab bar |
-| `miniPlayerHeight` | 64px | Floating mini player |
-| `dialogMaxWidth` | 400px | Maximum dialog width |
-| `menuWidth` | 240px | Context menu width |
-| `menuItemHeight` | 48px | Context menu item height |
-| `bottomSheetHandleHeight` | 24px | Bottom sheet drag handle |
-| `inputFieldHeight` | 44px | Text input fields |
-| `chipHeight` | 36px | Chip components |
-
-### Usage Guidelines
-
-1. **Always use tokens** instead of hardcoded values for consistency
-2. **Import from index**: `import { FluentSliderSize, FluentBorderWidth } from '@/constants/fluent2'`
-3. **Touch targets**: All interactive elements must meet `FluentTouchTarget.minimum` (44px)
-4. **Accessibility**: Use `hitSlop` to extend touch area if visual size is smaller
 
 ### Example Usage
 
@@ -523,7 +415,7 @@ const styles = StyleSheet.create({
   },
   slider: {
     thumbSize: FluentSliderSize.thumbMedium,
-    trackHeight: FluentSliderSize.trackThin,
+    trackHeight: FluentSliderSize.trackMedium,
   },
 });
 
@@ -538,5 +430,5 @@ const hitSlop = {
 
 ---
 
-*Last Updated: January 2026*
-*Version: 2.1.0*
+*Last Updated: January 18, 2026*  
+*Version: 2.2.0*

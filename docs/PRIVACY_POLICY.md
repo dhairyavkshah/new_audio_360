@@ -1,108 +1,132 @@
 # Privacy Policy
 
 **New Audio 360**  
-**Effective Date:** January 17, 2026  
-**Last Updated:** January 17, 2026
+**Effective Date:** January 18, 2026  
+**Last Updated:** January 18, 2026
 
 ## Introduction
 
-New Audio 360 ("we," "our," or "the App") is a premium music player application. This Privacy Policy explains how we handle your information when you use our application.
+New Audio 360 ("we," "our," or "the App") is a premium music player application developed by TheTeam360. This Privacy Policy explains how we handle your information when you use our application.
+
+**Our Core Commitment:** Your privacy is paramount. New Audio 360 is designed to work entirely offline with all data stored locally on your device. We do not operate servers, collect analytics, or track your usage.
 
 ## Data Collection
 
-### What We Collect
+### What We Store Locally (Never Leaves Your Device)
 
-New Audio 360 is designed with privacy in mind. **All data is stored locally on your device.**
+All data is stored exclusively on your device using encrypted storage:
 
-**Local Data (Never Leaves Your Device):**
-- Music library metadata (song titles, artists, albums, durations)
-- User preferences and settings
-- Playlists and favorites
-- Playback history and statistics
-- Theme and appearance settings
-- Equalizer and audio effect settings
+- **Music Library Metadata**: Song titles, artists, albums, durations, artwork
+- **User Preferences**: Theme selection, Sound Lab settings, playback preferences
+- **Playlists & Favorites**: Your custom playlists and favorited songs
+- **Playback Statistics**: Recently played, most played, queue history
+- **Audio Settings**: EQ presets, custom equalizer configurations, bass/treble levels
+- **License Cache**: Encrypted verification status for offline use
 
 ### What We Do NOT Collect
 
-- Personal identification information
-- Location data (except temporarily for online radio country detection)
-- Usage analytics or tracking data
+New Audio 360 does not collect, store, or transmit:
+
+- Personal identification information (name, email, phone)
+- Location data (except temporarily for online radio, never stored)
+- Usage analytics or behavioral tracking
 - Audio files or music content
-- Contact information
 - Device identifiers for advertising
+- Crash reports or diagnostic data to external servers
+- Any data to our servers (we have none)
 
 ## Third-Party Services
 
 ### Google Play Services
 
-For license verification and purchase processing, we integrate with Google Play:
-- Google Play Billing (for one-time purchase verification)
-- Installation source verification to confirm Play Store purchase
+For license verification and purchase processing only:
 
-Google's handling of your data is governed by [Google's Privacy Policy](https://policies.google.com/privacy).
+- **Google Play Billing**: Processes one-time purchase transactions
+- **Installation Verification**: Confirms legitimate Play Store installation
 
-### Radio Browser API
+Google's data handling is governed by [Google's Privacy Policy](https://policies.google.com/privacy).
+
+### Radio Browser API (Online Radio Feature Only)
 
 When using Online Radio features:
-- We query the Radio Browser API (radio-browser.info) to fetch station information
-- Only verified working streams (lastcheckok=1) with quality codecs (MP3, OGG, AAC) and bitrate >64kbps are displayed
-- Your IP address may be visible to the Radio Browser service
-- No personal data is transmitted
 
-Radio Browser's privacy practices are available at [radio-browser.info](https://www.radio-browser.info/).
+- Queries Radio Browser API (radio-browser.info) to fetch station listings
+- Only verified working streams with quality audio are displayed
+- Your IP address may be visible to the Radio Browser service during queries
+- No personal data is transmitted or stored
+
+Radio Browser's privacy practices: [radio-browser.info](https://www.radio-browser.info/)
 
 ## Permissions
 
-The App requests the following permissions:
-
 | Permission | Purpose | When Used |
 |------------|---------|-----------|
-| Media Library | Access device music files | Always (core functionality) |
-| Storage | Read music files from selected folders | When browsing music |
-| Location | Detect country for online radio stations | Optional, for radio feature |
-| Notifications | Display playback controls | During music playback |
+| Media Library | Access device music files | Core functionality (always) |
+| Storage | Read music files from selected folders | When browsing/playing music |
+| Location | Detect country for online radio stations | Optional, only when using radio |
+| Notifications | Display playback controls | During background playback |
+
+All permissions are requested with clear explanations during onboarding. You may deny any permission, though some features may be limited.
 
 ## Data Security
 
-- All user data is stored locally using encrypted storage (SecureStore)
-- License verification status is cached securely on-device
-- No data is transmitted to our servers (we have none)
+- **Local Encryption**: Sensitive data stored using Expo SecureStore
+- **No Network Transmission**: User data never leaves your device
+- **No Cloud Backup**: App data is not backed up to external services
+- **License Caching**: Encrypted locally for offline verification
+
+## Audio Processing
+
+New Audio 360 uses pure software-based digital signal processing (DSP) for all audio effects. This processing:
+
+- Occurs entirely on your device
+- Does not transmit audio data anywhere
+- Uses Web Audio API standards via react-native-audio-api
+- Applies EQ, bass/treble adjustments, and limiting locally
 
 ## Children's Privacy
 
-New Audio 360 is a general audience application. We do not knowingly collect information from children under 13. The App requires a Google Play account for purchase, which has its own age restrictions.
+New Audio 360 is a general audience application suitable for all ages. We do not knowingly collect information from children under 13. The App requires a Google Play account for purchase, which has its own age verification requirements.
 
-## Data Retention
+## Data Retention & Deletion
 
-Since all data is stored locally on your device:
-- Data persists until you uninstall the App
-- Clearing App data removes all stored preferences
-- No cloud backup of app data is performed
+Since all data is stored locally:
+
+- **Persistence**: Data remains until you uninstall the App or clear app data
+- **Deletion**: Uninstalling the App removes all stored data permanently
+- **No Recovery**: We cannot recover your data as it only exists on your device
+- **Export**: Playlist data can be exported where supported
 
 ## Your Rights
 
-You have full control over your data:
-- **Access:** View all settings within the App
-- **Delete:** Uninstall the App to remove all data
-- **Export:** Playlists can be exported (feature availability varies)
+You have complete control over your data:
+
+- **Access**: View all settings and data within the App
+- **Modify**: Change any preferences at any time
+- **Delete**: Clear app data or uninstall to remove all information
+- **Portability**: Export playlists where feature is available
 
 ## Changes to This Policy
 
-We may update this Privacy Policy periodically. Changes will be reflected in the "Last Updated" date above. Continued use of the App after changes constitutes acceptance.
+We may update this Privacy Policy periodically. Changes will be reflected in the "Last Updated" date. Continued use of the App after changes constitutes acceptance of the updated policy.
 
 ## Contact Us
 
 For privacy-related questions or concerns:
-- Email: support@theteam360.com
-- Website: https://theteam360.com/privacy
+
+- **Email**: support@theteam360.com
+- **Website**: https://theteam360.com/privacy
 
 ## Legal Compliance
 
-This App complies with:
+This App is designed to comply with:
+
 - General Data Protection Regulation (GDPR)
 - California Consumer Privacy Act (CCPA)
 - Google Play Developer Program Policies
+- Children's Online Privacy Protection Act (COPPA)
 
 ---
 
-*New Audio 360 is developed by TheTeam360.*
+*New Audio 360 is developed by TheTeam360.*  
+*"Top-grade music experience crafted for you"*
