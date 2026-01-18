@@ -174,3 +174,4 @@ Current implementation uses development stubs for testing. Web platform uses loc
 - Modal-based delete confirmations for EQ presets and playlists
 - Updated pricing to ₹311 INR / $13.11 USD
 - GitHub Actions workflows ready for signed APK and AAB builds
+- Updated app icon with new blue/purple gradient audio waveform design (January 18, 2026)
