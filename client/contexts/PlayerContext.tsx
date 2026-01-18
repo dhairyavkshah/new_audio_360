@@ -735,6 +735,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
     });
     
+    // Calculate gain compensation to prevent distortion
+    // When boosting, reduce master gain to maintain headroom
+    const bassBoostDb = soundLabMode === 'equalizer' ? Math.max(0, bassBoost) * DB_PER_UNIT : 0;
+    const trebleBoostDb = soundLabMode === 'equalizer' ? Math.max(0, trebleBoost) * DB_PER_UNIT : 0;
+    const maxEqBoostDb = Math.max(0, ...zeroSumBands) * DB_PER_UNIT;
+    const totalBoostDb = Math.max(bassBoostDb, trebleBoostDb, maxEqBoostDb);
+    
+    // Apply gain compensation: reduce gain by half the boost amount
+    // This prevents clipping while maintaining perceived loudness
+    const compensationDb = totalBoostDb * 0.5;
+    const compensationLinear = Math.pow(10, -compensationDb / 20);
+    
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = compensationLinear;
+    }
+    
     // Update dedicated Bass Boost filter
     if (bassBoostFilterRef.current) {
       bassBoostFilterRef.current.gain.value = soundLabMode === 'equalizer' 
