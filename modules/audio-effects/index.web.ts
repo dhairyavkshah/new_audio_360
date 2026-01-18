@@ -230,6 +230,7 @@ export const ImmersiveModeEngineModule = {
     { id: 'gaming', name: 'Gaming', description: 'Enhanced positional audio for gaming', icon: 'gamepad-variant' },
     { id: 'podcast', name: 'Podcast', description: 'Voice clarity enhancement', icon: 'podcast' },
     { id: 'movie', name: 'Movie', description: 'Cinematic audio enhancement', icon: 'movie-open' },
+    { id: 'sports', name: 'Sports', description: 'Stadium broadcast clarity', icon: 'soccer' },
     { id: 'custom', name: 'Custom', description: 'Custom audio settings', icon: 'tune' }
   ],
   setCustomParameters: async (): Promise<ImmersiveModeResult> => ({ success: false, error: 'Not available on web' }),
