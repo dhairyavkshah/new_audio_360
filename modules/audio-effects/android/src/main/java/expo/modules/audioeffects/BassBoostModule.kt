@@ -1,14 +1,13 @@
 package expo.modules.audioeffects
 
-import android.media.audiofx.BassBoost
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.Promise
 
 class BassBoostModule : Module() {
-    private var bassBoost: BassBoost? = null
     private var audioSessionId: Int = 0
     private var isEnabled = false
+    private var currentStrength: Int = 0
     
     override fun definition() = ModuleDefinition {
         Name("BassBoostModule")
@@ -19,24 +18,15 @@ class BassBoostModule : Module() {
         
         AsyncFunction("attach") { sessionId: Int, promise: Promise ->
             try {
-                release()
-                
                 audioSessionId = sessionId
-                android.util.Log.d("BassBoostModule", "Attaching to audio session: $sessionId")
-                
-                // Priority 1000 (high) helps effects work with session 0 (global audio output)
-                bassBoost = BassBoost(1000, sessionId).apply {
-                    enabled = false
-                }
-                
-                val strengthSupported = bassBoost?.strengthSupported ?: false
-                android.util.Log.d("BassBoostModule", "BassBoost attached successfully, strengthSupported: $strengthSupported")
+                android.util.Log.d("BassBoostModule", "Software DSP BassBoost attached to session: $sessionId")
                 
                 promise.resolve(mapOf(
                     "success" to true,
-                    "strengthSupported" to strengthSupported,
+                    "strengthSupported" to true,
                     "minStrength" to 0,
-                    "maxStrength" to 1000
+                    "maxStrength" to 1000,
+                    "isSoftwareDSP" to true
                 ))
                 
             } catch (e: Exception) {
@@ -47,9 +37,14 @@ class BassBoostModule : Module() {
         
         Function("setEnabled") { enabled: Boolean ->
             try {
-                bassBoost?.enabled = enabled
                 isEnabled = enabled
-                return@Function mapOf("success" to true, "enabled" to enabled)
+                if (!enabled) {
+                    SoftwareDSPAudioProcessor.getInstance()?.setBassBoost(0f)
+                } else {
+                    val gainUnits = (currentStrength / 1000.0f) * 5.0f
+                    SoftwareDSPAudioProcessor.getInstance()?.setBassBoost(gainUnits)
+                }
+                return@Function mapOf("success" to true, "enabled" to enabled, "isSoftwareDSP" to true)
             } catch (e: Exception) {
                 return@Function mapOf("success" to false, "error" to e.message)
             }
@@ -57,41 +52,59 @@ class BassBoostModule : Module() {
         
         Function("setStrength") { strength: Int ->
             try {
-                val clampedStrength = strength.coerceIn(0, 1000).toShort()
-                bassBoost?.setStrength(clampedStrength)
-                return@Function mapOf("success" to true, "strength" to clampedStrength.toInt())
+                val clampedStrength = strength.coerceIn(0, 1000)
+                currentStrength = clampedStrength
+                
+                val gainUnits = (clampedStrength / 1000.0f) * 5.0f
+                SoftwareDSPAudioProcessor.getInstance()?.setBassBoost(gainUnits)
+                
+                android.util.Log.d("BassBoostModule", "Software DSP bass boost set: strength=$clampedStrength, gain=$gainUnits")
+                
+                return@Function mapOf("success" to true, "strength" to clampedStrength, "isSoftwareDSP" to true)
             } catch (e: Exception) {
                 return@Function mapOf("success" to false, "error" to e.message)
             }
         }
         
         Function("getStrength") {
-            return@Function bassBoost?.roundedStrength?.toInt() ?: 0
+            val dspInstance = SoftwareDSPAudioProcessor.getInstance()
+            if (dspInstance != null) {
+                val gainDb = dspInstance.getBassGain()
+                val gainUnits = gainDb / SoftwareDSPAudioProcessor.DB_PER_UNIT
+                return@Function ((gainUnits / 5.0f) * 1000).toInt().coerceIn(0, 1000)
+            }
+            return@Function currentStrength
         }
         
         Function("getProperties") {
-            val bb = bassBoost ?: return@Function mapOf<String, Any>()
+            val dspInstance = SoftwareDSPAudioProcessor.getInstance()
+            val strength = if (dspInstance != null) {
+                val gainDb = dspInstance.getBassGain()
+                val gainUnits = gainDb / SoftwareDSPAudioProcessor.DB_PER_UNIT
+                ((gainUnits / 5.0f) * 1000).toInt().coerceIn(0, 1000)
+            } else {
+                currentStrength
+            }
+            
             return@Function mapOf(
-                "enabled" to bb.enabled,
-                "strengthSupported" to bb.strengthSupported,
-                "strength" to bb.roundedStrength.toInt()
+                "enabled" to isEnabled,
+                "strengthSupported" to true,
+                "strength" to strength,
+                "isSoftwareDSP" to true
             )
         }
         
         AsyncFunction("release") { promise: Promise ->
             try {
-                release()
+                SoftwareDSPAudioProcessor.getInstance()?.setBassBoost(0f)
+                isEnabled = false
+                currentStrength = 0
+                audioSessionId = 0
+                android.util.Log.d("BassBoostModule", "Software DSP BassBoost released")
                 promise.resolve(mapOf("success" to true))
             } catch (e: Exception) {
                 promise.reject("RELEASE_ERROR", e.message, e)
             }
         }
-    }
-    
-    private fun release() {
-        bassBoost?.release()
-        bassBoost = null
-        isEnabled = false
-        audioSessionId = 0
     }
 }
