@@ -2,8 +2,8 @@ import { Platform } from 'react-native';
 import { MetadataExtractorModule } from '@/modules/audio-effects';
 import { parseID3FromUri } from './id3Parser';
 
-// Log when this module is loaded to verify new code is in the build
-console.log('=== musicInfo.ts module loaded (v2) ===');
+// Use console.warn for production visibility (console.log may be stripped)
+console.warn('=== musicInfo.ts module loaded (v3) ===');
 
 export interface MusicMetadata {
   title?: string;
@@ -17,38 +17,38 @@ export interface MusicMetadata {
 }
 
 export async function getMusicMetadata(localUri: string): Promise<MusicMetadata | null> {
-  console.log('[getMusicMetadata] Called with URI:', localUri, 'Platform:', Platform.OS);
+  console.warn('[getMusicMetadata] START uri=' + localUri?.substring(0, 50) + ' platform=' + Platform.OS);
   
   if (Platform.OS === 'web') {
-    console.log('[getMusicMetadata] Using web ID3 parser');
+    console.warn('[getMusicMetadata] Using web ID3 parser');
     return await getMetadataFromID3Parser(localUri);
   }
   
   if (Platform.OS !== 'android') {
-    console.log('[getMusicMetadata] Platform not supported:', Platform.OS);
+    console.warn('[getMusicMetadata] Platform not supported: ' + Platform.OS);
     return null;
   }
   
-  // Check if MetadataExtractorModule exists and has the isAvailable function
-  console.log('[getMusicMetadata] MetadataExtractorModule:', typeof MetadataExtractorModule);
-  console.log('[getMusicMetadata] MetadataExtractorModule.isAvailable:', typeof MetadataExtractorModule?.isAvailable);
+  // Check native module availability
+  const moduleExists = !!MetadataExtractorModule;
+  const hasIsAvailable = typeof MetadataExtractorModule?.isAvailable === 'function';
+  console.warn('[getMusicMetadata] moduleExists=' + moduleExists + ' hasIsAvailable=' + hasIsAvailable);
   
   let isNativeAvailable = false;
   try {
     isNativeAvailable = MetadataExtractorModule?.isAvailable?.() ?? false;
+    console.warn('[getMusicMetadata] isAvailable() returned: ' + isNativeAvailable);
   } catch (e) {
-    console.warn('[getMusicMetadata] Error checking native availability:', e);
+    console.warn('[getMusicMetadata] isAvailable() threw: ' + String(e));
   }
-  console.log('[getMusicMetadata] Native module available:', isNativeAvailable);
   
   if (isNativeAvailable) {
     try {
-      console.log('[getMusicMetadata] Trying native extraction for:', localUri);
+      console.warn('[getMusicMetadata] Calling native extractMetadata...');
       const result = await MetadataExtractorModule.extractMetadata(localUri);
-      console.log('[getMusicMetadata] Native result:', JSON.stringify(result).substring(0, 500));
+      console.warn('[getMusicMetadata] Native result success=' + result?.success + ' error=' + result?.error);
       
-      if (result.success) {
-        console.log('[getMusicMetadata] Native extraction succeeded');
+      if (result && result.success) {
         const metadata: MusicMetadata = {};
         
         if (result.title) metadata.title = result.title;
@@ -61,25 +61,28 @@ export async function getMusicMetadata(localUri: string): Promise<MusicMetadata 
         
         if (result.albumArt) {
           metadata.albumArt = `data:image/jpeg;base64,${result.albumArt}`;
-          console.log('[getMusicMetadata] Album art found, length:', result.albumArt.length);
         }
         
-        console.log('[getMusicMetadata] Extracted fields:', Object.keys(metadata));
+        console.warn('[getMusicMetadata] Extracted: ' + Object.keys(metadata).join(','));
         if (Object.keys(metadata).length > 0) {
           return metadata;
         }
-      } else {
-        console.log('[getMusicMetadata] Native extraction failed:', result.error);
       }
     } catch (error) {
-      console.warn('[getMusicMetadata] Native extraction error:', error);
+      console.warn('[getMusicMetadata] Native error: ' + String(error));
     }
   }
   
-  console.log('[getMusicMetadata] Falling back to JavaScript ID3 parser');
-  const jsResult = await getMetadataFromID3Parser(localUri);
-  console.log('[getMusicMetadata] JS parser result:', jsResult ? Object.keys(jsResult) : 'null');
-  return jsResult;
+  // Fallback to JS ID3 parser
+  console.warn('[getMusicMetadata] Trying JS ID3 parser fallback...');
+  try {
+    const jsResult = await getMetadataFromID3Parser(localUri);
+    console.warn('[getMusicMetadata] JS result: ' + (jsResult ? Object.keys(jsResult).join(',') : 'null'));
+    return jsResult;
+  } catch (jsError) {
+    console.warn('[getMusicMetadata] JS parser error: ' + String(jsError));
+    return null;
+  }
 }
 
 async function getMetadataFromID3Parser(localUri: string): Promise<MusicMetadata | null> {
