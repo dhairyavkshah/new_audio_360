@@ -93,6 +93,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const eqFiltersRef = useRef<BiquadFilterNode[]>([]);
   const bassBoostFilterRef = useRef<BiquadFilterNode | null>(null);
   const trebleBoostFilterRef = useRef<BiquadFilterNode | null>(null);
+  const limiterRef = useRef<DynamicsCompressorNode | null>(null);
   const stereoWidenerRef = useRef<StereoPannerNode | null>(null);
   const delayNodeRef = useRef<DelayNode | null>(null);
   const delayGainRef = useRef<GainNode | null>(null);
@@ -698,17 +699,27 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     trebleFilter.frequency.value = 6000; // Boosts ALL frequencies above 6kHz
     trebleFilter.gain.value = soundLabMode === 'equalizer' ? trebleBoost * DB_PER_UNIT : 0;
     trebleBoostFilterRef.current = trebleFilter;
+    
+    // Create limiter to cap peaks and prevent distortion
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -3; // Start limiting at -3 dB (prevents clipping)
+    limiter.knee.value = 0; // Hard knee for brick-wall limiting
+    limiter.ratio.value = 20; // High ratio = aggressive limiting
+    limiter.attack.value = 0.001; // Fast attack to catch transients
+    limiter.release.value = 0.1; // Quick release
+    limiterRef.current = limiter;
 
     // Connect EQ chain
     for (let i = 0; i < eqFiltersRef.current.length - 1; i++) {
       eqFiltersRef.current[i].connect(eqFiltersRef.current[i + 1]);
     }
     
-    // Connect: last EQ -> Bass Boost -> Treble Boost
+    // Connect: last EQ -> Bass Boost -> Treble Boost -> Limiter
     if (eqFiltersRef.current.length > 0) {
       eqFiltersRef.current[eqFiltersRef.current.length - 1].connect(bassFilter);
     }
     bassFilter.connect(trebleFilter);
+    trebleFilter.connect(limiter);
 
     return eqFiltersRef.current;
   }, [soundLabMode, eqBands, bassBoost, trebleBoost]);
@@ -735,20 +746,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
     });
     
-    // Calculate gain compensation to prevent distortion
-    // When boosting, reduce master gain to maintain headroom
-    const bassBoostDb = soundLabMode === 'equalizer' ? Math.max(0, bassBoost) * DB_PER_UNIT : 0;
-    const trebleBoostDb = soundLabMode === 'equalizer' ? Math.max(0, trebleBoost) * DB_PER_UNIT : 0;
-    const maxEqBoostDb = Math.max(0, ...zeroSumBands) * DB_PER_UNIT;
-    const totalBoostDb = Math.max(bassBoostDb, trebleBoostDb, maxEqBoostDb);
-    
-    // Apply gain compensation: reduce gain by half the boost amount
-    // This prevents clipping while maintaining perceived loudness
-    const compensationDb = totalBoostDb * 0.5;
-    const compensationLinear = Math.pow(10, -compensationDb / 20);
-    
+    // Reset gain node to full volume - limiter handles peak capping
     if (gainNodeRef.current) {
-      gainNodeRef.current.gain.value = compensationLinear;
+      gainNodeRef.current.gain.value = 1;
     }
     
     // Update dedicated Bass Boost filter
@@ -869,9 +869,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         
         if (eqChain.length > 0) {
           gainNodeRef.current.connect(eqChain[0]);
-          // EQ chain -> Bass Boost -> Treble Boost -> Stereo Widener
-          // (createEQChain already connects EQ -> Bass -> Treble)
-          if (trebleBoostFilterRef.current) {
+          // EQ chain -> Bass Boost -> Treble Boost -> Limiter -> Stereo Widener
+          // (createEQChain already connects EQ -> Bass -> Treble -> Limiter)
+          if (limiterRef.current) {
+            limiterRef.current.connect(stereoWidenerRef.current);
+          } else if (trebleBoostFilterRef.current) {
             trebleBoostFilterRef.current.connect(stereoWidenerRef.current);
           } else {
             eqChain[eqChain.length - 1].connect(stereoWidenerRef.current);
