@@ -145,10 +145,12 @@ class WebAudioEffectsEngineClass {
       if (this.eqFilters[index]) {
         let dbValue = value * DB_PER_UNIT;
         
-        if (index <= 2) {
+        // Bass: 60Hz, 170Hz (indices 0, 1) - true low frequencies
+        if (index <= 1) {
           dbValue += bassBoost * DB_PER_UNIT;
         }
-        if (index >= 7) {
+        // Treble: 7kHz, 12kHz, 14kHz, 16kHz (indices 6-9) - true high frequencies
+        if (index >= 6) {
           dbValue += trebleBoost * DB_PER_UNIT;
         }
         

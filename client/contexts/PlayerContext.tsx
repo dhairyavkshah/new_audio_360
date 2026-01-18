@@ -670,8 +670,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       
       if (soundLabMode === 'equalizer') {
         let dbValue = zeroSumBands[index] * DB_PER_UNIT;
-        if (index <= 2) dbValue += bassBoost * DB_PER_UNIT;
-        if (index >= bands.length - 3) dbValue += trebleBoost * DB_PER_UNIT;
+        // Bass: sub (32Hz) and bass (64Hz) - indices 0, 1
+        if (index <= 1) dbValue += bassBoost * DB_PER_UNIT;
+        // Treble: treble (8kHz) and brilliance (16kHz) - indices 5, 6
+        if (index >= 5) dbValue += trebleBoost * DB_PER_UNIT;
         filter.gain.value = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
       } else {
         filter.gain.value = 0;
@@ -702,8 +704,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     eqFiltersRef.current.forEach((filter, index) => {
       if (soundLabMode === 'equalizer') {
         let dbValue = zeroSumBands[index] * DB_PER_UNIT;
-        if (index <= 2) dbValue += bassBoost * DB_PER_UNIT;
-        if (index >= bands.length - 3) dbValue += trebleBoost * DB_PER_UNIT;
+        // Bass: sub (32Hz) and bass (64Hz) - indices 0, 1
+        if (index <= 1) dbValue += bassBoost * DB_PER_UNIT;
+        // Treble: treble (8kHz) and brilliance (16kHz) - indices 5, 6
+        if (index >= 5) dbValue += trebleBoost * DB_PER_UNIT;
         filter.gain.value = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
       } else {
         filter.gain.value = 0;
