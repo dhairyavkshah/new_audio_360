@@ -22,6 +22,8 @@ import {
   FluentControlRadius,
   FluentSpacing,
   FluentSpring,
+  FluentControlHeight,
+  FluentIconSize,
 } from '@/constants/fluent2';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'subtle' | 'transparent';
@@ -43,23 +45,23 @@ const sizeStyles = {
   small: {
     paddingHorizontal: FluentSpacing.m,
     paddingVertical: FluentSpacing.xs,
-    minHeight: 36,
+    minHeight: FluentControlHeight.small,
     typography: FluentTypography.caption1Strong,
-    iconSize: 14,
+    iconSize: FluentIconSize.small,
   },
   medium: {
     paddingHorizontal: FluentSpacing.l,
     paddingVertical: FluentSpacing.s,
-    minHeight: 44,
+    minHeight: FluentControlHeight.medium,
     typography: FluentTypography.body1Strong,
-    iconSize: 18,
+    iconSize: FluentIconSize.small,
   },
   large: {
     paddingHorizontal: FluentSpacing.xl,
     paddingVertical: FluentSpacing.m,
-    minHeight: 44,
+    minHeight: FluentControlHeight.large,
     typography: FluentTypography.body2Strong,
-    iconSize: 22,
+    iconSize: FluentIconSize.regular,
   },
 };
 

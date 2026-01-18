@@ -1,7 +1,7 @@
 import React from 'react';
 import { Platform, View, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { FluentControlRadius } from '@/constants/fluent2';
+import { FluentControlRadius, FluentSliderSize, FluentLightColors } from '@/constants/fluent2';
 
 interface CrossPlatformSliderProps {
   style?: any;
@@ -24,9 +24,9 @@ export function CrossPlatformSlider({
   minimumValue,
   maximumValue,
   step = 1,
-  minimumTrackTintColor = '#007AFF',
-  maximumTrackTintColor = '#B0B0B0',
-  thumbTintColor = '#FFFFFF',
+  minimumTrackTintColor = FluentLightColors.colorBrandBackground,
+  maximumTrackTintColor = FluentLightColors.colorNeutralStroke2,
+  thumbTintColor = FluentLightColors.colorNeutralForegroundOnBrand,
   onValueChange,
   onSlidingComplete,
   disabled = false,
@@ -51,8 +51,8 @@ export function CrossPlatformSlider({
     const percentage = ((value - minimumValue) / (maximumValue - minimumValue)) * 100;
 
     const sliderStyle: React.CSSProperties = {
-      width: vertical ? 8 : '100%',
-      height: vertical ? '100%' : 8,
+      width: vertical ? FluentSliderSize.trackThick : '100%',
+      height: vertical ? '100%' : FluentSliderSize.trackThick,
       appearance: 'none' as const,
       WebkitAppearance: 'none',
       background: `linear-gradient(${vertical ? 'to top' : 'to right'}, ${minimumTrackTintColor} ${percentage}%, ${maximumTrackTintColor} ${percentage}%)`,
@@ -97,8 +97,8 @@ export function CrossPlatformSlider({
           input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
+            width: ${FluentSliderSize.thumbMedium}px;
+            height: ${FluentSliderSize.thumbMedium}px;
             background: ${thumbTintColor};
             border-radius: 50%;
             cursor: pointer;
@@ -106,8 +106,8 @@ export function CrossPlatformSlider({
             border: 2px solid ${minimumTrackTintColor};
           }
           input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
+            width: ${FluentSliderSize.thumbMedium}px;
+            height: ${FluentSliderSize.thumbMedium}px;
             background: ${thumbTintColor};
             border-radius: 50%;
             cursor: pointer;

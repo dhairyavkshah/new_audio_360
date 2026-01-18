@@ -15,6 +15,7 @@ import {
   FluentTypography,
   FluentLayoutSize,
   FluentControlRadius,
+  FluentSliderSize,
 } from "@/constants/fluent2";
 
 interface MiniPlayerProps {
@@ -91,12 +92,12 @@ export function MiniPlayer({ bottomOffset = 0, isDismissed = false, onDismiss, o
         ]}
         onPress={handleSwipeUp}
       >
-        <MaterialCommunityIcons name="chevron-up" size={20} color={tokens.colors.onPrimary} />
+        <MaterialCommunityIcons name="chevron-up" size={FluentIconSize.regular} color={tokens.colors.onPrimary} />
         <MaterialCommunityIcons 
           name={isPlaying ? "music" : "music-off"} 
           size={16} 
           color={tokens.colors.onPrimary} 
-          style={{ marginLeft: 4 }}
+          style={{ marginLeft: FluentSpacing.xs }}
         />
       </Pressable>
     );
@@ -187,8 +188,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   dismissButton: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     borderRadius: FluentControlRadius.fab,
     alignItems: "center",
     justifyContent: "center",
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
     left: "50%",
     marginLeft: -40,
     width: 80,
-    height: 32,
+    height: 44,
     borderRadius: FluentControlRadius.fab,
     flexDirection: "row",
     alignItems: "center",
@@ -215,7 +216,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 3,
+    height: FluentSliderSize.trackThin,
     zIndex: 10,
   },
   progressFill: {
@@ -232,8 +233,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.l,
   },
   artwork: {
-    width: 48,
-    height: 48,
+    width: FluentIconSize.xxlarge,
+    height: FluentIconSize.xxlarge,
   },
   info: {
     flex: 1,

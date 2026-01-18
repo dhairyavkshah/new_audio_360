@@ -6,6 +6,7 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
   FluentRadius,
+  FluentIconSize,
   FluentLightColors,
   FluentDarkColors,
 } from "@/constants/fluent2";
@@ -24,7 +25,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
   return (
     <View style={styles.container}>
       <View style={[styles.iconContainer, { backgroundColor: colors.colorNeutralBackground3 }]}>
-        <MaterialCommunityIcons name={icon} size={48} color={colors.colorNeutralForeground2} />
+        <MaterialCommunityIcons name={icon} size={FluentIconSize.xxlarge} color={colors.colorNeutralForeground2} />
       </View>
       <FluentText variant="subtitle1" align="center" style={styles.title}>
         {title}
@@ -48,8 +49,8 @@ const styles = StyleSheet.create({
     paddingVertical: FluentSpacing.xxxl,
   },
   iconContainer: {
-    width: 96,
-    height: 96,
+    width: FluentIconSize.xxlarge * 2,
+    height: FluentIconSize.xxlarge * 2,
     borderRadius: FluentRadius.circular,
     alignItems: "center",
     justifyContent: "center",

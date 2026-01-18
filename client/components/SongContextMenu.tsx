@@ -25,6 +25,8 @@ import {
   FluentTypography,
   FluentLightColors,
   FluentDarkColors,
+  FluentPadding,
+  FluentTouchTarget,
 } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { PlayableSong } from "@/contexts/PlayerContext";
@@ -349,7 +351,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
       <Animated.View
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(150)}
-        style={[styles.backdrop, { backgroundColor: "rgba(0,0,0,0.5)" }]}
+        style={[styles.backdrop, { backgroundColor: colors.colorBackgroundScrim }]}
       >
         <Pressable style={styles.backdropPressable} onPress={handleClose} />
       </Animated.View>
@@ -389,12 +391,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    borderTopLeftRadius: FluentRadius.xLarge,
-    borderTopRightRadius: FluentRadius.xLarge,
+    borderTopLeftRadius: FluentControlRadius.bottomSheet,
+    borderTopRightRadius: FluentControlRadius.bottomSheet,
     maxHeight: SCREEN_HEIGHT * 0.75,
   },
   handle: {
-    width: 36,
+    width: 40,
     height: 4,
     borderRadius: FluentControlRadius.checkbox,
     alignSelf: "center",
@@ -402,7 +404,7 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.m,
   },
   menuContent: {
-    paddingHorizontal: FluentSpacing.l,
+    paddingHorizontal: FluentPadding.xl,
   },
   songHeader: {
     flexDirection: "row",
@@ -430,8 +432,8 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.s,
   },
   menuItemIcon: {
-    width: 40,
-    height: 40,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     borderRadius: FluentRadius.medium,
     justifyContent: "center",
     alignItems: "center",
@@ -456,6 +458,7 @@ const styles = StyleSheet.create({
     paddingVertical: FluentSpacing.m,
     borderRadius: FluentRadius.medium,
     marginTop: FluentSpacing.l,
+    minHeight: FluentTouchTarget.minimum,
   },
   playlistList: {
     maxHeight: SCREEN_HEIGHT * 0.4,

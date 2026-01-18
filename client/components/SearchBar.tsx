@@ -11,8 +11,10 @@ import {
   FluentIconSize,
   FluentLightColors,
   FluentDarkColors,
+  FluentLayoutSize,
+  FluentTouchTarget,
+  FluentBorderWidth,
 } from "@/constants/fluent2";
-import { Layout } from "@/constants/theme";
 
 interface SearchBarProps {
   value: string;
@@ -47,7 +49,7 @@ export function SearchBar({ value, onChangeText, placeholder = "Search..." }: Se
         { 
           backgroundColor: fluentColors.colorNeutralBackground3,
           borderColor: isFocused ? fluentColors.colorStrokeFocus2 : fluentColors.colorNeutralStroke1,
-          borderWidth: isFocused ? 2 : 1,
+          borderWidth: isFocused ? FluentBorderWidth.thick : FluentBorderWidth.thin,
         }
       ]}>
         <MaterialCommunityIcons
@@ -103,13 +105,13 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: FluentSpacing.l,
     paddingVertical: FluentSpacing.s,
-    borderBottomWidth: 1,
+    borderBottomWidth: FluentBorderWidth.thin,
   },
   container: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    height: Layout.inputFieldHeight,
+    height: FluentLayoutSize.inputFieldHeight,
     borderRadius: FluentControlRadius.input,
     paddingHorizontal: FluentSpacing.m,
   },
@@ -122,8 +124,8 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     marginLeft: FluentSpacing.s,
-    width: Layout.touchTargetMin,
-    height: Layout.touchTargetMin,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -16,6 +16,7 @@ import {
   FluentSpring,
   getShadowStyle,
   ShadowLevel,
+  FluentBorderWidth,
 } from '@/constants/fluent2';
 
 type ElevationLevel = 'none' | 'subtle' | 'medium' | 'strong';
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   header: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: FluentBorderWidth.thin,
   },
   headerPadding: {
     padding: FluentSpacing.l,
@@ -163,7 +164,7 @@ const styles = StyleSheet.create({
     padding: FluentSpacing.l,
   },
   footer: {
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: FluentBorderWidth.thin,
   },
   footerPadding: {
     padding: FluentSpacing.l,

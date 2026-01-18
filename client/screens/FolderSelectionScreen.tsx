@@ -8,8 +8,7 @@ import * as MediaLibrary from "expo-media-library";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
-import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
-import { Layout } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
 import { 
   getSelectedFolders, 
   setSelectedFolders as saveSelectedFolders,
@@ -424,7 +423,7 @@ export default function FolderSelectionScreen() {
                     onPress={() => handleRemoveFolder(folder.id)}
                     style={[styles.removeButton, { backgroundColor: colors.colorPaletteRedForeground1 + "15" }]}
                   >
-                    <MaterialCommunityIcons name="close" size={18} color={colors.colorPaletteRedForeground1} />
+                    <MaterialCommunityIcons name="close" size={FluentIconSize.regular} color={colors.colorPaletteRedForeground1} />
                   </Pressable>
                 </View>
               </View>
@@ -469,7 +468,7 @@ export default function FolderSelectionScreen() {
 
       {successMessage ? (
         <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
-          <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
+          <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color="#FFFFFF" />
           <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
             {successMessage}
           </FluentText>
@@ -489,7 +488,7 @@ export default function FolderSelectionScreen() {
           onPress={selectAll}
           style={[styles.headerButton, { backgroundColor: colors.colorBrandBackground }]}
         >
-          <MaterialCommunityIcons name="checkbox-multiple-marked" size={18} color="#FFFFFF" />
+          <MaterialCommunityIcons name="checkbox-multiple-marked" size={FluentIconSize.regular} color="#FFFFFF" />
           <FluentText variant="caption1" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.xs }}>
             Select All
           </FluentText>
@@ -498,7 +497,7 @@ export default function FolderSelectionScreen() {
           onPress={clearAll}
           style={[styles.headerButton, { backgroundColor: colors.colorNeutralBackground3 }]}
         >
-          <MaterialCommunityIcons name="checkbox-multiple-blank-outline" size={18} color={colors.colorNeutralForeground1} />
+          <MaterialCommunityIcons name="checkbox-multiple-blank-outline" size={FluentIconSize.regular} color={colors.colorNeutralForeground1} />
           <FluentText variant="caption1" style={{ color: colors.colorNeutralForeground1, fontWeight: "600", marginLeft: FluentSpacing.xs }}>
             Clear
           </FluentText>
@@ -626,7 +625,7 @@ export default function FolderSelectionScreen() {
 
       {successMessage ? (
         <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
-          <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
+          <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color="#FFFFFF" />
           <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
             {successMessage}
           </FluentText>
@@ -646,6 +645,7 @@ const styles = StyleSheet.create({
   headerButton: {
     flexDirection: "row",
     alignItems: "center",
+    minHeight: FluentTouchTarget.minimum,
     paddingVertical: FluentSpacing.s,
     paddingHorizontal: FluentSpacing.m,
     borderRadius: FluentControlRadius.card,
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
     borderRadius: FluentControlRadius.card,
   },
   content: {
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: FluentSpacing.l,
     paddingTop: FluentSpacing.s,
   },
   infoText: {
@@ -736,8 +736,8 @@ const styles = StyleSheet.create({
     marginRight: FluentSpacing.m,
   },
   removeButton: {
-    width: 36,
-    height: 36,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     borderRadius: FluentControlRadius.button,
     justifyContent: "center",
     alignItems: "center",
@@ -764,10 +764,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.l,
     paddingVertical: FluentSpacing.l,
     borderRadius: FluentRadius.large,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    ...getShadowStyle('shadow4'),
   },
 });

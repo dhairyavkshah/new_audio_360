@@ -5,6 +5,7 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
   FluentRadius,
+  FluentSliderSize,
   FluentLightColors,
   FluentDarkColors,
 } from "@/constants/fluent2";
@@ -67,7 +68,7 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     width: "100%",
-    height: 4,
+    height: FluentSliderSize.trackThin,
     borderRadius: FluentRadius.small,
     overflow: "hidden",
     marginBottom: FluentSpacing.s,

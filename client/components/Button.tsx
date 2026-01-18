@@ -230,7 +230,7 @@ export function Button({
         {
           opacity: disabled ? 0.38 : 1,
           borderRadius: FluentControlRadius.button,
-          borderWidth: variant === 'outline' ? 1 : 0,
+          borderWidth: variant === 'outline' ? FluentBorderWidth.thin : 0,
           borderColor: getBorderColor(),
           backgroundColor: getBackgroundColor() as string,
         },

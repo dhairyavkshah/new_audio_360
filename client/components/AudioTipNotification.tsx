@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 
 interface AudioTipNotificationProps {
   visible: boolean;
@@ -107,7 +107,7 @@ export function AudioTipNotification({ visible, onDismiss }: AudioTipNotificatio
         <View style={styles.iconContainer}>
           <MaterialCommunityIcons
             name="lightbulb-outline"
-            size={20}
+            size={FluentIconSize.regular}
             color={colors.colorBrandForeground1}
           />
         </View>
@@ -116,10 +116,10 @@ export function AudioTipNotification({ visible, onDismiss }: AudioTipNotificatio
             For the best audio experience, disable your phone's native EQ or Dolby effects in system settings.
           </FluentText>
         </View>
-        <Pressable onPress={dismissNotification} style={styles.closeButton} hitSlop={8}>
+        <Pressable onPress={dismissNotification} style={styles.closeButton} hitSlop={FluentSpacing.s}>
           <MaterialCommunityIcons
             name="close"
-            size={18}
+            size={FluentIconSize.small}
             color={colors.colorNeutralForeground3}
           />
         </Pressable>

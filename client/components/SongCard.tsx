@@ -11,7 +11,6 @@ import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
-import { Layout } from "@/constants/theme";
 import {
   FluentSpacing,
   FluentControlRadius,
@@ -21,6 +20,7 @@ import {
   FluentCurve,
   FluentLightColors,
   FluentDarkColors,
+  FluentTouchTarget,
 } from "@/constants/fluent2";
 
 const ActionButton = ({ onPress, accessibilityLabel, children }: { 
@@ -49,8 +49,8 @@ const ActionButton = ({ onPress, accessibilityLabel, children }: {
 
 const actionButtonStyles = StyleSheet.create({
   button: {
-    width: Layout.touchTargetMin,
-    height: Layout.touchTargetMin,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -215,8 +215,8 @@ export function SongCard({
       <View style={styles.artworkContainer}>
         <Image source={{ uri: song.artwork }} style={styles.artwork} />
         {isPlaying ? (
-          <View style={[styles.playingIndicator, { backgroundColor: fluentColors.colorBrandBackground }]}>
-            <MaterialCommunityIcons name="volume-high" size={10} color="#FFFFFF" />
+          <View style={[styles.playingIndicator, { backgroundColor: fluentColors.colorBrandBackground, borderColor: fluentColors.colorNeutralBackground1 }]}>
+            <MaterialCommunityIcons name="volume-high" size={FluentIconSize.tiny} color="#FFFFFF" />
           </View>
         ) : null}
       </View>
@@ -280,27 +280,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.l,
     borderRadius: FluentControlRadius.card,
     marginBottom: FluentSpacing.s,
-    minHeight: Layout.listItemRich,
+    minHeight: 72,
   },
   artworkContainer: {
     position: "relative",
   },
   artwork: {
-    width: 48,
-    height: 48,
+    width: FluentIconSize.xxlarge,
+    height: FluentIconSize.xxlarge,
     borderRadius: FluentControlRadius.card,
   },
   playingIndicator: {
     position: "absolute",
-    bottom: -2,
-    right: -2,
-    width: 20,
-    height: 20,
+    bottom: -FluentSpacing.xxs,
+    right: -FluentSpacing.xxs,
+    width: FluentIconSize.regular,
+    height: FluentIconSize.regular,
     borderRadius: FluentControlRadius.card,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#000",
   },
   info: {
     flex: 1,

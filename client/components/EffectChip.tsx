@@ -122,9 +122,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   premiumIndicator: {
-    width: 6,
-    height: 6,
-    borderRadius: FluentControlRadius.button,
+    width: FluentSpacing.s,
+    height: FluentSpacing.s,
+    borderRadius: FluentControlRadius.chip,
     marginLeft: FluentSpacing.s,
   },
   lockIcon: {

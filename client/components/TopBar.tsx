@@ -16,7 +16,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { Layout } from "@/constants/theme";
 import {
   FluentSpacing,
   FluentIconSize,
@@ -26,6 +25,8 @@ import {
   FluentEasingValues,
   FluentLightColors,
   FluentDarkColors,
+  FluentLayoutSize,
+  FluentTouchTarget,
   getShadowStyle,
 } from "@/constants/fluent2";
 
@@ -205,7 +206,7 @@ function IconButton({
         focusStyle,
         animatedStyle,
       ]}
-      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+      hitSlop={{ top: FluentSpacing.xs, bottom: FluentSpacing.xs, left: FluentSpacing.xs, right: FluentSpacing.xs }}
       accessibilityRole="button"
       accessibilityLabel={label}
     >
@@ -303,7 +304,7 @@ export function TopBarAction({
         focusStyle,
         animatedStyle,
       ]}
-      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+      hitSlop={{ top: FluentSpacing.xs, bottom: FluentSpacing.xs, left: FluentSpacing.xs, right: FluentSpacing.xs }}
       accessibilityRole="button"
       accessibilityLabel={label}
     >
@@ -322,7 +323,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   content: {
-    height: Layout.topBarHeight,
+    height: FluentLayoutSize.topBarHeight,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -338,8 +339,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconButton: {
-    width: Layout.touchTargetMin,
-    height: Layout.touchTargetMin,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     borderRadius: FluentControlRadius.button,
     alignItems: "center",
     justifyContent: "center",
@@ -352,10 +353,10 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 18,
-    height: 18,
+    top: -FluentSpacing.xs,
+    right: -FluentSpacing.xs,
+    minWidth: FluentIconSize.small,
+    height: FluentIconSize.small,
     borderRadius: FluentControlRadius.card,
     alignItems: "center",
     justifyContent: "center",

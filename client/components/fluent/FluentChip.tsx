@@ -23,6 +23,8 @@ import {
   FluentSpacing,
   FluentIconSize,
   FluentSpring,
+  FluentLayoutSize,
+  FluentBorderWidth,
 } from '@/constants/fluent2';
 
 type ChipSize = 'small' | 'medium';
@@ -42,7 +44,7 @@ const sizeStyles = {
   small: {
     paddingHorizontal: FluentSpacing.s,
     paddingVertical: FluentSpacing.xxs,
-    minHeight: 32,
+    minHeight: FluentLayoutSize.chipHeight,
     typography: FluentTypography.caption1,
     iconSize: FluentIconSize.tiny,
     dismissSize: 14,
@@ -50,7 +52,7 @@ const sizeStyles = {
   medium: {
     paddingHorizontal: FluentSpacing.m,
     paddingVertical: FluentSpacing.xs,
-    minHeight: 32,
+    minHeight: FluentLayoutSize.chipHeight,
     typography: FluentTypography.body1,
     iconSize: FluentIconSize.small,
     dismissSize: 16,
@@ -202,7 +204,7 @@ export function FluentChip({
 
 const styles = StyleSheet.create({
   chip: {
-    borderWidth: 1,
+    borderWidth: FluentBorderWidth.thin,
     alignSelf: 'flex-start',
   },
   content: {

@@ -13,6 +13,7 @@ import {
   FluentSpacing,
   FluentDuration,
   FluentEasingValues,
+  FluentBorderWidth,
 } from "@/constants/fluent2";
 import { getCardEffectStyle } from "@/lib/themeUtils";
 
@@ -133,7 +134,7 @@ export function OutlinedCard({ children, onPress, style }: OutlinedCardProps) {
   const tokens = useThemeTokens();
   
   const outlinedStyle: ViewStyle = {
-    borderWidth: 1, 
+    borderWidth: FluentBorderWidth.thin, 
     borderColor: tokens.colors.outline,
   };
   
@@ -165,7 +166,7 @@ export function FilledCard({ children, onPress, style }: FilledCardProps) {
 const styles = StyleSheet.create({
   card: {
     padding: FluentSpacing.l,
-    borderWidth: 1,
+    borderWidth: FluentBorderWidth.thin,
   },
   cardTitle: {
     marginBottom: FluentSpacing.xs,

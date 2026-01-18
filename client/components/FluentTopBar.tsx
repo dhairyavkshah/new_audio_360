@@ -12,6 +12,8 @@ import {
   FluentControlRadius,
   FluentLightColors,
   FluentDarkColors,
+  FluentLayoutSize,
+  FluentControlHeight,
 } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 
@@ -241,7 +243,7 @@ export function FluentTopBar({
                 name={showSortOverlay ? "chevron-up" : "chevron-down"}
                 size={FluentIconSize.tiny}
                 color={fluentColors.colorNeutralForeground3}
-                style={{ marginLeft: 2 }}
+                style={{ marginLeft: FluentSpacing.xxs }}
               />
             </Pressable>
           )}
@@ -421,7 +423,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: FluentControlRadius.button,
     paddingHorizontal: FluentSpacing.m,
-    height: 40,
+    height: FluentLayoutSize.inputFieldHeight,
   },
   searchIcon: {
     marginRight: FluentSpacing.xs,
@@ -437,7 +439,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: FluentSpacing.m,
     borderRadius: FluentControlRadius.button,
-    height: 40,
+    height: FluentControlHeight.large,
     minWidth: 48,
   },
   overlayBackdrop: {

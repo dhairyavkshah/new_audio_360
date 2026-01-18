@@ -19,6 +19,7 @@ import {
   FluentIconSize,
   FluentTypography,
   FluentControlRadius,
+  FluentLayoutSize,
 } from "@/constants/fluent2";
 
 export type MainTabParamList = {
@@ -75,8 +76,8 @@ const TabIcon = memo(function TabIcon({
   );
 });
 
-const TAB_BAR_HEIGHT = 56;
-const MIN_BOTTOM_PADDING = 16;
+const TAB_BAR_HEIGHT = FluentLayoutSize.bottomNavHeight;
+const MIN_BOTTOM_PADDING = FluentSpacing.l;
 
 export default function MainTabNavigator() {
   const { isDark } = useThemeContext();

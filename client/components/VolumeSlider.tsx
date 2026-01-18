@@ -12,7 +12,7 @@ import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
 import { useThemeTokens } from "@/contexts/ThemeContext";
 import { getProgressBarStyle, getSliderThumbStyle, getGlowStyle } from "@/lib/themeUtils";
-import { FluentSpacing, FluentSliderSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentSliderSize, FluentBorderWidth } from "@/constants/fluent2";
 
 interface VolumeSliderProps {
   label: string;
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   sliderThumb: {
     position: "absolute",
     left: (SLIDER_WIDTH - THUMB_SIZE) / 2,
-    borderWidth: 3,
+    borderWidth: FluentBorderWidth.thicker,
     elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

@@ -9,7 +9,6 @@ import Animated, {
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { Layout } from "@/constants/theme";
 import {
   FluentSpacing,
   FluentControlRadius,
@@ -19,6 +18,8 @@ import {
   FluentLightColors,
   FluentDarkColors,
   getShadowStyle,
+  FluentLayoutSize,
+  FluentBorderWidth,
 } from "@/constants/fluent2";
 
 interface ChipItem {
@@ -153,9 +154,9 @@ export function HorizontalChips({
 
 const styles = StyleSheet.create({
   container: {
-    height: Layout.tabHeight,
+    height: FluentLayoutSize.secondaryBarHeight,
     justifyContent: "center",
-    borderBottomWidth: 1,
+    borderBottomWidth: FluentBorderWidth.thin,
   },
   listContent: {
     paddingHorizontal: FluentSpacing.l,
@@ -165,13 +166,13 @@ const styles = StyleSheet.create({
     width: FluentSpacing.s,
   },
   chip: {
-    height: 32,
+    height: FluentLayoutSize.chipHeight,
     paddingHorizontal: FluentSpacing.s,
     paddingVertical: FluentSpacing.xs,
     borderRadius: FluentControlRadius.chip,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    borderWidth: FluentBorderWidth.thin,
   },
   chipText: {
     textAlign: "center",

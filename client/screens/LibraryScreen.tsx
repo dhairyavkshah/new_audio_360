@@ -13,7 +13,7 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
-import { FluentSpacing, FluentRadius, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { Album } from "@/navigation/LibraryStackNavigator";
 
@@ -351,7 +351,7 @@ export default function LibraryScreen() {
   const renderPlaylistAddButton = () => (
     activeCategory === "playlists" ? (
       <Pressable style={[styles.addButton, { backgroundColor: colors.colorBrandBackground }]} onPress={handleManagePlaylists}>
-        <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
+        <MaterialCommunityIcons name="plus" size={FluentIconSize.regular} color="#FFFFFF" />
       </Pressable>
     ) : null
   );
@@ -467,7 +467,7 @@ export default function LibraryScreen() {
           <MaterialCommunityIcons name="playlist-music" size={64} color={colors.colorNeutralForeground3} />
           <FluentText variant="body1" color="tertiary" style={styles.emptyText}>No playlists yet</FluentText>
           <Pressable style={[styles.createButton, { backgroundColor: colors.colorBrandBackground }]} onPress={handleManagePlaylists}>
-            <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
+            <MaterialCommunityIcons name="plus" size={FluentIconSize.regular} color="#FFFFFF" />
             <FluentText variant="body2" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s }}>Create Playlist</FluentText>
           </Pressable>
         </View>
@@ -587,7 +587,7 @@ export default function LibraryScreen() {
 
       {successMessage ? (
         <View style={[styles.successToast, { backgroundColor: colors.colorBrandBackground, bottom: tabBarHeight + FluentSpacing.l }]}>
-          <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
+          <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color="#FFFFFF" />
           <FluentText variant="body2" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>{successMessage}</FluentText>
         </View>
       ) : null}
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
   artistAvatar: {
     width: "80%",
     aspectRatio: 1,
-    borderRadius: 1000,
+    borderRadius: FluentRadius.circular,
   },
   artistName: {
     fontWeight: "600",
@@ -690,8 +690,8 @@ const styles = StyleSheet.create({
     borderRadius: FluentRadius.circular,
   },
   addButton: {
-    width: 40,
-    height: 40,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     borderRadius: FluentControlRadius.fab,
     alignItems: "center",
     justifyContent: "center",
@@ -705,17 +705,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.l,
     paddingVertical: FluentSpacing.m,
     borderRadius: FluentRadius.large,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-      default: {},
-    }),
+    ...getShadowStyle('shadow4'),
   },
 });

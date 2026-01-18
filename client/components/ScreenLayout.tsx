@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { ThemedView } from "@/components/ThemedView";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import { FluentSpacing } from "@/constants/fluent2";
+import { FluentSpacing, FluentLayoutSize } from "@/constants/fluent2";
 
 interface ScreenLayoutProps {
   children: ReactNode;
@@ -20,7 +20,7 @@ interface ScreenLayoutProps {
   mode?: "listen" | "create";
 }
 
-const HEADER_FALLBACK_HEIGHT = 56;
+const HEADER_FALLBACK_HEIGHT = FluentLayoutSize.topBarHeight;
 
 export function ScreenLayout({
   children,

@@ -9,8 +9,7 @@ import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
-import { Layout } from "@/constants/theme";
+import { FluentSpacing, FluentPadding, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 
@@ -232,7 +231,7 @@ export default function QueueScreen() {
 
 const styles = StyleSheet.create({
   listContent: {
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: FluentPadding.l,
     paddingTop: FluentSpacing.l,
   },
   headerSection: {
@@ -316,7 +315,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: FluentPadding.l,
     paddingVertical: FluentSpacing.m,
   },
   selectionButton: {

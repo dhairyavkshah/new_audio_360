@@ -105,7 +105,7 @@ export function GlassCard({
           <Animated.View 
             style={[
               StyleSheet.absoluteFill, 
-              { backgroundColor: colors.colorNeutralBackground3, borderRadius: FluentControlRadius.card - 1 },
+              { backgroundColor: colors.colorNeutralBackground3, borderRadius: FluentControlRadius.card },
               bgAnimatedStyle,
             ]} 
           />
@@ -125,7 +125,7 @@ export function GlassCard({
           <Animated.View 
             style={[
               StyleSheet.absoluteFill, 
-              { backgroundColor: colors.colorNeutralBackground3, borderRadius: FluentControlRadius.card - 1 },
+              { backgroundColor: colors.colorNeutralBackground3, borderRadius: FluentControlRadius.card },
               bgAnimatedStyle,
             ]} 
           />

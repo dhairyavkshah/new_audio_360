@@ -6,6 +6,7 @@ import { useUiSound } from "@/contexts/UiSoundContext";
 import {
   FluentDuration,
   FluentSpring,
+  FluentSpacing,
   FluentLightColors,
   FluentDarkColors,
   getShadowStyle,
@@ -221,7 +222,7 @@ const styles = StyleSheet.create({
   },
   track: {
     justifyContent: "center",
-    paddingHorizontal: 3,
+    paddingHorizontal: FluentSpacing.xs,
   },
   thumb: {},
 });

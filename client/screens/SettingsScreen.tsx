@@ -9,7 +9,7 @@ import { FluentTopBar } from "@/components/FluentTopBar";
 import { FluentToggle } from "@/components/FluentToggle";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentIconSize, FluentControlHeight, FluentFontWeight } from "@/constants/fluent2";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 import { getHapticEnabled, setHapticEnabled as saveHapticEnabled } from "@/lib/storage";
 import { usePlayerContext } from "@/contexts/PlayerContext";
@@ -51,7 +51,7 @@ function MenuItem({ icon, iconColor, title, subtitle, onPress, isDark }: MenuIte
       accessibilityLabel={`${title}. ${subtitle}`}
     >
       <View style={[styles.menuIconContainer, { backgroundColor: colors.colorNeutralBackground3 }]}>
-        <MaterialCommunityIcons name={icon} size={24} color={iconColor || colors.colorBrandForeground1} />
+        <MaterialCommunityIcons name={icon} size={FluentIconSize.medium} color={iconColor || colors.colorBrandForeground1} />
       </View>
       <View style={styles.menuTextContainer}>
         <FluentText variant="body1Strong" style={styles.menuTitle}>
@@ -61,7 +61,7 @@ function MenuItem({ icon, iconColor, title, subtitle, onPress, isDark }: MenuIte
           {subtitle}
         </FluentText>
       </View>
-      <MaterialCommunityIcons name="chevron-right" size={24} color={colors.colorNeutralForeground3} />
+      <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.medium} color={colors.colorNeutralForeground3} />
     </Pressable>
   );
 }
@@ -121,7 +121,7 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="music-note" size={20} color={colors.colorBrandForeground1} />
+            <MaterialCommunityIcons name="music-note" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
             <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Audio
             </FluentText>
@@ -146,7 +146,7 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="palette" size={20} color={colors.colorBrandForeground1} />
+            <MaterialCommunityIcons name="palette" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
             <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Display
             </FluentText>
@@ -164,14 +164,14 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="cog-outline" size={20} color={colors.colorBrandForeground1} />
+            <MaterialCommunityIcons name="cog-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
             <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Preferences
             </FluentText>
           </View>
           <View style={[styles.settingItem, { backgroundColor: colors.colorNeutralBackground2 }]}>
             <View style={styles.settingInfo}>
-              <MaterialCommunityIcons name="vibrate" size={18} color={colors.colorNeutralForeground1} />
+              <MaterialCommunityIcons name="vibrate" size={FluentIconSize.regular} color={colors.colorNeutralForeground1} />
               <FluentText variant="body1" style={styles.settingLabel}>
                 Haptic Feedback
               </FluentText>
@@ -183,7 +183,7 @@ export default function SettingsScreen() {
           </View>
           <View style={[styles.settingItem, { backgroundColor: colors.colorNeutralBackground2, marginTop: FluentSpacing.s, opacity: isPlaybackActive ? 0.5 : 1 }]}>
             <View style={styles.settingInfo}>
-              <MaterialCommunityIcons name="volume-high" size={18} color={colors.colorNeutralForeground1} />
+              <MaterialCommunityIcons name="volume-high" size={FluentIconSize.regular} color={colors.colorNeutralForeground1} />
               <View>
                 <FluentText variant="body1" style={styles.settingLabel}>
                   UI Sounds
@@ -205,7 +205,7 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="timer-outline" size={20} color={colors.colorBrandForeground1} />
+            <MaterialCommunityIcons name="timer-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
             <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Sleep Timer
             </FluentText>
@@ -232,7 +232,7 @@ export default function SettingsScreen() {
                   variant="body2"
                   style={{
                     color: sleepTimerMinutes === option.value ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground1,
-                    fontWeight: "600",
+                    fontWeight: FluentFontWeight.semibold,
                   }}
                 >
                   {option.label}
@@ -249,7 +249,7 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="crown" size={20} color={colors.colorPaletteYellowForeground1} />
+            <MaterialCommunityIcons name="crown" size={FluentIconSize.regular} color={colors.colorPaletteYellowForeground1} />
             <FluentText variant="subtitle1" style={styles.sectionTitle}>
               License
             </FluentText>
@@ -268,7 +268,7 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="information" size={20} color={colors.colorBrandForeground1} />
+            <MaterialCommunityIcons name="information" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
             <FluentText variant="subtitle1" style={styles.sectionTitle}>
               About
             </FluentText>
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     gap: FluentSpacing.xxs,
   },
   menuTitle: {
-    fontWeight: "600",
+    fontWeight: FluentFontWeight.semibold,
   },
   section: {
     marginBottom: FluentSpacing.xxl,
@@ -382,9 +382,9 @@ const styles = StyleSheet.create({
     paddingVertical: FluentSpacing.m,
     paddingHorizontal: FluentSpacing.l,
     borderRadius: FluentRadius.medium,
-    minWidth: 70,
+    minWidth: 72,
     alignItems: "center",
-    height: 44,
+    height: FluentControlHeight.large,
     justifyContent: "center",
   },
 });

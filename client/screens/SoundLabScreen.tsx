@@ -10,7 +10,7 @@ import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useToast } from "@/contexts/ToastContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
-import { FluentSpacing, FluentRadius, FluentControlRadius, FluentTypography } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentControlRadius, FluentTypography, FluentIconSize, FluentControlHeight, FluentFontWeight } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { 
   getEQPreset, saveEQPreset, clearEQPreset, 
@@ -539,13 +539,13 @@ export default function SoundLabScreen() {
 
         <View style={[styles.sectionCard, cardStyle]}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="tune-vertical" size={18} color={tokens.colors.primary} />
+            <MaterialCommunityIcons name="tune-vertical" size={FluentIconSize.regular} color={tokens.colors.primary} />
             <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Equalizer Mode
             </FluentText>
             {isEqualizerActive ? (
               <View style={[styles.activeIndicator, { backgroundColor: tokens.colors.primary }]}>
-                <FluentText variant="caption1" color="onBrand" style={{ fontWeight: "600" }}>Active</FluentText>
+                <FluentText variant="caption1" color="onBrand" style={{ fontWeight: FluentFontWeight.semibold }}>Active</FluentText>
               </View>
             ) : null}
           </View>
@@ -582,7 +582,7 @@ export default function SoundLabScreen() {
               
               <View style={styles.effectSliderRow}>
                 <View style={styles.effectSliderHeader}>
-                  <MaterialCommunityIcons name="speaker-wireless" size={18} color={tokens.colors.primary} />
+                  <MaterialCommunityIcons name="speaker-wireless" size={FluentIconSize.regular} color={tokens.colors.primary} />
                   <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Bass</FluentText>
                   <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
                     {bassControl === 0 ? "Off" : bassControl > 0 ? `+${bassControl}` : `${bassControl}`}
@@ -607,7 +607,7 @@ export default function SoundLabScreen() {
 
               <View style={styles.effectSliderRow}>
                 <View style={styles.effectSliderHeader}>
-                  <MaterialCommunityIcons name="tune-vertical" size={18} color={tokens.colors.primary} />
+                  <MaterialCommunityIcons name="tune-vertical" size={FluentIconSize.regular} color={tokens.colors.primary} />
                   <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Treble</FluentText>
                   <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
                     {trebleControl === 0 ? "Off" : trebleControl > 0 ? `+${trebleControl}` : `${trebleControl}`}
@@ -632,7 +632,7 @@ export default function SoundLabScreen() {
 
               <View style={styles.effectSliderRow}>
                 <View style={styles.effectSliderHeader}>
-                  <MaterialCommunityIcons name="surround-sound" size={18} color={tokens.colors.primary} />
+                  <MaterialCommunityIcons name="surround-sound" size={FluentIconSize.regular} color={tokens.colors.primary} />
                   <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Virtualizer</FluentText>
                   <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
                     {virtualizerLevel === 0 ? "Off" : virtualizerLevel > 0 ? `+${virtualizerLevel}` : `${virtualizerLevel}`}
@@ -715,10 +715,10 @@ export default function SoundLabScreen() {
                       </Pressable>
                       <View style={styles.presetActions}>
                         <Pressable onPress={() => handleEditPreset(preset)} style={styles.actionIconButton}>
-                          <MaterialCommunityIcons name="pencil-outline" size={18} color={tokens.colors.primary} />
+                          <MaterialCommunityIcons name="pencil-outline" size={FluentIconSize.regular} color={tokens.colors.primary} />
                         </Pressable>
                         <Pressable onPress={() => handleDeletePreset(preset)} style={styles.actionIconButton}>
-                          <MaterialCommunityIcons name="delete-outline" size={18} color={tokens.colors.error} />
+                          <MaterialCommunityIcons name="delete-outline" size={FluentIconSize.regular} color={tokens.colors.error} />
                         </Pressable>
                       </View>
                     </View>
@@ -731,18 +731,18 @@ export default function SoundLabScreen() {
 
         <View style={[styles.sectionCard, cardStyle]}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="headphones" size={18} color={tokens.colors.primary} />
+            <MaterialCommunityIcons name="headphones" size={FluentIconSize.regular} color={tokens.colors.primary} />
             <FluentText variant="subtitle1" style={styles.sectionTitle}>
               Immersive Modes
             </FluentText>
             {!isLicensed ? (
               <View style={[styles.premiumBadge, { backgroundColor: tokens.colors.warning }]}>
                 <MaterialCommunityIcons name="crown" size={12} color={tokens.colors.onPrimary} />
-                <FluentText variant="caption1" style={{ color: tokens.colors.onPrimary, fontWeight: "600", marginLeft: 4 }}>License Required</FluentText>
+                <FluentText variant="caption1" style={{ color: tokens.colors.onPrimary, fontWeight: FluentFontWeight.semibold, marginLeft: 4 }}>License Required</FluentText>
               </View>
             ) : isImmersiveActive && selectedImmersive !== 'off' ? (
               <View style={[styles.activeIndicator, { backgroundColor: tokens.colors.primary }]}>
-                <FluentText variant="caption1" color="onBrand" style={{ fontWeight: "600" }}>Active</FluentText>
+                <FluentText variant="caption1" color="onBrand" style={{ fontWeight: FluentFontWeight.semibold }}>Active</FluentText>
               </View>
             ) : null}
           </View>
@@ -776,7 +776,7 @@ export default function SoundLabScreen() {
                     <FluentText
                       variant="body1"
                       style={{
-                        fontWeight: "600",
+                        fontWeight: FluentFontWeight.semibold,
                         color: isImmersiveActive && selectedImmersive === mode.id ? tokens.colors.onPrimary : tokens.colors.text,
                       }}
                     >
@@ -804,7 +804,7 @@ export default function SoundLabScreen() {
 
         <View style={[styles.sectionCard, cardStyle, styles.infoCard]}>
           <View style={styles.infoContent}>
-            <MaterialCommunityIcons name="information-outline" size={18} color={tokens.colors.primary} />
+            <MaterialCommunityIcons name="information-outline" size={FluentIconSize.regular} color={tokens.colors.primary} />
             <View style={styles.infoText}>
               <FluentText variant="body1Strong">Sound Experience</FluentText>
               <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
@@ -1035,7 +1035,7 @@ const styles = StyleSheet.create({
   },
   effectSlider: {
     flex: 1,
-    height: 36,
+    height: FluentControlHeight.medium,
   },
   customEQContainer: {
     marginTop: FluentSpacing.m,
@@ -1050,7 +1050,7 @@ const styles = StyleSheet.create({
   },
   slider: {
     flex: 1,
-    height: 40,
+    height: FluentControlHeight.large,
   },
   bandValue: {
     width: 30,
@@ -1115,8 +1115,8 @@ const styles = StyleSheet.create({
     marginLeft: FluentSpacing.m,
   },
   enhancementIconContainer: {
-    width: 40,
-    height: 40,
+    width: FluentControlHeight.large,
+    height: FluentControlHeight.large,
     borderRadius: FluentControlRadius.fab,
     justifyContent: "center",
     alignItems: "center",
@@ -1164,7 +1164,7 @@ const styles = StyleSheet.create({
   },
   controlSlider: {
     flex: 1,
-    height: 40,
+    height: FluentControlHeight.large,
   },
   modesContainer: {
     gap: FluentSpacing.s,

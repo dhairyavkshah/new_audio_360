@@ -27,6 +27,8 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import {
   FluentControlRadius,
   FluentSpacing,
+  FluentPadding,
+  FluentRadius,
   FluentDuration,
   FluentCurve,
   getShadowStyle,
@@ -228,7 +230,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    borderRadius: FluentControlRadius.checkbox,
+    borderRadius: FluentRadius.circular,
   },
   title: {
     paddingHorizontal: FluentSpacing.l,
@@ -238,7 +240,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: FluentSpacing.l,
+    paddingHorizontal: FluentPadding.xl,
     paddingTop: FluentSpacing.s,
   },
 });

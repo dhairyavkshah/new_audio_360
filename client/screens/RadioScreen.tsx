@@ -26,6 +26,7 @@ import {
   FluentControlRadius,
   FluentTypography,
   FluentBorderWidth,
+  FluentFontWeight,
 } from "@/constants/fluent2";
 
 const FM_MIN = 87.5;
@@ -518,7 +519,7 @@ export default function RadioScreen() {
           >
             <MaterialCommunityIcons
               name="stop"
-              size={24}
+              size={FluentIconSize.medium}
               color={colors.colorNeutralForegroundOnBrand}
             />
           </Pressable>
@@ -1177,7 +1178,7 @@ export default function RadioScreen() {
               style={styles.modalCloseButton}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <MaterialCommunityIcons name="close" size={24} color={colors.colorNeutralForeground1} />
+              <MaterialCommunityIcons name="close" size={FluentIconSize.medium} color={colors.colorNeutralForeground1} />
             </Pressable>
           </View>
 
@@ -1358,7 +1359,7 @@ const styles = StyleSheet.create({
     marginRight: FluentSpacing.xs,
   },
   signalBar: {
-    width: 6,
+    width: 8,
     marginHorizontal: 2,
     borderRadius: FluentControlRadius.checkbox,
   },
@@ -1459,7 +1460,7 @@ const styles = StyleSheet.create({
   },
   unavailableText: {
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: FluentTypography.body1.lineHeight,
   },
   soundLabCard: {
     flexDirection: "row",
@@ -1493,7 +1494,7 @@ const styles = StyleSheet.create({
   },
   fallbackText: {
     flex: 1,
-    lineHeight: 20,
+    lineHeight: FluentTypography.body2.lineHeight,
   },
   instructionsList: {
     padding: FluentSpacing.m,
@@ -1550,7 +1551,7 @@ const styles = StyleSheet.create({
   nowPlayingLabel: {
     marginLeft: FluentSpacing.xs,
     letterSpacing: 1,
-    fontWeight: "600",
+    fontWeight: FluentFontWeight.semibold,
   },
   stationMeta: {
     marginTop: FluentSpacing.xs,

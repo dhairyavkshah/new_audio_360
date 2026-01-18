@@ -3,7 +3,9 @@ import { View, StyleSheet, Animated, Pressable, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FluentText } from '@/components/fluent';
 import { useThemeTokens } from '@/contexts/ThemeContext';
-import { FluentSpacing, FluentRadius } from '@/constants/fluent2';
+import { FluentSpacing, FluentRadius, FluentIconSize, FluentLayoutSize, FluentLightColors, FluentDarkColors, getShadowStyle } from '@/constants/fluent2';
+import { useThemeContext } from '@/contexts/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -30,8 +32,12 @@ export function Toast({
   onDismiss,
 }: ToastProps) {
   const tokens = useThemeTokens();
+  const { isDark } = useThemeContext();
+  const insets = useSafeAreaInsets();
+  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+  const toastShadow = getShadowStyle('shadow8', isDark);
 
   useEffect(() => {
     if (visible) {
@@ -79,24 +85,26 @@ export function Toast({
   const getColors = () => {
     switch (type) {
       case 'success':
-        return { bg: '#10B981', icon: '#FFFFFF' };
+        return { bg: fluentColors.colorPaletteGreenBorderActive, icon: fluentColors.colorNeutralForegroundOnBrand };
       case 'error':
-        return { bg: '#EF4444', icon: '#FFFFFF' };
+        return { bg: fluentColors.colorPaletteRedBorderActive, icon: fluentColors.colorNeutralForegroundOnBrand };
       case 'warning':
-        return { bg: '#F59E0B', icon: '#FFFFFF' };
+        return { bg: fluentColors.colorPaletteYellowBorderActive, icon: fluentColors.colorNeutralForeground1 };
       case 'info':
       default:
-        return { bg: tokens.colors.primary, icon: '#FFFFFF' };
+        return { bg: fluentColors.colorBrandBackground, icon: fluentColors.colorNeutralForegroundOnBrand };
     }
   };
 
   const colors = getColors();
+  const topPosition = insets.top + FluentSpacing.m;
 
   return (
     <Animated.View
       style={[
         styles.container,
         {
+          top: topPosition,
           transform: [{ translateY }],
           opacity,
         },
@@ -108,17 +116,13 @@ export function Toast({
             styles.toast,
             {
               backgroundColor: colors.bg,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 8,
+              ...toastShadow,
             },
           ]}
         >
           <MaterialCommunityIcons
             name={ICONS[type]}
-            size={20}
+            size={FluentIconSize.regular}
             color={colors.icon}
             style={styles.icon}
           />
@@ -127,7 +131,7 @@ export function Toast({
           </FluentText>
           <MaterialCommunityIcons
             name="close"
-            size={18}
+            size={FluentIconSize.small}
             color={colors.icon}
             style={styles.closeIcon}
           />
@@ -140,7 +144,6 @@ export function Toast({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 60,
     left: FluentSpacing.l,
     right: FluentSpacing.l,
     zIndex: 9999,

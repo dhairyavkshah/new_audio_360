@@ -11,7 +11,7 @@ import { SongContextMenu } from "@/components/SongContextMenu";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import { PlayableSong } from "@/contexts/PlayerContext";
@@ -108,7 +108,7 @@ export default function ListenScreen() {
 
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
-      <MaterialCommunityIcons name="music-note-off" size={48} color={colors.colorNeutralForeground2} />
+      <MaterialCommunityIcons name="music-note-off" size={FluentIconSize.xxlarge} color={colors.colorNeutralForeground2} />
       <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.l, textAlign: "center" }}>
         No songs found matching "{searchQuery}"
       </FluentText>
@@ -172,9 +172,9 @@ export default function ListenScreen() {
       />
 
       {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
-          <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
-          <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
+        <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1 }, getShadowStyle('shadow4', isDark)]}>
+          <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
+          <FluentText variant="caption1" style={{ color: colors.colorNeutralForegroundOnBrand, marginLeft: FluentSpacing.s, flex: 1 }}>
             {successMessage}
           </FluentText>
         </View>
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   successToast: {
     position: "absolute",
-    bottom: 100,
+    bottom: FluentSpacing.xxxxxxl + FluentSpacing.xxxl,
     left: FluentSpacing.l,
     right: FluentSpacing.l,
     flexDirection: "row",
@@ -202,10 +202,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.l,
     paddingVertical: FluentSpacing.l,
     borderRadius: FluentRadius.large,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
 });

@@ -164,6 +164,7 @@ export const FluentLightColors = {
   colorStrokeFocus1: '#FFFFFF',
   colorStrokeFocus2: '#000000',
   colorScrollbarOverlay: 'rgba(0, 0, 0, 0.5)',
+  colorBackgroundScrim: 'rgba(0, 0, 0, 0.5)',
 };
 
 export const FluentDarkColors = {
@@ -240,6 +241,7 @@ export const FluentDarkColors = {
   colorStrokeFocus1: '#000000',
   colorStrokeFocus2: '#FFFFFF',
   colorScrollbarOverlay: 'rgba(255, 255, 255, 0.6)',
+  colorBackgroundScrim: 'rgba(0, 0, 0, 0.5)',
 };
 
 export type FluentColorToken = keyof typeof FluentLightColors;

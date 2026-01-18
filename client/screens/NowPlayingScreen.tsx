@@ -18,7 +18,7 @@ import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
@@ -143,7 +143,7 @@ export default function NowPlayingScreen() {
           </View>
           {error ? (
             <View style={[styles.errorBadge, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)' }]}>
-              <MaterialCommunityIcons name="alert-circle" size={14} color={colors.colorPaletteRedForeground1} />
+              <MaterialCommunityIcons name="alert-circle" size={FluentIconSize.tiny} color={colors.colorPaletteRedForeground1} />
               <FluentText variant="caption1" style={{ color: colors.colorPaletteRedForeground1, marginLeft: FluentSpacing.xxs, flex: 1 }} numberOfLines={1}>
                 {error}
               </FluentText>

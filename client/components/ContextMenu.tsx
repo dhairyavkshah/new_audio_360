@@ -84,7 +84,7 @@ export function ContextMenu({
       opacity.value = withTiming(1, {
         duration: FluentDuration.fast,
       });
-      scrimOpacity.value = withTiming(0.3, {
+      scrimOpacity.value = withTiming(0.5, {
         duration: FluentDuration.normal,
       });
     } else if (isRendered) {
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menu: {
-    borderRadius: FluentControlRadius.card,
+    borderRadius: FluentControlRadius.dialog,
     overflow: "hidden",
     maxHeight: FluentLayoutSize.menuItemHeight * 8,
   },
@@ -283,12 +283,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.l,
   },
   firstItem: {
-    borderTopLeftRadius: FluentControlRadius.card,
-    borderTopRightRadius: FluentControlRadius.card,
+    borderTopLeftRadius: FluentControlRadius.dialog,
+    borderTopRightRadius: FluentControlRadius.dialog,
   },
   lastItem: {
-    borderBottomLeftRadius: FluentControlRadius.card,
-    borderBottomRightRadius: FluentControlRadius.card,
+    borderBottomLeftRadius: FluentControlRadius.dialog,
+    borderBottomRightRadius: FluentControlRadius.dialog,
   },
   menuIcon: {
     marginRight: FluentSpacing.m,
