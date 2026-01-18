@@ -5,7 +5,15 @@ interface AlbumArtResult {
   error?: string;
 }
 
+const MAX_CACHE_SIZE = 100;
 const albumArtCache = new Map<string, string | null>();
+
+function evictOldestCacheEntries() {
+  if (albumArtCache.size > MAX_CACHE_SIZE) {
+    const keysToDelete = Array.from(albumArtCache.keys()).slice(0, albumArtCache.size - MAX_CACHE_SIZE);
+    keysToDelete.forEach(key => albumArtCache.delete(key));
+  }
+}
 
 export async function extractAlbumArt(url: string): Promise<AlbumArtResult> {
   if (Platform.OS !== 'web') {
@@ -24,6 +32,7 @@ export async function extractAlbumArt(url: string): Promise<AlbumArtResult> {
     const response = await fetch(fullUrl);
     if (!response.ok) {
       albumArtCache.set(url, null);
+      evictOldestCacheEntries();
       return { dataUrl: null, error: `Failed to fetch: ${response.status}` };
     }
     
@@ -31,10 +40,12 @@ export async function extractAlbumArt(url: string): Promise<AlbumArtResult> {
     const dataUrl = extractID3Picture(new Uint8Array(arrayBuffer));
     
     albumArtCache.set(url, dataUrl);
+    evictOldestCacheEntries();
     return { dataUrl };
   } catch (err: any) {
     console.warn('Album art extraction failed for', url, '- Error:', err?.message || err);
     albumArtCache.set(url, null);
+    evictOldestCacheEntries();
     return { dataUrl: null, error: err?.message || 'Extraction failed' };
   }
 }
@@ -53,8 +64,14 @@ function extractID3Picture(data: Uint8Array): string | null {
   let offset = 10;
   
   if (flags & 0x40) {
-    const extSize = (data[10] << 24) | (data[11] << 16) | (data[12] << 8) | data[13];
-    offset += extSize;
+    if (majorVersion === 4) {
+      const extSize = ((data[10] & 0x7f) << 21) | ((data[11] & 0x7f) << 14) |
+                      ((data[12] & 0x7f) << 7) | (data[13] & 0x7f);
+      offset += extSize;
+    } else {
+      const extSize = (data[10] << 24) | (data[11] << 16) | (data[12] << 8) | data[13];
+      offset += 4 + extSize;
+    }
   }
   
   const tagEnd = Math.min(10 + size, data.length);
@@ -82,6 +99,7 @@ function extractID3Picture(data: Uint8Array): string | null {
     }
     
     if (frameId === '\0\0\0\0' || frameId === '\0\0\0' || frameSize === 0) break;
+    if (frameSize > data.length - offset - frameHeaderSize) break;
     
     if (frameId === 'APIC' || frameId === 'PIC') {
       const frameData = data.slice(offset + frameHeaderSize, offset + frameHeaderSize + frameSize);
