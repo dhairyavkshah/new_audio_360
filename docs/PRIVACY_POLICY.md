@@ -144,4 +144,4 @@ This App is designed to comply with:
 ---
 
 *New Audio 360 is developed by TheTeam360.*  
-*"The top-grade intelligent music experience designed for you"*
+*"The top-grade intelligent music experience built for you"*
