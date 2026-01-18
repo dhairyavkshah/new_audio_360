@@ -9,6 +9,7 @@ import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useToast } from "@/contexts/ToastContext";
+import { useSoundLab } from "@/contexts/SoundLabContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
 import { FluentSpacing, FluentRadius, FluentControlRadius, FluentTypography, FluentIconSize, FluentControlHeight, FluentFontWeight } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
@@ -114,6 +115,7 @@ function SoundLabScreen() {
   const tokens = useThemeTokens();
   const { isLicensed } = useSubscription();
   const { showSuccess, showError, showWarning } = useToast();
+  const { setBassBoost, setTrebleBoost } = useSoundLab();
   
   const cardStyle = getCardEffectStyle(tokens);
   
@@ -201,7 +203,9 @@ function SoundLabScreen() {
       setCustomBands(bands);
       setCustomPresets(presets);
       setBassControl(bassLvl);
+      setBassBoost(bassLvl); // Sync to context for software DSP
       setTrebleControl(trebleLvl);
+      setTrebleBoost(trebleLvl); // Sync to context for software DSP
       setVirtualizerLevel(virtLvl);
       
       if (eqPreset) {
@@ -269,7 +273,9 @@ function SoundLabScreen() {
           const newTreble = presetData.trebleControl ?? 0;
           const newVirt = presetData.virtualizer ?? 0;
           setBassControl(newBass);
+          setBassBoost(newBass); // Sync to context for software DSP
           setTrebleControl(newTreble);
+          setTrebleBoost(newTreble); // Sync to context for software DSP
           setVirtualizerLevel(newVirt);
           // Persist to storage
           await Promise.all([
@@ -304,6 +310,7 @@ function SoundLabScreen() {
   const handleBassControlChange = async (level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setBassControl(level);
+    setBassBoost(level); // Update context for software DSP
     await saveBassControlLevel(level);
     
     if (Platform.OS !== 'web' && BassBoostModule.isAvailable()) {
@@ -324,6 +331,7 @@ function SoundLabScreen() {
   const handleTrebleControlChange = async (level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setTrebleControl(level);
+    setTrebleBoost(level); // Update context for software DSP
     await saveTrebleControlLevel(level);
   };
 
@@ -388,7 +396,9 @@ function SoundLabScreen() {
     const newTreble = preset.trebleControl ?? 0;
     const newVirt = preset.virtualizer ?? 0;
     setBassControl(newBass);
+    setBassBoost(newBass); // Sync to context for software DSP
     setTrebleControl(newTreble);
+    setTrebleBoost(newTreble); // Sync to context for software DSP
     setVirtualizerLevel(newVirt);
     await Promise.all([
       saveBassControlLevel(newBass),
@@ -421,8 +431,12 @@ function SoundLabScreen() {
     setEditingPreset(preset);
     setEditPresetName(preset.name);
     setCustomBands(preset.bands);
-    setBassControl(preset.bassControl ?? 0);
-    setTrebleControl(preset.trebleControl ?? 0);
+    const presetBass = preset.bassControl ?? 0;
+    const presetTreble = preset.trebleControl ?? 0;
+    setBassControl(presetBass);
+    setBassBoost(presetBass); // Sync to context for software DSP
+    setTrebleControl(presetTreble);
+    setTrebleBoost(presetTreble); // Sync to context for software DSP
     setVirtualizerLevel(preset.virtualizer ?? 0);
     NativeEffectsManager.applyFiveBandEQ(preset.bands);
     setShowEditDialog(true);
