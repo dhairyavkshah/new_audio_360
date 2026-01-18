@@ -12,7 +12,7 @@ import {
   WebFolderSong
 } from '@/lib/storage';
 import { getSessionWebFolders } from '@/lib/webFolderCache';
-import { MediaStoreScannerModule } from '@/modules/audio-effects';
+import { MediaStoreScannerModule } from 'audio-effects';
 
 const HIDDEN_SONGS_KEY = '@new_audio_360_hidden_songs';
 const ONBOARDING_COMPLETE_KEY = '@new_audio_360_onboarding_complete';
