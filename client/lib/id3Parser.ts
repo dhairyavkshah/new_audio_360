@@ -43,28 +43,49 @@ async function parseID3Web(url: string): Promise<ID3Metadata | null> {
 
 async function parseID3Native(uri: string): Promise<ID3Metadata | null> {
   try {
-    const fileUri = uri.startsWith('file://') ? uri : `file://${uri}`;
+    console.log('[ID3Parser] parseID3Native called with URI:', uri);
     
+    // Handle different URI formats
+    let fileUri = uri;
+    if (uri.startsWith('content://')) {
+      // content:// URIs need special handling - expo-file-system may not support them directly
+      console.log('[ID3Parser] content:// URI detected, attempting to read...');
+    } else if (!uri.startsWith('file://')) {
+      fileUri = `file://${uri}`;
+    }
+    
+    console.log('[ID3Parser] Checking file info for:', fileUri);
     const fileInfo = await FileSystem.getInfoAsync(fileUri);
+    console.log('[ID3Parser] File info:', JSON.stringify(fileInfo));
+    
     if (!fileInfo.exists) {
       console.warn('[ID3Parser] File does not exist:', fileUri);
       return null;
     }
     
+    console.log('[ID3Parser] Reading file as base64...');
     const base64Content = await FileSystem.readAsStringAsync(fileUri, {
       encoding: 'base64' as any,
-      length: 512 * 1024,
     });
     
-    const binaryString = atob(base64Content);
+    console.log('[ID3Parser] Read', base64Content.length, 'chars of base64');
+    
+    // Only use first 512KB for ID3 parsing
+    const truncatedBase64 = base64Content.substring(0, 700000); // ~512KB in base64
+    
+    const binaryString = atob(truncatedBase64);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
     
-    return parseID3Tags(bytes);
+    console.log('[ID3Parser] Converted to', bytes.length, 'bytes, parsing ID3 tags...');
+    const result = parseID3Tags(bytes);
+    console.log('[ID3Parser] Parse result:', result ? Object.keys(result) : 'null');
+    
+    return result;
   } catch (error) {
-    console.warn('[ID3Parser] Native parse error:', error);
+    console.error('[ID3Parser] Native parse error:', error);
     return null;
   }
 }

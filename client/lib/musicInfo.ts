@@ -14,21 +14,35 @@ export interface MusicMetadata {
 }
 
 export async function getMusicMetadata(localUri: string): Promise<MusicMetadata | null> {
+  console.log('[getMusicMetadata] Called with URI:', localUri, 'Platform:', Platform.OS);
+  
   if (Platform.OS === 'web') {
+    console.log('[getMusicMetadata] Using web ID3 parser');
     return await getMetadataFromID3Parser(localUri);
   }
   
   if (Platform.OS !== 'android') {
+    console.log('[getMusicMetadata] Platform not supported:', Platform.OS);
     return null;
   }
   
-  const isNativeAvailable = MetadataExtractorModule.isAvailable();
+  // Check if MetadataExtractorModule exists and has the isAvailable function
+  console.log('[getMusicMetadata] MetadataExtractorModule:', typeof MetadataExtractorModule);
+  console.log('[getMusicMetadata] MetadataExtractorModule.isAvailable:', typeof MetadataExtractorModule?.isAvailable);
+  
+  let isNativeAvailable = false;
+  try {
+    isNativeAvailable = MetadataExtractorModule?.isAvailable?.() ?? false;
+  } catch (e) {
+    console.warn('[getMusicMetadata] Error checking native availability:', e);
+  }
   console.log('[getMusicMetadata] Native module available:', isNativeAvailable);
   
   if (isNativeAvailable) {
     try {
       console.log('[getMusicMetadata] Trying native extraction for:', localUri);
       const result = await MetadataExtractorModule.extractMetadata(localUri);
+      console.log('[getMusicMetadata] Native result:', JSON.stringify(result).substring(0, 500));
       
       if (result.success) {
         console.log('[getMusicMetadata] Native extraction succeeded');
@@ -44,8 +58,10 @@ export async function getMusicMetadata(localUri: string): Promise<MusicMetadata 
         
         if (result.albumArt) {
           metadata.albumArt = `data:image/jpeg;base64,${result.albumArt}`;
+          console.log('[getMusicMetadata] Album art found, length:', result.albumArt.length);
         }
         
+        console.log('[getMusicMetadata] Extracted fields:', Object.keys(metadata));
         if (Object.keys(metadata).length > 0) {
           return metadata;
         }
@@ -58,7 +74,9 @@ export async function getMusicMetadata(localUri: string): Promise<MusicMetadata 
   }
   
   console.log('[getMusicMetadata] Falling back to JavaScript ID3 parser');
-  return await getMetadataFromID3Parser(localUri);
+  const jsResult = await getMetadataFromID3Parser(localUri);
+  console.log('[getMusicMetadata] JS parser result:', jsResult ? Object.keys(jsResult) : 'null');
+  return jsResult;
 }
 
 async function getMetadataFromID3Parser(localUri: string): Promise<MusicMetadata | null> {
