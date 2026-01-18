@@ -46,9 +46,22 @@ Source → Gain → 7-Band EQ → Bass Shelf Filter → Treble Shelf Filter → 
 
 **EQ Presets** (8 total):
 Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic
+- Zero-sum normalization applied to prevent volume jumps
 
 **Immersive Modes** (6 total):
 Music, 360 Reality, Gaming, Podcast, Movie, Off
+- Each mode has its own independent EQ curve, bass boost, treble boost, and virtualizer (spatial width)
+- NO zero-sum normalization (creative curves applied directly)
+- Limiter remains active for distortion prevention
+
+**Immersive Mode Settings**:
+| Mode | Bass | Treble | Spatial Width |
+|------|------|--------|---------------|
+| Music | +2 | +1 | 30% |
+| 360 Reality | +1 | +2 | 60% |
+| Gaming | +3 | +2 | 50% |
+| Podcast | -1 | 0 | 0% |
+| Movie | +3 | +2 | 40% |
 
 ### Navigation Structure
 4-tab system with persistent MiniPlayer:

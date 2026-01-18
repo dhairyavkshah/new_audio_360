@@ -60,13 +60,18 @@ Source → Gain → 7-Band EQ → Bass Shelf Filter → Treble Shelf Filter → 
 - **Distortion Prevention**: Preserves loudness while eliminating clipping
 
 #### Immersive Audio Modes
-6 preset modes optimized for different content:
-- **Music**: Balanced enhancement for general listening
-- **360 Reality**: Spatial audio simulation
-- **Gaming**: Enhanced directional cues and bass impact
-- **Podcast**: Voice clarity optimization
-- **Movie**: Cinematic surround simulation
-- **Off**: Pure, unprocessed audio
+6 preset modes optimized for different content, each with independent settings:
+
+| Mode | Description | Bass | Treble | Spatial |
+|------|-------------|------|--------|---------|
+| **Music** | Balanced enhancement for general listening | +2 | +1 | 30% |
+| **360 Reality** | Spatial audio simulation | +1 | +2 | 60% |
+| **Gaming** | Enhanced directional cues and bass impact | +3 | +2 | 50% |
+| **Podcast** | Voice clarity optimization | -1 | 0 | 0% |
+| **Movie** | Cinematic surround simulation | +3 | +2 | 40% |
+| **Off** | Pure, unprocessed audio | 0 | 0 | 0% |
+
+Each immersive mode has its own dedicated EQ curve, bass boost, treble boost, and virtualizer settings applied directly without zero-sum normalization. The intelligent limiter remains active to prevent distortion.
 
 ### Music Playback
 

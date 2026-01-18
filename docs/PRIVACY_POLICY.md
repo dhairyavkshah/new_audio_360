@@ -68,6 +68,21 @@ Radio Browser's privacy practices: [radio-browser.info](https://www.radio-browse
 
 All permissions are requested with clear explanations during onboarding. You may deny any permission, though some features may be limited.
 
+## Consent and Acceptance
+
+By downloading, installing, accessing, or using New Audio 360, you expressly acknowledge that you have read, understood, and agree to be bound by this Privacy Policy and the associated Terms of Service. You hereby consent to the collection and use of information as described herein.
+
+Furthermore, by proceeding with the installation and use of the Application, you expressly grant permission for the App to request and utilize the device permissions outlined above, which are essential for the full functionality of the music player experience. These permissions are necessary to provide the core features of the Application, including but not limited to:
+
+- Access to your device's media library for music playback
+- Storage access for reading audio files from your selected folders
+- Notification access for displaying playback controls during background operation
+- Location access (optional) for discovering local online radio stations
+
+You understand that denying certain permissions may limit or prevent access to specific features of the Application. If you do not agree to grant the required permissions or accept the terms of this Privacy Policy, you should not install or use this Application.
+
+Your continued use of New Audio 360 following any modifications to this Privacy Policy shall constitute your acceptance of such modifications.
+
 ## Data Security
 
 - **Local Encryption**: Sensitive data stored using Expo SecureStore

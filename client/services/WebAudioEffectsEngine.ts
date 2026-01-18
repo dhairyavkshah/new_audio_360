@@ -212,8 +212,59 @@ class WebAudioEffectsEngineClass {
       return;
     }
 
-    this.applyEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost);
+    // Immersive modes use their own dedicated settings WITHOUT zero-sum normalization
+    // This allows for the full creative EQ curves designed for each mode
+    // Limiter in PlayerContext still prevents distortion
+    this.applyImmersiveEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost, mode.spatialWidth);
     this.currentMode = modeName;
+  }
+
+  /**
+   * Apply EQ settings for immersive modes WITHOUT zero-sum normalization.
+   * Immersive modes have their own creative curves that shouldn't be balanced.
+   * The limiter in PlayerContext handles distortion prevention.
+   */
+  private applyImmersiveEQ(bands: number[], bassBoost: number, trebleBoost: number, spatialWidth: number): void {
+    if (!this.isInitialized || this.eqFilters.length === 0) {
+      console.log('[WebAudioEffectsEngine] Not initialized, cannot apply immersive EQ');
+      return;
+    }
+
+    const paddedBands = [...bands];
+    while (paddedBands.length < 10) {
+      paddedBands.push(0);
+    }
+
+    // NO zero-sum normalization for immersive modes
+    // Each mode has its own designed EQ curve applied directly
+    const DB_PER_UNIT = 2.4;
+    const MAX_DB = 12;
+
+    paddedBands.forEach((value, index) => {
+      if (this.eqFilters[index]) {
+        let dbValue = value * DB_PER_UNIT;
+        
+        // Apply immersive mode's bass boost to low frequencies
+        if (index <= 1) {
+          dbValue += bassBoost * DB_PER_UNIT;
+        }
+        // Apply immersive mode's treble boost to high frequencies
+        if (index >= 6) {
+          dbValue += trebleBoost * DB_PER_UNIT;
+        }
+        
+        const clampedDb = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
+        this.eqFilters[index].gain.value = clampedDb;
+      }
+    });
+
+    // Master gain stays at 1.0 - limiter handles distortion prevention
+    if (this.masterGain) {
+      this.masterGain.gain.value = 1.0;
+    }
+
+    this.currentEQValues = paddedBands;
+    console.log(`[WebAudioEffectsEngine] Applied immersive mode with bass:${bassBoost}, treble:${trebleBoost}, spatial:${spatialWidth}`);
   }
 
   setMasterVolume(volume: number): void {

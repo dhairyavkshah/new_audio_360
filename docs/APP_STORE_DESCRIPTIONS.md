@@ -28,6 +28,7 @@ Experience professional audio control with our pure software DSP engine:
 - **Treble Control**: ±12 dB adjustment via dedicated highshelf filter at 6kHz
 - **Intelligent Limiter**: Prevents distortion at any boost level
 - **6 Immersive Modes**: Music, 360 Reality, Gaming, Podcast, Movie, Off
+- **Independent Mode Settings**: Each immersive mode has its own EQ, bass, treble, and virtualizer
 - **Custom EQ Editor**: Create and save up to 5 personal presets
 - **Zero-Sum Normalization**: Presets stay balanced without volume jumps
 - **Real-time Waveform**: 64-bar visualization while playing
