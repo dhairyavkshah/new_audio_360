@@ -30,9 +30,12 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 
 ### Core Audio Engine
 
-#### Pure Software DSP
-- **Platform-Independent Processing**: Uses react-native-audio-api (Web Audio API) for consistent audio across all devices
-- **No Hardware Dependencies**: Works identically on any Android device regardless of chipset
+#### Pure Software DSP (100% Software-Based)
+- **Platform-Independent Processing**: Identical biquad filter algorithms on Web and Android
+- **Web Platform**: Uses react-native-audio-api (Web Audio API with BiquadFilterNode)
+- **Android Platform**: Custom ExoPlayer AudioProcessor with biquad filter chain
+- **No Hardware Dependencies**: No android.media.audiofx.* hardware effects used
+- **Consistent Experience**: Same DSP algorithms deliver identical sound on all devices
 - **Real-Time Processing**: All effects apply instantly with no perceptible latency
 
 #### Audio Signal Chain
@@ -41,7 +44,7 @@ Source → Gain → 7-Band EQ → Bass Shelf Filter → Treble Shelf Filter → 
 ```
 
 #### 7-Band Parametric Equalizer
-- **Frequency Bands**: Sub (60Hz), Bass (170Hz), Low-Mid (310Hz), Mid (1kHz), High-Mid (3kHz), Treble (6kHz), Brilliance (14kHz)
+- **Frequency Bands**: Sub (32Hz), Bass (64Hz), Low-Mid (125Hz), Mid (500Hz), High-Mid (2kHz), Treble (8kHz), Brilliance (16kHz)
 - **8 Presets**: Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic
 - **Zero-Sum Normalization**: Presets automatically balanced to prevent volume jumps
 - **Custom EQ Editor**: 5-band editor with save/load (up to 5 custom presets)

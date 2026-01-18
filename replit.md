@@ -75,16 +75,30 @@ Music, 360 Reality, Gaming, Podcast, Movie, Off
 - **SettingsTab**: General, Sound Lab, Appearance, License, About
 
 ### Native Modules (Android-specific)
-- **PlaybackEngineModule**: ExoPlayer-based playback with custom AudioProcessor for DSP
-- **SoftwareDSPAudioProcessor**: Biquad filter chain (7-band EQ, bass/treble shelves, limiter)
-- **BiquadFilter**: Peaking and shelf filter implementation using Web Audio API cookbook algorithms
-- **Limiter**: Brickwall limiter with envelope follower
-- **EqualizerModule**: Interface to SoftwareDSPAudioProcessor (no hardware effects)
-- **ImmersiveModeEngineModule**: Immersive audio mode management
-- **AudioSessionBridgeModule**: Audio session bridging
-- **NativeWaveformVisualizer**: 64-bar real-time visualization
-- **FMRadioModule**: FM/AM radio tuning
-- **LicenseVerificationModule**: Play Store verification
+
+**Audio Processing (100% Software DSP)**:
+- **SoftwareDSPAudioProcessor**: Core DSP engine implementing biquad filter chain
+  - 7-band parametric EQ (32Hz, 64Hz, 125Hz, 500Hz, 2kHz, 8kHz, 16kHz)
+  - Bass shelf filter (150Hz, Q=0.707)
+  - Treble shelf filter (6kHz, Q=0.707)
+  - Brickwall limiter (threshold -1dB, ratio 20:1, attack 1ms, release 100ms)
+- **BiquadFilter**: Implements peaking and shelf filter algorithms using Web Audio API cookbook formulas
+- **Limiter**: Brickwall limiter with envelope follower for distortion prevention
+- **PlaybackEngineModule**: ExoPlayer with custom AudioProcessor injection via DefaultAudioSink
+
+**Audio Control Modules (All delegate to SoftwareDSPAudioProcessor)**:
+- **EqualizerModule**: 7-band EQ control, preset management
+- **BassBoostModule**: Bass shelf filter control (converts 0-1000 strength to ±5 gain units)
+- **VirtualizerModule**: Stereo width control (stub - spatial processing planned)
+- **ImmersiveModeEngineModule**: Preset modes (Music, 360 Reality, Gaming, Podcast, Movie)
+
+**System Modules**:
+- **AudioSessionBridgeModule**: Audio session ID management
+- **WaveformAnalyzerModule**: Real-time waveform/FFT visualization (uses android.media.audiofx.Visualizer for read-only audio data)
+- **FMRadioModule**: FM/AM radio tuning (device hardware required)
+- **LicenseVerificationModule**: Google Play Store license verification
+
+**Note**: No Android hardware audio effects (android.media.audiofx.Equalizer, BassBoost, Virtualizer) are used for audio processing. Only the Visualizer class is used for read-only waveform analysis.
 
 ### License Verification
 - Checks if installed from Google Play (com.android.vending)
@@ -171,18 +185,35 @@ Music, 360 Reality, Gaming, Podcast, Movie, Off
 
 ## Recent Changes
 
-### January 18, 2026
-- **Implemented pure software DSP for Android using ExoPlayer AudioProcessor**
-  - Created BiquadFilter.kt with peaking and shelf filter algorithms (Web Audio API cookbook formulas)
-  - Created Limiter.kt with brickwall limiting (threshold -1dB, ratio 20:1, attack 1ms, release 100ms)
-  - Created SoftwareDSPAudioProcessor.kt integrating 7-band EQ, bass/treble shelves, and limiter
-  - Updated PlaybackEngineModule.kt to inject custom AudioProcessor via DefaultAudioSink
-  - Removed all android.media.audiofx.Equalizer usage from EqualizerModule.kt
-- Fixed LSP errors in PlayerContext.tsx (createAudioPlayer signature, setQueue usage)
-- Fixed TypeScript interface definitions in audio-effects module
+### January 18, 2026 - MAJOR: 100% Pure Software DSP Architecture
+- **Achieved 100% software-based audio processing on Android**
+  - ALL audio effects now use custom biquad filter algorithms
+  - NO Android hardware audio effects (android.media.audiofx.*) used for processing
+  - Same DSP algorithms on Android and Web for consistent audio experience
+- **Created SoftwareDSPAudioProcessor.kt** - Core DSP engine:
+  - ExoPlayer AudioProcessor with biquad filter chain
+  - 7-band parametric EQ at: 32Hz, 64Hz, 125Hz, 500Hz, 2kHz, 8kHz, 16kHz
+  - Bass shelf filter at 150Hz (Q=0.707)
+  - Treble shelf filter at 6kHz (Q=0.707)
+  - Brickwall limiter for distortion prevention
+- **Created BiquadFilter.kt** - Filter implementation:
+  - Supports peaking, lowshelf, highshelf filter types
+  - Uses Web Audio API cookbook formulas for coefficient calculation
+  - Per-channel state for stereo processing
+- **Created Limiter.kt** - Brickwall limiter:
+  - Threshold: -1dB, Ratio: 20:1, Attack: 1ms, Release: 100ms
+  - Envelope follower with peak detection
+- **Converted all native modules to software DSP**:
+  - EqualizerModule.kt - Delegates to SoftwareDSPAudioProcessor
+  - BassBoostModule.kt - Removed android.media.audiofx.BassBoost
+  - VirtualizerModule.kt - Removed android.media.audiofx.Virtualizer
+  - ImmersiveModeEngineModule.kt - Removed all hardware effects
+- **Integrated with ExoPlayer via custom AudioProcessor injection**:
+  - PlaybackEngineModule.kt uses DefaultRenderersFactory override
+  - Custom DefaultAudioSink with SoftwareDSPAudioProcessor chain
 
 ### January 17, 2026
-- Implemented pure software-based DSP using react-native-audio-api
+- Implemented pure software-based DSP using react-native-audio-api for Web
 - Added dedicated shelf filters for Bass (150Hz) and Treble (6kHz)
 - Implemented zero-sum normalization for EQ presets
 - Created 7-band EQ architecture with proper frequency distribution

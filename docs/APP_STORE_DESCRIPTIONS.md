@@ -33,7 +33,7 @@ Experience professional audio control with our pure software DSP engine:
 - **Zero-Sum Normalization**: Presets stay balanced without volume jumps
 - **Real-time Waveform**: 64-bar visualization while playing
 
-All audio processing works identically across all devices - no hardware dependencies.
+**100% Software-Based DSP** - No Android hardware audio effects used. Same biquad filter algorithms on Android and Web deliver consistent sound quality across ALL devices.
 
 **55 STUNNING THEMES**
 
@@ -85,7 +85,9 @@ No subscriptions. No ads. No limitations. No data collection. Pay once and enjoy
 
 **WHY CHOOSE NEW AUDIO 360?**
 
-- Pure software DSP works on any Android device
+- **100% Software DSP**: Custom audio engine with same algorithms on Android and Web
+- **No Hardware Limits**: Works identically on ANY Android device, any chipset
+- **Professional Quality**: Web Audio API cookbook algorithms for studio-grade filtering
 - Microsoft Fluent 2 design system
 - Regular updates with new features
 - Responsive customer support
