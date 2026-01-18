@@ -52,8 +52,8 @@ Source → Gain → 7-Band EQ → Bass Shelf Filter → Treble Shelf Filter → 
 Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic
 - Zero-sum normalization applied to prevent volume jumps
 
-**Immersive Modes** (6 total):
-Music, 360 Reality, Gaming, Podcast, Movie, Off
+**Immersive Modes** (5 total, plus Off to disable):
+Music, 360 Reality, Gaming, Podcast, Movie
 - Each mode has its own independent EQ curve, bass boost, treble boost, and virtualizer (spatial width)
 - NO zero-sum normalization (creative curves applied directly)
 - Limiter remains active for distortion prevention
@@ -111,7 +111,7 @@ Music, 360 Reality, Gaming, Podcast, Movie, Off
 
 ### Sound Lab
 - **Equalizer Mode**: 8 presets with custom 5-band EQ editor (up to 5 saved presets)
-- **Immersive Mode**: 6 audio enhancement modes
+- **Immersive Mode**: 5 audio enhancement modes (plus Off)
 - **Bass Control**: Slider -5 to +5 (±12 dB via lowshelf filter at 150Hz)
 - **Treble Control**: Slider -5 to +5 (±12 dB via highshelf filter at 6kHz)
 - **Distortion Prevention**: Intelligent brickwall limiter (no fixed gain reduction)

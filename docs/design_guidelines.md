@@ -22,7 +22,7 @@
 New Audio 360 is a premium mobile music player targeting audio enthusiasts. The app requires a one-time purchase (₹299 India / $29 International) with no free tier. All data is stored locally on the device.
 
 **Key Features:**
-- 6 Immersive Audio Modes
+- 5 Immersive Audio Modes
 - 8 Equalizer Presets with Waveform Visualization
 - Bass/Treble Controls & Virtualizer
 - 55 Themes across 6 Categories

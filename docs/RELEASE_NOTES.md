@@ -15,7 +15,7 @@ Studio-grade audio experience:
 - Pure software DSP with 7-band parametric EQ
 - Bass & Treble controls: ±12 dB range
 - Intelligent limiter prevents distortion
-- 8 EQ presets + 6 immersive audio modes
+- 8 EQ presets + 5 immersive audio modes
 - 55 stunning themes
 - Online Radio: Hundreds of verified stations
 
