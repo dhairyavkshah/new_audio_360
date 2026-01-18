@@ -19,11 +19,18 @@ __tests__
 *.spec.ts
 *.spec.tsx
 coverage
-attached_assets
 generated-icon.png
 
 # Large folders - EAS will run npm install, don't upload node_modules
 node_modules
 
+# Attached assets - test files, screenshots, audio samples
+attached_assets/
+attached_assets/**
+attached_assets/*.mp3
+attached_assets/*.txt
+
 # Test audio files - not needed for build
 public/audio
+public/audio/**
+*.mp3
