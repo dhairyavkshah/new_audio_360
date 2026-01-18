@@ -24,14 +24,26 @@ export default function AlbumDetailScreen() {
   const tabBarHeight = useSafeTabBarHeight();
 
   const albumSongs: PlayableSong[] = useMemo(() => {
+    if (album.songs && album.songs.length > 0) {
+      return album.songs.map((s: any) => ({
+        id: s.id,
+        title: s.title,
+        artist: s.artist || 'Unknown Artist',
+        album: s.album || 'Unknown Album',
+        duration: s.duration,
+        artwork: s.artwork,
+        uri: s.uri || '',
+      }));
+    }
+    
     const allSongs: PlayableSong[] = isOnboardingComplete && deviceSongs.length > 0
       ? deviceSongs.map((s) => ({
           id: s.id,
-          title: s.filename.replace(/\.[^/.]+$/, ""),
-          artist: "Unknown Artist",
-          album: "Unknown Album",
-          duration: Math.floor((s.duration || 0) / 1000),
-          artwork: "https://placehold.co/300x300/1a1a2e/ffffff?text=🎵",
+          title: s.title || s.filename.replace(/\.[^/.]+$/, ""),
+          artist: s.artist || "Unknown Artist",
+          album: s.album || "Unknown Album",
+          duration: s.duration,
+          artwork: s.artwork || "https://placehold.co/300x300/1a1a2e/ffffff?text=🎵",
           uri: s.uri,
         }))
       : mockSongs.map((s) => ({

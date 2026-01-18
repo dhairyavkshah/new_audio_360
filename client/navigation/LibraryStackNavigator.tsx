@@ -13,6 +13,7 @@ export interface Album {
   artist: string;
   artwork: string;
   songCount: number;
+  songs?: any[];
 }
 
 export type LibraryStackParamList = {

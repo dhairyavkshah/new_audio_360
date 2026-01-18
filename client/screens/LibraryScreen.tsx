@@ -12,9 +12,22 @@ import { AnimatedCard } from "@/components/AnimatedCard";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
+import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
 import { FluentSpacing, FluentRadius, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { mockSongs, mockAlbums, mockArtists, Song } from "@/lib/data";
+import { Album } from "@/navigation/LibraryStackNavigator";
+
+interface DerivedAlbum extends Album {
+  songs: DeviceSong[];
+}
+
+interface DerivedArtist {
+  id: string;
+  name: string;
+  artwork: string;
+  songCount: number;
+  songs: DeviceSong[];
+}
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 import { Playlist, getPlaylists } from "@/lib/storage";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
@@ -76,6 +89,65 @@ export default function LibraryScreen() {
     return deviceSongs.length > 0 ? deviceSongs : mockSongs;
   }, [deviceSongs]);
 
+  const derivedAlbums = useMemo((): DerivedAlbum[] => {
+    if (usingMockData) {
+      return mockAlbums.map(album => ({
+        ...album,
+        songs: [],
+      }));
+    }
+    
+    const albumMap = new Map<string, DerivedAlbum>();
+    
+    allSongs.forEach(song => {
+      const albumName = song.album || 'Unknown Album';
+      if (!albumMap.has(albumName)) {
+        albumMap.set(albumName, {
+          id: albumName.toLowerCase().replace(/\s+/g, '-'),
+          name: albumName,
+          artist: song.artist || 'Unknown Artist',
+          artwork: song.artwork || `https://picsum.photos/seed/${encodeURIComponent(albumName)}/400/400`,
+          songCount: 0,
+          songs: [],
+        });
+      }
+      const album = albumMap.get(albumName)!;
+      album.songCount++;
+      album.songs.push(song as DeviceSong);
+    });
+    
+    return Array.from(albumMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [allSongs, usingMockData]);
+
+  const derivedArtists = useMemo((): DerivedArtist[] => {
+    if (usingMockData) {
+      return mockArtists.map(artist => ({
+        ...artist,
+        songs: [],
+      }));
+    }
+    
+    const artistMap = new Map<string, DerivedArtist>();
+    
+    allSongs.forEach(song => {
+      const artistName = song.artist || 'Unknown Artist';
+      if (!artistMap.has(artistName)) {
+        artistMap.set(artistName, {
+          id: artistName.toLowerCase().replace(/\s+/g, '-'),
+          name: artistName,
+          artwork: song.artwork || `https://picsum.photos/seed/${encodeURIComponent(artistName)}/400/400`,
+          songCount: 0,
+          songs: [],
+        });
+      }
+      const artist = artistMap.get(artistName)!;
+      artist.songCount++;
+      artist.songs.push(song as DeviceSong);
+    });
+    
+    return Array.from(artistMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [allSongs, usingMockData]);
+
   const filteredData = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     
@@ -102,7 +174,7 @@ export default function LibraryScreen() {
       return result;
     };
 
-    const filterAlbums = (albums: typeof mockAlbums) => {
+    const filterAlbums = (albums: DerivedAlbum[]) => {
       let result = [...albums];
       if (query) {
         result = result.filter(
@@ -115,7 +187,7 @@ export default function LibraryScreen() {
       return result;
     };
 
-    const filterArtists = (artists: typeof mockArtists) => {
+    const filterArtists = (artists: DerivedArtist[]) => {
       let result = [...artists];
       if (query) {
         result = result.filter((artist) => artist.name.toLowerCase().includes(query));
@@ -152,21 +224,21 @@ export default function LibraryScreen() {
         return song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query);
       }),
       songs: filterSongs(allSongs),
-      albums: filterAlbums(mockAlbums),
-      artists: filterArtists(mockArtists),
+      albums: filterAlbums(derivedAlbums),
+      artists: filterArtists(derivedArtists),
       playlists: filterPlaylists(playlists),
     };
-  }, [searchQuery, sortBy, playlists, favorites, recentlyPlayed, mostPlayed, allSongs]);
+  }, [searchQuery, sortBy, playlists, favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists]);
 
   const categoryCounts = useMemo(() => ({
     liked: favorites.length,
     recent: recentlyPlayed.length,
     top: mostPlayed.length,
     songs: allSongs.length,
-    albums: mockAlbums.length,
-    artists: mockArtists.length,
+    albums: derivedAlbums.length,
+    artists: derivedArtists.length,
     playlists: playlists.length,
-  }), [favorites, recentlyPlayed, mostPlayed, allSongs, playlists]);
+  }), [favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists, playlists]);
 
   const handleCategoryChange = (category: CategoryType) => {
     playTapSound();

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
+import { MusicInfo } from 'expo-music-info';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Song, mockSongs } from '@/lib/data';
 import { 
@@ -116,18 +117,21 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
   const setWebAudioFiles = useCallback((files: WebFolderSong[]) => {
     if (Platform.OS !== 'web') return;
     
-    const webSongs: DeviceSong[] = files.map(file => ({
-      id: file.id,
-      title: file.title,
-      artist: 'Unknown Artist',
-      album: 'Local Folder',
-      duration: 0,
-      artwork: `https://picsum.photos/seed/${file.id}/400/400`,
-      uri: file.blobUrl || file.path,
-      filename: file.filename,
-      modificationTime: Date.now(),
-      isFromDevice: true,
-    }));
+    const webSongs: DeviceSong[] = files.map(file => {
+      const artist = parseArtistFromFilename(file.filename);
+      return {
+        id: file.id,
+        title: file.title,
+        artist: artist || 'Unknown Artist',
+        album: 'Local Folder',
+        duration: 0,
+        artwork: `https://picsum.photos/seed/${file.id}/400/400`,
+        uri: file.blobUrl || file.path,
+        filename: file.filename,
+        modificationTime: Date.now(),
+        isFromDevice: true,
+      };
+    });
     
     const filtered = webSongs.filter(s => !hiddenSongIds.includes(s.id));
     setSongs(filtered);
@@ -199,18 +203,21 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
           return;
         }
         
-        const webSongs: DeviceSong[] = playableSongs.map(song => ({
-          id: song.id,
-          title: song.title,
-          artist: 'Unknown Artist',
-          album: 'Local Folder',
-          duration: 0,
-          artwork: `https://picsum.photos/seed/${song.id}/400/400`,
-          uri: song.blobUrl!,
-          filename: song.filename,
-          modificationTime: Date.now(),
-          isFromDevice: true,
-        }));
+        const webSongs: DeviceSong[] = playableSongs.map(song => {
+          const artist = parseArtistFromFilename(song.filename);
+          return {
+            id: song.id,
+            title: song.title,
+            artist: artist || 'Unknown Artist',
+            album: 'Local Folder',
+            duration: 0,
+            artwork: `https://picsum.photos/seed/${song.id}/400/400`,
+            uri: song.blobUrl!,
+            filename: song.filename,
+            modificationTime: Date.now(),
+            isFromDevice: true,
+          };
+        });
         const filtered = webSongs.filter(s => !hiddenIds.includes(s.id));
         setSongs(filtered);
         setAllSongsIncludingHidden(webSongs);
@@ -297,17 +304,87 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         return;
       }
 
-      const deviceSongs: DeviceSong[] = allAssets.map((asset) => ({
-        id: asset.id,
-        title: extractTitle(asset.filename),
-        artist: 'Unknown Artist',
-        album: 'Unknown Album',
-        duration: Math.floor(asset.duration),
-        artwork: `https://picsum.photos/seed/${asset.id}/400/400`,
-        uri: asset.uri,
-        filename: asset.filename,
-        modificationTime: asset.modificationTime,
-        isFromDevice: true,
+      // Cache for album names - stores promises to avoid duplicate concurrent fetches
+      const albumPromiseCache = new Map<string, Promise<string>>();
+      
+      const getAlbumName = (albumId: string | undefined): Promise<string> => {
+        if (!albumId) return Promise.resolve('Unknown Album');
+        
+        if (albumPromiseCache.has(albumId)) {
+          return albumPromiseCache.get(albumId)!;
+        }
+        
+        const promise = (async () => {
+          try {
+            const album = await MediaLibrary.getAlbumAsync(albumId);
+            return album?.title || 'Unknown Album';
+          } catch {
+            return 'Unknown Album';
+          }
+        })();
+        
+        albumPromiseCache.set(albumId, promise);
+        return promise;
+      };
+
+      const deviceSongs: DeviceSong[] = await Promise.all(allAssets.map(async (asset, index) => {
+        let artist = 'Unknown Artist';
+        let album = 'Unknown Album';
+        let title = extractTitle(asset.filename);
+        
+        // Try ID3 extraction on native platforms only
+        if (Platform.OS !== 'web') {
+          try {
+            const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
+            
+            if (assetInfo.localUri) {
+              const metadata = await MusicInfo.getMusicInfoAsync(assetInfo.localUri, {
+                title: true,
+                artist: true,
+                album: true,
+              });
+              
+              if (metadata) {
+                if (metadata.title) title = metadata.title;
+                if (metadata.artist) artist = metadata.artist;
+                if (metadata.album) album = metadata.album;
+              }
+            }
+          } catch {
+            // MusicInfo failed - will use fallbacks below
+          }
+        }
+        
+        // Apply fallbacks only if ID3 extraction didn't provide data
+        if (artist === 'Unknown Artist') {
+          const parsedArtist = parseArtistFromFilename(asset.filename);
+          if (parsedArtist) artist = parsedArtist;
+        }
+        
+        // Get folder name as album fallback (single call via promise cache)
+        if (album === 'Unknown Album') {
+          const albumName = await getAlbumName(asset.albumId);
+          if (albumName && albumName !== 'Unknown Album') {
+            album = albumName;
+          }
+        }
+        
+        if ((index + 1) % 10 === 0 || index === allAssets.length - 1) {
+          setProgress({ loaded: index + 1, total: allAssets.length });
+        }
+        
+        return {
+          id: asset.id,
+          title,
+          artist,
+          album,
+          duration: Math.floor(asset.duration),
+          artwork: `https://picsum.photos/seed/${asset.id}/400/400`,
+          uri: asset.uri,
+          filename: asset.filename,
+          modificationTime: asset.modificationTime,
+          isFromDevice: true,
+        };
       }));
 
       const filtered = deviceSongs.filter(s => !hiddenIds.includes(s.id));
@@ -482,4 +559,24 @@ function extractTitle(filename: string): string {
     .replace(/\s+/g, ' ')
     .trim();
   return cleaned || 'Unknown Title';
+}
+
+function parseArtistFromFilename(filename: string): string | null {
+  const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+  
+  const patterns = [
+    /^(?:\d+[\.\s-]*)?(.+?)\s*-\s*.+$/,
+    /^(?:\d+[\.\s-]*)?(.+?)_-_.+$/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = nameWithoutExt.match(pattern);
+    if (match && match[1]) {
+      const artist = match[1].replace(/[-_]/g, ' ').trim();
+      if (artist && artist.length > 0) {
+        return artist;
+      }
+    }
+  }
+  return null;
 }
