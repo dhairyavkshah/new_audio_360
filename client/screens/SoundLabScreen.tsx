@@ -4,15 +4,13 @@ import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
-import { FluentScreenLayout, FluentText, FluentButton } from "@/components/fluent";
+import { FluentScreenLayout, FluentText, FluentButton, FluentCard } from "@/components/fluent";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useSoundLab } from "@/contexts/SoundLabContext";
-import { getCardEffectStyle } from "@/lib/themeUtils";
-import { FluentSpacing, FluentRadius, FluentControlRadius, FluentTypography, FluentIconSize, FluentControlHeight, FluentFontWeight } from "@/constants/fluent2";
-import { Layout } from "@/constants/theme";
+import { FluentSpacing, FluentRadius, FluentControlRadius, FluentTypography, FluentIconSize, FluentControlHeight, FluentFontWeight, FluentSliderSize, FluentBorderWidth, FluentLayoutSize } from "@/constants/fluent2";
 import { 
   getEQPreset, saveEQPreset, clearEQPreset, 
   getSoundMode, saveSoundMode, clearSoundMode,
@@ -103,7 +101,6 @@ const EQ_PRESETS = [
   },
 ];
 
-
 const CUSTOM_EQ_BAND_LABELS = ["60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz"];
 
 const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
@@ -116,8 +113,6 @@ function SoundLabScreen() {
   const { isLicensed } = useSubscription();
   const { showSuccess, showError, showWarning } = useToast();
   const { setBassBoost, setTrebleBoost } = useSoundLab();
-  
-  const cardStyle = getCardEffectStyle(tokens);
   
   const [soundLabMode, setSoundLabMode] = useState<SoundLabMode>("off");
   const [selectedEQ, setSelectedEQ] = useState("Flat");
@@ -142,8 +137,6 @@ function SoundLabScreen() {
   const MAX_CUSTOM_PRESETS = 5;
 
   const immersiveModes = useMemo(() => {
-    // Always use the static DISPLAY_IMMERSIVE_MODES list with IMMERSIVE_MODE_INFO
-    // This ensures Sports mode is always included
     return DISPLAY_IMMERSIVE_MODES.map(modeId => ({
       id: modeId,
       name: IMMERSIVE_MODE_INFO[modeId].name,
@@ -166,7 +159,6 @@ function SoundLabScreen() {
           BassBoostModule.setStrength(Math.abs(bass) * 200);
         }
       } catch (error) {
-        // Silently handle error in production
       }
     }
     
@@ -179,7 +171,6 @@ function SoundLabScreen() {
           VirtualizerModule.setStrength(Math.abs(virtualizer) * 200);
         }
       } catch (error) {
-        // Silently handle error in production
       }
     }
   }, []);
@@ -202,9 +193,9 @@ function SoundLabScreen() {
       setCustomBands(bands);
       setCustomPresets(presets);
       setBassControl(bassLvl);
-      setBassBoost(bassLvl); // Sync to context for software DSP
+      setBassBoost(bassLvl);
       setTrebleControl(trebleLvl);
-      setTrebleBoost(trebleLvl); // Sync to context for software DSP
+      setTrebleBoost(trebleLvl);
       setVirtualizerLevel(virtLvl);
       
       if (eqPreset) {
@@ -263,26 +254,22 @@ function SoundLabScreen() {
         await clearSoundMode();
         await saveEQPreset(preset);
         await NativeAudioService.setImmersiveMode('off');
-        // Apply the preset's EQ bands and load bass/treble/virtualizer values
         const presetData = EQ_PRESETS.find(p => p.name === preset);
         if (presetData) {
           NativeEffectsManager.applyFiveBandEQ(presetData.bands);
-          // Load bass/treble/virtualizer values from preset into state
           const newBass = presetData.bassControl ?? 0;
           const newTreble = presetData.trebleControl ?? 0;
           const newVirt = presetData.virtualizer ?? 0;
           setBassControl(newBass);
-          setBassBoost(newBass); // Sync to context for software DSP
+          setBassBoost(newBass);
           setTrebleControl(newTreble);
-          setTrebleBoost(newTreble); // Sync to context for software DSP
+          setTrebleBoost(newTreble);
           setVirtualizerLevel(newVirt);
-          // Persist to storage
           await Promise.all([
             saveBassControlLevel(newBass),
             saveTrebleControlLevel(newTreble),
             saveVirtualizerLevel(newVirt)
           ]);
-          // Apply effects to native audio
           applyAudioEffects(newBass, newTreble, newVirt);
         }
       }
@@ -294,7 +281,6 @@ function SoundLabScreen() {
     newBands[index] = Math.round(value);
     setCustomBands(newBands);
     await saveCustomEQBands(newBands);
-    // Apply to native equalizer in real-time
     NativeEffectsManager.applyFiveBandEQ(newBands);
   };
 
@@ -309,7 +295,7 @@ function SoundLabScreen() {
   const handleBassControlChange = async (level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setBassControl(level);
-    setBassBoost(level); // Update context for software DSP
+    setBassBoost(level);
     await saveBassControlLevel(level);
     
     if (Platform.OS !== 'web' && BassBoostModule.isAvailable()) {
@@ -322,7 +308,6 @@ function SoundLabScreen() {
           BassBoostModule.setStrength(strength);
         }
       } catch (error) {
-        // Silently handle error in production
       }
     }
   };
@@ -330,7 +315,7 @@ function SoundLabScreen() {
   const handleTrebleControlChange = async (level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setTrebleControl(level);
-    setTrebleBoost(level); // Update context for software DSP
+    setTrebleBoost(level);
     await saveTrebleControlLevel(level);
   };
 
@@ -349,7 +334,6 @@ function SoundLabScreen() {
           VirtualizerModule.setStrength(strength);
         }
       } catch (error) {
-        // Silently handle error in production
       }
     }
   };
@@ -395,16 +379,15 @@ function SoundLabScreen() {
     const newTreble = preset.trebleControl ?? 0;
     const newVirt = preset.virtualizer ?? 0;
     setBassControl(newBass);
-    setBassBoost(newBass); // Sync to context for software DSP
+    setBassBoost(newBass);
     setTrebleControl(newTreble);
-    setTrebleBoost(newTreble); // Sync to context for software DSP
+    setTrebleBoost(newTreble);
     setVirtualizerLevel(newVirt);
     await Promise.all([
       saveBassControlLevel(newBass),
       saveTrebleControlLevel(newTreble),
       saveVirtualizerLevel(newVirt)
     ]);
-    // Apply effects to native audio
     applyAudioEffects(newBass, newTreble, newVirt);
   };
 
@@ -433,9 +416,9 @@ function SoundLabScreen() {
     const presetBass = preset.bassControl ?? 0;
     const presetTreble = preset.trebleControl ?? 0;
     setBassControl(presetBass);
-    setBassBoost(presetBass); // Sync to context for software DSP
+    setBassBoost(presetBass);
     setTrebleControl(presetTreble);
-    setTrebleBoost(presetTreble); // Sync to context for software DSP
+    setTrebleBoost(presetTreble);
     setVirtualizerLevel(preset.virtualizer ?? 0);
     NativeEffectsManager.applyFiveBandEQ(preset.bands);
     setShowEditDialog(true);
@@ -514,295 +497,327 @@ function SoundLabScreen() {
   const isEqualizerActive = soundLabMode === "equalizer";
   const isImmersiveActive = soundLabMode === "immersive";
 
+  const formatValue = (value: number) => {
+    if (value === 0) return "0";
+    return value > 0 ? `+${value.toFixed(1)}` : value.toFixed(1);
+  };
+
   return (
     <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: tabBarHeight + FluentSpacing.xl },
+          { paddingBottom: tabBarHeight + FluentSpacing.xxl },
         ]}
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
-        <FluentText variant="caption1" color="secondary" style={styles.sectionDesc}>
+        <FluentText variant="caption1" color="secondary" style={styles.screenHint}>
           Tap a preset to apply, tap again to turn off. Only one mode can be active at a time.
         </FluentText>
 
-        <View style={[styles.sectionCard, cardStyle]}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="tune-vertical" size={FluentIconSize.regular} color={tokens.colors.primary} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Equalizer Mode
+        <View style={styles.section}>
+          <FluentText variant="caption1" color="secondary" style={styles.sectionLabel}>
+            EQ PRESETS
+          </FluentText>
+          <FluentCard elevation="subtle" noPadding style={styles.sectionCard}>
+            <View style={styles.cardInnerPadding}>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipsScrollContent}
+              >
+                {EQ_PRESETS.map((preset) => (
+                  <Pressable
+                    key={preset.name}
+                    onPress={() => handleEQChange(preset.name)}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: isEqualizerActive && selectedEQ === preset.name && !isCustomEQ 
+                          ? tokens.colors.primary 
+                          : tokens.colors.surfaceVariant,
+                      }
+                    ]}
+                  >
+                    <FluentText 
+                      variant="body2" 
+                      style={{ 
+                        color: isEqualizerActive && selectedEQ === preset.name && !isCustomEQ 
+                          ? tokens.colors.onPrimary 
+                          : tokens.colors.text 
+                      }}
+                    >
+                      {preset.name}
+                    </FluentText>
+                  </Pressable>
+                ))}
+                <Pressable
+                  onPress={() => handleEQChange("Custom")}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: isEqualizerActive && isCustomEQ 
+                        ? tokens.colors.primary 
+                        : tokens.colors.surfaceVariant,
+                    }
+                  ]}
+                >
+                  <FluentText 
+                    variant="body2" 
+                    style={{ 
+                      color: isEqualizerActive && isCustomEQ 
+                        ? tokens.colors.onPrimary 
+                        : tokens.colors.text 
+                    }}
+                  >
+                    Custom
+                  </FluentText>
+                </Pressable>
+              </ScrollView>
+
+              {isEqualizerActive && selectedEQ && !isCustomEQ && (
+                <View style={styles.presetInfo}>
+                  <FluentText variant="body1Strong">{selectedEQ}</FluentText>
+                  <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
+                    {EQ_PRESETS.find(p => p.name === selectedEQ)?.description}
+                  </FluentText>
+                </View>
+              )}
+            </View>
+          </FluentCard>
+        </View>
+
+        {isEqualizerActive && (
+          <View style={styles.section}>
+            <FluentText variant="caption1" color="secondary" style={styles.sectionLabel}>
+              BASS & TREBLE
             </FluentText>
-            {isEqualizerActive ? (
-              <View style={[styles.activeIndicator, { backgroundColor: tokens.colors.primary }]}>
-                <FluentText variant="caption1" color="onBrand" style={{ fontWeight: FluentFontWeight.semibold }}>Active</FluentText>
+            <FluentCard elevation="subtle" noPadding style={styles.sectionCard}>
+              <View style={styles.cardInnerPadding}>
+                <View style={styles.symmetricSliderRow}>
+                  <View style={styles.symmetricSliderColumn}>
+                    <FluentText variant="body2" style={styles.sliderLabel}>Bass</FluentText>
+                    <View style={styles.sliderWithIcons}>
+                      <FluentText variant="caption1" color="secondary">-5</FluentText>
+                      <CrossPlatformSlider
+                        style={styles.symmetricSlider}
+                        minimumValue={-5}
+                        maximumValue={5}
+                        step={0.1}
+                        value={bassControl}
+                        onValueChange={(value) => handleBassControlChange(Math.round(value * 10) / 10)}
+                        minimumTrackTintColor={tokens.colors.primary}
+                        maximumTrackTintColor={tokens.colors.outline}
+                        thumbTintColor={tokens.colors.primary}
+                      />
+                      <FluentText variant="caption1" color="secondary">+5</FluentText>
+                    </View>
+                    <FluentText variant="caption1" color="secondary" style={styles.sliderValue}>
+                      Value: {formatValue(bassControl)}
+                    </FluentText>
+                  </View>
+
+                  <View style={styles.symmetricSliderColumn}>
+                    <FluentText variant="body2" style={styles.sliderLabel}>Treble</FluentText>
+                    <View style={styles.sliderWithIcons}>
+                      <FluentText variant="caption1" color="secondary">-5</FluentText>
+                      <CrossPlatformSlider
+                        style={styles.symmetricSlider}
+                        minimumValue={-5}
+                        maximumValue={5}
+                        step={0.1}
+                        value={trebleControl}
+                        onValueChange={(value) => handleTrebleControlChange(Math.round(value * 10) / 10)}
+                        minimumTrackTintColor={tokens.colors.primary}
+                        maximumTrackTintColor={tokens.colors.outline}
+                        thumbTintColor={tokens.colors.primary}
+                      />
+                      <FluentText variant="caption1" color="secondary">+5</FluentText>
+                    </View>
+                    <FluentText variant="caption1" color="secondary" style={styles.sliderValue}>
+                      Value: {formatValue(trebleControl)}
+                    </FluentText>
+                  </View>
+                </View>
+
+                <View style={styles.virtualizerSection}>
+                  <FluentText variant="body2" style={styles.sliderLabel}>Virtualizer</FluentText>
+                  <View style={styles.sliderWithIcons}>
+                    <FluentText variant="caption1" color="secondary">-5</FluentText>
+                    <CrossPlatformSlider
+                      style={styles.virtualizerSlider}
+                      minimumValue={-5}
+                      maximumValue={5}
+                      step={0.1}
+                      value={virtualizerLevel}
+                      onValueChange={(value) => handleVirtualizerLevelChange(Math.round(value * 10) / 10)}
+                      minimumTrackTintColor={tokens.colors.primary}
+                      maximumTrackTintColor={tokens.colors.outline}
+                      thumbTintColor={tokens.colors.primary}
+                    />
+                    <FluentText variant="caption1" color="secondary">+5</FluentText>
+                  </View>
+                  <FluentText variant="caption1" color="secondary" style={styles.sliderValue}>
+                    Value: {formatValue(virtualizerLevel)}
+                  </FluentText>
+                </View>
               </View>
-            ) : null}
+            </FluentCard>
           </View>
+        )}
 
-          <View style={styles.chipsContainer}>
-            {EQ_PRESETS.map((preset) => (
-              <EffectChip
-                key={preset.name}
-                label={preset.name}
-                isSelected={isEqualizerActive && selectedEQ === preset.name && !isCustomEQ}
-                onPress={() => handleEQChange(preset.name)}
-              />
-            ))}
-            <EffectChip
-              label="Custom"
-              isSelected={isEqualizerActive && isCustomEQ}
-              onPress={() => handleEQChange("Custom")}
-              isPremium={false}
-            />
-          </View>
-
-          {isEqualizerActive && selectedEQ && !isCustomEQ ? (
-            <View style={styles.presetInfo}>
-              <FluentText variant="body1Strong">{selectedEQ}</FluentText>
-              <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
-                {EQ_PRESETS.find(p => p.name === selectedEQ)?.description}
-              </FluentText>
-            </View>
-          ) : null}
-
-          {isEqualizerActive ? (
-            <View style={[styles.effectControlsSection, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: FluentRadius.large }]}>
-              <FluentText variant="body2Strong" style={{ marginBottom: FluentSpacing.s }}>Audio Effects</FluentText>
-              
-              <View style={styles.effectSliderRow}>
-                <View style={styles.effectSliderHeader}>
-                  <MaterialCommunityIcons name="speaker-wireless" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Bass</FluentText>
-                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
-                    {bassControl === 0 ? "Off" : bassControl > 0 ? `+${bassControl}` : `${bassControl}`}
-                  </FluentText>
-                </View>
-                <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">-5</FluentText>
-                  <CrossPlatformSlider
-                    style={styles.effectSlider}
-                    minimumValue={-5}
-                    maximumValue={5}
-                    step={1}
-                    value={bassControl}
-                    onValueChange={(value) => handleBassControlChange(value)}
-                    minimumTrackTintColor={tokens.colors.primary}
-                    maximumTrackTintColor={tokens.colors.outline}
-                    thumbTintColor={tokens.colors.primary}
-                  />
-                  <FluentText variant="caption1" color="secondary">+5</FluentText>
-                </View>
-              </View>
-
-              <View style={styles.effectSliderRow}>
-                <View style={styles.effectSliderHeader}>
-                  <MaterialCommunityIcons name="tune-vertical" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Treble</FluentText>
-                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
-                    {trebleControl === 0 ? "Off" : trebleControl > 0 ? `+${trebleControl}` : `${trebleControl}`}
-                  </FluentText>
-                </View>
-                <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">-5</FluentText>
-                  <CrossPlatformSlider
-                    style={styles.effectSlider}
-                    minimumValue={-5}
-                    maximumValue={5}
-                    step={1}
-                    value={trebleControl}
-                    onValueChange={(value) => handleTrebleControlChange(value)}
-                    minimumTrackTintColor={tokens.colors.primary}
-                    maximumTrackTintColor={tokens.colors.outline}
-                    thumbTintColor={tokens.colors.primary}
-                  />
-                  <FluentText variant="caption1" color="secondary">+5</FluentText>
-                </View>
-              </View>
-
-              <View style={styles.effectSliderRow}>
-                <View style={styles.effectSliderHeader}>
-                  <MaterialCommunityIcons name="surround-sound" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Virtualizer</FluentText>
-                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
-                    {virtualizerLevel === 0 ? "Off" : virtualizerLevel > 0 ? `+${virtualizerLevel}` : `${virtualizerLevel}`}
-                  </FluentText>
-                </View>
-                <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">-5</FluentText>
-                  <CrossPlatformSlider
-                    style={styles.effectSlider}
-                    minimumValue={-5}
-                    maximumValue={5}
-                    step={1}
-                    value={virtualizerLevel}
-                    onValueChange={(value) => handleVirtualizerLevelChange(value)}
-                    minimumTrackTintColor={tokens.colors.primary}
-                    maximumTrackTintColor={tokens.colors.outline}
-                    thumbTintColor={tokens.colors.primary}
-                  />
-                  <FluentText variant="caption1" color="secondary">+5</FluentText>
-                </View>
-              </View>
-            </View>
-          ) : null}
-
-          {isEqualizerActive && isCustomEQ ? (
-            <View style={styles.customEQContainer}>
-              <FluentText variant="body1Strong" style={{ marginBottom: FluentSpacing.m }}>
-                Custom Equalizer
-              </FluentText>
-              
-              {CUSTOM_EQ_BAND_LABELS.map((label, index) => (
-                <View key={label} style={styles.bandRow}>
-                  <FluentText variant="caption1" style={styles.bandLabel}>{label}</FluentText>
-                  <CrossPlatformSlider
-                    style={styles.slider}
-                    minimumValue={-8}
-                    maximumValue={8}
-                    step={1}
-                    value={customBands[index]}
-                    onValueChange={(value) => handleBandChange(index, value)}
-                    minimumTrackTintColor={tokens.colors.primary}
-                    maximumTrackTintColor={tokens.colors.outline}
-                    thumbTintColor={tokens.colors.primary}
-                  />
-                  <FluentText variant="caption1" style={styles.bandValue}>
-                    {customBands[index] > 0 ? `+${customBands[index]}` : customBands[index]}
-                  </FluentText>
-                </View>
-              ))}
-              
-              <View style={styles.customEQButtons}>
-                <Pressable
-                  style={[styles.actionButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
-                  onPress={handleResetBands}
-                >
-                  <MaterialCommunityIcons name="refresh" size={16} color={tokens.colors.text} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs }}>Reset</FluentText>
-                </Pressable>
-                <Pressable
-                  style={[styles.actionButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
-                  onPress={() => setShowSaveDialog(true)}
-                >
-                  <MaterialCommunityIcons name="content-save" size={16} color={tokens.colors.onPrimary} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, color: tokens.colors.onPrimary }}>Save Preset</FluentText>
-                </Pressable>
-              </View>
-
-              {customPresets.length > 0 ? (
-                <View style={styles.savedPresetsSection}>
-                  <FluentText variant="body2" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
-                    My Presets ({customPresets.length}/{MAX_CUSTOM_PRESETS})
-                  </FluentText>
-                  {customPresets.map((preset) => (
-                    <View key={preset.id} style={[styles.savedPresetRow, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.cardBorderRadius }]}>
-                      <Pressable style={styles.savedPresetInfo} onPress={() => handleLoadPreset(preset)}>
-                        <FluentText variant="body2">{preset.name}</FluentText>
-                        <FluentText variant="caption1" color="secondary">
-                          {preset.bands.map(b => b > 0 ? `+${b}` : b).join(", ")}
-                        </FluentText>
-                      </Pressable>
-                      <View style={styles.presetActions}>
-                        <Pressable onPress={() => handleEditPreset(preset)} style={styles.actionIconButton}>
-                          <MaterialCommunityIcons name="pencil-outline" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                        </Pressable>
-                        <Pressable onPress={() => handleDeletePreset(preset)} style={styles.actionIconButton}>
-                          <MaterialCommunityIcons name="delete-outline" size={FluentIconSize.regular} color={tokens.colors.error} />
-                        </Pressable>
+        {isEqualizerActive && isCustomEQ && (
+          <View style={styles.section}>
+            <FluentText variant="caption1" color="secondary" style={styles.sectionLabel}>
+              CUSTOM EQ EDITOR
+            </FluentText>
+            <FluentCard elevation="subtle" noPadding style={styles.sectionCard}>
+              <View style={styles.cardInnerPadding}>
+                <View style={styles.customEQBands}>
+                  {CUSTOM_EQ_BAND_LABELS.map((label, index) => (
+                    <View key={label} style={styles.customEQBand}>
+                      <FluentText variant="caption1" style={styles.bandDbValue}>
+                        {customBands[index] > 0 ? `+${customBands[index]}` : customBands[index]}dB
+                      </FluentText>
+                      <View style={styles.verticalSliderContainer}>
+                        <CrossPlatformSlider
+                          style={styles.verticalSlider}
+                          minimumValue={-8}
+                          maximumValue={8}
+                          step={1}
+                          value={customBands[index]}
+                          onValueChange={(value) => handleBandChange(index, value)}
+                          minimumTrackTintColor={tokens.colors.primary}
+                          maximumTrackTintColor={tokens.colors.outline}
+                          thumbTintColor={tokens.colors.primary}
+                        />
                       </View>
+                      <FluentText variant="caption1" color="secondary" style={styles.bandFreqLabel}>
+                        {label}
+                      </FluentText>
                     </View>
                   ))}
                 </View>
-              ) : null}
-            </View>
-          ) : null}
-        </View>
-
-        <View style={[styles.sectionCard, cardStyle]}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="headphones" size={FluentIconSize.regular} color={tokens.colors.primary} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Immersive Modes
-            </FluentText>
-            {!isLicensed ? (
-              <View style={[styles.premiumBadge, { backgroundColor: tokens.colors.warning }]}>
-                <MaterialCommunityIcons name="crown" size={12} color={tokens.colors.onPrimary} />
-                <FluentText variant="caption1" style={{ color: tokens.colors.onPrimary, fontWeight: FluentFontWeight.semibold, marginLeft: 4 }}>License Required</FluentText>
-              </View>
-            ) : isImmersiveActive && selectedImmersive !== 'off' ? (
-              <View style={[styles.activeIndicator, { backgroundColor: tokens.colors.primary }]}>
-                <FluentText variant="caption1" color="onBrand" style={{ fontWeight: FluentFontWeight.semibold }}>Active</FluentText>
-              </View>
-            ) : null}
-          </View>
-          
-          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
-            Premium audio processing for an immersive experience
-          </FluentText>
-          
-          <View style={styles.modesContainer}>
-            {immersiveModes.filter(mode => mode.id !== 'off').map((mode) => (
-              <Pressable
-                key={mode.id}
-                onPress={() => handleImmersiveChange(mode.id)}
-                style={[
-                  styles.modeCard,
-                  {
-                    backgroundColor: isImmersiveActive && selectedImmersive === mode.id 
-                      ? tokens.colors.primary 
-                      : tokens.colors.surface,
-                    borderRadius: tokens.shapes.cardBorderRadius,
-                  },
-                ]}
-              >
-                <View style={styles.modeCardContent}>
-                  <MaterialCommunityIcons
-                    name={getModeIcon(mode.icon)}
-                    size={20}
-                    color={isImmersiveActive && selectedImmersive === mode.id ? tokens.colors.onPrimary : tokens.colors.text}
-                  />
-                  <View style={styles.modeCardText}>
-                    <FluentText
-                      variant="body1"
-                      style={{
-                        fontWeight: FluentFontWeight.semibold,
-                        color: isImmersiveActive && selectedImmersive === mode.id ? tokens.colors.onPrimary : tokens.colors.text,
-                      }}
-                    >
-                      {mode.name}
-                    </FluentText>
-                    <FluentText
-                      variant="caption1"
-                      style={{
-                        color: isImmersiveActive && selectedImmersive === mode.id 
-                          ? "rgba(255,255,255,0.8)" 
-                          : tokens.colors.textSecondary,
-                      }}
-                    >
-                      {mode.description}
-                    </FluentText>
-                  </View>
-                  {isImmersiveActive && selectedImmersive === mode.id ? (
-                    <MaterialCommunityIcons name="check-circle" size={20} color={tokens.colors.onPrimary} />
-                  ) : null}
+                
+                <View style={styles.customEQButtons}>
+                  <Pressable
+                    style={[styles.actionButton, { backgroundColor: tokens.colors.surfaceVariant }]}
+                    onPress={handleResetBands}
+                  >
+                    <MaterialCommunityIcons name="refresh" size={16} color={tokens.colors.text} />
+                    <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs }}>Reset</FluentText>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.actionButton, { backgroundColor: tokens.colors.primary }]}
+                    onPress={() => setShowSaveDialog(true)}
+                  >
+                    <MaterialCommunityIcons name="content-save" size={16} color={tokens.colors.onPrimary} />
+                    <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, color: tokens.colors.onPrimary }}>Save Preset</FluentText>
+                  </Pressable>
                 </View>
-              </Pressable>
-            ))}
+
+                {customPresets.length > 0 && (
+                  <View style={styles.savedPresetsSection}>
+                    <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
+                      My Presets ({customPresets.length}/{MAX_CUSTOM_PRESETS})
+                    </FluentText>
+                    {customPresets.map((preset) => (
+                      <View key={preset.id} style={[styles.savedPresetRow, { backgroundColor: tokens.colors.surfaceVariant }]}>
+                        <Pressable style={styles.savedPresetInfo} onPress={() => handleLoadPreset(preset)}>
+                          <FluentText variant="body2">{preset.name}</FluentText>
+                          <FluentText variant="caption1" color="secondary">
+                            {preset.bands.map(b => b > 0 ? `+${b}` : b).join(", ")}
+                          </FluentText>
+                        </Pressable>
+                        <View style={styles.presetActions}>
+                          <Pressable onPress={() => handleEditPreset(preset)} style={styles.actionIconButton}>
+                            <MaterialCommunityIcons name="pencil-outline" size={FluentIconSize.regular} color={tokens.colors.primary} />
+                          </Pressable>
+                          <Pressable onPress={() => handleDeletePreset(preset)} style={styles.actionIconButton}>
+                            <MaterialCommunityIcons name="delete-outline" size={FluentIconSize.regular} color={tokens.colors.error} />
+                          </Pressable>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            </FluentCard>
           </View>
+        )}
+
+        <View style={styles.section}>
+          <FluentText variant="caption1" color="secondary" style={styles.sectionLabel}>
+            IMMERSIVE MODES
+          </FluentText>
+          <FluentCard elevation="subtle" noPadding style={styles.sectionCard}>
+            <View style={styles.cardInnerPadding}>
+              {!isLicensed && (
+                <View style={[styles.licenseBadge, { backgroundColor: tokens.colors.warning + '20' }]}>
+                  <MaterialCommunityIcons name="crown" size={16} color={tokens.colors.warning} />
+                  <FluentText variant="caption1" style={{ color: tokens.colors.warning, marginLeft: FluentSpacing.xs }}>
+                    License Required
+                  </FluentText>
+                </View>
+              )}
+              
+              <View style={styles.modesGrid}>
+                {immersiveModes.filter(mode => mode.id !== 'off').map((mode) => {
+                  const isSelected = isImmersiveActive && selectedImmersive === mode.id;
+                  return (
+                    <Pressable
+                      key={mode.id}
+                      onPress={() => handleImmersiveChange(mode.id)}
+                      style={[
+                        styles.modeCard,
+                        {
+                          backgroundColor: isSelected 
+                            ? tokens.colors.primary + '15'
+                            : tokens.colors.surfaceVariant,
+                          borderWidth: isSelected ? FluentBorderWidth.thick : 0,
+                          borderColor: isSelected ? tokens.colors.primary : 'transparent',
+                        },
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name={getModeIcon(mode.icon)}
+                        size={FluentIconSize.medium}
+                        color={isSelected ? tokens.colors.primary : tokens.colors.text}
+                      />
+                      <FluentText
+                        variant="body2"
+                        style={{
+                          marginLeft: FluentSpacing.m,
+                          color: isSelected ? tokens.colors.primary : tokens.colors.text,
+                          flex: 1,
+                        }}
+                      >
+                        {mode.name}
+                      </FluentText>
+                      {isSelected && (
+                        <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color={tokens.colors.primary} />
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          </FluentCard>
         </View>
 
-        <View style={[styles.sectionCard, cardStyle, styles.infoCard]}>
-          <View style={styles.infoContent}>
-            <MaterialCommunityIcons name="information-outline" size={FluentIconSize.regular} color={tokens.colors.primary} />
-            <View style={styles.infoText}>
-              <FluentText variant="body1Strong">Sound Experience</FluentText>
-              <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
-                Your audio settings are saved automatically and applied to all playback.
-              </FluentText>
+        <View style={styles.section}>
+          <FluentCard elevation="subtle" noPadding style={styles.sectionCard}>
+            <View style={[styles.cardInnerPadding, styles.infoContent]}>
+              <MaterialCommunityIcons name="information-outline" size={FluentIconSize.regular} color={tokens.colors.primary} />
+              <View style={styles.infoText}>
+                <FluentText variant="body2Strong">Sound Experience</FluentText>
+                <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
+                  Your audio settings are saved automatically and applied to all playback.
+                </FluentText>
+              </View>
             </View>
-          </View>
+          </FluentCard>
         </View>
       </ScrollView>
 
@@ -813,7 +828,7 @@ function SoundLabScreen() {
         onRequestClose={() => setShowSaveDialog(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: tokens.colors.backgroundDefault, borderRadius: tokens.shapes.cardBorderRadius }]}>
+          <View style={[styles.modalContent, { backgroundColor: tokens.colors.backgroundDefault }]}>
             <FluentText variant="subtitle1" style={{ marginBottom: FluentSpacing.m }}>
               Save Custom Preset
             </FluentText>
@@ -824,7 +839,6 @@ function SoundLabScreen() {
                   backgroundColor: tokens.colors.surfaceVariant,
                   color: tokens.colors.text,
                   borderColor: tokens.colors.outline,
-                  borderRadius: tokens.shapes.buttonBorderRadius,
                 }
               ]}
               placeholder="Preset name"
@@ -834,7 +848,7 @@ function SoundLabScreen() {
             />
             <View style={styles.modalButtons}>
               <Pressable
-                style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
+                style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant }]}
                 onPress={() => {
                   setShowSaveDialog(false);
                   setNewPresetName("");
@@ -843,7 +857,7 @@ function SoundLabScreen() {
                 <FluentText variant="body2">Cancel</FluentText>
               </Pressable>
               <Pressable
-                style={[styles.modalButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
+                style={[styles.modalButton, { backgroundColor: tokens.colors.primary }]}
                 onPress={handleSavePreset}
               >
                 <FluentText variant="body2" style={{ color: tokens.colors.onPrimary }}>Save</FluentText>
@@ -864,7 +878,7 @@ function SoundLabScreen() {
         }}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: tokens.colors.backgroundDefault, borderRadius: tokens.shapes.cardBorderRadius }]}>
+          <View style={[styles.modalContent, { backgroundColor: tokens.colors.backgroundDefault }]}>
             <FluentText variant="subtitle1" style={{ marginBottom: FluentSpacing.m }}>
               Edit Preset
             </FluentText>
@@ -875,7 +889,6 @@ function SoundLabScreen() {
                   backgroundColor: tokens.colors.surfaceVariant,
                   color: tokens.colors.text,
                   borderColor: tokens.colors.outline,
-                  borderRadius: tokens.shapes.buttonBorderRadius,
                   marginBottom: FluentSpacing.m,
                 }
               ]}
@@ -891,7 +904,7 @@ function SoundLabScreen() {
               <View key={label} style={styles.bandRow}>
                 <FluentText variant="caption1" style={styles.bandLabel}>{label}</FluentText>
                 <CrossPlatformSlider
-                  style={styles.slider}
+                  style={styles.modalSlider}
                   minimumValue={-8}
                   maximumValue={8}
                   step={1}
@@ -908,7 +921,7 @@ function SoundLabScreen() {
             ))}
             <View style={styles.modalButtons}>
               <Pressable
-                style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
+                style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant }]}
                 onPress={() => {
                   setShowEditDialog(false);
                   setEditingPreset(null);
@@ -918,7 +931,7 @@ function SoundLabScreen() {
                 <FluentText variant="body2">Cancel</FluentText>
               </Pressable>
               <Pressable
-                style={[styles.modalButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
+                style={[styles.modalButton, { backgroundColor: tokens.colors.primary }]}
                 onPress={handleUpdatePreset}
               >
                 <FluentText variant="body2" style={{ color: tokens.colors.onPrimary }}>Save Changes</FluentText>
@@ -935,7 +948,7 @@ function SoundLabScreen() {
         onRequestClose={() => setShowDeleteDialog(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: tokens.colors.backgroundDefault, borderRadius: tokens.shapes.cardBorderRadius }]}>
+          <View style={[styles.modalContent, { backgroundColor: tokens.colors.backgroundDefault }]}>
             <MaterialCommunityIcons name="delete-alert" size={48} color={tokens.colors.error} style={{ alignSelf: "center", marginBottom: FluentSpacing.m }} />
             <FluentText variant="subtitle1" style={{ textAlign: "center", marginBottom: FluentSpacing.s }}>
               Delete Preset
@@ -945,7 +958,7 @@ function SoundLabScreen() {
             </FluentText>
             <View style={styles.modalButtons}>
               <Pressable
-                style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
+                style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant }]}
                 onPress={() => {
                   setShowDeleteDialog(false);
                   setPresetToDelete(null);
@@ -954,7 +967,7 @@ function SoundLabScreen() {
                 <FluentText variant="body2">Cancel</FluentText>
               </Pressable>
               <Pressable
-                style={[styles.modalButton, { backgroundColor: tokens.colors.error, borderRadius: tokens.shapes.buttonBorderRadius }]}
+                style={[styles.modalButton, { backgroundColor: tokens.colors.error }]}
                 onPress={confirmDeletePreset}
               >
                 <FluentText variant="body2" style={{ color: "#FFFFFF" }}>Delete</FluentText>
@@ -969,214 +982,166 @@ function SoundLabScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: FluentSpacing.xl,
   },
-  sectionDesc: {
-    marginBottom: FluentSpacing.m,
+  screenHint: {
+    marginBottom: FluentSpacing.l,
+  },
+  section: {
+    marginBottom: FluentSpacing.xxxl,
+  },
+  sectionLabel: {
+    textTransform: 'uppercase',
+    marginBottom: FluentSpacing.s,
+    letterSpacing: 0.5,
   },
   sectionCard: {
+    borderRadius: FluentRadius.xLarge,
+  },
+  cardInnerPadding: {
     padding: FluentSpacing.l,
-    marginBottom: FluentSpacing.m,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: FluentSpacing.m,
-  },
-  sectionTitle: {
-    marginLeft: FluentSpacing.xs,
-    flex: 1,
-  },
-  activeIndicator: {
-    paddingHorizontal: FluentSpacing.s,
-    paddingVertical: FluentSpacing.xs,
-    borderRadius: FluentRadius.circular,
-  },
-  premiumBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: FluentSpacing.s,
-    paddingVertical: FluentSpacing.xs,
-    borderRadius: FluentRadius.circular,
-  },
-  chipsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  chipsScrollContent: {
     gap: FluentSpacing.s,
+    paddingRight: FluentSpacing.s,
+  },
+  chip: {
+    height: FluentLayoutSize.chipHeight,
+    paddingHorizontal: FluentSpacing.l,
+    borderRadius: FluentRadius.circular,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   presetInfo: {
     marginTop: FluentSpacing.m,
+    paddingTop: FluentSpacing.m,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(128,128,128,0.15)',
   },
-  effectControlsSection: {
-    marginTop: FluentSpacing.m,
-    padding: FluentSpacing.m,
-    gap: FluentSpacing.s,
+  symmetricSliderRow: {
+    flexDirection: 'row',
+    gap: FluentSpacing.l,
   },
-  effectSliderRow: {
-    gap: FluentSpacing.xs,
-  },
-  effectSliderHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  effectSliderContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: FluentSpacing.xs,
-  },
-  effectSlider: {
+  symmetricSliderColumn: {
     flex: 1,
-    height: FluentControlHeight.medium,
+    alignItems: 'center',
   },
-  customEQContainer: {
-    marginTop: FluentSpacing.m,
-  },
-  bandRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  sliderLabel: {
+    textAlign: 'center',
     marginBottom: FluentSpacing.s,
   },
-  bandLabel: {
-    width: 50,
+  sliderWithIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    gap: FluentSpacing.xs,
   },
-  slider: {
+  symmetricSlider: {
     flex: 1,
-    height: FluentControlHeight.large,
+    height: FluentSliderSize.thumbMedium,
   },
-  bandValue: {
-    width: 30,
-    textAlign: "right",
+  sliderValue: {
+    textAlign: 'center',
+    marginTop: FluentSpacing.xs,
+  },
+  virtualizerSection: {
+    marginTop: FluentSpacing.l,
+    paddingTop: FluentSpacing.l,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(128,128,128,0.15)',
+    alignItems: 'center',
+  },
+  virtualizerSlider: {
+    flex: 1,
+    height: FluentSliderSize.thumbMedium,
+  },
+  customEQBands: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: FluentSpacing.l,
+  },
+  customEQBand: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  bandDbValue: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginBottom: FluentSpacing.xs,
+  },
+  verticalSliderContainer: {
+    height: 120,
+    justifyContent: 'center',
+  },
+  verticalSlider: {
+    width: 120,
+    height: FluentSliderSize.thumbMedium,
+    transform: [{ rotate: '-90deg' }],
+  },
+  bandFreqLabel: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: FluentSpacing.xs,
   },
   customEQButtons: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: FluentSpacing.s,
-    marginTop: FluentSpacing.m,
   },
   actionButton: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: FluentSpacing.m,
+    borderRadius: FluentControlRadius.button,
   },
   savedPresetsSection: {
     marginTop: FluentSpacing.l,
+    paddingTop: FluentSpacing.l,
     borderTopWidth: 1,
-    borderTopColor: "rgba(128,128,128,0.2)",
-    paddingTop: FluentSpacing.m,
+    borderTopColor: 'rgba(128,128,128,0.15)',
   },
   savedPresetRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: FluentSpacing.m,
     marginBottom: FluentSpacing.xs,
+    borderRadius: FluentRadius.large,
   },
   savedPresetInfo: {
     flex: 1,
   },
   presetActions: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: FluentSpacing.xs,
   },
   actionIconButton: {
     padding: FluentSpacing.xs,
   },
-  enhancementsContainer: {
-    gap: 0,
-  },
-  enhancementItem: {
-    paddingVertical: FluentSpacing.m,
-  },
-  enhancementDivider: {
-    height: 1,
-    opacity: 0.3,
-  },
-  enhancementSection: {
-    padding: FluentSpacing.l,
-    borderWidth: 1,
-    borderColor: "rgba(128,128,128,0.15)",
-  },
-  enhancementHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  enhancementText: {
-    flex: 1,
-    marginLeft: FluentSpacing.m,
-  },
-  enhancementIconContainer: {
-    width: FluentControlHeight.large,
-    height: FluentControlHeight.large,
-    borderRadius: FluentControlRadius.fab,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  levelBadge: {
-    minWidth: 40,
-    paddingHorizontal: FluentSpacing.s,
-    paddingVertical: FluentSpacing.xs,
-    borderRadius: FluentRadius.circular,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sliderLabel: {
-    width: 24,
-    textAlign: "center",
-  },
-  toggleIndicator: {
+  licenseBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.xs,
-    borderRadius: FluentRadius.circular,
-  },
-  strengthSelector: {
-    marginTop: FluentSpacing.m,
-    paddingTop: FluentSpacing.m,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(128,128,128,0.2)",
-  },
-  strengthChips: {
-    flexDirection: "row",
-    gap: FluentSpacing.s,
-  },
-  strengthChip: {
-    flex: 1,
-    alignItems: "center",
     paddingVertical: FluentSpacing.s,
+    borderRadius: FluentRadius.large,
+    marginBottom: FluentSpacing.m,
+    alignSelf: 'flex-start',
   },
-  sliderContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: FluentSpacing.m,
-    paddingTop: FluentSpacing.m,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(128,128,128,0.2)",
-    gap: FluentSpacing.s,
-  },
-  controlSlider: {
-    flex: 1,
-    height: FluentControlHeight.large,
-  },
-  modesContainer: {
-    gap: FluentSpacing.s,
+  modesGrid: {
+    gap: FluentSpacing.m,
   },
   modeCard: {
-    padding: FluentSpacing.m,
-  },
-  modeCardContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  modeCardText: {
-    flex: 1,
-    marginLeft: FluentSpacing.m,
-  },
-  infoCard: {
-    marginTop: FluentSpacing.m,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 56,
+    paddingHorizontal: FluentSpacing.m,
+    borderRadius: FluentRadius.large,
   },
   infoContent: {
-    flexDirection: "row",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   infoText: {
     flex: 1,
@@ -1184,32 +1149,52 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: FluentSpacing.xl,
   },
   modalContent: {
-    width: "100%",
+    width: '100%',
     maxWidth: 400,
     padding: FluentSpacing.xl,
+    borderRadius: FluentRadius.xLarge,
   },
   textInput: {
+    height: FluentLayoutSize.inputFieldHeight,
     paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.m,
-    borderWidth: 1,
-    fontSize: FluentTypography.body1.fontSize,
+    borderWidth: FluentBorderWidth.thin,
+    borderRadius: FluentControlRadius.input,
+    marginBottom: FluentSpacing.m,
   },
   modalButtons: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: FluentSpacing.s,
-    marginTop: FluentSpacing.l,
+    marginTop: FluentSpacing.m,
   },
   modalButton: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: FluentSpacing.m,
+    borderRadius: FluentControlRadius.button,
+  },
+  bandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: FluentSpacing.s,
+  },
+  bandLabel: {
+    width: 50,
+  },
+  modalSlider: {
+    flex: 1,
+    height: FluentControlHeight.medium,
+  },
+  bandValue: {
+    width: 30,
+    textAlign: 'right',
   },
 });
 
-export default memo(SoundLabScreen);
+export default SoundLabScreen;

@@ -42,16 +42,16 @@ export default function LoginScreen() {
       <View style={[styles.container, { paddingTop: insets.top + FluentSpacing.xxxl }]}>
         <View style={styles.header}>
           <View style={[styles.logoContainer, { backgroundColor: colors.colorBrandBackground + '15' }]}>
-            <MaterialCommunityIcons name="music-circle" size={80} color={colors.colorBrandForeground1} />
+            <MaterialCommunityIcons name="music-circle" size={64} color={colors.colorBrandForeground1} />
           </View>
-          <FluentText variant="title1" align="center">New Audio 360</FluentText>
-          <FluentText variant="body1" color="secondary" align="center" style={styles.subtitle}>
+          <FluentText variant="title2" align="center">New Audio 360</FluentText>
+          <FluentText variant="body2" color="secondary" align="center" style={styles.subtitle}>
             Premium Music Experience
           </FluentText>
         </View>
 
         <View style={styles.content}>
-          <FluentText variant="subtitle1" align="center" style={styles.welcomeText}>
+          <FluentText variant="subtitle2" align="center" style={styles.welcomeText}>
             Sign in to access your music
           </FluentText>
           
@@ -110,10 +110,10 @@ export default function LoginScreen() {
         </View>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + FluentSpacing.m }]}>
-          <FluentText variant="caption2" color="secondary" align="center">
+          <FluentText variant="caption1" color="secondary" align="center">
             By signing in, you agree to our Terms of Service and Privacy Policy
           </FluentText>
-          <FluentText variant="caption2" color="secondary" align="center" style={styles.attribution}>
+          <FluentText variant="caption1" color="secondary" align="center" style={styles.attribution}>
             By: Dhairya Shah (The Team 360)
           </FluentText>
         </View>
@@ -125,7 +125,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: FluentSpacing.xl,
+    paddingHorizontal: FluentSpacing.xxxl,
   },
   header: {
     alignItems: 'center',
@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.xxxl,
   },
   logoContainer: {
-    width: 140,
-    height: 140,
+    width: 100,
+    height: 100,
     borderRadius: FluentControlRadius.avatar,
     alignItems: 'center',
     justifyContent: 'center',
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.xs,
   },
   description: {
-    lineHeight: 22,
+    lineHeight: 20,
     paddingHorizontal: FluentSpacing.l,
   },
   errorContainer: {
@@ -171,28 +171,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: FluentSpacing.m,
-    paddingVertical: FluentSpacing.m,
-    paddingHorizontal: FluentSpacing.xl,
     borderRadius: FluentControlRadius.dialog,
     borderWidth: 1,
-    minWidth: 250,
-    height: 52,
+    width: '100%',
+    height: 44,
   },
   googleIcon: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
   },
   testButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: FluentSpacing.s,
-    paddingVertical: FluentSpacing.s,
-    paddingHorizontal: FluentSpacing.l,
+    height: 44,
+    width: '100%',
     borderRadius: FluentControlRadius.dialog,
     borderWidth: 1,
     borderStyle: 'dashed',
-    minWidth: 200,
   },
   footer: {
     gap: FluentSpacing.s,

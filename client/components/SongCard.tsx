@@ -13,15 +13,18 @@ import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
 import {
   FluentSpacing,
-  FluentControlRadius,
-  FluentTypography,
+  FluentRadius,
   FluentIconSize,
   FluentDuration,
-  FluentCurve,
   FluentLightColors,
   FluentDarkColors,
   FluentTouchTarget,
 } from "@/constants/fluent2";
+
+const ITEM_HEIGHT = 72;
+const COMPACT_HEIGHT = 56;
+const ARTWORK_SIZE = 48;
+const PLAYING_INDICATOR_WIDTH = 4;
 
 const ActionButton = ({ onPress, accessibilityLabel, children }: { 
   onPress: (e: any) => void; 
@@ -63,8 +66,8 @@ interface SongCardProps {
   onAddToPlaylist?: (song: PlayableSong) => void;
   isPlaying?: boolean;
   showDuration?: boolean;
-  showFavoriteButton?: boolean;
-  showAddToPlaylist?: boolean;
+  showDivider?: boolean;
+  compact?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -75,17 +78,14 @@ function SongCardComponent({
   onContextMenu, 
   onAddToPlaylist, 
   isPlaying = false, 
-  showDuration = true, 
-  showFavoriteButton = true, 
-  showAddToPlaylist = false 
+  showDuration = true,
+  showDivider = false,
+  compact = false,
 }: SongCardProps) {
   const { isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
-  const { isFavorite, toggleFavorite } = usePlayerContext();
-  const scale = useSharedValue(1);
   const bgOpacity = useSharedValue(0);
   const longPressTriggered = useRef(false);
-  const favorite = isFavorite(song.id);
   const fluentColors = useMemo(() => isDark ? FluentDarkColors : FluentLightColors, [isDark]);
   
   const artworkSource = useMemo(() => ({ uri: song.artwork }), [song.artwork]);
@@ -98,27 +98,14 @@ function SongCardComponent({
   
   const formattedDuration = useMemo(() => formatDuration(song.duration), [formatDuration, song.duration]);
 
-  const handleFavoritePress = useCallback((e: any) => {
+  const handleMenuPress = useCallback((e: any) => {
     e.stopPropagation?.();
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     playTapSound();
-    toggleFavorite(song.id);
-  }, [song.id, toggleFavorite, playTapSound]);
-
-  const handleAddToPlaylistPress = useCallback((e: any) => {
-    e.stopPropagation?.();
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    playTapSound();
-    onAddToPlaylist?.(song);
-  }, [song, onAddToPlaylist, playTapSound]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+    onContextMenu?.(song);
+  }, [song, onContextMenu, playTapSound]);
 
   const bgAnimatedStyle = useAnimatedStyle(() => ({
     opacity: bgOpacity.value,
@@ -126,18 +113,10 @@ function SongCardComponent({
 
   const handlePressIn = () => {
     longPressTriggered.current = false;
-    scale.value = withTiming(0.98, { 
-      duration: FluentDuration.fast,
-      easing: FluentCurve.decelerateMid,
-    });
     bgOpacity.value = withTiming(1, { duration: FluentDuration.fast });
   };
 
   const handlePressOut = () => {
-    scale.value = withTiming(1, { 
-      duration: FluentDuration.normal,
-      easing: FluentCurve.decelerateMid,
-    });
     bgOpacity.value = withTiming(0, { duration: FluentDuration.normal });
   };
 
@@ -177,6 +156,8 @@ function SongCardComponent({
 
   const containerProps = useMemo(() => Platform.OS === "web" ? { onContextMenu: handleContextMenuWeb } : {}, [handleContextMenuWeb]);
 
+  const itemHeight = compact ? COMPACT_HEIGHT : ITEM_HEIGHT;
+
   return (
     <AnimatedPressable
       onPress={handlePress}
@@ -186,21 +167,7 @@ function SongCardComponent({
       delayLongPress={400}
       style={[
         styles.container,
-        {
-          backgroundColor: fluentColors.colorNeutralBackground2,
-          borderColor: isPlaying ? fluentColors.colorBrandStroke1 : fluentColors.colorNeutralStroke2,
-          borderWidth: 1,
-          ...(Platform.OS === "web" ? {
-            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.14)",
-          } : {
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.08,
-            shadowRadius: 2,
-            elevation: 1,
-          }),
-        },
-        animatedStyle,
+        { height: itemHeight },
       ]}
       accessibilityRole="button"
       accessibilityLabel={`${song.title} by ${song.artist}`}
@@ -209,69 +176,78 @@ function SongCardComponent({
       <Animated.View 
         style={[
           StyleSheet.absoluteFill, 
-          { 
-            backgroundColor: fluentColors.colorNeutralBackground1Pressed, 
-            borderRadius: FluentControlRadius.card - 1 
-          },
+          { backgroundColor: fluentColors.colorSubtleBackgroundPressed },
           bgAnimatedStyle,
         ]} 
       />
-      <View style={styles.artworkContainer}>
-        <Image source={artworkSource} style={styles.artwork} />
-        {isPlaying ? (
-          <View style={[styles.playingIndicator, { backgroundColor: fluentColors.colorBrandBackground, borderColor: fluentColors.colorNeutralBackground1 }]}>
-            <MaterialCommunityIcons name="volume-high" size={FluentIconSize.tiny} color="#FFFFFF" />
+      
+      {isPlaying && (
+        <View 
+          style={[
+            styles.playingIndicator, 
+            { backgroundColor: fluentColors.colorBrandBackground }
+          ]} 
+        />
+      )}
+      
+      <View style={styles.content}>
+        {!compact && (
+          <View style={styles.artworkContainer}>
+            <Image source={artworkSource} style={styles.artwork} />
           </View>
-        ) : null}
+        )}
+        
+        <View style={styles.info}>
+          <FluentText 
+            variant="body2"
+            style={{ 
+              color: isPlaying ? fluentColors.colorBrandForeground1 : fluentColors.colorNeutralForeground1 
+            }}
+            numberOfLines={2}
+          >
+            {song.title}
+          </FluentText>
+          <FluentText
+            variant="caption1"
+            color="secondary"
+            numberOfLines={1}
+          >
+            {song.artist}
+          </FluentText>
+        </View>
+        
+        {showDuration && (
+          <FluentText 
+            variant="caption1"
+            color="secondary"
+            style={styles.duration}
+          >
+            {formattedDuration}
+          </FluentText>
+        )}
+        
+        {onContextMenu && (
+          <ActionButton onPress={handleMenuPress} accessibilityLabel="More options">
+            <MaterialCommunityIcons 
+              name="dots-vertical" 
+              size={FluentIconSize.regular} 
+              color={fluentColors.colorNeutralForeground3} 
+            />
+          </ActionButton>
+        )}
       </View>
-      <View style={styles.info}>
-        <FluentText 
-          variant="body1Strong"
-          color="primary"
-          numberOfLines={1}
-        >
-          {song.title}
-        </FluentText>
-        <FluentText
-          variant="caption1"
-          color="secondary"
-          numberOfLines={1}
-        >
-          {song.artist}
-        </FluentText>
-      </View>
-      {showDuration ? (
-        <FluentText 
-          variant="caption1"
-          color="tertiary"
-          style={styles.duration}
-        >
-          {formattedDuration}
-        </FluentText>
-      ) : null}
-      {showAddToPlaylist ? (
-        <ActionButton onPress={handleAddToPlaylistPress} accessibilityLabel="Add to playlist">
-          <MaterialCommunityIcons 
-            name="playlist-plus" 
-            size={FluentIconSize.regular} 
-            color={fluentColors.colorBrandForeground1} 
-          />
-        </ActionButton>
-      ) : null}
-      {showFavoriteButton ? (
-        <ActionButton onPress={handleFavoritePress} accessibilityLabel={favorite ? "Remove from favorites" : "Add to favorites"}>
-          <MaterialCommunityIcons 
-            name={favorite ? "heart" : "heart-outline"} 
-            size={FluentIconSize.regular} 
-            color={favorite ? "#FF4D67" : fluentColors.colorNeutralForeground3} 
-          />
-        </ActionButton>
-      ) : null}
-      <MaterialCommunityIcons 
-        name="chevron-right" 
-        size={FluentIconSize.small} 
-        color={fluentColors.colorNeutralForeground3} 
-      />
+      
+      {showDivider && (
+        <View 
+          style={[
+            styles.divider, 
+            { 
+              backgroundColor: fluentColors.colorNeutralStroke2,
+              left: compact ? FluentSpacing.l : FluentSpacing.l + ARTWORK_SIZE + FluentSpacing.m,
+            }
+          ]} 
+        />
+      )}
     </AnimatedPressable>
   );
 }
@@ -280,38 +256,44 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: FluentSpacing.m,
+    width: '100%',
+    backgroundColor: 'transparent',
+  },
+  content: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: FluentSpacing.l,
-    borderRadius: FluentControlRadius.card,
-    marginBottom: FluentSpacing.s,
-    minHeight: 72,
+  },
+  playingIndicator: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: PLAYING_INDICATOR_WIDTH,
   },
   artworkContainer: {
     position: "relative",
   },
   artwork: {
-    width: FluentIconSize.xxlarge,
-    height: FluentIconSize.xxlarge,
-    borderRadius: FluentControlRadius.card,
-  },
-  playingIndicator: {
-    position: "absolute",
-    bottom: -FluentSpacing.xxs,
-    right: -FluentSpacing.xxs,
-    width: FluentIconSize.regular,
-    height: FluentIconSize.regular,
-    borderRadius: FluentControlRadius.card,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
+    width: ARTWORK_SIZE,
+    height: ARTWORK_SIZE,
+    borderRadius: FluentRadius.medium,
   },
   info: {
     flex: 1,
     marginLeft: FluentSpacing.m,
+    justifyContent: 'center',
     gap: FluentSpacing.xxs,
   },
   duration: {
     marginRight: FluentSpacing.s,
+  },
+  divider: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    height: 1,
   },
 });
 

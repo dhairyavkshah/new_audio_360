@@ -2,7 +2,60 @@
 
 **Audit Date:** January 19, 2026  
 **Design System Target:** Microsoft Fluent 2  
-**Objective:** Achieve "poem-like rhythm" - visual harmony, symmetry, and consistent flow
+**Objective:** Achieve "poem-like rhythm" - visual harmony, symmetry, and consistent flow  
+**Total Screens Analyzed:** 28 screens + 5 modals + 7 components
+
+---
+
+## COMPLETE SCREEN HIERARCHY
+
+### Tab 1: Listen
+- ListenScreen (home)
+- NowPlayingScreen
+- SoundLabScreen
+- QueueScreen
+
+### Tab 2: Library
+- LibraryScreen (home) → 7 sub-views: Liked, Recent, Top, Songs, Albums, Artists, Playlists
+- AlbumDetailScreen
+- ArtistDetailScreen
+- PlaylistDetailScreen
+- PlaylistManagementScreen (+ 3 modals: Create, Edit, Delete)
+- RecordingsScreen
+
+### Tab 3: Radio
+- RadioScreen (home) → FM/AM mode, Online mode
+- RadioStationsScreen → FM/AM stations, Online stations
+- SoundLabScreen (shared)
+
+### Tab 4: Settings
+- SettingsScreen (home)
+- SoundLabScreen (shared)
+- AppearanceScreen
+- FolderSelectionScreen
+- LicenseScreen
+- AboutScreen
+- PrivacyPolicyScreen
+- OpenSourceLicensesScreen
+- SupportDeveloperScreen
+
+### System Screens
+- SplashScreen
+- LoadingScreen
+- PermissionOnboardingScreen
+- PermissionOnboardingFlow
+- SubscriptionRequiredScreen
+- BiometricLockScreen
+- LoginScreen
+- ExitScreen
+
+### Modals & Overlays
+- SongContextMenu (bottom sheet)
+- ContextMenu (popup)
+- AudioTipNotification (modal)
+- Toast (notification)
+- PlaylistManagementScreen modals (create/edit/delete)
+- Country picker modal (RadioScreen)
 
 ---
 

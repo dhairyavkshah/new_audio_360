@@ -84,9 +84,9 @@ export default function BiometricLockScreen() {
           <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground + '15' }]}>
             <MaterialCommunityIcons name="lock" size={64} color={colors.colorBrandForeground1} />
           </View>
-          <FluentText variant="title1" align="center">App Locked</FluentText>
+          <FluentText variant="title2" align="center">App Locked</FluentText>
           {user && (
-            <FluentText variant="body1" color="secondary" align="center">
+            <FluentText variant="body2" color="secondary" align="center">
               Welcome back, {user.displayName || user.email}
             </FluentText>
           )}
@@ -110,7 +110,7 @@ export default function BiometricLockScreen() {
             ) : (
               <>
                 <MaterialCommunityIcons name={getAuthIcon()} size={24} color="#FFFFFF" />
-                <FluentText variant="subtitle1" color="onBrand">{getAuthLabel()}</FluentText>
+                <FluentText variant="subtitle2" color="onBrand">{getAuthLabel()}</FluentText>
               </>
             )}
           </Pressable>
@@ -119,12 +119,12 @@ export default function BiometricLockScreen() {
             style={[styles.signOutButton, { borderColor: colors.colorNeutralStroke1 }]}
             onPress={handleSignOut}
           >
-            <FluentText variant="body1" color="secondary">Sign out</FluentText>
+            <FluentText variant="body2" color="secondary">Sign out</FluentText>
           </Pressable>
         </View>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + FluentSpacing.m }]}>
-          <FluentText variant="caption2" color="secondary" align="center">
+          <FluentText variant="caption1" color="secondary" align="center">
             Your data is protected with biometric authentication
           </FluentText>
         </View>
@@ -136,7 +136,7 @@ export default function BiometricLockScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: FluentSpacing.xl,
+    paddingHorizontal: FluentSpacing.xxxl,
   },
   header: {
     alignItems: 'center',
@@ -144,8 +144,8 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.xxxl,
   },
   iconContainer: {
-    width: 120,
-    height: 120,
+    width: 100,
+    height: 100,
     borderRadius: FluentControlRadius.avatar,
     alignItems: 'center',
     justifyContent: 'center',
@@ -173,15 +173,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: FluentSpacing.m,
-    paddingVertical: FluentSpacing.m,
-    paddingHorizontal: FluentSpacing.xxl,
     borderRadius: FluentControlRadius.dialog,
-    minWidth: 220,
-    height: 56,
+    width: '100%',
+    height: 44,
   },
   signOutButton: {
-    paddingVertical: FluentSpacing.m,
-    paddingHorizontal: FluentSpacing.xl,
+    height: 44,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: FluentControlRadius.dialog,
     borderWidth: 1,
   },

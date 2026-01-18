@@ -10,7 +10,7 @@ import {
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -19,12 +19,12 @@ import {
   FluentLightColors,
   FluentDarkColors,
   FluentTypography,
-  FluentControlRadius,
   FluentSpacing,
   FluentIconSize,
-  FluentSpring,
-  FluentLayoutSize,
+  FluentControlHeight,
   FluentBorderWidth,
+  FluentDuration,
+  FluentCurve,
 } from '@/constants/fluent2';
 
 type ChipSize = 'small' | 'medium';
@@ -40,11 +40,14 @@ export interface FluentChipProps extends Omit<PressableProps, 'children'> {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+const CHIP_HEIGHT = FluentControlHeight.medium;
+const CHIP_BORDER_RADIUS = CHIP_HEIGHT / 2;
+
 const sizeStyles = {
   small: {
     paddingHorizontal: FluentSpacing.s,
     paddingVertical: FluentSpacing.xxs,
-    minHeight: FluentLayoutSize.chipHeight,
+    minHeight: CHIP_HEIGHT,
     typography: FluentTypography.caption1,
     iconSize: FluentIconSize.tiny,
     dismissSize: 14,
@@ -52,12 +55,19 @@ const sizeStyles = {
   medium: {
     paddingHorizontal: FluentSpacing.m,
     paddingVertical: FluentSpacing.xs,
-    minHeight: FluentLayoutSize.chipHeight,
+    minHeight: CHIP_HEIGHT,
     typography: FluentTypography.body1,
     iconSize: FluentIconSize.small,
     dismissSize: 16,
   },
 };
+
+const timingConfig = {
+  duration: FluentDuration.normal,
+  easing: FluentCurve.decelerateMid,
+};
+
+export const CHIP_GAP = FluentSpacing.s;
 
 export function FluentChip({
   label,
@@ -88,7 +98,7 @@ export function FluentChip({
 
   const handlePressIn = (e: any) => {
     setIsPressed(true);
-    scale.value = withSpring(0.95, FluentSpring.stiff);
+    scale.value = withTiming(0.95, timingConfig);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -97,7 +107,7 @@ export function FluentChip({
 
   const handlePressOut = (e: any) => {
     setIsPressed(false);
-    scale.value = withSpring(1, FluentSpring.stiff);
+    scale.value = withTiming(1, timingConfig);
     onPressOut?.(e);
   };
 
@@ -143,7 +153,7 @@ export function FluentChip({
         {
           backgroundColor: getBackgroundColor(),
           borderColor: getBorderColor(),
-          borderRadius: FluentControlRadius.chip,
+          borderRadius: CHIP_BORDER_RADIUS,
           paddingHorizontal: sizeConfig.paddingHorizontal,
           paddingVertical: sizeConfig.paddingVertical,
           minHeight: sizeConfig.minHeight,

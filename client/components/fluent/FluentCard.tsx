@@ -3,7 +3,7 @@ import { Pressable, PressableProps, View, StyleSheet, Platform } from 'react-nat
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useThemeContext } from '@/contexts/ThemeContext';
@@ -13,10 +13,12 @@ import {
   FluentDarkColors,
   FluentSpacing,
   FluentControlRadius,
-  FluentSpring,
+  FluentRadius,
   getShadowStyle,
   ShadowLevel,
   FluentBorderWidth,
+  FluentDuration,
+  FluentCurve,
 } from '@/constants/fluent2';
 
 type ElevationLevel = 'none' | 'subtle' | 'medium' | 'strong';
@@ -28,15 +30,21 @@ export interface FluentCardProps extends Omit<PressableProps, 'children'> {
   footer?: React.ReactNode;
   children?: React.ReactNode;
   noPadding?: boolean;
+  featured?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const elevationToShadow: Record<ElevationLevel, ShadowLevel | null> = {
   none: null,
-  subtle: 'shadow2',
+  subtle: 'shadow4',
   medium: 'shadow8',
   strong: 'shadow16',
+};
+
+const timingConfig = {
+  duration: FluentDuration.normal,
+  easing: FluentCurve.decelerateMid,
 };
 
 export function FluentCard({
@@ -46,6 +54,7 @@ export function FluentCard({
   footer,
   children,
   noPadding = false,
+  featured = false,
   onPress,
   style,
   ...props
@@ -64,7 +73,7 @@ export function FluentCard({
   const handlePressIn = () => {
     if (!interactive && !onPress) return;
     setIsPressed(true);
-    scale.value = withSpring(0.98, FluentSpring.stiff);
+    scale.value = withTiming(0.98, timingConfig);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -72,8 +81,10 @@ export function FluentCard({
 
   const handlePressOut = () => {
     setIsPressed(false);
-    scale.value = withSpring(1, FluentSpring.stiff);
+    scale.value = withTiming(1, timingConfig);
   };
+
+  const borderRadius = featured ? FluentRadius.xLarge : FluentControlRadius.card;
 
   const getBackgroundColor = () => {
     if (isPressed) return colors.colorNeutralBackground1Pressed;
@@ -111,7 +122,7 @@ export function FluentCard({
           styles.card,
           {
             backgroundColor: getBackgroundColor(),
-            borderRadius: FluentControlRadius.card,
+            borderRadius,
           },
           shadowStyle,
           animatedStyle,
@@ -136,7 +147,7 @@ export function FluentCard({
         styles.card,
         {
           backgroundColor: colors.colorNeutralBackground1,
-          borderRadius: FluentControlRadius.card,
+          borderRadius,
         },
         shadowStyle,
         style,

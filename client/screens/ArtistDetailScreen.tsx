@@ -1,18 +1,32 @@
 import React, { useMemo, useCallback } from "react";
-import { View, StyleSheet, FlatList, Image } from "react-native";
+import { View, StyleSheet, FlatList, Image, ImageBackground, Pressable } from "react-native";
 import { useRoute, RouteProp, useNavigation, CommonActions } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
-import { FluentScreenLayout, FluentText } from "@/components/fluent";
+import { LinearGradient } from "expo-linear-gradient";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { FluentScreenLayout, FluentText, FluentButton } from "@/components/fluent";
 import { SongCard } from "@/components/SongCard";
 import { EmptyState } from "@/components/EmptyState";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { 
+  FluentSpacing, 
+  FluentLightColors, 
+  FluentDarkColors,
+  FluentTouchTarget,
+  FluentIconSize,
+  getShadowStyle,
+} from "@/constants/fluent2";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 
 type ArtistDetailRouteProp = RouteProp<LibraryStackParamList, "ArtistDetail">;
+
+const HERO_HEIGHT = 280;
+const ARTWORK_SIZE = 120;
+const BLUR_RADIUS = 50;
 
 export default function ArtistDetailScreen() {
   const route = useRoute<ArtistDetailRouteProp>();
@@ -22,6 +36,8 @@ export default function ArtistDetailScreen() {
   const { playSong, currentSong, setQueue } = usePlayerContext();
   const { songs: deviceSongs, isOnboardingComplete } = useMediaLibraryContext();
   const tabBarHeight = useSafeTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
 
   const artistSongs: PlayableSong[] = useMemo(() => {
     if (artist.songs && artist.songs.length > 0) {
@@ -57,7 +73,10 @@ export default function ArtistDetailScreen() {
     );
   }, [deviceSongs, isOnboardingComplete, artist]);
 
-  const navigation = useNavigation();
+  const albumCount = useMemo(() => {
+    const albums = new Set(artistSongs.map(song => song.album));
+    return albums.size;
+  }, [artistSongs]);
 
   const handlePlaySong = useCallback((song: PlayableSong) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -74,31 +93,143 @@ export default function ArtistDetailScreen() {
     );
   }, [artistSongs, setQueue, playSong, navigation]);
 
+  const handlePlayAll = useCallback(() => {
+    if (artistSongs.length > 0) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setQueue(artistSongs);
+      playSong(artistSongs[0]);
+      navigation.dispatch(
+        CommonActions.navigate({
+          name: "ListenTab",
+          params: {
+            screen: "NowPlaying",
+            params: { songId: artistSongs[0].id },
+          },
+        })
+      );
+    }
+  }, [artistSongs, setQueue, playSong, navigation]);
+
+  const handleShuffle = useCallback(() => {
+    if (artistSongs.length > 0) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const shuffled = [...artistSongs].sort(() => Math.random() - 0.5);
+      setQueue(shuffled);
+      playSong(shuffled[0]);
+      navigation.dispatch(
+        CommonActions.navigate({
+          name: "ListenTab",
+          params: {
+            screen: "NowPlaying",
+            params: { songId: shuffled[0].id },
+          },
+        })
+      );
+    }
+  }, [artistSongs, setQueue, playSong, navigation]);
+
+  const handleGoBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.goBack();
+  }, [navigation]);
+
   const renderHeader = () => (
-    <View style={styles.header}>
-      <Image source={{ uri: artist.artwork }} style={styles.artwork} />
-      <View style={styles.headerInfo}>
-        <FluentText variant="title2" style={styles.artistName}>
-          {artist.name}
-        </FluentText>
-        <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
-          {artistSongs.length} {artistSongs.length === 1 ? "song" : "songs"}
+    <View>
+      <View style={[styles.heroContainer, { height: HERO_HEIGHT }]}>
+        <ImageBackground
+          source={{ uri: artist.artwork }}
+          style={styles.backdrop}
+          blurRadius={BLUR_RADIUS}
+        >
+          <View style={[styles.backdropOverlay, { opacity: 0.85 }]}>
+            <LinearGradient
+              colors={['transparent', colors.colorNeutralBackground1]}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            />
+          </View>
+        </ImageBackground>
+
+        <Pressable
+          onPress={handleGoBack}
+          style={[
+            styles.backButton,
+            { 
+              top: insets.top + FluentSpacing.l,
+              backgroundColor: `${colors.colorNeutralBackground1}80`,
+            }
+          ]}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+        >
+          <MaterialCommunityIcons 
+            name="chevron-left" 
+            size={FluentIconSize.medium} 
+            color={colors.colorNeutralForeground1} 
+          />
+        </Pressable>
+
+        <View style={styles.heroContent}>
+          <Image 
+            source={{ uri: artist.artwork }} 
+            style={[
+              styles.artwork,
+              getShadowStyle('shadow8', isDark),
+            ]} 
+          />
+          <View style={styles.textInfo}>
+            <FluentText variant="title2" style={styles.title}>
+              {artist.name}
+            </FluentText>
+            <FluentText variant="body2" color="secondary" style={styles.subtitle}>
+              {albumCount} {albumCount === 1 ? "album" : "albums"} • {artistSongs.length} {artistSongs.length === 1 ? "song" : "songs"}
+            </FluentText>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.actionButtons}>
+        <FluentButton
+          variant="primary"
+          size="large"
+          iconBefore={<MaterialCommunityIcons name="play" />}
+          onPress={handlePlayAll}
+          style={styles.actionButton}
+        >
+          Play All
+        </FluentButton>
+        <FluentButton
+          variant="outline"
+          size="large"
+          iconBefore={<MaterialCommunityIcons name="shuffle" />}
+          onPress={handleShuffle}
+          style={styles.actionButton}
+        >
+          Shuffle
+        </FluentButton>
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <FluentText variant="subtitle2" style={styles.sectionTitle}>
+          Songs
         </FluentText>
       </View>
     </View>
   );
 
   const renderSong = ({ item }: { item: PlayableSong }) => (
-    <SongCard
-      song={item}
-      onPress={() => handlePlaySong(item)}
-      isPlaying={currentSong?.id === item.id}
-      showFavoriteButton={true}
-    />
+    <View style={styles.songItem}>
+      <SongCard
+        song={item}
+        onPress={() => handlePlaySong(item)}
+        isPlaying={currentSong?.id === item.id}
+      />
+    </View>
   );
 
   return (
-    <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>
+    <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true} edges={[]}>
       <FlatList
         data={artistSongs}
         renderItem={renderSong}
@@ -126,25 +257,72 @@ export default function ArtistDetailScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: FluentSpacing.l,
-    paddingTop: FluentSpacing.m,
+    flexGrow: 1,
   },
-  header: {
-    flexDirection: "row",
-    marginBottom: FluentSpacing.xl,
+  heroContainer: {
+    width: '100%',
+    position: 'relative',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  backdropOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  backButton: {
+    position: 'absolute',
+    left: FluentSpacing.l,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentTouchTarget.minimum / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  heroContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: FluentSpacing.xxxl,
   },
   artwork: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: ARTWORK_SIZE,
+    height: ARTWORK_SIZE,
+    borderRadius: ARTWORK_SIZE / 2,
   },
-  headerInfo: {
+  textInfo: {
+    marginTop: FluentSpacing.l,
+    alignItems: 'center',
+    paddingHorizontal: FluentSpacing.xl,
+  },
+  title: {
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  subtitle: {
+    textAlign: 'center',
+    marginTop: FluentSpacing.xs,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: FluentSpacing.l,
+    paddingVertical: FluentSpacing.l,
+    paddingHorizontal: FluentSpacing.xl,
+  },
+  actionButton: {
     flex: 1,
-    marginLeft: FluentSpacing.l,
-    justifyContent: "center",
+    maxWidth: 160,
   },
-  artistName: {
-    fontWeight: "700",
-    marginBottom: FluentSpacing.xs,
+  sectionHeader: {
+    paddingHorizontal: FluentSpacing.xl,
+    paddingTop: FluentSpacing.l,
+    paddingBottom: FluentSpacing.s,
+  },
+  sectionTitle: {
+    fontWeight: '600',
+  },
+  songItem: {
+    paddingHorizontal: FluentSpacing.xl,
   },
 });

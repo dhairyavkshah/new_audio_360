@@ -1,16 +1,38 @@
 import React from "react";
-import { StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { ThemeName } from "@/constants/theme";
-import { FluentSpacing } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentFontWeight } from "@/constants/fluent2";
+
+function SectionHeader({ title, isDark }: { title: string; isDark: boolean }) {
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  return (
+    <FluentText 
+      variant="caption2" 
+      style={[styles.sectionHeader, { color: colors.colorNeutralForeground2, fontWeight: FluentFontWeight.medium }]}
+    >
+      {title.toUpperCase()}
+    </FluentText>
+  );
+}
+
+function SectionCard({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  return (
+    <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
+      {children}
+    </View>
+  );
+}
 
 export default function AppearanceScreen() {
   const tabBarHeight = useSafeTabBarHeight();
-  const { themeName, setThemeName } = useThemeContext();
+  const { themeName, setThemeName, isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const handleThemeChange = (newTheme: ThemeName) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -22,19 +44,23 @@ export default function AppearanceScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: tabBarHeight + FluentSpacing.xl },
+          { paddingBottom: tabBarHeight + FluentSpacing.xxl },
         ]}
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
-        <FluentText variant="subtitle1" style={styles.sectionHeader}>
-          Themes
-        </FluentText>
-        <FluentText variant="body2" color="secondary" style={styles.sectionDesc}>
-          Choose a theme that matches your style. Your selection is saved automatically.
-        </FluentText>
+        <SectionHeader title="Themes" isDark={isDark} />
+        <SectionCard isDark={isDark}>
+          <View style={styles.descriptionContainer}>
+            <FluentText variant="caption1" color="secondary">
+              Choose a theme that matches your style. Your selection is saved automatically.
+            </FluentText>
+          </View>
+        </SectionCard>
 
-        <ThemeSelector currentTheme={themeName} onThemeChange={handleThemeChange} />
+        <View style={styles.themeSelectorContainer}>
+          <ThemeSelector currentTheme={themeName} onThemeChange={handleThemeChange} />
+        </View>
       </ScrollView>
     </FluentScreenLayout>
   );
@@ -42,12 +68,24 @@ export default function AppearanceScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: FluentSpacing.l,
+    paddingTop: FluentSpacing.l,
   },
   sectionHeader: {
-    marginBottom: FluentSpacing.xs,
+    paddingLeft: FluentSpacing.l,
+    paddingTop: FluentSpacing.s,
+    paddingBottom: FluentSpacing.s,
+    marginTop: FluentSpacing.xxl,
   },
-  sectionDesc: {
-    marginBottom: FluentSpacing.m,
+  sectionCard: {
+    marginHorizontal: FluentSpacing.l,
+    borderRadius: FluentRadius.xLarge,
+    overflow: "hidden",
+  },
+  descriptionContainer: {
+    padding: FluentSpacing.l,
+  },
+  themeSelectorContainer: {
+    marginTop: FluentSpacing.l,
+    paddingHorizontal: FluentSpacing.l,
   },
 });

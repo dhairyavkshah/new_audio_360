@@ -31,8 +31,8 @@ export default function SubscriptionRequiredScreen() {
           <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground + '15' }]}>
             <MaterialCommunityIcons name="google-play" size={64} color={colors.colorBrandForeground1} />
           </View>
-          <FluentText variant="title1" align="center">License Required</FluentText>
-          <FluentText variant="body1" color="secondary" align="center" style={styles.subtitle}>
+          <FluentText variant="title2" align="center">License Required</FluentText>
+          <FluentText variant="body2" color="secondary" align="center" style={styles.subtitle}>
             This is a paid app available on Google Play Store
           </FluentText>
         </View>
@@ -41,33 +41,33 @@ export default function SubscriptionRequiredScreen() {
           <View style={[styles.infoCard, { backgroundColor: colors.colorNeutralBackground3 }]}>
             <MaterialCommunityIcons name="information-outline" size={24} color={colors.colorBrandForeground1} />
             <View style={styles.infoContent}>
-              <FluentText variant="body1Strong">How to get licensed</FluentText>
-              <FluentText variant="body2" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
+              <FluentText variant="body2Strong">How to get licensed</FluentText>
+              <FluentText variant="body2" color="secondary" style={styles.infoDescription}>
                 New Audio 360 must be purchased and installed from the Google Play Store. If you already purchased the app, tap "Verify Installation" below.
               </FluentText>
             </View>
           </View>
 
           <View style={styles.featuresSection}>
-            <FluentText variant="subtitle1" align="center">What's Included</FluentText>
+            <FluentText variant="title3" align="center">What's Included</FluentText>
 
             <View style={[styles.licenseCard, { backgroundColor: colors.colorNeutralBackground3 }]}>
               <View style={styles.licenseFeatures}>
                 <View style={styles.featureRow}>
-                  <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
-                  <FluentText variant="caption1" color="secondary">All 55 Themes</FluentText>
+                  <MaterialCommunityIcons name="check" size={20} color={colors.colorPaletteGreenForeground1} />
+                  <FluentText variant="body2">All 55 Themes</FluentText>
                 </View>
                 <View style={styles.featureRow}>
-                  <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
-                  <FluentText variant="caption1" color="secondary">Immersive Audio Modes</FluentText>
+                  <MaterialCommunityIcons name="check" size={20} color={colors.colorPaletteGreenForeground1} />
+                  <FluentText variant="body2">Immersive Audio Modes</FluentText>
                 </View>
                 <View style={styles.featureRow}>
-                  <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
-                  <FluentText variant="caption1" color="secondary">All Effects & Reverbs</FluentText>
+                  <MaterialCommunityIcons name="check" size={20} color={colors.colorPaletteGreenForeground1} />
+                  <FluentText variant="body2">All Effects & Reverbs</FluentText>
                 </View>
                 <View style={styles.featureRow}>
-                  <MaterialCommunityIcons name="check" size={16} color={colors.colorPaletteGreenForeground1} />
-                  <FluentText variant="caption1" color="secondary">Lifetime Access - Never Expires</FluentText>
+                  <MaterialCommunityIcons name="check" size={20} color={colors.colorPaletteGreenForeground1} />
+                  <FluentText variant="body2">Lifetime Access - Never Expires</FluentText>
                 </View>
               </View>
             </View>
@@ -85,7 +85,7 @@ export default function SubscriptionRequiredScreen() {
             ) : (
               <>
                 <MaterialCommunityIcons name="refresh" size={20} color="#FFFFFF" />
-                <FluentText variant="subtitle1" color="onBrand">Verify Installation</FluentText>
+                <FluentText variant="subtitle2" color="onBrand">Verify Installation</FluentText>
               </>
             )}
           </Pressable>
@@ -106,7 +106,7 @@ export default function SubscriptionRequiredScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: FluentSpacing.l,
+    paddingHorizontal: FluentSpacing.xxxl,
   },
   header: {
     alignItems: 'center',
@@ -138,16 +138,18 @@ const styles = StyleSheet.create({
   infoContent: {
     flex: 1,
   },
+  infoDescription: {
+    marginTop: FluentSpacing.xs,
+  },
   featuresSection: {
     gap: FluentSpacing.m,
   },
   licenseCard: {
     padding: FluentSpacing.m,
     borderRadius: FluentControlRadius.card,
-    gap: FluentSpacing.s,
   },
   licenseFeatures: {
-    gap: FluentSpacing.xs,
+    gap: FluentSpacing.m,
   },
   featureRow: {
     flexDirection: 'row',
@@ -162,16 +164,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: FluentSpacing.s,
-    paddingVertical: FluentSpacing.m,
     borderRadius: FluentControlRadius.dialog,
-    height: 52,
+    height: 48,
   },
   secondaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: FluentSpacing.s,
-    paddingVertical: FluentSpacing.s,
+    height: 44,
     borderRadius: FluentControlRadius.card,
     borderWidth: 1,
   },

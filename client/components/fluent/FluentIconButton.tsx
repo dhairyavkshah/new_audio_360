@@ -9,19 +9,16 @@ import {
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import {
   FluentLightColors,
   FluentDarkColors,
-  FluentSpacing,
-  FluentIconSize,
-  FluentControlRadius,
-  FluentSpring,
-  IconSizeToken,
   FluentTouchTarget,
+  FluentDuration,
+  FluentCurve,
 } from '@/constants/fluent2';
 
 type IconButtonVariant = 'subtle' | 'transparent' | 'outline' | 'primary';
@@ -36,10 +33,18 @@ export interface FluentIconButtonProps extends PressableProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const sizeConfig: Record<IconButtonSize, { containerSize: number; iconSizeToken: IconSizeToken }> = {
-  small: { containerSize: 28, iconSizeToken: 'small' },
-  medium: { containerSize: 36, iconSizeToken: 'regular' },
-  large: { containerSize: 44, iconSizeToken: 'medium' },
+const ICON_BUTTON_SIZE = FluentTouchTarget.minimum;
+const ICON_BUTTON_RADIUS = ICON_BUTTON_SIZE / 2;
+
+const sizeConfig: Record<IconButtonSize, { containerSize: number; iconSize: number }> = {
+  small: { containerSize: ICON_BUTTON_SIZE, iconSize: 20 },
+  medium: { containerSize: ICON_BUTTON_SIZE, iconSize: 24 },
+  large: { containerSize: ICON_BUTTON_SIZE, iconSize: 28 },
+};
+
+const timingConfig = {
+  duration: FluentDuration.normal,
+  easing: FluentCurve.decelerateMid,
 };
 
 export function FluentIconButton({
@@ -58,23 +63,10 @@ export function FluentIconButton({
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const config = sizeConfig[size];
-  const iconSize = FluentIconSize[config.iconSizeToken];
 
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const scale = useSharedValue(1);
-
-  // Calculate hitSlop to ensure minimum touch target of 44px
-  const calculateHitSlop = () => {
-    const minTouchTarget = FluentTouchTarget.minimum;
-    const extraSpace = Math.max(0, (minTouchTarget - config.containerSize) / 2);
-    return {
-      top: extraSpace,
-      bottom: extraSpace,
-      left: extraSpace,
-      right: extraSpace,
-    };
-  };
 
   // Provide default accessibility label if none provided
   const finalAccessibilityLabel = accessibilityLabel || 'Icon button';
@@ -85,7 +77,7 @@ export function FluentIconButton({
 
   const handlePressIn = (e: any) => {
     setIsPressed(true);
-    scale.value = withSpring(0.92, FluentSpring.stiff);
+    scale.value = withTiming(0.92, timingConfig);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -94,7 +86,7 @@ export function FluentIconButton({
 
   const handlePressOut = (e: any) => {
     setIsPressed(false);
-    scale.value = withSpring(1, FluentSpring.stiff);
+    scale.value = withTiming(1, timingConfig);
     onPressOut?.(e);
   };
 
@@ -155,7 +147,7 @@ export function FluentIconButton({
         {
           width: config.containerSize,
           height: config.containerSize,
-          borderRadius: FluentControlRadius.button,
+          borderRadius: ICON_BUTTON_RADIUS,
           backgroundColor: getBackgroundColor(),
           borderWidth: variant === 'outline' ? 1 : 0,
           borderColor: getBorderColor(),
@@ -170,7 +162,6 @@ export function FluentIconButton({
       onPressOut={handlePressOut}
       onHoverIn={() => setIsHovered(true)}
       onHoverOut={() => setIsHovered(false)}
-      hitSlop={calculateHitSlop()}
       accessibilityRole="button"
       accessibilityLabel={finalAccessibilityLabel}
       accessibilityState={{ disabled: disabled || undefined, selected: selected || undefined }}
@@ -178,7 +169,7 @@ export function FluentIconButton({
     >
       {React.cloneElement(icon as React.ReactElement<{ color?: string; size?: number }>, {
         color: getIconColor(),
-        size: iconSize,
+        size: config.iconSize,
       })}
     </AnimatedPressable>
   );

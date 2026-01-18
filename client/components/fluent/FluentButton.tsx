@@ -11,7 +11,7 @@ import {
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useThemeContext } from '@/contexts/ThemeContext';
@@ -19,11 +19,13 @@ import {
   FluentLightColors,
   FluentDarkColors,
   FluentTypography,
-  FluentControlRadius,
   FluentSpacing,
-  FluentSpring,
   FluentControlHeight,
+  FluentControlMinWidth,
   FluentIconSize,
+  FluentTouchTarget,
+  FluentDuration,
+  FluentCurve,
 } from '@/constants/fluent2';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'subtle' | 'transparent';
@@ -63,6 +65,33 @@ const sizeStyles = {
     typography: FluentTypography.body2Strong,
     iconSize: FluentIconSize.regular,
   },
+};
+
+const getButtonRadius = (variant: ButtonVariant): number => {
+  switch (variant) {
+    case 'primary':
+      return 22;
+    case 'secondary':
+      return 18;
+    default:
+      return 4;
+  }
+};
+
+const getButtonHeight = (variant: ButtonVariant, size: ButtonSize): number => {
+  if (variant === 'primary') return FluentControlHeight.large;
+  if (variant === 'secondary') return FluentControlHeight.medium;
+  return sizeStyles[size].minHeight;
+};
+
+const getButtonMinWidth = (variant: ButtonVariant): number | undefined => {
+  if (variant === 'primary') return FluentControlMinWidth.medium;
+  return undefined;
+};
+
+const timingConfig = {
+  duration: FluentDuration.normal,
+  easing: FluentCurve.decelerateMid,
 };
 
 interface ButtonColors {
@@ -169,7 +198,7 @@ export function FluentButton({
 
   const handlePressIn = (e: any) => {
     setIsPressed(true);
-    scale.value = withSpring(0.97, FluentSpring.stiff);
+    scale.value = withTiming(0.97, timingConfig);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -178,8 +207,20 @@ export function FluentButton({
 
   const handlePressOut = (e: any) => {
     setIsPressed(false);
-    scale.value = withSpring(1, FluentSpring.stiff);
+    scale.value = withTiming(1, timingConfig);
     onPressOut?.(e);
+  };
+
+  const calculateHitSlop = () => {
+    const buttonHeight = getButtonHeight(variant, size);
+    const minTouchTarget = FluentTouchTarget.minimum;
+    const extraSpace = Math.max(0, (minTouchTarget - buttonHeight) / 2);
+    return {
+      top: extraSpace,
+      bottom: extraSpace,
+      left: 0,
+      right: 0,
+    };
   };
 
   const isDisabled = disabled || loading;
@@ -213,8 +254,9 @@ export function FluentButton({
           borderWidth: buttonColors.border ? 1 : 0,
           paddingHorizontal: sizeConfig.paddingHorizontal,
           paddingVertical: sizeConfig.paddingVertical,
-          minHeight: sizeConfig.minHeight,
-          borderRadius: FluentControlRadius.button,
+          minHeight: getButtonHeight(variant, size),
+          minWidth: getButtonMinWidth(variant),
+          borderRadius: getButtonRadius(variant),
           opacity: isDisabled ? 0.5 : 1,
         },
         fullWidth && styles.fullWidth,
@@ -227,6 +269,7 @@ export function FluentButton({
       onPressOut={handlePressOut}
       onHoverIn={() => setIsHovered(true)}
       onHoverOut={() => setIsHovered(false)}
+      hitSlop={calculateHitSlop()}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || (typeof children === 'string' ? children : undefined)}
       accessibilityState={{ disabled: isDisabled }}

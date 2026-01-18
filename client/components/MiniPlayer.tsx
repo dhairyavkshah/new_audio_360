@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, memo } from "react";
+import React, { useCallback, useMemo, memo, useState } from "react";
 import { View, StyleSheet, Pressable, Image, Platform, Text } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -8,14 +8,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeContext, useSkin, useThemeTokens } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import { getCardEffectStyle, getGlowStyle } from "@/lib/themeUtils";
 import {
   FluentSpacing,
   FluentIconSize,
   FluentTypography,
   FluentLayoutSize,
   FluentControlRadius,
-  FluentSliderSize,
+  FluentRadius,
+  FluentTouchTarget,
+  FluentGap,
+  getShadowStyle,
 } from "@/constants/fluent2";
 
 interface MiniPlayerProps {
@@ -33,13 +35,13 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   const { playTapSound } = useUiSound();
   const { currentSong, isPlaying, togglePlayPause, progress } = usePlayerContext();
   const insets = useSafeAreaInsets();
+  const [isPressed, setIsPressed] = useState(false);
   
-  const cardEffectStyle = useMemo(() => getCardEffectStyle(tokens, 2), [tokens]);
-  const glowStyle = useMemo(() => getGlowStyle(tokens), [tokens]);
+  const shadowStyle = useMemo(() => getShadowStyle('shadow8', isDark), [isDark]);
   
   const artworkSource = useMemo(() => currentSong ? { uri: currentSong.artwork } : undefined, [currentSong?.artwork]);
   
-  const containerBottom = useMemo(() => bottomOffset + FluentSpacing.s + (insets.bottom > 0 ? 0 : FluentSpacing.s), [bottomOffset, insets.bottom]);
+  const containerBottom = useMemo(() => bottomOffset + FluentLayoutSize.miniPlayerGapFromNav, [bottomOffset]);
   
   const progressWidth = useMemo(() => `${(progress || 0) * 100}%` as const, [progress]);
 
@@ -112,11 +114,14 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   return (
     <View style={[
       styles.container, 
-      { bottom: containerBottom, borderRadius: tokens.shapes.cardBorderRadius }, 
-      cardEffectStyle,
-      glowStyle,
+      { 
+        bottom: containerBottom,
+        borderTopLeftRadius: FluentControlRadius.bottomSheet,
+        borderTopRightRadius: FluentControlRadius.bottomSheet,
+      }, 
+      shadowStyle,
     ]}>
-      <View style={[styles.progressTrack, { backgroundColor: tokens.colors.outline }]}>
+      <View style={[styles.progressTrack, { backgroundColor: tokens.colors.divider || tokens.colors.outline }]}>
         <View 
           style={[
             styles.progressFill, 
@@ -127,7 +132,10 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
           ]} 
         />
       </View>
-      <View style={[styles.background, { borderRadius: tokens.shapes.cardBorderRadius }]}>
+      <View style={[styles.background, { 
+        borderTopLeftRadius: FluentControlRadius.bottomSheet,
+        borderTopRightRadius: FluentControlRadius.bottomSheet,
+      }]}>
         <Image 
           source={artworkSource} 
           style={StyleSheet.absoluteFill}
@@ -144,42 +152,51 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
             { backgroundColor: isDark ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)' }
           ]} 
         />
-        <Pressable style={styles.content} onPress={handlePress}>
-          <Image source={artworkSource} style={[styles.artwork, { borderRadius: tokens.shapes.buttonBorderRadius }]} />
+        <Pressable 
+          style={[styles.content, { opacity: isPressed ? 0.7 : 1 }]} 
+          onPress={handlePress}
+          onPressIn={() => setIsPressed(true)}
+          onPressOut={() => setIsPressed(false)}
+        >
+          <Image source={artworkSource} style={styles.artwork} />
           <View style={styles.info}>
-            <Text style={[FluentTypography.body1Strong, { color: tokens.colors.text }]} numberOfLines={1}>
+            <Text style={[FluentTypography.body2, { color: tokens.colors.text }]} numberOfLines={1}>
               {currentSong.title}
             </Text>
-            <Text style={[FluentTypography.caption1, { color: tokens.colors.textSecondary }]} numberOfLines={1}>
+            <Text style={[FluentTypography.caption2, { color: tokens.colors.textSecondary }]} numberOfLines={1}>
               {currentSong.artist}
             </Text>
           </View>
-          <Pressable
-            onPress={handlePlayPause}
-            style={[styles.playButton, { backgroundColor: tokens.colors.primary }]}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityRole="button"
-            accessibilityLabel={isPlaying ? "Pause" : "Play"}
-          >
-            <MaterialCommunityIcons 
-              name={(isPlaying ? icons.pause : icons.play) as keyof typeof MaterialCommunityIcons.glyphMap} 
-              size={FluentIconSize.medium} 
-              color={tokens.colors.onPrimary} 
-            />
-          </Pressable>
-          <Pressable
-            onPress={handleSwipeDown}
-            style={[styles.dismissButton, { backgroundColor: tokens.colors.surfaceVariant }]}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel="Hide player"
-          >
-            <MaterialCommunityIcons 
-              name="chevron-down" 
-              size={FluentIconSize.medium} 
-              color={tokens.colors.text} 
-            />
-          </Pressable>
+          <View style={styles.controls}>
+            <Pressable
+              onPress={handlePlayPause}
+              style={[styles.playButton, { backgroundColor: tokens.colors.primary }]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={isPlaying ? "Pause" : "Play"}
+            >
+              <MaterialCommunityIcons 
+                name={(isPlaying ? icons.pause : icons.play) as keyof typeof MaterialCommunityIcons.glyphMap} 
+                size={FluentIconSize.large} 
+                color={tokens.colors.onPrimary} 
+              />
+            </Pressable>
+            {onDismiss && (
+              <Pressable
+                onPress={handleSwipeDown}
+                style={styles.dismissButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Minimize player"
+              >
+                <MaterialCommunityIcons 
+                  name="chevron-down" 
+                  size={FluentIconSize.medium} 
+                  color={tokens.colors.textSecondary} 
+                />
+              </Pressable>
+            )}
+          </View>
         </Pressable>
       </View>
     </View>
@@ -189,24 +206,16 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    left: FluentSpacing.l,
-    right: FluentSpacing.l,
+    left: 0,
+    right: 0,
     overflow: "hidden",
-  },
-  dismissButton: {
-    width: 44,
-    height: 44,
-    borderRadius: FluentControlRadius.fab,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: FluentSpacing.s,
   },
   restoreHandle: {
     position: "absolute",
     left: "50%",
     marginLeft: -40,
     width: 80,
-    height: 44,
+    height: FluentTouchTarget.minimum,
     borderRadius: FluentControlRadius.fab,
     flexDirection: "row",
     alignItems: "center",
@@ -222,7 +231,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: FluentSliderSize.trackThin,
+    height: 2,
     zIndex: 10,
   },
   progressFill: {
@@ -235,22 +244,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: FluentLayoutSize.miniPlayerHeight,
-    paddingVertical: FluentSpacing.m,
-    paddingHorizontal: FluentSpacing.l,
+    paddingLeft: FluentSpacing.s,
+    paddingRight: FluentSpacing.s,
   },
   artwork: {
-    width: FluentIconSize.xxlarge,
-    height: FluentIconSize.xxlarge,
+    width: 48,
+    height: 48,
+    borderRadius: FluentRadius.large,
   },
   info: {
     flex: 1,
     marginLeft: FluentSpacing.m,
     gap: FluentSpacing.xxs,
   },
+  controls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: FluentGap.smaller,
+    paddingRight: FluentSpacing.s,
+  },
   playButton: {
-    width: 44,
-    height: 44,
-    borderRadius: FluentControlRadius.fab,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentTouchTarget.minimum / 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dismissButton: {
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     justifyContent: "center",
     alignItems: "center",
   },

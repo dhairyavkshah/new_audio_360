@@ -164,8 +164,8 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
           <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground + '15' }]}>
             <MaterialCommunityIcons name="web" size={64} color={colors.colorBrandForeground1} />
           </View>
-          <FluentText variant="title1" align="center">Welcome to New Audio 360</FluentText>
-          <FluentText variant="body1" color="secondary" align="center" style={styles.webDescription}>
+          <FluentText variant="title2" align="center">Welcome to New Audio 360</FluentText>
+          <FluentText variant="body2" color="secondary" align="center" style={styles.webDescription}>
             On the web, permissions are handled differently. You can use sample music or select folders when prompted.
           </FluentText>
           <FluentText variant="caption1" color="secondary" align="center" style={styles.webNote}>
@@ -176,7 +176,7 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
               style={[styles.button, { backgroundColor: colors.colorBrandBackground }]}
               onPress={onComplete}
             >
-              <FluentText variant="subtitle1" color="onBrand">Get Started</FluentText>
+              <FluentText variant="subtitle2" color="onBrand">Get Started</FluentText>
             </Pressable>
           </View>
         </View>
@@ -218,8 +218,8 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
           />
         </View>
         
-        <FluentText variant="title1" align="center">{currentPermission.title}</FluentText>
-        <FluentText variant="body1" color="secondary" align="center" style={styles.description}>
+        <FluentText variant="title2" align="center">{currentPermission.title}</FluentText>
+        <FluentText variant="body2" color="secondary" align="center" style={styles.description}>
           {currentPermission.description}
         </FluentText>
 
@@ -227,21 +227,21 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
           {currentStatus === 'granted' ? (
             <>
               <MaterialCommunityIcons name="check-circle" size={24} color={colors.colorPaletteGreenForeground1} />
-              <FluentText variant="body1Strong" color="success">
+              <FluentText variant="body2Strong" color="success">
                 Permission Granted
               </FluentText>
             </>
           ) : currentStatus === 'denied' ? (
             <>
               <MaterialCommunityIcons name="close-circle" size={24} color={colors.colorPaletteRedForeground1} />
-              <FluentText variant="body1Strong" color="error">
+              <FluentText variant="body2Strong" color="error">
                 Permission Denied
               </FluentText>
             </>
           ) : (
             <>
               <MaterialCommunityIcons name="circle-outline" size={24} color={colors.colorNeutralForeground2} />
-              <FluentText variant="body1" color="secondary">
+              <FluentText variant="body2" color="secondary">
                 Waiting for permission
               </FluentText>
             </>
@@ -262,11 +262,11 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
               disabled={isRequesting}
             >
               {isRequesting ? (
-                <FluentText variant="subtitle1" color="onBrand">Requesting...</FluentText>
+                <FluentText variant="subtitle2" color="onBrand">Requesting...</FluentText>
               ) : (
                 <>
                   <MaterialCommunityIcons name="shield-check" size={20} color={colors.colorNeutralForegroundOnBrand} />
-                  <FluentText variant="subtitle1" color="onBrand">Allow</FluentText>
+                  <FluentText variant="subtitle2" color="onBrand">Allow</FluentText>
                 </>
               )}
             </Pressable>
@@ -274,7 +274,7 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
               style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
               onPress={handleSkip}
             >
-              <FluentText variant="body1" color="secondary">Skip</FluentText>
+              <FluentText variant="body2" color="secondary">Skip</FluentText>
             </Pressable>
           </>
         ) : currentStatus === 'denied' ? (
@@ -284,13 +284,13 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
               onPress={handleOpenSettings}
             >
               <MaterialCommunityIcons name="cog" size={20} color={colors.colorNeutralForegroundOnBrand} />
-              <FluentText variant="subtitle1" color="onBrand">Open Settings</FluentText>
+              <FluentText variant="subtitle2" color="onBrand">Open Settings</FluentText>
             </Pressable>
             <Pressable
               style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
               onPress={handleNext}
             >
-              <FluentText variant="body1" color="secondary">
+              <FluentText variant="body2" color="secondary">
                 {isLastStep ? 'Get Started' : 'Next'}
               </FluentText>
             </Pressable>
@@ -300,7 +300,7 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
             style={[styles.button, { backgroundColor: colors.colorBrandBackground }]}
             onPress={handleNext}
           >
-            <FluentText variant="subtitle1" color="onBrand">
+            <FluentText variant="subtitle2" color="onBrand">
               {isLastStep ? 'Get Started' : 'Next'}
             </FluentText>
             {!isLastStep && (
@@ -320,7 +320,7 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: FluentSpacing.xl,
+    paddingHorizontal: FluentSpacing.xxxl,
   },
   header: {
     alignItems: 'center',
@@ -332,27 +332,27 @@ const styles = StyleSheet.create({
     gap: FluentSpacing.s,
   },
   dot: {
-    width: 10,
-    height: 10,
-    borderRadius: FluentControlRadius.button,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: FluentSpacing.l,
+    gap: FluentSpacing.m,
   },
   iconContainer: {
-    width: 120,
-    height: 120,
+    width: 100,
+    height: 100,
     borderRadius: FluentControlRadius.avatar,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: FluentSpacing.m,
   },
   description: {
-    lineHeight: 22,
-    paddingHorizontal: FluentSpacing.xl,
+    lineHeight: 20,
+    paddingHorizontal: FluentSpacing.l,
   },
   statusContainer: {
     flexDirection: 'row',
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: FluentSpacing.s,
-    height: 52,
+    height: 44,
     width: '100%',
     borderRadius: FluentControlRadius.dialog,
   },
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   secondaryButton: {
-    height: 48,
+    height: 44,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -394,11 +394,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: FluentSpacing.l,
+    gap: FluentSpacing.m,
   },
   webDescription: {
-    lineHeight: 22,
-    paddingHorizontal: FluentSpacing.xl,
+    lineHeight: 20,
+    paddingHorizontal: FluentSpacing.l,
   },
   webNote: {
     marginTop: FluentSpacing.s,

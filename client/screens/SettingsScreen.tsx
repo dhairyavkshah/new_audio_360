@@ -24,45 +24,79 @@ const SLEEP_TIMER_OPTIONS = [
   { label: "90 min", value: 90 },
 ];
 
-type MenuItemProps = {
+type SettingsItemProps = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   iconColor?: string;
   title: string;
-  subtitle: string;
-  onPress: () => void;
+  subtitle?: string;
+  onPress?: () => void;
+  rightAccessory?: React.ReactNode;
+  showChevron?: boolean;
+  showDivider?: boolean;
   isDark: boolean;
+  disabled?: boolean;
 };
 
-function MenuItem({ icon, iconColor, title, subtitle, onPress, isDark }: MenuItemProps) {
+function SettingsItem({ icon, iconColor, title, subtitle, onPress, rightAccessory, showChevron = true, showDivider = true, isDark, disabled }: SettingsItemProps) {
   const { playTapSound } = useUiSound();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   
   const handlePress = () => {
+    if (disabled || !onPress) return;
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   };
   
   return (
-    <Pressable
-      onPress={handlePress}
-      style={[styles.menuItem, { backgroundColor: colors.colorNeutralBackground2 }]}
-      accessibilityRole="button"
-      accessibilityLabel={`${title}. ${subtitle}`}
+    <>
+      <Pressable
+        onPress={handlePress}
+        disabled={disabled || !onPress}
+        style={[styles.settingsItem, { opacity: disabled ? 0.5 : 1 }]}
+        accessibilityRole="button"
+        accessibilityLabel={`${title}${subtitle ? `. ${subtitle}` : ''}`}
+      >
+        <View style={styles.settingsItemLeft}>
+          <MaterialCommunityIcons name={icon} size={FluentIconSize.medium} color={iconColor || colors.colorNeutralForeground1} />
+          <View style={styles.settingsItemText}>
+            <FluentText variant="body2" style={{ color: colors.colorNeutralForeground1 }}>
+              {title}
+            </FluentText>
+            {subtitle ? (
+              <FluentText variant="caption2" style={{ color: colors.colorNeutralForeground2, marginTop: 2 }}>
+                {subtitle}
+              </FluentText>
+            ) : null}
+          </View>
+        </View>
+        {rightAccessory || (showChevron && onPress ? (
+          <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
+        ) : null)}
+      </Pressable>
+      {showDivider && <View style={[styles.divider, { backgroundColor: colors.colorNeutralStroke2 }]} />}
+    </>
+  );
+}
+
+function SectionHeader({ title, isDark }: { title: string; isDark: boolean }) {
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  return (
+    <FluentText 
+      variant="caption2" 
+      style={[styles.sectionHeader, { color: colors.colorNeutralForeground2, fontWeight: FluentFontWeight.medium }]}
     >
-      <View style={[styles.menuIconContainer, { backgroundColor: colors.colorNeutralBackground3 }]}>
-        <MaterialCommunityIcons name={icon} size={FluentIconSize.medium} color={iconColor || colors.colorBrandForeground1} />
-      </View>
-      <View style={styles.menuTextContainer}>
-        <FluentText variant="body1Strong" style={styles.menuTitle}>
-          {title}
-        </FluentText>
-        <FluentText variant="caption1" style={{ color: colors.colorNeutralForeground3 }}>
-          {subtitle}
-        </FluentText>
-      </View>
-      <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.medium} color={colors.colorNeutralForeground3} />
-    </Pressable>
+      {title.toUpperCase()}
+    </FluentText>
+  );
+}
+
+function SectionCard({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  return (
+    <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
+      {children}
+    </View>
   );
 }
 
@@ -112,105 +146,79 @@ export default function SettingsScreen() {
   return (
     <FluentScreenLayout header={<FluentTopBar title="Settings" />}>
       <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: FluentSpacing.l },
-        ]}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        <SectionHeader title="Audio" isDark={isDark} />
+        <SectionCard isDark={isDark}>
+          <SettingsItem
+            icon="tune-vertical"
+            iconColor={colors.colorBrandForeground1}
+            title="Sound Lab"
+            subtitle="Equalizer presets and immersive modes"
+            onPress={() => navigation.navigate("SoundLab")}
+            isDark={isDark}
+          />
+          <SettingsItem
+            icon="folder-music"
+            iconColor={colors.colorBrandForeground1}
+            title="Music Folders"
+            subtitle="Select folders to source music from"
+            onPress={() => navigation.navigate("FolderSelection")}
+            showDivider={false}
+            isDark={isDark}
+          />
+        </SectionCard>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="music-note" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Audio
-            </FluentText>
-          </View>
-          <View style={styles.menuGroup}>
-            <MenuItem
-              icon="tune-vertical"
-              title="Sound Lab"
-              subtitle="Equalizer presets and immersive modes"
-              onPress={() => navigation.navigate("SoundLab")}
-              isDark={isDark}
-            />
-            <MenuItem
-              icon="folder-music"
-              title="Music Folders"
-              subtitle="Select folders to source music from"
-              onPress={() => navigation.navigate("FolderSelection")}
-              isDark={isDark}
-            />
-          </View>
-        </View>
+        <SectionHeader title="Display" isDark={isDark} />
+        <SectionCard isDark={isDark}>
+          <SettingsItem
+            icon="palette-outline"
+            iconColor={colors.colorBrandForeground1}
+            title="Appearance"
+            subtitle="Themes and visual customization"
+            onPress={() => navigation.navigate("Appearance")}
+            showDivider={false}
+            isDark={isDark}
+          />
+        </SectionCard>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="palette" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Display
-            </FluentText>
-          </View>
-          <View style={styles.menuGroup}>
-            <MenuItem
-              icon="palette-outline"
-              title="Appearance"
-              subtitle="Themes and visual customization"
-              onPress={() => navigation.navigate("Appearance")}
-              isDark={isDark}
-            />
-          </View>
-        </View>
+        <SectionHeader title="Preferences" isDark={isDark} />
+        <SectionCard isDark={isDark}>
+          <SettingsItem
+            icon="vibrate"
+            title="Haptic Feedback"
+            subtitle="Vibration on interactions"
+            showChevron={false}
+            rightAccessory={
+              <FluentToggle
+                value={hapticEnabled}
+                onValueChange={handleHapticToggle}
+              />
+            }
+            isDark={isDark}
+          />
+          <SettingsItem
+            icon="volume-high"
+            title="UI Sounds"
+            subtitle={isPlaybackActive ? "Disabled during playback" : "Sound effects for buttons"}
+            showChevron={false}
+            rightAccessory={
+              <FluentToggle
+                value={uiSoundEnabled}
+                onValueChange={handleUiSoundToggle}
+                disabled={isPlaybackActive}
+              />
+            }
+            showDivider={false}
+            isDark={isDark}
+            disabled={isPlaybackActive}
+          />
+        </SectionCard>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="cog-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Preferences
-            </FluentText>
-          </View>
-          <View style={[styles.settingItem, { backgroundColor: colors.colorNeutralBackground2 }]}>
-            <View style={styles.settingInfo}>
-              <MaterialCommunityIcons name="vibrate" size={FluentIconSize.regular} color={colors.colorNeutralForeground1} />
-              <FluentText variant="body1" style={styles.settingLabel}>
-                Haptic Feedback
-              </FluentText>
-            </View>
-            <FluentToggle
-              value={hapticEnabled}
-              onValueChange={handleHapticToggle}
-            />
-          </View>
-          <View style={[styles.settingItem, { backgroundColor: colors.colorNeutralBackground2, marginTop: FluentSpacing.s, opacity: isPlaybackActive ? 0.5 : 1 }]}>
-            <View style={styles.settingInfo}>
-              <MaterialCommunityIcons name="volume-high" size={FluentIconSize.regular} color={colors.colorNeutralForeground1} />
-              <View>
-                <FluentText variant="body1" style={styles.settingLabel}>
-                  UI Sounds
-                </FluentText>
-                {isPlaybackActive && (
-                  <FluentText variant="caption2" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
-                    Disabled during playback
-                  </FluentText>
-                )}
-              </View>
-            </View>
-            <FluentToggle
-              value={uiSoundEnabled}
-              onValueChange={handleUiSoundToggle}
-              disabled={isPlaybackActive}
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="timer-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Sleep Timer
-            </FluentText>
-          </View>
-          <View style={[styles.timerGrid]}>
+        <SectionHeader title="Sleep Timer" isDark={isDark} />
+        <SectionCard isDark={isDark}>
+          <View style={styles.timerGrid}>
             {SLEEP_TIMER_OPTIONS.map((option) => (
               <Pressable
                 key={option.label}
@@ -219,7 +227,7 @@ export default function SettingsScreen() {
                   { 
                     backgroundColor: sleepTimerMinutes === option.value 
                       ? colors.colorBrandBackground 
-                      : colors.colorNeutralBackground2 
+                      : colors.colorNeutralBackground3 
                   },
                 ]}
                 onPress={() => {
@@ -229,10 +237,10 @@ export default function SettingsScreen() {
                 }}
               >
                 <FluentText
-                  variant="body2"
+                  variant="caption1"
                   style={{
                     color: sleepTimerMinutes === option.value ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground1,
-                    fontWeight: FluentFontWeight.semibold,
+                    fontWeight: FluentFontWeight.medium,
                   }}
                 >
                   {option.label}
@@ -241,63 +249,52 @@ export default function SettingsScreen() {
             ))}
           </View>
           {sleepTimerMinutes ? (
-            <FluentText variant="caption1" style={{ color: colors.colorNeutralForeground3, marginTop: FluentSpacing.m }}>
+            <FluentText variant="caption2" style={[styles.timerHint, { color: colors.colorNeutralForeground2 }]}>
               Playback will stop in {sleepTimerMinutes} minutes
             </FluentText>
           ) : null}
-        </View>
+        </SectionCard>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="crown" size={FluentIconSize.regular} color={colors.colorPaletteYellowForeground1} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              License
-            </FluentText>
-          </View>
-          <View style={styles.menuGroup}>
-            <MenuItem
-              icon="crown-outline"
-              iconColor={colors.colorPaletteYellowForeground1}
-              title="License"
-              subtitle="Manage your license"
-              onPress={() => navigation.navigate("License")}
-              isDark={isDark}
-            />
-          </View>
-        </View>
+        <SectionHeader title="License" isDark={isDark} />
+        <SectionCard isDark={isDark}>
+          <SettingsItem
+            icon="crown-outline"
+            iconColor={colors.colorPaletteYellowForeground1}
+            title="License"
+            subtitle="Manage your license"
+            onPress={() => navigation.navigate("License")}
+            showDivider={false}
+            isDark={isDark}
+          />
+        </SectionCard>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="information" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              About
-            </FluentText>
-          </View>
-          <View style={styles.menuGroup}>
-            <MenuItem
-              icon="information-outline"
-              title="About New Audio 360"
-              subtitle="Version, legal, and more"
-              onPress={() => navigation.navigate("About")}
-              isDark={isDark}
-            />
-            <MenuItem
-              icon="power"
-              iconColor={colors.colorPaletteRedForeground1}
-              title="Close App"
-              subtitle="Securely exit the application"
-              onPress={handleCloseApp}
-              isDark={isDark}
-            />
-          </View>
-        </View>
+        <SectionHeader title="About" isDark={isDark} />
+        <SectionCard isDark={isDark}>
+          <SettingsItem
+            icon="information-outline"
+            iconColor={colors.colorBrandForeground1}
+            title="About New Audio 360"
+            subtitle="Version, legal, and more"
+            onPress={() => navigation.navigate("About")}
+            isDark={isDark}
+          />
+          <SettingsItem
+            icon="power"
+            iconColor={colors.colorPaletteRedForeground1}
+            title="Close App"
+            subtitle="Securely exit the application"
+            onPress={handleCloseApp}
+            showDivider={false}
+            isDark={isDark}
+          />
+        </SectionCard>
 
         <View style={styles.footer}>
-          <FluentText variant="caption1" style={{ color: colors.colorNeutralForeground3, textAlign: "center" }}>
+          <FluentText variant="caption2" style={{ color: colors.colorNeutralForeground3, textAlign: "center" }}>
             New Audio 360 v1.0
           </FluentText>
           <FluentText
-            variant="caption1"
+            variant="caption2"
             style={{ color: colors.colorNeutralForeground3, textAlign: "center", marginTop: FluentSpacing.xs }}
           >
             By: Dhairya Shah (The Team 360)
@@ -316,75 +313,64 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: FluentSpacing.l,
-  },
-  menuGroup: {
-    gap: FluentSpacing.s,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: FluentSpacing.l,
-    borderRadius: FluentRadius.large,
-    minHeight: 56,
-  },
-  menuIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: FluentRadius.large,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  menuTextContainer: {
-    flex: 1,
-    marginLeft: FluentSpacing.m,
-    gap: FluentSpacing.xxs,
-  },
-  menuTitle: {
-    fontWeight: FluentFontWeight.semibold,
-  },
-  section: {
-    marginBottom: FluentSpacing.xxl,
+    paddingTop: FluentSpacing.l,
+    paddingBottom: FluentSpacing.xxl,
   },
   sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: FluentSpacing.m,
+    paddingLeft: FluentSpacing.l,
+    paddingTop: FluentSpacing.s,
+    paddingBottom: FluentSpacing.s,
+    marginTop: FluentSpacing.xxl,
   },
-  sectionTitle: {
-    marginLeft: FluentSpacing.s,
+  sectionCard: {
+    marginHorizontal: FluentSpacing.l,
+    borderRadius: FluentRadius.xLarge,
+    overflow: "hidden",
   },
-  settingItem: {
+  settingsItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: FluentSpacing.l,
-    borderRadius: FluentRadius.large,
     minHeight: 56,
+    paddingLeft: FluentSpacing.l,
+    paddingRight: FluentSpacing.l,
+    paddingVertical: FluentSpacing.m,
   },
-  settingInfo: {
+  settingsItemLeft: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
+    marginRight: FluentSpacing.m,
   },
-  settingLabel: {
+  settingsItemText: {
+    flex: 1,
     marginLeft: FluentSpacing.m,
   },
-  footer: {
-    paddingVertical: FluentSpacing.xxl,
-    alignItems: "center",
+  divider: {
+    height: 1,
+    marginLeft: FluentSpacing.l + FluentIconSize.medium + FluentSpacing.m,
   },
   timerGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: FluentSpacing.s,
+    padding: FluentSpacing.l,
   },
   timerOption: {
-    paddingVertical: FluentSpacing.m,
-    paddingHorizontal: FluentSpacing.l,
+    paddingVertical: FluentSpacing.s,
+    paddingHorizontal: FluentSpacing.m,
     borderRadius: FluentRadius.medium,
-    minWidth: 72,
+    minWidth: 64,
     alignItems: "center",
-    height: FluentControlHeight.large,
+    height: FluentControlHeight.small,
     justifyContent: "center",
+  },
+  timerHint: {
+    paddingHorizontal: FluentSpacing.l,
+    paddingBottom: FluentSpacing.l,
+  },
+  footer: {
+    paddingVertical: FluentSpacing.xxl,
+    alignItems: "center",
   },
 });

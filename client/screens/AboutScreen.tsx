@@ -1,26 +1,93 @@
 import React from "react";
-import { View, StyleSheet, ScrollView, Linking, Pressable, Image } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
-import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentDarkColors, FluentFontWeight } from "@/constants/fluent2";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
+
+function SectionHeader({ title, isDark }: { title: string; isDark: boolean }) {
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  return (
+    <FluentText 
+      variant="caption2" 
+      style={[styles.sectionHeader, { color: colors.colorNeutralForeground2, fontWeight: FluentFontWeight.medium }]}
+    >
+      {title.toUpperCase()}
+    </FluentText>
+  );
+}
+
+function SectionCard({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  return (
+    <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
+      {children}
+    </View>
+  );
+}
+
+type SettingsItemProps = {
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  iconColor?: string;
+  title: string;
+  subtitle?: string;
+  onPress?: () => void;
+  showDivider?: boolean;
+  isDark: boolean;
+};
+
+function SettingsItem({ icon, iconColor, title, subtitle, onPress, showDivider = true, isDark }: SettingsItemProps) {
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  
+  const handlePress = () => {
+    if (!onPress) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+  
+  return (
+    <>
+      <Pressable
+        onPress={handlePress}
+        disabled={!onPress}
+        style={styles.settingsItem}
+        accessibilityRole="button"
+        accessibilityLabel={`${title}${subtitle ? `. ${subtitle}` : ''}`}
+      >
+        <View style={styles.settingsItemLeft}>
+          <View style={[styles.featureIcon, { backgroundColor: (iconColor || colors.colorBrandForeground1) + "15" }]}>
+            <MaterialCommunityIcons name={icon} size={FluentIconSize.small} color={iconColor || colors.colorBrandForeground1} />
+          </View>
+          <View style={styles.settingsItemText}>
+            <FluentText variant="body2" style={{ color: colors.colorNeutralForeground1 }}>
+              {title}
+            </FluentText>
+            {subtitle ? (
+              <FluentText variant="caption2" style={{ color: colors.colorNeutralForeground2, marginTop: 2 }}>
+                {subtitle}
+              </FluentText>
+            ) : null}
+          </View>
+        </View>
+        {onPress ? (
+          <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
+        ) : null}
+      </Pressable>
+      {showDivider && <View style={[styles.divider, { backgroundColor: colors.colorNeutralStroke2 }]} />}
+    </>
+  );
+}
 
 export default function AboutScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
-
-  const handleLinkPress = (url: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Linking.openURL(url);
-  };
 
   const handlePrivacyPolicyPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -37,7 +104,7 @@ export default function AboutScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: tabBarHeight + FluentSpacing.xl },
+          { paddingBottom: tabBarHeight + FluentSpacing.xxl },
         ]}
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
@@ -56,79 +123,63 @@ export default function AboutScreen() {
           </FluentText>
         </View>
 
-        <GlassCard style={styles.descriptionCard}>
-          <FluentText variant="caption1" color="secondary" style={styles.description}>
-            A beautiful music player designed with love for audio enthusiasts. 
-            Experience your music collection like never before with our carefully 
-            crafted equalizer presets and immersive sound modes.
-          </FluentText>
-        </GlassCard>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="star" size={FluentIconSize.small} color={colors.colorBrandForeground1} />
-            <FluentText variant="body1" style={styles.sectionTitle}>
-              Features
+        <SectionCard isDark={isDark}>
+          <View style={styles.descriptionContainer}>
+            <FluentText variant="caption1" color="secondary" style={styles.description}>
+              A beautiful music player designed with love for audio enthusiasts. 
+              Experience your music collection like never before with our carefully 
+              crafted equalizer presets and immersive sound modes.
             </FluentText>
           </View>
-          <View style={styles.featuresList}>
-            <FeatureItem
-              icon="music"
-              title="Music Library"
-              description="Organize and browse your music collection"
-              colors={colors}
-            />
-            <FeatureItem
-              icon="tune-vertical"
-              title="Sound Lab"
-              description="Professional equalizer presets and sound modes"
-              colors={colors}
-            />
-            <FeatureItem
-              icon="palette"
-              title="55 Themes"
-              description="Beautiful skins from iconic music players"
-              colors={colors}
-            />
-            <FeatureItem
-              icon="headphones"
-              title="Immersive Audio"
-              description="Cinema, Music, Sports, and 360 Reality modes"
-              colors={colors}
-            />
-          </View>
-        </View>
+        </SectionCard>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="scale-balance" size={FluentIconSize.small} color={colors.colorBrandForeground1} />
-            <FluentText variant="body1" style={styles.sectionTitle}>
-              Legal
-            </FluentText>
-          </View>
-          <View style={styles.legalLinks}>
-            <Pressable
-              style={[styles.linkItem, { backgroundColor: colors.colorNeutralBackground2 }]}
-              onPress={handlePrivacyPolicyPress}
-            >
-              <MaterialCommunityIcons name="shield-lock-outline" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
-              <FluentText variant="caption1" style={styles.linkText}>
-                Privacy Policy
-              </FluentText>
-              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
-            </Pressable>
-            <Pressable
-              style={[styles.linkItem, { backgroundColor: colors.colorNeutralBackground2 }]}
-              onPress={handleOpenSourceLicensesPress}
-            >
-              <MaterialCommunityIcons name="license" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
-              <FluentText variant="caption1" style={styles.linkText}>
-                Open Source Licenses
-              </FluentText>
-              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
-            </Pressable>
-          </View>
-        </View>
+        <SectionHeader title="Features" isDark={isDark} />
+        <SectionCard isDark={isDark}>
+          <SettingsItem
+            icon="music"
+            title="Music Library"
+            subtitle="Organize and browse your music collection"
+            isDark={isDark}
+          />
+          <SettingsItem
+            icon="tune-vertical"
+            title="Sound Lab"
+            subtitle="Professional equalizer presets and sound modes"
+            isDark={isDark}
+          />
+          <SettingsItem
+            icon="palette"
+            title="55 Themes"
+            subtitle="Beautiful skins from iconic music players"
+            isDark={isDark}
+          />
+          <SettingsItem
+            icon="headphones"
+            title="Immersive Audio"
+            subtitle="Cinema, Music, Sports, and 360 Reality modes"
+            showDivider={false}
+            isDark={isDark}
+          />
+        </SectionCard>
+
+        <SectionHeader title="Legal" isDark={isDark} />
+        <SectionCard isDark={isDark}>
+          <SettingsItem
+            icon="shield-lock-outline"
+            title="Privacy Policy"
+            subtitle="How we protect your data"
+            onPress={handlePrivacyPolicyPress}
+            isDark={isDark}
+          />
+          <SettingsItem
+            icon="license"
+            title="Open Source Licenses"
+            subtitle="Third-party software acknowledgments"
+            onPress={handleOpenSourceLicensesPress}
+            showDivider={false}
+            isDark={isDark}
+          />
+        </SectionCard>
 
         <View style={styles.footer}>
           <FluentText variant="caption2" color="secondary" align="center">
@@ -156,109 +207,77 @@ export default function AboutScreen() {
   );
 }
 
-function FeatureItem({
-  icon,
-  title,
-  description,
-  colors,
-}: {
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-  title: string;
-  description: string;
-  colors: typeof FluentLightColors;
-}) {
-  return (
-    <View style={[styles.featureItem, { backgroundColor: colors.colorNeutralBackground2 }]}>
-      <View style={[styles.featureIcon, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
-        <MaterialCommunityIcons name={icon} size={FluentIconSize.small} color={colors.colorBrandForeground1} />
-      </View>
-      <View style={styles.featureText}>
-        <FluentText variant="caption1" style={{ fontWeight: "600" }}>
-          {title}
-        </FluentText>
-        <FluentText variant="caption2" color="secondary">
-          {description}
-        </FluentText>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: FluentSpacing.l,
+    paddingTop: FluentSpacing.l,
   },
   logoContainer: {
     alignItems: "center",
-    marginTop: FluentSpacing.xl,
+    marginTop: FluentSpacing.l,
     marginBottom: FluentSpacing.xl,
   },
   appIcon: {
     width: 96,
     height: 96,
-    borderRadius: FluentControlRadius.card,
+    borderRadius: FluentRadius.xLarge,
     marginBottom: FluentSpacing.m,
   },
   appName: {
-    fontWeight: "700",
+    fontWeight: FluentFontWeight.bold,
   },
   version: {
     marginTop: FluentSpacing.xs,
   },
-  descriptionCard: {
-    marginBottom: FluentSpacing.xl,
+  sectionHeader: {
+    paddingLeft: FluentSpacing.l,
+    paddingTop: FluentSpacing.s,
+    paddingBottom: FluentSpacing.s,
+    marginTop: FluentSpacing.xxl,
+  },
+  sectionCard: {
+    marginHorizontal: FluentSpacing.l,
+    borderRadius: FluentRadius.xLarge,
+    overflow: "hidden",
+  },
+  descriptionContainer: {
+    padding: FluentSpacing.l,
   },
   description: {
     textAlign: "center",
     lineHeight: 20,
   },
-  section: {
-    marginBottom: FluentSpacing.xl,
-  },
-  sectionHeader: {
+  settingsItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: FluentSpacing.m,
+    justifyContent: "space-between",
+    minHeight: 56,
+    paddingLeft: FluentSpacing.l,
+    paddingRight: FluentSpacing.l,
+    paddingVertical: FluentSpacing.m,
   },
-  sectionTitle: {
-    marginLeft: FluentSpacing.xs,
-    fontWeight: "600",
-  },
-  featuresList: {
-    gap: FluentSpacing.xs,
-  },
-  featureItem: {
+  settingsItemLeft: {
     flexDirection: "row",
     alignItems: "center",
-    padding: FluentSpacing.m,
-    borderRadius: FluentControlRadius.card,
+    flex: 1,
+    marginRight: FluentSpacing.m,
+  },
+  settingsItemText: {
+    flex: 1,
+    marginLeft: FluentSpacing.m,
   },
   featureIcon: {
-    width: FluentIconSize.xxlarge,
-    height: FluentIconSize.xxlarge,
-    borderRadius: FluentControlRadius.avatar,
+    width: 36,
+    height: 36,
+    borderRadius: FluentRadius.circular,
     justifyContent: "center",
     alignItems: "center",
   },
-  featureText: {
-    flex: 1,
-    marginLeft: FluentSpacing.m,
-  },
-  legalLinks: {
-    gap: FluentSpacing.xs,
-  },
-  linkItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: FluentSpacing.m,
-    borderRadius: FluentControlRadius.card,
-  },
-  linkText: {
-    flex: 1,
-    marginLeft: FluentSpacing.m,
+  divider: {
+    height: 1,
+    marginLeft: FluentSpacing.l + 36 + FluentSpacing.m,
   },
   footer: {
-    paddingVertical: FluentSpacing.l,
+    paddingVertical: FluentSpacing.xxl,
     alignItems: "center",
   },
 });

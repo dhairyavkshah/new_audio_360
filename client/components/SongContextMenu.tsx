@@ -12,7 +12,16 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from "react-native-reanimated";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  SlideInDown,
+  SlideOutDown,
+  SlideInRight,
+  SlideOutRight,
+  SlideInLeft,
+  SlideOutLeft,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentText } from "@/components/fluent";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -25,8 +34,9 @@ import {
   FluentTypography,
   FluentLightColors,
   FluentDarkColors,
-  FluentPadding,
   FluentTouchTarget,
+  FluentIconSize,
+  getShadowStyle,
 } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { PlayableSong } from "@/contexts/PlayerContext";
@@ -51,6 +61,11 @@ type MenuView = "main" | "selectPlaylist" | "createPlaylist";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const MIN_BOTTOM_PADDING = 24;
+const MENU_ITEM_HEIGHT = 56;
+const HANDLE_TOP_PADDING = 8;
+const HANDLE_BOTTOM_PADDING = 16;
+const DIVIDER_MARGIN_VERTICAL = 8;
+const TRANSITION_DURATION = 300;
 
 export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong, showHideOption = false }: SongContextMenuProps) {
   const { isDark } = useThemeContext();
@@ -62,6 +77,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [pressedItem, setPressedItem] = useState<string | null>(null);
 
   const handleHideSong = async () => {
     if (!song || !onHideSong) return;
@@ -87,6 +103,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
       loadPlaylists();
       setMenuView("main");
       setNewPlaylistName("");
+      setPressedItem(null);
     }
   }, [visible, loadPlaylists]);
 
@@ -140,14 +157,18 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
   if (!visible || !song) return null;
 
   const renderMainMenu = () => (
-    <View style={styles.menuContent}>
+    <Animated.View
+      entering={SlideInLeft.duration(TRANSITION_DURATION).easing((t) => t * (2 - t))}
+      exiting={SlideOutLeft.duration(TRANSITION_DURATION).easing((t) => t * (2 - t))}
+      style={styles.menuContent}
+    >
       <View style={styles.songHeader}>
         <Image source={{ uri: song.artwork }} style={styles.songArtwork} />
         <View style={styles.songInfo}>
           <FluentText variant="body1Strong" color="primary" numberOfLines={1}>
             {song.title}
           </FluentText>
-          <FluentText variant="caption1" color="secondary">
+          <FluentText variant="body2" color="secondary" numberOfLines={1}>
             {song.artist}
           </FluentText>
         </View>
@@ -156,65 +177,80 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
       <View style={[styles.divider, { backgroundColor: colors.colorNeutralStroke2 }]} />
 
       <Pressable
-        style={[styles.menuItem, { backgroundColor: colors.colorNeutralBackground2 }]}
+        style={[
+          styles.menuItem,
+          pressedItem === "addToPlaylist" && { backgroundColor: colors.colorNeutralBackground1Pressed },
+        ]}
         onPress={() => handleNavigate("selectPlaylist")}
+        onPressIn={() => setPressedItem("addToPlaylist")}
+        onPressOut={() => setPressedItem(null)}
       >
-        <View style={[styles.menuItemIcon, { backgroundColor: colors.colorBrandBackground + "20" }]}>
-          <MaterialCommunityIcons name="playlist-plus" size={20} color={colors.colorBrandForeground1} />
-        </View>
-        <View style={styles.menuItemText}>
-          <FluentText variant="body1" color="primary">Add to Playlist</FluentText>
-          <FluentText variant="caption1" color="secondary">
-            {playlists.length} {playlists.length === 1 ? "playlist" : "playlists"} available
-          </FluentText>
-        </View>
-        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.colorNeutralForeground2} />
+        <MaterialCommunityIcons name="playlist-plus" size={FluentIconSize.medium} color={colors.colorNeutralForeground1} />
+        <FluentText variant="body2" color="primary" style={styles.menuItemText}>
+          Add to Playlist
+        </FluentText>
+        <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.medium} color={colors.colorNeutralForeground3} />
       </Pressable>
 
       <Pressable
-        style={[styles.menuItem, { backgroundColor: colors.colorNeutralBackground2 }]}
+        style={[
+          styles.menuItem,
+          pressedItem === "createPlaylist" && { backgroundColor: colors.colorNeutralBackground1Pressed },
+        ]}
         onPress={() => handleNavigate("createPlaylist")}
+        onPressIn={() => setPressedItem("createPlaylist")}
+        onPressOut={() => setPressedItem(null)}
       >
-        <View style={[styles.menuItemIcon, { backgroundColor: colors.colorPaletteGreenBackground1 }]}>
-          <MaterialCommunityIcons name="playlist-music" size={20} color={colors.colorPaletteGreenForeground1} />
-        </View>
-        <View style={styles.menuItemText}>
-          <FluentText variant="body1" color="primary">Create New Playlist</FluentText>
-          <FluentText variant="caption1" color="secondary">
-            Start a new collection with this song
-          </FluentText>
-        </View>
-        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.colorNeutralForeground2} />
+        <MaterialCommunityIcons name="playlist-music" size={FluentIconSize.medium} color={colors.colorNeutralForeground1} />
+        <FluentText variant="body2" color="primary" style={styles.menuItemText}>
+          Create New Playlist
+        </FluentText>
+        <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.medium} color={colors.colorNeutralForeground3} />
       </Pressable>
 
       {showHideOption && onHideSong && (
         <>
           <View style={[styles.divider, { backgroundColor: colors.colorNeutralStroke2 }]} />
           <Pressable
-            style={[styles.menuItem, { backgroundColor: colors.colorNeutralBackground2 }]}
+            style={[
+              styles.menuItem,
+              pressedItem === "hide" && { backgroundColor: colors.colorNeutralBackground1Pressed },
+            ]}
             onPress={handleHideSong}
+            onPressIn={() => setPressedItem("hide")}
+            onPressOut={() => setPressedItem(null)}
             disabled={isLoading}
           >
-            <View style={[styles.menuItemIcon, { backgroundColor: colors.colorPaletteRedBackground1 }]}>
-              <MaterialCommunityIcons name="eye-off" size={20} color={colors.colorPaletteRedForeground1} />
-            </View>
-            <View style={styles.menuItemText}>
-              <FluentText variant="body1" color="primary">Hide from Library</FluentText>
-              <FluentText variant="caption1" color="secondary">
-                Remove this song from your All Songs list
-              </FluentText>
-            </View>
+            <MaterialCommunityIcons name="eye-off" size={FluentIconSize.medium} color={colors.colorPaletteRedForeground1} />
+            <FluentText
+              variant="body2"
+              style={[styles.menuItemText, { color: colors.colorPaletteRedForeground1 }]}
+            >
+              Hide from Library
+            </FluentText>
           </Pressable>
         </>
       )}
-    </View>
+    </Animated.View>
   );
 
   const renderPlaylistSelection = () => (
-    <View style={styles.menuContent}>
-      <Pressable style={styles.backHeader} onPress={() => handleNavigate("main")}>
-        <MaterialCommunityIcons name="arrow-left" size={20} color={colors.colorNeutralForeground1} />
-        <FluentText variant="body1Strong" color="primary" style={{ marginLeft: FluentSpacing.s }}>
+    <Animated.View
+      entering={SlideInRight.duration(TRANSITION_DURATION).easing((t) => t * (2 - t))}
+      exiting={SlideOutRight.duration(TRANSITION_DURATION).easing((t) => t * (2 - t))}
+      style={styles.menuContent}
+    >
+      <Pressable
+        style={[
+          styles.backHeader,
+          pressedItem === "back" && { backgroundColor: colors.colorNeutralBackground1Pressed },
+        ]}
+        onPress={() => handleNavigate("main")}
+        onPressIn={() => setPressedItem("back")}
+        onPressOut={() => setPressedItem(null)}
+      >
+        <MaterialCommunityIcons name="arrow-left" size={FluentIconSize.medium} color={colors.colorNeutralForeground1} />
+        <FluentText variant="body1Strong" color="primary" style={{ marginLeft: FluentSpacing.l }}>
           Select Playlist
         </FluentText>
       </Pressable>
@@ -223,16 +259,16 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
 
       {playlists.length === 0 ? (
         <View style={styles.emptyState}>
-          <MaterialCommunityIcons name="playlist-music" size={48} color={colors.colorNeutralForeground2} />
-          <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.m }}>
+          <MaterialCommunityIcons name="playlist-music" size={48} color={colors.colorNeutralForeground3} />
+          <FluentText variant="body2" color="secondary" style={{ marginTop: FluentSpacing.m }}>
             No playlists yet
           </FluentText>
           <Pressable
             style={[styles.createButton, { backgroundColor: colors.colorBrandBackground }]}
             onPress={() => handleNavigate("createPlaylist")}
           >
-            <MaterialCommunityIcons name="plus" size={18} color={colors.colorNeutralForegroundOnBrand} />
-            <FluentText variant="body1" color="onBrand" style={{ marginLeft: FluentSpacing.xs }}>
+            <MaterialCommunityIcons name="plus" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
+            <FluentText variant="body2Strong" color="onBrand" style={{ marginLeft: FluentSpacing.s }}>
               Create Playlist
             </FluentText>
           </Pressable>
@@ -245,18 +281,18 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
               <Pressable
                 key={playlist.id}
                 style={[
-                  styles.playlistItem,
-                  { backgroundColor: colors.colorNeutralBackground2 },
+                  styles.menuItem,
                   isAlreadyAdded && { opacity: 0.5 },
+                  pressedItem === playlist.id && { backgroundColor: colors.colorNeutralBackground1Pressed },
                 ]}
                 onPress={() => !isAlreadyAdded && handleAddToPlaylist(playlist)}
+                onPressIn={() => setPressedItem(playlist.id)}
+                onPressOut={() => setPressedItem(null)}
                 disabled={isAlreadyAdded || isLoading}
               >
-                <View style={[styles.playlistIcon, { backgroundColor: colors.colorBrandBackground + "15" }]}>
-                  <MaterialCommunityIcons name="playlist-music" size={24} color={colors.colorBrandForeground1} />
-                </View>
+                <MaterialCommunityIcons name="playlist-music" size={FluentIconSize.medium} color={colors.colorNeutralForeground1} />
                 <View style={styles.playlistInfo}>
-                  <FluentText variant="body1" color="primary" numberOfLines={1}>
+                  <FluentText variant="body2" color="primary" numberOfLines={1}>
                     {playlist.name}
                   </FluentText>
                   <FluentText variant="caption1" color="secondary">
@@ -265,24 +301,36 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
                   </FluentText>
                 </View>
                 {isAlreadyAdded ? (
-                  <MaterialCommunityIcons name="check-circle" size={20} color={colors.colorPaletteGreenForeground1} />
+                  <MaterialCommunityIcons name="check-circle" size={FluentIconSize.medium} color={colors.colorPaletteGreenForeground1} />
                 ) : (
-                  <MaterialCommunityIcons name="plus-circle-outline" size={20} color={colors.colorBrandForeground1} />
+                  <MaterialCommunityIcons name="plus-circle-outline" size={FluentIconSize.medium} color={colors.colorBrandForeground1} />
                 )}
               </Pressable>
             );
           })}
         </ScrollView>
       )}
-    </View>
+    </Animated.View>
   );
 
   const renderCreatePlaylist = () => (
     <KeyboardAwareScrollViewCompat>
-      <View style={styles.menuContent}>
-        <Pressable style={styles.backHeader} onPress={() => handleNavigate("main")}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color={colors.colorNeutralForeground1} />
-          <FluentText variant="body1Strong" color="primary" style={{ marginLeft: FluentSpacing.s }}>
+      <Animated.View
+        entering={SlideInRight.duration(TRANSITION_DURATION).easing((t) => t * (2 - t))}
+        exiting={SlideOutRight.duration(TRANSITION_DURATION).easing((t) => t * (2 - t))}
+        style={styles.menuContent}
+      >
+        <Pressable
+          style={[
+            styles.backHeader,
+            pressedItem === "backCreate" && { backgroundColor: colors.colorNeutralBackground1Pressed },
+          ]}
+          onPress={() => handleNavigate("main")}
+          onPressIn={() => setPressedItem("backCreate")}
+          onPressOut={() => setPressedItem(null)}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={FluentIconSize.medium} color={colors.colorNeutralForeground1} />
+          <FluentText variant="body1Strong" color="primary" style={{ marginLeft: FluentSpacing.l }}>
             Create New Playlist
           </FluentText>
         </Pressable>
@@ -292,7 +340,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
         <View style={styles.createForm}>
           <View style={styles.songPreview}>
             <Image source={{ uri: song.artwork }} style={styles.previewArtwork} />
-            <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
+            <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.s }}>
               First song: {song.title}
             </FluentText>
           </View>
@@ -328,11 +376,11 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
           >
             <MaterialCommunityIcons
               name="playlist-plus"
-              size={20}
+              size={FluentIconSize.regular}
               color={newPlaylistName.trim() ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground3}
             />
             <FluentText
-              variant="body1Strong"
+              variant="body2Strong"
               style={{
                 color: newPlaylistName.trim() ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground3,
                 marginLeft: FluentSpacing.s,
@@ -342,7 +390,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
             </FluentText>
           </Pressable>
         </View>
-      </View>
+      </Animated.View>
     </KeyboardAwareScrollViewCompat>
   );
 
@@ -351,7 +399,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
       <Animated.View
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(150)}
-        style={[styles.backdrop, { backgroundColor: colors.colorBackgroundScrim }]}
+        style={styles.backdrop}
       >
         <Pressable style={styles.backdropPressable} onPress={handleClose} />
       </Animated.View>
@@ -359,18 +407,28 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
       <Animated.View
         entering={SlideInDown.springify().damping(20).stiffness(200)}
         exiting={SlideOutDown.duration(200)}
-        style={[styles.menuContainer, { backgroundColor: colors.colorNeutralBackground1, paddingBottom: FluentSpacing.xl + safeBottom }]}
+        style={[
+          styles.menuContainer,
+          { backgroundColor: colors.colorNeutralBackground1, paddingBottom: FluentSpacing.xl + safeBottom },
+          getShadowStyle('shadow16', isDark),
+        ]}
       >
-        <View style={[styles.handle, { backgroundColor: colors.colorNeutralForeground3 + "40" }]} />
+        <View style={[styles.handle, { backgroundColor: colors.colorNeutralForeground3 }]} />
         {menuView === "main" && renderMainMenu()}
         {menuView === "selectPlaylist" && renderPlaylistSelection()}
         {menuView === "createPlaylist" && renderCreatePlaylist()}
 
         <Pressable
-          style={[styles.cancelButton, { backgroundColor: colors.colorNeutralBackground3 }]}
+          style={[
+            styles.cancelButton,
+            { backgroundColor: colors.colorNeutralBackground3 },
+            pressedItem === "cancel" && { backgroundColor: colors.colorNeutralBackground1Pressed },
+          ]}
           onPress={handleClose}
+          onPressIn={() => setPressedItem("cancel")}
+          onPressOut={() => setPressedItem(null)}
         >
-          <FluentText variant="body1Strong" color="primary">
+          <FluentText variant="body2Strong" color="primary">
             Cancel
           </FluentText>
         </Pressable>
@@ -382,6 +440,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   backdropPressable: {
     flex: 1,
@@ -393,63 +452,59 @@ const styles = StyleSheet.create({
     right: 0,
     borderTopLeftRadius: FluentControlRadius.bottomSheet,
     borderTopRightRadius: FluentControlRadius.bottomSheet,
-    maxHeight: SCREEN_HEIGHT * 0.75,
+    maxHeight: SCREEN_HEIGHT * 0.7,
+    overflow: 'hidden',
   },
   handle: {
     width: 40,
     height: 4,
-    borderRadius: FluentControlRadius.checkbox,
+    borderRadius: 2,
     alignSelf: "center",
-    marginTop: FluentSpacing.s,
-    marginBottom: FluentSpacing.m,
+    marginTop: HANDLE_TOP_PADDING,
+    marginBottom: HANDLE_BOTTOM_PADDING,
   },
   menuContent: {
-    paddingHorizontal: FluentPadding.xl,
+    paddingHorizontal: 0,
   },
   songHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: FluentSpacing.s,
+    paddingHorizontal: FluentSpacing.l,
+    paddingBottom: FluentSpacing.l,
   },
   songArtwork: {
-    width: 56,
-    height: 56,
-    borderRadius: FluentRadius.medium,
+    width: 64,
+    height: 64,
+    borderRadius: FluentRadius.large,
   },
   songInfo: {
     flex: 1,
-    marginLeft: FluentSpacing.m,
+    marginLeft: FluentSpacing.l,
   },
   divider: {
     height: 1,
-    marginVertical: FluentSpacing.m,
+    marginVertical: DIVIDER_MARGIN_VERTICAL,
+    marginHorizontal: FluentSpacing.l,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
-    marginBottom: FluentSpacing.s,
-  },
-  menuItemIcon: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
-    borderRadius: FluentRadius.medium,
-    justifyContent: "center",
-    alignItems: "center",
+    height: MENU_ITEM_HEIGHT,
+    paddingHorizontal: FluentSpacing.xl,
+    gap: FluentSpacing.l,
   },
   menuItemText: {
     flex: 1,
-    marginLeft: FluentSpacing.m,
   },
   backHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: FluentSpacing.s,
+    height: MENU_ITEM_HEIGHT,
+    paddingHorizontal: FluentSpacing.xl,
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: FluentSpacing.xl,
+    paddingVertical: FluentSpacing.xxxl,
   },
   createButton: {
     flexDirection: "row",
@@ -463,25 +518,11 @@ const styles = StyleSheet.create({
   playlistList: {
     maxHeight: SCREEN_HEIGHT * 0.4,
   },
-  playlistItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
-    marginBottom: FluentSpacing.s,
-  },
-  playlistIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: FluentRadius.medium,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   playlistInfo: {
     flex: 1,
-    marginLeft: FluentSpacing.m,
   },
   createForm: {
+    paddingHorizontal: FluentSpacing.xl,
     paddingVertical: FluentSpacing.s,
   },
   songPreview: {
@@ -494,10 +535,10 @@ const styles = StyleSheet.create({
     borderRadius: FluentRadius.large,
   },
   textInput: {
-    height: 48,
-    borderRadius: FluentRadius.medium,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentControlRadius.input,
     paddingHorizontal: FluentSpacing.m,
-    fontSize: FluentTypography.body1.fontSize,
+    fontSize: FluentTypography.body2.fontSize,
     borderWidth: 1,
     marginBottom: FluentSpacing.l,
   },
@@ -505,14 +546,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    height: 48,
-    borderRadius: FluentRadius.medium,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentTouchTarget.minimum / 2,
   },
   cancelButton: {
     marginHorizontal: FluentSpacing.l,
     marginTop: FluentSpacing.m,
-    height: 48,
-    borderRadius: FluentRadius.medium,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentTouchTarget.minimum / 2,
     justifyContent: "center",
     alignItems: "center",
   },
