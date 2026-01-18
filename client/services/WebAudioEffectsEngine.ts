@@ -159,16 +159,10 @@ class WebAudioEffectsEngineClass {
       }
     });
 
-    // Apply gain compensation to prevent distortion
-    const bassBoostDb = Math.max(0, bassBoost) * DB_PER_UNIT;
-    const trebleBoostDb = Math.max(0, trebleBoost) * DB_PER_UNIT;
-    const maxEqBoostDb = Math.max(0, ...zeroSumBands) * DB_PER_UNIT;
-    const totalBoostDb = Math.max(bassBoostDb, trebleBoostDb, maxEqBoostDb);
-    const compensationDb = totalBoostDb * 0.5;
-    const compensationLinear = Math.pow(10, -compensationDb / 20);
-    
+    // Limiter handles distortion prevention in PlayerContext
+    // Master gain stays at 1.0 for maximum headroom
     if (this.masterGain) {
-      this.masterGain.gain.value = compensationLinear;
+      this.masterGain.gain.value = 1.0;
     }
 
     this.currentEQValues = paddedBands;

@@ -90,6 +90,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
+  const limiterRef = useRef<DynamicsCompressorNode | null>(null);
   const eqFiltersRef = useRef<BiquadFilterNode[]>([]);
   const bassBoostFilterRef = useRef<BiquadFilterNode | null>(null);
   const trebleBoostFilterRef = useRef<BiquadFilterNode | null>(null);
@@ -607,6 +608,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       eqFiltersRef.current.forEach(f => { try { f.disconnect(); } catch {} });
       if (gainNodeRef.current) { try { gainNodeRef.current.disconnect(); } catch {} }
+      if (limiterRef.current) { try { limiterRef.current.disconnect(); } catch {} }
       if (stereoWidenerRef.current) { try { stereoWidenerRef.current.disconnect(); } catch {} }
       if (delayNodeRef.current) { try { delayNodeRef.current.disconnect(); } catch {} }
       if (delayGainRef.current) { try { delayGainRef.current.disconnect(); } catch {} }
@@ -735,21 +737,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
     });
     
-    // Calculate gain compensation to prevent distortion
-    // When boosting, reduce master gain to maintain headroom
-    const bassBoostDb = soundLabMode === 'equalizer' ? Math.max(0, bassBoost) * DB_PER_UNIT : 0;
-    const trebleBoostDb = soundLabMode === 'equalizer' ? Math.max(0, trebleBoost) * DB_PER_UNIT : 0;
-    const maxEqBoostDb = Math.max(0, ...zeroSumBands) * DB_PER_UNIT;
-    const totalBoostDb = Math.max(bassBoostDb, trebleBoostDb, maxEqBoostDb);
-    
-    // Apply gain compensation: reduce gain by half the boost amount
-    // This prevents clipping while maintaining perceived loudness
-    const compensationDb = totalBoostDb * 0.5;
-    const compensationLinear = Math.pow(10, -compensationDb / 20);
-    
-    if (gainNodeRef.current) {
-      gainNodeRef.current.gain.value = compensationLinear;
-    }
+    // Limiter is used instead of fixed gain compensation
+    // The DynamicsCompressorNode configured as a limiter handles distortion prevention intelligently
     
     // Update dedicated Bass Boost filter
     if (bassBoostFilterRef.current) {
@@ -865,6 +854,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           stereoWidenerRef.current.pan.value = Math.max(-1, Math.min(1, pan));
         }
 
+        // Create limiter (DynamicsCompressorNode configured as brickwall limiter)
+        // This prevents clipping when bass/treble boost pushes signal too hot
+        limiterRef.current = ctx.createDynamicsCompressor();
+        limiterRef.current.threshold.value = -1;    // Start limiting at -1 dB (just before clipping)
+        limiterRef.current.knee.value = 0;          // Hard knee for brickwall limiting
+        limiterRef.current.ratio.value = 20;        // 20:1 ratio = hard limiting
+        limiterRef.current.attack.value = 0.001;    // 1ms attack to catch transients
+        limiterRef.current.release.value = 0.1;     // 100ms release for smooth recovery
+
         mediaSourceRef.current.connect(gainNodeRef.current);
         
         if (eqChain.length > 0) {
@@ -880,10 +878,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           gainNodeRef.current.connect(stereoWidenerRef.current);
         }
 
-        stereoWidenerRef.current.connect(ctx.destination);
+        // Stereo Widener -> Limiter -> Destination (prevents clipping)
+        stereoWidenerRef.current.connect(limiterRef.current);
+        limiterRef.current.connect(ctx.destination);
+        // Delay/reverb path also goes through limiter
         stereoWidenerRef.current.connect(delayNodeRef.current);
         delayNodeRef.current.connect(delayGainRef.current);
-        delayGainRef.current.connect(ctx.destination);
+        delayGainRef.current.connect(limiterRef.current);
 
         audio.onended = () => {
           setIsPlaying(false);
