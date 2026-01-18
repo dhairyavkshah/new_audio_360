@@ -358,7 +358,14 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
           if (index < 3) console.log('[MediaLibrary] Using URI for', index, ':', fileUri?.substring(0, 60));
           
           if (fileUri) {
-            const metadata = await getMusicMetadata(fileUri);
+            if (index < 3) console.log('[MediaLibrary] About to call getMusicMetadata for', index);
+            let metadata = null;
+            try {
+              metadata = await getMusicMetadata(fileUri);
+            } catch (metaErr) {
+              console.error('[MediaLibrary] getMusicMetadata threw error for', index, ':', metaErr);
+            }
+            if (index < 3) console.log('[MediaLibrary] getMusicMetadata returned for', index, ':', metadata ? 'has data' : 'null');
             
             if (metadata) {
               if (index < 3) console.log('[MediaLibrary] Got metadata for', index, ':', {
