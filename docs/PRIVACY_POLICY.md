@@ -72,7 +72,7 @@ All permissions are requested with clear explanations during onboarding. You may
 
 By downloading, installing, accessing, or using New Audio 360, you expressly acknowledge that you have read, understood, and agree to be bound by this Privacy Policy and the associated Terms of Service. You hereby consent to the collection and use of information as described herein.
 
-Furthermore, by proceeding with the installation and use of the Application, you expressly grant permission for the App to request and utilize the device permissions outlined above, which are essential for the full functionality of the music player experience. These permissions are necessary to provide the core features of the Application, including but not limited to:
+Furthermore, by proceeding with the installation and use of the Application, you expressly grant permission for the App to request and utilize the device permissions outlined above, which are essential for the full functionality of the music player and radio-streaming experience. These permissions are necessary to provide the core features of the Application, including but not limited to:
 
 - Access to your device's media library for music playback
 - Storage access for reading audio files from your selected folders
@@ -144,4 +144,4 @@ This App is designed to comply with:
 ---
 
 *New Audio 360 is developed by TheTeam360.*  
-*"Top-grade music experience crafted for you"*
+*"The top-grade intelligent music experience designed for you"*

@@ -2,7 +2,7 @@
 
 ## New Audio 360
 
-**Tagline:** "Top-grade music experience crafted for you"
+**Tagline:** "The top-grade intelligent music experience designed for you"
 
 ---
 
