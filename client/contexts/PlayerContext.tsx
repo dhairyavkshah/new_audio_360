@@ -5,7 +5,7 @@ import { Song } from '@/lib/data';
 import { DeviceSong } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
 import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
-import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule } from 'audio-effects';
+import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule, AudioSessionBridgeModule } from 'audio-effects';
 import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
@@ -286,17 +286,38 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           
           if (Platform.OS === 'android' && NativeEffectsManager.isAvailable()) {
             try {
-              const attached = await NativeEffectsManager.attach(0);
+              let audioSessionId = 0;
+              
+              // Try to get TrackPlayer's audio session ID
+              if (AudioSessionBridgeModule.isAvailable()) {
+                const trackPlayerResult = await AudioSessionBridgeModule.getTrackPlayerSessionId();
+                if (trackPlayerResult.success && trackPlayerResult.sessionId > 0) {
+                  audioSessionId = trackPlayerResult.sessionId;
+                  console.log('[PlayerContext] Got TrackPlayer audio session ID:', audioSessionId);
+                } else {
+                  // Fallback: generate a new audio session ID
+                  audioSessionId = AudioSessionBridgeModule.generateAudioSessionId();
+                  if (audioSessionId > 0) {
+                    console.log('[PlayerContext] Generated audio session ID:', audioSessionId);
+                  } else {
+                    // Last resort: use session 0 (global)
+                    audioSessionId = 0;
+                    console.log('[PlayerContext] Using global audio session (0)');
+                  }
+                }
+              }
+              
+              const attached = await NativeEffectsManager.attach(audioSessionId);
               if (attached) {
-                console.log('[PlayerContext] NativeEffectsManager attached to global audio session');
+                console.log('[PlayerContext] NativeEffectsManager attached to audio session:', audioSessionId);
               } else {
                 console.log('[PlayerContext] NativeEffectsManager attachment returned false - effects may not work');
               }
               
               if (ImmersiveModeEngineModule.isAvailable()) {
-                const immersiveResult = await ImmersiveModeEngineModule.attach(0);
+                const immersiveResult = await ImmersiveModeEngineModule.attach(audioSessionId);
                 if (immersiveResult.success) {
-                  console.log('[PlayerContext] ImmersiveModeEngineModule attached to global audio session');
+                  console.log('[PlayerContext] ImmersiveModeEngineModule attached to audio session:', audioSessionId);
                 }
               }
             } catch (err) {

@@ -22,11 +22,15 @@ class BassBoostModule : Module() {
                 release()
                 
                 audioSessionId = sessionId
-                bassBoost = BassBoost(0, sessionId).apply {
+                android.util.Log.d("BassBoostModule", "Attaching to audio session: $sessionId")
+                
+                // Priority 1000 (high) helps effects work with session 0 (global audio output)
+                bassBoost = BassBoost(1000, sessionId).apply {
                     enabled = false
                 }
                 
                 val strengthSupported = bassBoost?.strengthSupported ?: false
+                android.util.Log.d("BassBoostModule", "BassBoost attached successfully, strengthSupported: $strengthSupported")
                 
                 promise.resolve(mapOf(
                     "success" to true,
@@ -36,6 +40,7 @@ class BassBoostModule : Module() {
                 ))
                 
             } catch (e: Exception) {
+                android.util.Log.e("BassBoostModule", "Attach failed: ${e.message}", e)
                 promise.reject("ATTACH_ERROR", e.message, e)
             }
         }

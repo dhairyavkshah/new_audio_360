@@ -39,8 +39,9 @@ A 4-tab system (`MainTabNavigator`) with a persistent MiniPlayer:
 
 ### Native Audio Modules (Android-specific)
 -   **PlaybackEngineModule**: ExoPlayer-based playback with queue, shuffle, repeat, speed, and audio session management.
--   **Native Audio Effects**: 5-band Equalizer, BassBoost, Virtualizer, WaveformAnalyzer, all with headroom-safe processing.
+-   **Native Audio Effects**: 5-band Equalizer, BassBoost, Virtualizer, WaveformAnalyzer, all with headroom-safe processing (priority 1000 for global session support).
 -   **ImmersiveModeEngineModule**: Manages 6 immersive audio modes (Music, 360 Reality, Gaming, Podcast, Movie, Off).
+-   **AudioSessionBridgeModule**: Bridges audio session IDs between react-native-track-player and native effects, attempts to get TrackPlayer's audio session via reflection.
 -   **NativeWaveformVisualizer**: Real-time 64-bar waveform visualization.
 -   **FMRadioModule**: FM/AM radio tuning with Sound Lab effects integration.
 -   **LicenseVerificationModule**: Native Kotlin module for Play Store license verification.

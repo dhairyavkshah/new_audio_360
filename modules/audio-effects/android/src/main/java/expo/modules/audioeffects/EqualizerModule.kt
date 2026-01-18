@@ -22,7 +22,10 @@ class EqualizerModule : Module() {
                 release()
                 
                 audioSessionId = sessionId
-                equalizer = Equalizer(0, sessionId).apply {
+                android.util.Log.d("EqualizerModule", "Attaching to audio session: $sessionId")
+                
+                // Priority 1000 (high) helps effects work with session 0 (global audio output)
+                equalizer = Equalizer(1000, sessionId).apply {
                     enabled = false
                 }
                 

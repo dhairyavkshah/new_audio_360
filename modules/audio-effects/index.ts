@@ -1111,6 +1111,85 @@ export const IMMERSIVE_MODE_INFO: Record<ImmersiveMode, { name: string; descript
   custom: { name: 'Custom', description: 'Custom audio settings', icon: 'tune' }
 };
 
+// Audio Session Bridge Module Types
+export interface AudioSessionResult {
+  success: boolean;
+  sessionId: number;
+  error?: string;
+}
+
+interface AudioSessionBridgeModuleInterface extends NativeModule {
+  isAvailable(): boolean;
+  generateAudioSessionId(): number;
+  getGeneratedSessionId(): number;
+  getTrackPlayerSessionId(): Promise<AudioSessionResult>;
+  getActiveAudioSessionId(): number;
+}
+
+let AudioSessionBridgeModuleNative: AudioSessionBridgeModuleInterface | null = null;
+
+if (Platform.OS === 'android') {
+  try {
+    AudioSessionBridgeModuleNative = requireNativeModule<AudioSessionBridgeModuleInterface>('AudioSessionBridgeModule');
+  } catch (error) {
+    console.warn('AudioSessionBridgeModule not available:', error);
+  }
+}
+
+export const AudioSessionBridgeModule = {
+  isAvailable: (): boolean => {
+    return Platform.OS === 'android' && AudioSessionBridgeModuleNative !== null;
+  },
+
+  generateAudioSessionId: (): number => {
+    if (!AudioSessionBridgeModuleNative) {
+      return 0;
+    }
+    try {
+      return AudioSessionBridgeModuleNative.generateAudioSessionId();
+    } catch (error) {
+      console.error('AudioSessionBridgeModule.generateAudioSessionId error:', error);
+      return 0;
+    }
+  },
+
+  getGeneratedSessionId: (): number => {
+    if (!AudioSessionBridgeModuleNative) {
+      return 0;
+    }
+    try {
+      return AudioSessionBridgeModuleNative.getGeneratedSessionId();
+    } catch (error) {
+      console.error('AudioSessionBridgeModule.getGeneratedSessionId error:', error);
+      return 0;
+    }
+  },
+
+  getTrackPlayerSessionId: async (): Promise<AudioSessionResult> => {
+    if (!AudioSessionBridgeModuleNative) {
+      return { success: false, sessionId: 0, error: 'Module not available' };
+    }
+    try {
+      return await AudioSessionBridgeModuleNative.getTrackPlayerSessionId();
+    } catch (error) {
+      console.error('AudioSessionBridgeModule.getTrackPlayerSessionId error:', error);
+      return { success: false, sessionId: 0, error: String(error) };
+    }
+  },
+
+  getActiveAudioSessionId: (): number => {
+    if (!AudioSessionBridgeModuleNative) {
+      return 0;
+    }
+    try {
+      return AudioSessionBridgeModuleNative.getActiveAudioSessionId();
+    } catch (error) {
+      console.error('AudioSessionBridgeModule.getActiveAudioSessionId error:', error);
+      return 0;
+    }
+  }
+};
+
 // License Verification Module Types
 export interface InstallerInfo {
   installerPackageName: string;

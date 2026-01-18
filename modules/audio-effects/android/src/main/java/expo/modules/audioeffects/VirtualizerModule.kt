@@ -22,11 +22,15 @@ class VirtualizerModule : Module() {
                 release()
                 
                 audioSessionId = sessionId
-                virtualizer = Virtualizer(0, sessionId).apply {
+                android.util.Log.d("VirtualizerModule", "Attaching to audio session: $sessionId")
+                
+                // Priority 1000 (high) helps effects work with session 0 (global audio output)
+                virtualizer = Virtualizer(1000, sessionId).apply {
                     enabled = false
                 }
                 
                 val strengthSupported = virtualizer?.strengthSupported ?: false
+                android.util.Log.d("VirtualizerModule", "Virtualizer attached successfully, strengthSupported: $strengthSupported")
                 
                 promise.resolve(mapOf(
                     "success" to true,
@@ -36,6 +40,7 @@ class VirtualizerModule : Module() {
                 ))
                 
             } catch (e: Exception) {
+                android.util.Log.e("VirtualizerModule", "Attach failed: ${e.message}", e)
                 promise.reject("ATTACH_ERROR", e.message, e)
             }
         }

@@ -42,33 +42,37 @@ class ImmersiveModeEngineModule : Module() {
                     release()
                     
                     audioSessionId = sessionId
+                    android.util.Log.d("ImmersiveMode", "Attaching to audio session: $sessionId")
                     
-                    // Initialize Equalizer
-                    equalizer = Equalizer(0, sessionId).apply {
+                    // Initialize Equalizer with high priority (1000) for better global session support
+                    equalizer = Equalizer(1000, sessionId).apply {
                         enabled = false
                     }
+                    android.util.Log.d("ImmersiveMode", "Equalizer attached successfully")
                     
-                    // Initialize BassBoost with low priority
+                    // Initialize BassBoost with high priority
                     try {
-                        bassBoost = BassBoost(1, sessionId).apply {
+                        bassBoost = BassBoost(1000, sessionId).apply {
                             enabled = false
                             if (strengthSupported) {
                                 setStrength(0)
                             }
                         }
+                        android.util.Log.d("ImmersiveMode", "BassBoost attached successfully")
                     } catch (e: Exception) {
                         android.util.Log.w("ImmersiveMode", "BassBoost not supported: ${e.message}")
                         bassBoost = null
                     }
                     
-                    // Initialize Virtualizer with low priority
+                    // Initialize Virtualizer with high priority
                     try {
-                        virtualizer = Virtualizer(1, sessionId).apply {
+                        virtualizer = Virtualizer(1000, sessionId).apply {
                             enabled = false
                             if (strengthSupported) {
                                 setStrength(0)
                             }
                         }
+                        android.util.Log.d("ImmersiveMode", "Virtualizer attached successfully")
                     } catch (e: Exception) {
                         android.util.Log.w("ImmersiveMode", "Virtualizer not supported: ${e.message}")
                         virtualizer = null
@@ -86,6 +90,7 @@ class ImmersiveModeEngineModule : Module() {
                     ))
                     
                 } catch (e: Exception) {
+                    android.util.Log.e("ImmersiveMode", "Attach failed: ${e.message}", e)
                     promise.reject("ATTACH_ERROR", e.message, e)
                 }
             }
