@@ -10,7 +10,8 @@
       "expo.modules.audioeffects.ImmersiveModeEngineModule",
       "expo.modules.audioeffects.LicenseVerificationModule",
       "expo.modules.audioeffects.AudioSessionBridgeModule",
-      "expo.modules.audioeffects.MetadataExtractorModule"
+      "expo.modules.audioeffects.MetadataExtractorModule",
+      "expo.modules.audioeffects.MediaStoreScannerModule"
     ]
   }
 }

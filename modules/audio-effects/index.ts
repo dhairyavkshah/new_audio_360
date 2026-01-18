@@ -219,6 +219,35 @@ interface ImmersiveModeEngineModuleInterface {
   release(): Promise<{ success: boolean }>;
 }
 
+export interface MediaStoreSong {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  albumId: string;
+  duration: number;
+  size: number;
+  dateModified: number;
+  filename: string;
+  year: number | null;
+  track: number | null;
+  uri: string;
+  albumArt: string | null;
+}
+
+export interface MediaStoreScanResult {
+  success: boolean;
+  error?: string;
+  count?: number;
+  songs: MediaStoreSong[];
+}
+
+interface MediaStoreScannerModuleInterface {
+  isAvailable(): boolean;
+  scanAllAudio(): Promise<MediaStoreScanResult>;
+  getAlbumArt(albumId: string): Promise<{ success: boolean; albumArt: string | null }>;
+}
+
 // Native Module Instances
 let PlaybackEngineModuleNative: PlaybackEngineModuleInterface | null = null;
 let EqualizerModuleNative: EqualizerModuleInterface | null = null;
@@ -226,6 +255,7 @@ let BassBoostModuleNative: BassBoostModuleInterface | null = null;
 let VirtualizerModuleNative: VirtualizerModuleInterface | null = null;
 let WaveformAnalyzerModuleNative: WaveformAnalyzerModuleInterface | null = null;
 let ImmersiveModeEngineModuleNative: ImmersiveModeEngineModuleInterface | null = null;
+let MediaStoreScannerModuleNative: MediaStoreScannerModuleInterface | null = null;
 
 if (Platform.OS === 'android') {
   try {
@@ -262,6 +292,12 @@ if (Platform.OS === 'android') {
     ImmersiveModeEngineModuleNative = requireNativeModule<ImmersiveModeEngineModuleInterface>('ImmersiveModeEngineModule');
   } catch (e) {
     console.warn('ImmersiveModeEngineModule not available:', e);
+  }
+  
+  try {
+    MediaStoreScannerModuleNative = requireNativeModule<MediaStoreScannerModuleInterface>('MediaStoreScannerModule');
+  } catch (e) {
+    console.warn('MediaStoreScannerModule not available:', e);
   }
 }
 
@@ -1362,6 +1398,41 @@ export const MetadataExtractorModule = {
     } catch (error) {
       console.error('MetadataExtractorModule.extractAlbumArt error:', error);
       return { success: false, error: String(error) };
+    }
+  }
+};
+
+export const MediaStoreScannerModule = {
+  isAvailable: (): boolean => {
+    if (!MediaStoreScannerModuleNative) return false;
+    try {
+      return MediaStoreScannerModuleNative.isAvailable();
+    } catch (error) {
+      return false;
+    }
+  },
+
+  scanAllAudio: async (): Promise<MediaStoreScanResult> => {
+    if (!MediaStoreScannerModuleNative) {
+      return { success: false, error: 'MediaStore scanner not available', songs: [] };
+    }
+    try {
+      return await MediaStoreScannerModuleNative.scanAllAudio();
+    } catch (error) {
+      console.error('MediaStoreScannerModule.scanAllAudio error:', error);
+      return { success: false, error: String(error), songs: [] };
+    }
+  },
+
+  getAlbumArt: async (albumId: string): Promise<{ success: boolean; albumArt: string | null }> => {
+    if (!MediaStoreScannerModuleNative) {
+      return { success: false, albumArt: null };
+    }
+    try {
+      return await MediaStoreScannerModuleNative.getAlbumArt(albumId);
+    } catch (error) {
+      console.error('MediaStoreScannerModule.getAlbumArt error:', error);
+      return { success: false, albumArt: null };
     }
   }
 };

@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getMusicMetadata } from '@/lib/musicInfo';
 import { Song } from '@/lib/data';
 import { testSongs } from '@/lib/testSongs';
 import { extractAlbumArt } from '@/lib/extractAlbumArt';
@@ -13,6 +12,7 @@ import {
   WebFolderSong
 } from '@/lib/storage';
 import { getSessionWebFolders } from '@/lib/webFolderCache';
+import { MediaStoreScannerModule } from '@/modules/audio-effects';
 
 const HIDDEN_SONGS_KEY = '@new_audio_360_hidden_songs';
 const ONBOARDING_COMPLETE_KEY = '@new_audio_360_onboarding_complete';
@@ -250,171 +250,96 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
       return;
     }
 
-    console.log('[MediaLibrary] Android: Starting audio file scan...');
+    console.log('[MediaLibrary] Android: Starting MediaStore audio scan...');
     setIsLoading(true);
     setError(null);
     setProgress({ loaded: 0, total: 0 });
 
     try {
-      let allAssets: MediaLibrary.Asset[] = [];
-      
-      if (folderIds.length > 0) {
-        for (const albumId of folderIds) {
-          let hasNextPage = true;
-          let endCursor: string | undefined;
-          
-          while (hasNextPage) {
-            const result = await MediaLibrary.getAssetsAsync({
-              album: albumId,
-              mediaType: MediaLibrary.MediaType.audio,
-              first: 100,
-              after: endCursor,
-              sortBy: [MediaLibrary.SortBy.modificationTime],
-            });
-
-            allAssets = [...allAssets, ...result.assets];
-            hasNextPage = result.hasNextPage;
-            endCursor = result.endCursor;
-            
-            setProgress({ loaded: allAssets.length, total: allAssets.length });
-          }
-        }
-      } else {
-        let hasNextPage = true;
-        let endCursor: string | undefined;
+      if (MediaStoreScannerModule.isAvailable()) {
+        console.log('[MediaLibrary] Using native MediaStoreScannerModule');
+        const result = await MediaStoreScannerModule.scanAllAudio();
         
-        while (hasNextPage) {
-          const result = await MediaLibrary.getAssetsAsync({
-            mediaType: MediaLibrary.MediaType.audio,
-            first: 100,
-            after: endCursor,
-            sortBy: [MediaLibrary.SortBy.modificationTime],
-          });
-
-          allAssets = [...allAssets, ...result.assets];
-          hasNextPage = result.hasNextPage;
-          endCursor = result.endCursor;
-          
-          setProgress({ loaded: allAssets.length, total: result.totalCount });
+        console.log('[MediaLibrary] MediaStore scan result:', {
+          success: result.success,
+          count: result.count,
+          error: result.error
+        });
+        
+        if (!result.success) {
+          console.error('[MediaLibrary] MediaStore scan failed:', result.error);
+          setError(result.error || 'Failed to scan audio files');
+          setSongs([]);
+          setAllSongsIncludingHidden([]);
+          setUsingMockData(false);
+          setIsLoading(false);
+          return;
         }
-      }
-
-      console.log('[MediaLibrary] Android: Found', allAssets.length, 'audio assets');
-      
-      if (allAssets.length === 0) {
-        console.log('[MediaLibrary] Android: No assets found, clearing songs');
-        setSongs([]);
-        setAllSongsIncludingHidden([]);
+        
+        const deviceSongs: DeviceSong[] = result.songs.map(song => ({
+          id: song.id,
+          title: song.title || extractTitle(song.filename),
+          artist: song.artist || parseArtistFromFilename(song.filename) || 'Unknown Artist',
+          album: song.album || 'Unknown Album',
+          duration: Math.floor((song.duration || 0) / 1000),
+          artwork: song.albumArt || undefined,
+          uri: song.uri,
+          filename: song.filename,
+          modificationTime: song.dateModified * 1000,
+          isFromDevice: true,
+        }));
+        
+        console.log('[MediaLibrary] Processed', deviceSongs.length, 'songs with metadata');
+        if (deviceSongs.length > 0) {
+          console.log('[MediaLibrary] Sample song:', {
+            title: deviceSongs[0].title,
+            artist: deviceSongs[0].artist,
+            hasArt: !!deviceSongs[0].artwork
+          });
+        }
+        
+        const filtered = deviceSongs.filter(s => !hiddenIds.includes(s.id));
+        setSongs(filtered);
+        setAllSongsIncludingHidden(deviceSongs);
         setUsingMockData(false);
-        setProgress({ loaded: 0, total: 0 });
+        setProgress({ loaded: filtered.length, total: deviceSongs.length });
+        setIsLoading(false);
         return;
       }
-
-      // Cache for album names - stores promises to avoid duplicate concurrent fetches
-      const albumPromiseCache = new Map<string, Promise<string>>();
       
-      const getAlbumName = (albumId: string | undefined): Promise<string> => {
-        if (!albumId) return Promise.resolve('Unknown Album');
-        
-        if (albumPromiseCache.has(albumId)) {
-          return albumPromiseCache.get(albumId)!;
-        }
-        
-        const promise = (async () => {
-          try {
-            const album = await MediaLibrary.getAlbumAsync(albumId);
-            return album?.title || 'Unknown Album';
-          } catch {
-            return 'Unknown Album';
-          }
-        })();
-        
-        albumPromiseCache.set(albumId, promise);
-        return promise;
-      };
-
-      console.log('[MediaLibrary] Starting metadata extraction for', allAssets.length, 'assets...');
+      console.log('[MediaLibrary] MediaStoreScannerModule not available, falling back to expo-media-library');
       
-      const deviceSongs: DeviceSong[] = await Promise.all(allAssets.map(async (asset, index) => {
-        let artist = 'Unknown Artist';
-        let album = 'Unknown Album';
-        let title = extractTitle(asset.filename);
-        let artwork: string | undefined = undefined;
-        
-        try {
-          if (index < 3) console.log('[MediaLibrary] Processing asset', index, ':', asset.filename);
-          
-          // Try to get localUri from assetInfo, but fall back to asset.uri if not available
-          let fileUri = asset.uri;
-          try {
-            const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
-            if (assetInfo.localUri) {
-              fileUri = assetInfo.localUri;
-            }
-          } catch {
-            // Use asset.uri as fallback
-          }
-          
-          if (index < 3) console.log('[MediaLibrary] Using URI for', index, ':', fileUri?.substring(0, 60));
-          
-          if (fileUri) {
-            if (index < 3) console.log('[MediaLibrary] About to call getMusicMetadata for', index);
-            let metadata = null;
-            try {
-              metadata = await getMusicMetadata(fileUri);
-            } catch (metaErr) {
-              console.error('[MediaLibrary] getMusicMetadata threw error for', index, ':', metaErr);
-            }
-            if (index < 3) console.log('[MediaLibrary] getMusicMetadata returned for', index, ':', metadata ? 'has data' : 'null');
-            
-            if (metadata) {
-              if (index < 3) console.log('[MediaLibrary] Got metadata for', index, ':', {
-                title: metadata.title,
-                artist: metadata.artist,
-                hasArt: !!metadata.albumArt
-              });
-              if (metadata.title) title = metadata.title;
-              if (metadata.artist) artist = metadata.artist;
-              if (metadata.album) album = metadata.album;
-              if (metadata.albumArt) artwork = metadata.albumArt;
-            } else {
-              if (index < 3) console.log('[MediaLibrary] No metadata returned for', index);
-            }
-          } else {
-            if (index < 3) console.log('[MediaLibrary] No URI available for', index);
-          }
-        } catch (err) {
-          console.warn('[MediaLibrary] Error extracting metadata for:', asset.filename, err);
-        }
-        
-        if (artist === 'Unknown Artist') {
-          const parsedArtist = parseArtistFromFilename(asset.filename);
-          if (parsedArtist) artist = parsedArtist;
-        }
-        
-        if (album === 'Unknown Album') {
-          const albumName = await getAlbumName(asset.albumId);
-          if (albumName && albumName !== 'Unknown Album') {
-            album = albumName;
-          }
-        }
-        
-        if ((index + 1) % 10 === 0 || index === allAssets.length - 1) {
-          setProgress({ loaded: index + 1, total: allAssets.length });
-        }
-        
-        return {
-          id: asset.id,
-          title,
-          artist,
-          album,
-          duration: Math.floor(asset.duration),
-          artwork: artwork || undefined,
-          uri: asset.uri,
-          filename: asset.filename,
-          modificationTime: asset.modificationTime,
-          isFromDevice: true,
-        };
+      let allAssets: MediaLibrary.Asset[] = [];
+      let hasNextPage = true;
+      let endCursor: string | undefined;
+      
+      while (hasNextPage) {
+        const result = await MediaLibrary.getAssetsAsync({
+          mediaType: MediaLibrary.MediaType.audio,
+          first: 100,
+          after: endCursor,
+          sortBy: [MediaLibrary.SortBy.modificationTime],
+        });
+
+        allAssets = [...allAssets, ...result.assets];
+        hasNextPage = result.hasNextPage;
+        endCursor = result.endCursor;
+        setProgress({ loaded: allAssets.length, total: result.totalCount });
+      }
+
+      console.log('[MediaLibrary] Fallback: Found', allAssets.length, 'audio assets');
+      
+      const deviceSongs: DeviceSong[] = allAssets.map(asset => ({
+        id: asset.id,
+        title: extractTitle(asset.filename),
+        artist: parseArtistFromFilename(asset.filename) || 'Unknown Artist',
+        album: 'Unknown Album',
+        duration: Math.floor(asset.duration),
+        artwork: undefined,
+        uri: asset.uri,
+        filename: asset.filename,
+        modificationTime: asset.modificationTime,
+        isFromDevice: true,
       }));
 
       const filtered = deviceSongs.filter(s => !hiddenIds.includes(s.id));

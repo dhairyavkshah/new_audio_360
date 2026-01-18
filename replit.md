@@ -99,7 +99,8 @@ Music, 360 Reality, Gaming, Podcast, Movie, Sports
 - **WaveformAnalyzerModule**: Real-time waveform/FFT visualization (uses android.media.audiofx.Visualizer for read-only audio data)
 - **FMRadioModule**: FM/AM radio tuning (device hardware required)
 - **LicenseVerificationModule**: Google Play Store license verification
-- **MetadataExtractorModule**: ID3 metadata extraction (title, artist, album, album art) using MediaMetadataRetriever
+- **MediaStoreScannerModule**: Uses Android MediaStore API to scan all audio files with metadata (title, artist, album, album art) in a single efficient query - replaces per-file ID3 parsing
+- **MetadataExtractorModule**: ID3 metadata extraction fallback using MediaMetadataRetriever
 
 **Note**: No Android hardware audio effects (android.media.audiofx.Equalizer, BassBoost, Virtualizer) are used for audio processing. Only the Visualizer class is used for read-only waveform analysis.
 
@@ -187,6 +188,22 @@ Music, 360 Reality, Gaming, Podcast, Movie, Sports
 - react-native-iap (Google Play Billing)
 
 ## Recent Changes
+
+### January 19, 2026 - MediaStore Scanner Module (Android Native Audio Scanning)
+- **Created MediaStoreScannerModule.kt** - Uses Android's native MediaStore API for audio scanning
+  - Single ContentResolver query to get ALL audio files with metadata
+  - Returns: title, artist, album, albumId, duration, size, dateModified, filename, year, track, uri, albumArt
+  - Album art loaded via `ContentResolver.loadThumbnail()` (API 29+) with legacy fallback
+  - Album art cached per albumId for efficiency
+  - Much faster than per-file ID3 parsing - Android's media scanner already indexed everything
+- **Updated MediaLibraryContext.tsx** to use MediaStoreScannerModule on Android
+  - Replaced expo-media-library + per-file getMusicMetadata with single native call
+  - Falls back to expo-media-library if native module not available
+- **Key benefits**:
+  - Faster scanning (one query vs N queries)
+  - More reliable metadata (uses Android's indexed database)
+  - Proper scoped storage handling with content:// URIs
+  - Album art from system cache
 
 ### January 18, 2026 - Metadata Extraction Module
 - **Created MetadataExtractorModule.kt** for proper ID3 metadata extraction on Android
