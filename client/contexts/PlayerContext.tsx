@@ -902,7 +902,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
         AudioCoordinator.notifyPlaybackStarted('music');
       } else if (useTrackPlayerRef.current) {
+        console.log('[PlayerContext] Using TrackPlayer for playback');
+        
         if (!trackPlayerInitializedRef.current) {
+          console.log('[PlayerContext] Initializing TrackPlayer...');
           const initialized = await TrackPlayerService.initialize();
           if (!initialized) {
             console.warn('[PlayerContext] TrackPlayer failed to initialize, falling back to expo-av');
@@ -922,10 +925,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             return;
           }
           trackPlayerInitializedRef.current = true;
+          console.log('[PlayerContext] TrackPlayer initialized successfully');
         }
 
-        // Stop any current playback first (radio or previous music)
-        await TrackPlayerService.stop();
+        // Stop any current playback but don't reset queue yet
+        try {
+          await TrackPlayerService.pause();
+        } catch (e) {
+          console.log('[PlayerContext] Pause before load failed (may be normal):', e);
+        }
 
         // Set source to music
         TrackPlayerService.setPlaybackSource('music');
@@ -999,31 +1007,58 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           },
         });
         
-        const currentQueue = queueRef.current;
-        const songIndex = currentQueue.findIndex(s => s.id === song.id);
+        let currentQueue = queueRef.current;
+        console.log('[PlayerContext] Current queue length:', currentQueue.length);
+        
+        // If queue is empty, add the current song as a single-track queue
+        if (currentQueue.length === 0 && song) {
+          console.log('[PlayerContext] Queue empty, adding current song');
+          currentQueue = [song];
+          setQueueState([song]);
+        }
         
         const trackMetadataList: TrackMetadata[] = currentQueue
           .map(s => convertSongToTrackMetadata(s))
           .filter((t): t is TrackMetadata => t !== null);
         
+        console.log('[PlayerContext] Valid tracks for TrackPlayer:', trackMetadataList.length);
+        
         if (trackMetadataList.length === 0) {
-          setError('No valid tracks in queue');
-          setIsLoading(false);
-          return;
+          // Last resort: try to create metadata from current song directly
+          const singleTrack = convertSongToTrackMetadata(song);
+          if (singleTrack) {
+            console.log('[PlayerContext] Using single track fallback');
+            trackMetadataList.push(singleTrack);
+          } else {
+            setError('No valid audio source for this song');
+            setIsLoading(false);
+            return;
+          }
         }
 
-        await TrackPlayerService.setQueue(trackMetadataList);
-        
-        const trackIndex = trackMetadataList.findIndex(t => t.id === song.id);
-        if (trackIndex >= 0) {
-          await TrackPlayerService.skipToTrack(trackIndex);
+        try {
+          console.log('[PlayerContext] Setting TrackPlayer queue...');
+          await TrackPlayerService.setQueue(trackMetadataList);
+          
+          const trackIndex = trackMetadataList.findIndex(t => t.id === song.id);
+          console.log('[PlayerContext] Track index in queue:', trackIndex);
+          
+          if (trackIndex >= 0) {
+            await TrackPlayerService.skipToTrack(trackIndex);
+          }
+          
+          console.log('[PlayerContext] Starting TrackPlayer playback...');
+          await TrackPlayerService.play();
+          
+          setIsPlaying(true);
+          setIsLoading(false);
+          AudioCoordinator.notifyPlaybackStarted('music');
+          console.log('[PlayerContext] TrackPlayer playback started successfully');
+        } catch (trackPlayerError) {
+          console.error('[PlayerContext] TrackPlayer error:', trackPlayerError);
+          setError('Failed to start playback');
+          setIsLoading(false);
         }
-        
-        await TrackPlayerService.play();
-        
-        setIsPlaying(true);
-        setIsLoading(false);
-        AudioCoordinator.notifyPlaybackStarted('music');
       } else if (useNativePlaybackRef.current) {
         cleanupPlayer();
         
@@ -1178,40 +1213,84 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [handlePreviousInternal]);
 
   const togglePlayPause = useCallback(async () => {
-    if (Platform.OS === 'web' && audioElementRef.current) {
-      if (isPlaying) {
-        audioElementRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        // Request playback to stop any playing radio first
-        await AudioCoordinator.requestPlayback('music');
-        if (audioContextRef.current?.state === 'suspended') {
-          audioContextRef.current.resume();
+    console.log('[PlayerContext] togglePlayPause called', { 
+      platform: Platform.OS, 
+      isPlaying, 
+      hasAudioElement: !!audioElementRef.current,
+      hasCurrentSong: !!currentSong 
+    });
+
+    if (Platform.OS === 'web') {
+      if (!audioElementRef.current) {
+        console.log('[PlayerContext] No audio element on web, attempting to load current song');
+        if (currentSong) {
+          loadAndPlaySong(currentSong);
         }
-        audioElementRef.current.play().catch(console.error);
-        setIsPlaying(true);
-        AudioCoordinator.notifyPlaybackStarted('music');
+        return;
+      }
+      
+      try {
+        if (isPlaying) {
+          console.log('[PlayerContext] Web: Pausing audio');
+          audioElementRef.current.pause();
+          setIsPlaying(false);
+        } else {
+          console.log('[PlayerContext] Web: Playing audio');
+          await AudioCoordinator.requestPlayback('music');
+          if (audioContextRef.current?.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+          await audioElementRef.current.play();
+          setIsPlaying(true);
+          AudioCoordinator.notifyPlaybackStarted('music');
+        }
+      } catch (err) {
+        console.error('[PlayerContext] Web togglePlayPause error:', err);
+        setIsPlaying(false);
       }
       return;
     }
 
     if (useTrackPlayerRef.current) {
+      console.log('[PlayerContext] TrackPlayer togglePlayPause, isPlaying:', isPlaying, 'initialized:', trackPlayerInitializedRef.current);
+      
+      // Check if TrackPlayer is actually initialized
+      if (!trackPlayerInitializedRef.current) {
+        console.log('[PlayerContext] TrackPlayer not initialized, loading song first');
+        if (currentSong) {
+          loadAndPlaySong(currentSong);
+        }
+        return;
+      }
+      
       if (isPlaying) {
+        console.log('[PlayerContext] Pausing TrackPlayer...');
         TrackPlayerService.pause().then(() => {
+          console.log('[PlayerContext] TrackPlayer paused');
           setIsPlaying(false);
+        }).catch((err) => {
+          console.error('[PlayerContext] TrackPlayer pause error:', err);
         });
       } else {
-        if (!currentSong) return;
+        if (!currentSong) {
+          console.log('[PlayerContext] No current song to play');
+          return;
+        }
         // Request playback to stop any playing radio first
         await AudioCoordinator.requestPlayback('music');
         // Restore playback source before playing so callbacks work correctly
         TrackPlayerService.setPlaybackSource('music');
         try {
+          console.log('[PlayerContext] Playing TrackPlayer...');
           await TrackPlayerService.play();
           setIsPlaying(true);
           AudioCoordinator.notifyPlaybackStarted('music');
+          console.log('[PlayerContext] TrackPlayer resumed');
         } catch (error) {
           console.warn('[PlayerContext] Failed to resume playback:', error);
+          // Try reloading the song
+          console.log('[PlayerContext] Attempting to reload current song');
+          loadAndPlaySong(currentSong);
         }
       }
       return;
@@ -1258,13 +1337,32 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [isPlaying, currentSong, loadAndPlaySong]);
 
   const handleNext = useCallback(() => {
-    if (!currentSong) return;
+    console.log('[PlayerContext] handleNext called', {
+      platform: Platform.OS,
+      hasCurrentSong: !!currentSong,
+      queueLength: queue.length,
+      useTrackPlayer: useTrackPlayerRef.current,
+    });
+
+    if (!currentSong) {
+      console.log('[PlayerContext] handleNext: No current song');
+      return;
+    }
 
     if (useTrackPlayerRef.current) {
+      console.log('[PlayerContext] handleNext with TrackPlayer, initialized:', trackPlayerInitializedRef.current);
+      
+      if (!trackPlayerInitializedRef.current) {
+        console.log('[PlayerContext] TrackPlayer not initialized for next');
+        return;
+      }
+      
       const currentQueue = queueRef.current;
       const currentIndex = currentQueue.findIndex((s) => s.id === currentSong.id);
       const currentShuffle = shuffleRef.current;
       const currentRepeat = repeatRef.current;
+      
+      console.log('[PlayerContext] handleNext - currentIndex:', currentIndex, 'queueLength:', currentQueue.length);
       
       let nextIndex: number;
       if (currentShuffle) {
@@ -1274,13 +1372,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
 
       if (nextIndex === 0 && currentRepeat === 'off' && !currentShuffle) {
+        console.log('[PlayerContext] End of queue, stopping');
         setIsPlaying(false);
         setCurrentTime(0);
         return;
       }
 
+      console.log('[PlayerContext] Skipping to track:', nextIndex);
       TrackPlayerService.skipToTrack(nextIndex).then(() => {
+        console.log('[PlayerContext] Playing after skip');
         TrackPlayerService.play();
+      }).catch((err) => {
+        console.error('[PlayerContext] Skip/play error:', err);
       });
       return;
     }
@@ -1294,7 +1397,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       nextIndex = (currentIndex + 1) % queue.length;
     }
 
+    console.log('[PlayerContext] handleNext: currentIndex=', currentIndex, 'nextIndex=', nextIndex);
+
     if (nextIndex === 0 && repeat === 'off' && !shuffle) {
+      console.log('[PlayerContext] handleNext: Reached end of queue, stopping');
       setIsPlaying(false);
       setCurrentTime(0);
       return;
@@ -1302,14 +1408,27 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     const nextSong = queue[nextIndex];
     if (nextSong) {
+      console.log('[PlayerContext] handleNext: Loading next song:', nextSong.title);
       loadAndPlaySong(nextSong);
     }
   }, [currentSong, queue, shuffle, repeat, loadAndPlaySong]);
 
   const handlePrevious = useCallback(() => {
-    if (!currentSong) return;
+    console.log('[PlayerContext] handlePrevious called', {
+      platform: Platform.OS,
+      hasCurrentSong: !!currentSong,
+      currentTime,
+      queueLength: queue.length,
+      useTrackPlayer: useTrackPlayerRef.current,
+    });
+
+    if (!currentSong) {
+      console.log('[PlayerContext] handlePrevious: No current song');
+      return;
+    }
 
     if (currentTime > 3) {
+      console.log('[PlayerContext] handlePrevious: Seeking to start (currentTime > 3)');
       if (Platform.OS === 'web' && audioElementRef.current) {
         audioElementRef.current.currentTime = 0;
         setCurrentTime(0);
@@ -1327,12 +1446,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
 
     if (useTrackPlayerRef.current) {
+      console.log('[PlayerContext] handlePrevious with TrackPlayer, initialized:', trackPlayerInitializedRef.current);
+      
+      if (!trackPlayerInitializedRef.current) {
+        console.log('[PlayerContext] TrackPlayer not initialized for previous');
+        return;
+      }
+      
       const currentQueue = queueRef.current;
       const currentIndex = currentQueue.findIndex((s) => s.id === currentSong.id);
       const prevIndex = currentIndex === 0 ? currentQueue.length - 1 : currentIndex - 1;
       
+      console.log('[PlayerContext] handlePrevious - currentIndex:', currentIndex, 'prevIndex:', prevIndex);
+      
       TrackPlayerService.skipToTrack(prevIndex).then(() => {
+        console.log('[PlayerContext] Playing after skip to previous');
         TrackPlayerService.play();
+      }).catch((err) => {
+        console.error('[PlayerContext] Skip to previous error:', err);
       });
       return;
     }
@@ -1340,22 +1471,47 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const currentIndex = queue.findIndex((s) => s.id === currentSong.id);
     const prevIndex = currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
     const prevSong = queue[prevIndex];
+    console.log('[PlayerContext] handlePrevious: currentIndex=', currentIndex, 'prevIndex=', prevIndex);
     if (prevSong) {
+      console.log('[PlayerContext] handlePrevious: Loading previous song:', prevSong.title);
       loadAndPlaySong(prevSong);
     }
   }, [currentSong, queue, currentTime, loadAndPlaySong]);
 
   const seek = useCallback((time: number) => {
-    const targetTime = Math.max(0, Math.min(time, duration || currentSong?.duration || 0));
+    const maxDuration = duration || currentSong?.duration || 0;
+    const targetTime = Math.max(0, Math.min(time, maxDuration));
+    
+    console.log('[PlayerContext] seek called', {
+      platform: Platform.OS,
+      requestedTime: time,
+      targetTime,
+      maxDuration,
+      hasAudioElement: !!audioElementRef.current,
+    });
+
     setCurrentTime(targetTime);
-    if (Platform.OS === 'web' && audioElementRef.current) {
-      audioElementRef.current.currentTime = targetTime;
-    } else if (useTrackPlayerRef.current) {
-      TrackPlayerService.seekTo(targetTime);
-    } else if (useNativePlaybackRef.current) {
-      PlaybackEngineModule.seekTo(targetTime * 1000);
-    } else if (playerRef.current) {
-      playerRef.current.seekTo(targetTime);
+    
+    try {
+      if (Platform.OS === 'web') {
+        if (audioElementRef.current) {
+          console.log('[PlayerContext] Web: Setting currentTime to', targetTime);
+          audioElementRef.current.currentTime = targetTime;
+        } else {
+          console.log('[PlayerContext] Web: No audio element for seeking');
+        }
+      } else if (useTrackPlayerRef.current) {
+        console.log('[PlayerContext] TrackPlayer: Seeking to', targetTime);
+        TrackPlayerService.seekTo(targetTime).catch((err) => {
+          console.error('[PlayerContext] TrackPlayer seek error:', err);
+        });
+      } else if (useNativePlaybackRef.current) {
+        PlaybackEngineModule.seekTo(targetTime * 1000);
+      } else if (playerRef.current) {
+        playerRef.current.seekTo(targetTime);
+      }
+    } catch (err) {
+      console.error('[PlayerContext] Seek error:', err);
     }
   }, [duration, currentSong]);
 

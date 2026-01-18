@@ -461,5 +461,3 @@ export async function PlaybackService() {
   });
 }
 
-export { State, RepeatMode };
-export type { Track, Progress, PlaybackState };
