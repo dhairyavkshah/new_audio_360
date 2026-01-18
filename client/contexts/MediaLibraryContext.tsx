@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMusicMetadata } from '@/lib/musicInfo';
 import { Song } from '@/lib/data';
 import { testSongs } from '@/lib/testSongs';
+import { extractAlbumArt } from '@/lib/extractAlbumArt';
 import { 
   getSelectedFolders as loadSelectedFoldersFromStorage, 
   setSelectedFolders as saveSelectedFoldersToStorage,
@@ -219,11 +220,31 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         return;
       }
       
-      const filtered = testSongs.filter(s => !hiddenIds.includes(s.id));
+      setIsLoading(true);
+      setProgress({ loaded: 0, total: testSongs.length });
+      
+      const songsWithArt: DeviceSong[] = await Promise.all(
+        testSongs.map(async (song, index) => {
+          try {
+            const result = await extractAlbumArt(song.uri);
+            setProgress({ loaded: index + 1, total: testSongs.length });
+            return {
+              ...song,
+              artwork: result.dataUrl || song.artwork,
+            };
+          } catch {
+            setProgress({ loaded: index + 1, total: testSongs.length });
+            return song;
+          }
+        })
+      );
+      
+      const filtered = songsWithArt.filter(s => !hiddenIds.includes(s.id));
       setSongs(filtered);
-      setAllSongsIncludingHidden(testSongs);
+      setAllSongsIncludingHidden(songsWithArt);
       setUsingMockData(false);
-      setProgress({ loaded: filtered.length, total: testSongs.length });
+      setIsLoading(false);
+      setProgress({ loaded: filtered.length, total: songsWithArt.length });
       return;
     }
 
