@@ -14,16 +14,22 @@ export interface MusicMetadata {
 
 export async function getMusicMetadata(localUri: string): Promise<MusicMetadata | null> {
   if (Platform.OS !== 'android') {
+    console.log('[getMusicMetadata] Not Android, skipping');
     return null;
   }
   
-  if (!MetadataExtractorModule.isAvailable()) {
+  const isAvailable = MetadataExtractorModule.isAvailable();
+  console.log('[getMusicMetadata] Module available:', isAvailable);
+  
+  if (!isAvailable) {
     console.warn('[getMusicMetadata] MetadataExtractorModule not available');
     return null;
   }
   
   try {
+    console.log('[getMusicMetadata] Extracting from:', localUri);
     const result = await MetadataExtractorModule.extractMetadata(localUri);
+    console.log('[getMusicMetadata] Result:', JSON.stringify(result).substring(0, 200));
     
     if (!result.success) {
       console.warn('[getMusicMetadata] Extraction failed:', result.error);

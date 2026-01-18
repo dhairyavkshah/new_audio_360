@@ -341,13 +341,24 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
               const metadata = await getMusicMetadata(assetInfo.localUri);
               
               if (metadata) {
+                console.log('[MediaLibrary] Extracted metadata for:', asset.filename, {
+                  title: metadata.title,
+                  artist: metadata.artist,
+                  album: metadata.album,
+                  hasArt: !!metadata.albumArt
+                });
                 if (metadata.title) title = metadata.title;
                 if (metadata.artist) artist = metadata.artist;
                 if (metadata.album) album = metadata.album;
                 if (metadata.albumArt) artwork = metadata.albumArt;
+              } else {
+                console.log('[MediaLibrary] No metadata for:', asset.filename, 'uri:', assetInfo.localUri);
               }
+            } else {
+              console.log('[MediaLibrary] No localUri for:', asset.filename);
             }
-          } catch {
+          } catch (err) {
+            console.error('[MediaLibrary] Error getting asset info:', asset.filename, err);
           }
         }
         
