@@ -91,6 +91,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const eqFiltersRef = useRef<BiquadFilterNode[]>([]);
+  const bassBoostFilterRef = useRef<BiquadFilterNode | null>(null);
+  const trebleBoostFilterRef = useRef<BiquadFilterNode | null>(null);
   const stereoWidenerRef = useRef<StereoPannerNode | null>(null);
   const delayNodeRef = useRef<DelayNode | null>(null);
   const delayGainRef = useRef<GainNode | null>(null);
@@ -644,6 +646,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const createEQChain = useCallback((ctx: AudioContext): BiquadFilterNode[] => {
     eqFiltersRef.current.forEach(f => { try { f.disconnect(); } catch {} });
     eqFiltersRef.current = [];
+    
+    // Disconnect old bass/treble filters
+    if (bassBoostFilterRef.current) { try { bassBoostFilterRef.current.disconnect(); } catch {} }
+    if (trebleBoostFilterRef.current) { try { trebleBoostFilterRef.current.disconnect(); } catch {} }
 
     const bands = Object.keys(EQ_FREQUENCIES) as (keyof EQBands)[];
     const bandValues = bands.map(band => eqBands[band]);
@@ -654,6 +660,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const DB_PER_UNIT = 2.4;
     const MAX_DB = 12;
     
+    // Create EQ band filters (only apply preset, no bass/treble boost here)
     bands.forEach((band, index) => {
       const filter = ctx.createBiquadFilter();
       
@@ -669,11 +676,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       filter.frequency.value = EQ_FREQUENCIES[band];
       
       if (soundLabMode === 'equalizer') {
-        let dbValue = zeroSumBands[index] * DB_PER_UNIT;
-        // Bass: sub (32Hz) and bass (64Hz) - indices 0, 1
-        if (index <= 1) dbValue += bassBoost * DB_PER_UNIT;
-        // Treble: treble (8kHz) and brilliance (16kHz) - indices 5, 6
-        if (index >= 5) dbValue += trebleBoost * DB_PER_UNIT;
+        const dbValue = zeroSumBands[index] * DB_PER_UNIT;
         filter.gain.value = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
       } else {
         filter.gain.value = 0;
@@ -682,9 +685,30 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       eqFiltersRef.current.push(filter);
     });
 
+    // Create dedicated Bass Boost filter (lowshelf at 150Hz for full bass range)
+    const bassFilter = ctx.createBiquadFilter();
+    bassFilter.type = 'lowshelf';
+    bassFilter.frequency.value = 150; // Boosts ALL frequencies below 150Hz
+    bassFilter.gain.value = soundLabMode === 'equalizer' ? bassBoost * DB_PER_UNIT : 0;
+    bassBoostFilterRef.current = bassFilter;
+    
+    // Create dedicated Treble Boost filter (highshelf at 6kHz for full treble range)
+    const trebleFilter = ctx.createBiquadFilter();
+    trebleFilter.type = 'highshelf';
+    trebleFilter.frequency.value = 6000; // Boosts ALL frequencies above 6kHz
+    trebleFilter.gain.value = soundLabMode === 'equalizer' ? trebleBoost * DB_PER_UNIT : 0;
+    trebleBoostFilterRef.current = trebleFilter;
+
+    // Connect EQ chain
     for (let i = 0; i < eqFiltersRef.current.length - 1; i++) {
       eqFiltersRef.current[i].connect(eqFiltersRef.current[i + 1]);
     }
+    
+    // Connect: last EQ -> Bass Boost -> Treble Boost
+    if (eqFiltersRef.current.length > 0) {
+      eqFiltersRef.current[eqFiltersRef.current.length - 1].connect(bassFilter);
+    }
+    bassFilter.connect(trebleFilter);
 
     return eqFiltersRef.current;
   }, [soundLabMode, eqBands, bassBoost, trebleBoost]);
@@ -701,18 +725,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const DB_PER_UNIT = 2.4;
     const MAX_DB = 12;
     
+    // Update EQ band filters (preset only, no bass/treble boost)
     eqFiltersRef.current.forEach((filter, index) => {
       if (soundLabMode === 'equalizer') {
-        let dbValue = zeroSumBands[index] * DB_PER_UNIT;
-        // Bass: sub (32Hz) and bass (64Hz) - indices 0, 1
-        if (index <= 1) dbValue += bassBoost * DB_PER_UNIT;
-        // Treble: treble (8kHz) and brilliance (16kHz) - indices 5, 6
-        if (index >= 5) dbValue += trebleBoost * DB_PER_UNIT;
+        const dbValue = zeroSumBands[index] * DB_PER_UNIT;
         filter.gain.value = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
       } else {
         filter.gain.value = 0;
       }
     });
+    
+    // Update dedicated Bass Boost filter
+    if (bassBoostFilterRef.current) {
+      bassBoostFilterRef.current.gain.value = soundLabMode === 'equalizer' 
+        ? Math.max(-MAX_DB, Math.min(MAX_DB, bassBoost * DB_PER_UNIT)) 
+        : 0;
+    }
+    
+    // Update dedicated Treble Boost filter
+    if (trebleBoostFilterRef.current) {
+      trebleBoostFilterRef.current.gain.value = soundLabMode === 'equalizer' 
+        ? Math.max(-MAX_DB, Math.min(MAX_DB, trebleBoost * DB_PER_UNIT)) 
+        : 0;
+    }
     
     if (stereoWidenerRef.current) {
       const pan = soundLabMode === 'immersive' ? (immersiveEffect.stereoWidth - 1) * 0.3 : 0;
@@ -818,7 +853,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         
         if (eqChain.length > 0) {
           gainNodeRef.current.connect(eqChain[0]);
-          eqChain[eqChain.length - 1].connect(stereoWidenerRef.current);
+          // EQ chain -> Bass Boost -> Treble Boost -> Stereo Widener
+          // (createEQChain already connects EQ -> Bass -> Treble)
+          if (trebleBoostFilterRef.current) {
+            trebleBoostFilterRef.current.connect(stereoWidenerRef.current);
+          } else {
+            eqChain[eqChain.length - 1].connect(stereoWidenerRef.current);
+          }
         } else {
           gainNodeRef.current.connect(stereoWidenerRef.current);
         }
