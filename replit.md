@@ -37,14 +37,13 @@ A 4-tab system (`MainTabNavigator`) with a persistent MiniPlayer:
 -   **RadioTab**: FM/AM native radio and Online streaming radio.
 -   **SettingsTab**: General settings, Sound Lab, Appearance, License, About.
 
-### Audio Effects Architecture (Hybrid Approach)
--   **Android Platform**: Uses native `android.media.audiofx.Equalizer` with 2.5x effect strength (100 millibels per unit) for noticeable EQ changes. Native effects attached via priority 1000 for global audio session support.
--   **Web/iOS Platform**: Uses `react-native-audio-api` (Web Audio API implementation) with BiquadFilter-based 10-band EQ. WebAudioEffectsEngine provides consistent effects across platforms.
--   **Immersive Modes**: 6 preset modes (Music, 360 Reality, Gaming, Podcast, Movie, Off) with custom EQ curves applied via platform-appropriate engine.
+### Audio Effects Architecture (Software DSP)
+-   **All Platforms**: Uses `react-native-audio-api` (Web Audio API implementation) with BiquadFilter-based 10-band software EQ. This provides consistent, device-independent audio processing across Android, iOS, and Web.
+-   **WebAudioEffectsEngine**: Implements 10-band parametric EQ with peaking filters at standard frequencies (60Hz to 16kHz), plus low-shelf and high-shelf filters for bass/treble enhancement.
+-   **Immersive Modes**: 6 preset modes (Music, 360 Reality, Gaming, Podcast, Movie, Off) with custom EQ curves applied via software DSP.
 
 ### Native Audio Modules (Android-specific)
 -   **PlaybackEngineModule**: ExoPlayer-based playback with queue, shuffle, repeat, speed, and audio session management.
--   **Native Audio Effects**: 5-band Equalizer with 100mb/unit strength for noticeable effect. Headroom-safe processing with priority 1000.
 -   **ImmersiveModeEngineModule**: Manages 6 immersive audio modes (Music, 360 Reality, Gaming, Podcast, Movie, Off).
 -   **AudioSessionBridgeModule**: Bridges audio session IDs between react-native-track-player and native effects.
 -   **NativeWaveformVisualizer**: Real-time 64-bar waveform visualization.

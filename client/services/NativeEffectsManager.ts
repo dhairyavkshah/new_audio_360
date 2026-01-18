@@ -5,7 +5,7 @@ import {
 } from 'audio-effects';
 import type { EQBands, SoundLabMode } from '@/contexts/SoundLabContext';
 
-export type AudioSessionSource = 'music' | 'radio' | 'none';
+export type AudioSessionSource = 'music' | 'radio' | 'software' | 'none';
 
 class NativeEffectsManagerClass {
   private isInitialized = false;
