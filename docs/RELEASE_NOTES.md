@@ -170,12 +170,7 @@ Each immersive mode has its own dedicated EQ curve, bass boost, treble boost, an
 
 ### Pricing
 
-| Region | Price | Access |
-|--------|-------|--------|
-| India | ₹311 INR | Lifetime |
-| International | $13.11 USD | Lifetime |
-
-No subscriptions. No ads. No expiration.
+One-time purchase for lifetime access. No subscriptions. No ads. No expiration.
 
 ---
 

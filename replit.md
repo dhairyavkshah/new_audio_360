@@ -1,7 +1,7 @@
 # New Audio 360
 
 ## Overview
-New Audio 360 is a premium mobile music player application built with React Native and Expo, targeting audio enthusiasts. It delivers studio-quality audio processing through pure software-based DSP, 55 stunning themes, and comprehensive music organization. The app requires a one-time purchase (₹311 India / $13.11 International) for lifetime access, with all data stored locally and no backend required.
+New Audio 360 is a premium mobile music player application built with React Native and Expo, targeting audio enthusiasts. It delivers studio-quality audio processing through pure software-based DSP, 55 stunning themes, and comprehensive music organization. The app requires a one-time purchase for lifetime access, with all data stored locally and no backend required.
 
 **Tagline**: "The top-grade intelligent music experience designed for you"
 

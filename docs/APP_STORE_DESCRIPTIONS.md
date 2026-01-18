@@ -130,15 +130,10 @@ All ages
 
 ## Pricing
 
-### India
-- **Price**: ₹311 INR
-- **Currency**: Indian Rupee
-- **Product ID**: new_audio_360_lifetime
+One-time purchase for lifetime access. Pricing configured separately on Google Play for each region.
 
-### International
-- **Price**: $13.11 USD
-- **Currency**: US Dollar
 - **Product ID**: new_audio_360_lifetime
+- No subscriptions, no ads, no expiration
 
 ---
 
