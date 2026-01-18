@@ -156,6 +156,15 @@ Current implementation uses development stubs for testing. Web platform uses loc
 -   **react-native-track-player**: Background audio playback with notification controls
 -   **react-native-iap** (production): Google Play Billing integration for license verification
 
+## Recent Changes (January 18, 2026)
+- **Fluent 2 Design Audit & Fixes**: Full compliance audit completed
+  - All borderRadius values now use FluentControlRadius tokens (checkbox, button, card, dialog, fab, avatar)
+  - All fontSize values use FluentTypography tokens (except decorative/technical elements)
+  - Touch targets updated to meet minimum sizes (FluentButton small=36dp, medium=44dp; FluentChip small=32dp)
+  - Circular elements properly use avatar token for full circular geometry
+- Updated app icon with new glassmorphic blue/purple gradient audio waveform design
+- About screen now displays the actual app icon instead of generic icon
+
 ## Recent Changes (January 17, 2026)
 - Audio Effects UI changed from numeric chips to slider-based controls
 - Bass Control, Treble Control, and Virtualizer all use -5 to +5 slider range (zero-sum rule maintained)
@@ -174,4 +183,3 @@ Current implementation uses development stubs for testing. Web platform uses loc
 - Modal-based delete confirmations for EQ presets and playlists
 - Updated pricing to ₹311 INR / $13.11 USD
 - GitHub Actions workflows ready for signed APK and AAB builds
-- Updated app icon with new blue/purple gradient audio waveform design (January 18, 2026)
