@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, ScrollView, Linking, Pressable } from "react-native";
+import { View, StyleSheet, ScrollView, Linking, Pressable, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -43,9 +43,11 @@ export default function AboutScreen() {
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
         <View style={styles.logoContainer}>
-          <View style={[styles.logoCircle, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
-            <MaterialCommunityIcons name="music-circle" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} />
-          </View>
+          <Image
+            source={require("../../assets/images/icon.png")}
+            style={styles.appIcon}
+            resizeMode="contain"
+          />
           <FluentText variant="title1" style={styles.appName}>
             New Audio 360
           </FluentText>
@@ -188,14 +190,13 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
+    marginTop: FluentSpacing.xl,
     marginBottom: FluentSpacing.xl,
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: FluentControlRadius.avatar,
-    justifyContent: "center",
-    alignItems: "center",
+  appIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: FluentControlRadius.card,
     marginBottom: FluentSpacing.m,
   },
   appName: {
