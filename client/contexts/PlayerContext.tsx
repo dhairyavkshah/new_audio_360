@@ -660,7 +660,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       
       filter.frequency.value = EQ_FREQUENCIES[band];
-      filter.gain.value = soundLabMode === 'equalizer' ? eqBands[band] * 2 : 0;
+      filter.gain.value = soundLabMode === 'equalizer' ? eqBands[band] * 2.4 : 0;
       
       eqFiltersRef.current.push(filter);
     });
@@ -679,7 +679,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     eqFiltersRef.current.forEach((filter, index) => {
       const band = bands[index];
       if (band) {
-        filter.gain.value = soundLabMode === 'equalizer' ? eqBands[band] * 2 : 0;
+        filter.gain.value = soundLabMode === 'equalizer' ? eqBands[band] * 2.4 : 0;
       }
     });
     
