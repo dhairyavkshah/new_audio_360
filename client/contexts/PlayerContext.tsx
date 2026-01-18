@@ -724,9 +724,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           await ctx.resume();
         }
 
+        let webAudioSource = audioSource;
+        if (audioSource.startsWith('/') && !audioSource.startsWith('//')) {
+          webAudioSource = `${window.location.origin}${audioSource}`;
+        }
+
         const audio = new Audio();
         audio.crossOrigin = 'anonymous';
-        audio.src = audioSource;
+        audio.src = webAudioSource;
         audioElementRef.current = audio;
 
         await new Promise<void>((resolve, reject) => {
