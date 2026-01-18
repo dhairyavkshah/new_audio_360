@@ -1,297 +1,255 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet, Pressable, Animated, Platform, Dimensions } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Dimensions,
+  Platform,
+  Modal,
+} from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  runOnJS,
+} from "react-native-reanimated";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentText } from "@/components/fluent";
+import { Button } from "@/components/Button";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import {
+  FluentControlRadius,
+  FluentSpacing,
+  FluentDuration,
+  FluentCurve,
+  getShadowStyle,
+  FluentLightColors,
+  FluentDarkColors,
+  FluentLayoutSize,
+} from "@/constants/fluent2";
 
 interface AudioTipNotificationProps {
   visible: boolean;
   onDismiss: () => void;
 }
 
-const useNativeDriver = Platform.OS !== "web";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const DIALOG_WIDTH = Math.min(SCREEN_WIDTH * 0.9, FluentLayoutSize.dialogMaxWidth);
 
 export function AudioTipNotification({ visible, onDismiss }: AudioTipNotificationProps) {
   const { isDark } = useThemeContext();
+  const [isRendered, setIsRendered] = useState(visible);
+  const scale = useSharedValue(0.9);
+  const opacity = useSharedValue(0);
+  const scrimOpacity = useSharedValue(0);
+
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const insets = useSafeAreaInsets();
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-  const backdropAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const [isVisible, setIsVisible] = useState(false);
+
+  const handleAnimationComplete = useCallback((toVisible: boolean) => {
+    if (!toVisible) {
+      setIsRendered(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (visible) {
-      setIsVisible(true);
-      
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          useNativeDriver,
-          friction: 6,
-          tension: 80,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver,
-        }),
-        Animated.timing(backdropAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver,
-        }),
-      ]).start();
-
-      const pulseAnimation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.05,
-            duration: 800,
-            useNativeDriver,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver,
-          }),
-        ])
-      );
-      pulseAnimation.start();
-
-      const autoDismissTimer = setTimeout(() => {
-        dismissNotification();
-      }, 12000);
-
-      return () => {
-        clearTimeout(autoDismissTimer);
-        pulseAnimation.stop();
-      };
+      setIsRendered(true);
+      scale.value = withTiming(1, {
+        duration: FluentDuration.normal,
+        easing: FluentCurve.decelerateMid,
+      });
+      opacity.value = withTiming(1, {
+        duration: FluentDuration.normal,
+      });
+      scrimOpacity.value = withTiming(0.5, {
+        duration: FluentDuration.normal,
+      });
+    } else if (isRendered) {
+      scale.value = withTiming(0.9, {
+        duration: FluentDuration.fast,
+        easing: FluentCurve.accelerateMid,
+      });
+      opacity.value = withTiming(0, {
+        duration: FluentDuration.fast,
+      }, () => {
+        runOnJS(handleAnimationComplete)(false);
+      });
+      scrimOpacity.value = withTiming(0, {
+        duration: FluentDuration.fast,
+      });
     }
   }, [visible]);
 
-  const dismissNotification = () => {
-    Animated.parallel([
-      Animated.timing(scaleAnim, {
-        toValue: 0.8,
-        duration: 200,
-        useNativeDriver,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver,
-      }),
-      Animated.timing(backdropAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver,
-      }),
-    ]).start(() => {
-      setIsVisible(false);
-      onDismiss();
-    });
+  const handleDismiss = () => {
+    onDismiss();
   };
 
-  if (!isVisible) return null;
+  const dialogStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
 
-  const warningColor = "#FF9500";
-  const warningColorDark = "#FFB340";
+  const scrimStyle = useAnimatedStyle(() => ({
+    opacity: scrimOpacity.value,
+  }));
+
+  if (!isRendered) return null;
 
   return (
-    <View style={styles.overlay}>
-      <Animated.View 
-        style={[
-          styles.backdrop, 
-          { 
-            opacity: backdropAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, 0.5],
-            }) 
-          }
-        ]} 
-      />
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            top: insets.top + FluentSpacing.xl,
-            opacity: opacityAnim,
-            transform: [
-              { scale: scaleAnim },
-            ],
-          },
-        ]}
-      >
-        <Animated.View 
-          style={[
-            styles.card, 
-            { 
-              backgroundColor: isDark ? colors.colorNeutralBackground2 : colors.colorNeutralBackground1,
-              borderColor: isDark ? warningColorDark : warningColor,
-              transform: [{ scale: pulseAnim }],
-            }
-          ]}
+    <Modal
+      visible={isRendered}
+      transparent
+      animationType="none"
+      onRequestClose={handleDismiss}
+      statusBarTranslucent
+    >
+      <View style={styles.overlay}>
+        <Animated.View
+          style={[styles.scrim, { backgroundColor: colors.colorNeutralBackgroundInverted }, scrimStyle]}
         >
-          <View style={[styles.iconBadge, { backgroundColor: isDark ? warningColorDark : warningColor }]}>
+          <Pressable style={styles.scrimPressable} onPress={handleDismiss} />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            styles.dialog,
+            {
+              backgroundColor: colors.colorNeutralBackground1,
+              width: DIALOG_WIDTH,
+            },
+            getShadowStyle('shadow64', isDark),
+            dialogStyle,
+          ]}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
+          <View style={[styles.iconContainer, { backgroundColor: colors.colorPaletteYellowBackground2 }]}>
             <MaterialCommunityIcons
-              name="volume-off"
-              size={32}
-              color="#FFFFFF"
+              name="lightbulb-on-outline"
+              size={28}
+              color={colors.colorPaletteYellowForeground1}
             />
           </View>
-          
-          <View style={styles.content}>
-            <FluentText 
-              variant="subtitle1" 
-              style={[styles.title, { color: isDark ? warningColorDark : warningColor }]}
-            >
-              Important Audio Tip
-            </FluentText>
-            
-            <FluentText 
-              variant="body1" 
-              style={[styles.message, { color: colors.colorNeutralForeground1 }]}
-            >
-              For the best experience with New Audio 360, please disable your phone's built-in audio effects:
-            </FluentText>
-            
-            <View style={styles.bulletPoints}>
-              <View style={styles.bulletRow}>
-                <MaterialCommunityIcons
-                  name="checkbox-blank-circle"
-                  size={6}
-                  color={colors.colorNeutralForeground2}
-                  style={styles.bullet}
-                />
-                <FluentText variant="body2" style={{ color: colors.colorNeutralForeground2, flex: 1 }}>
-                  Dolby Atmos / Dolby Audio
-                </FluentText>
-              </View>
-              <View style={styles.bulletRow}>
-                <MaterialCommunityIcons
-                  name="checkbox-blank-circle"
-                  size={6}
-                  color={colors.colorNeutralForeground2}
-                  style={styles.bullet}
-                />
-                <FluentText variant="body2" style={{ color: colors.colorNeutralForeground2, flex: 1 }}>
-                  System Equalizer
-                </FluentText>
-              </View>
-              <View style={styles.bulletRow}>
-                <MaterialCommunityIcons
-                  name="checkbox-blank-circle"
-                  size={6}
-                  color={colors.colorNeutralForeground2}
-                  style={styles.bullet}
-                />
-                <FluentText variant="body2" style={{ color: colors.colorNeutralForeground2, flex: 1 }}>
-                  Adapt Sound / Audio Enhancement
-                </FluentText>
-              </View>
-            </View>
 
-            <FluentText 
-              variant="caption1" 
-              style={[styles.hint, { color: colors.colorNeutralForeground3 }]}
-            >
-              Settings → Sound → Sound Quality or Dolby
-            </FluentText>
+          <FluentText variant="subtitle1" style={styles.title}>
+            Audio Enhancement Tip
+          </FluentText>
+
+          <FluentText variant="body1" color="secondary" style={styles.message}>
+            For the best experience with New Audio 360's studio-grade audio processing, we recommend disabling your device's built-in audio effects.
+          </FluentText>
+
+          <View style={styles.listContainer}>
+            <View style={styles.listItem}>
+              <MaterialCommunityIcons
+                name="circle-small"
+                size={20}
+                color={colors.colorNeutralForeground2}
+              />
+              <FluentText variant="body2" color="secondary" style={styles.listText}>
+                Dolby Atmos / Dolby Audio
+              </FluentText>
+            </View>
+            <View style={styles.listItem}>
+              <MaterialCommunityIcons
+                name="circle-small"
+                size={20}
+                color={colors.colorNeutralForeground2}
+              />
+              <FluentText variant="body2" color="secondary" style={styles.listText}>
+                System Equalizer
+              </FluentText>
+            </View>
+            <View style={styles.listItem}>
+              <MaterialCommunityIcons
+                name="circle-small"
+                size={20}
+                color={colors.colorNeutralForeground2}
+              />
+              <FluentText variant="body2" color="secondary" style={styles.listText}>
+                Adapt Sound / Audio Enhancement
+              </FluentText>
+            </View>
           </View>
-          
-          <Pressable 
-            onPress={dismissNotification} 
-            style={[styles.gotItButton, { backgroundColor: isDark ? warningColorDark : warningColor }]}
-          >
-            <FluentText variant="body2Strong" style={{ color: "#FFFFFF" }}>
+
+          <FluentText variant="caption1" color="tertiary" style={styles.hint}>
+            Settings → Sound → Sound Quality and Effects
+          </FluentText>
+
+          <View style={styles.actions}>
+            <Button
+              onPress={handleDismiss}
+              variant="default"
+              size="default"
+              style={styles.actionButton}
+            >
               Got it
-            </FluentText>
-          </Pressable>
+            </Button>
+          </View>
         </Animated.View>
-      </Animated.View>
-    </View>
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 99999,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#000000",
-  },
-  container: {
-    position: "absolute",
-    left: FluentSpacing.l,
-    right: FluentSpacing.l,
-    zIndex: 99999,
-  },
-  card: {
-    padding: FluentSpacing.l,
-    borderRadius: FluentRadius.xLarge,
-    borderWidth: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 12,
-    alignItems: "center",
-  },
-  iconBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: FluentSpacing.m,
   },
-  content: {
-    width: "100%",
+  scrim: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  scrimPressable: {
+    flex: 1,
+  },
+  dialog: {
+    borderRadius: FluentControlRadius.dialog,
+    padding: FluentSpacing.xxl,
+  },
+  iconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
     alignItems: "center",
+    alignSelf: "center",
+    marginBottom: FluentSpacing.l,
   },
   title: {
-    fontWeight: "700",
-    marginBottom: FluentSpacing.s,
     textAlign: "center",
+    marginBottom: FluentSpacing.m,
   },
   message: {
     textAlign: "center",
-    marginBottom: FluentSpacing.m,
+    marginBottom: FluentSpacing.l,
     lineHeight: 22,
   },
-  bulletPoints: {
-    alignSelf: "flex-start",
-    width: "100%",
-    paddingHorizontal: FluentSpacing.m,
+  listContainer: {
     marginBottom: FluentSpacing.m,
+    paddingLeft: FluentSpacing.s,
   },
-  bulletRow: {
+  listItem: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: FluentSpacing.xs,
   },
-  bullet: {
-    marginRight: FluentSpacing.s,
-    marginTop: 2,
+  listText: {
+    flex: 1,
   },
   hint: {
     textAlign: "center",
     fontStyle: "italic",
     marginBottom: FluentSpacing.l,
   },
-  gotItButton: {
-    paddingVertical: FluentSpacing.s,
-    paddingHorizontal: FluentSpacing.xl,
-    borderRadius: FluentRadius.large,
+  actions: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: FluentSpacing.s,
+  },
+  actionButton: {
     minWidth: 120,
-    alignItems: "center",
   },
 });
 

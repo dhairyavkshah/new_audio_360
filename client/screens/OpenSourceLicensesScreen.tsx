@@ -27,24 +27,24 @@ function LicenseSection({ title, content, colors }: LicenseSectionProps) {
 }
 
 const OPEN_SOURCE_LIBRARIES = [
-  { name: "React Native", license: "MIT License" },
-  { name: "Expo", license: "MIT License" },
-  { name: "React Navigation", license: "MIT License" },
-  { name: "React Native Reanimated", license: "MIT License" },
-  { name: "React Native Track Player", license: "Apache 2.0 License" },
-  { name: "React Native Audio API", license: "MIT License" },
-  { name: "React Native IAP", license: "MIT License" },
-  { name: "Expo AV", license: "MIT License" },
-  { name: "Expo Media Library", license: "MIT License" },
-  { name: "Expo Haptics", license: "MIT License" },
-  { name: "Expo Notifications", license: "MIT License" },
-  { name: "Expo Location", license: "MIT License" },
-  { name: "Expo Local Authentication", license: "MIT License" },
-  { name: "Expo Application", license: "MIT License" },
-  { name: "Expo Linear Gradient", license: "MIT License" },
-  { name: "AsyncStorage", license: "MIT License" },
-  { name: "Expo Secure Store", license: "MIT License" },
-  { name: "Material Community Icons", license: "SIL Open Font License" },
+  { name: "React Native", license: "MIT License", version: "0.79.2" },
+  { name: "Expo SDK", license: "MIT License", version: "53.0.0" },
+  { name: "React Navigation", license: "MIT License", version: "7.x" },
+  { name: "React Native Reanimated", license: "MIT License", version: "3.x" },
+  { name: "React Native Track Player", license: "Apache License 2.0", version: "4.x" },
+  { name: "React Native Audio API", license: "MIT License", version: "0.x" },
+  { name: "React Native IAP", license: "MIT License", version: "12.x" },
+  { name: "Expo AV", license: "MIT License", version: "~15.x" },
+  { name: "Expo Media Library", license: "MIT License", version: "~17.x" },
+  { name: "Expo Haptics", license: "MIT License", version: "~14.x" },
+  { name: "Expo Notifications", license: "MIT License", version: "~0.29.x" },
+  { name: "Expo Location", license: "MIT License", version: "~18.x" },
+  { name: "Expo Local Authentication", license: "MIT License", version: "~15.x" },
+  { name: "Expo Application", license: "MIT License", version: "~6.x" },
+  { name: "Expo Linear Gradient", license: "MIT License", version: "~14.x" },
+  { name: "Async Storage", license: "MIT License", version: "2.x" },
+  { name: "Expo Secure Store", license: "MIT License", version: "~14.x" },
+  { name: "Material Community Icons", license: "SIL Open Font License 1.1", version: "7.x" },
 ];
 
 export default function OpenSourceLicensesScreen() {
@@ -64,46 +64,52 @@ export default function OpenSourceLicensesScreen() {
       >
         <GlassCard style={styles.headerCard}>
           <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
-            <MaterialCommunityIcons name="license" size={32} color={colors.colorBrandForeground1} />
+            <MaterialCommunityIcons name="scale-balance" size={32} color={colors.colorBrandForeground1} />
           </View>
           <FluentText variant="title3" style={styles.headerTitle}>
-            Open Source Licenses
+            Legal Notices & Attributions
           </FluentText>
           <FluentText variant="caption2" color="secondary" align="center">
-            Third-party software acknowledgments
+            Open Source Software Acknowledgments
           </FluentText>
         </GlassCard>
 
         <GlassCard style={styles.copyrightCard}>
-          <View style={[styles.warningIcon, { backgroundColor: colors.colorPaletteRedForeground1 + "20" }]}>
-            <MaterialCommunityIcons name="shield-alert" size={24} color={colors.colorPaletteRedForeground1} />
+          <View style={[styles.warningIcon, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
+            <MaterialCommunityIcons name="copyright" size={24} color={colors.colorBrandForeground1} />
           </View>
           <FluentText variant="subtitle2" style={styles.copyrightTitle}>
-            Intellectual Property Notice
+            Proprietary Software Notice
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.copyrightText}>
-            Copyright © 2024-2026 Dhairya Shah (The Team 360). All rights reserved.
+            Copyright © 2024-2026 Dhairya Shah, operating as The Team 360. All Rights Reserved Worldwide.
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.copyrightText}>
-            This application, including but not limited to its source code, design, user interface, graphics, audio processing algorithms, and all associated intellectual property, is the exclusive property of Dhairya Shah operating under The Team 360.
+            This software application, including without limitation, its source code, object code, user interface design, graphical elements, audio processing algorithms, digital signal processing implementations, and all associated documentation and intellectual property rights (collectively, the "Software"), constitutes the sole and exclusive property of the copyright holder.
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.copyrightText}>
-            UNAUTHORIZED REPRODUCTION PROHIBITED: No part of this application may be reproduced, distributed, transmitted, copied, reverse-engineered, decompiled, disassembled, or utilized in any form or by any means, whether electronic, mechanical, photocopying, recording, or otherwise, without the prior express written authorization and consent of the developer.
+            RESTRICTED RIGHTS LEGEND: Use, duplication, or disclosure by any party is subject to restrictions as set forth in the applicable license agreement. This Software is provided under license and may only be used or copied in accordance with the terms of such license.
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.copyrightText}>
-            Any unauthorized use, reproduction, modification, or distribution of this software or any portion thereof may result in severe civil and criminal penalties, and will be prosecuted to the maximum extent permitted by law.
+            PROHIBITED ACTIVITIES: No portion of this Software may be reproduced, modified, adapted, translated, reverse engineered, decompiled, disassembled, or otherwise reduced to human-readable form without the express prior written consent of The Team 360. Any attempt to do so shall constitute a violation of this license and applicable intellectual property laws.
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.copyrightText}>
-            For licensing inquiries or permission requests, please contact: support@theteam360.com
+            ENFORCEMENT: Unauthorized reproduction, distribution, modification, public display, public performance, or creation of derivative works based upon this Software, in whole or in part, may subject the infringer to civil liability and criminal prosecution under applicable laws, including but not limited to the Copyright Act, Computer Fraud and Abuse Act, and equivalent international statutes.
+          </FluentText>
+          <FluentText variant="caption1" color="secondary" style={styles.copyrightText}>
+            TRADEMARK NOTICE: "New Audio 360" and "The Team 360" are trademarks or registered trademarks of Dhairya Shah. All other trademarks, service marks, and trade names referenced herein are the property of their respective owners.
+          </FluentText>
+          <FluentText variant="caption1" color="secondary" style={[styles.copyrightText, { marginTop: FluentSpacing.s }]}>
+            For licensing inquiries, permissions, or legal matters:{"\n"}legal@theteam360.com
           </FluentText>
         </GlassCard>
 
         <View style={styles.sectionsContainer}>
           <FluentText variant="subtitle2" style={styles.sectionHeader}>
-            Third-Party Libraries
+            Open Source Components
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.sectionDescription}>
-            This application incorporates the following open-source software components, each governed by their respective licenses:
+            This application incorporates the following third-party open source software components, each distributed under their respective licenses. We gratefully acknowledge the contributions of the open source community.
           </FluentText>
 
           {OPEN_SOURCE_LIBRARIES.map((lib, index) => (
@@ -117,9 +123,14 @@ export default function OpenSourceLicensesScreen() {
                   size={FluentIconSize.small} 
                   color={colors.colorBrandForeground1} 
                 />
-                <FluentText variant="body2" style={styles.libraryName}>
-                  {lib.name}
-                </FluentText>
+                <View style={styles.libraryDetails}>
+                  <FluentText variant="body2" style={styles.libraryName}>
+                    {lib.name}
+                  </FluentText>
+                  <FluentText variant="caption2" color="tertiary">
+                    Version {lib.version}
+                  </FluentText>
+                </View>
               </View>
               <FluentText variant="caption2" color="secondary">
                 {lib.license}
@@ -128,21 +139,34 @@ export default function OpenSourceLicensesScreen() {
           ))}
 
           <LicenseSection
-            title="MIT License"
-            content="Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND."
+            title="MIT License (Massachusetts Institute of Technology)"
+            content={'Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.'}
             colors={colors}
           />
 
           <LicenseSection
-            title="Apache License 2.0"
-            content="Licensed under the Apache License, Version 2.0. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an 'AS IS' BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied."
+            title="Apache License, Version 2.0"
+            content={'Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:\n\nhttp://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.'}
+            colors={colors}
+          />
+
+          <LicenseSection
+            title="SIL Open Font License, Version 1.1"
+            content={'This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL\n\nThe fonts are free to use, study, modify and redistribute, subject to the conditions in the license. The fonts cannot be sold by themselves but can be bundled with other software.'}
             colors={colors}
           />
         </View>
 
+        <View style={styles.disclaimerSection}>
+          <FluentText variant="caption1" color="tertiary" style={styles.disclaimerText}>
+            DISCLAIMER: The inclusion and use of the above-listed open source components does not convey or grant any rights or licenses to the proprietary portions of this application. The open source licenses apply solely to the respective third-party components and do not extend to the proprietary code, design, or intellectual property of New Audio 360.
+          </FluentText>
+        </View>
+
         <View style={styles.footer}>
-          <FluentText variant="caption2" color="secondary" align="center">
-            The use of third-party open-source components does not grant any rights to the proprietary portions of this application.
+          <FluentText variant="caption2" color="tertiary" align="center">
+            This legal notice was last updated on January 18, 2026.{"\n"}
+            Document Version: 1.0.0
           </FluentText>
         </View>
       </ScrollView>
@@ -189,8 +213,8 @@ const styles = StyleSheet.create({
   },
   copyrightText: {
     textAlign: "justify",
-    lineHeight: 18,
-    marginBottom: FluentSpacing.s,
+    lineHeight: 20,
+    marginBottom: FluentSpacing.m,
   },
   sectionsContainer: {
     gap: FluentSpacing.s,
@@ -200,7 +224,8 @@ const styles = StyleSheet.create({
   },
   sectionDescription: {
     marginBottom: FluentSpacing.m,
-    lineHeight: 18,
+    lineHeight: 20,
+    textAlign: "justify",
   },
   libraryItem: {
     flexDirection: "row",
@@ -212,22 +237,36 @@ const styles = StyleSheet.create({
   libraryInfo: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
+  },
+  libraryDetails: {
+    marginLeft: FluentSpacing.s,
+    flex: 1,
   },
   libraryName: {
-    marginLeft: FluentSpacing.s,
+    fontWeight: "500",
   },
   licenseSection: {
-    padding: FluentSpacing.m,
+    padding: FluentSpacing.l,
     borderRadius: FluentControlRadius.card,
     marginTop: FluentSpacing.m,
   },
   licenseSectionTitle: {
-    marginBottom: FluentSpacing.xs,
+    marginBottom: FluentSpacing.s,
     fontWeight: "600",
   },
   licenseSectionContent: {
-    lineHeight: 16,
+    lineHeight: 18,
     textAlign: "justify",
+  },
+  disclaimerSection: {
+    marginTop: FluentSpacing.xl,
+    padding: FluentSpacing.m,
+  },
+  disclaimerText: {
+    textAlign: "justify",
+    lineHeight: 18,
+    fontStyle: "italic",
   },
   footer: {
     paddingVertical: FluentSpacing.xl,

@@ -246,13 +246,14 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyMode360Reality() {
-        // Flat EQ to preserve spatial audio cues - Sony 360 Reality Audio inspired
-        // Minimal coloration, maximum spatial positioning accuracy
+        // Flat/neutral EQ profile - Sony 360 Reality Audio & Samsung 360 Audio inspired
+        // Preserves original sound for accurate spatial positioning in object-based audio
+        // Reference: Sony MDR-MV1 professional monitoring standard (5Hz-80kHz flat response)
         applyImmersiveSettings(
-            eqGains = listOf(0.5, 0.3, 0.0, 0.0, 0.5, 1.0, 0.5),
-            bassGainUnits = 0.5f,      // +1.2 dB (subtle warmth)
-            trebleGainUnits = 1.5f,    // +3.6 dB (enhanced location perception)
-            virtualizerStrength = 700  // 70% - maximum spatial width
+            eqGains = listOf(0.0, 0.0, 0.0, 0.0, 0.3, 0.3, 0.0),
+            bassGainUnits = 0.0f,      // 0 dB - neutral bass to preserve spatial cues
+            trebleGainUnits = 0.5f,    // +1.2 dB (subtle air for enhanced location perception)
+            virtualizerStrength = 750  // 75% - maximum spatial width for immersive 360° soundfield
         )
     }
     

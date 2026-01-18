@@ -35,13 +35,14 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     spatialWidth: 0.35, // 35% - moderate widening for immersion
   },
   '360_reality': {
-    // Flat EQ to preserve spatial audio cues - Sony 360 Reality Audio inspired
-    // Minimal coloration, maximum spatial positioning accuracy
+    // Flat/neutral EQ profile - Sony 360 Reality Audio & Samsung 360 Audio inspired
+    // Preserves original sound for accurate spatial positioning in object-based audio
+    // Reference: Sony MDR-MV1 professional monitoring standard (5Hz-80kHz flat response)
     name: '360 Reality',
-    eqPreset: [0.5, 0, 0, 0, 0, 0.5, 1.0, 1.5, 1.0, 0.5],
-    bassBoost: 0.5,    // +1.2 dB (subtle warmth without masking spatial cues)
-    trebleBoost: 1.5,  // +3.6 dB (enhanced location perception)
-    spatialWidth: 0.7, // 70% - maximum spatial width for immersive experience
+    eqPreset: [0, 0, 0, 0, 0, 0.3, 0.5, 0.3, 0, 0],
+    bassBoost: 0,      // 0 dB - neutral bass to preserve spatial cues and avoid masking
+    trebleBoost: 0.5,  // +1.2 dB (subtle air for enhanced location perception)
+    spatialWidth: 0.75, // 75% - maximum spatial width for immersive 360° soundfield
   },
   gaming: {
     // Competitive gaming EQ - cut bass, boost footstep frequencies (2-6kHz)

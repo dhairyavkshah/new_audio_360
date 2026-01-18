@@ -63,7 +63,7 @@ Music, 360 Reality, Gaming, Podcast, Movie, Sports
 | Mode | Bass | Treble | Spatial Width | Design Philosophy |
 |------|------|--------|---------------|-------------------|
 | Music | +4.8 dB | +3.6 dB | 35% | Warm "smile curve" - Samsung Music mode inspired |
-| 360 Reality | +1.2 dB | +3.6 dB | 70% | Flat EQ for spatial accuracy - Sony 360 Reality inspired |
+| 360 Reality | 0 dB | +1.2 dB | 75% | Flat/neutral EQ - Sony 360 Reality Audio & Samsung 360 Audio |
 | Gaming | -2.4 dB | +6 dB | 50% | Footstep clarity (2-6kHz boost) - Pro gaming standards |
 | Podcast | -3.6 dB | -1.2 dB | 0% | Voice clarity, reduced rumble/sibilance |
 | Movie | +8.4 dB | +4.8 dB | 45% | THX-inspired cinematic impact |
