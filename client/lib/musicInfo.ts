@@ -2,6 +2,9 @@ import { Platform } from 'react-native';
 import { MetadataExtractorModule } from '@/modules/audio-effects';
 import { parseID3FromUri } from './id3Parser';
 
+// Log when this module is loaded to verify new code is in the build
+console.log('=== musicInfo.ts module loaded (v2) ===');
+
 export interface MusicMetadata {
   title?: string;
   artist?: string;
