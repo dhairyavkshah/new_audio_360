@@ -333,33 +333,27 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         let title = extractTitle(asset.filename);
         let artwork: string | undefined = undefined;
         
-        if (Platform.OS !== 'web') {
-          try {
-            const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
+        try {
+          const assetInfo = await MediaLibrary.getAssetInfoAsync(asset);
+          
+          if (assetInfo.localUri) {
+            const metadata = await getMusicMetadata(assetInfo.localUri);
             
-            if (assetInfo.localUri) {
-              const metadata = await getMusicMetadata(assetInfo.localUri);
-              
-              if (metadata) {
-                console.log('[MediaLibrary] Extracted metadata for:', asset.filename, {
-                  title: metadata.title,
-                  artist: metadata.artist,
-                  album: metadata.album,
-                  hasArt: !!metadata.albumArt
-                });
-                if (metadata.title) title = metadata.title;
-                if (metadata.artist) artist = metadata.artist;
-                if (metadata.album) album = metadata.album;
-                if (metadata.albumArt) artwork = metadata.albumArt;
-              } else {
-                console.log('[MediaLibrary] No metadata for:', asset.filename, 'uri:', assetInfo.localUri);
-              }
-            } else {
-              console.log('[MediaLibrary] No localUri for:', asset.filename);
+            if (metadata) {
+              console.log('[MediaLibrary] Extracted metadata for:', asset.filename, {
+                title: metadata.title,
+                artist: metadata.artist,
+                album: metadata.album,
+                hasArt: !!metadata.albumArt
+              });
+              if (metadata.title) title = metadata.title;
+              if (metadata.artist) artist = metadata.artist;
+              if (metadata.album) album = metadata.album;
+              if (metadata.albumArt) artwork = metadata.albumArt;
             }
-          } catch (err) {
-            console.error('[MediaLibrary] Error getting asset info:', asset.filename, err);
           }
+        } catch (err) {
+          console.warn('[MediaLibrary] Error extracting metadata for:', asset.filename);
         }
         
         if (artist === 'Unknown Artist') {
