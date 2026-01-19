@@ -16,6 +16,8 @@ interface CrossPlatformSliderProps {
   onSlidingComplete?: (value: number) => void;
   disabled?: boolean;
   vertical?: boolean;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 export function CrossPlatformSlider({
@@ -31,6 +33,8 @@ export function CrossPlatformSlider({
   onSlidingComplete,
   disabled = false,
   vertical = false,
+  accessibilityLabel,
+  accessibilityHint,
 }: CrossPlatformSliderProps) {
   if (Platform.OS === 'web') {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,6 +139,8 @@ export function CrossPlatformSlider({
       onValueChange={onValueChange}
       onSlidingComplete={onSlidingComplete}
       disabled={disabled}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
     />
   );
 }

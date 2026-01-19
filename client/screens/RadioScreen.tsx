@@ -24,6 +24,7 @@ import {
   FluentIconSize,
   FluentTouchTarget,
   FluentControlRadius,
+  FluentControlHeight,
   FluentTypography,
   FluentBorderWidth,
   FluentFontWeight,
@@ -548,7 +549,7 @@ function RadioScreen() {
           />
         </Pressable>
 
-        <View style={[styles.searchContainer, { backgroundColor: colors.colorNeutralBackground3, borderColor: colors.colorNeutralStroke2 }]}>
+        <View style={[styles.searchContainer, { backgroundColor: colors.colorNeutralBackground3 }]}>
           <MaterialCommunityIcons
             name="magnify"
             size={FluentIconSize.regular}
@@ -558,9 +559,7 @@ function RadioScreen() {
             style={[
               styles.searchInput,
               {
-                backgroundColor: colors.colorNeutralBackground2,
                 color: colors.colorNeutralForeground1,
-                borderColor: colors.colorNeutralStroke1,
                 fontSize: FluentTypography.body1.fontSize,
                 paddingVertical: FluentSpacing.xs,
               },
@@ -863,7 +862,6 @@ function RadioScreen() {
               minimumTrackTintColor={colors.colorBrandForeground1}
               maximumTrackTintColor={colors.colorNeutralBackground3}
               thumbTintColor={colors.colorBrandForeground1}
-              hitSlop={{ top: 12, bottom: 12, left: 0, right: 0 }}
               accessibilityLabel="Frequency tuner"
               accessibilityHint={`Tune to a ${bandType === "fm" ? "FM" : "AM"} frequency`}
             />
@@ -1521,11 +1519,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.s,
     borderRadius: FluentControlRadius.input,
-    borderWidth: FluentBorderWidth.thin,
+    height: FluentControlHeight.xlarge,
     marginBottom: FluentSpacing.l,
-    minHeight: FluentTouchTarget.minimum,
   },
   searchInput: {
     flex: 1,
