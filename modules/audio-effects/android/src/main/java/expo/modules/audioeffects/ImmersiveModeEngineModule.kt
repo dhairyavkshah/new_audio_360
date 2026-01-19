@@ -15,7 +15,6 @@ class ImmersiveModeEngineModule : Module() {
     private val mainHandler = Handler(Looper.getMainLooper())
     
     private var currentEqGains: List<Double> = emptyList()
-    private var currentBassGain: Float = 0f
     private var currentVirtualizerStrength: Int = 0
     
     companion object {
@@ -42,7 +41,7 @@ class ImmersiveModeEngineModule : Module() {
                     android.util.Log.d("ImmersiveMode", "Software DSP ImmersiveMode attached to session: $sessionId")
                     
                     val dsp = SoftwareDSPAudioProcessor.getInstance()
-                    val numBands = dsp?.getNumberOfBands() ?: 7
+                    val numBands = dsp?.getNumberOfBands() ?: 10
                     
                     isAttached = true
                     currentMode = MODE_OFF
@@ -51,7 +50,7 @@ class ImmersiveModeEngineModule : Module() {
                         "success" to true,
                         "audioSessionId" to sessionId,
                         "equalizerBands" to numBands,
-                        "bassBoostSupported" to true,
+                        "bassBoostSupported" to false,
                         "virtualizerSupported" to true,
                         "isSoftwareDSP" to true
                     ))
@@ -171,19 +170,9 @@ class ImmersiveModeEngineModule : Module() {
                     
                     val dsp = SoftwareDSPAudioProcessor.getInstance()
                     
-                    val bassGainUnits = (bassStrength / 1000.0f) * 5.0f
-                    dsp?.setBassBoost(bassGainUnits)
-                    currentBassGain = bassGainUnits
-                    
-                    // Disable psychoacoustic virtualizer for immersive custom mode
-                    dsp?.setPsychoacousticVirtualizer(false, 0f)
-                    
-                    // Apply stereo width via software DSP (mid-side technique)
                     val stereoWidth = virtualizerStrength / 1000f
                     dsp?.setStereoWidth(stereoWidth)
                     currentVirtualizerStrength = virtualizerStrength
-                    val widthPercent = ((1f + stereoWidth) * 100).toInt()
-                    android.util.Log.d("ImmersiveMode", "Custom: virtualizer=$virtualizerStrength (width=${widthPercent}%)")
                     
                     currentMode = "custom"
                     
@@ -215,127 +204,79 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyModeOff() {
         val dsp = SoftwareDSPAudioProcessor.getInstance()
-        dsp?.resetAll()  // This also resets stereoWidth to 0
+        dsp?.resetAll()
         currentEqGains = emptyList()
-        currentBassGain = 0f
         currentVirtualizerStrength = 0
     }
     
-    private fun applyImmersiveSettings(eqGains: List<Double>, bassGainUnits: Float, trebleGainUnits: Float, virtualizerStrength: Int, reverbWetMix: Float = 0f) {
+    private fun applyImmersiveSettings(eqGains: List<Double>, virtualizerStrength: Int, reverbWetMix: Float = 0f) {
         val dsp = SoftwareDSPAudioProcessor.getInstance()
         
         dsp?.setAllEqBandGains(eqGains)
         currentEqGains = eqGains
         
-        dsp?.setBassBoost(bassGainUnits)
-        currentBassGain = bassGainUnits
-        
-        dsp?.setTrebleBoost(trebleGainUnits)
-        
-        // Disable psychoacoustic virtualizer (EQ mode) when switching to immersive mode
-        // Immersive modes use simple mid-side stereo width instead
-        dsp?.setPsychoacousticVirtualizer(false, 0f)
-        
-        // Apply stereo width via software DSP (mid-side technique)
-        // virtualizerStrength 0-1000 maps to stereoWidth 0.0-1.0
         val stereoWidth = virtualizerStrength / 1000f
         dsp?.setStereoWidth(stereoWidth)
         currentVirtualizerStrength = virtualizerStrength
         
-        // Apply reverb wet mix
         dsp?.setReverb(reverbWetMix)
-        
-        val widthPercent = ((1f + stereoWidth) * 100).toInt()
-        android.util.Log.d("ImmersiveMode", "Mode applied: bass=$bassGainUnits, treble=$trebleGainUnits, virtualizer=$virtualizerStrength (width=${widthPercent}%), reverb=$reverbWetMix")
     }
     
-    // Professional Immersive Mode Configurations
-    // Based on Samsung Dolby Atmos, Sony 360 Reality Audio, and professional audio engineering standards
-    // EQ bands (10): 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz
-    // Values in gain units (-5 to +5), where 1 unit = 2.4 dB
-    
     private fun applyModeMusic() {
-        // Bose-inspired balanced music mode
-        // Moderate warm bass, subtle treble sparkle, minimal room ambience
         applyImmersiveSettings(
-            eqGains = listOf(2.0, 1.5, 0.5, -0.5, 0.0, 0.5, 1.0, 1.5, 1.0, 0.5),
-            bassGainUnits = 1.5f,      // +3.6 dB (Bose music: moderate warm bass)
-            trebleGainUnits = 1.0f,    // +2.4 dB (reduced for non-fatiguing warmth)
-            virtualizerStrength = 250, // 25% - subtle widening only
-            reverbWetMix = 0.05f       // 5% - minimal room ambience for natural feel
+            eqGains = listOf(1.5, 1.0, 0.5, -0.5, -1.0, -0.5, 0.5, -0.5, -0.5, -0.5),
+            virtualizerStrength = 250,
+            reverbWetMix = 0.05f
         )
     }
     
     private fun applyMode360Reality() {
-        // Sony 360 Reality Audio inspired - near-flat for accurate spatial positioning
-        // Maximum spatial immersion with significant reverb for 360° soundfield
         applyImmersiveSettings(
-            eqGains = listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.5, 0.3, 0.0, 0.0),
-            bassGainUnits = 0.3f,      // +0.7 dB (near-flat for accurate spatial cues)
-            trebleGainUnits = 0.5f,    // +1.2 dB (air for spatial perception)
-            virtualizerStrength = 850, // 85% - maximum immersion for 360° soundfield
-            reverbWetMix = 0.25f       // 25% - significant reverb for true 360° surround sphere
+            eqGains = listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, -0.5, -0.5, 0.0),
+            virtualizerStrength = 850,
+            reverbWetMix = 0.25f
         )
     }
     
     private fun applyModeGaming() {
-        // Competitive gaming - cut bass, boost footstep frequencies (2-6kHz)
-        // Subtle spatial cues without muddiness
         applyImmersiveSettings(
-            eqGains = listOf(-2.0, -1.5, -1.0, 0.0, 2.0, 3.5, 3.0, 2.0, 1.5, 1.0),
-            bassGainUnits = -1.0f,     // -2.4 dB (reduce bass masking for footsteps)
-            trebleGainUnits = 2.0f,    // +4.8 dB (slightly less to reduce fatigue)
-            virtualizerStrength = 450, // 45% - better directional accuracy
-            reverbWetMix = 0.075f      // 7.5% - subtle room cues for spatial awareness
+            eqGains = listOf(-2.0, -1.0, 0.0, 0.0, 1.0, 2.0, 1.0, 0.0, 0.0, -1.0),
+            virtualizerStrength = 450,
+            reverbWetMix = 0.075f
         )
     }
     
     private fun applyModePodcast() {
-        // Voice clarity mode - crystal clear speech
-        // No spatial processing, no reverb
         applyImmersiveSettings(
-            eqGains = listOf(-2.0, -1.5, 0.0, 1.5, 2.5, 2.0, 1.0, 0.0, -0.5, -1.0),
-            bassGainUnits = -1.5f,     // -3.6 dB (removes rumble and boominess)
-            trebleGainUnits = -0.5f,   // -1.2 dB (reduces sibilance)
-            virtualizerStrength = 0,   // 0% - mono-focused for speech
-            reverbWetMix = 0.0f        // 0% - no reverb for clean voice
+            eqGains = listOf(-1.5, -1.0, 0.0, 1.0, 1.5, 1.0, 0.0, -0.5, -0.5, 0.0),
+            virtualizerStrength = 0,
+            reverbWetMix = 0.0f
         )
     }
     
     private fun applyModeMovie() {
-        // IMAX/THX-inspired cinematic experience
-        // Strong bass punch, detailed highs, cinema hall ambience
         applyImmersiveSettings(
-            eqGains = listOf(3.5, 2.5, 1.0, 0.0, 0.5, 1.0, 1.5, 2.5, 2.0, 1.5),
-            bassGainUnits = 4.0f,      // +9.6 dB (IMAX Enhanced-level bass punch)
-            trebleGainUnits = 2.5f,    // +6 dB (enhanced effects detail)
-            virtualizerStrength = 550, // 55% - proper surround experience
-            reverbWetMix = 0.15f       // 15% - cinema hall ambience (Yamaha Cinema DSP inspired)
+            eqGains = listOf(2.0, 1.5, 0.5, 0.0, -0.5, -0.5, -0.5, -1.0, -1.0, -0.5),
+            virtualizerStrength = 550,
+            reverbWetMix = 0.15f
         )
     }
     
     private fun applyModeSports() {
-        // Stadium/broadcast mode - commentary clarity with crowd atmosphere
-        // Open stadium feel with arena ambience
         applyImmersiveSettings(
-            eqGains = listOf(1.0, 0.5, 0.5, 2.0, 2.5, 2.0, 0.5, 0.0, -0.5, -0.5),
-            bassGainUnits = 1.5f,      // +3.6 dB (slightly more for stadium atmosphere)
-            trebleGainUnits = 0.0f,    // Neutral (balanced commentary clarity)
-            virtualizerStrength = 500, // 50% - stadium-like open soundstage
-            reverbWetMix = 0.125f      // 12.5% - stadium/arena open-air ambience
+            eqGains = listOf(0.5, 0.0, 0.0, 1.0, 1.0, 0.5, -0.5, -1.0, -1.0, -0.5),
+            virtualizerStrength = 500,
+            reverbWetMix = 0.125f
         )
     }
     
     private fun getCurrentSettings(): Map<String, Any> {
         val dsp = SoftwareDSPAudioProcessor.getInstance()
         val eqGains = dsp?.getEqBandGains()?.toList() ?: emptyList<Float>()
-        val bassGain = dsp?.getBassGain() ?: 0f
         
         return mapOf(
             "equalizerEnabled" to (currentMode != MODE_OFF),
             "equalizerBandLevels" to eqGains.map { (it * 100).toInt() },
-            "bassBoostEnabled" to (currentBassGain > 0),
-            "bassBoostStrength" to ((currentBassGain / 5.0f) * 1000).toInt().coerceIn(0, 1000),
             "virtualizerEnabled" to (currentVirtualizerStrength > 0),
             "virtualizerStrength" to currentVirtualizerStrength,
             "isSoftwareDSP" to true
@@ -350,7 +291,6 @@ class ImmersiveModeEngineModule : Module() {
         currentMode = MODE_OFF
         audioSessionId = 0
         currentEqGains = emptyList()
-        currentBassGain = 0f
         currentVirtualizerStrength = 0
     }
 }

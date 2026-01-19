@@ -57,7 +57,7 @@ class EqualizerModule : Module() {
                     "minLevel" to -1200,
                     "maxLevel" to 1200,
                     "bands" to bandInfo,
-                    "presets" to listOf("Flat", "Bass Boost", "Treble Boost", "Vocal", "Electronic", "Rock", "Pop", "Jazz"),
+                    "presets" to listOf("Flat", "Rock", "Pop", "Jazz", "Classical", "Electronic", "Hip-Hop", "Acoustic"),
                     "isSoftwareDSP" to true
                 ))
                 
@@ -109,28 +109,19 @@ class EqualizerModule : Module() {
                 }
                 
                 val presetGains = when (preset) {
-                    0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)  // Flat
-                    1 -> listOf(4.0, 3.5, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)  // Bass Boost
-                    2 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 3.0, 3.5, 4.0)  // Treble Boost
-                    3 -> listOf(-1.0, -0.5, 0.0, 1.0, 2.0, 3.0, 2.0, 1.0, 0.0, -0.5)  // Vocal
-                    4 -> listOf(3.0, 2.5, 2.0, 0.0, -1.0, -0.5, 0.0, 2.0, 2.5, 3.0)  // Electronic
-                    5 -> listOf(3.0, 2.5, 2.0, 1.0, 0.0, 0.5, 1.0, 2.0, 2.5, 3.0)  // Rock
-                    6 -> listOf(1.0, 1.5, 2.0, 2.0, 1.0, 0.5, 0.0, 1.0, 1.5, 2.0)  // Pop
-                    7 -> listOf(2.0, 1.5, 1.0, 0.0, 0.5, 1.0, 2.0, 2.0, 1.5, 1.0)  // Jazz
+                    0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)  // Flat (sum=0)
+                    1 -> listOf(3.0, 2.0, 0.0, -2.0, -3.0, -2.0, 0.0, 1.0, 1.0, 0.0)  // Rock (sum=0)
+                    2 -> listOf(1.0, 1.0, 0.0, -1.0, 1.0, 1.0, 0.0, -1.0, -1.0, -1.0)  // Pop (sum=0)
+                    3 -> listOf(0.0, 1.0, 1.0, 1.0, 0.0, 0.0, -1.0, -1.0, -1.0, 0.0)  // Jazz (sum=0)
+                    4 -> listOf(-1.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0)  // Classical (sum=0)
+                    5 -> listOf(4.0, 2.0, 0.0, -2.0, -3.0, -2.0, 0.0, 0.0, 1.0, 0.0)  // Electronic (sum=0)
+                    6 -> listOf(4.0, 3.0, 1.0, -1.0, -2.0, -2.0, -1.0, -1.0, 0.0, -1.0)  // Hip-Hop (sum=0)
+                    7 -> listOf(-1.0, 0.0, 1.0, 2.0, 1.0, 0.0, -1.0, -1.0, -1.0, 0.0)  // Acoustic (sum=0)
                     else -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
                 }
                 
-                // Apply EQ with zero-sum normalization (matching Web implementation)
-                // This ensures overall level stays consistent
-                dsp.applyEqWithZeroSum(presetGains, 0f, 0f)
-                
-                // Reset reverb for standard EQ mode (matching Web)
+                dsp.setAllEqBandGains(presetGains)
                 dsp.setReverb(0f)
-                
-                // Reset to standard stereo for EQ presets
-                // Professional standard: EQ presets only affect frequency response, not stereo field
-                // Disable psychoacoustic virtualizer and reset stereo width (matching Web)
-                dsp.setPsychoacousticVirtualizer(false, 0f)
                 dsp.setStereoWidth(0f)
                 
                 return@Function mapOf("success" to true, "preset" to preset)
@@ -151,14 +142,8 @@ class EqualizerModule : Module() {
                 }
                 
                 val gains = levels.map { it.toDouble() / 100.0 }
-                // Apply EQ with zero-sum normalization (matching Web)
-                dsp.applyEqWithZeroSum(gains, 0f, 0f)
-                
-                // Reset reverb for standard EQ mode (matching Web)
+                dsp.setAllEqBandGains(gains)
                 dsp.setReverb(0f)
-                
-                // Reset to standard stereo for custom EQ (matching Web)
-                dsp.setPsychoacousticVirtualizer(false, 0f)
                 dsp.setStereoWidth(0f)
                 
                 return@Function mapOf("success" to true)
@@ -192,85 +177,14 @@ class EqualizerModule : Module() {
                     return@Function mapOf("success" to false, "error" to "DSP not initialized")
                 }
                 
-                // Apply EQ with zero-sum normalization (matching Web)
-                dsp.applyEqWithZeroSum(bands, 0f, 0f)
-                
-                // Reset reverb for standard EQ mode (matching Web)
+                dsp.setAllEqBandGains(bands)
                 dsp.setReverb(0f)
-                
-                // Reset to standard stereo for EQ-only mode (matching Web)
-                dsp.setPsychoacousticVirtualizer(false, 0f)
                 dsp.setStereoWidth(0f)
                 
                 return@Function mapOf("success" to true)
             } catch (e: Exception) {
                 return@Function mapOf("success" to false, "error" to e.message)
             }
-        }
-        
-        Function("setBassBoost") { gain: Double ->
-            try {
-                val dsp = getDspProcessor()
-                if (dsp == null) {
-                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
-                }
-                
-                dsp.setBassBoost(gain.toFloat())
-                return@Function mapOf("success" to true, "gain" to gain)
-            } catch (e: Exception) {
-                return@Function mapOf("success" to false, "error" to e.message)
-            }
-        }
-        
-        Function("setTrebleBoost") { gain: Double ->
-            try {
-                val dsp = getDspProcessor()
-                if (dsp == null) {
-                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
-                }
-                
-                dsp.setTrebleBoost(gain.toFloat())
-                return@Function mapOf("success" to true, "gain" to gain)
-            } catch (e: Exception) {
-                return@Function mapOf("success" to false, "error" to e.message)
-            }
-        }
-        
-        // Psychoacoustic Virtualizer for EQ mode
-        // Creates 3D spatial perception using cross-feed, micro-delay, and decorrelation
-        // intensity: 0.0 to 1.0 (0% to 100%)
-        Function("setPsychoacousticVirtualizer") { intensity: Double ->
-            try {
-                val dsp = getDspProcessor()
-                if (dsp == null) {
-                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
-                }
-                
-                val enabled = intensity > 0.0
-                dsp.setPsychoacousticVirtualizer(enabled, intensity.toFloat())
-                
-                // Ensure simple stereo width is disabled when using psychoacoustic
-                if (enabled) {
-                    dsp.setStereoWidth(0f)
-                }
-                
-                return@Function mapOf(
-                    "success" to true,
-                    "enabled" to enabled,
-                    "intensity" to intensity,
-                    "mode" to "psychoacoustic"
-                )
-            } catch (e: Exception) {
-                return@Function mapOf("success" to false, "error" to e.message)
-            }
-        }
-        
-        Function("getPsychoacousticVirtualizer") {
-            val dsp = getDspProcessor()
-            return@Function mapOf(
-                "enabled" to (dsp?.getPsychoacousticEnabled() ?: false),
-                "intensity" to (dsp?.getPsychoacousticIntensity() ?: 0f)
-            )
         }
         
         AsyncFunction("release") { promise: Promise ->

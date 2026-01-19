@@ -55,17 +55,11 @@ class VirtualizerModule : Module() {
         
         Function("setStrength") { strength: Int ->
             try {
-                // Support signed values: -1000 to +1000
-                // Negative = narrow toward mono, Positive = widen stereo
                 val clampedStrength = strength.coerceIn(-1000, 1000)
                 currentStrength = clampedStrength
                 
                 val dsp = SoftwareDSPAudioProcessor.getInstance()
                 
-                // Disable psychoacoustic virtualizer when using simple stereo width
-                dsp.setPsychoacousticVirtualizer(false, 0f)
-                
-                // Convert to stereo width: -1000 → -1.0, 0 → 0.0, +1000 → +1.0
                 val width = clampedStrength / 1000f
                 dsp.setStereoWidth(width)
                 
