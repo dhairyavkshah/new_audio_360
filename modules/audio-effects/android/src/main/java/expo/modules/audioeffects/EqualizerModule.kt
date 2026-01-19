@@ -121,6 +121,12 @@ class EqualizerModule : Module() {
                 }
                 
                 dsp.setAllEqBandGains(presetGains)
+                
+                // Reset stereo width to neutral (standard stereo) for EQ presets
+                // Professional standard: EQ presets only affect frequency response, not stereo field
+                // Matches Bose, Sony, Yamaha behavior
+                dsp.setStereoWidth(0f)
+                
                 return@Function mapOf("success" to true, "preset" to preset)
             } catch (e: Exception) {
                 return@Function mapOf("success" to false, "error" to e.message)
@@ -140,6 +146,9 @@ class EqualizerModule : Module() {
                 
                 val gains = levels.map { it.toDouble() / 100.0 }
                 dsp.setAllEqBandGains(gains)
+                
+                // Reset stereo width to neutral (standard stereo) for custom EQ
+                dsp.setStereoWidth(0f)
                 
                 return@Function mapOf("success" to true)
             } catch (e: Exception) {
@@ -173,6 +182,10 @@ class EqualizerModule : Module() {
                 }
                 
                 dsp.setAllEqBandGains(bands)
+                
+                // Reset stereo width to neutral (standard stereo) for EQ-only mode
+                dsp.setStereoWidth(0f)
+                
                 return@Function mapOf("success" to true)
             } catch (e: Exception) {
                 return@Function mapOf("success" to false, "error" to e.message)
