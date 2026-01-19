@@ -373,6 +373,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 duration: state.lastSong.duration,
                 artwork: state.lastSong.artwork,
                 uri: state.lastSong.uri || '',
+                filename: state.lastSong.filename || '',
+                modificationTime: state.lastSong.modificationTime || 0,
                 isFromDevice: true,
               } as DeviceSong
             : {
@@ -382,7 +384,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 album: state.lastSong.album || '',
                 duration: state.lastSong.duration,
                 artwork: state.lastSong.artwork,
-                audioUrl: state.lastSong.uri,
+                audioUrl: state.lastSong.audioUrl || state.lastSong.uri,
               } as Song;
           
           setCurrentSong(restoredSong);
@@ -1052,16 +1054,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (currentSong) {
-      const songForStorage = {
-        id: currentSong.id,
-        title: currentSong.title,
-        artist: currentSong.artist,
-        album: currentSong.album,
-        duration: currentSong.duration,
-        artwork: currentSong.artwork,
-        uri: isDeviceSong(currentSong) ? currentSong.uri : currentSong.audioUrl,
-        isFromDevice: isDeviceSong(currentSong),
-      };
+      const songForStorage = isDeviceSong(currentSong) 
+        ? {
+            id: currentSong.id,
+            title: currentSong.title,
+            artist: currentSong.artist,
+            album: currentSong.album,
+            duration: currentSong.duration,
+            artwork: currentSong.artwork,
+            uri: currentSong.uri,
+            isFromDevice: true,
+            filename: currentSong.filename,
+            modificationTime: currentSong.modificationTime,
+          }
+        : {
+            id: currentSong.id,
+            title: currentSong.title,
+            artist: currentSong.artist,
+            album: currentSong.album,
+            duration: currentSong.duration,
+            artwork: currentSong.artwork,
+            audioUrl: currentSong.audioUrl,
+            isFromDevice: false,
+          };
       
       savePlayerState({
         currentSongId: currentSong.id,

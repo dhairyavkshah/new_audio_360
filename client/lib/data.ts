@@ -42,7 +42,10 @@ export interface PlayerState {
     duration: number;
     artwork?: string;
     uri?: string;
+    audioUrl?: string;
     isFromDevice?: boolean;
+    filename?: string;
+    modificationTime?: number;
   } | null;
   lastDuration?: number;
 }
