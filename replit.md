@@ -34,13 +34,11 @@ Source → Gain → 10-Band EQ (with bass/treble applied to bands) → Stereo Wi
 ```
 
 **Key Components**:
-- **10-Band Parametric EQ**: Frequencies at 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000 Hz with zero-sum normalization.
-- **Bass Boost**: Applied to EQ bands 0-1 (60Hz, 170Hz), ±12 dB range.
-- **Treble Boost**: Applied to EQ bands 6-9 (6kHz-16kHz), ±12 dB range.
+- **10-Band Parametric EQ**: Frequencies at 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000 Hz. All presets are inherently zero-sum (values sum to 0, no runtime normalization needed).
+- **Bass Boost**: Separate low-shelf filter at 150Hz, ±12 dB range.
+- **Treble Boost**: Separate high-shelf filter at 6kHz, ±12 dB range.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
-- **Stereo Width/Virtualizer**: Two modes available:
-  - **Immersive Modes**: Mid-side processing for stereo width control (-100% mono to +200% wide)
-  - **EQ Mode**: Psychoacoustic virtualizer with cross-feed delay (ITD), lowpass filtered cross-feed (ILD/head shadow), allpass decorrelation, and wet/dry mixing for 3D spatial perception
+- **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide)
 - **EQ Presets**: 8 total (Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic) with zero-sum normalization.
 - **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, and virtualizer settings, designed for specific listening experiences.
 
