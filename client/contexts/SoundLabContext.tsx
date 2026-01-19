@@ -76,7 +76,7 @@ interface SoundLabContextType {
 const SoundLabContext = createContext<SoundLabContextType | undefined>(undefined);
 
 export function SoundLabProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<SoundLabMode>('off');
+  const [mode, setMode] = useState<SoundLabMode>('equalizer');
   const [eqPresetName, setEqPresetName] = useState('Flat');
   const [immersiveModeName, setImmersiveModeName] = useState<ImmersiveMode>('off');
   const [immersiveModeSettings, setImmersiveModeSettings] = useState<ImmersiveModeSettings | null>(null);
@@ -138,11 +138,13 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
         setImmersiveModeName(newMode);
         setMode('immersive');
       } else {
+        // When turning off immersive mode, switch to Flat EQ preset by default
         if (webAudioInitialized) {
-          WebAudioEffectsEngine.resetEQ();
+          WebAudioEffectsEngine.applySevenBandEQ(EQ_PRESETS.Flat);
         }
         setImmersiveModeName('off');
-        setMode('off');
+        setEqPresetName('Flat');
+        setMode('equalizer');
       }
       return { success: true };
     } catch (error) {
@@ -164,11 +166,13 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
       if (eqPreset && EQ_PRESETS[eqPreset]) {
         setEqPresetName(eqPreset);
         setMode('equalizer');
-      } else if (soundMode && VALID_IMMERSIVE_MODES.includes(soundMode as ImmersiveMode)) {
+      } else if (soundMode && VALID_IMMERSIVE_MODES.includes(soundMode as ImmersiveMode) && soundMode !== 'off') {
         setImmersiveModeName(soundMode as ImmersiveMode);
         setMode('immersive');
       } else {
-        setMode('off');
+        // Default to Flat EQ preset
+        setEqPresetName('Flat');
+        setMode('equalizer');
       }
     } catch (error) {
       // Silent error handling
