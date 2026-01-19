@@ -466,12 +466,12 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
   }, [initialized, isOnboardingComplete]);
 
   useEffect(() => {
-    if (!initialized || songs.length === 0) return;
+    if (!initialized) return;
 
     const currentSongIds = new Set(songs.map(s => s.id));
     const previousSongIds = previousSongIdsRef.current;
 
-    if (previousSongIds.size === 0) {
+    if (previousSongIds.size === 0 && currentSongIds.size > 0) {
       previousSongIdsRef.current = currentSongIds;
       return;
     }
