@@ -38,6 +38,7 @@ Source → Gain → 7-Band EQ → Bass Shelf Filter → Treble Shelf Filter → 
 - **Bass Boost Filter**: Lowshelf at 150Hz (±12 dB range).
 - **Treble Boost Filter**: Highshelf at 6kHz (±12 dB range).
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
+- **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide). VirtualizerModule and ImmersiveModeEngineModule delegate to SoftwareDSPAudioProcessor.
 - **EQ Presets**: 8 total (Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic) with zero-sum normalization.
 - **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, and virtualizer settings, designed for specific listening experiences.
 
