@@ -563,9 +563,30 @@ function SoundLabScreen() {
     if (soundLabMode === "immersive" && selectedImmersive === modeId) {
       const result = await NativeAudioService.setImmersiveMode('off');
       if (result.success) {
-        setSoundLabMode("off");
         setSelectedImmersive("off");
         await clearSoundMode();
+        // Switch back to Flat instead of turning off (Flat is always active)
+        setSelectedEQ("Flat");
+        setSoundLabMode("equalizer");
+        await saveEQPreset("Flat");
+        const flatPreset = EQ_PRESETS.find(p => p.name === "Flat");
+        if (flatPreset) {
+          NativeEffectsManager.applyFiveBandEQ(flatPreset.bands);
+          const newBass = flatPreset.bassControl ?? 0;
+          const newTreble = flatPreset.trebleControl ?? 0;
+          const newVirt = flatPreset.virtualizer ?? 0;
+          setBassControl(newBass);
+          setBassBoost(newBass);
+          setTrebleControl(newTreble);
+          setTrebleBoost(newTreble);
+          setVirtualizerLevel(newVirt);
+          await Promise.all([
+            saveBassControlLevel(newBass),
+            saveTrebleControlLevel(newTreble),
+            saveVirtualizerLevel(newVirt)
+          ]);
+          applyAudioEffects(newBass, newTreble, newVirt);
+        }
       }
     } else {
       const result = await NativeAudioService.setImmersiveMode(modeId);

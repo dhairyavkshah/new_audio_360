@@ -6,6 +6,7 @@ New Audio 360 is a premium mobile music player application built with React Nati
 ## Recent Changes (v26.0)
 - **Flat EQ Always Active**: The Flat preset is now always active by default and cannot be turned off. Tapping another preset and tapping it again returns to Flat instead of disabling EQ entirely.
 - **Updated Sound Lab Text**: Changed instruction text to "Flat is always active by default. Tap a preset to apply. Only one mode can be active at a time."
+- **Floating/Draggable MiniPlayer**: The MiniPlayer (both expanded and minimized versions) can now be dragged and repositioned anywhere on the screen. Uses pan gestures with smooth spring animations. A subtle drag handle icon indicates the feature.
 - **Version Update**: Updated version to 26.0 across app.config.js, AboutScreen, and documentation.
 
 ## User Preferences
