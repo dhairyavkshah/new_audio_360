@@ -118,7 +118,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     if (!status.isLoaded) {
       if (status.error) {
         console.error('[OnlineRadioContext] Playback error:', status.error);
-        setError('Stream playback failed. The station may be temporarily unavailable.');
+        setError('Streaming source unavailable. The station may be temporarily offline.');
         setIsPlaying(false);
         setIsBuffering(false);
       }
@@ -305,7 +305,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
       const streamUrl = station.url_resolved || station.url;
       if (!streamUrl) {
-        throw new Error('No stream URL available for this station');
+        throw new Error('Streaming source unavailable');
       }
 
       if (Platform.OS === 'android' && PlaybackEngineModule.isAvailable()) {
@@ -375,7 +375,12 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       OnlineRadioService.reportStationClick(station.stationuuid).catch(() => {});
     } catch (err) {
       console.error('[OnlineRadioContext] playStation error:', err);
-      const message = err instanceof Error ? err.message : 'Failed to play station';
+      const rawMessage = err instanceof Error ? err.message : 'Failed to play station';
+      const message = rawMessage.toLowerCase().includes('network') || rawMessage.toLowerCase().includes('timeout')
+        ? 'Streaming source unavailable. Check your internet connection.'
+        : rawMessage.toLowerCase().includes('url') || rawMessage.toLowerCase().includes('stream')
+          ? 'Streaming source unavailable'
+          : `Stream playback failed: ${rawMessage}`;
       setError(message);
       setIsPlaying(false);
       setIsBuffering(false);

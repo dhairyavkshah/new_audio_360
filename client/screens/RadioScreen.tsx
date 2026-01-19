@@ -30,6 +30,7 @@ import {
   FluentFontWeight,
   FluentSliderSize,
 } from "@/constants/fluent2";
+import { useToast } from "@/contexts/ToastContext";
 
 const FM_MIN = 87.5;
 const FM_MAX = 108.0;
@@ -117,6 +118,7 @@ function RadioScreen() {
   } = useOnlineRadio();
 
   const { mode: soundLabMode, eqPresetName, immersiveModeName, getImmersiveModeInfo } = useSoundLab();
+  const { showError: showToastError } = useToast();
 
   const [radioMode, setRadioMode] = useState<RadioMode>('fmam');
   const [localFrequency, setLocalFrequency] = useState(currentFrequency);
@@ -147,6 +149,18 @@ function RadioScreen() {
       loadOnlineData();
     }
   }, [radioMode, hasLoadedOnline, modeLoaded]);
+
+  useEffect(() => {
+    if (onlineError && radioMode === 'online') {
+      const isStreamError = onlineError.toLowerCase().includes('stream') || 
+                           onlineError.toLowerCase().includes('playback') ||
+                           onlineError.toLowerCase().includes('failed') ||
+                           onlineError.toLowerCase().includes('unavailable');
+      if (isStreamError) {
+        showToastError('Streaming source unavailable. Please try another station.');
+      }
+    }
+  }, [onlineError, radioMode, showToastError]);
 
   const loadSavedMode = async () => {
     try {
