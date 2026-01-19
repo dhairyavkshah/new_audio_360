@@ -22,8 +22,8 @@ import { LicenseVerificationModule } from '../../modules/audio-effects';
 
 const APP_VARIANT = Constants.expoConfig?.extra?.appVariant;
 const IS_PRODUCTION = APP_VARIANT === 'production';
-// Only bypass license in explicit development/preview variants, NOT based on __DEV__ flag
-const IS_DEVELOPMENT = APP_VARIANT === 'development' || APP_VARIANT === 'preview';
+// Bypass license in development, preview, or testing builds (testing = production APK without license check)
+const IS_DEVELOPMENT = APP_VARIANT === 'development' || APP_VARIANT === 'preview' || APP_VARIANT === 'testing';
 
 export interface PurchaseInfo {
   productId: string;

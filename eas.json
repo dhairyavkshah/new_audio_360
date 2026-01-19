@@ -53,6 +53,16 @@
         "buildType": "apk",
         "credentialsSource": "remote"
       }
+    },
+    "testing": {
+      "distribution": "internal",
+      "env": {
+        "APP_ENV": "testing"
+      },
+      "android": {
+        "buildType": "apk",
+        "credentialsSource": "remote"
+      }
     }
   },
   "submit": {

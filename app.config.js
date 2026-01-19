@@ -1,21 +1,25 @@
 const IS_DEV = process.env.APP_ENV === 'development';
 const IS_PREVIEW = process.env.APP_ENV === 'preview';
+const IS_TESTING = process.env.APP_ENV === 'testing';
 
 const getAppVariant = () => {
   if (IS_DEV) return 'development';
   if (IS_PREVIEW) return 'preview';
+  if (IS_TESTING) return 'testing';
   return 'production';
 };
 
 const getAppName = () => {
   if (IS_DEV) return 'New Audio 360 (Dev)';
   if (IS_PREVIEW) return 'New Audio 360 (Preview)';
+  // Testing uses production name (same APK as production, just without license check)
   return 'New Audio 360';
 };
 
 const getAppIdentifier = () => {
   if (IS_DEV) return 'com.theteam360.newaudio360.dev';
   if (IS_PREVIEW) return 'com.theteam360.newaudio360.preview';
+  // Testing uses production package (same APK as production, just without license check)
   return 'com.theteam360.newaudio360';
 };
 
