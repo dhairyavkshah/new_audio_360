@@ -5,10 +5,20 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
 import * as MediaLibrary from "expo-media-library";
-import { FluentScreenLayout, FluentText } from "@/components/fluent";
+import { FluentScreenLayout, FluentText, FluentSectionHeader } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
-import { FluentSpacing, FluentControlRadius, FluentRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
+import { 
+  FluentSpacing, 
+  FluentControlRadius, 
+  FluentRadius, 
+  FluentLightColors, 
+  FluentDarkColors, 
+  FluentTouchTarget, 
+  FluentIconSize, 
+  FluentControlHeight,
+  getShadowStyle 
+} from "@/constants/fluent2";
 import { 
   getSelectedFolders, 
   setSelectedFolders as saveSelectedFolders,
@@ -313,20 +323,85 @@ export default function FolderSelectionScreen() {
     .filter(f => selectedFolderIds.includes(f.id))
     .reduce((sum, f) => sum + f.assetCount, 0);
 
+  const renderFolderItem = (folder: FolderInfo, isWeb: boolean = false) => {
+    const isSelected = selectedFolderIds.includes(folder.id);
+    
+    return (
+      <Pressable
+        key={folder.id}
+        onPress={() => isWeb ? undefined : toggleFolder(folder.id)}
+        style={[
+          styles.folderItem,
+          getShadowStyle('shadow2', isDark),
+          { backgroundColor: colors.colorNeutralBackground2 },
+        ]}
+      >
+        <View style={[styles.folderIconContainer, { backgroundColor: colors.colorBrandBackground + "20" }]}>
+          <MaterialCommunityIcons 
+            name="folder-music" 
+            size={FluentIconSize.medium} 
+            color={colors.colorBrandForeground1} 
+          />
+        </View>
+        <View style={styles.folderTextContainer}>
+          <FluentText 
+            variant="body1Strong" 
+            numberOfLines={1}
+            style={{ color: colors.colorNeutralForeground1 }}
+          >
+            {folder.title}
+          </FluentText>
+          <FluentText variant="caption1" color="tertiary" numberOfLines={1}>
+            {folder.assetCount} {folder.assetCount === 1 ? "song" : "songs"}
+          </FluentText>
+        </View>
+        {isWeb ? (
+          <Pressable
+            onPress={() => handleRemoveFolder(folder.id)}
+            style={[styles.removeButton, { backgroundColor: colors.colorPaletteRedForeground1 + "15" }]}
+          >
+            <MaterialCommunityIcons name="close" size={FluentIconSize.regular} color={colors.colorPaletteRedForeground1} />
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={() => toggleFolder(folder.id)}
+            style={[
+              styles.checkboxCircle,
+              { 
+                backgroundColor: isSelected ? colors.colorBrandBackground : "transparent",
+                borderColor: isSelected ? colors.colorBrandBackground : colors.colorNeutralStroke1,
+              },
+            ]}
+          >
+            {isSelected && (
+              <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
+            )}
+          </Pressable>
+        )}
+      </Pressable>
+    );
+  };
+
   const renderWebContent = () => (
     <FluentScreenLayout hasBottomNavigation={false} isNestedScreen={true}>
-      <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground2 }]}>
+      <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground1 }]}>
         <Pressable
           onPress={handleAddFolder}
           disabled={isScanning}
-          style={[styles.addButton, { backgroundColor: colors.colorBrandBackground, opacity: isScanning ? 0.7 : 1 }]}
+          style={[
+            styles.addButton, 
+            { 
+              backgroundColor: colors.colorBrandBackground, 
+              opacity: isScanning ? 0.7 : 1 
+            }
+          ]}
         >
           {isScanning ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <>
-              <MaterialCommunityIcons name="folder-plus" size={20} color="#FFFFFF" />
-              <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.xs }}>
+              <MaterialCommunityIcons name="folder-plus" size={FluentIconSize.regular} color="#FFFFFF" />
+              <FluentText variant="body1Strong" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s }}>
                 Add Folder
               </FluentText>
             </>
@@ -350,10 +425,8 @@ export default function FolderSelectionScreen() {
           <FluentText variant="body1" color="secondary" style={{ textAlign: "center", marginBottom: FluentSpacing.xl }}>
             Click "Add Folder" to select a folder containing your music files
           </FluentText>
-          <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
-            <FluentText variant="subtitle1" style={{ color: colors.colorNeutralForeground1, marginBottom: FluentSpacing.m }}>
-              How to Get Started
-            </FluentText>
+          <View style={[styles.instructionsCard, getShadowStyle('shadow4', isDark), { backgroundColor: colors.colorNeutralBackground2 }]}>
+            <FluentSectionHeader icon="help-circle-outline" title="How to Get Started" />
             <View style={styles.instructionsList}>
               <View style={styles.instructionItem}>
                 <MaterialCommunityIcons name="numeric-1-circle" size={24} color={colors.colorBrandForeground1} />
@@ -384,50 +457,14 @@ export default function FolderSelectionScreen() {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          <FluentText variant="caption2" color="secondary" style={styles.infoText}>
+          <FluentText variant="caption1" color="secondary" style={styles.infoText}>
             {folders.length} folder{folders.length === 1 ? "" : "s"} added ({totalSongsSelected} songs total)
           </FluentText>
 
-          <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
-            <FluentText variant="subtitle1" style={{ color: colors.colorNeutralForeground1, marginBottom: FluentSpacing.m }}>
-              Added Folders
-            </FluentText>
-            {folders.map((folder) => (
-              <View
-                key={folder.id}
-                style={[
-                  styles.folderItem,
-                  { 
-                    backgroundColor: colors.colorNeutralBackground2,
-                    borderColor: colors.colorBrandForeground1,
-                  },
-                ]}
-              >
-                <View style={styles.folderContent}>
-                  <View style={[styles.folderIcon, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
-                    <MaterialCommunityIcons name="folder-music" size={24} color={colors.colorBrandForeground1} />
-                  </View>
-                  <View style={styles.folderInfo}>
-                    <FluentText 
-                      variant="body1" 
-                      style={[styles.folderTitle, { color: colors.colorNeutralForeground1 }]}
-                      numberOfLines={1}
-                    >
-                      {folder.title}
-                    </FluentText>
-                    <FluentText variant="caption2" color="secondary">
-                      {folder.assetCount} {folder.assetCount === 1 ? "song" : "songs"}
-                    </FluentText>
-                  </View>
-                  <Pressable
-                    onPress={() => handleRemoveFolder(folder.id)}
-                    style={[styles.removeButton, { backgroundColor: colors.colorPaletteRedForeground1 + "15" }]}
-                  >
-                    <MaterialCommunityIcons name="close" size={FluentIconSize.regular} color={colors.colorPaletteRedForeground1} />
-                  </Pressable>
-                </View>
-              </View>
-            ))}
+          <FluentSectionHeader icon="folder-multiple" title="Added Folders" style={{ marginHorizontal: FluentSpacing.l }} />
+          
+          <View style={styles.foldersList}>
+            {folders.map((folder) => renderFolderItem(folder, true))}
           </View>
         </ScrollView>
       )}
@@ -435,10 +472,10 @@ export default function FolderSelectionScreen() {
       {folders.length > 0 && (
         <View style={[
           styles.footer, 
+          getShadowStyle('shadow8', isDark),
           { 
             backgroundColor: colors.colorNeutralBackground1, 
             paddingBottom: insets.bottom + FluentSpacing.m,
-            borderTopColor: colors.colorNeutralStroke2,
           }
         ]}>
           <Pressable
@@ -456,8 +493,8 @@ export default function FolderSelectionScreen() {
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <>
-                <MaterialCommunityIcons name="content-save" size={20} color="#FFFFFF" />
-                <FluentText variant="body1Strong" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.xs }}>
+                <MaterialCommunityIcons name="content-save" size={FluentIconSize.regular} color="#FFFFFF" />
+                <FluentText variant="body1Strong" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s }}>
                   Apply Changes
                 </FluentText>
               </>
@@ -467,9 +504,9 @@ export default function FolderSelectionScreen() {
       )}
 
       {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
+        <View style={[styles.successToast, getShadowStyle('shadow8', isDark), { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
           <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color="#FFFFFF" />
-          <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
+          <FluentText variant="body2" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
             {successMessage}
           </FluentText>
         </View>
@@ -483,25 +520,27 @@ export default function FolderSelectionScreen() {
 
   return (
     <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>
-      <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground2 }]}>
-        <Pressable
-          onPress={selectAll}
-          style={[styles.headerButton, { backgroundColor: colors.colorBrandBackground }]}
-        >
-          <MaterialCommunityIcons name="checkbox-multiple-marked" size={FluentIconSize.regular} color="#FFFFFF" />
-          <FluentText variant="caption1" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.xs }}>
-            Select All
-          </FluentText>
-        </Pressable>
-        <Pressable
-          onPress={clearAll}
-          style={[styles.headerButton, { backgroundColor: colors.colorNeutralBackground3 }]}
-        >
-          <MaterialCommunityIcons name="checkbox-multiple-blank-outline" size={FluentIconSize.regular} color={colors.colorNeutralForeground1} />
-          <FluentText variant="caption1" style={{ color: colors.colorNeutralForeground1, fontWeight: "600", marginLeft: FluentSpacing.xs }}>
-            Clear
-          </FluentText>
-        </Pressable>
+      <View style={[styles.header, { backgroundColor: colors.colorNeutralBackground1 }]}>
+        <View style={styles.headerButtonsRow}>
+          <Pressable
+            onPress={selectAll}
+            style={[styles.headerButton, { backgroundColor: colors.colorBrandBackground }]}
+          >
+            <MaterialCommunityIcons name="checkbox-multiple-marked" size={FluentIconSize.regular} color="#FFFFFF" />
+            <FluentText variant="body2" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.s }}>
+              Select All
+            </FluentText>
+          </Pressable>
+          <Pressable
+            onPress={clearAll}
+            style={[styles.headerButton, { backgroundColor: colors.colorNeutralBackground3, borderWidth: 1, borderColor: colors.colorNeutralStroke1 }]}
+          >
+            <MaterialCommunityIcons name="checkbox-multiple-blank-outline" size={FluentIconSize.regular} color={colors.colorNeutralForeground1} />
+            <FluentText variant="body2" style={{ color: colors.colorNeutralForeground1, fontWeight: "600", marginLeft: FluentSpacing.s }}>
+              Clear
+            </FluentText>
+          </Pressable>
+        </View>
       </View>
 
       {isLoading ? (
@@ -525,78 +564,31 @@ export default function FolderSelectionScreen() {
         <ScrollView
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: insets.bottom + 100 },
+            { paddingBottom: insets.bottom + 120 },
           ]}
           showsVerticalScrollIndicator={false}
         >
-          <FluentText variant="caption2" color="secondary" style={styles.infoText}>
+          <FluentText variant="caption1" color="secondary" style={styles.infoText}>
             {selectedFolderIds.length === 0 
               ? "No folders selected - showing all songs"
               : `${selectedFolderIds.length} folder${selectedFolderIds.length === 1 ? "" : "s"} selected (${totalSongsSelected} songs)`
             }
           </FluentText>
 
-          <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
-            <FluentText variant="subtitle1" style={{ color: colors.colorNeutralForeground1, marginBottom: FluentSpacing.m }}>
-              Available Folders
-            </FluentText>
-            {folders.map((folder) => {
-              const isSelected = selectedFolderIds.includes(folder.id);
-              return (
-                <Pressable
-                  key={folder.id}
-                  onPress={() => toggleFolder(folder.id)}
-                  style={[
-                    styles.folderItem,
-                    { 
-                      backgroundColor: isSelected ? colors.colorBrandForeground1 + "15" : colors.colorNeutralBackground2,
-                      borderColor: isSelected ? colors.colorBrandForeground1 : colors.colorNeutralStroke2,
-                    },
-                  ]}
-                >
-                  <View style={[
-                    styles.checkbox,
-                    { 
-                      backgroundColor: isSelected ? colors.colorBrandBackground : "transparent",
-                      borderColor: isSelected ? colors.colorBrandForeground1 : colors.colorNeutralStroke2,
-                    },
-                  ]}>
-                    {isSelected && (
-                      <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
-                    )}
-                  </View>
-                  <View style={styles.folderInfo}>
-                    <View style={styles.folderTitleRow}>
-                      <MaterialCommunityIcons 
-                        name="folder-music" 
-                        size={20} 
-                        color={isSelected ? colors.colorBrandForeground1 : colors.colorNeutralForeground2} 
-                      />
-                      <FluentText 
-                        variant="body1" 
-                        style={[styles.folderTitle, { color: colors.colorNeutralForeground1 }]}
-                        numberOfLines={1}
-                      >
-                        {folder.title}
-                      </FluentText>
-                    </View>
-                    <FluentText variant="caption2" color="secondary">
-                      {folder.assetCount} {folder.assetCount === 1 ? "song" : "songs"}
-                    </FluentText>
-                  </View>
-                </Pressable>
-              );
-            })}
+          <FluentSectionHeader icon="folder-multiple" title="Available Folders" style={{ marginHorizontal: FluentSpacing.l }} />
+          
+          <View style={styles.foldersList}>
+            {folders.map((folder) => renderFolderItem(folder, false))}
           </View>
         </ScrollView>
       )}
 
       <View style={[
         styles.footer, 
+        getShadowStyle('shadow8', isDark),
         { 
           backgroundColor: colors.colorNeutralBackground1, 
           paddingBottom: Platform.OS === 'android' ? tabBarHeight + FluentSpacing.m : insets.bottom + FluentSpacing.m,
-          borderTopColor: colors.colorNeutralStroke2,
         }
       ]}>
         <Pressable
@@ -614,8 +606,8 @@ export default function FolderSelectionScreen() {
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <>
-              <MaterialCommunityIcons name="content-save" size={20} color="#FFFFFF" />
-              <FluentText variant="body1Strong" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.xs }}>
+              <MaterialCommunityIcons name="content-save" size={FluentIconSize.regular} color="#FFFFFF" />
+              <FluentText variant="body1Strong" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s }}>
                 Save Selection
               </FluentText>
             </>
@@ -624,9 +616,9 @@ export default function FolderSelectionScreen() {
       </View>
 
       {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
+        <View style={[styles.successToast, getShadowStyle('shadow8', isDark), { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
           <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color="#FFFFFF" />
-          <FluentText variant="caption1" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
+          <FluentText variant="body2" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
             {successMessage}
           </FluentText>
         </View>
@@ -637,33 +629,39 @@ export default function FolderSelectionScreen() {
 
 const styles = StyleSheet.create({
   header: {
+    paddingHorizontal: FluentSpacing.l,
+    paddingVertical: FluentSpacing.m,
+  },
+  headerButtonsRow: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: FluentSpacing.s,
-    padding: FluentSpacing.m,
+    gap: FluentSpacing.m,
   },
   headerButton: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: FluentTouchTarget.minimum,
-    paddingVertical: FluentSpacing.s,
-    paddingHorizontal: FluentSpacing.m,
-    borderRadius: FluentControlRadius.card,
+    justifyContent: "center",
+    height: FluentControlHeight.large,
+    paddingHorizontal: FluentSpacing.l,
+    borderRadius: FluentControlRadius.button,
+    minWidth: 120,
   },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: FluentSpacing.m,
+    justifyContent: "center",
+    height: FluentControlHeight.large,
     paddingHorizontal: FluentSpacing.xl,
-    borderRadius: FluentControlRadius.card,
+    borderRadius: FluentControlRadius.button,
+    alignSelf: "center",
   },
   content: {
-    paddingHorizontal: FluentSpacing.l,
     paddingTop: FluentSpacing.s,
   },
   infoText: {
     textAlign: "center",
-    marginBottom: FluentSpacing.m,
+    marginBottom: FluentSpacing.l,
+    paddingHorizontal: FluentSpacing.l,
   },
   loadingState: {
     flex: 1,
@@ -681,59 +679,50 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.s,
     fontWeight: "600",
   },
-  sectionCard: {
-    borderRadius: FluentControlRadius.dialog,
+  instructionsCard: {
+    borderRadius: FluentControlRadius.card,
     padding: FluentSpacing.l,
-    marginBottom: FluentSpacing.m,
+    width: "100%",
+    maxWidth: 360,
   },
   instructionsList: {
     width: "100%",
-    maxWidth: 300,
   },
   instructionItem: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: FluentSpacing.m,
   },
-  folderItem: {
-    borderRadius: FluentControlRadius.card,
-    borderWidth: 1,
-    marginBottom: FluentSpacing.s,
-    overflow: "hidden",
+  foldersList: {
+    paddingHorizontal: FluentSpacing.l,
+    gap: FluentSpacing.s,
   },
-  folderContent: {
+  folderItem: {
     flexDirection: "row",
     alignItems: "center",
     padding: FluentSpacing.m,
-  },
-  folderIcon: {
-    width: 48,
-    height: 48,
     borderRadius: FluentControlRadius.card,
-    justifyContent: "center",
-    alignItems: "center",
+    minHeight: 72,
   },
-  folderInfo: {
+  folderIconContainer: {
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentControlRadius.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  folderTextContainer: {
     flex: 1,
     marginLeft: FluentSpacing.m,
+    gap: FluentSpacing.xxs,
   },
-  folderTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: FluentSpacing.xxs,
-  },
-  folderTitle: {
-    marginLeft: FluentSpacing.s,
-    fontWeight: "500",
-  },
-  checkbox: {
+  checkboxCircle: {
     width: 24,
     height: 24,
-    borderRadius: FluentControlRadius.checkbox,
+    borderRadius: 12,
     borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: FluentSpacing.m,
   },
   removeButton: {
     width: FluentTouchTarget.minimum,
@@ -743,27 +732,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: FluentSpacing.l,
     paddingTop: FluentSpacing.m,
-    borderTopWidth: 1,
   },
   saveButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: FluentSpacing.m,
+    height: FluentControlHeight.xlarge,
     borderRadius: FluentControlRadius.button,
   },
   successToast: {
     position: "absolute",
-    bottom: 100,
+    bottom: 120,
     left: FluentSpacing.l,
     right: FluentSpacing.l,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: FluentSpacing.l,
-    paddingVertical: FluentSpacing.l,
+    paddingVertical: FluentSpacing.m,
     borderRadius: FluentRadius.large,
-    ...getShadowStyle('shadow4'),
   },
 });
