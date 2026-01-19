@@ -112,7 +112,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
           setIsBuffering(false);
         }
       },
-      onStateChange: (state: State) => {
+      onStateChange: (state: typeof State) => {
         if (TrackPlayerService.getPlaybackSource() !== 'radio') return;
         if (state === State.Buffering) {
           setIsBuffering(true);
@@ -245,7 +245,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     try {
       const fetchedStations = await OnlineRadioService.getStationsByCountryCode(
         countryCode,
-        100
+        200
       );
       setStations(fetchedStations);
 
@@ -273,7 +273,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     try {
       const fetchedStations = await OnlineRadioService.getPopularStations(
         countryCode,
-        50
+        200
       );
       setPopularStations(fetchedStations);
 
@@ -329,7 +329,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
-      const fetchedStations = await OnlineRadioService.searchStations(query, 50);
+      const fetchedStations = await OnlineRadioService.searchStations(query, 200);
       setStations(fetchedStations);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Search failed';

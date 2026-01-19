@@ -33,7 +33,7 @@ const RADIO_BROWSER_SERVERS = [
 
 const NOMINATIM_API = 'https://nominatim.openstreetmap.org';
 
-const MAX_STATIONS_PER_COUNTRY = 50;
+const MAX_STATIONS_PER_COUNTRY = 200;
 const MIN_BITRATE = 64;
 const VALID_CODECS = ['MP3', 'OGG', 'AAC'];
 const REQUEST_TIMEOUT = 10000;
@@ -117,7 +117,7 @@ export const OnlineRadioService = {
         order: 'votes',
         reverse: 'true',
         hidebroken: 'true',
-        limit: String(Math.min(limit * 3, 150)),
+        limit: String(Math.min(limit * 3, 600)),
       });
       
       const stations = await fetchFromRadioBrowser(`/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?${params}`);
@@ -142,7 +142,7 @@ export const OnlineRadioService = {
         order: 'votes',
         reverse: 'true',
         hidebroken: 'true',
-        limit: String(Math.min(limit * 3, 150)),
+        limit: String(Math.min(limit * 3, 600)),
       });
       
       if (countryCode) {
@@ -169,7 +169,7 @@ export const OnlineRadioService = {
         order: 'votes',
         reverse: 'true',
         hidebroken: 'true',
-        limit: String(Math.min(limit * 3, 150)),
+        limit: String(Math.min(limit * 3, 600)),
       });
       
       let endpoint = '/json/stations/topvote';
@@ -201,7 +201,7 @@ export const OnlineRadioService = {
         order: 'votes',
         reverse: 'true',
         hidebroken: 'true',
-        limit: String(Math.min(limit * 3, 150)),
+        limit: String(Math.min(limit * 3, 600)),
       });
       
       if (countryCode) {

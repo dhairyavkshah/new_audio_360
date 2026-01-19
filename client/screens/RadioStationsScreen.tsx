@@ -293,7 +293,7 @@ export default function RadioStationsScreen() {
 
   useEffect(() => {
     if (radioMode === "online" && detectedCountryCode && genreFilter === "all" && !searchQuery) {
-      setFilteredOnlineStations(onlineStations.slice(0, 50));
+      setFilteredOnlineStations(onlineStations.slice(0, 200));
     }
   }, [onlineStations, radioMode, genreFilter, searchQuery, detectedCountryCode]);
 
@@ -370,7 +370,7 @@ export default function RadioStationsScreen() {
     } else if (detectedCountryCode) {
       setIsLoadingGenre(true);
       try {
-        const stations = await OnlineRadioService.getStationsByGenre(genre, detectedCountryCode, 100);
+        const stations = await OnlineRadioService.getStationsByGenre(genre, detectedCountryCode, 200);
         setFilteredOnlineStations(stations);
       } catch (err) {
         console.error("Error loading genre stations:", err);
@@ -387,7 +387,7 @@ export default function RadioStationsScreen() {
       setDisplayedStationsCount(50);
       setIsSearching(true);
       try {
-        const results = await OnlineRadioService.searchStations(query, 100, detectedCountryCode || undefined);
+        const results = await OnlineRadioService.searchStations(query, 200, detectedCountryCode || undefined);
         setSearchResults(results);
         setFilteredOnlineStations(results);
       } catch (err) {
@@ -399,7 +399,7 @@ export default function RadioStationsScreen() {
     } else if (query.trim().length === 0 && detectedCountryCode) {
       setGenreFilter("all");
       setSearchResults([]);
-      setFilteredOnlineStations(onlineStations.slice(0, 50));
+      setFilteredOnlineStations(onlineStations.slice(0, 200));
     }
   }, [onlineStations, detectedCountryCode]);
 
