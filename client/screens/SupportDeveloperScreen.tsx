@@ -5,7 +5,6 @@ import {
   Pressable,
   TextInput,
   Alert,
-  Modal,
   AppState,
   AppStateStatus,
   KeyboardAvoidingView,
@@ -24,7 +23,7 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
-import { FluentScreenLayout, FluentText } from "@/components/fluent";
+import { FluentScreenLayout, FluentText, FluentModal } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors, FluentTypography } from "@/constants/fluent2";
@@ -505,103 +504,98 @@ export default function SupportDeveloperScreen() {
         </KeyboardAwareScrollViewCompat>
       </KeyboardAvoidingView>
 
-      <Modal
+      <FluentModal
         visible={showConfirmationModal}
-        transparent
-        animationType="slide"
-        onRequestClose={handleDenyPayment}
+        onClose={handleDenyPayment}
+        title="Did your support transaction go through?"
+        showHandle={true}
+        showCloseButton={false}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.confirmationSheet, { backgroundColor: colors.colorNeutralBackground1 }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.colorNeutralStroke1 }]} />
-            <FluentText variant="title3" style={styles.confirmationTitle}>
-              Did your support transaction go through?
-            </FluentText>
-            <FluentText
-              variant="caption1"
-              color="secondary"
-              style={styles.confirmationDesc}
-            >
-              We can't verify UPI payments automatically. Please confirm if your payment was
-              successful.
-            </FluentText>
-
-            <Pressable
-              onPress={handleConfirmPayment}
-              style={[styles.confirmButton, { backgroundColor: colors.colorPaletteGreenForeground1 }]}
-            >
-              <MaterialCommunityIcons name="check" size={FluentIconSize.regular} color="#FFFFFF" />
-              <FluentText variant="body1" style={styles.confirmButtonText}>
-                Yes, I contributed
-              </FluentText>
-            </Pressable>
-
-            <Pressable
-              onPress={handleDenyPayment}
-              style={[styles.denyButton, { backgroundColor: colors.colorNeutralBackground2 }]}
-            >
-              <FluentText variant="body1" color="secondary">
-                No / Not yet
-              </FluentText>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={showThankYouModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowThankYouModal(false)}
-      >
-        <View style={[styles.modalOverlay, { justifyContent: "center" }]}>
-          <Animated.View
-            style={[styles.thankYouCard, { backgroundColor: colors.colorNeutralBackground1 }, confettiStyle]}
+        <View style={styles.confirmationContent}>
+          <FluentText
+            variant="caption1"
+            color="secondary"
+            style={styles.confirmationDesc}
           >
-            <View style={styles.confettiContainer}>
-              <Animated.View style={[styles.confettiParticle, confetti1Style]}>
-                <MaterialCommunityIcons name="star" size={FluentIconSize.regular} color="#FFD700" />
-              </Animated.View>
-              <Animated.View style={[styles.confettiParticle, confetti2Style]}>
-                <MaterialCommunityIcons name="heart" size={FluentIconSize.small} color="#FF6B6B" />
-              </Animated.View>
-              <Animated.View style={[styles.confettiParticle, confetti3Style]}>
-                <MaterialCommunityIcons name="star" size={FluentIconSize.tiny} color="#4ECDC4" />
-              </Animated.View>
-              <Animated.View style={[styles.confettiParticle, confetti4Style]}>
-                <MaterialCommunityIcons name="circle" size={FluentIconSize.tiny} color="#9B59B6" />
-              </Animated.View>
-              <Animated.View style={[styles.confettiParticle, confetti5Style]}>
-                <MaterialCommunityIcons name="star" size={FluentIconSize.regular} color="#3498DB" />
-              </Animated.View>
-              <Animated.View style={[styles.confettiParticle, confetti6Style]}>
-                <MaterialCommunityIcons name="heart" size={FluentIconSize.tiny} color="#E74C3C" />
-              </Animated.View>
-            </View>
-            <Animated.View style={heartStyle}>
-              <MaterialCommunityIcons name="heart" size={64} color={colors.colorPaletteRedForeground1} />
-            </Animated.View>
-            <FluentText variant="title1" style={styles.thankYouTitle}>
-              Thank You!
+            We can't verify UPI payments automatically. Please confirm if your payment was
+            successful.
+          </FluentText>
+
+          <Pressable
+            onPress={handleConfirmPayment}
+            style={[styles.confirmButton, { backgroundColor: colors.colorPaletteGreenForeground1 }]}
+          >
+            <MaterialCommunityIcons name="check" size={FluentIconSize.regular} color="#FFFFFF" />
+            <FluentText variant="body1" style={styles.confirmButtonText}>
+              Yes, I contributed
             </FluentText>
-            <FluentText
-              variant="body1"
-              color="secondary"
-              style={styles.thankYouDesc}
-            >
-              Your support means the world to me. You've unlocked all premium features!
+          </Pressable>
+
+          <Pressable
+            onPress={handleDenyPayment}
+            style={[styles.denyButton, { backgroundColor: colors.colorNeutralBackground2 }]}
+          >
+            <FluentText variant="body1" color="secondary">
+              No / Not yet
             </FluentText>
-            <Pressable
-              onPress={() => setShowThankYouModal(false)}
-              style={[styles.thankYouButton, { backgroundColor: colors.colorBrandBackground }]}
-            >
-              <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-                Continue
-              </FluentText>
-            </Pressable>
-          </Animated.View>
+          </Pressable>
         </View>
-      </Modal>
+      </FluentModal>
+
+      <FluentModal
+        visible={showThankYouModal}
+        onClose={() => setShowThankYouModal(false)}
+        showHandle={false}
+        showCloseButton={false}
+        animationType="fade"
+        presentationStyle="overFullScreen"
+      >
+        <Animated.View
+          style={[styles.thankYouCard, { backgroundColor: colors.colorNeutralBackground1 }, confettiStyle]}
+        >
+          <View style={styles.confettiContainer}>
+            <Animated.View style={[styles.confettiParticle, confetti1Style]}>
+              <MaterialCommunityIcons name="star" size={FluentIconSize.regular} color="#FFD700" />
+            </Animated.View>
+            <Animated.View style={[styles.confettiParticle, confetti2Style]}>
+              <MaterialCommunityIcons name="heart" size={FluentIconSize.small} color="#FF6B6B" />
+            </Animated.View>
+            <Animated.View style={[styles.confettiParticle, confetti3Style]}>
+              <MaterialCommunityIcons name="star" size={FluentIconSize.tiny} color="#4ECDC4" />
+            </Animated.View>
+            <Animated.View style={[styles.confettiParticle, confetti4Style]}>
+              <MaterialCommunityIcons name="circle" size={FluentIconSize.tiny} color="#9B59B6" />
+            </Animated.View>
+            <Animated.View style={[styles.confettiParticle, confetti5Style]}>
+              <MaterialCommunityIcons name="star" size={FluentIconSize.regular} color="#3498DB" />
+            </Animated.View>
+            <Animated.View style={[styles.confettiParticle, confetti6Style]}>
+              <MaterialCommunityIcons name="heart" size={FluentIconSize.tiny} color="#E74C3C" />
+            </Animated.View>
+          </View>
+          <Animated.View style={heartStyle}>
+            <MaterialCommunityIcons name="heart" size={64} color={colors.colorPaletteRedForeground1} />
+          </Animated.View>
+          <FluentText variant="title1" style={styles.thankYouTitle}>
+            Thank You!
+          </FluentText>
+          <FluentText
+            variant="body1"
+            color="secondary"
+            style={styles.thankYouDesc}
+          >
+            Your support means the world to me. You've unlocked all premium features!
+          </FluentText>
+          <Pressable
+            onPress={() => setShowThankYouModal(false)}
+            style={[styles.thankYouButton, { backgroundColor: colors.colorBrandBackground }]}
+          >
+            <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+              Continue
+            </FluentText>
+          </Pressable>
+        </Animated.View>
+      </FluentModal>
     </FluentScreenLayout>
   );
 }
@@ -736,26 +730,11 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: FluentSpacing.m,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  confirmationSheet: {
-    padding: FluentSpacing.xl,
-    borderTopLeftRadius: FluentControlRadius.bottomSheet,
-    borderTopRightRadius: FluentControlRadius.bottomSheet,
+  confirmationContent: {
+    width: "100%",
     alignItems: "center",
-  },
-  sheetHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: FluentControlRadius.checkbox,
-    marginBottom: FluentSpacing.xl,
-  },
-  confirmationTitle: {
-    textAlign: "center",
-    marginBottom: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.l,
+    paddingVertical: FluentSpacing.m,
   },
   confirmationDesc: {
     textAlign: "center",

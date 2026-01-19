@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, memo } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Platform, ActivityIndicator, TextInput, Modal, FlatList } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Platform, ActivityIndicator, TextInput, FlatList } from "react-native";
 import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -7,7 +7,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import { FluentScreenLayout, FluentText, FluentButton, FluentIconButton } from "@/components/fluent";
+import { FluentScreenLayout, FluentText, FluentButton, FluentIconButton, FluentModal } from "@/components/fluent";
 import { FluentTopBar } from "@/components/FluentTopBar";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
@@ -28,6 +28,7 @@ import {
   FluentTypography,
   FluentBorderWidth,
   FluentFontWeight,
+  FluentSliderSize,
 } from "@/constants/fluent2";
 
 const FM_MIN = 87.5;
@@ -860,8 +861,9 @@ function RadioScreen() {
               onValueChange={handleFrequencyChange}
               onSlidingComplete={handleFrequencyChangeComplete}
               minimumTrackTintColor={colors.colorBrandForeground1}
-              maximumTrackTintColor={colors.colorNeutralBackground3}
+              maximumTrackTintColor={colors.colorNeutralStroke1}
               thumbTintColor={colors.colorBrandForeground1}
+              trackHeight={FluentSliderSize.trackMedium}
               accessibilityLabel="Frequency tuner"
               accessibilityHint={`Tune to a ${bandType === "fm" ? "FM" : "AM"} frequency`}
             />
@@ -1161,107 +1163,95 @@ function RadioScreen() {
         {radioMode === 'fmam' ? renderFmContent() : renderOnlineContent()}
       </ScrollView>
 
-      <Modal
+      <FluentModal
         visible={isCountryPickerVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setIsCountryPickerVisible(false)}
+        onClose={() => setIsCountryPickerVisible(false)}
+        title="Select Country"
+        showHandle={true}
+        showCloseButton={true}
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.colorNeutralBackground1 }]}>
-          <View style={styles.modalHeader}>
-            <FluentText variant="title2">Select Country</FluentText>
+        <View style={[styles.modalSearchContainer, { backgroundColor: colors.colorNeutralBackground3, borderColor: colors.colorNeutralStroke2 }]}>
+          <MaterialCommunityIcons
+            name="magnify"
+            size={FluentIconSize.regular}
+            color={colors.colorNeutralForeground3}
+          />
+          <TextInput
+            style={[
+              styles.modalSearchInput,
+              { color: colors.colorNeutralForeground1, fontSize: FluentTypography.body1.fontSize }
+            ]}
+            placeholder="Search countries..."
+            placeholderTextColor={colors.colorNeutralForeground3}
+            value={countrySearchQuery}
+            onChangeText={setCountrySearchQuery}
+            autoFocus={true}
+          />
+          {countrySearchQuery.length > 0 && (
             <Pressable
-              onPress={() => setIsCountryPickerVisible(false)}
-              style={styles.modalCloseButton}
+              onPress={() => setCountrySearchQuery('')}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <MaterialCommunityIcons name="close" size={FluentIconSize.medium} color={colors.colorNeutralForeground1} />
+              <MaterialCommunityIcons name="close-circle" size={FluentIconSize.small} color={colors.colorNeutralForeground3} />
             </Pressable>
-          </View>
-
-          <View style={[styles.modalSearchContainer, { backgroundColor: colors.colorNeutralBackground3, borderColor: colors.colorNeutralStroke2 }]}>
-            <MaterialCommunityIcons
-              name="magnify"
-              size={FluentIconSize.regular}
-              color={colors.colorNeutralForeground3}
-            />
-            <TextInput
-              style={[
-                styles.modalSearchInput,
-                { color: colors.colorNeutralForeground1, fontSize: FluentTypography.body1.fontSize }
-              ]}
-              placeholder="Search countries..."
-              placeholderTextColor={colors.colorNeutralForeground3}
-              value={countrySearchQuery}
-              onChangeText={setCountrySearchQuery}
-              autoFocus={true}
-            />
-            {countrySearchQuery.length > 0 && (
-              <Pressable
-                onPress={() => setCountrySearchQuery('')}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <MaterialCommunityIcons name="close-circle" size={FluentIconSize.small} color={colors.colorNeutralForeground3} />
-              </Pressable>
-            )}
-          </View>
-
-          {availableCountries.length === 0 ? (
-            <View style={styles.modalLoadingContainer}>
-              <ActivityIndicator size="large" color={colors.colorBrandForeground1} />
-              <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.m }}>
-                Loading countries...
-              </FluentText>
-            </View>
-          ) : (
-            <FlatList
-              data={filteredCountries}
-              keyExtractor={(item) => item.iso_3166_1}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={[
-                    styles.countryItem,
-                    {
-                      backgroundColor: item.iso_3166_1 === detectedCountryCode
-                        ? colors.colorBrandBackgroundSelected
-                        : 'transparent',
-                    }
-                  ]}
-                  onPress={() => handleSelectCountry(item.iso_3166_1, item.name)}
-                >
-                  <FluentText variant="title3" style={styles.countryFlag}>
-                    {getCountryFlag(item.iso_3166_1)}
-                  </FluentText>
-                  <View style={styles.countryInfo}>
-                    <FluentText 
-                      variant="body1Strong"
-                      style={{
-                        color: item.iso_3166_1 === detectedCountryCode
-                          ? colors.colorBrandForeground1
-                          : colors.colorNeutralForeground1
-                      }}
-                    >
-                      {item.name}
-                    </FluentText>
-                    <FluentText variant="caption1" color="secondary">
-                      {item.stationcount.toLocaleString()} stations
-                    </FluentText>
-                  </View>
-                  {item.iso_3166_1 === detectedCountryCode && (
-                    <MaterialCommunityIcons
-                      name="check"
-                      size={FluentIconSize.regular}
-                      color={colors.colorBrandForeground1}
-                    />
-                  )}
-                </Pressable>
-              )}
-              contentContainerStyle={styles.countryList}
-              showsVerticalScrollIndicator={true}
-            />
           )}
         </View>
-      </Modal>
+
+        {availableCountries.length === 0 ? (
+          <View style={styles.modalLoadingContainer}>
+            <ActivityIndicator size="large" color={colors.colorBrandForeground1} />
+            <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.m }}>
+              Loading countries...
+            </FluentText>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredCountries}
+            keyExtractor={(item) => item.iso_3166_1}
+            renderItem={({ item }) => (
+              <Pressable
+                style={[
+                  styles.countryItem,
+                  {
+                    backgroundColor: item.iso_3166_1 === detectedCountryCode
+                      ? colors.colorBrandBackgroundSelected
+                      : 'transparent',
+                  }
+                ]}
+                onPress={() => handleSelectCountry(item.iso_3166_1, item.name)}
+              >
+                <FluentText variant="title3" style={styles.countryFlag}>
+                  {getCountryFlag(item.iso_3166_1)}
+                </FluentText>
+                <View style={styles.countryInfo}>
+                  <FluentText 
+                    variant="body1Strong"
+                    style={{
+                      color: item.iso_3166_1 === detectedCountryCode
+                        ? colors.colorBrandForeground1
+                        : colors.colorNeutralForeground1
+                    }}
+                  >
+                    {item.name}
+                  </FluentText>
+                  <FluentText variant="caption1" color="secondary">
+                    {item.stationcount.toLocaleString()} stations
+                  </FluentText>
+                </View>
+                {item.iso_3166_1 === detectedCountryCode && (
+                  <MaterialCommunityIcons
+                    name="check"
+                    size={FluentIconSize.regular}
+                    color={colors.colorBrandForeground1}
+                  />
+                )}
+              </Pressable>
+            )}
+            contentContainerStyle={styles.countryList}
+            showsVerticalScrollIndicator={true}
+          />
+        )}
+      </FluentModal>
     </FluentScreenLayout>
   );
 }
@@ -1603,20 +1593,6 @@ const styles = StyleSheet.create({
   },
   countryDropdownText: {
     flex: 1,
-  },
-  modalContainer: {
-    flex: 1,
-    paddingTop: FluentSpacing.l,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: FluentSpacing.l,
-    paddingBottom: FluentSpacing.m,
-  },
-  modalCloseButton: {
-    padding: FluentSpacing.xs,
   },
   modalSearchContainer: {
     flexDirection: "row",

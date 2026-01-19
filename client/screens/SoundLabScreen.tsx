@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Alert, TextInput, Modal, Platform } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Alert, TextInput, Platform } from "react-native";
 import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
-import { FluentScreenLayout, FluentText, FluentButton } from "@/components/fluent";
+import { FluentScreenLayout, FluentText, FluentButton, FluentModal } from "@/components/fluent";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useSoundLab } from "@/contexts/SoundLabContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
-import { FluentSpacing, FluentRadius, FluentControlRadius, FluentTypography, FluentIconSize, FluentControlHeight, FluentFontWeight } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentControlRadius, FluentTypography, FluentIconSize, FluentControlHeight, FluentFontWeight, FluentSliderSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { 
   getEQPreset, saveEQPreset, clearEQPreset, 
@@ -113,6 +113,8 @@ const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
 function SoundLabScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const tokens = useThemeTokens();
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { isLicensed } = useSubscription();
   const { showSuccess, showError, showWarning } = useToast();
   const { setBassBoost, setTrebleBoost } = useSoundLab();
@@ -588,9 +590,10 @@ function SoundLabScreen() {
                     step={1}
                     value={bassControl}
                     onValueChange={(value) => handleBassControlChange(value)}
-                    minimumTrackTintColor={tokens.colors.primary}
-                    maximumTrackTintColor={tokens.colors.outline}
-                    thumbTintColor={tokens.colors.primary}
+                    minimumTrackTintColor={colors.colorBrandForeground1}
+                    maximumTrackTintColor={colors.colorNeutralStroke1}
+                    thumbTintColor={colors.colorBrandForeground1}
+                    trackHeight={FluentSliderSize.trackMedium}
                   />
                   <FluentText variant="caption1" color="secondary">+5</FluentText>
                 </View>
@@ -613,9 +616,10 @@ function SoundLabScreen() {
                     step={1}
                     value={trebleControl}
                     onValueChange={(value) => handleTrebleControlChange(value)}
-                    minimumTrackTintColor={tokens.colors.primary}
-                    maximumTrackTintColor={tokens.colors.outline}
-                    thumbTintColor={tokens.colors.primary}
+                    minimumTrackTintColor={colors.colorBrandForeground1}
+                    maximumTrackTintColor={colors.colorNeutralStroke1}
+                    thumbTintColor={colors.colorBrandForeground1}
+                    trackHeight={FluentSliderSize.trackMedium}
                   />
                   <FluentText variant="caption1" color="secondary">+5</FluentText>
                 </View>
@@ -638,9 +642,10 @@ function SoundLabScreen() {
                     step={1}
                     value={virtualizerLevel}
                     onValueChange={(value) => handleVirtualizerLevelChange(value)}
-                    minimumTrackTintColor={tokens.colors.primary}
-                    maximumTrackTintColor={tokens.colors.outline}
-                    thumbTintColor={tokens.colors.primary}
+                    minimumTrackTintColor={colors.colorBrandForeground1}
+                    maximumTrackTintColor={colors.colorNeutralStroke1}
+                    thumbTintColor={colors.colorBrandForeground1}
+                    trackHeight={FluentSliderSize.trackMedium}
                   />
                   <FluentText variant="caption1" color="secondary">+5</FluentText>
                 </View>
@@ -664,9 +669,10 @@ function SoundLabScreen() {
                     step={1}
                     value={customBands[index]}
                     onValueChange={(value) => handleBandChange(index, value)}
-                    minimumTrackTintColor={tokens.colors.primary}
-                    maximumTrackTintColor={tokens.colors.outline}
-                    thumbTintColor={tokens.colors.primary}
+                    minimumTrackTintColor={colors.colorBrandForeground1}
+                    maximumTrackTintColor={colors.colorNeutralStroke1}
+                    thumbTintColor={colors.colorBrandForeground1}
+                    trackHeight={FluentSliderSize.trackMedium}
                   />
                   <FluentText variant="caption1" style={styles.bandValue}>
                     {customBands[index] > 0 ? `+${customBands[index]}` : customBands[index]}
@@ -806,163 +812,160 @@ function SoundLabScreen() {
         </View>
       </ScrollView>
 
-      <Modal
+      <FluentModal
         visible={showSaveDialog}
-        transparent={true}
+        onClose={() => {
+          setShowSaveDialog(false);
+          setNewPresetName("");
+        }}
+        title="Save Custom Preset"
+        showHandle={true}
+        showCloseButton={false}
+        presentationStyle="overFullScreen"
         animationType="fade"
-        onRequestClose={() => setShowSaveDialog(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: tokens.colors.backgroundDefault, borderRadius: tokens.shapes.cardBorderRadius }]}>
-            <FluentText variant="subtitle1" style={{ marginBottom: FluentSpacing.m }}>
-              Save Custom Preset
-            </FluentText>
-            <TextInput
-              style={[
-                styles.textInput,
-                {
-                  backgroundColor: tokens.colors.surfaceVariant,
-                  color: tokens.colors.text,
-                  borderColor: tokens.colors.outline,
-                  borderRadius: tokens.shapes.buttonBorderRadius,
-                }
-              ]}
-              placeholder="Preset name"
-              placeholderTextColor={tokens.colors.textSecondary}
-              value={newPresetName}
-              onChangeText={setNewPresetName}
-            />
-            <View style={styles.modalButtons}>
-              <Pressable
-                style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
-                onPress={() => {
-                  setShowSaveDialog(false);
-                  setNewPresetName("");
-                }}
-              >
-                <FluentText variant="body2">Cancel</FluentText>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
-                onPress={handleSavePreset}
-              >
-                <FluentText variant="body2" style={{ color: tokens.colors.onPrimary }}>Save</FluentText>
-              </Pressable>
-            </View>
-          </View>
+        <TextInput
+          style={[
+            styles.textInput,
+            {
+              backgroundColor: tokens.colors.surfaceVariant,
+              color: tokens.colors.text,
+              borderColor: tokens.colors.outline,
+              borderRadius: tokens.shapes.buttonBorderRadius,
+            }
+          ]}
+          placeholder="Preset name"
+          placeholderTextColor={tokens.colors.textSecondary}
+          value={newPresetName}
+          onChangeText={setNewPresetName}
+        />
+        <View style={styles.modalButtons}>
+          <Pressable
+            style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
+            onPress={() => {
+              setShowSaveDialog(false);
+              setNewPresetName("");
+            }}
+          >
+            <FluentText variant="body2">Cancel</FluentText>
+          </Pressable>
+          <Pressable
+            style={[styles.modalButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
+            onPress={handleSavePreset}
+          >
+            <FluentText variant="body2" style={{ color: tokens.colors.onPrimary }}>Save</FluentText>
+          </Pressable>
         </View>
-      </Modal>
+      </FluentModal>
 
-      <Modal
+      <FluentModal
         visible={showEditDialog}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => {
+        onClose={() => {
           setShowEditDialog(false);
           setEditingPreset(null);
           setEditPresetName("");
         }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: tokens.colors.backgroundDefault, borderRadius: tokens.shapes.cardBorderRadius }]}>
-            <FluentText variant="subtitle1" style={{ marginBottom: FluentSpacing.m }}>
-              Edit Preset
-            </FluentText>
-            <TextInput
-              style={[
-                styles.textInput,
-                {
-                  backgroundColor: tokens.colors.surfaceVariant,
-                  color: tokens.colors.text,
-                  borderColor: tokens.colors.outline,
-                  borderRadius: tokens.shapes.buttonBorderRadius,
-                  marginBottom: FluentSpacing.m,
-                }
-              ]}
-              placeholder="Preset name"
-              placeholderTextColor={tokens.colors.textSecondary}
-              value={editPresetName}
-              onChangeText={setEditPresetName}
-            />
-            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
-              Adjust EQ bands and save changes
-            </FluentText>
-            {CUSTOM_EQ_BAND_LABELS.map((label, index) => (
-              <View key={label} style={styles.bandRow}>
-                <FluentText variant="caption1" style={styles.bandLabel}>{label}</FluentText>
-                <CrossPlatformSlider
-                  style={styles.slider}
-                  minimumValue={-8}
-                  maximumValue={8}
-                  step={1}
-                  value={customBands[index]}
-                  onValueChange={(value) => handleBandChange(index, value)}
-                  minimumTrackTintColor={tokens.colors.primary}
-                  maximumTrackTintColor={tokens.colors.outline}
-                  thumbTintColor={tokens.colors.primary}
-                />
-                <FluentText variant="caption1" style={styles.bandValue}>
-                  {customBands[index] > 0 ? `+${customBands[index]}` : customBands[index]}
-                </FluentText>
-              </View>
-            ))}
-            <View style={styles.modalButtons}>
-              <Pressable
-                style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
-                onPress={() => {
-                  setShowEditDialog(false);
-                  setEditingPreset(null);
-                  setEditPresetName("");
-                }}
-              >
-                <FluentText variant="body2">Cancel</FluentText>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
-                onPress={handleUpdatePreset}
-              >
-                <FluentText variant="body2" style={{ color: tokens.colors.onPrimary }}>Save Changes</FluentText>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={showDeleteDialog}
-        transparent={true}
+        title="Edit Preset"
+        showHandle={true}
+        showCloseButton={false}
+        presentationStyle="overFullScreen"
         animationType="fade"
-        onRequestClose={() => setShowDeleteDialog(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: tokens.colors.backgroundDefault, borderRadius: tokens.shapes.cardBorderRadius }]}>
-            <MaterialCommunityIcons name="delete-alert" size={48} color={tokens.colors.error} style={{ alignSelf: "center", marginBottom: FluentSpacing.m }} />
-            <FluentText variant="subtitle1" style={{ textAlign: "center", marginBottom: FluentSpacing.s }}>
-              Delete Preset
+        <TextInput
+          style={[
+            styles.textInput,
+            {
+              backgroundColor: tokens.colors.surfaceVariant,
+              color: tokens.colors.text,
+              borderColor: tokens.colors.outline,
+              borderRadius: tokens.shapes.buttonBorderRadius,
+              marginBottom: FluentSpacing.m,
+            }
+          ]}
+          placeholder="Preset name"
+          placeholderTextColor={tokens.colors.textSecondary}
+          value={editPresetName}
+          onChangeText={setEditPresetName}
+        />
+        <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
+          Adjust EQ bands and save changes
+        </FluentText>
+        {CUSTOM_EQ_BAND_LABELS.map((label, index) => (
+          <View key={label} style={styles.bandRow}>
+            <FluentText variant="caption1" style={styles.bandLabel}>{label}</FluentText>
+            <CrossPlatformSlider
+              style={styles.slider}
+              minimumValue={-8}
+              maximumValue={8}
+              step={1}
+              value={customBands[index]}
+              onValueChange={(value) => handleBandChange(index, value)}
+              minimumTrackTintColor={colors.colorBrandForeground1}
+              maximumTrackTintColor={colors.colorNeutralStroke1}
+              thumbTintColor={colors.colorBrandForeground1}
+              trackHeight={FluentSliderSize.trackMedium}
+            />
+            <FluentText variant="caption1" style={styles.bandValue}>
+              {customBands[index] > 0 ? `+${customBands[index]}` : customBands[index]}
             </FluentText>
-            <FluentText variant="body2" color="secondary" style={{ textAlign: "center", marginBottom: FluentSpacing.l }}>
-              Are you sure you want to delete "{presetToDelete?.name}"? This action cannot be undone.
-            </FluentText>
-            <View style={styles.modalButtons}>
-              <Pressable
-                style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
-                onPress={() => {
-                  setShowDeleteDialog(false);
-                  setPresetToDelete(null);
-                }}
-              >
-                <FluentText variant="body2">Cancel</FluentText>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, { backgroundColor: tokens.colors.error, borderRadius: tokens.shapes.buttonBorderRadius }]}
-                onPress={confirmDeletePreset}
-              >
-                <FluentText variant="body2" style={{ color: "#FFFFFF" }}>Delete</FluentText>
-              </Pressable>
-            </View>
           </View>
+        ))}
+        <View style={styles.modalButtons}>
+          <Pressable
+            style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
+            onPress={() => {
+              setShowEditDialog(false);
+              setEditingPreset(null);
+              setEditPresetName("");
+            }}
+          >
+            <FluentText variant="body2">Cancel</FluentText>
+          </Pressable>
+          <Pressable
+            style={[styles.modalButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
+            onPress={handleUpdatePreset}
+          >
+            <FluentText variant="body2" style={{ color: tokens.colors.onPrimary }}>Save Changes</FluentText>
+          </Pressable>
         </View>
-      </Modal>
+      </FluentModal>
+
+      <FluentModal
+        visible={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setPresetToDelete(null);
+        }}
+        title="Delete Preset"
+        showHandle={true}
+        showCloseButton={false}
+        presentationStyle="overFullScreen"
+        animationType="fade"
+      >
+        <View style={{ alignItems: "center" }}>
+          <MaterialCommunityIcons name="delete-alert" size={48} color={tokens.colors.error} style={{ marginBottom: FluentSpacing.m }} />
+          <FluentText variant="body2" color="secondary" style={{ textAlign: "center", marginBottom: FluentSpacing.l }}>
+            Are you sure you want to delete "{presetToDelete?.name}"? This action cannot be undone.
+          </FluentText>
+        </View>
+        <View style={styles.modalButtons}>
+          <Pressable
+            style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
+            onPress={() => {
+              setShowDeleteDialog(false);
+              setPresetToDelete(null);
+            }}
+          >
+            <FluentText variant="body2">Cancel</FluentText>
+          </Pressable>
+          <Pressable
+            style={[styles.modalButton, { backgroundColor: tokens.colors.error, borderRadius: tokens.shapes.buttonBorderRadius }]}
+            onPress={confirmDeletePreset}
+          >
+            <FluentText variant="body2" style={{ color: "#FFFFFF" }}>Delete</FluentText>
+          </Pressable>
+        </View>
+      </FluentModal>
     </FluentScreenLayout>
   );
 }
@@ -1181,18 +1184,6 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     marginLeft: FluentSpacing.m,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: FluentSpacing.xl,
-  },
-  modalContent: {
-    width: "100%",
-    maxWidth: 400,
-    padding: FluentSpacing.xl,
   },
   textInput: {
     paddingHorizontal: FluentSpacing.m,

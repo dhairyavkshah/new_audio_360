@@ -3,7 +3,7 @@ import { View, StyleSheet, Animated, Pressable, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FluentText } from '@/components/fluent';
 import { useThemeTokens } from '@/contexts/ThemeContext';
-import { FluentSpacing, FluentRadius, FluentIconSize, FluentLayoutSize, FluentLightColors, FluentDarkColors, getShadowStyle } from '@/constants/fluent2';
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLayoutSize, FluentLightColors, FluentDarkColors, getShadowStyle } from '@/constants/fluent2';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -126,7 +126,7 @@ export function Toast({
             color={colors.icon}
             style={styles.icon}
           />
-          <FluentText variant="body1" style={[styles.message, { color: colors.icon }]}>
+          <FluentText variant="body2" style={[styles.message, { color: colors.icon }]}>
             {message}
           </FluentText>
           <MaterialCommunityIcons
@@ -152,9 +152,8 @@ const styles = StyleSheet.create({
   toast: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: FluentSpacing.m,
-    paddingHorizontal: FluentSpacing.l,
-    borderRadius: FluentRadius.large,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
     minWidth: 200,
     maxWidth: '100%',
   },

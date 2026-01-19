@@ -18,6 +18,7 @@ interface CrossPlatformSliderProps {
   vertical?: boolean;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  trackHeight?: number;
 }
 
 export function CrossPlatformSlider({
@@ -35,6 +36,7 @@ export function CrossPlatformSlider({
   vertical = false,
   accessibilityLabel,
   accessibilityHint,
+  trackHeight = FluentSliderSize.trackMedium,
 }: CrossPlatformSliderProps) {
   if (Platform.OS === 'web') {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,8 +57,8 @@ export function CrossPlatformSlider({
     const percentage = ((value - minimumValue) / (maximumValue - minimumValue)) * 100;
 
     const sliderStyle: React.CSSProperties = {
-      width: vertical ? FluentSliderSize.trackThick : '100%',
-      height: vertical ? '100%' : FluentSliderSize.trackThick,
+      width: vertical ? trackHeight : '100%',
+      height: vertical ? '100%' : trackHeight,
       appearance: 'none' as const,
       WebkitAppearance: 'none',
       background: `linear-gradient(${vertical ? 'to top' : 'to right'}, ${minimumTrackTintColor} ${percentage}%, ${maximumTrackTintColor} ${percentage}%)`,

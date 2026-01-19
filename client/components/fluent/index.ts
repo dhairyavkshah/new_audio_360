@@ -30,3 +30,6 @@ export type { FluentListItemProps } from './FluentListItem';
 
 export { FluentSectionHeader } from './FluentSectionHeader';
 export type { FluentSectionHeaderProps } from './FluentSectionHeader';
+
+export { FluentModal } from './FluentModal';
+export type { FluentModalProps } from './FluentModal';

@@ -13,6 +13,7 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
+import { useToast } from "@/contexts/ToastContext";
 import { FluentSpacing, FluentRadius, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { Album } from "@/navigation/LibraryStackNavigator";
@@ -119,7 +120,7 @@ function LibraryScreen() {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [contextMenuSong, setContextMenuSong] = useState<PlayableSong | null>(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { showSuccess } = useToast();
 
   const loadPlaylists = useCallback(async () => {
     const data = await getPlaylists();
@@ -328,10 +329,9 @@ function LibraryScreen() {
   }, []);
 
   const handleContextMenuSuccess = useCallback((message: string) => {
-    setSuccessMessage(message);
+    showSuccess(message);
     loadPlaylists();
-    setTimeout(() => setSuccessMessage(null), 3000);
-  }, [loadPlaylists]);
+  }, [loadPlaylists, showSuccess]);
 
   const categoryOptions: CategoryOption[] = useMemo(() => 
     categories.map(cat => ({
@@ -578,13 +578,6 @@ function LibraryScreen() {
         onHideSong={hideSong}
         showHideOption={activeCategory === "songs"}
       />
-
-      {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: colors.colorBrandBackground, bottom: tabBarHeight + FluentSpacing.l }]}>
-          <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color="#FFFFFF" />
-          <FluentText variant="body2" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>{successMessage}</FluentText>
-        </View>
-      ) : null}
     </FluentScreenLayout>
   );
 }
@@ -672,17 +665,6 @@ const styles = StyleSheet.create({
     borderRadius: FluentControlRadius.fab,
     alignItems: "center",
     justifyContent: "center",
-  },
-  successToast: {
-    position: "absolute",
-    left: FluentSpacing.l,
-    right: FluentSpacing.l,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: FluentSpacing.l,
-    paddingVertical: FluentSpacing.m,
-    borderRadius: FluentRadius.large,
-    ...getShadowStyle('shadow4'),
   },
 });
 

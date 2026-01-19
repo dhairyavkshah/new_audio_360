@@ -1,26 +1,20 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Pressable, TextInput, Alert, Modal, Platform } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, TextInput, Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { FluentScreenLayout, FluentText } from "@/components/fluent";
+import { FluentScreenLayout, FluentText, FluentModal } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentTypography } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { Playlist, getPlaylists, addPlaylist, updatePlaylist, deletePlaylist } from "@/lib/storage";
-import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
-
-const MIN_BOTTOM_PADDING = 24;
 
 export default function PlaylistManagementScreen() {
   const tabBarHeight = useSafeTabBarHeight();
-  const insets = useSafeAreaInsets();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const safeBottom = Platform.OS === 'android' ? Math.max(insets.bottom, MIN_BOTTOM_PADDING) : insets.bottom;
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
@@ -208,119 +202,103 @@ export default function PlaylistManagementScreen() {
         </GlassCard>
       </ScrollView>
 
-      <Modal
+      <FluentModal
         visible={isModalVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setIsModalVisible(false)}
+        onClose={() => setIsModalVisible(false)}
+        title={editingPlaylist ? "Edit Playlist" : "Create Playlist"}
+        showHandle={true}
       >
-        <View style={[styles.modalOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
-          <KeyboardAwareScrollViewCompat
-            contentContainerStyle={styles.modalScrollContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={[styles.modalContent, { backgroundColor: colors.colorNeutralBackground1, paddingBottom: FluentSpacing.xxl + safeBottom }]}>
-              <View style={styles.modalHeader}>
-                <FluentText variant="subtitle1" style={{ fontWeight: "700" }}>
-                  {editingPlaylist ? "Edit Playlist" : "Create Playlist"}
-                </FluentText>
-                <Pressable onPress={() => setIsModalVisible(false)}>
-                  <MaterialCommunityIcons name="close" size={24} color={colors.colorNeutralForeground1} />
-                </Pressable>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <FluentText variant="body1" color="secondary" style={styles.inputLabel}>
-                  Playlist Name
-                </FluentText>
-                <TextInput
-                  style={[styles.textInput, { backgroundColor: colors.colorNeutralBackground2, color: colors.colorNeutralForeground1 }]}
-                  value={playlistName}
-                  onChangeText={setPlaylistName}
-                  placeholder="My Awesome Playlist"
-                  placeholderTextColor={colors.colorNeutralForeground2}
-                  autoFocus
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <FluentText variant="body1" color="secondary" style={styles.inputLabel}>
-                  Description (optional)
-                </FluentText>
-                <TextInput
-                  style={[
-                    styles.textInput,
-                    styles.textArea,
-                    { backgroundColor: colors.colorNeutralBackground2, color: colors.colorNeutralForeground1 },
-                  ]}
-                  value={playlistDescription}
-                  onChangeText={setPlaylistDescription}
-                  placeholder="Add a description for your playlist..."
-                  placeholderTextColor={colors.colorNeutralForeground2}
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                />
-              </View>
-
-              <View style={styles.modalActions}>
-                <Pressable
-                  onPress={() => setIsModalVisible(false)}
-                  style={[styles.modalButton, { backgroundColor: colors.colorNeutralBackground2 }]}
-                >
-                  <FluentText variant="body1Strong">
-                    Cancel
-                  </FluentText>
-                </Pressable>
-                <Pressable
-                  onPress={handleSave}
-                  style={[styles.modalButton, { backgroundColor: colors.colorBrandBackground }]}
-                >
-                  <FluentText variant="body1Strong" style={{ color: "#FFFFFF" }}>
-                    {editingPlaylist ? "Save Changes" : "Create"}
-                  </FluentText>
-                </Pressable>
-              </View>
-            </View>
-          </KeyboardAwareScrollViewCompat>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={showDeleteModal}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setShowDeleteModal(false)}
-      >
-        <View style={[styles.modalOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
-          <View style={[styles.deleteModalContent, { backgroundColor: colors.colorNeutralBackground1 }]}>
-            <MaterialCommunityIcons name="delete-alert" size={48} color={colors.colorPaletteRedForeground1} style={{ alignSelf: "center", marginBottom: FluentSpacing.m }} />
-            <FluentText variant="subtitle1" style={{ textAlign: "center", marginBottom: FluentSpacing.s, fontWeight: "700" }}>
-              Delete Playlist
+        <View style={styles.formContent}>
+          <View style={styles.inputGroup}>
+            <FluentText variant="body1" color="secondary" style={styles.inputLabel}>
+              Playlist Name
             </FluentText>
-            <FluentText variant="body1" color="secondary" style={{ textAlign: "center", marginBottom: FluentSpacing.l }}>
-              Are you sure you want to delete "{playlistToDelete?.name}"? This action cannot be undone.
+            <TextInput
+              style={[styles.textInput, { backgroundColor: colors.colorNeutralBackground2, color: colors.colorNeutralForeground1 }]}
+              value={playlistName}
+              onChangeText={setPlaylistName}
+              placeholder="My Awesome Playlist"
+              placeholderTextColor={colors.colorNeutralForeground2}
+              autoFocus
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <FluentText variant="body1" color="secondary" style={styles.inputLabel}>
+              Description (optional)
             </FluentText>
-            <View style={styles.modalActions}>
-              <Pressable
-                onPress={() => {
-                  setShowDeleteModal(false);
-                  setPlaylistToDelete(null);
-                }}
-                style={[styles.modalButton, { backgroundColor: colors.colorNeutralBackground2 }]}
-              >
-                <FluentText variant="body1Strong">Cancel</FluentText>
-              </Pressable>
-              <Pressable
-                onPress={confirmDelete}
-                style={[styles.modalButton, { backgroundColor: colors.colorPaletteRedForeground1 }]}
-              >
-                <FluentText variant="body1Strong" style={{ color: "#FFFFFF" }}>Delete</FluentText>
-              </Pressable>
-            </View>
+            <TextInput
+              style={[
+                styles.textInput,
+                styles.textArea,
+                { backgroundColor: colors.colorNeutralBackground2, color: colors.colorNeutralForeground1 },
+              ]}
+              value={playlistDescription}
+              onChangeText={setPlaylistDescription}
+              placeholder="Add a description for your playlist..."
+              placeholderTextColor={colors.colorNeutralForeground2}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+          </View>
+
+          <View style={styles.modalActions}>
+            <Pressable
+              onPress={() => setIsModalVisible(false)}
+              style={[styles.modalButton, { backgroundColor: colors.colorNeutralBackground2 }]}
+            >
+              <FluentText variant="body1Strong">
+                Cancel
+              </FluentText>
+            </Pressable>
+            <Pressable
+              onPress={handleSave}
+              style={[styles.modalButton, { backgroundColor: colors.colorBrandBackground }]}
+            >
+              <FluentText variant="body1Strong" style={{ color: "#FFFFFF" }}>
+                {editingPlaylist ? "Save Changes" : "Create"}
+              </FluentText>
+            </Pressable>
           </View>
         </View>
-      </Modal>
+      </FluentModal>
+
+      <FluentModal
+        visible={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setPlaylistToDelete(null);
+        }}
+        title="Delete Playlist"
+        showHandle={true}
+        animationType="fade"
+        presentationStyle="overFullScreen"
+      >
+        <View style={styles.deleteContent}>
+          <MaterialCommunityIcons name="delete-alert" size={48} color={colors.colorPaletteRedForeground1} style={styles.deleteIcon} />
+          <FluentText variant="body1" color="secondary" style={styles.deleteMessage}>
+            Are you sure you want to delete "{playlistToDelete?.name}"? This action cannot be undone.
+          </FluentText>
+          <View style={styles.modalActions}>
+            <Pressable
+              onPress={() => {
+                setShowDeleteModal(false);
+                setPlaylistToDelete(null);
+              }}
+              style={[styles.modalButton, { backgroundColor: colors.colorNeutralBackground2 }]}
+            >
+              <FluentText variant="body1Strong">Cancel</FluentText>
+            </Pressable>
+            <Pressable
+              onPress={confirmDelete}
+              style={[styles.modalButton, { backgroundColor: colors.colorPaletteRedForeground1 }]}
+            >
+              <FluentText variant="body1Strong" style={{ color: "#FFFFFF" }}>Delete</FluentText>
+            </Pressable>
+          </View>
+        </View>
+      </FluentModal>
     </FluentScreenLayout>
   );
 }
@@ -396,28 +374,17 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: FluentSpacing.s,
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
+  formContent: {
+    paddingHorizontal: FluentSpacing.l,
   },
-  modalScrollContent: {
-    flexGrow: 1,
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    borderTopLeftRadius: FluentControlRadius.bottomSheet,
-    borderTopRightRadius: FluentControlRadius.bottomSheet,
-    padding: FluentSpacing.l,
-  },
-  deleteModalContent: {
-    margin: FluentSpacing.l,
-    padding: FluentSpacing.l,
-    borderRadius: FluentControlRadius.card,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  deleteContent: {
     alignItems: "center",
+  },
+  deleteIcon: {
+    marginBottom: FluentSpacing.m,
+  },
+  deleteMessage: {
+    textAlign: "center",
     marginBottom: FluentSpacing.l,
   },
   inputGroup: {
