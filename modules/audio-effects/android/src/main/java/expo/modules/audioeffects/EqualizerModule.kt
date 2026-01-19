@@ -122,9 +122,10 @@ class EqualizerModule : Module() {
                 
                 dsp.setAllEqBandGains(presetGains)
                 
-                // Reset stereo width to neutral (standard stereo) for EQ presets
+                // Reset to standard stereo for EQ presets
                 // Professional standard: EQ presets only affect frequency response, not stereo field
-                // Matches Bose, Sony, Yamaha behavior
+                // Disable psychoacoustic virtualizer and reset stereo width
+                dsp.setPsychoacousticVirtualizer(false, 0f)
                 dsp.setStereoWidth(0f)
                 
                 return@Function mapOf("success" to true, "preset" to preset)
@@ -147,7 +148,8 @@ class EqualizerModule : Module() {
                 val gains = levels.map { it.toDouble() / 100.0 }
                 dsp.setAllEqBandGains(gains)
                 
-                // Reset stereo width to neutral (standard stereo) for custom EQ
+                // Reset to standard stereo for custom EQ (user can enable virtualizer separately)
+                dsp.setPsychoacousticVirtualizer(false, 0f)
                 dsp.setStereoWidth(0f)
                 
                 return@Function mapOf("success" to true)
@@ -183,7 +185,8 @@ class EqualizerModule : Module() {
                 
                 dsp.setAllEqBandGains(bands)
                 
-                // Reset stereo width to neutral (standard stereo) for EQ-only mode
+                // Reset to standard stereo for EQ-only mode (user can enable virtualizer separately)
+                dsp.setPsychoacousticVirtualizer(false, 0f)
                 dsp.setStereoWidth(0f)
                 
                 return@Function mapOf("success" to true)
@@ -218,6 +221,43 @@ class EqualizerModule : Module() {
             } catch (e: Exception) {
                 return@Function mapOf("success" to false, "error" to e.message)
             }
+        }
+        
+        // Psychoacoustic Virtualizer for EQ mode
+        // Creates 3D spatial perception using cross-feed, micro-delay, and decorrelation
+        // intensity: 0.0 to 1.0 (0% to 100%)
+        Function("setPsychoacousticVirtualizer") { intensity: Double ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
+                }
+                
+                val enabled = intensity > 0.0
+                dsp.setPsychoacousticVirtualizer(enabled, intensity.toFloat())
+                
+                // Ensure simple stereo width is disabled when using psychoacoustic
+                if (enabled) {
+                    dsp.setStereoWidth(0f)
+                }
+                
+                return@Function mapOf(
+                    "success" to true,
+                    "enabled" to enabled,
+                    "intensity" to intensity,
+                    "mode" to "psychoacoustic"
+                )
+            } catch (e: Exception) {
+                return@Function mapOf("success" to false, "error" to e.message)
+            }
+        }
+        
+        Function("getPsychoacousticVirtualizer") {
+            val dsp = getDspProcessor()
+            return@Function mapOf(
+                "enabled" to (dsp?.getPsychoacousticEnabled() ?: false),
+                "intensity" to (dsp?.getPsychoacousticIntensity() ?: 0f)
+            )
         }
         
         AsyncFunction("release") { promise: Promise ->

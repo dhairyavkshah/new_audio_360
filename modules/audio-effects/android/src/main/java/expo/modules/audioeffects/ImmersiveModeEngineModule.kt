@@ -175,7 +175,10 @@ class ImmersiveModeEngineModule : Module() {
                     dsp?.setBassBoost(bassGainUnits)
                     currentBassGain = bassGainUnits
                     
-                    // Apply stereo width via software DSP
+                    // Disable psychoacoustic virtualizer for immersive custom mode
+                    dsp?.setPsychoacousticVirtualizer(false, 0f)
+                    
+                    // Apply stereo width via software DSP (mid-side technique)
                     val stereoWidth = virtualizerStrength / 1000f
                     dsp?.setStereoWidth(stereoWidth)
                     currentVirtualizerStrength = virtualizerStrength
@@ -229,7 +232,11 @@ class ImmersiveModeEngineModule : Module() {
         
         dsp?.setTrebleBoost(trebleGainUnits)
         
-        // Apply stereo width via software DSP
+        // Disable psychoacoustic virtualizer (EQ mode) when switching to immersive mode
+        // Immersive modes use simple mid-side stereo width instead
+        dsp?.setPsychoacousticVirtualizer(false, 0f)
+        
+        // Apply stereo width via software DSP (mid-side technique)
         // virtualizerStrength 0-1000 maps to stereoWidth 0.0-1.0
         val stereoWidth = virtualizerStrength / 1000f
         dsp?.setStereoWidth(stereoWidth)

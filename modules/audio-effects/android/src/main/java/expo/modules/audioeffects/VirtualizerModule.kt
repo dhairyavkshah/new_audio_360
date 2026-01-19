@@ -60,9 +60,14 @@ class VirtualizerModule : Module() {
                 val clampedStrength = strength.coerceIn(-1000, 1000)
                 currentStrength = clampedStrength
                 
+                val dsp = SoftwareDSPAudioProcessor.getInstance()
+                
+                // Disable psychoacoustic virtualizer when using simple stereo width
+                dsp.setPsychoacousticVirtualizer(false, 0f)
+                
                 // Convert to stereo width: -1000 → -1.0, 0 → 0.0, +1000 → +1.0
                 val width = clampedStrength / 1000f
-                SoftwareDSPAudioProcessor.getInstance().setStereoWidth(width)
+                dsp.setStereoWidth(width)
                 
                 val widthPercent = ((1f + width) * 100).toInt()
                 android.util.Log.d("VirtualizerModule", "Software DSP Virtualizer strength=$clampedStrength (width=${widthPercent}%)")

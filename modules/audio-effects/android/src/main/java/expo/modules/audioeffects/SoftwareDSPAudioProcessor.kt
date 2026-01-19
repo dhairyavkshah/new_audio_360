@@ -47,6 +47,30 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private var trebleGain = 0f
     private var stereoWidth = 0f  // -1.0 = mono, 0.0 = original, 1.0 = max wide (200%)
     private var isEnabled = true
+    
+    // Psychoacoustic Virtualizer - creates 3D spatial perception
+    private var psychoacousticEnabled = false
+    private var psychoacousticIntensity = 0f  // 0.0 to 1.0
+    
+    // Cross-feed delay buffers (simulates interaural time difference ~0.3-0.7ms)
+    // At 44100Hz, 0.5ms = ~22 samples
+    private val CROSSFEED_DELAY_SAMPLES = 22
+    private val leftDelayBuffer = FloatArray(CROSSFEED_DELAY_SAMPLES)
+    private val rightDelayBuffer = FloatArray(CROSSFEED_DELAY_SAMPLES)
+    private var delayIndex = 0
+    
+    // Cross-feed lowpass filter state (simulates head shadow effect)
+    // Head blocks high frequencies, so cross-fed signal is lowpassed
+    private var crossfeedFilterStateL = 0f
+    private var crossfeedFilterStateR = 0f
+    private val CROSSFEED_LOWPASS_COEFF = 0.3f  // Cutoff ~3kHz at 44.1kHz
+    
+    // Subtle decorrelation for spaciousness (allpass filter states)
+    private var allpassStateL1 = 0f
+    private var allpassStateL2 = 0f
+    private var allpassStateR1 = 0f
+    private var allpassStateR2 = 0f
+    private val ALLPASS_COEFF = 0.6f
 
     private var outputBuffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
     private var inputBuffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
@@ -127,10 +151,15 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             trebleShelfFilter.processBuffer(samples, channelCount)
         }
 
-        // Apply stereo width processing (mid-side technique)
-        // Only process if stereo (2 channels) and width is not 0 (original)
-        if (channelCount == 2 && stereoWidth != 0f) {
-            processStereoWidth(samples)
+        // Apply spatial processing (stereo width or psychoacoustic virtualizer)
+        if (channelCount == 2) {
+            if (psychoacousticEnabled && psychoacousticIntensity > 0f) {
+                // Psychoacoustic virtualizer for EQ mode - creates 3D spatial perception
+                processPsychoacousticVirtualizer(samples)
+            } else if (stereoWidth != 0f) {
+                // Simple mid-side stereo width for immersive modes
+                processStereoWidth(samples)
+            }
         }
 
         limiter.processBuffer(samples, channelCount)
@@ -264,6 +293,110 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         }
     }
 
+    /**
+     * Psychoacoustic Virtualizer - Creates 3D spatial perception using:
+     * 1. Cross-feed with micro-delay (simulates interaural time difference - ITD)
+     * 2. Lowpass filtered cross-feed (simulates head shadow effect - ILD)
+     * 3. Subtle decorrelation via allpass filters (creates spaciousness)
+     * 4. Wet/dry mixing with psychoacousticIntensity
+     * 
+     * Based on Bose/Sony/Yamaha spatial processing principles.
+     */
+    private fun processPsychoacousticVirtualizer(samples: ShortArray) {
+        val wetMix = psychoacousticIntensity * 0.35f  // Max 35% wet for natural sound
+        val dryMix = 1f - (psychoacousticIntensity * 0.15f)  // Slight dry reduction
+        val crossfeedLevel = psychoacousticIntensity * 0.25f  // Cross-feed amount
+        
+        var i = 0
+        while (i < samples.size - 1) {
+            val leftDry = samples[i].toFloat()
+            val rightDry = samples[i + 1].toFloat()
+            
+            // 1. Get delayed samples from opposite channel (ITD simulation)
+            val leftDelayed = leftDelayBuffer[delayIndex]
+            val rightDelayed = rightDelayBuffer[delayIndex]
+            
+            // Store current samples in delay buffer
+            leftDelayBuffer[delayIndex] = leftDry
+            rightDelayBuffer[delayIndex] = rightDry
+            delayIndex = (delayIndex + 1) % CROSSFEED_DELAY_SAMPLES
+            
+            // 2. Lowpass filter the cross-feed (head shadow - high frequencies blocked)
+            // Simple one-pole lowpass: y = y_prev + coeff * (x - y_prev)
+            crossfeedFilterStateL += CROSSFEED_LOWPASS_COEFF * (rightDelayed - crossfeedFilterStateL)
+            crossfeedFilterStateR += CROSSFEED_LOWPASS_COEFF * (leftDelayed - crossfeedFilterStateR)
+            
+            val leftCrossfeed = crossfeedFilterStateL
+            val rightCrossfeed = crossfeedFilterStateR
+            
+            // 3. Apply subtle decorrelation via cascaded allpass filters
+            // Creates slight phase differences that enhance spaciousness
+            // Allpass: y = coeff * (x - y_prev) + x_prev
+            val leftDecorr1 = ALLPASS_COEFF * (leftDry - allpassStateL1) + leftDelayed * 0.1f
+            allpassStateL1 = leftDecorr1
+            val leftDecorr = ALLPASS_COEFF * (leftDecorr1 - allpassStateL2) + allpassStateL1 * 0.05f
+            allpassStateL2 = leftDecorr
+            
+            val rightDecorr1 = ALLPASS_COEFF * (rightDry - allpassStateR1) + rightDelayed * 0.1f
+            allpassStateR1 = rightDecorr1
+            val rightDecorr = ALLPASS_COEFF * (rightDecorr1 - allpassStateR2) + allpassStateR1 * 0.05f
+            allpassStateR2 = rightDecorr
+            
+            // 4. Combine: dry signal + cross-feed from opposite channel + decorrelation
+            var leftWet = leftDry + (leftCrossfeed * crossfeedLevel) + (leftDecorr * wetMix * 0.3f)
+            var rightWet = rightDry + (rightCrossfeed * crossfeedLevel) + (rightDecorr * wetMix * 0.3f)
+            
+            // 5. Subtle stereo widening on top (enhance the spatial effect)
+            val mid = (leftWet + rightWet) / 2f
+            val side = (leftWet - rightWet) / 2f
+            val widthBoost = 1f + (psychoacousticIntensity * 0.3f)  // Up to 30% wider
+            leftWet = mid + side * widthBoost
+            rightWet = mid - side * widthBoost
+            
+            // 6. Final mix: blend processed with dry
+            var finalLeft = (leftDry * dryMix) + (leftWet * wetMix)
+            var finalRight = (rightDry * dryMix) + (rightWet * wetMix)
+            
+            // Normalize to prevent clipping
+            val normFactor = 1f / (dryMix + wetMix)
+            finalLeft *= normFactor
+            finalRight *= normFactor
+            
+            // Soft clip
+            finalLeft = finalLeft.coerceIn(-32768f, 32767f)
+            finalRight = finalRight.coerceIn(-32768f, 32767f)
+            
+            samples[i] = finalLeft.toInt().toShort()
+            samples[i + 1] = finalRight.toInt().toShort()
+            
+            i += 2
+        }
+    }
+    
+    /**
+     * Enable/disable psychoacoustic virtualizer (for EQ mode)
+     */
+    fun setPsychoacousticVirtualizer(enabled: Boolean, intensity: Float) {
+        psychoacousticEnabled = enabled
+        psychoacousticIntensity = intensity.coerceIn(0f, 1f)
+        android.util.Log.d("SoftwareDSP", "Psychoacoustic virtualizer: enabled=$enabled, intensity=${(intensity * 100).toInt()}%")
+    }
+    
+    fun getPsychoacousticEnabled(): Boolean = psychoacousticEnabled
+    fun getPsychoacousticIntensity(): Float = psychoacousticIntensity
+    
+    private fun resetPsychoacousticBuffers() {
+        leftDelayBuffer.fill(0f)
+        rightDelayBuffer.fill(0f)
+        delayIndex = 0
+        crossfeedFilterStateL = 0f
+        crossfeedFilterStateR = 0f
+        allpassStateL1 = 0f
+        allpassStateL2 = 0f
+        allpassStateR1 = 0f
+        allpassStateR2 = 0f
+    }
+
     fun setEnabled(enabled: Boolean) {
         isEnabled = enabled
     }
@@ -284,6 +417,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         bassGain = 0f
         trebleGain = 0f
         stereoWidth = 0f
+        psychoacousticEnabled = false
+        psychoacousticIntensity = 0f
         bassShelfFilter.setGain(0f)
         trebleShelfFilter.setGain(0f)
         
@@ -291,5 +426,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         bassShelfFilter.resetAllChannels()
         trebleShelfFilter.resetAllChannels()
         limiter.reset()
+        resetPsychoacousticBuffers()
     }
 }
