@@ -23,6 +23,8 @@ import {
   FluentLayoutSize,
   FluentControlRadius,
   FluentSliderSize,
+  FluentTouchTarget,
+  getShadowStyle,
 } from "@/constants/fluent2";
 import { useAlbumArt } from "@/hooks/useAlbumArt";
 
@@ -40,8 +42,8 @@ const SPRING_CONFIG = {
 };
 
 const RESTORE_HANDLE_WIDTH = 80;
-const RESTORE_HANDLE_HEIGHT = 44;
-const MIN_EDGE_PADDING = 8;
+const RESTORE_HANDLE_HEIGHT = FluentTouchTarget.minimum;
+const MIN_EDGE_PADDING = FluentSpacing.s;
 
 function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss, onRestore }: MiniPlayerProps) {
   const navigation = useNavigation<any>();
@@ -57,6 +59,8 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   
   const cardEffectStyle = useMemo(() => getCardEffectStyle(tokens, 2), [tokens]);
   const glowStyle = useMemo(() => getGlowStyle(tokens), [tokens]);
+  const shadowStyle = useMemo(() => getShadowStyle('shadow8', isDark), [isDark]);
+  const restoreShadowStyle = useMemo(() => getShadowStyle('shadow4', isDark), [isDark]);
   
   const albumArt = useAlbumArt(currentSong?.id, currentSong?.artwork);
   const artworkSource = useMemo(() => currentSong ? { uri: albumArt } : undefined, [albumArt, currentSong]);
@@ -247,6 +251,7 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
               bottom: containerBottom,
               backgroundColor: tokens.colors.primary,
             },
+            restoreShadowStyle,
             restoreAnimatedStyle,
           ]}
         >
@@ -257,15 +262,14 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
             <MaterialCommunityIcons name="chevron-up" size={FluentIconSize.regular} color={tokens.colors.onPrimary} />
             <MaterialCommunityIcons 
               name={isPlaying ? "music" : "music-off"} 
-              size={16} 
+              size={FluentIconSize.small} 
               color={tokens.colors.onPrimary} 
-              style={{ marginLeft: FluentSpacing.xs }}
             />
           </Pressable>
           <View style={styles.dragIndicator}>
             <MaterialCommunityIcons 
               name="drag" 
-              size={12} 
+              size={FluentIconSize.tiny} 
               color={tokens.colors.onPrimary} 
               style={{ opacity: 0.7 }}
             />
@@ -281,6 +285,7 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
         style={[
           styles.container, 
           { bottom: containerBottom, borderRadius: tokens.shapes.cardBorderRadius }, 
+          shadowStyle,
           cardEffectStyle,
           glowStyle,
           animatedStyle,
@@ -335,7 +340,7 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
             <Pressable
               onPress={handlePlayPause}
               style={[styles.playButton, { backgroundColor: tokens.colors.primary }]}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              hitSlop={{ top: FluentSpacing.s, bottom: FluentSpacing.s, left: FluentSpacing.s, right: FluentSpacing.s }}
               accessibilityRole="button"
               accessibilityLabel={isPlaying ? "Pause" : "Play"}
             >
@@ -348,7 +353,7 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
             <Pressable
               onPress={handleSwipeDown}
               style={[styles.dismissButton, { backgroundColor: tokens.colors.surfaceVariant }]}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              hitSlop={{ top: FluentSpacing.s, bottom: FluentSpacing.s, left: FluentSpacing.s, right: FluentSpacing.s }}
               accessibilityRole="button"
               accessibilityLabel="Hide player"
             >
@@ -371,10 +376,11 @@ const styles = StyleSheet.create({
     left: FluentSpacing.l,
     right: FluentSpacing.l,
     overflow: "hidden",
+    borderRadius: FluentControlRadius.card,
   },
   dismissButton: {
-    width: 44,
-    height: 44,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     borderRadius: FluentControlRadius.fab,
     alignItems: "center",
     justifyContent: "center",
@@ -383,17 +389,12 @@ const styles = StyleSheet.create({
   restoreHandle: {
     position: "absolute",
     left: "50%",
-    marginLeft: -40,
-    width: 80,
-    height: 44,
+    marginLeft: -(RESTORE_HANDLE_WIDTH / 2),
+    width: RESTORE_HANDLE_WIDTH,
+    height: RESTORE_HANDLE_HEIGHT,
     borderRadius: FluentControlRadius.fab,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
   },
   restoreHandleContent: {
     flexDirection: "row",
@@ -401,17 +402,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flex: 1,
     width: "100%",
+    gap: FluentSpacing.xs,
   },
   dragIndicator: {
     position: "absolute",
-    top: 2,
-    right: 4,
+    top: FluentSpacing.xxs,
+    right: FluentSpacing.xs,
   },
   dragHandle: {
     position: "absolute",
     left: FluentSpacing.xs,
     top: "50%",
-    marginTop: -8,
+    marginTop: -(FluentIconSize.small / 2),
     opacity: 0.6,
   },
   progressTrack: {
@@ -421,6 +423,9 @@ const styles = StyleSheet.create({
     right: 0,
     height: FluentSliderSize.trackThin,
     zIndex: 10,
+    borderTopLeftRadius: FluentControlRadius.card,
+    borderTopRightRadius: FluentControlRadius.card,
+    overflow: "hidden",
   },
   progressFill: {
     height: "100%",
@@ -435,19 +440,20 @@ const styles = StyleSheet.create({
     paddingVertical: FluentSpacing.m,
     paddingHorizontal: FluentSpacing.l,
     paddingLeft: FluentSpacing.xl,
+    gap: FluentSpacing.m,
   },
   artwork: {
     width: FluentIconSize.xxlarge,
     height: FluentIconSize.xxlarge,
+    borderRadius: FluentControlRadius.button,
   },
   info: {
     flex: 1,
-    marginLeft: FluentSpacing.m,
     gap: FluentSpacing.xxs,
   },
   playButton: {
-    width: 44,
-    height: 44,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     borderRadius: FluentControlRadius.fab,
     justifyContent: "center",
     alignItems: "center",
