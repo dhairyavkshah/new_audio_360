@@ -73,6 +73,7 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   const startY = useSharedValue(0);
   const hasDragged = useSharedValue(false);
   const restoreHasDragged = useSharedValue(false);
+  const mainDraggedRef = useRef(false);
   const restoreDraggedRef = useRef(false);
 
   useEffect(() => {
@@ -86,6 +87,14 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+  }, []);
+
+  const setMainDraggedTrue = useCallback(() => {
+    mainDraggedRef.current = true;
+  }, []);
+
+  const setMainDraggedFalse = useCallback(() => {
+    mainDraggedRef.current = false;
   }, []);
 
   const onLayout = useCallback((event: LayoutChangeEvent) => {
@@ -104,12 +113,14 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   const panGesture = Gesture.Pan()
     .onStart(() => {
       hasDragged.value = false;
+      runOnJS(setMainDraggedFalse)();
       startX.value = translateX.value;
       startY.value = translateY.value;
       runOnJS(triggerHaptic)();
     })
     .onUpdate((event) => {
       hasDragged.value = true;
+      runOnJS(setMainDraggedTrue)();
       const newX = startX.value + event.translationX;
       const newY = startY.value + event.translationY;
       translateX.value = Math.max(minTranslateX, Math.min(newX, maxTranslateX));
@@ -176,6 +187,10 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   }));
 
   const handlePress = useCallback(() => {
+    if (mainDraggedRef.current) {
+      mainDraggedRef.current = false;
+      return;
+    }
     playTapSound();
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
