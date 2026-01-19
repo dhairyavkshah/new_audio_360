@@ -57,7 +57,7 @@ class EqualizerModule : Module() {
                     "minLevel" to -1200,
                     "maxLevel" to 1200,
                     "bands" to bandInfo,
-                    "presets" to listOf("Flat", "Rock", "Pop", "Jazz", "Classical", "Electronic", "Hip-Hop", "Acoustic"),
+                    "presets" to listOf("Flat", "Rock", "Pop", "Jazz", "Classical", "Electronic", "Hip-Hop", "Acoustic", "Bass+", "Clarity"),
                     "isSoftwareDSP" to true
                 ))
                 
@@ -109,14 +109,16 @@ class EqualizerModule : Module() {
                 }
                 
                 val presetGains = when (preset) {
-                    0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)  // Flat (sum=0)
-                    1 -> listOf(3.0, 2.0, 0.0, -2.0, -3.0, -2.0, 0.0, 1.0, 1.0, 0.0)  // Rock (sum=0)
-                    2 -> listOf(1.0, 1.0, 0.0, -1.0, 1.0, 1.0, 0.0, -1.0, -1.0, -1.0)  // Pop (sum=0)
-                    3 -> listOf(0.0, 1.0, 1.0, 1.0, 0.0, 0.0, -1.0, -1.0, -1.0, 0.0)  // Jazz (sum=0)
-                    4 -> listOf(-1.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0)  // Classical (sum=0)
-                    5 -> listOf(4.0, 2.0, 0.0, -2.0, -3.0, -2.0, 0.0, 0.0, 1.0, 0.0)  // Electronic (sum=0)
-                    6 -> listOf(4.0, 3.0, 1.0, -1.0, -2.0, -2.0, -1.0, -1.0, 0.0, -1.0)  // Hip-Hop (sum=0)
-                    7 -> listOf(-1.0, 0.0, 1.0, 2.0, 1.0, 0.0, -1.0, -1.0, -1.0, 0.0)  // Acoustic (sum=0)
+                    0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)  // Flat
+                    1 -> listOf(2.0, 2.0, 1.0, 0.0, 0.0, 1.0, 2.0, 3.0, 2.0, 1.0)  // Rock
+                    2 -> listOf(2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 1.0, 1.0)  // Pop
+                    3 -> listOf(1.0, 1.0, 0.0, 2.0, 2.0, 1.0, 0.0, 1.0, 1.0, 0.0)  // Jazz
+                    4 -> listOf(0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0)  // Classical
+                    5 -> listOf(3.0, 3.0, 2.0, 0.0, 0.0, 1.0, 2.0, 3.0, 2.0, 1.0)  // Electronic
+                    6 -> listOf(4.0, 4.0, 2.0, 0.0, 1.0, 1.0, 2.0, 1.0, 0.0, 0.0)  // Hip-Hop
+                    7 -> listOf(1.0, 1.0, 0.0, 2.0, 3.0, 3.0, 2.0, 1.0, 1.0, 0.0)  // Acoustic
+                    8 -> listOf(5.0, 4.0, 3.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0)  // Bass+
+                    9 -> listOf(0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0, 4.0, 3.0)  // Clarity
                     else -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
                 }
                 
