@@ -7,6 +7,7 @@ import React, {
   useRef,
   ReactNode,
 } from 'react';
+import { Platform } from 'react-native';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,8 +16,8 @@ import {
   OnlineRadioStation,
   OnlineRadioCountry,
 } from '@/services/OnlineRadioService';
-import { TrackPlayerService, TrackMetadata, State, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
+import { PlaybackEngineModule } from '../../modules/audio-effects';
 
 const STORAGE_KEY_COUNTRY = '@new_audio_360_online_radio_country';
 const STORAGE_KEY_STATIONS_CACHE = '@new_audio_360_online_radio_stations';
@@ -69,62 +70,10 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     loadCachedData();
-    initializeTrackPlayer();
     return () => {
       cleanupSound();
     };
   }, []);
-
-  const initializeTrackPlayer = async () => {
-    if (!TrackPlayerService.isAvailable()) {
-      console.log('[OnlineRadioContext] TrackPlayerService not available (web platform)');
-      return;
-    }
-
-    try {
-      const initialized = await TrackPlayerService.initialize();
-      if (initialized) {
-        setupTrackPlayerCallbacks();
-        console.log('[OnlineRadioContext] TrackPlayerService initialized');
-      }
-    } catch (err) {
-      console.warn('[OnlineRadioContext] Failed to initialize TrackPlayerService:', err);
-    }
-  };
-
-  const setupTrackPlayerCallbacks = () => {
-    TrackPlayerService.setCallbacks({
-      onPlay: () => {
-        if (TrackPlayerService.getPlaybackSource() === 'radio') {
-          setIsPlaying(true);
-          setIsBuffering(false);
-        }
-      },
-      onPause: () => {
-        if (TrackPlayerService.getPlaybackSource() === 'radio') {
-          setIsPlaying(false);
-        }
-      },
-      onStop: () => {
-        if (TrackPlayerService.getPlaybackSource() === 'radio') {
-          setIsPlaying(false);
-          setCurrentStation(null);
-          setIsBuffering(false);
-        }
-      },
-      onStateChange: (state: typeof State) => {
-        if (TrackPlayerService.getPlaybackSource() !== 'radio') return;
-        if (state === State.Buffering) {
-          setIsBuffering(true);
-        } else if (state === State.Playing) {
-          setIsBuffering(false);
-          setIsPlaying(true);
-        } else if (state === State.Paused) {
-          setIsPlaying(false);
-        }
-      },
-    });
-  };
 
   const loadCachedData = async () => {
     try {
@@ -359,32 +308,37 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         throw new Error('No stream URL available for this station');
       }
 
-      if (TrackPlayerService.isAvailable()) {
+      if (Platform.OS === 'android' && PlaybackEngineModule.isAvailable()) {
         try {
-          await TrackPlayerService.stop();
+          console.log('[OnlineRadioContext] Using PlaybackEngineModule for radio stream on Android');
           
-          TrackPlayerService.setPlaybackSource('radio');
+          await PlaybackEngineModule.stop();
           
-          const trackMetadata: TrackMetadata = {
-            id: station.stationuuid,
-            url: streamUrl,
-            title: station.name,
-            artist: station.country || 'Online Radio',
-            artwork: station.favicon || undefined,
-            isLiveStream: true,
-          };
-
-          await TrackPlayerService.setQueue([trackMetadata]);
-          await TrackPlayerService.play();
+          const initResult = await PlaybackEngineModule.initialize();
+          if (!initResult.success) {
+            throw new Error(initResult.error || 'Failed to initialize PlaybackEngineModule');
+          }
+          
+          const loadResult = await PlaybackEngineModule.loadTrack(streamUrl);
+          if (!loadResult.success) {
+            throw new Error(loadResult.error || 'Failed to load radio stream');
+          }
+          
+          const playResult = await PlaybackEngineModule.play();
+          if (!playResult.success) {
+            throw new Error(playResult.error || 'Failed to start radio playback');
+          }
+          
           setCurrentStation(station);
           setIsPlaying(true);
           setIsBuffering(false);
           AudioCoordinator.notifyPlaybackStarted('radio');
 
           OnlineRadioService.reportStationClick(station.stationuuid).catch(() => {});
+          console.log('[OnlineRadioContext] Radio stream started via PlaybackEngineModule:', station.name);
           return;
         } catch (nativeErr) {
-          console.warn('[OnlineRadioContext] TrackPlayerService failed, falling back to expo-av:', nativeErr);
+          console.warn('[OnlineRadioContext] PlaybackEngineModule failed, falling back to expo-av:', nativeErr);
         }
       }
 
@@ -397,7 +351,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         playThroughEarpieceAndroid: false,
       });
 
-      console.log('[OnlineRadioContext] Loading stream:', streamUrl);
+      console.log('[OnlineRadioContext] Loading stream via expo-av:', streamUrl);
       
       const { sound } = await Audio.Sound.createAsync(
         { uri: streamUrl },
@@ -415,7 +369,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       setCurrentStation(station);
       setIsPlaying(true);
       setIsBuffering(false);
-      console.log('[OnlineRadioContext] Stream loaded successfully:', station.name);
+      console.log('[OnlineRadioContext] Stream loaded successfully via expo-av:', station.name);
       AudioCoordinator.notifyPlaybackStarted('radio');
 
       OnlineRadioService.reportStationClick(station.stationuuid).catch(() => {});
@@ -431,11 +385,12 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
   const stopPlayback = useCallback(async (): Promise<void> => {
     try {
-      if (TrackPlayerService.isAvailable()) {
+      if (Platform.OS === 'android' && PlaybackEngineModule.isAvailable()) {
         try {
-          await TrackPlayerService.stop();
+          await PlaybackEngineModule.stop();
+          console.log('[OnlineRadioContext] Radio stopped via PlaybackEngineModule');
         } catch (nativeErr) {
-          console.warn('[OnlineRadioContext] TrackPlayerService.stop() failed:', nativeErr);
+          console.warn('[OnlineRadioContext] PlaybackEngineModule.stop() failed:', nativeErr);
         }
       }
 
@@ -461,11 +416,11 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     const clampedVolume = Math.max(0, Math.min(1, newVolume));
     setVolumeState(clampedVolume);
 
-    if (TrackPlayerService.isAvailable()) {
+    if (Platform.OS === 'android' && PlaybackEngineModule.isAvailable()) {
       try {
-        await TrackPlayerService.setVolume(clampedVolume);
+        PlaybackEngineModule.setVolume(clampedVolume);
       } catch (err) {
-        console.warn('[OnlineRadioContext] TrackPlayerService.setVolume error:', err);
+        console.warn('[OnlineRadioContext] PlaybackEngineModule.setVolume error:', err);
       }
     }
 
