@@ -11,7 +11,7 @@ import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { useThemeContext, useSkin, useThemeTokens } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { usePlayerContext } from "@/contexts/PlayerContext";
+import { usePlayer } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { getTabBarStyle } from "@/lib/themeUtils";
 import {
@@ -83,7 +83,7 @@ function MainTabNavigator() {
   const { isDark } = useThemeContext();
   const tokens = useThemeTokens();
   const { playTapSound } = useUiSound();
-  const { currentSong } = usePlayerContext();
+  const { currentSong } = usePlayer();
   const { isNowPlayingVisible } = useNavigationContext();
   const [currentTab, setCurrentTab] = useState<string>("ListenTab");
   const [isMiniPlayerDismissed, setIsMiniPlayerDismissed] = useState(false);
