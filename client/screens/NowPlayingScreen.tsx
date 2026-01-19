@@ -19,6 +19,7 @@ import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
 import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { useAlbumArt } from "@/hooks/useAlbumArt";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
@@ -58,6 +59,7 @@ export default function NowPlayingScreen() {
 
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const visitCountRef = useRef(0);
+  const albumArt = useAlbumArt(currentSong?.id, currentSong?.artwork);
   
   const isCompact = screenWidth <= 375 || screenHeight <= 700;
   const isVeryCompact = screenHeight <= 667;
@@ -105,7 +107,7 @@ export default function NowPlayingScreen() {
   return (
     <View style={styles.container}>
       <ImageBackground
-        source={{ uri: currentSong.artwork }}
+        source={{ uri: albumArt }}
         style={StyleSheet.absoluteFill}
         blurRadius={Platform.OS === "ios" ? BLUR_INTENSITY : BLUR_INTENSITY / 2}
       >
@@ -129,7 +131,7 @@ export default function NowPlayingScreen() {
         <View style={[styles.artworkContainer, { marginTop: isExtraCompact ? 0 : isVeryCompact ? FluentSpacing.xxs : isCompact ? FluentSpacing.s : FluentSpacing.l }]}>
           <View style={styles.artworkWrapper}>
             <Image
-              source={{ uri: currentSong.artwork }}
+              source={{ uri: albumArt }}
               style={[styles.artwork, { width: artworkSize, height: artworkSize }]}
             />
             {(isLoading || isBuffering) ? (

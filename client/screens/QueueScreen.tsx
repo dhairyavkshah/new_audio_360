@@ -12,6 +12,7 @@ import { usePlayerContext } from "@/contexts/PlayerContext";
 import { FluentSpacing, FluentPadding, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
+import { useAlbumArt, getAlbumArt } from "@/hooks/useAlbumArt";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 
@@ -24,6 +25,7 @@ export default function QueueScreen() {
   const { queue, currentSong, playSong, removeFromQueue } = usePlayerContext();
   const [selectedSongs, setSelectedSongs] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
+  const currentSongArt = useAlbumArt(currentSong?.id, currentSong?.artwork);
 
   const handleSongPress = useCallback((song: Song) => {
     if (selectionMode) {
@@ -111,7 +113,7 @@ export default function QueueScreen() {
             </FluentText>
           )}
         </View>
-        <Image source={{ uri: item.artwork }} style={styles.artwork} />
+        <Image source={{ uri: getAlbumArt(item.id, item.artwork) }} style={styles.artwork} />
         <View style={styles.songInfo}>
           <FluentText 
             variant="body1" 
@@ -149,7 +151,7 @@ export default function QueueScreen() {
               navigation.navigate("NowPlaying", { songId: currentSong.id });
             }}
           >
-            <Image source={{ uri: currentSong.artwork }} style={styles.currentArtwork} />
+            <Image source={{ uri: currentSongArt }} style={styles.currentArtwork} />
             <View style={styles.currentInfo}>
               <FluentText variant="body1Strong" numberOfLines={1}>
                 {currentSong.title}

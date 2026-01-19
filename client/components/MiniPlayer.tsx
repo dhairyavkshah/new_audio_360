@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, memo, useState, useEffect } from "react";
+import React, { useCallback, useMemo, memo, useState, useEffect, useRef } from "react";
 import { View, StyleSheet, Pressable, Image, Platform, Text, useWindowDimensions, LayoutChangeEvent } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -24,6 +24,7 @@ import {
   FluentControlRadius,
   FluentSliderSize,
 } from "@/constants/fluent2";
+import { useAlbumArt } from "@/hooks/useAlbumArt";
 
 interface MiniPlayerProps {
   bottomOffset?: number;
@@ -57,7 +58,8 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   const cardEffectStyle = useMemo(() => getCardEffectStyle(tokens, 2), [tokens]);
   const glowStyle = useMemo(() => getGlowStyle(tokens), [tokens]);
   
-  const artworkSource = useMemo(() => currentSong ? { uri: currentSong.artwork } : undefined, [currentSong?.artwork]);
+  const albumArt = useAlbumArt(currentSong?.id, currentSong?.artwork);
+  const artworkSource = useMemo(() => currentSong ? { uri: albumArt } : undefined, [albumArt, currentSong]);
   
   const containerBottom = useMemo(() => bottomOffset + FluentSpacing.s + (insets.bottom > 0 ? 0 : FluentSpacing.s), [bottomOffset, insets.bottom]);
   
@@ -69,6 +71,9 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   const restoreTranslateY = useSharedValue(0);
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
+  const hasDragged = useSharedValue(false);
+  const restoreHasDragged = useSharedValue(false);
+  const restoreDraggedRef = useRef(false);
 
   useEffect(() => {
     translateX.value = 0;
@@ -98,11 +103,13 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
 
   const panGesture = Gesture.Pan()
     .onStart(() => {
+      hasDragged.value = false;
       startX.value = translateX.value;
       startY.value = translateY.value;
       runOnJS(triggerHaptic)();
     })
     .onUpdate((event) => {
+      hasDragged.value = true;
       const newX = startX.value + event.translationX;
       const newY = startY.value + event.translationY;
       translateX.value = Math.max(minTranslateX, Math.min(newX, maxTranslateX));
@@ -122,13 +129,25 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   const restoreMinY = -(screenHeight - RESTORE_HANDLE_HEIGHT - containerBottom - insets.top - MIN_EDGE_PADDING);
   const restoreMaxY = containerBottom - MIN_EDGE_PADDING;
 
+  const setRestoreDraggedTrue = useCallback(() => {
+    restoreDraggedRef.current = true;
+  }, []);
+
+  const setRestoreDraggedFalse = useCallback(() => {
+    restoreDraggedRef.current = false;
+  }, []);
+
   const restorePanGesture = Gesture.Pan()
     .onStart(() => {
+      restoreHasDragged.value = false;
+      runOnJS(setRestoreDraggedFalse)();
       startX.value = restoreTranslateX.value;
       startY.value = restoreTranslateY.value;
       runOnJS(triggerHaptic)();
     })
     .onUpdate((event) => {
+      restoreHasDragged.value = true;
+      runOnJS(setRestoreDraggedTrue)();
       const newX = startX.value + event.translationX;
       const newY = startY.value + event.translationY;
       restoreTranslateX.value = Math.max(restoreMinX, Math.min(newX, restoreMaxX));
@@ -189,6 +208,10 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   }, [onDismiss]);
 
   const handleSwipeUp = useCallback(() => {
+    if (restoreDraggedRef.current) {
+      restoreDraggedRef.current = false;
+      return;
+    }
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
