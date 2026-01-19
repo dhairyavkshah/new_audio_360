@@ -53,7 +53,7 @@ class EqualizerModule : Module() {
                 
                 promise.resolve(mapOf(
                     "success" to true,
-                    "numberOfBands" to 7,
+                    "numberOfBands" to 10,
                     "minLevel" to -1200,
                     "maxLevel" to 1200,
                     "bands" to bandInfo,
@@ -109,22 +109,27 @@ class EqualizerModule : Module() {
                 }
                 
                 val presetGains = when (preset) {
-                    0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-                    1 -> listOf(4.0, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0)
-                    2 -> listOf(0.0, 0.0, 0.0, 0.0, 2.0, 3.0, 4.0)
-                    3 -> listOf(-1.0, 0.0, 2.0, 3.0, 2.0, 0.0, -1.0)
-                    4 -> listOf(3.0, 2.0, 0.0, -1.0, 0.0, 2.0, 3.0)
-                    5 -> listOf(3.0, 2.0, 1.0, 0.0, 1.0, 2.0, 3.0)
-                    6 -> listOf(1.0, 2.0, 2.0, 1.0, 0.0, 1.0, 2.0)
-                    7 -> listOf(2.0, 1.0, 0.0, 1.0, 2.0, 2.0, 1.0)
-                    else -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+                    0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)  // Flat
+                    1 -> listOf(4.0, 3.5, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)  // Bass Boost
+                    2 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 3.0, 3.5, 4.0)  // Treble Boost
+                    3 -> listOf(-1.0, -0.5, 0.0, 1.0, 2.0, 3.0, 2.0, 1.0, 0.0, -0.5)  // Vocal
+                    4 -> listOf(3.0, 2.5, 2.0, 0.0, -1.0, -0.5, 0.0, 2.0, 2.5, 3.0)  // Electronic
+                    5 -> listOf(3.0, 2.5, 2.0, 1.0, 0.0, 0.5, 1.0, 2.0, 2.5, 3.0)  // Rock
+                    6 -> listOf(1.0, 1.5, 2.0, 2.0, 1.0, 0.5, 0.0, 1.0, 1.5, 2.0)  // Pop
+                    7 -> listOf(2.0, 1.5, 1.0, 0.0, 0.5, 1.0, 2.0, 2.0, 1.5, 1.0)  // Jazz
+                    else -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
                 }
                 
-                dsp.setAllEqBandGains(presetGains)
+                // Apply EQ with zero-sum normalization (matching Web implementation)
+                // This ensures overall level stays consistent
+                dsp.applyEqWithZeroSum(presetGains, 0f, 0f)
+                
+                // Reset reverb for standard EQ mode (matching Web)
+                dsp.setReverb(0f)
                 
                 // Reset to standard stereo for EQ presets
                 // Professional standard: EQ presets only affect frequency response, not stereo field
-                // Disable psychoacoustic virtualizer and reset stereo width
+                // Disable psychoacoustic virtualizer and reset stereo width (matching Web)
                 dsp.setPsychoacousticVirtualizer(false, 0f)
                 dsp.setStereoWidth(0f)
                 
@@ -146,9 +151,13 @@ class EqualizerModule : Module() {
                 }
                 
                 val gains = levels.map { it.toDouble() / 100.0 }
-                dsp.setAllEqBandGains(gains)
+                // Apply EQ with zero-sum normalization (matching Web)
+                dsp.applyEqWithZeroSum(gains, 0f, 0f)
                 
-                // Reset to standard stereo for custom EQ (user can enable virtualizer separately)
+                // Reset reverb for standard EQ mode (matching Web)
+                dsp.setReverb(0f)
+                
+                // Reset to standard stereo for custom EQ (matching Web)
                 dsp.setPsychoacousticVirtualizer(false, 0f)
                 dsp.setStereoWidth(0f)
                 
@@ -168,7 +177,7 @@ class EqualizerModule : Module() {
             val dsp = getDspProcessor()
             return@Function mapOf(
                 "enabled" to (dsp?.getIsEnabled() ?: false),
-                "numberOfBands" to 7,
+                "numberOfBands" to 10,
                 "currentPreset" to -1,
                 "minLevel" to -1200,
                 "maxLevel" to 1200,
@@ -183,9 +192,13 @@ class EqualizerModule : Module() {
                     return@Function mapOf("success" to false, "error" to "DSP not initialized")
                 }
                 
-                dsp.setAllEqBandGains(bands)
+                // Apply EQ with zero-sum normalization (matching Web)
+                dsp.applyEqWithZeroSum(bands, 0f, 0f)
                 
-                // Reset to standard stereo for EQ-only mode (user can enable virtualizer separately)
+                // Reset reverb for standard EQ mode (matching Web)
+                dsp.setReverb(0f)
+                
+                // Reset to standard stereo for EQ-only mode (matching Web)
                 dsp.setPsychoacousticVirtualizer(false, 0f)
                 dsp.setStereoWidth(0f)
                 
