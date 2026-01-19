@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { View, StyleSheet, FlatList, Pressable, Image, Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -9,17 +9,7 @@ import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import {
-  FluentSpacing,
-  FluentPadding,
-  FluentRadius,
-  FluentLightColors,
-  FluentDarkColors,
-  FluentLayoutSize,
-  FluentTouchTarget,
-  FluentIconSize,
-  FluentBorderWidth,
-} from "@/constants/fluent2";
+import { FluentSpacing, FluentPadding, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 
@@ -31,32 +21,47 @@ export default function QueueScreen() {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { playTapSound } = useUiSound();
-  const { queue, currentSong, playSong, removeFromQueue, clearQueue } = usePlayerContext();
+  const { queue, currentSong, playSong, removeFromQueue } = usePlayerContext();
+  const [selectedSongs, setSelectedSongs] = useState<string[]>([]);
+  const [selectionMode, setSelectionMode] = useState(false);
 
   const handleSongPress = useCallback((song: Song) => {
-    playTapSound();
-    if (Platform.OS !== "web") {
+    if (selectionMode) {
+      setSelectedSongs(prev => 
+        prev.includes(song.id) 
+          ? prev.filter(id => id !== song.id)
+          : [...prev, song.id]
+      );
+    } else {
+      playTapSound();
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      playSong(song);
+      navigation.navigate("NowPlaying", { songId: song.id });
     }
-    playSong(song);
-    navigation.navigate("NowPlaying", { songId: song.id });
-  }, [playSong, navigation, playTapSound]);
+  }, [selectionMode, playSong, navigation, playTapSound]);
 
-  const handleRemoveSong = useCallback((songId: string) => {
-    playTapSound();
-    if (Platform.OS !== "web") {
+  const handleLongPress = useCallback((song: Song) => {
+    if (!selectionMode) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      playTapSound();
+      setSelectionMode(true);
+      setSelectedSongs([song.id]);
     }
-    removeFromQueue([songId]);
-  }, [removeFromQueue, playTapSound]);
+  }, [selectionMode, playTapSound]);
 
-  const handleClearAll = useCallback(() => {
-    playTapSound();
-    if (Platform.OS !== "web") {
+  const exitSelectionMode = useCallback(() => {
+    setSelectionMode(false);
+    setSelectedSongs([]);
+  }, []);
+
+  const handleRemoveSelected = useCallback(() => {
+    if (selectedSongs.length > 0) {
+      playTapSound();
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      removeFromQueue(selectedSongs);
+      exitSelectionMode();
     }
-    clearQueue();
-  }, [clearQueue, playTapSound]);
+  }, [selectedSongs, removeFromQueue, exitSelectionMode, playTapSound]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -67,182 +72,156 @@ export default function QueueScreen() {
   const currentIndex = currentSong ? queue.findIndex(s => s.id === currentSong.id) : -1;
   const upNext = currentIndex >= 0 ? queue.slice(currentIndex + 1) : queue;
 
-  const DRAG_HANDLE_WIDTH = FluentTouchTarget.minimum;
+  const QUEUE_ITEM_HEIGHT = 72;
 
   const getItemLayout = useCallback(
-    (_data: ArrayLike<Song> | null | undefined, index: number) => ({
-      length: FluentLayoutSize.listItemRich,
-      offset: FluentLayoutSize.listItemRich * index,
+    (data: ArrayLike<Song> | null | undefined, index: number) => ({
+      length: QUEUE_ITEM_HEIGHT,
+      offset: QUEUE_ITEM_HEIGHT * index,
       index,
     }),
     []
   );
 
-  const renderQueueItem = ({ item, index }: { item: Song; index: number }) => {
-    return (
-      <View>
-        <Pressable
-          style={styles.queueItem}
-          onPress={() => handleSongPress(item)}
-        >
-          <View style={styles.dragHandle}>
-            <MaterialCommunityIcons
-              name="drag"
-              size={FluentIconSize.medium}
-              color={colors.colorNeutralForeground4}
-            />
-          </View>
-          <Image
-            source={{ uri: item.artwork }}
-            style={styles.artwork}
-          />
-          <View style={styles.songInfo}>
-            <FluentText variant="body2" numberOfLines={1}>
-              {item.title}
-            </FluentText>
-            <FluentText variant="caption1" color="secondary" numberOfLines={1}>
-              {item.artist}
-            </FluentText>
-          </View>
-          <FluentText variant="caption1" color="secondary" style={styles.duration}>
-            {formatDuration(item.duration)}
-          </FluentText>
-          <Pressable
-            style={styles.removeButton}
-            onPress={() => handleRemoveSong(item.id)}
-            hitSlop={8}
-          >
-            <MaterialCommunityIcons
-              name="close"
-              size={FluentIconSize.regular}
-              color={colors.colorNeutralForeground3}
-            />
-          </Pressable>
-        </Pressable>
-        {index < upNext.length - 1 && (
-          <View style={[styles.divider, { marginLeft: DRAG_HANDLE_WIDTH, backgroundColor: colors.colorNeutralStroke2 }]} />
-        )}
-      </View>
-    );
-  };
-
-  const renderNowPlaying = () => {
-    if (!currentSong) return null;
+  const renderSong = ({ item, index }: { item: Song; index: number }) => {
+    const isCurrentSong = currentSong?.id === item.id;
+    const isSelected = selectedSongs.includes(item.id);
 
     return (
-      <View style={styles.section}>
-        <FluentText variant="caption1" color="secondary" style={styles.sectionHeader}>
-          NOW PLAYING
-        </FluentText>
-        <View>
-          <Pressable
-            style={[
-              styles.queueItem,
-              styles.nowPlayingItem,
-              { backgroundColor: colors.colorBrandBackground + "1A" },
-            ]}
-            onPress={() => {
-              playTapSound();
-              if (Platform.OS !== "web") {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              navigation.navigate("NowPlaying", { songId: currentSong.id });
-            }}
-          >
-            <View style={[styles.accentBar, { backgroundColor: colors.colorBrandBackground }]} />
-            <View style={styles.dragHandle}>
-              <MaterialCommunityIcons
-                name="drag"
-                size={FluentIconSize.medium}
-                color={colors.colorNeutralForeground4}
-              />
-            </View>
-            <Image
-              source={{ uri: currentSong.artwork }}
-              style={styles.artwork}
+      <Pressable
+        style={[
+          styles.songItem,
+          { backgroundColor: isSelected ? colors.colorBrandBackground + "20" : colors.colorNeutralBackground1 },
+          isCurrentSong && styles.currentSong,
+        ]}
+        onPress={() => handleSongPress(item)}
+        onLongPress={() => handleLongPress(item)}
+        delayLongPress={400}
+      >
+        <View style={styles.songIndex}>
+          {selectionMode ? (
+            <MaterialCommunityIcons
+              name={isSelected ? "checkbox-marked-circle" : "checkbox-blank-circle-outline"}
+              size={24}
+              color={isSelected ? colors.colorBrandForeground1 : colors.colorNeutralForeground2}
             />
-            <View style={styles.songInfo}>
-              <FluentText
-                variant="body2"
-                numberOfLines={1}
-                style={{ color: colors.colorBrandForeground1 }}
-              >
-                {currentSong.title}
-              </FluentText>
-              <FluentText variant="caption1" color="secondary" numberOfLines={1}>
-                {currentSong.artist}
-              </FluentText>
-            </View>
-            <FluentText variant="caption1" color="secondary" style={styles.duration}>
-              {formatDuration(currentSong.duration)}
+          ) : (
+            <FluentText variant="caption1" color="secondary">
+              {index + 1}
             </FluentText>
-          </Pressable>
+          )}
         </View>
-      </View>
+        <Image source={{ uri: item.artwork }} style={styles.artwork} />
+        <View style={styles.songInfo}>
+          <FluentText 
+            variant="body1" 
+            numberOfLines={1} 
+            style={[styles.songTitle, isCurrentSong && { color: colors.colorBrandForeground1 }]}
+          >
+            {item.title}
+          </FluentText>
+          <FluentText variant="caption1" color="secondary" numberOfLines={1}>
+            {item.artist}
+          </FluentText>
+        </View>
+        <FluentText variant="caption1" color="secondary">
+          {formatDuration(item.duration)}
+        </FluentText>
+        {isCurrentSong ? (
+          <View style={[styles.playingBadge, { backgroundColor: colors.colorBrandBackground }]}>
+            <MaterialCommunityIcons name="volume-high" size={12} color="#FFFFFF" />
+          </View>
+        ) : null}
+      </Pressable>
     );
   };
 
   const renderHeader = () => (
-    <View>
-      {renderNowPlaying()}
-      {upNext.length > 0 && (
-        <FluentText variant="caption1" color="secondary" style={styles.sectionHeader}>
-          UP NEXT
+    <View style={styles.headerSection}>
+      {currentSong ? (
+        <>
+          <FluentText variant="title3" style={styles.sectionTitle}>Now Playing</FluentText>
+          <Pressable
+            style={[styles.currentSongCard, { backgroundColor: colors.colorNeutralBackground3 }]}
+            onPress={() => {
+              playTapSound();
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate("NowPlaying", { songId: currentSong.id });
+            }}
+          >
+            <Image source={{ uri: currentSong.artwork }} style={styles.currentArtwork} />
+            <View style={styles.currentInfo}>
+              <FluentText variant="body1Strong" numberOfLines={1}>
+                {currentSong.title}
+              </FluentText>
+              <FluentText variant="caption1" color="secondary">
+                {currentSong.artist}
+              </FluentText>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color={colors.colorNeutralForeground2} />
+          </Pressable>
+        </>
+      ) : null}
+      
+      <View style={styles.upNextHeader}>
+        <FluentText variant="title3" style={styles.sectionTitle}>
+          Up Next ({upNext.length} songs)
         </FluentText>
-      )}
+      </View>
     </View>
   );
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <MaterialCommunityIcons
-        name="playlist-music"
-        size={FluentIconSize.xxlarge}
-        color={colors.colorNeutralForeground4}
-      />
-      <FluentText variant="body2" color="secondary" style={styles.emptyText}>
+      <MaterialCommunityIcons name="playlist-music" size={64} color={colors.colorNeutralForeground2} />
+      <FluentText variant="body1" color="secondary" style={styles.emptyText}>
         Your queue is empty
       </FluentText>
       <FluentText variant="caption1" color="secondary" style={styles.emptySubtext}>
-        Add songs to start listening
+        Play a song to start building your queue
       </FluentText>
-    </View>
-  );
-
-  const renderTopBar = () => (
-    <View style={[styles.topBar, { borderBottomColor: colors.colorNeutralStroke2 }]}>
-      <FluentText variant="subtitle2">Queue</FluentText>
-      {queue.length > 0 && (
-        <Pressable
-          style={styles.clearAllButton}
-          onPress={handleClearAll}
-        >
-          <FluentText variant="body2" style={{ color: colors.colorPaletteRedForeground1 }}>
-            Clear All
-          </FluentText>
-        </Pressable>
-      )}
     </View>
   );
 
   return (
     <FluentScreenLayout hasBottomNavigation={false} isNestedScreen={true}>
-      {renderTopBar()}
+      {selectionMode ? (
+        <View style={[styles.selectionHeader, { backgroundColor: colors.colorNeutralBackground3 }]}>
+          <Pressable 
+            style={styles.selectionButton}
+            onPress={exitSelectionMode}
+          >
+            <MaterialCommunityIcons name="close" size={24} color={colors.colorNeutralForeground1} />
+          </Pressable>
+          <FluentText variant="body1Strong">
+            {selectedSongs.length} selected
+          </FluentText>
+          <View style={styles.selectionActions}>
+            <Pressable 
+              style={styles.selectionButton}
+              onPress={handleRemoveSelected}
+            >
+              <MaterialCommunityIcons name="delete-outline" size={24} color={colors.colorPaletteRedForeground1} />
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+
       <FlatList
         data={upNext}
-        renderItem={renderQueueItem}
+        renderItem={renderSong}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
-        ListEmptyComponent={!currentSong ? renderEmpty : null}
+        ListEmptyComponent={currentSong ? undefined : renderEmpty}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: insets.bottom + FluentLayoutSize.miniPlayerHeight + FluentLayoutSize.bottomNavHeight },
+          { paddingBottom: insets.bottom + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
         maxToRenderPerBatch={10}
         windowSize={10}
-        removeClippedSubviews={Platform.OS === "android"}
+        removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
         getItemLayout={getItemLayout}
       />
@@ -251,89 +230,101 @@ export default function QueueScreen() {
 }
 
 const styles = StyleSheet.create({
-  topBar: {
-    height: FluentLayoutSize.topBarHeight,
+  listContent: {
+    paddingHorizontal: FluentPadding.l,
+    paddingTop: FluentSpacing.l,
+  },
+  headerSection: {
+    marginBottom: FluentSpacing.xl,
+  },
+  sectionTitle: {
+    marginBottom: FluentSpacing.l,
+    fontWeight: "600",
+  },
+  currentSongCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
+    marginBottom: FluentSpacing.xl,
+  },
+  currentArtwork: {
+    width: 56,
+    height: 56,
+    borderRadius: FluentControlRadius.card,
+  },
+  currentInfo: {
+    flex: 1,
+    marginLeft: FluentSpacing.l,
+  },
+  upNextHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: FluentPadding.l,
-    borderBottomWidth: FluentBorderWidth.thin,
   },
-  clearAllButton: {
-    height: FluentTouchTarget.minimum,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: FluentSpacing.s,
-  },
-  listContent: {
-    paddingTop: FluentSpacing.s,
-  },
-  section: {
-    marginBottom: FluentSpacing.s,
-  },
-  sectionHeader: {
-    paddingHorizontal: FluentPadding.l,
-    marginBottom: FluentSpacing.s,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  queueItem: {
-    height: FluentLayoutSize.listItemRich,
+  songItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingRight: FluentPadding.l,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
+    marginBottom: FluentSpacing.xs,
   },
-  nowPlayingItem: {
-    position: "relative",
+  currentSong: {
+    borderLeftWidth: 3,
   },
-  accentBar: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-  },
-  dragHandle: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
-    justifyContent: "center",
+  songIndex: {
+    width: 32,
     alignItems: "center",
+    justifyContent: "center",
   },
   artwork: {
     width: 48,
     height: 48,
-    borderRadius: FluentRadius.medium,
-    marginLeft: FluentSpacing.s,
+    borderRadius: FluentControlRadius.chip,
+    marginLeft: FluentSpacing.xs,
   },
   songInfo: {
     flex: 1,
     marginLeft: FluentSpacing.m,
-    justifyContent: "center",
   },
-  duration: {
-    marginLeft: FluentSpacing.s,
+  songTitle: {
+    fontWeight: "500",
   },
-  removeButton: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
+  playingBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: FluentSpacing.xs,
-  },
-  divider: {
-    height: FluentBorderWidth.thin,
+    marginLeft: FluentSpacing.m,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: FluentSpacing.xxxxxxl,
+    paddingVertical: FluentSpacing.xxxl,
   },
   emptyText: {
-    marginTop: FluentSpacing.l,
+    marginTop: FluentSpacing.xl,
   },
   emptySubtext: {
     marginTop: FluentSpacing.xs,
     textAlign: "center",
+  },
+  selectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: FluentPadding.l,
+    paddingVertical: FluentSpacing.m,
+  },
+  selectionButton: {
+    width: 48,
+    height: 48,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  selectionActions: {
+    flexDirection: "row",
   },
 });

@@ -86,8 +86,8 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
         <MaterialCommunityIcons name={icon} size={28} color={colors.colorBrandForeground1} />
       </View>
       <View style={styles.permissionContent}>
-        <FluentText variant="subtitle2">{title}</FluentText>
-        <FluentText variant="body2" color="secondary">{description}</FluentText>
+        <FluentText variant="subtitle1">{title}</FluentText>
+        <FluentText variant="caption1" color="secondary">{description}</FluentText>
       </View>
       <View style={styles.permissionStatus}>
         {status === 'granted' ? (
@@ -107,8 +107,8 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
         <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground + '15' }]}>
           <MaterialCommunityIcons name="music-box-multiple" size={64} color={colors.colorBrandForeground1} />
         </View>
-        <FluentText variant="title2" align="center">Welcome to New Audio 360</FluentText>
-        <FluentText variant="body2" color="secondary" align="center" style={styles.subtitle}>
+        <FluentText variant="title1" align="center">Welcome to New Audio 360</FluentText>
+        <FluentText variant="body1" color="secondary" align="center" style={styles.subtitle}>
           To play music from your device, we need access to your media library.
         </FluentText>
       </View>
@@ -142,14 +142,14 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
                 onPress={handleOpenSettings}
               >
                 <MaterialCommunityIcons name="cog" size={20} color={colors.colorNeutralForegroundOnBrand} />
-                <FluentText variant="subtitle2" color="onBrand">Open Settings</FluentText>
+                <FluentText variant="subtitle1" color="onBrand">Open Settings</FluentText>
               </Pressable>
             )}
             <Pressable
               style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
               onPress={handleSkip}
             >
-              <FluentText variant="body2" color="secondary">Continue with Sample Music</FluentText>
+              <FluentText variant="body1" color="secondary">Continue with Sample Music</FluentText>
             </Pressable>
           </>
         ) : (
@@ -164,11 +164,11 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
               disabled={isRequesting}
             >
               {isRequesting ? (
-                <FluentText variant="subtitle2" color="onBrand">Requesting...</FluentText>
+                <FluentText variant="subtitle1" color="onBrand">Requesting...</FluentText>
               ) : (
                 <>
                   <MaterialCommunityIcons name="shield-check" size={20} color={colors.colorNeutralForegroundOnBrand} />
-                  <FluentText variant="subtitle2" color="onBrand">Grant Access</FluentText>
+                  <FluentText variant="subtitle1" color="onBrand">Grant Access</FluentText>
                 </>
               )}
             </Pressable>
@@ -176,7 +176,7 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
               style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
               onPress={handleSkip}
             >
-              <FluentText variant="body2" color="secondary">Skip for Now</FluentText>
+              <FluentText variant="body1" color="secondary">Skip for Now</FluentText>
             </Pressable>
           </>
         )}
@@ -192,23 +192,22 @@ export default function PermissionOnboardingScreen({ onComplete, onSkip }: Permi
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: FluentSpacing.xxxl,
+    paddingHorizontal: FluentSpacing.xl,
   },
   header: {
     alignItems: 'center',
-    marginBottom: FluentSpacing.xxl,
+    marginBottom: FluentSpacing.xxxl,
   },
   iconContainer: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
     borderRadius: FluentControlRadius.avatar,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: FluentSpacing.l,
   },
   subtitle: {
-    lineHeight: 20,
-    marginTop: FluentSpacing.s,
+    lineHeight: 22,
   },
   permissionsList: {
     flex: 1,
@@ -245,7 +244,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: FluentSpacing.s,
-    height: 44,
+    height: 52,
     width: '100%',
     borderRadius: FluentControlRadius.dialog,
   },
@@ -253,7 +252,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   secondaryButton: {
-    height: 44,
+    height: 48,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',

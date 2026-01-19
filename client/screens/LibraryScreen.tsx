@@ -1,29 +1,19 @@
 import React, { useState, useCallback, useMemo, memo } from "react";
-import { View, StyleSheet, Pressable, Image, Platform, ActivityIndicator, FlatList, TextInput, ScrollView } from "react-native";
+import { View, StyleSheet, Pressable, Image, Platform, ActivityIndicator, FlatList, ImageSourcePropType } from "react-native";
 import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FluentText } from "@/components/fluent";
-import { SortOption, SORT_OPTIONS } from "@/components/FluentTopBar";
+import { FluentText, FluentScreenLayout } from "@/components/fluent";
+import { FluentTopBar, SortOption, CategoryOption } from "@/components/FluentTopBar";
 import { SongContextMenu } from "@/components/SongContextMenu";
 import { SongCard } from "@/components/SongCard";
+import { AnimatedCard } from "@/components/AnimatedCard";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
-import { 
-  FluentSpacing, 
-  FluentRadius, 
-  FluentLightColors, 
-  FluentDarkColors, 
-  FluentTouchTarget, 
-  FluentIconSize, 
-  FluentLayoutSize,
-  FluentTypography,
-  getShadowStyle 
-} from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { Album } from "@/navigation/LibraryStackNavigator";
 
@@ -45,27 +35,24 @@ import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 
 type NavigationProp = NativeStackNavigationProp<LibraryStackParamList>;
 
-type CategoryType = "songs" | "albums" | "artists" | "playlists";
+type CategoryType = "liked" | "recent" | "top" | "songs" | "albums" | "artists" | "playlists";
 
 interface CategoryConfig {
   key: CategoryType;
   label: string;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  color: string;
 }
 
 const categories: CategoryConfig[] = [
-  { key: "songs", label: "Songs" },
-  { key: "albums", label: "Albums" },
-  { key: "artists", label: "Artists" },
-  { key: "playlists", label: "Playlists" },
+  { key: "liked", label: "Liked", icon: "heart", color: "#E91E63" },
+  { key: "recent", label: "Recent", icon: "history", color: "#9C27B0" },
+  { key: "top", label: "Top", icon: "chart-line", color: "#FF9800" },
+  { key: "songs", label: "Songs", icon: "music", color: "#2196F3" },
+  { key: "albums", label: "Albums", icon: "album", color: "#4CAF50" },
+  { key: "artists", label: "Artists", icon: "account-group", color: "#00BCD4" },
+  { key: "playlists", label: "Playlists", icon: "playlist-music", color: "#673AB7" },
 ];
-
-const CHIP_HEIGHT = FluentLayoutSize.chipHeight;
-const CHIP_RADIUS = CHIP_HEIGHT / 2;
-const CHIP_HORIZONTAL_PADDING = FluentSpacing.m;
-const CHIP_GAP = FluentSpacing.s;
-const SEARCH_BAR_HEIGHT = FluentLayoutSize.inputFieldHeight + 4;
-const HORIZONTAL_MARGIN = FluentSpacing.xl;
-const ALBUM_GRID_GAP = FluentSpacing.m;
 
 interface AlbumCardProps {
   album: DerivedAlbum;
@@ -77,15 +64,16 @@ const AlbumCard = memo(function AlbumCard({ album, onPress }: AlbumCardProps) {
   const handlePress = useCallback(() => onPress(album), [onPress, album]);
   
   return (
-    <Pressable
+    <AnimatedCard
       style={styles.albumCard}
+      borderRadius={FluentRadius.large}
       onPress={handlePress}
       accessibilityLabel={`${album.name} by ${album.artist}`}
     >
       <Image source={imageSource} style={styles.albumArtwork} />
-      <FluentText variant="body2" numberOfLines={1} style={styles.albumName}>{album.name}</FluentText>
+      <FluentText variant="body1" numberOfLines={1} style={styles.albumName}>{album.name}</FluentText>
       <FluentText variant="caption1" color="tertiary" numberOfLines={1}>{album.artist}</FluentText>
-    </Pressable>
+    </AnimatedCard>
   );
 });
 
@@ -99,63 +87,28 @@ const ArtistCard = memo(function ArtistCard({ artist, onPress }: ArtistCardProps
   const handlePress = useCallback(() => onPress(artist), [onPress, artist]);
   
   return (
-    <Pressable
+    <AnimatedCard
       style={styles.artistCard}
+      borderRadius={FluentRadius.large}
       onPress={handlePress}
       accessibilityLabel={`${artist.name}, ${artist.songCount} songs`}
     >
       <View style={styles.artistAvatarContainer}>
         <Image source={imageSource} style={styles.artistAvatar} />
       </View>
-      <FluentText variant="body2" numberOfLines={1} style={styles.artistName}>{artist.name}</FluentText>
+      <FluentText variant="body1" numberOfLines={1} style={styles.artistName}>{artist.name}</FluentText>
       <FluentText variant="caption1" color="tertiary" numberOfLines={1}>{artist.songCount} {artist.songCount === 1 ? 'song' : 'songs'}</FluentText>
-    </Pressable>
-  );
-});
-
-interface FilterChipProps {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}
-
-const FilterChip = memo(function FilterChip({ label, selected, onPress }: FilterChipProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
-  
-  return (
-    <Pressable
-      style={[
-        styles.filterChip,
-        {
-          backgroundColor: selected ? colors.colorBrandBackground : colors.colorNeutralBackground3,
-        },
-      ]}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      accessibilityLabel={label}
-    >
-      <FluentText
-        variant="body2"
-        style={{
-          color: selected ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground1,
-        }}
-      >
-        {label}
-      </FluentText>
-    </Pressable>
+    </AnimatedCard>
   );
 });
 
 function LibraryScreen() {
   const tabBarHeight = useSafeTabBarHeight();
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp>();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { playTapSound } = useUiSound();
-  const { playSong, setQueue } = usePlayerContext();
+  const { favorites, recentlyPlayed, mostPlayed, playSong, setQueue } = usePlayerContext();
   const { songs: deviceSongs, isLoading: isLoadingSongs, progress, usingMockData, hideSong } = useMediaLibraryContext();
   const { currentSong, isPlaying } = usePlayer();
   const [activeCategory, setActiveCategory] = useState<CategoryType>("songs");
@@ -163,6 +116,7 @@ function LibraryScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("title_asc");
   const [showSortOptions, setShowSortOptions] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [contextMenuSong, setContextMenuSong] = useState<PlayableSong | null>(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -284,37 +238,59 @@ function LibraryScreen() {
       return result;
     };
 
+    const likedSongs = allSongs.filter(song => favorites.includes(song.id));
+    const recentSongs = recentlyPlayed
+      .map(id => allSongs.find(s => s.id === id))
+      .filter((s): s is PlayableSong => s !== undefined);
+    const topSongs = mostPlayed
+      .map(id => allSongs.find(s => s.id === id))
+      .filter((s): s is PlayableSong => s !== undefined);
+
     return {
+      liked: filterSongs(likedSongs),
+      recent: recentSongs.filter(song => {
+        if (!query) return true;
+        return song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query);
+      }),
+      top: topSongs.filter(song => {
+        if (!query) return true;
+        return song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query);
+      }),
       songs: filterSongs(allSongs),
       albums: filterAlbums(derivedAlbums),
       artists: filterArtists(derivedArtists),
       playlists: filterPlaylists(playlists),
     };
-  }, [searchQuery, sortBy, playlists, allSongs, derivedAlbums, derivedArtists]);
+  }, [searchQuery, sortBy, playlists, favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists]);
+
+  const categoryCounts = useMemo(() => ({
+    liked: favorites.length,
+    recent: recentlyPlayed.length,
+    top: mostPlayed.length,
+    songs: allSongs.length,
+    albums: derivedAlbums.length,
+    artists: derivedArtists.length,
+    playlists: playlists.length,
+  }), [favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists, playlists]);
 
   const handleCategoryChange = useCallback((category: CategoryType) => {
     playTapSound();
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setActiveCategory(category);
     setSearchQuery("");
     setShowSortOptions(false);
+    setShowCategoryDropdown(false);
   }, [playTapSound]);
 
   const handleManagePlaylists = useCallback(() => {
     playTapSound();
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate("PlaylistManagement");
   }, [playTapSound, navigation]);
 
   const handleSongPress = useCallback((song: PlayableSong, songList: PlayableSong[]) => {
     playTapSound();
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setQueue(songList);
     playSong(song);
     navigation.dispatch(
@@ -330,28 +306,16 @@ function LibraryScreen() {
 
   const handlePlaylistPress = useCallback((playlist: Playlist) => {
     playTapSound();
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate("PlaylistDetail", { playlistId: playlist.id, playlistName: playlist.name });
   }, [playTapSound, navigation]);
 
   const handleSortPress = useCallback((option: SortOption) => {
     playTapSound();
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSortBy(option);
     setShowSortOptions(false);
   }, [playTapSound]);
-
-  const handleToggleSortOptions = useCallback(() => {
-    playTapSound();
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setShowSortOptions(!showSortOptions);
-  }, [playTapSound, showSortOptions]);
 
   const handleSongContextMenu = useCallback((song: PlayableSong) => {
     setContextMenuSong(song);
@@ -369,34 +333,39 @@ function LibraryScreen() {
     setTimeout(() => setSuccessMessage(null), 3000);
   }, [loadPlaylists]);
 
-  const handleClearSearch = useCallback(() => {
-    playTapSound();
-    setSearchQuery("");
-  }, [playTapSound]);
+  const categoryOptions: CategoryOption[] = useMemo(() => 
+    categories.map(cat => ({
+      key: cat.key,
+      label: cat.label,
+      icon: cat.icon,
+      color: cat.color,
+      count: categoryCounts[cat.key],
+    })),
+    [categoryCounts]
+  );
 
-  const currentCount = useMemo(() => {
-    switch (activeCategory) {
-      case "songs": return filteredData.songs.length;
-      case "albums": return filteredData.albums.length;
-      case "artists": return filteredData.artists.length;
-      case "playlists": return filteredData.playlists.length;
-      default: return 0;
-    }
-  }, [activeCategory, filteredData]);
+  const handleCategorySelect = useCallback((key: string) => {
+    handleCategoryChange(key as CategoryType);
+  }, [handleCategoryChange]);
 
-  const renderSongItem = useCallback(({ item: song, index }: { item: PlayableSong; index: number }) => {
-    const songs = filteredData.songs;
-    const isLastItem = index === songs.length - 1;
+  const renderPlaylistAddButton = () => (
+    activeCategory === "playlists" ? (
+      <Pressable style={[styles.addButton, { backgroundColor: colors.colorBrandBackground }]} onPress={handleManagePlaylists}>
+        <MaterialCommunityIcons name="plus" size={FluentIconSize.regular} color="#FFFFFF" />
+      </Pressable>
+    ) : null
+  );
+
+  const renderSongItem = ({ item: song, songs }: { item: PlayableSong; songs: PlayableSong[] }) => {
     return (
       <SongCard
         song={song}
         onPress={() => handleSongPress(song, songs)}
         onContextMenu={handleSongContextMenu}
         isPlaying={currentSong?.id === song.id && isPlaying}
-        showDivider={!isLastItem}
       />
     );
-  }, [filteredData.songs, handleSongPress, handleSongContextMenu, currentSong?.id, isPlaying]);
+  };
 
   const renderEmptyState = (icon: keyof typeof MaterialCommunityIcons.glyphMap, message: string) => (
     <View style={styles.emptyState}>
@@ -405,16 +374,15 @@ function LibraryScreen() {
     </View>
   );
 
-  const renderSongsList = () => {
-    const songs = filteredData.songs;
+  const renderSongsList = (songs: PlayableSong[], emptyIcon: keyof typeof MaterialCommunityIcons.glyphMap, emptyMessage: string) => {
     if (songs.length === 0) {
-      return renderEmptyState("music-off", usingMockData ? "Using sample music. Grant media access to play your own music." : "No songs found.");
+      return renderEmptyState(emptyIcon, emptyMessage);
     }
     return (
       <FlatList
         key="songs-list"
         data={songs}
-        renderItem={renderSongItem}
+        renderItem={({ item }) => renderSongItem({ item, songs })}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + FluentSpacing.m }]}
         showsVerticalScrollIndicator={false}
@@ -509,27 +477,19 @@ function LibraryScreen() {
       <FlatList
         key="playlists-list"
         data={filteredData.playlists}
-        renderItem={({ item: playlist, index }) => (
+        renderItem={({ item: playlist }) => (
           <Pressable
-            style={styles.playlistItem}
+            style={[styles.playlistItem, { backgroundColor: colors.colorNeutralBackground2 }]}
             onPress={() => handlePlaylistPress(playlist)}
           >
             <View style={[styles.playlistIcon, { backgroundColor: colors.colorNeutralBackground3 }]}>
               <MaterialCommunityIcons name="playlist-music" size={24} color={colors.colorBrandForeground1} />
             </View>
             <View style={styles.playlistInfo}>
-              <FluentText variant="body2">{playlist.name}</FluentText>
+              <FluentText variant="body1">{playlist.name}</FluentText>
               <FluentText variant="caption1" color="tertiary">{playlist.songIds.length} songs</FluentText>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={24} color={colors.colorNeutralForeground3} />
-            {index < filteredData.playlists.length - 1 && (
-              <View 
-                style={[
-                  styles.playlistDivider, 
-                  { backgroundColor: colors.colorNeutralStroke2 }
-                ]} 
-              />
-            )}
           </Pressable>
         )}
         keyExtractor={(item) => item.id}
@@ -559,8 +519,14 @@ function LibraryScreen() {
     }
 
     switch (activeCategory) {
+      case "liked":
+        return renderSongsList(filteredData.liked, "heart-outline", "No liked songs yet. Tap the heart icon on any song to add it here.");
+      case "recent":
+        return renderSongsList(filteredData.recent, "history", "No recently played songs. Start listening to see your history here.");
+      case "top":
+        return renderSongsList(filteredData.top, "chart-line", "No play history yet. Keep listening to see your most played songs here.");
       case "songs":
-        return renderSongsList();
+        return renderSongsList(filteredData.songs, "music-off", usingMockData ? "Using sample music. Grant media access to play your own music." : "No songs found.");
       case "albums":
         return renderAlbumsList();
       case "artists":
@@ -572,161 +538,40 @@ function LibraryScreen() {
     }
   };
 
-  const topPadding = insets.top + FluentSpacing.s;
+  const header = (
+    <FluentTopBar
+      title="Library"
+      categoryOptions={categoryOptions}
+      activeCategory={activeCategory}
+      onCategoryChange={handleCategorySelect}
+      showCategoryDropdown={showCategoryDropdown}
+      onCategoryDropdownToggle={() => {
+        setShowCategoryDropdown(!showCategoryDropdown);
+        setShowSortOptions(false);
+      }}
+      showSearch
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
+      searchPlaceholder={`Search ${categories.find(c => c.key === activeCategory)?.label || ''}...`}
+      showSort
+      sortBy={sortBy}
+      onSortChange={handleSortPress}
+      showSortOverlay={showSortOptions}
+      onSortOverlayToggle={() => {
+        setShowSortOptions(!showSortOptions);
+        setShowCategoryDropdown(false);
+      }}
+      rightAction={renderPlaylistAddButton()}
+    />
+  );
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.colorNeutralBackground1 }]}>
-      <View style={[styles.headerContainer, { paddingTop: topPadding }]}>
-        <View style={styles.titleRow}>
-          <FluentText variant="title2" style={styles.title}>Library</FluentText>
-        </View>
-
-        <View style={[styles.searchBar, { backgroundColor: colors.colorNeutralBackground3 }]}>
-          <MaterialCommunityIcons
-            name="magnify"
-            size={FluentIconSize.regular}
-            color={colors.colorNeutralForeground3}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={[
-              styles.searchInput,
-              FluentTypography.body2,
-              { color: colors.colorNeutralForeground1 },
-            ]}
-            placeholder={`Search ${categories.find(c => c.key === activeCategory)?.label || ''}...`}
-            placeholderTextColor={colors.colorNeutralForeground4}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <Pressable
-              onPress={handleClearSearch}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityLabel="Clear search"
-            >
-              <MaterialCommunityIcons
-                name="close-circle"
-                size={FluentIconSize.regular}
-                color={colors.colorNeutralForeground3}
-              />
-            </Pressable>
-          )}
-        </View>
-
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterChipContainer}
-          style={styles.filterChipScroll}
-        >
-          {categories.map((category) => (
-            <FilterChip
-              key={category.key}
-              label={category.label}
-              selected={activeCategory === category.key}
-              onPress={() => handleCategoryChange(category.key)}
-            />
-          ))}
-        </ScrollView>
-
-        <View style={styles.sortRow}>
-          <FluentText variant="caption1" color="tertiary">
-            {currentCount} {activeCategory === "songs" ? (currentCount === 1 ? "song" : "songs") : 
-              activeCategory === "albums" ? (currentCount === 1 ? "album" : "albums") :
-              activeCategory === "artists" ? (currentCount === 1 ? "artist" : "artists") :
-              (currentCount === 1 ? "playlist" : "playlists")}
-          </FluentText>
-          <View style={styles.sortActions}>
-            {activeCategory === "playlists" && (
-              <Pressable 
-                style={[styles.addButton, { backgroundColor: colors.colorBrandBackground }]} 
-                onPress={handleManagePlaylists}
-              >
-                <MaterialCommunityIcons name="plus" size={FluentIconSize.regular} color="#FFFFFF" />
-              </Pressable>
-            )}
-            {activeCategory === "songs" && (
-              <Pressable
-                style={[styles.sortButton, { backgroundColor: colors.colorNeutralBackground3 }]}
-                onPress={handleToggleSortOptions}
-                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                accessibilityLabel="Sort options"
-              >
-                <MaterialCommunityIcons
-                  name={SORT_OPTIONS.find((o) => o.key === sortBy)?.icon || "sort"}
-                  size={FluentIconSize.small}
-                  color={colors.colorNeutralForeground1}
-                />
-                <MaterialCommunityIcons
-                  name={showSortOptions ? "chevron-up" : "chevron-down"}
-                  size={FluentIconSize.tiny}
-                  color={colors.colorNeutralForeground3}
-                  style={{ marginLeft: FluentSpacing.xxs }}
-                />
-              </Pressable>
-            )}
-          </View>
-        </View>
-      </View>
-
-      {showSortOptions && (
-        <>
-          <Pressable
-            style={styles.overlayBackdrop}
-            onPress={handleToggleSortOptions}
-          />
-          <View
-            style={[
-              styles.sortOverlay,
-              {
-                backgroundColor: colors.colorNeutralBackground1,
-                borderColor: colors.colorNeutralStroke2,
-                top: topPadding + FluentLayoutSize.topBarHeight + SEARCH_BAR_HEIGHT + CHIP_HEIGHT + FluentLayoutSize.secondaryBarHeight + FluentSpacing.m * 3,
-              },
-            ]}
-          >
-            {SORT_OPTIONS.map((option) => {
-              const isActive = sortBy === option.key;
-              return (
-                <Pressable
-                  key={option.key}
-                  style={[
-                    styles.sortOption,
-                    isActive && { backgroundColor: colors.colorNeutralBackground3 },
-                  ]}
-                  onPress={() => handleSortPress(option.key)}
-                >
-                  <MaterialCommunityIcons
-                    name={option.icon}
-                    size={FluentIconSize.small}
-                    color={isActive ? colors.colorBrandForeground1 : colors.colorNeutralForeground1}
-                  />
-                  <FluentText
-                    variant="body2"
-                    style={[
-                      styles.sortOptionLabel,
-                      { color: isActive ? colors.colorBrandForeground1 : colors.colorNeutralForeground1 },
-                    ]}
-                  >
-                    {option.label}
-                  </FluentText>
-                  {isActive && (
-                    <MaterialCommunityIcons
-                      name="check"
-                      size={FluentIconSize.small}
-                      color={colors.colorBrandForeground1}
-                      style={{ marginLeft: "auto" }}
-                    />
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
-        </>
-      )}
-
+    <FluentScreenLayout
+      header={header}
+      backgroundColor="neutral1"
+      hasBottomNavigation={true}
+      avoidKeyboard={true}
+    >
       <View style={styles.contentArea}>
         {renderContent()}
       </View>
@@ -746,151 +591,46 @@ function LibraryScreen() {
           <FluentText variant="body2" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>{successMessage}</FluentText>
         </View>
       ) : null}
-    </View>
+    </FluentScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  headerContainer: {
-    zIndex: 100,
-  },
-  titleRow: {
-    height: FluentLayoutSize.topBarHeight,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: HORIZONTAL_MARGIN,
-  },
-  title: {
-    flex: 1,
-  },
-  searchBar: {
-    height: SEARCH_BAR_HEIGHT,
-    marginHorizontal: HORIZONTAL_MARGIN,
-    borderRadius: FluentRadius.large,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: FluentSpacing.m,
-  },
-  searchIcon: {
-    marginRight: FluentSpacing.s,
-  },
-  searchInput: {
-    flex: 1,
-    height: "100%",
-    paddingVertical: 0,
-  },
-  filterChipScroll: {
-    maxHeight: CHIP_HEIGHT + FluentSpacing.m * 2,
-  },
-  filterChipContainer: {
-    paddingHorizontal: HORIZONTAL_MARGIN,
-    paddingVertical: FluentSpacing.m,
-    gap: CHIP_GAP,
-    flexDirection: "row",
-  },
-  filterChip: {
-    height: CHIP_HEIGHT,
-    paddingHorizontal: CHIP_HORIZONTAL_PADDING,
-    borderRadius: CHIP_RADIUS,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sortRow: {
-    height: FluentLayoutSize.secondaryBarHeight,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: HORIZONTAL_MARGIN,
-  },
-  sortActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: FluentSpacing.s,
-  },
-  sortButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
-    height: 36,
-    minWidth: 48,
-  },
-  addButton: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
-    borderRadius: FluentRadius.circular,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  overlayBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "transparent",
-    zIndex: 100,
-  },
-  sortOverlay: {
-    position: "absolute",
-    right: HORIZONTAL_MARGIN,
-    width: 160,
-    borderRadius: FluentRadius.large,
-    borderWidth: 1,
-    paddingVertical: FluentSpacing.xs,
-    zIndex: 101,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-  },
-  sortOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: FluentSpacing.m,
-    paddingHorizontal: FluentSpacing.m,
-    gap: FluentSpacing.s,
-  },
-  sortOptionLabel: {
-    flex: 1,
-  },
   contentArea: {
     flex: 1,
   },
   listContent: {
-    paddingTop: FluentSpacing.s,
+    paddingHorizontal: FluentSpacing.l,
+    paddingTop: FluentSpacing.l,
   },
   gridContent: {
-    paddingHorizontal: HORIZONTAL_MARGIN,
-    paddingTop: FluentSpacing.s,
+    padding: FluentSpacing.l,
+    paddingTop: FluentSpacing.l,
   },
   albumRow: {
-    gap: ALBUM_GRID_GAP,
-    marginBottom: ALBUM_GRID_GAP,
+    gap: FluentSpacing.m,
+    marginBottom: FluentSpacing.m,
   },
   albumCard: {
     flex: 1,
+    padding: FluentSpacing.s,
   },
   albumArtwork: {
     width: "100%",
     aspectRatio: 1,
-    borderRadius: FluentRadius.large,
+    borderRadius: FluentRadius.medium,
     marginBottom: FluentSpacing.s,
   },
   albumName: {
     fontWeight: "600",
   },
   artistRow: {
-    gap: ALBUM_GRID_GAP,
-    marginBottom: ALBUM_GRID_GAP,
+    gap: FluentSpacing.m,
+    marginBottom: FluentSpacing.m,
   },
   artistCard: {
     flex: 1,
+    padding: FluentSpacing.s,
     alignItems: "center",
   },
   artistAvatarContainer: {
@@ -912,10 +652,9 @@ const styles = StyleSheet.create({
   playlistItem: {
     flexDirection: "row",
     alignItems: "center",
-    height: 72,
-    paddingHorizontal: HORIZONTAL_MARGIN,
+    padding: FluentSpacing.m,
+    borderRadius: FluentRadius.large,
     gap: FluentSpacing.m,
-    position: "relative",
   },
   playlistIcon: {
     width: 48,
@@ -926,14 +665,6 @@ const styles = StyleSheet.create({
   },
   playlistInfo: {
     flex: 1,
-    gap: FluentSpacing.xxs,
-  },
-  playlistDivider: {
-    position: "absolute",
-    bottom: 0,
-    left: HORIZONTAL_MARGIN + 48 + FluentSpacing.m,
-    right: 0,
-    height: 1,
   },
   emptyState: {
     flex: 1,
@@ -957,6 +688,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.l,
     paddingVertical: FluentSpacing.m,
     borderRadius: FluentRadius.circular,
+  },
+  addButton: {
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentControlRadius.fab,
+    alignItems: "center",
+    justifyContent: "center",
   },
   successToast: {
     position: "absolute",

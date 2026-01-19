@@ -25,8 +25,9 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
+import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentDarkColors, FluentFontWeight } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors, FluentTypography } from "@/constants/fluent2";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import {
   PaymentHandler,
@@ -34,29 +35,9 @@ import {
   CURRENCIES,
   DONATION_TIERS,
   detectUserRegion,
-  RegionDetectionResult,
+  GeoDetectionResult,
 } from "@/lib/payment";
 
-function SectionHeader({ title, isDark }: { title: string; isDark: boolean }) {
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
-  return (
-    <FluentText 
-      variant="caption2" 
-      style={[styles.sectionHeader, { color: colors.colorNeutralForeground2, fontWeight: FluentFontWeight.medium }]}
-    >
-      {title.toUpperCase()}
-    </FluentText>
-  );
-}
-
-function SectionCard({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
-  return (
-    <View style={[styles.sectionCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
-      {children}
-    </View>
-  );
-}
 
 export default function SupportDeveloperScreen() {
   const insets = useSafeAreaInsets();
@@ -72,7 +53,7 @@ export default function SupportDeveloperScreen() {
   const [showThankYouModal, setShowThankYouModal] = useState(false);
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<"upi" | "paypal" | null>(null);
   const [isDonor, setIsDonor] = useState(false);
-  const [geoInfo, setGeoInfo] = useState<RegionDetectionResult | null>(null);
+  const [geoInfo, setGeoInfo] = useState<GeoDetectionResult | null>(null);
   const [isLoadingGeo, setIsLoadingGeo] = useState(true);
 
   const confettiScale = useSharedValue(0);
@@ -257,9 +238,8 @@ export default function SupportDeveloperScreen() {
         style={[
           styles.tierCard,
           {
-            backgroundColor: isSelected ? colors.colorBrandBackground : colors.colorNeutralBackground3,
-            borderColor: isSelected ? colors.colorBrandForeground1 : "transparent",
-            borderWidth: isSelected ? 1 : 0,
+            backgroundColor: isSelected ? colors.colorBrandBackground : colors.colorNeutralBackground2,
+            borderColor: isSelected ? colors.colorBrandForeground1 : colors.colorNeutralStroke1,
           },
         ]}
       >
@@ -278,12 +258,11 @@ export default function SupportDeveloperScreen() {
           />
         </View>
         <FluentText
-          variant="body2"
-          style={{
-            color: isSelected ? "#FFFFFF" : colors.colorNeutralForeground1,
-            fontWeight: FluentFontWeight.semibold,
-            marginTop: FluentSpacing.s,
-          }}
+          variant="body1"
+          style={[
+            styles.tierAmount,
+            { color: isSelected ? "#FFFFFF" : colors.colorNeutralForeground1 },
+          ]}
         >
           {getCurrencySymbol()} {tier.amount}
         </FluentText>
@@ -291,7 +270,6 @@ export default function SupportDeveloperScreen() {
           variant="caption2"
           style={{
             color: isSelected ? "rgba(255,255,255,0.8)" : colors.colorNeutralForeground2,
-            marginTop: 2,
           }}
         >
           {tier.label}
@@ -301,7 +279,7 @@ export default function SupportDeveloperScreen() {
   };
 
   return (
-    <FluentScreenLayout edges={[]} hasBottomNavigation={true} isNestedScreen={true}>
+    <FluentScreenLayout edges={[]} hasBottomNavigation={true}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -310,216 +288,220 @@ export default function SupportDeveloperScreen() {
         <KeyboardAwareScrollViewCompat
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: tabBarHeight + FluentSpacing.xxl },
+            { paddingTop: FluentSpacing.s, paddingBottom: tabBarHeight + FluentSpacing.l },
           ]}
           showsVerticalScrollIndicator={false}
           scrollIndicatorInsets={{ bottom: tabBarHeight }}
         >
-          <View style={styles.developerSection}>
-            <View style={[styles.avatar, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
-              <MaterialCommunityIcons name="account" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} />
+        <GlassCard style={styles.developerCard}>
+          <View style={[styles.avatar, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
+            <MaterialCommunityIcons name="account" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} />
+          </View>
+          <FluentText variant="title3" style={styles.developerName}>
+            Dhairya Shah (The Team 360)
+          </FluentText>
+          <FluentText variant="caption1" color="secondary" style={styles.developerBio}>
+            Hi! I'm the solo developer behind New Audio 360. Your support helps me continue
+            developing new features and keeping the app free of ads.
+          </FluentText>
+          {isDonor ? (
+            <View style={[styles.donorBadge, { backgroundColor: colors.colorPaletteGreenForeground1 + "20" }]}>
+              <MaterialCommunityIcons name="heart" size={FluentIconSize.tiny} color={colors.colorPaletteGreenForeground1} />
+              <FluentText variant="caption2" style={{ color: colors.colorPaletteGreenForeground1, marginLeft: 4 }}>
+                Supporter
+              </FluentText>
             </View>
-            <FluentText variant="title3" style={styles.developerName}>
-              Dhairya Shah (The Team 360)
+          ) : null}
+        </GlassCard>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="currency-usd" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+            <FluentText variant="body1" style={styles.sectionTitle}>
+              Select Currency
             </FluentText>
-            <FluentText variant="caption1" color="secondary" style={styles.developerBio}>
-              Hi! I'm the solo developer behind New Audio 360. Your support helps me continue
-              developing new features and keeping the app free of ads.
-            </FluentText>
-            {isDonor ? (
-              <View style={[styles.donorBadge, { backgroundColor: colors.colorPaletteGreenForeground1 + "20" }]}>
-                <MaterialCommunityIcons name="heart" size={FluentIconSize.tiny} color={colors.colorPaletteGreenForeground1} />
-                <FluentText variant="caption2" style={{ color: colors.colorPaletteGreenForeground1, marginLeft: 4 }}>
-                  Supporter
-                </FluentText>
-              </View>
-            ) : null}
           </View>
 
-          <SectionHeader title="Select Currency" isDark={isDark} />
-          <SectionCard isDark={isDark}>
-            <Pressable
-              onPress={() => setShowCurrencyPicker(!showCurrencyPicker)}
-              style={styles.currencySelector}
+          <Pressable
+            onPress={() => setShowCurrencyPicker(!showCurrencyPicker)}
+            style={[styles.currencySelector, { backgroundColor: colors.colorNeutralBackground2 }]}
+          >
+            <FluentText
+              variant="body1"
+              style={{ color: selectedCurrency ? colors.colorNeutralForeground1 : colors.colorNeutralForeground2 }}
             >
-              <FluentText
-                variant="body2"
-                style={{ color: selectedCurrency ? colors.colorNeutralForeground1 : colors.colorNeutralForeground2 }}
-              >
-                {selectedCurrency
-                  ? CURRENCIES.find((c) => c.value === selectedCurrency)?.label
-                  : "Choose your currency"}
-              </FluentText>
-              <MaterialCommunityIcons
-                name={showCurrencyPicker ? "chevron-up" : "chevron-down"}
-                size={FluentIconSize.small}
-                color={colors.colorNeutralForeground2}
-              />
-            </Pressable>
+              {selectedCurrency
+                ? CURRENCIES.find((c) => c.value === selectedCurrency)?.label
+                : "Choose your currency"}
+            </FluentText>
+            <MaterialCommunityIcons
+              name={showCurrencyPicker ? "chevron-up" : "chevron-down"}
+              size={FluentIconSize.regular}
+              color={colors.colorNeutralForeground2}
+            />
+          </Pressable>
 
-            {showCurrencyPicker ? (
-              <>
-                <View style={[styles.divider, { backgroundColor: colors.colorNeutralStroke2 }]} />
-                {CURRENCIES.filter((c) => {
-                  if (c.value === "INR") {
-                    return geoInfo?.isIndian === true;
-                  }
-                  return true;
-                }).map((currency, index, arr) => (
-                  <View key={currency.value}>
-                    <Pressable
-                      onPress={() => handleCurrencySelect(currency.value)}
-                      style={[
-                        styles.currencyOption,
-                        selectedCurrency === currency.value && {
-                          backgroundColor: colors.colorBrandForeground1 + "10",
-                        },
-                      ]}
-                    >
-                      <View style={styles.currencyInfo}>
-                        <FluentText variant="body2" style={{ color: colors.colorNeutralForeground1 }}>
-                          {currency.label}
-                        </FluentText>
-                        <FluentText variant="caption2" color="secondary">
-                          {currency.value === "INR" ? "UPI Available" : "PayPal"}
-                        </FluentText>
-                      </View>
-                      <FluentText variant="body2" style={{ color: colors.colorBrandForeground1 }}>
-                        {currency.symbol}
-                      </FluentText>
-                    </Pressable>
-                    {index < arr.length - 1 && (
-                      <View style={[styles.divider, { backgroundColor: colors.colorNeutralStroke2 }]} />
-                    )}
-                  </View>
-                ))}
-              </>
-            ) : null}
-          </SectionCard>
-
-          {selectedCurrency ? (
-            <>
-              <SectionHeader title="Choose an Amount" isDark={isDark} />
-              <SectionCard isDark={isDark}>
-                <View style={styles.amountContent}>
-                  <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
-                    Every contribution helps, no matter the size
-                  </FluentText>
-                  <View style={styles.tiersGrid}>
-                    {DONATION_TIERS[selectedCurrency].map(renderTierCard)}
-                  </View>
-                </View>
-              </SectionCard>
-
-              <SectionHeader title="Custom Amount" isDark={isDark} />
-              <SectionCard isDark={isDark}>
-                <View style={styles.customInputContainer}>
-                  <FluentText variant="body2" color="secondary">
-                    {getCurrencySymbol()}
-                  </FluentText>
-                  <TextInput
-                    style={[styles.customInput, { color: colors.colorNeutralForeground1 }]}
-                    value={customAmount}
-                    onChangeText={handleCustomAmountChange}
-                    placeholder="Enter amount"
-                    placeholderTextColor={colors.colorNeutralForeground3}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </SectionCard>
-
-              <View style={styles.paymentSection}>
-                {isUPICurrency ? (
-                  <>
-                    <Pressable
-                      onPress={handleUPIPayment}
-                      style={[
-                        styles.payButton,
-                        {
-                          backgroundColor: finalAmount > 0 ? "#5C2D91" : colors.colorNeutralBackground2,
-                          opacity: finalAmount > 0 ? 1 : 0.5,
-                        },
-                      ]}
-                    >
-                      <MaterialCommunityIcons
-                        name="bank"
-                        size={FluentIconSize.medium}
-                        color={finalAmount > 0 ? "#FFFFFF" : colors.colorNeutralForeground2}
-                      />
-                      <FluentText
-                        variant="body2"
-                        style={{
-                          color: finalAmount > 0 ? "#FFFFFF" : colors.colorNeutralForeground2,
-                          fontWeight: FluentFontWeight.semibold,
-                          marginLeft: FluentSpacing.s,
-                        }}
-                      >
-                        {finalAmount > 0 ? `Pay ₹${finalAmount} with UPI` : "Select an Amount"}
-                      </FluentText>
-                    </Pressable>
-                    <FluentText variant="caption2" color="secondary" style={styles.payHint}>
-                      Opens your preferred UPI app (GPay, PhonePe, Paytm, etc.)
+          {showCurrencyPicker ? (
+            <View style={[styles.currencyList, { backgroundColor: colors.colorNeutralBackground2 }]}>
+              {CURRENCIES.filter((c) => {
+                if (c.value === "INR") {
+                  return geoInfo?.isIndian === true;
+                }
+                return true;
+              }).map((currency) => (
+                <Pressable
+                  key={currency.value}
+                  onPress={() => handleCurrencySelect(currency.value)}
+                  style={[
+                    styles.currencyOption,
+                    selectedCurrency === currency.value && {
+                      backgroundColor: colors.colorBrandForeground1 + "20",
+                    },
+                  ]}
+                >
+                  <View style={styles.currencyInfo}>
+                    <FluentText variant="body1">{currency.label}</FluentText>
+                    <FluentText variant="caption2" color="secondary">
+                      {currency.value === "INR" ? "UPI Available" : "PayPal"}
                     </FluentText>
-                  </>
-                ) : (
-                  <Pressable
-                    onPress={handlePayPalPayment}
-                    style={[
-                      styles.payButton,
-                      {
-                        backgroundColor: finalAmount > 0 ? "#0070BA" : colors.colorNeutralBackground2,
-                        opacity: finalAmount > 0 ? 1 : 0.5,
-                      },
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name="credit-card-outline"
-                      size={FluentIconSize.medium}
-                      color={finalAmount > 0 ? "#FFFFFF" : colors.colorNeutralForeground2}
-                    />
-                    <FluentText
-                      variant="body2"
-                      style={{
-                        color: finalAmount > 0 ? "#FFFFFF" : colors.colorNeutralForeground2,
-                        fontWeight: FluentFontWeight.semibold,
-                        marginLeft: FluentSpacing.s,
-                      }}
-                    >
-                      {finalAmount > 0
-                        ? `Pay ${getCurrencySymbol()} ${finalAmount} with PayPal`
-                        : "Select an Amount"}
-                    </FluentText>
-                  </Pressable>
-                )}
-              </View>
-            </>
+                  </View>
+                  <FluentText variant="body1" color="brand">
+                    {currency.symbol}
+                  </FluentText>
+                </Pressable>
+              ))}
+            </View>
           ) : null}
+        </View>
 
-          <SectionHeader title="Why Support?" isDark={isDark} />
-          <SectionCard isDark={isDark}>
-            <View style={styles.infoContent}>
-              <View style={styles.infoRow}>
-                <MaterialCommunityIcons name="shield-check" size={FluentIconSize.medium} color={colors.colorPaletteGreenForeground1} />
-                <FluentText variant="caption1" color="secondary" style={styles.infoText}>
-                  Secure payment processing
+        {selectedCurrency ? (
+          <>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons name="heart" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+                <FluentText variant="body1" style={styles.sectionTitle}>
+                  Choose an Amount
                 </FluentText>
               </View>
-              <View style={[styles.divider, { backgroundColor: colors.colorNeutralStroke2, marginVertical: FluentSpacing.m }]} />
-              <View style={styles.infoRow}>
-                <MaterialCommunityIcons name="gift" size={FluentIconSize.medium} color={colors.colorBrandForeground1} />
-                <FluentText variant="caption1" color="secondary" style={styles.infoText}>
-                  All donations unlock premium features as a thank you
-                </FluentText>
-              </View>
-              <View style={[styles.divider, { backgroundColor: colors.colorNeutralStroke2, marginVertical: FluentSpacing.m }]} />
-              <View style={styles.infoRow}>
-                <MaterialCommunityIcons name="heart-outline" size={FluentIconSize.medium} color={colors.colorPaletteRedForeground1} />
-                <FluentText variant="caption1" color="secondary" style={styles.infoText}>
-                  Your support keeps this app ad-free
-                </FluentText>
+              <FluentText variant="caption2" color="secondary" style={styles.sectionDesc}>
+                Every contribution helps, no matter the size
+              </FluentText>
+
+              <View style={styles.tiersGrid}>
+                {DONATION_TIERS[selectedCurrency].map(renderTierCard)}
               </View>
             </View>
-          </SectionCard>
+
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons name="pencil" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+                <FluentText variant="body1" style={styles.sectionTitle}>
+                  Custom Amount
+                </FluentText>
+              </View>
+              <View
+                style={[styles.customInputContainer, { backgroundColor: colors.colorNeutralBackground2 }]}
+              >
+                <FluentText variant="body1" color="secondary">
+                  {getCurrencySymbol()}
+                </FluentText>
+                <TextInput
+                  style={[styles.customInput, { color: colors.colorNeutralForeground1 }]}
+                  value={customAmount}
+                  onChangeText={handleCustomAmountChange}
+                  placeholder="Enter amount"
+                  placeholderTextColor={colors.colorNeutralForeground2}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            {isUPICurrency ? (
+              <View style={styles.section}>
+                <Pressable
+                  onPress={handleUPIPayment}
+                  style={[
+                    styles.payButton,
+                    {
+                      backgroundColor: finalAmount > 0 ? "#5C2D91" : colors.colorNeutralBackground2,
+                      opacity: finalAmount > 0 ? 1 : 0.5,
+                    },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="bank"
+                    size={FluentIconSize.medium}
+                    color={finalAmount > 0 ? "#FFFFFF" : colors.colorNeutralForeground2}
+                  />
+                  <FluentText
+                    variant="body1"
+                    style={[
+                      styles.payButtonText,
+                      { color: finalAmount > 0 ? "#FFFFFF" : colors.colorNeutralForeground2 },
+                    ]}
+                  >
+                    {finalAmount > 0 ? `Pay ₹${finalAmount} with UPI` : "Select an Amount"}
+                  </FluentText>
+                </Pressable>
+
+                <FluentText variant="caption2" color="secondary" style={styles.payHint}>
+                  Opens your preferred UPI app (GPay, PhonePe, Paytm, etc.)
+                </FluentText>
+              </View>
+            ) : (
+              <View style={styles.section}>
+                <Pressable
+                  onPress={handlePayPalPayment}
+                  style={[
+                    styles.payButton,
+                    {
+                      backgroundColor: finalAmount > 0 ? "#0070BA" : colors.colorNeutralBackground2,
+                      opacity: finalAmount > 0 ? 1 : 0.5,
+                    },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="credit-card-outline"
+                    size={FluentIconSize.medium}
+                    color={finalAmount > 0 ? "#FFFFFF" : colors.colorNeutralForeground2}
+                  />
+                  <FluentText
+                    variant="body1"
+                    style={[
+                      styles.payButtonText,
+                      { color: finalAmount > 0 ? "#FFFFFF" : colors.colorNeutralForeground2 },
+                    ]}
+                  >
+                    {finalAmount > 0
+                      ? `Pay ${getCurrencySymbol()} ${finalAmount} with PayPal`
+                      : "Select an Amount"}
+                  </FluentText>
+                </Pressable>
+              </View>
+            )}
+          </>
+        ) : null}
+
+        <GlassCard style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <MaterialCommunityIcons name="shield-check" size={FluentIconSize.regular} color={colors.colorPaletteGreenForeground1} />
+            <FluentText variant="caption1" color="secondary" style={styles.infoText}>
+              Secure payment processing
+            </FluentText>
+          </View>
+          <View style={styles.infoRow}>
+            <MaterialCommunityIcons name="gift" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+            <FluentText variant="caption1" color="secondary" style={styles.infoText}>
+              All donations unlock premium features as a thank you
+            </FluentText>
+          </View>
+          <View style={[styles.infoRow, { marginBottom: 0 }]}>
+            <MaterialCommunityIcons name="heart-outline" size={FluentIconSize.regular} color={colors.colorPaletteRedForeground1} />
+            <FluentText variant="caption1" color="secondary" style={styles.infoText}>
+              Your support keeps this app ad-free
+            </FluentText>
+          </View>
+        </GlassCard>
         </KeyboardAwareScrollViewCompat>
       </KeyboardAvoidingView>
 
@@ -549,7 +531,7 @@ export default function SupportDeveloperScreen() {
               style={[styles.confirmButton, { backgroundColor: colors.colorPaletteGreenForeground1 }]}
             >
               <MaterialCommunityIcons name="check" size={FluentIconSize.regular} color="#FFFFFF" />
-              <FluentText variant="body2" style={styles.confirmButtonText}>
+              <FluentText variant="body1" style={styles.confirmButtonText}>
                 Yes, I contributed
               </FluentText>
             </Pressable>
@@ -558,7 +540,7 @@ export default function SupportDeveloperScreen() {
               onPress={handleDenyPayment}
               style={[styles.denyButton, { backgroundColor: colors.colorNeutralBackground2 }]}
             >
-              <FluentText variant="body2" color="secondary">
+              <FluentText variant="body1" color="secondary">
                 No / Not yet
               </FluentText>
             </Pressable>
@@ -597,21 +579,23 @@ export default function SupportDeveloperScreen() {
               </Animated.View>
             </View>
             <Animated.View style={heartStyle}>
-              <View style={[styles.thankYouIcon, { backgroundColor: colors.colorPaletteGreenForeground1 + "20" }]}>
-                <MaterialCommunityIcons name="heart" size={FluentIconSize.xxlarge} color={colors.colorPaletteGreenForeground1} />
-              </View>
+              <MaterialCommunityIcons name="heart" size={64} color={colors.colorPaletteRedForeground1} />
             </Animated.View>
-            <FluentText variant="title2" style={styles.thankYouTitle}>
+            <FluentText variant="title1" style={styles.thankYouTitle}>
               Thank You!
             </FluentText>
-            <FluentText variant="caption1" color="secondary" style={styles.thankYouDesc}>
-              Your support means the world to me. You're now a valued supporter of New Audio 360!
+            <FluentText
+              variant="body1"
+              color="secondary"
+              style={styles.thankYouDesc}
+            >
+              Your support means the world to me. You've unlocked all premium features!
             </FluentText>
             <Pressable
               onPress={() => setShowThankYouModal(false)}
-              style={[styles.closeThankYouButton, { backgroundColor: colors.colorBrandBackground }]}
+              style={[styles.thankYouButton, { backgroundColor: colors.colorBrandBackground }]}
             >
-              <FluentText variant="body2" style={{ color: "#FFFFFF", fontWeight: FluentFontWeight.semibold }}>
+              <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
                 Continue
               </FluentText>
             </Pressable>
@@ -624,24 +608,23 @@ export default function SupportDeveloperScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingTop: FluentSpacing.l,
+    paddingHorizontal: FluentSpacing.l,
   },
-  developerSection: {
+  developerCard: {
     alignItems: "center",
     marginBottom: FluentSpacing.l,
-    paddingHorizontal: FluentSpacing.l,
   },
   avatar: {
     width: 80,
     height: 80,
-    borderRadius: FluentRadius.circular,
+    borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: FluentSpacing.m,
   },
   developerName: {
-    fontWeight: FluentFontWeight.semibold,
-    marginBottom: FluentSpacing.s,
+    marginBottom: FluentSpacing.xs,
+    textAlign: "center",
   },
   developerBio: {
     textAlign: "center",
@@ -652,100 +635,106 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: FluentSpacing.m,
     paddingVertical: FluentSpacing.xs,
-    borderRadius: FluentRadius.circular,
+    borderRadius: FluentControlRadius.chip,
     marginTop: FluentSpacing.m,
   },
-  sectionHeader: {
-    paddingLeft: FluentSpacing.l,
-    paddingTop: FluentSpacing.s,
-    paddingBottom: FluentSpacing.s,
-    marginTop: FluentSpacing.xxl,
+  section: {
+    marginBottom: FluentSpacing.l,
   },
-  sectionCard: {
-    marginHorizontal: FluentSpacing.l,
-    borderRadius: FluentRadius.xLarge,
-    overflow: "hidden",
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: FluentSpacing.s,
+  },
+  sectionTitle: {
+    marginLeft: FluentSpacing.s,
+    fontWeight: "600",
+  },
+  sectionDesc: {
+    marginBottom: FluentSpacing.m,
   },
   currencySelector: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    minHeight: 56,
-    paddingHorizontal: FluentSpacing.l,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
+  },
+  currencyList: {
+    marginTop: FluentSpacing.s,
+    borderRadius: FluentControlRadius.card,
+    overflow: "hidden",
   },
   currencyOption: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    minHeight: 56,
-    paddingHorizontal: FluentSpacing.l,
+    padding: FluentSpacing.m,
   },
   currencyInfo: {
     flex: 1,
   },
-  divider: {
-    height: 1,
-    marginHorizontal: FluentSpacing.l,
-  },
-  amountContent: {
-    padding: FluentSpacing.l,
-  },
   tiersGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: FluentSpacing.m,
-    justifyContent: "space-between",
+    gap: FluentSpacing.s,
   },
   tierCard: {
-    width: "47%",
+    width: "31%",
     alignItems: "center",
-    padding: FluentSpacing.l,
-    borderRadius: FluentRadius.large,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
+    borderWidth: 1,
   },
   tierIconHalo: {
-    width: 48,
-    height: 48,
-    borderRadius: FluentRadius.circular,
+    width: 44,
+    height: 44,
+    borderRadius: FluentControlRadius.fab,
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: FluentSpacing.s,
+  },
+  tierAmount: {
+    fontWeight: "600",
+    marginBottom: FluentSpacing.xxs,
   },
   customInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 56,
-    paddingHorizontal: FluentSpacing.l,
+    padding: FluentSpacing.m,
+    borderRadius: FluentControlRadius.card,
   },
   customInput: {
     flex: 1,
-    fontSize: 14,
     marginLeft: FluentSpacing.s,
-    paddingVertical: FluentSpacing.m,
-  },
-  paymentSection: {
-    marginTop: FluentSpacing.xl,
-    paddingHorizontal: FluentSpacing.l,
+    fontSize: FluentTypography.body1.fontSize,
   },
   payButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 56,
-    borderRadius: FluentRadius.xLarge,
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
+  },
+  payButtonText: {
+    fontWeight: "600",
+    marginLeft: FluentSpacing.s,
   },
   payHint: {
     textAlign: "center",
-    marginTop: FluentSpacing.m,
+    marginTop: FluentSpacing.s,
   },
-  infoContent: {
-    padding: FluentSpacing.l,
+  infoCard: {
+    marginTop: FluentSpacing.m,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: FluentSpacing.m,
   },
   infoText: {
-    marginLeft: FluentSpacing.m,
     flex: 1,
+    marginLeft: FluentSpacing.m,
   },
   modalOverlay: {
     flex: 1,
@@ -753,22 +742,20 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   confirmationSheet: {
-    borderTopLeftRadius: FluentRadius.xLarge,
-    borderTopRightRadius: FluentRadius.xLarge,
     padding: FluentSpacing.xl,
-    paddingBottom: FluentSpacing.xxxl,
+    borderTopLeftRadius: FluentControlRadius.bottomSheet,
+    borderTopRightRadius: FluentControlRadius.bottomSheet,
+    alignItems: "center",
   },
   sheetHandle: {
     width: 40,
     height: 4,
-    borderRadius: 2,
-    alignSelf: "center",
+    borderRadius: FluentControlRadius.checkbox,
     marginBottom: FluentSpacing.xl,
   },
   confirmationTitle: {
     textAlign: "center",
     marginBottom: FluentSpacing.m,
-    fontWeight: FluentFontWeight.semibold,
   },
   confirmationDesc: {
     textAlign: "center",
@@ -778,58 +765,54 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 56,
-    borderRadius: FluentRadius.xLarge,
+    width: "100%",
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.button,
     marginBottom: FluentSpacing.m,
   },
   confirmButtonText: {
     color: "#FFFFFF",
-    fontWeight: FluentFontWeight.semibold,
+    fontWeight: "600",
     marginLeft: FluentSpacing.s,
   },
   denyButton: {
+    width: "100%",
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.button,
     alignItems: "center",
-    justifyContent: "center",
-    minHeight: 56,
-    borderRadius: FluentRadius.xLarge,
   },
   thankYouCard: {
     marginHorizontal: FluentSpacing.xl,
-    borderRadius: FluentRadius.xLarge,
     padding: FluentSpacing.xl,
+    borderRadius: FluentControlRadius.dialog,
     alignItems: "center",
+    overflow: "visible",
   },
   confettiContainer: {
     position: "absolute",
-    top: 80,
+    top: 0,
     left: 0,
     right: 0,
+    bottom: 0,
     alignItems: "center",
+    justifyContent: "center",
+    overflow: "visible",
   },
   confettiParticle: {
     position: "absolute",
   },
-  thankYouIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: FluentRadius.circular,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: FluentSpacing.l,
-  },
   thankYouTitle: {
-    fontWeight: FluentFontWeight.bold,
+    marginTop: FluentSpacing.l,
     marginBottom: FluentSpacing.m,
   },
   thankYouDesc: {
     textAlign: "center",
     marginBottom: FluentSpacing.xl,
   },
-  closeThankYouButton: {
+  thankYouButton: {
     width: "100%",
+    padding: FluentSpacing.l,
+    borderRadius: FluentControlRadius.button,
     alignItems: "center",
-    justifyContent: "center",
-    minHeight: 56,
-    borderRadius: FluentRadius.xLarge,
   },
 });

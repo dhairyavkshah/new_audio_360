@@ -36,6 +36,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   useEffect(() => {
     Image.prefetch(appIcon);
     
+    // Fallback: Force iconLoaded after 500ms if onLoad doesn't fire (web compatibility)
     const fallback = setTimeout(() => {
       if (!iconLoadedRef.current) {
         setIconLoaded(true);
@@ -47,6 +48,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   useEffect(() => {
     if (!iconLoaded) return;
 
+    // Start fade out after display period
     const fadeOutTimer = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -55,6 +57,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       }).start();
     }, 1500);
 
+    // Force finish regardless of animation callback (web compatibility)
     const finishTimer = setTimeout(() => {
       onFinish();
     }, 1900);
@@ -83,10 +86,10 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
             onLoad={() => setIconLoaded(true)}
           />
         </View>
-        <FluentText variant="title2" align="center" style={styles.title}>
+        <FluentText variant="title1" align="center" style={styles.title}>
           New Audio 360
         </FluentText>
-        <FluentText variant="body2" color="secondary" align="center">
+        <FluentText variant="body1" color="secondary" align="center">
           The top-grade intelligent music experience{"\n"}built for you
         </FluentText>
       </Animated.View>
@@ -94,7 +97,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         <FluentText variant="caption1" color="tertiary" align="center">
           By: Dhairya Shah (The Team 360)
         </FluentText>
-        <FluentText variant="caption1" color="tertiary" align="center" style={styles.version}>
+        <FluentText variant="caption1" color="tertiary" align="center" style={{ marginTop: FluentSpacing.xs }}>
           v1.0
         </FluentText>
       </View>
@@ -124,9 +127,6 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: FluentSpacing.s,
-  },
-  version: {
-    marginTop: FluentSpacing.xs,
   },
   footer: {
     position: "absolute",

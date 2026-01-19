@@ -45,7 +45,6 @@ export const FluentLayoutSize = {
   bottomSheetHandleHeight: 24,
   inputFieldHeight: 44,
   chipHeight: 36,
-  listItemRich: 72,
 } as const;
 
 export type ControlHeightToken = keyof typeof FluentControlHeight;

@@ -177,114 +177,7 @@ export const GooglePlayLicense = {
 export interface RegionDetectionResult {
   isIndian: boolean;
   country: string;
-  currency: Currency;
 }
-
-export type Currency = "INR" | "USD" | "EUR" | "GBP" | "AUD" | "CAD";
-
-export const CURRENCIES: { value: Currency; label: string; symbol: string }[] = [
-  { value: "INR", label: "Indian Rupee", symbol: "₹" },
-  { value: "USD", label: "US Dollar", symbol: "$" },
-  { value: "EUR", label: "Euro", symbol: "€" },
-  { value: "GBP", label: "British Pound", symbol: "£" },
-  { value: "AUD", label: "Australian Dollar", symbol: "A$" },
-  { value: "CAD", label: "Canadian Dollar", symbol: "C$" },
-];
-
-export const DONATION_TIERS: Record<Currency, { amount: number; label: string; icon: string }[]> = {
-  INR: [
-    { amount: 49, label: "Coffee", icon: "coffee" },
-    { amount: 99, label: "Snack", icon: "food" },
-    { amount: 199, label: "Meal", icon: "food-variant" },
-    { amount: 499, label: "Generous", icon: "gift" },
-  ],
-  USD: [
-    { amount: 2, label: "Coffee", icon: "coffee" },
-    { amount: 5, label: "Snack", icon: "food" },
-    { amount: 10, label: "Meal", icon: "food-variant" },
-    { amount: 25, label: "Generous", icon: "gift" },
-  ],
-  EUR: [
-    { amount: 2, label: "Coffee", icon: "coffee" },
-    { amount: 5, label: "Snack", icon: "food" },
-    { amount: 10, label: "Meal", icon: "food-variant" },
-    { amount: 20, label: "Generous", icon: "gift" },
-  ],
-  GBP: [
-    { amount: 2, label: "Coffee", icon: "coffee" },
-    { amount: 4, label: "Snack", icon: "food" },
-    { amount: 8, label: "Meal", icon: "food-variant" },
-    { amount: 20, label: "Generous", icon: "gift" },
-  ],
-  AUD: [
-    { amount: 3, label: "Coffee", icon: "coffee" },
-    { amount: 7, label: "Snack", icon: "food" },
-    { amount: 15, label: "Meal", icon: "food-variant" },
-    { amount: 35, label: "Generous", icon: "gift" },
-  ],
-  CAD: [
-    { amount: 3, label: "Coffee", icon: "coffee" },
-    { amount: 7, label: "Snack", icon: "food" },
-    { amount: 15, label: "Meal", icon: "food-variant" },
-    { amount: 35, label: "Generous", icon: "gift" },
-  ],
-};
-
-export const PaymentHandler = {
-  getCurrencySymbol(currency: Currency): string {
-    const found = CURRENCIES.find(c => c.value === currency);
-    return found?.symbol || "$";
-  },
-
-  async getDonorStatus(): Promise<boolean> {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('na360_donor') === 'true';
-    }
-    return false;
-  },
-
-  async setDonorStatus(isDonor: boolean): Promise<void> {
-    if (typeof window !== 'undefined') {
-      if (isDonor) {
-        localStorage.setItem('na360_donor', 'true');
-      } else {
-        localStorage.removeItem('na360_donor');
-      }
-    }
-  },
-
-  async openUPIPayment(amount: number): Promise<{ success: boolean; requiresConfirmation?: boolean; error?: string }> {
-    const upiId = "theteam360@okaxis";
-    const name = "The Team 360";
-    const note = "Support New Audio 360";
-    const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
-    
-    try {
-      if (typeof window !== 'undefined') {
-        window.open(upiUrl, '_blank');
-        return { success: true, requiresConfirmation: true };
-      }
-      return { success: false, error: "Unable to open UPI" };
-    } catch (error) {
-      return { success: false, error: "Failed to open UPI app" };
-    }
-  },
-
-  async openPayPalPayment(amount: number, currency: Currency): Promise<{ success: boolean; requiresConfirmation?: boolean; error?: string }> {
-    const paypalEmail = "theteam360@paypal.com";
-    const paypalUrl = `https://www.paypal.com/paypalme/theteam360/${amount}${currency}`;
-    
-    try {
-      if (typeof window !== 'undefined') {
-        window.open(paypalUrl, '_blank');
-        return { success: true, requiresConfirmation: true };
-      }
-      return { success: false, error: "Unable to open PayPal" };
-    } catch (error) {
-      return { success: false, error: "Failed to open PayPal" };
-    }
-  },
-};
 
 export async function detectUserRegion(): Promise<RegionDetectionResult> {
   try {
@@ -304,13 +197,11 @@ export async function detectUserRegion(): Promise<RegionDetectionResult> {
     return {
       country: countryCode,
       isIndian,
-      currency: isIndian ? "INR" : "USD",
     };
   } catch (error) {
     return {
       country: "US",
       isIndian: false,
-      currency: "USD",
     };
   }
 }
