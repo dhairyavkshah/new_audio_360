@@ -24,3 +24,9 @@ export type { FluentChipProps } from './FluentChip';
 
 export { FluentScreenLayout } from './FluentScreenLayout';
 export type { FluentScreenLayoutProps } from './FluentScreenLayout';
+
+export { FluentListItem } from './FluentListItem';
+export type { FluentListItemProps } from './FluentListItem';
+
+export { FluentSectionHeader } from './FluentSectionHeader';
+export type { FluentSectionHeaderProps } from './FluentSectionHeader';
