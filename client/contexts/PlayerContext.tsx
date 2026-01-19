@@ -706,7 +706,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     if (useNativePlaybackRef.current) {
       try {
-        const playResult = await PlaybackEngineModule.play(audioUrl);
+        const loadResult = await PlaybackEngineModule.loadTrack(audioUrl);
+        if (!loadResult.success) {
+          throw new Error(loadResult.error || 'Failed to load track');
+        }
+        const playResult = await PlaybackEngineModule.play();
         if (playResult.success) {
           setIsPlaying(true);
           setIsLoading(false);
@@ -794,7 +798,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const player = createAudioPlayer({ uri: audioUrl });
       playerRef.current = player;
       
-      statusListenerRef.current = player.addListener('onPlaybackStatusUpdate', handleStatusUpdate);
+      statusListenerRef.current = player.addListener('playbackStatusUpdate', handleStatusUpdate);
       
       player.play();
       setIsPlaying(true);
@@ -823,7 +827,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         await PlaybackEngineModule.pause();
         setIsPlaying(false);
       } else {
-        await PlaybackEngineModule.resume();
+        await PlaybackEngineModule.play();
         setIsPlaying(true);
       }
       return;
@@ -944,8 +948,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     handlePreviousInternalRef.current = handlePrevious;
   }, [handleNext, handlePrevious]);
 
-  const playSong = useCallback((song: PlayableSong) => {
-    AudioCoordinator.stopRadioForMusic();
+  const playSong = useCallback(async (song: PlayableSong) => {
+    await AudioCoordinator.requestPlayback('music');
     loadAndPlaySong(song);
   }, [loadAndPlaySong]);
 
@@ -1022,12 +1026,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (currentSong) {
       savePlayerState({
         currentSongId: currentSong.id,
+        isPlaying,
         currentTime,
         shuffle,
         repeat,
+        queue: queue.map(s => s.id),
       });
     }
-  }, [currentSong, currentTime, shuffle, repeat]);
+  }, [currentSong, isPlaying, currentTime, shuffle, repeat, queue]);
 
   const progress = duration > 0 ? currentTime / duration : 0;
 
