@@ -51,29 +51,14 @@ export function FluentListItem({
 
   const getBackgroundColor = () => {
     if (disabled) return colors.colorNeutralBackground2;
-    if (isPressed) return colors.colorNeutralBackground1Pressed;
+    if (isPressed && onPress) return colors.colorNeutralBackground1Pressed;
     return colors.colorNeutralBackground2;
   };
 
   const shadowStyle = elevation ? getShadowStyle('shadow2', isDark) : {};
 
-  return (
-    <Pressable
-      onPress={handlePress}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
-      disabled={disabled || !onPress}
-      style={[
-        styles.container,
-        { backgroundColor: getBackgroundColor() },
-        shadowStyle,
-        disabled && styles.disabled,
-        style,
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
-      accessibilityState={{ disabled }}
-    >
+  const content = (
+    <>
       <View style={[styles.iconContainer, { backgroundColor: colors.colorNeutralBackground3 }]}>
         <MaterialCommunityIcons
           name={icon}
@@ -99,6 +84,40 @@ export function FluentListItem({
           color={colors.colorNeutralForeground3}
         />
       ) : null}
+    </>
+  );
+
+  const containerStyle = [
+    styles.container,
+    { backgroundColor: getBackgroundColor() },
+    shadowStyle,
+    disabled && styles.disabled,
+    style,
+  ];
+
+  if (!onPress) {
+    return (
+      <View
+        style={containerStyle}
+        accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
+      >
+        {content}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      disabled={disabled}
+      style={containerStyle}
+      accessibilityRole="button"
+      accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
+      accessibilityState={{ disabled }}
+    >
+      {content}
     </Pressable>
   );
 }

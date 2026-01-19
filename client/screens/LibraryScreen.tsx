@@ -4,7 +4,7 @@ import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { FluentText, FluentScreenLayout } from "@/components/fluent";
+import { FluentText, FluentScreenLayout, FluentListItem } from "@/components/fluent";
 import { FluentTopBar, SortOption, CategoryOption } from "@/components/FluentTopBar";
 import { SongContextMenu } from "@/components/SongContextMenu";
 import { SongCard } from "@/components/SongCard";
@@ -478,22 +478,16 @@ function LibraryScreen() {
         key="playlists-list"
         data={filteredData.playlists}
         renderItem={({ item: playlist }) => (
-          <Pressable
-            style={[styles.playlistItem, { backgroundColor: colors.colorNeutralBackground2 }]}
+          <FluentListItem
+            icon="playlist-music"
+            title={playlist.name}
+            subtitle={`${playlist.songIds.length} songs`}
             onPress={() => handlePlaylistPress(playlist)}
-          >
-            <View style={[styles.playlistIcon, { backgroundColor: colors.colorNeutralBackground3 }]}>
-              <MaterialCommunityIcons name="playlist-music" size={24} color={colors.colorBrandForeground1} />
-            </View>
-            <View style={styles.playlistInfo}>
-              <FluentText variant="body1">{playlist.name}</FluentText>
-              <FluentText variant="caption1" color="tertiary">{playlist.songIds.length} songs</FluentText>
-            </View>
-            <MaterialCommunityIcons name="chevron-right" size={24} color={colors.colorNeutralForeground3} />
-          </Pressable>
+          />
         )}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + FluentSpacing.m }]}
+        ItemSeparatorComponent={() => <View style={{ height: FluentSpacing.s }} />}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
         maxToRenderPerBatch={10}
@@ -648,23 +642,6 @@ const styles = StyleSheet.create({
   artistName: {
     fontWeight: "600",
     textAlign: "center",
-  },
-  playlistItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: FluentSpacing.m,
-    borderRadius: FluentRadius.large,
-    gap: FluentSpacing.m,
-  },
-  playlistIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: FluentRadius.medium,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  playlistInfo: {
-    flex: 1,
   },
   emptyState: {
     flex: 1,

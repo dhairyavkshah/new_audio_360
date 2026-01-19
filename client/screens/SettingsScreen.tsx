@@ -4,12 +4,12 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { FluentScreenLayout, FluentText } from "@/components/fluent";
+import { FluentScreenLayout, FluentText, FluentListItem, FluentSectionHeader } from "@/components/fluent";
 import { FluentTopBar } from "@/components/FluentTopBar";
 import { FluentToggle } from "@/components/FluentToggle";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentIconSize, FluentControlHeight, FluentFontWeight } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentIconSize, FluentControlHeight, FluentFontWeight, getShadowStyle } from "@/constants/fluent2";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 import { getHapticEnabled, setHapticEnabled as saveHapticEnabled } from "@/lib/storage";
 import { usePlayerContext } from "@/contexts/PlayerContext";
@@ -23,48 +23,6 @@ const SLEEP_TIMER_OPTIONS = [
   { label: "60 min", value: 60 },
   { label: "90 min", value: 90 },
 ];
-
-type MenuItemProps = {
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-  iconColor?: string;
-  title: string;
-  subtitle: string;
-  onPress: () => void;
-  isDark: boolean;
-};
-
-function MenuItem({ icon, iconColor, title, subtitle, onPress, isDark }: MenuItemProps) {
-  const { playTapSound } = useUiSound();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
-  
-  const handlePress = () => {
-    playTapSound();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress();
-  };
-  
-  return (
-    <Pressable
-      onPress={handlePress}
-      style={[styles.menuItem, { backgroundColor: colors.colorNeutralBackground2 }]}
-      accessibilityRole="button"
-      accessibilityLabel={`${title}. ${subtitle}`}
-    >
-      <View style={[styles.menuIconContainer, { backgroundColor: colors.colorNeutralBackground3 }]}>
-        <MaterialCommunityIcons name={icon} size={FluentIconSize.medium} color={iconColor || colors.colorBrandForeground1} />
-      </View>
-      <View style={styles.menuTextContainer}>
-        <FluentText variant="body1Strong" style={styles.menuTitle}>
-          {title}
-        </FluentText>
-        <FluentText variant="caption1" style={{ color: colors.colorNeutralForeground3 }}>
-          {subtitle}
-        </FluentText>
-      </View>
-      <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.medium} color={colors.colorNeutralForeground3} />
-    </Pressable>
-  );
-}
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
@@ -120,96 +78,68 @@ export default function SettingsScreen() {
       >
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="music-note" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Audio
-            </FluentText>
-          </View>
+          <FluentSectionHeader icon="music-note" title="Audio" />
           <View style={styles.menuGroup}>
-            <MenuItem
+            <FluentListItem
               icon="tune-vertical"
               title="Sound Lab"
               subtitle="Equalizer presets and immersive modes"
               onPress={() => navigation.navigate("SoundLab")}
-              isDark={isDark}
             />
-            <MenuItem
+            <FluentListItem
               icon="folder-music"
               title="Music Folders"
               subtitle="Select folders to source music from"
               onPress={() => navigation.navigate("FolderSelection")}
-              isDark={isDark}
             />
           </View>
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="palette" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Display
-            </FluentText>
-          </View>
+          <FluentSectionHeader icon="palette" title="Display" />
           <View style={styles.menuGroup}>
-            <MenuItem
+            <FluentListItem
               icon="palette-outline"
               title="Appearance"
               subtitle="Themes and visual customization"
               onPress={() => navigation.navigate("Appearance")}
-              isDark={isDark}
             />
           </View>
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="cog-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Preferences
-            </FluentText>
-          </View>
-          <View style={[styles.settingItem, { backgroundColor: colors.colorNeutralBackground2 }]}>
-            <View style={styles.settingInfo}>
-              <MaterialCommunityIcons name="vibrate" size={FluentIconSize.regular} color={colors.colorNeutralForeground1} />
-              <FluentText variant="body1" style={styles.settingLabel}>
-                Haptic Feedback
-              </FluentText>
-            </View>
-            <FluentToggle
-              value={hapticEnabled}
-              onValueChange={handleHapticToggle}
+          <FluentSectionHeader icon="cog-outline" title="Preferences" />
+          <View style={styles.menuGroup}>
+            <FluentListItem
+              icon="vibrate"
+              title="Haptic Feedback"
+              showChevron={false}
+              rightElement={
+                <FluentToggle
+                  value={hapticEnabled}
+                  onValueChange={handleHapticToggle}
+                />
+              }
             />
-          </View>
-          <View style={[styles.settingItem, { backgroundColor: colors.colorNeutralBackground2, marginTop: FluentSpacing.s, opacity: isPlaybackActive ? 0.5 : 1 }]}>
-            <View style={styles.settingInfo}>
-              <MaterialCommunityIcons name="volume-high" size={FluentIconSize.regular} color={colors.colorNeutralForeground1} />
-              <View>
-                <FluentText variant="body1" style={styles.settingLabel}>
-                  UI Sounds
-                </FluentText>
-                {isPlaybackActive && (
-                  <FluentText variant="caption2" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
-                    Disabled during playback
-                  </FluentText>
-                )}
-              </View>
-            </View>
-            <FluentToggle
-              value={uiSoundEnabled}
-              onValueChange={handleUiSoundToggle}
+            <FluentListItem
+              icon="volume-high"
+              title="UI Sounds"
+              subtitle={isPlaybackActive ? "Disabled during playback" : undefined}
+              showChevron={false}
               disabled={isPlaybackActive}
+              rightElement={
+                <FluentToggle
+                  value={uiSoundEnabled}
+                  onValueChange={handleUiSoundToggle}
+                  disabled={isPlaybackActive}
+                />
+              }
             />
           </View>
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="timer-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Sleep Timer
-            </FluentText>
-          </View>
+          <FluentSectionHeader icon="timer-outline" title="Sleep Timer" />
           <View style={[styles.timerGrid]}>
             {SLEEP_TIMER_OPTIONS.map((option) => (
               <Pressable
@@ -248,46 +178,33 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="crown" size={FluentIconSize.regular} color={colors.colorPaletteYellowForeground1} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              License
-            </FluentText>
-          </View>
+          <FluentSectionHeader icon="crown" title="License" iconColor={colors.colorPaletteYellowForeground1} />
           <View style={styles.menuGroup}>
-            <MenuItem
+            <FluentListItem
               icon="crown-outline"
               iconColor={colors.colorPaletteYellowForeground1}
               title="License"
               subtitle="Manage your license"
               onPress={() => navigation.navigate("License")}
-              isDark={isDark}
             />
           </View>
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="information" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              About
-            </FluentText>
-          </View>
+          <FluentSectionHeader icon="information" title="About" />
           <View style={styles.menuGroup}>
-            <MenuItem
+            <FluentListItem
               icon="information-outline"
               title="About New Audio 360"
               subtitle="Version, legal, and more"
               onPress={() => navigation.navigate("About")}
-              isDark={isDark}
             />
-            <MenuItem
+            <FluentListItem
               icon="power"
               iconColor={colors.colorPaletteRedForeground1}
               title="Close App"
               subtitle="Securely exit the application"
               onPress={handleCloseApp}
-              isDark={isDark}
             />
           </View>
         </View>
@@ -321,53 +238,8 @@ const styles = StyleSheet.create({
   menuGroup: {
     gap: FluentSpacing.s,
   },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: FluentSpacing.l,
-    borderRadius: FluentRadius.large,
-    minHeight: 56,
-  },
-  menuIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: FluentRadius.large,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  menuTextContainer: {
-    flex: 1,
-    marginLeft: FluentSpacing.m,
-    gap: FluentSpacing.xxs,
-  },
-  menuTitle: {
-    fontWeight: FluentFontWeight.semibold,
-  },
   section: {
     marginBottom: FluentSpacing.xxl,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: FluentSpacing.m,
-  },
-  sectionTitle: {
-    marginLeft: FluentSpacing.s,
-  },
-  settingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: FluentSpacing.l,
-    borderRadius: FluentRadius.large,
-    minHeight: 56,
-  },
-  settingInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  settingLabel: {
-    marginLeft: FluentSpacing.m,
   },
   footer: {
     paddingVertical: FluentSpacing.xxl,

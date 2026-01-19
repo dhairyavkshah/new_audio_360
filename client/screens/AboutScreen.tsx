@@ -1,14 +1,13 @@
 import React from "react";
-import { View, StyleSheet, ScrollView, Linking, Pressable, Image } from "react-native";
+import { View, StyleSheet, ScrollView, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import * as Haptics from "expo-haptics";
-import { FluentScreenLayout, FluentText } from "@/components/fluent";
+import { FluentScreenLayout, FluentText, FluentListItem, FluentSectionHeader } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentTouchTarget, FluentLightColors, FluentDarkColors, getShadowStyle } from "@/constants/fluent2";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 
 export default function AboutScreen() {
@@ -16,21 +15,6 @@ export default function AboutScreen() {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
-
-  const handleLinkPress = (url: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Linking.openURL(url);
-  };
-
-  const handlePrivacyPolicyPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("PrivacyPolicy");
-  };
-
-  const handleOpenSourceLicensesPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("OpenSourceLicenses");
-  };
 
   return (
     <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>
@@ -65,68 +49,52 @@ export default function AboutScreen() {
         </GlassCard>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="star" size={FluentIconSize.small} color={colors.colorBrandForeground1} />
-            <FluentText variant="body1" style={styles.sectionTitle}>
-              Features
-            </FluentText>
-          </View>
+          <FluentSectionHeader icon="star" title="Features" />
           <View style={styles.featuresList}>
             <FeatureItem
               icon="music"
               title="Music Library"
               description="Organize and browse your music collection"
               colors={colors}
+              isDark={isDark}
             />
             <FeatureItem
               icon="tune-vertical"
               title="Sound Lab"
               description="Professional equalizer presets and sound modes"
               colors={colors}
+              isDark={isDark}
             />
             <FeatureItem
               icon="palette"
               title="55 Themes"
               description="Beautiful skins from iconic music players"
               colors={colors}
+              isDark={isDark}
             />
             <FeatureItem
               icon="headphones"
               title="Immersive Audio"
               description="Cinema, Music, Sports, and 360 Reality modes"
               colors={colors}
+              isDark={isDark}
             />
           </View>
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="scale-balance" size={FluentIconSize.small} color={colors.colorBrandForeground1} />
-            <FluentText variant="body1" style={styles.sectionTitle}>
-              Legal
-            </FluentText>
-          </View>
+          <FluentSectionHeader icon="scale-balance" title="Legal" />
           <View style={styles.legalLinks}>
-            <Pressable
-              style={[styles.linkItem, { backgroundColor: colors.colorNeutralBackground2 }]}
-              onPress={handlePrivacyPolicyPress}
-            >
-              <MaterialCommunityIcons name="shield-lock-outline" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
-              <FluentText variant="caption1" style={styles.linkText}>
-                Privacy Policy
-              </FluentText>
-              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
-            </Pressable>
-            <Pressable
-              style={[styles.linkItem, { backgroundColor: colors.colorNeutralBackground2 }]}
-              onPress={handleOpenSourceLicensesPress}
-            >
-              <MaterialCommunityIcons name="license" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
-              <FluentText variant="caption1" style={styles.linkText}>
-                Open Source Licenses
-              </FluentText>
-              <MaterialCommunityIcons name="chevron-right" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
-            </Pressable>
+            <FluentListItem
+              icon="shield-lock-outline"
+              title="Privacy Policy"
+              onPress={() => navigation.navigate("PrivacyPolicy")}
+            />
+            <FluentListItem
+              icon="license"
+              title="Open Source Licenses"
+              onPress={() => navigation.navigate("OpenSourceLicenses")}
+            />
           </View>
         </View>
 
@@ -161,22 +129,24 @@ function FeatureItem({
   title,
   description,
   colors,
+  isDark,
 }: {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   title: string;
   description: string;
   colors: typeof FluentLightColors;
+  isDark: boolean;
 }) {
   return (
-    <View style={[styles.featureItem, { backgroundColor: colors.colorNeutralBackground2 }]}>
+    <View style={[styles.featureItem, { backgroundColor: colors.colorNeutralBackground2 }, getShadowStyle('shadow2', isDark)]}>
       <View style={[styles.featureIcon, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
-        <MaterialCommunityIcons name={icon} size={FluentIconSize.small} color={colors.colorBrandForeground1} />
+        <MaterialCommunityIcons name={icon} size={FluentIconSize.medium} color={colors.colorBrandForeground1} />
       </View>
       <View style={styles.featureText}>
-        <FluentText variant="caption1" style={{ fontWeight: "600" }}>
+        <FluentText variant="body1Strong">
           {title}
         </FluentText>
-        <FluentText variant="caption2" color="secondary">
+        <FluentText variant="caption1" color="secondary">
           {description}
         </FluentText>
       </View>
@@ -215,15 +185,6 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: FluentSpacing.xl,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: FluentSpacing.m,
-  },
-  sectionTitle: {
-    marginLeft: FluentSpacing.xs,
-    fontWeight: "600",
-  },
   featuresList: {
     gap: FluentSpacing.xs,
   },
@@ -234,9 +195,9 @@ const styles = StyleSheet.create({
     borderRadius: FluentControlRadius.card,
   },
   featureIcon: {
-    width: FluentIconSize.xxlarge,
-    height: FluentIconSize.xxlarge,
-    borderRadius: FluentControlRadius.avatar,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentControlRadius.card,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -245,17 +206,7 @@ const styles = StyleSheet.create({
     marginLeft: FluentSpacing.m,
   },
   legalLinks: {
-    gap: FluentSpacing.xs,
-  },
-  linkItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: FluentSpacing.m,
-    borderRadius: FluentControlRadius.card,
-  },
-  linkText: {
-    flex: 1,
-    marginLeft: FluentSpacing.m,
+    gap: FluentSpacing.s,
   },
   footer: {
     paddingVertical: FluentSpacing.l,

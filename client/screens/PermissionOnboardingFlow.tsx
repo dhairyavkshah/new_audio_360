@@ -10,7 +10,7 @@ import { FluentText, FluentSurface } from '@/components/fluent';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useUiSound } from '@/contexts/UiSoundContext';
 import { useMediaLibraryContext } from '@/contexts/MediaLibraryContext';
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
+import { FluentSpacing, FluentControlRadius, FluentControlHeight, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
 
 interface PermissionOnboardingFlowProps {
   onComplete: () => void;
@@ -332,9 +332,9 @@ const styles = StyleSheet.create({
     gap: FluentSpacing.s,
   },
   dot: {
-    width: 10,
-    height: 10,
-    borderRadius: FluentControlRadius.button,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   content: {
     flex: 1,
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: FluentSpacing.s,
-    height: 52,
+    height: FluentControlHeight.xlarge,
     width: '100%',
     borderRadius: FluentControlRadius.dialog,
   },
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   secondaryButton: {
-    height: 48,
+    height: FluentControlHeight.large,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
