@@ -22,7 +22,8 @@ import { LicenseVerificationModule } from '../../modules/audio-effects';
 
 const APP_VARIANT = Constants.expoConfig?.extra?.appVariant;
 const IS_PRODUCTION = APP_VARIANT === 'production';
-const IS_DEVELOPMENT = APP_VARIANT === 'development' || APP_VARIANT === 'preview' || __DEV__;
+// Only bypass license in explicit development/preview variants, NOT based on __DEV__ flag
+const IS_DEVELOPMENT = APP_VARIANT === 'development' || APP_VARIANT === 'preview';
 
 export interface PurchaseInfo {
   productId: string;
