@@ -1,9 +1,7 @@
 # New Audio 360
 
 ## Overview
-New Audio 360 is a premium mobile music player application built with React Native and Expo, targeting audio enthusiasts. It delivers studio-quality audio processing through pure software-based DSP, 55 stunning themes, and comprehensive music organization. The app requires a one-time purchase for lifetime access, with all data stored locally and no backend required.
-
-**Tagline**: "The top-grade intelligent music experience built for you"
+New Audio 360 is a premium mobile music player application built with React Native and Expo, targeting audio enthusiasts. It delivers studio-quality audio processing through pure software-based DSP, 55 stunning themes, and comprehensive music organization. The app requires a one-time purchase for lifetime access, with all data stored locally and no backend required. Its vision is to be "The top-grade intelligent music experience built for you."
 
 ## User Preferences
 - Concise and direct communication
@@ -24,8 +22,7 @@ New Audio 360 is a premium mobile music player application built with React Nati
 - **Data Persistence**: AsyncStorage/SecureStorage (all local, no backend)
 
 ### Audio Effects Architecture (Pure Software DSP)
-
-The app uses **pure software-based DSP** across all platforms. No Android hardware audio effects (android.media.audiofx.*) are used.
+The app uses **pure software-based DSP** across all platforms, ensuring a consistent audio experience without relying on hardware audio effects.
 
 **Platform Implementations**:
 - **Web**: `react-native-audio-api` (Web Audio API with BiquadFilterNode, DynamicsCompressorNode)
@@ -37,235 +34,60 @@ Source → Gain → 7-Band EQ → Bass Shelf Filter → Treble Shelf Filter → 
 ```
 
 **Key Components**:
-- **7-Band Parametric EQ**: Sub, Bass, Low-Mid, Mid, High-Mid, Treble, Brilliance
-- **Zero-Sum Normalization**: EQ presets automatically balanced to prevent overall volume change
-- **Bass Boost Filter**: Lowshelf at 150Hz, affects all frequencies below
-- **Treble Boost Filter**: Highshelf at 6kHz, affects all frequencies above
-- **Bass/Treble Range**: ±12 dB (slider range -5 to +5, DB_PER_UNIT = 2.4)
-- **Intelligent Limiter**: DynamicsCompressorNode configured as brickwall limiter
-  - Threshold: -1 dB (catches peaks before clipping)
-  - Ratio: 20:1 (hard limiting)
-  - Attack: 1ms (catches transients)
-  - Release: 100ms (smooth recovery)
-
-**EQ Presets** (8 total):
-Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic
-- Zero-sum normalization applied to prevent volume jumps
-
-**Immersive Modes** (6 total, plus Off to disable):
-Music, 360 Reality, Gaming, Podcast, Movie, Sports
-- Each mode has its own independent EQ curve, bass boost, treble boost, and virtualizer (spatial width)
-- NO zero-sum normalization (creative curves applied directly)
-- Limiter remains active for distortion prevention
-
-**Immersive Mode Settings** (Professional-grade, based on Samsung Dolby Atmos/Sony 360 Reality Audio standards):
-
-| Mode | Bass | Treble | Spatial Width | Design Philosophy |
-|------|------|--------|---------------|-------------------|
-| Music | +4.8 dB | +3.6 dB | 35% | Warm "smile curve" - Samsung Music mode inspired |
-| 360 Reality | +1.2 dB | +1.2 dB | 75% | Flat/neutral EQ - Sony 360 Reality Audio & Samsung 360 Audio |
-| Gaming | -2.4 dB | +6 dB | 50% | Footstep clarity (2-6kHz boost) - Pro gaming standards |
-| Podcast | -3.6 dB | -1.2 dB | 0% | Voice clarity, reduced rumble/sibilance |
-| Movie | +8.4 dB | +4.8 dB | 45% | THX-inspired cinematic impact |
-| Sports | +2.4 dB | -1.2 dB | 40% | Stadium broadcast clarity - enhanced commentary |
+- **7-Band Parametric EQ**: Sub, Bass, Low-Mid, Mid, High-Mid, Treble, Brilliance with zero-sum normalization.
+- **Bass Boost Filter**: Lowshelf at 150Hz (±12 dB range).
+- **Treble Boost Filter**: Highshelf at 6kHz (±12 dB range).
+- **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
+- **EQ Presets**: 8 total (Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic) with zero-sum normalization.
+- **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, and virtualizer settings, designed for specific listening experiences.
 
 ### Navigation Structure
-4-tab system with persistent MiniPlayer:
+A 4-tab system with a persistent MiniPlayer:
 - **ListenTab**: Main player, Now Playing, Sound Lab, Queue
 - **LibraryTab**: Music organization, Quick Access Category Grid
 - **RadioTab**: FM/AM native radio, Online streaming radio
 - **SettingsTab**: General, Sound Lab, Appearance, License, About
 
 ### Native Modules (Android-specific)
-
-**Audio Processing (100% Software DSP)**:
-- **SoftwareDSPAudioProcessor**: Core DSP engine implementing biquad filter chain
-  - 7-band parametric EQ (32Hz, 64Hz, 125Hz, 500Hz, 2kHz, 8kHz, 16kHz)
-  - Bass shelf filter (150Hz, Q=0.707)
-  - Treble shelf filter (6kHz, Q=0.707)
-  - Brickwall limiter (threshold -1dB, ratio 20:1, attack 1ms, release 100ms)
-- **BiquadFilter**: Implements peaking and shelf filter algorithms using Web Audio API cookbook formulas
-- **Limiter**: Brickwall limiter with envelope follower for distortion prevention
-- **PlaybackEngineModule**: ExoPlayer with custom AudioProcessor injection via DefaultAudioSink
-
-**Audio Control Modules (All delegate to SoftwareDSPAudioProcessor)**:
-- **EqualizerModule**: 7-band EQ control, preset management
-- **BassBoostModule**: Bass shelf filter control (converts 0-1000 strength to ±5 gain units)
-- **VirtualizerModule**: Stereo width control (stub - spatial processing planned)
-- **ImmersiveModeEngineModule**: Preset modes (Music, 360 Reality, Gaming, Podcast, Movie)
-
-**System Modules**:
-- **AudioSessionBridgeModule**: Audio session ID management
-- **WaveformAnalyzerModule**: Real-time waveform/FFT visualization (uses android.media.audiofx.Visualizer for read-only audio data)
-- **FMRadioModule**: FM/AM radio tuning (device hardware required)
-- **LicenseVerificationModule**: Google Play Store license verification
-- **MediaStoreScannerModule**: Uses Android MediaStore API to scan all audio files with metadata (title, artist, album, album art) in a single efficient query - replaces per-file ID3 parsing
-- **MetadataExtractorModule**: ID3 metadata extraction fallback using MediaMetadataRetriever
-
-**Note**: No Android hardware audio effects (android.media.audiofx.Equalizer, BassBoost, Virtualizer) are used for audio processing. Only the Visualizer class is used for read-only waveform analysis.
+- **Audio Processing**: `SoftwareDSPAudioProcessor` (core DSP engine), `BiquadFilter`, `Limiter`.
+- **Audio Control**: `EqualizerModule`, `BassBoostModule`, `VirtualizerModule`, `ImmersiveModeEngineModule` (all delegate to `SoftwareDSPAudioProcessor`).
+- **System Modules**: `AudioSessionBridgeModule`, `WaveformAnalyzerModule` (for read-only FFT), `FMRadioModule`, `LicenseVerificationModule`, `MediaStoreScannerModule` (efficient audio file scanning), `MetadataExtractorModule` (ID3 fallback).
+- No Android hardware audio effects are used for audio processing.
 
 ### License Verification
-- Checks if installed from Google Play (com.android.vending)
-- Licensed: Full access granted
-- Unlicensed: Prompt to purchase from Play Store
-- License state cached locally for offline use
-- Production uses `react-native-iap` with product ID `new_audio_360_lifetime`
+Checks for Google Play installation. Licensed users get full access; unlicensed users are prompted to purchase. License state is cached locally. Production uses `react-native-iap` with product ID `new_audio_360_lifetime`.
 
-## Feature Specifications
+### Feature Specifications
 
-### Sound Lab
-- **Equalizer Mode**: 8 presets with custom 5-band EQ editor (up to 5 saved presets)
-- **Immersive Mode**: 5 audio enhancement modes (plus Off)
-- **Bass Control**: Slider -5 to +5 (±12 dB via lowshelf filter at 150Hz)
-- **Treble Control**: Slider -5 to +5 (±12 dB via highshelf filter at 6kHz)
-- **Distortion Prevention**: Intelligent brickwall limiter (no fixed gain reduction)
+- **Sound Lab**: 8 EQ presets, custom 5-band EQ editor, 5 immersive modes, bass/treble control, distortion prevention.
+- **Theming**: 55 themes across 6 categories (System, Winamp, Retro, Nature, Professional, Special).
+- **Radio**: Native FM/AM radio and online streaming radio (Radio Browser API with quality filters).
+- **Playback Features**: Background playback, notification controls, queue management, shuffle/repeat, playback speed, sleep timer, favorites, recently/most played.
+- **Library Management**: Music folder selection, paginated loading, "Hide Song" feature, full playlist CRUD.
 
-### Theming
-55 themes across 6 categories:
-- System (5): Fluent Light, Dark, Night AMOLED, Warm Neutral, Cool Blue
-- Winamp (10): Classic, Modern, Bento, Foxpro, and more
-- Retro (10): VHS, Cassette, Vaporwave, Cyberpunk, and more
-- Nature (10): Forest, Ocean, Sunset, Aurora, and more
-- Professional (10): Midnight, Corporate, Slate, Graphite, and more
-- Special (10): Neon, Holographic, Candy, Galaxy, and more
-
-### Radio
-- **FM/AM**: Native Android radio (device hardware required)
-- **Online Radio**: Radio Browser API with quality filters
-  - Only verified working streams (lastcheckok=1)
-  - Quality codecs: MP3, OGG, AAC
-  - Bitrate >64kbps
-  - Max 50 stations per country, sorted by popularity
-
-### Playback Features
-- Background playback with notification controls
-- Queue management with drag-to-reorder
-- Shuffle and repeat modes
-- Playback speed (0.5x to 2.0x)
-- Sleep timer
-- Favorites, Recently Played, Most Played
-
-### Library Management
-- Music folder selection
-- Paginated loading for large libraries
-- "Hide Song" feature
-- Full playlist CRUD
-
-## Build Configuration
-
-### EAS Build Profiles
-- `development`: Development build with debugging
-- `preview`: Internal testing build
-- `production`: Production AAB for Play Store
-- `production-apk`: Production APK for direct distribution
-
-### Requirements
-- Minimum Android: 8.0 (API 26)
-- Target Android: 14 (API 34)
-- Architectures: ARM64, ARM32, x86_64
-- Package Name: com.theteam360.newaudio360
+### Build Configuration
+- **EAS Build Profiles**: `development`, `preview`, `production`, `production-apk`.
+- **Requirements**: Minimum Android 8.0 (API 26), Target Android 14 (API 34), ARM64, ARM32, x86_64 architectures.
+- **Package Name**: `com.theteam360.newaudio360`.
 
 ## External Dependencies
 
 ### Core
-- react-native, expo (SDK 53.0.0)
-- react-native-track-player (background playback)
-- expo-av (web fallback)
-- expo-media-library (device media access)
+- `react-native`, `expo` (SDK 53.0.0)
+- `react-native-track-player` (background playback)
+- `expo-av` (web fallback)
+- `expo-media-library` (device media access)
 
 ### Audio Processing
-- react-native-audio-api (Web Audio API for software DSP)
+- `react-native-audio-api` (Web Audio API for software DSP)
 
 ### UI & Navigation
-- @react-navigation (navigation system)
-- react-native-reanimated (simple animations)
-- MaterialCommunityIcons (iconography)
+- `@react-navigation` (navigation system)
+- `react-native-reanimated` (simple animations)
+- `MaterialCommunityIcons` (iconography)
 
 ### Platform Services
-- expo-notifications (playback controls)
-- expo-local-authentication (biometric auth)
-- expo-location (online radio location)
-- react-native-iap (Google Play Billing)
-
-## Recent Changes
-
-### January 19, 2026 - Design Harmonization Implementation (Microsoft Fluent 2)
-- **Created reusable Fluent 2 components**:
-  - `FluentListItem`: Consistent list items with 44px icon containers, shadow2 elevation, proper touch handling
-  - `FluentSectionHeader`: Consistent section headers with FluentIconSize.regular icons
-  - Smart container logic: Uses Pressable for interactive items, View for items with embedded controls (toggles)
-- **Harmonized screens** (70% → 95% Fluent 2 compliance):
-  - SettingsScreen: Updated menu items and preference toggles with FluentListItem
-  - AboutScreen: Replaced custom menu items with FluentListItem
-  - LibraryScreen: Standardized playlist items with FluentListItem
-  - PrivacyPolicyScreen: Flat surfaces (colorNeutralBackground2) for subdued long-form content
-  - PermissionOnboardingFlow: Fixed button heights using FluentControlHeight tokens (xlarge=48px)
-- **Design standards applied**:
-  - List items use shadow2 elevation for lifted card appearance
-  - Long-form content uses flat surfaces without elevation
-  - Dot indicators aligned to 4px grid
-  - Interactive rightElement controls (toggles, buttons) work correctly
-
-### January 19, 2026 - Design Audit Document
-- **Created comprehensive design audit document** at `docs/DESIGN_AUDIT_FLUENT2.md`
-- Screen-by-screen analysis of all 15+ screens for Fluent 2 compliance
-- Documented visual harmony guidelines for surface hierarchy, typography, spacing, and color
-
-### January 19, 2026 - MediaStore Scanner Module (Android Native Audio Scanning)
-- **Created MediaStoreScannerModule.kt** - Uses Android's native MediaStore API for audio scanning
-  - Single ContentResolver query to get ALL audio files with metadata
-  - Returns: title, artist, album, albumId, duration, size, dateModified, filename, year, track, uri, albumArt
-  - Album art loaded via `ContentResolver.loadThumbnail()` (API 29+) with legacy fallback
-  - Album art cached per albumId for efficiency
-  - Much faster than per-file ID3 parsing - Android's media scanner already indexed everything
-- **Updated MediaLibraryContext.tsx** to use MediaStoreScannerModule on Android
-  - Replaced expo-media-library + per-file getMusicMetadata with single native call
-  - Falls back to expo-media-library if native module not available
-- **Key benefits**:
-  - Faster scanning (one query vs N queries)
-  - More reliable metadata (uses Android's indexed database)
-  - Proper scoped storage handling with content:// URIs
-  - Album art from system cache
-
-### January 18, 2026 - Metadata Extraction Module
-- **Created MetadataExtractorModule.kt** for proper ID3 metadata extraction on Android
-  - Uses `MediaMetadataRetriever` to extract title, artist, album, year, genre, track number
-  - Extracts embedded album art and converts to base64-encoded JPEG
-  - Handles both content:// and file:// URIs with proper URL decoding for spaces/special characters
-  - Downscales album art to 400px max for memory efficiency
-- **Updated getMusicMetadata** in musicInfo.ts to use native module
-- **Updated MediaLibraryContext** to use real album art from metadata instead of placeholder images
-- **Made Song.artwork optional** to support songs without embedded album art
-
-### January 18, 2026 - MAJOR: 100% Pure Software DSP Architecture
-- **Achieved 100% software-based audio processing on Android**
-  - ALL audio effects now use custom biquad filter algorithms
-  - NO Android hardware audio effects (android.media.audiofx.*) used for processing
-  - Same DSP algorithms on Android and Web for consistent audio experience
-- **Created SoftwareDSPAudioProcessor.kt** - Core DSP engine:
-  - ExoPlayer AudioProcessor with biquad filter chain
-  - 7-band parametric EQ at: 32Hz, 64Hz, 125Hz, 500Hz, 2kHz, 8kHz, 16kHz
-  - Bass shelf filter at 150Hz (Q=0.707)
-  - Treble shelf filter at 6kHz (Q=0.707)
-  - Brickwall limiter for distortion prevention
-- **Created BiquadFilter.kt** - Filter implementation:
-  - Supports peaking, lowshelf, highshelf filter types
-  - Uses Web Audio API cookbook formulas for coefficient calculation
-  - Per-channel state for stereo processing
-- **Created Limiter.kt** - Brickwall limiter:
-  - Threshold: -1dB, Ratio: 20:1, Attack: 1ms, Release: 100ms
-  - Envelope follower with peak detection
-- **Converted all native modules to software DSP**:
-  - EqualizerModule.kt - Delegates to SoftwareDSPAudioProcessor
-  - BassBoostModule.kt - Removed android.media.audiofx.BassBoost
-  - VirtualizerModule.kt - Removed android.media.audiofx.Virtualizer
-  - ImmersiveModeEngineModule.kt - Removed all hardware effects
-- **Integrated with ExoPlayer via custom AudioProcessor injection**:
-  - PlaybackEngineModule.kt uses DefaultRenderersFactory override
-  - Custom DefaultAudioSink with SoftwareDSPAudioProcessor chain
-
-### January 17, 2026
-- Implemented pure software-based DSP using react-native-audio-api for Web
-- Added dedicated shelf filters for Bass (150Hz) and Treble (6kHz)
-- Implemented zero-sum normalization for EQ presets
-- Created 7-band EQ architecture with proper frequency distribution
+- `expo-notifications` (playback controls)
+- `expo-local-authentication` (biometric auth)
+- `expo-location` (online radio location)
+- `react-native-iap` (Google Play Billing)
