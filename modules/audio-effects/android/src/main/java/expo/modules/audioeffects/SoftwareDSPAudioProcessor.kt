@@ -13,6 +13,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         const val DB_PER_UNIT = 2.4f
         const val MAX_DB = 12f
         const val DEFAULT_Q = 1.4f
+        const val BASS_FREQUENCY = 150f
+        const val TREBLE_FREQUENCY = 6000f
         
         private val EQ_FREQUENCIES = floatArrayOf(60f, 170f, 310f, 600f, 1000f, 3000f, 6000f, 12000f, 14000f, 16000f)
         private val EQ_NAMES = arrayOf("Sub Bass", "Bass", "Low Bass", "Low Mid", "Mid", "Upper Mid", "Presence", "Brilliance", "Air", "Ultra High")
@@ -36,9 +38,16 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private val eqFilters = Array(10) { i ->
         BiquadFilter(FilterType.PEAKING, EQ_FREQUENCIES[i], 0f, DEFAULT_Q, 44100f)
     }
+    
+    private val bassBoostFilter = BiquadFilter(FilterType.LOWSHELF, BASS_FREQUENCY, 0f, 0.707f, 44100f)
+    private val trebleBoostFilter = BiquadFilter(FilterType.HIGHSHELF, TREBLE_FREQUENCY, 0f, 0.707f, 44100f)
+    
     private val limiter = Limiter(-1f, 20f, 1f, 100f, 44100f)
 
     private val eqGains = FloatArray(10) { 0f }
+    private var bassGainDb = 0f
+    private var trebleGainDb = 0f
+    private var safetyGainReduction = 0f
     private var stereoWidth = 0f
     private var isEnabled = true
     
@@ -90,6 +99,10 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         eqFilters.forEachIndexed { i, filter ->
             filter.configure(FilterType.PEAKING, EQ_FREQUENCIES[i], eqGains[i], DEFAULT_Q, sampleRate)
         }
+        
+        bassBoostFilter.configure(FilterType.LOWSHELF, BASS_FREQUENCY, bassGainDb, 0.707f, sampleRate)
+        trebleBoostFilter.configure(FilterType.HIGHSHELF, TREBLE_FREQUENCY, trebleGainDb, 0.707f, sampleRate)
+        
         limiter.setSampleRate(sampleRate)
         
         initializeReverbBuffers(sampleRate)
@@ -139,6 +152,18 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             if (!filter.isPassthrough()) {
                 filter.processBuffer(samples, channelCount)
             }
+        }
+        
+        if (!bassBoostFilter.isPassthrough()) {
+            bassBoostFilter.processBuffer(samples, channelCount)
+        }
+        
+        if (!trebleBoostFilter.isPassthrough()) {
+            trebleBoostFilter.processBuffer(samples, channelCount)
+        }
+        
+        if (safetyGainReduction < 0f) {
+            applySafetyGainReduction(samples)
         }
 
         if (channelCount == 2 && stereoWidth != 0f) {
@@ -198,6 +223,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             val gainDb = (gainUnits * DB_PER_UNIT).coerceIn(-MAX_DB, MAX_DB)
             eqGains[band] = gainDb
             eqFilters[band].setGain(gainDb)
+            recalculateSafetyGain()
         }
     }
 
@@ -208,6 +234,59 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
                 eqGains[index] = gainDb
                 eqFilters[index].setGain(gainDb)
             }
+        }
+        recalculateSafetyGain()
+    }
+    
+    fun setBassBoost(gainUnits: Float) {
+        val gainDb = (gainUnits * DB_PER_UNIT).coerceIn(-MAX_DB, MAX_DB)
+        bassGainDb = gainDb
+        bassBoostFilter.setGain(gainDb)
+        recalculateSafetyGain()
+    }
+    
+    fun setTrebleBoost(gainUnits: Float) {
+        val gainDb = (gainUnits * DB_PER_UNIT).coerceIn(-MAX_DB, MAX_DB)
+        trebleGainDb = gainDb
+        trebleBoostFilter.setGain(gainDb)
+        recalculateSafetyGain()
+    }
+    
+    fun getBassGain(): Float = bassGainDb
+    
+    fun getTrebleGain(): Float = trebleGainDb
+    
+    fun getSafetyGainReduction(): Float = safetyGainReduction
+    
+    private fun recalculateSafetyGain() {
+        val lowFreqBands = eqGains.slice(0..2)
+        val midFreqBands = eqGains.slice(3..5)
+        val highFreqBands = eqGains.slice(6..9)
+        
+        val maxLowEq = lowFreqBands.maxOrNull() ?: 0f
+        val maxMidEq = midFreqBands.maxOrNull() ?: 0f
+        val maxHighEq = highFreqBands.maxOrNull() ?: 0f
+        
+        val lowFreqTotal = maxLowEq + kotlin.math.max(0f, bassGainDb)
+        val highFreqTotal = maxHighEq + kotlin.math.max(0f, trebleGainDb)
+        val midFreqTotal = maxMidEq
+        
+        val totalMaxGain = kotlin.math.max(kotlin.math.max(lowFreqTotal, midFreqTotal), highFreqTotal)
+        
+        safetyGainReduction = if (totalMaxGain > MAX_DB) {
+            -(totalMaxGain - MAX_DB)
+        } else {
+            0f
+        }
+        
+        android.util.Log.d("SoftwareDSP", "Safety gain: lowEQ=$maxLowEq+bass=$bassGainDb, highEQ=$maxHighEq+treble=$trebleGainDb, reduction=$safetyGainReduction dB")
+    }
+    
+    private fun applySafetyGainReduction(samples: ShortArray) {
+        val linearGain = kotlin.math.pow(10.0, safetyGainReduction / 20.0).toFloat()
+        for (i in samples.indices) {
+            val sample = samples[i].toFloat() * linearGain
+            samples[i] = sample.coerceIn(-32768f, 32767f).toInt().toShort()
         }
     }
 
@@ -322,10 +401,19 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             eqGains[i] = 0f
             eqFilters[i].setGain(0f)
         }
+        
+        bassGainDb = 0f
+        trebleGainDb = 0f
+        safetyGainReduction = 0f
+        bassBoostFilter.setGain(0f)
+        trebleBoostFilter.setGain(0f)
+        
         stereoWidth = 0f
         reverbWetMix = 0f
         
         eqFilters.forEach { it.resetAllChannels() }
+        bassBoostFilter.resetAllChannels()
+        trebleBoostFilter.resetAllChannels()
         limiter.reset()
         resetReverbBuffers()
     }

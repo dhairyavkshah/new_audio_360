@@ -63,12 +63,20 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
   const [trebleBoost, setTrebleBoostState] = useState(0);
 
   const setBassBoost = useCallback((value: number) => {
-    setBassBoostState(Math.max(-5, Math.min(5, value)));
-  }, []);
+    const clampedValue = Math.max(-5, Math.min(5, value));
+    setBassBoostState(clampedValue);
+    if (webAudioInitialized) {
+      WebAudioEffectsEngine.setBassBoost(clampedValue);
+    }
+  }, [webAudioInitialized]);
 
   const setTrebleBoost = useCallback((value: number) => {
-    setTrebleBoostState(Math.max(-5, Math.min(5, value)));
-  }, []);
+    const clampedValue = Math.max(-5, Math.min(5, value));
+    setTrebleBoostState(clampedValue);
+    if (webAudioInitialized) {
+      WebAudioEffectsEngine.setTrebleBoost(clampedValue);
+    }
+  }, [webAudioInitialized]);
 
   const eqBands = EQ_PRESETS[eqPresetName] || EQ_PRESETS.Flat;
 

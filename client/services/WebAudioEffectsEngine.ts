@@ -18,6 +18,10 @@ export interface ImmersiveMode {
 }
 
 const EQ_FREQUENCIES = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
+const BASS_FREQUENCY = 150;
+const TREBLE_FREQUENCY = 6000;
+const DB_PER_UNIT = 2.4;
+const MAX_DB = 12;
 
 const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
   music: {
@@ -61,12 +65,17 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
 class WebAudioEffectsEngineClass {
   private audioContext: AudioContext | null = null;
   private eqFilters: BiquadFilterNode[] = [];
+  private bassBoostFilter: BiquadFilterNode | null = null;
+  private trebleBoostFilter: BiquadFilterNode | null = null;
+  private safetyGain: GainNode | null = null;
   private masterGain: GainNode | null = null;
   private dryGain: GainNode | null = null;
   private wetGain: GainNode | null = null;
   private reverbDelays: { delay: any; feedback: GainNode; filter: BiquadFilterNode }[] = [];
   private isInitialized = false;
   private currentEQValues: number[] = new Array(10).fill(0);
+  private bassGainDb: number = 0;
+  private trebleGainDb: number = 0;
   private currentMode: string = 'off';
   private currentReverb: number = 0;
 
@@ -107,6 +116,19 @@ class WebAudioEffectsEngineClass {
         
         return filter;
       });
+      
+      this.bassBoostFilter = this.audioContext.createBiquadFilter();
+      this.bassBoostFilter.type = 'lowshelf';
+      this.bassBoostFilter.frequency.value = BASS_FREQUENCY;
+      this.bassBoostFilter.gain.value = 0;
+      
+      this.trebleBoostFilter = this.audioContext.createBiquadFilter();
+      this.trebleBoostFilter.type = 'highshelf';
+      this.trebleBoostFilter.frequency.value = TREBLE_FREQUENCY;
+      this.trebleBoostFilter.gain.value = 0;
+      
+      this.safetyGain = this.audioContext.createGain();
+      this.safetyGain.gain.value = 1.0;
 
       const delayTimes = [0.023, 0.041, 0.067, 0.089];
       const feedbacks = [0.4, 0.35, 0.3, 0.25];
@@ -134,10 +156,13 @@ class WebAudioEffectsEngineClass {
       }
       
       const eqOutput = this.eqFilters[this.eqFilters.length - 1];
-      eqOutput.connect(this.dryGain);
+      eqOutput.connect(this.bassBoostFilter!);
+      this.bassBoostFilter!.connect(this.trebleBoostFilter!);
+      this.trebleBoostFilter!.connect(this.safetyGain!);
+      this.safetyGain!.connect(this.dryGain);
       
       this.reverbDelays.forEach(({ delay, feedback, filter }) => {
-        eqOutput.connect(delay);
+        this.safetyGain!.connect(delay);
         delay.connect(filter);
         filter.connect(feedback);
         feedback.connect(delay);
@@ -176,9 +201,6 @@ class WebAudioEffectsEngineClass {
       paddedBands.push(0);
     }
 
-    const DB_PER_UNIT = 2.4;
-    const MAX_DB = 12;
-
     paddedBands.forEach((value, index) => {
       if (this.eqFilters[index]) {
         const dbValue = value * DB_PER_UNIT;
@@ -188,10 +210,7 @@ class WebAudioEffectsEngineClass {
     });
 
     this.setReverb(0);
-
-    if (this.masterGain) {
-      this.masterGain.gain.value = 1.0;
-    }
+    this.recalculateSafetyGain();
 
     this.currentEQValues = paddedBands;
     this.currentMode = 'equalizer';
@@ -241,9 +260,6 @@ class WebAudioEffectsEngineClass {
       paddedBands.push(0);
     }
 
-    const DB_PER_UNIT = 2.4;
-    const MAX_DB = 12;
-
     paddedBands.forEach((value, index) => {
       if (this.eqFilters[index]) {
         const dbValue = value * DB_PER_UNIT;
@@ -253,13 +269,78 @@ class WebAudioEffectsEngineClass {
     });
 
     this.setReverb(reverb);
-
-    if (this.masterGain) {
-      this.masterGain.gain.value = 1.0;
-    }
+    this.recalculateSafetyGain();
 
     this.currentEQValues = paddedBands;
     console.log(`[WebAudioEffectsEngine] Applied immersive mode with reverb:${reverb}`);
+  }
+
+  setBassBoost(gainUnits: number): void {
+    const dbValue = gainUnits * DB_PER_UNIT;
+    const clampedDb = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
+    this.bassGainDb = clampedDb;
+    
+    if (this.bassBoostFilter) {
+      this.bassBoostFilter.gain.value = clampedDb;
+    }
+    
+    this.recalculateSafetyGain();
+    console.log(`[WebAudioEffectsEngine] Bass boost set to ${clampedDb} dB`);
+  }
+  
+  setTrebleBoost(gainUnits: number): void {
+    const dbValue = gainUnits * DB_PER_UNIT;
+    const clampedDb = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
+    this.trebleGainDb = clampedDb;
+    
+    if (this.trebleBoostFilter) {
+      this.trebleBoostFilter.gain.value = clampedDb;
+    }
+    
+    this.recalculateSafetyGain();
+    console.log(`[WebAudioEffectsEngine] Treble boost set to ${clampedDb} dB`);
+  }
+  
+  getBassGain(): number {
+    return this.bassGainDb;
+  }
+  
+  getTrebleGain(): number {
+    return this.trebleGainDb;
+  }
+  
+  private recalculateSafetyGain(): void {
+    const eqDbValues = this.currentEQValues.map(v => v * DB_PER_UNIT);
+    
+    const lowFreqBands = eqDbValues.slice(0, 3);
+    const midFreqBands = eqDbValues.slice(3, 6);
+    const highFreqBands = eqDbValues.slice(6, 10);
+    
+    const maxLowEq = Math.max(...lowFreqBands, 0);
+    const maxMidEq = Math.max(...midFreqBands, 0);
+    const maxHighEq = Math.max(...highFreqBands, 0);
+    
+    const lowFreqTotal = maxLowEq + Math.max(0, this.bassGainDb);
+    const highFreqTotal = maxHighEq + Math.max(0, this.trebleGainDb);
+    const midFreqTotal = maxMidEq;
+    
+    const totalMaxGain = Math.max(lowFreqTotal, midFreqTotal, highFreqTotal);
+    
+    let safetyReductionDb = 0;
+    if (totalMaxGain > MAX_DB) {
+      safetyReductionDb = -(totalMaxGain - MAX_DB);
+    }
+    
+    if (this.safetyGain) {
+      const linearGain = Math.pow(10, safetyReductionDb / 20);
+      this.safetyGain.gain.value = linearGain;
+    }
+    
+    if (this.masterGain) {
+      this.masterGain.gain.value = 1.0;
+    }
+    
+    console.log(`[WebAudioEffectsEngine] Safety gain: lowEQ=${maxLowEq.toFixed(1)}+bass=${this.bassGainDb.toFixed(1)}, highEQ=${maxHighEq.toFixed(1)}+treble=${this.trebleGainDb.toFixed(1)}, reduction=${safetyReductionDb.toFixed(1)} dB`);
   }
 
   setReverb(wetMix: number): void {
@@ -285,6 +366,19 @@ class WebAudioEffectsEngineClass {
     this.eqFilters.forEach(filter => {
       filter.gain.value = 0;
     });
+    
+    if (this.bassBoostFilter) {
+      this.bassBoostFilter.gain.value = 0;
+    }
+    if (this.trebleBoostFilter) {
+      this.trebleBoostFilter.gain.value = 0;
+    }
+    if (this.safetyGain) {
+      this.safetyGain.gain.value = 1.0;
+    }
+    
+    this.bassGainDb = 0;
+    this.trebleGainDb = 0;
     this.setReverb(0);
     this.currentEQValues = new Array(10).fill(0);
     this.currentMode = 'off';
@@ -314,12 +408,17 @@ class WebAudioEffectsEngineClass {
     
     this.audioContext = null;
     this.eqFilters = [];
+    this.bassBoostFilter = null;
+    this.trebleBoostFilter = null;
+    this.safetyGain = null;
     this.masterGain = null;
     this.dryGain = null;
     this.wetGain = null;
     this.reverbDelays = [];
     this.isInitialized = false;
     this.currentEQValues = new Array(10).fill(0);
+    this.bassGainDb = 0;
+    this.trebleGainDb = 0;
     this.currentMode = 'off';
     this.currentReverb = 0;
     

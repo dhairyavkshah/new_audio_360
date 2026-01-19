@@ -30,13 +30,14 @@ The app uses **pure software-based DSP** across all platforms, ensuring a consis
 
 **Audio Signal Chain**:
 ```
-Source → Gain → 10-Band EQ (with bass/treble applied to bands) → Stereo Widener → Reverb → Limiter → Output
+Source → 10-Band EQ → Bass Boost (150Hz low-shelf) → Treble Boost (6kHz high-shelf) → Safety Gain → Stereo Width → Reverb → Limiter → Output
 ```
 
 **Key Components**:
 - **10-Band Parametric EQ**: Frequencies at 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000 Hz. All presets are inherently zero-sum (values sum to 0, no runtime normalization needed).
 - **Bass Boost**: Separate low-shelf filter at 150Hz, ±12 dB range.
 - **Treble Boost**: Separate high-shelf filter at 6kHz, ±12 dB range.
+- **Volume Safety System**: Automatic gain reduction when combined EQ + bass + treble exceeds ±12 dB limit. Prevents excessive loudness regardless of settings.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
 - **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide)
 - **EQ Presets**: 8 total (Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic) with zero-sum normalization.
