@@ -10,6 +10,7 @@ import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
 import { setMusicPlaying } from '@/lib/playbackState';
+import { mediaLibraryEvents, MediaLibraryEvent } from '@/lib/mediaLibraryEvents';
 
 export type PlayableSong = Song | DeviceSong;
 
@@ -398,6 +399,45 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     getFavorites().then(setFavorites);
     getRecentlyPlayed().then(setRecentlyPlayed);
     getMostPlayed(10).then(setMostPlayed);
+  }, []);
+
+  useEffect(() => {
+    const handleLibraryChange = (event: MediaLibraryEvent) => {
+      if (event.type === 'songRemoved' && event.songIds) {
+        const removedSet = new Set(event.songIds);
+        const availableSongIds = new Set(event.allSongIds);
+
+        const current = currentSongRef.current;
+        if (current && removedSet.has(current.id)) {
+          console.log('[PlayerContext] Current song was removed, stopping playback');
+          if (useTrackPlayerRef.current) {
+            TrackPlayerService.stop();
+          } else if (useNativePlaybackRef.current) {
+            PlaybackEngineModule.stop();
+          } else if (playerRef.current) {
+            playerRef.current.pause();
+          }
+          setCurrentSong(null);
+          setIsPlaying(false);
+          setCurrentTime(0);
+          setDuration(0);
+          currentSongRef.current = null;
+        }
+
+        const currentQueue = queueRef.current;
+        const filteredQueue = currentQueue.filter(song => availableSongIds.has(song.id));
+        if (filteredQueue.length !== currentQueue.length) {
+          console.log('[PlayerContext] Queue updated - removed unavailable songs');
+          setQueueState(filteredQueue);
+          queueRef.current = filteredQueue;
+        }
+      }
+    };
+
+    const unsubscribe = mediaLibraryEvents.subscribe(handleLibraryChange);
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
