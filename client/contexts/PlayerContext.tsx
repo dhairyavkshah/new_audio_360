@@ -621,6 +621,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (audioElementRef.current) {
         audioElementRef.current.pause();
         audioElementRef.current.src = '';
+        audioElementRef.current.onloadedmetadata = null;
+        audioElementRef.current.ontimeupdate = null;
+        audioElementRef.current.onended = null;
+        audioElementRef.current.onerror = null;
+        audioElementRef.current = null;
       }
       if (mediaSourceRef.current) {
         try { mediaSourceRef.current.disconnect(); } catch {}
