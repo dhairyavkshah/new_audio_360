@@ -224,31 +224,31 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyModeMusic() {
         applyImmersiveSettings(
-            eqGains = listOf(1.5, 1.0, 0.5, -0.5, -1.0, -0.5, 0.5, -0.5, -0.5, -0.5),
-            virtualizerStrength = 250,
-            reverbWetMix = 0.05f
+            eqGains = listOf(2.0, 1.5, 1.0, 0.5, 0.0, 0.5, 1.0, 1.5, 1.0, 0.5),
+            virtualizerStrength = 300,
+            reverbWetMix = 0.08f
         )
     }
     
     private fun applyMode360Reality() {
         applyImmersiveSettings(
-            eqGains = listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, -0.5, -0.5, 0.0),
+            eqGains = listOf(0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 0.5, 0.5),
             virtualizerStrength = 850,
-            reverbWetMix = 0.25f
+            reverbWetMix = 0.20f
         )
     }
     
     private fun applyModeGaming() {
         applyImmersiveSettings(
-            eqGains = listOf(-2.0, -1.0, 0.0, 0.0, 1.0, 2.0, 1.0, 0.0, 0.0, -1.0),
-            virtualizerStrength = 450,
-            reverbWetMix = 0.075f
+            eqGains = listOf(2.5, 2.0, 1.0, 0.5, 1.5, 2.5, 2.0, 1.0, 0.5, 0.0),
+            virtualizerStrength = 500,
+            reverbWetMix = 0.06f
         )
     }
     
     private fun applyModePodcast() {
         applyImmersiveSettings(
-            eqGains = listOf(-1.5, -1.0, 0.0, 1.0, 1.5, 1.0, 0.0, -0.5, -0.5, 0.0),
+            eqGains = listOf(0.0, 0.5, 1.0, 2.0, 2.5, 2.0, 1.5, 1.0, 0.5, 0.0),
             virtualizerStrength = 0,
             reverbWetMix = 0.0f
         )
@@ -256,17 +256,17 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyModeMovie() {
         applyImmersiveSettings(
-            eqGains = listOf(2.0, 1.5, 0.5, 0.0, -0.5, -0.5, -0.5, -1.0, -1.0, -0.5),
-            virtualizerStrength = 550,
-            reverbWetMix = 0.15f
+            eqGains = listOf(3.0, 2.5, 1.5, 1.0, 1.5, 1.0, 0.5, 1.0, 1.5, 1.0),
+            virtualizerStrength = 600,
+            reverbWetMix = 0.12f
         )
     }
     
     private fun applyModeSports() {
         applyImmersiveSettings(
-            eqGains = listOf(0.5, 0.0, 0.0, 1.0, 1.0, 0.5, -0.5, -1.0, -1.0, -0.5),
-            virtualizerStrength = 500,
-            reverbWetMix = 0.125f
+            eqGains = listOf(1.5, 1.0, 0.5, 1.5, 2.0, 1.5, 1.0, 0.5, 0.5, 0.0),
+            virtualizerStrength = 550,
+            reverbWetMix = 0.10f
         )
     }
     

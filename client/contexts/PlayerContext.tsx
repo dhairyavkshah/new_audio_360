@@ -360,9 +360,37 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     getPlayerState().then((state) => {
       if (state) {
-        setCurrentTime(state.currentTime || 0);
         setShuffle(state.shuffle || false);
         setRepeat(state.repeat || 'off');
+        
+        if (state.lastSong) {
+          const restoredSong: PlayableSong = state.lastSong.isFromDevice 
+            ? {
+                id: state.lastSong.id,
+                title: state.lastSong.title,
+                artist: state.lastSong.artist,
+                album: state.lastSong.album || '',
+                duration: state.lastSong.duration,
+                artwork: state.lastSong.artwork,
+                uri: state.lastSong.uri || '',
+                isFromDevice: true,
+              } as DeviceSong
+            : {
+                id: state.lastSong.id,
+                title: state.lastSong.title,
+                artist: state.lastSong.artist,
+                album: state.lastSong.album || '',
+                duration: state.lastSong.duration,
+                artwork: state.lastSong.artwork,
+                audioUrl: state.lastSong.uri,
+              } as Song;
+          
+          setCurrentSong(restoredSong);
+          setCurrentTime(state.currentTime || 0);
+          setDuration(state.lastDuration || state.lastSong.duration || 0);
+          setIsPlaying(false);
+          console.log('[PlayerContext] Restored last playing song:', state.lastSong.title, 'at position:', state.currentTime);
+        }
       }
     });
     getFavorites().then(setFavorites);
@@ -1024,6 +1052,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (currentSong) {
+      const songForStorage = {
+        id: currentSong.id,
+        title: currentSong.title,
+        artist: currentSong.artist,
+        album: currentSong.album,
+        duration: currentSong.duration,
+        artwork: currentSong.artwork,
+        uri: isDeviceSong(currentSong) ? currentSong.uri : currentSong.audioUrl,
+        isFromDevice: isDeviceSong(currentSong),
+      };
+      
       savePlayerState({
         currentSongId: currentSong.id,
         isPlaying,
@@ -1031,9 +1070,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         shuffle,
         repeat,
         queue: queue.map(s => s.id),
+        lastSong: songForStorage,
+        lastDuration: duration,
       });
     }
-  }, [currentSong, isPlaying, currentTime, shuffle, repeat, queue]);
+  }, [currentSong, isPlaying, currentTime, shuffle, repeat, queue, duration]);
 
   const progress = duration > 0 ? currentTime / duration : 0;
 
