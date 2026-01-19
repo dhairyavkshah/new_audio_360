@@ -4,6 +4,7 @@
 New Audio 360 is a premium mobile music player application built with React Native and Expo, targeting audio enthusiasts. It delivers studio-quality audio processing through pure software-based DSP, 55 stunning themes, and comprehensive music organization. The app requires a one-time purchase for lifetime access, with all data stored locally and no backend required. Its vision is to be "The top-grade intelligent music experience built for you."
 
 ## Recent Changes (v26.0)
+- **Real-time Library Sync**: When songs are added or removed from local storage, the player automatically updates without requiring a reload. If the current song is deleted, playback stops and the queue is filtered to remove unavailable songs.
 - **Flat EQ Always Active**: The Flat preset is now always active by default and cannot be turned off. Tapping another preset and tapping it again returns to Flat instead of disabling EQ entirely.
 - **Updated Sound Lab Text**: Changed instruction text to "Flat is always active by default. Tap a preset to apply. Only one mode can be active at a time."
 - **Floating/Draggable MiniPlayer**: The MiniPlayer (both expanded and minimized versions) can now be dragged and repositioned anywhere on the screen. Uses pan gestures with smooth spring animations. A subtle drag handle icon indicates the feature.
