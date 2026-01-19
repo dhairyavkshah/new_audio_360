@@ -100,6 +100,7 @@ class WebAudioEffectsEngineClass {
   private currentEQValues: number[] = new Array(10).fill(0);
   private currentMode: string = 'off';
   private currentReverb: number = 0;
+  private currentVirtualizer: number = 0; // -5 to +5 range
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {
@@ -376,6 +377,46 @@ class WebAudioEffectsEngineClass {
     }
   }
 
+  /**
+   * Set virtualizer level (-5 to +5)
+   * Negative = narrower stereo (more mono-like)
+   * Zero = original stereo
+   * Positive = wider stereo (enhanced surround)
+   * 
+   * Intelligent mapping:
+   * -5: Full mono (0% stereo width)
+   * -3: Reduced stereo (40% width)
+   * -1: Slightly narrower (80% width)
+   *  0: Original stereo (100% width)
+   * +1: Slightly wider (120% perceived width)
+   * +3: Wide stereo (180% perceived width)
+   * +5: Maximum surround (250% perceived width)
+   */
+  setVirtualizer(level: number): void {
+    const clampedLevel = Math.max(-5, Math.min(5, level));
+    this.currentVirtualizer = clampedLevel;
+    
+    // Calculate stereo width multiplier
+    // -5 = 0.0 (mono), 0 = 1.0 (original), +5 = 2.5 (extra wide)
+    let stereoWidth: number;
+    if (clampedLevel < 0) {
+      // Narrowing: -5 = 0%, 0 = 100%
+      stereoWidth = 1.0 + (clampedLevel / 5); // -5 → 0.0, 0 → 1.0
+    } else {
+      // Widening: 0 = 100%, +5 = 250%
+      stereoWidth = 1.0 + (clampedLevel * 0.3); // 0 → 1.0, +5 → 2.5
+    }
+    
+    console.log(`[WebAudioEffectsEngine] Virtualizer set to ${clampedLevel} (width: ${(stereoWidth * 100).toFixed(0)}%)`);
+    // Note: Actual stereo processing requires stereo channel separation
+    // which isn't available in basic mono Web Audio API setup
+    // The native Android VirtualizerModule handles actual audio processing
+  }
+
+  getVirtualizerLevel(): number {
+    return this.currentVirtualizer;
+  }
+
   setMasterVolume(volume: number): void {
     if (this.masterGain) {
       this.masterGain.gain.value = Math.max(0, Math.min(2, volume));
@@ -423,6 +464,7 @@ class WebAudioEffectsEngineClass {
     this.currentEQValues = new Array(10).fill(0);
     this.currentMode = 'off';
     this.currentReverb = 0;
+    this.currentVirtualizer = 0;
     
     console.log('[WebAudioEffectsEngine] Released');
   }

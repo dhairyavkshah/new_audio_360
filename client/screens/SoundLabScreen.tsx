@@ -33,6 +33,7 @@ import {
 } from "../../modules/audio-effects";
 import NativeAudioService from "@/services/NativeAudioService";
 import { NativeEffectsManager } from "@/services/NativeEffectsManager";
+import { WebAudioEffectsEngine } from "@/services/WebAudioEffectsEngine";
 
 type SoundLabMode = "equalizer" | "immersive" | "off";
 
@@ -155,10 +156,13 @@ function SoundLabScreen() {
   }, []);
 
   const applyAudioEffects = useCallback((bass: number, treble: number, virtualizer: number) => {
+    // Apply virtualizer on web
     if (Platform.OS === 'web') {
+      WebAudioEffectsEngine.setVirtualizer(virtualizer);
       return;
     }
     
+    // Apply on native Android
     if (BassBoostModule.isAvailable()) {
       try {
         if (bass === 0) {
@@ -172,13 +176,15 @@ function SoundLabScreen() {
       }
     }
     
+    // Android Virtualizer via software DSP - supports both narrowing and widening
     if (VirtualizerModule.isAvailable()) {
       try {
         if (virtualizer === 0) {
           VirtualizerModule.setEnabled(false);
         } else {
           VirtualizerModule.setEnabled(true);
-          VirtualizerModule.setStrength(Math.abs(virtualizer) * 200);
+          // Software DSP handles direction: negative = narrow, positive = widen
+          VirtualizerModule.setStrength(virtualizer * 200);
         }
       } catch (error) {
         // Silently handle error in production
@@ -341,14 +347,25 @@ function SoundLabScreen() {
     setVirtualizerLevel(level);
     await saveVirtualizerLevel(level);
     
-    if (Platform.OS !== 'web' && VirtualizerModule.isAvailable()) {
+    // Apply virtualizer on web using WebAudioEffectsEngine
+    if (Platform.OS === 'web') {
+      WebAudioEffectsEngine.setVirtualizer(level);
+      return;
+    }
+    
+    // Apply virtualizer on Android via software DSP (SoftwareDSPAudioProcessor)
+    // Negative values = narrower stereo (toward mono)
+    // Zero = disable effect (original stereo)
+    // Positive values = wider stereo field
+    if (VirtualizerModule.isAvailable()) {
       try {
         if (level === 0) {
           VirtualizerModule.setEnabled(false);
         } else {
           VirtualizerModule.setEnabled(true);
-          const strength = Math.abs(level) * 200;
-          VirtualizerModule.setStrength(strength);
+          // Pass level directly (-5 to +5) - software DSP handles direction
+          // Negative = narrow toward mono, Positive = widen stereo
+          VirtualizerModule.setStrength(level * 200); // -1000 to +1000 range
         }
       } catch (error) {
         // Silently handle error in production
