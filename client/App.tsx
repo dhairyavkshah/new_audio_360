@@ -17,6 +17,7 @@ import { StatusBar } from "expo-status-bar";
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { useSystemBars } from "@/hooks/useSystemBars";
 import { UiSoundProvider } from "@/contexts/UiSoundContext";
 import { PlayerProvider } from "@/contexts/PlayerContext";
 import { MediaLibraryProvider, useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
@@ -53,6 +54,8 @@ function AppContent() {
   const [appState, setAppState] = useState<AppState>("splash");
   const [showAudioTip, setShowAudioTip] = useState(false);
   const { isOnboardingComplete, isLoading, completeOnboarding, skipOnboarding } = useMediaLibraryContext();
+  
+  useSystemBars();
 
   const handleSplashFinish = () => {
     setAppState("loading");
