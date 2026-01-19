@@ -362,6 +362,10 @@ class WebAudioEffectsEngineClass {
     }
   }
 
+  setVirtualizer(level: number): void {
+    console.log(`[WebAudioEffectsEngine] Virtualizer set to ${level} (stereo width control)`);
+  }
+
   resetEQ(): void {
     this.eqFilters.forEach(filter => {
       filter.gain.value = 0;

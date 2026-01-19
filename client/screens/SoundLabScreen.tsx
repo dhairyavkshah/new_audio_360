@@ -40,7 +40,7 @@ type SoundLabMode = "equalizer" | "immersive" | "off";
 const EQ_PRESETS = [
   { 
     name: "Flat", 
-    description: "Natural, unprocessed sound",
+    description: "Natural, reference tuning",
     bands: [0, 0, 0, 0, 0],
     bassControl: 0,
     trebleControl: 0,
@@ -48,56 +48,72 @@ const EQ_PRESETS = [
   },
   { 
     name: "Rock", 
-    description: "Punchy bass, crisp guitars",
-    bands: [3, 2, -1, 2, 3],
+    description: "Punchy, clean guitars",
+    bands: [2, 1, 0, 2, 2],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
   },
   { 
     name: "Pop", 
-    description: "Bright vocals, balanced bass",
-    bands: [2, 1, 2, 3, 2],
+    description: "Vocal-clear & balanced",
+    bands: [2, 1, 1, 2, 1],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
   },
   { 
     name: "Jazz", 
-    description: "Warm mids, smooth highs",
-    bands: [2, 3, 1, -1, 0],
+    description: "Warm & natural",
+    bands: [1, 1, 2, 1, 1],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
   },
   { 
     name: "Classical", 
-    description: "Wide dynamics, clear separation",
-    bands: [1, 1, 0, 2, 3],
+    description: "Wide & open, clean separation",
+    bands: [0, 1, 1, 1, 2],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
   },
   { 
     name: "Electronic", 
-    description: "Deep bass, sparkling highs",
-    bands: [4, 3, -1, 2, 4],
+    description: "Deep but controlled bass",
+    bands: [3, 1, 0, 2, 2],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
   },
   { 
     name: "Hip-Hop", 
-    description: "Heavy sub-bass, clear vocals",
-    bands: [5, 3, 1, 2, 1],
+    description: "Deep bass + clear vocals",
+    bands: [4, 1, 1, 2, 0],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
   },
   { 
     name: "Acoustic", 
-    description: "Natural warmth, presence",
-    bands: [1, 2, 2, 1, 1],
+    description: "Live vocals & unplugged music",
+    bands: [1, 1, 3, 2, 1],
+    bassControl: 0,
+    trebleControl: 0,
+    virtualizer: 0
+  },
+  { 
+    name: "Bass+", 
+    description: "Party mode, use at medium volume",
+    bands: [5, 2, 0, 0, 1],
+    bassControl: 0,
+    trebleControl: 0,
+    virtualizer: 0
+  },
+  { 
+    name: "Clarity", 
+    description: "Great for podcasts & movies",
+    bands: [0, 1, 2, 3, 4],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0

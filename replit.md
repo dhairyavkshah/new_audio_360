@@ -34,13 +34,13 @@ Source → 10-Band EQ → Bass Boost (150Hz low-shelf) → Treble Boost (6kHz hi
 ```
 
 **Key Components**:
-- **10-Band Parametric EQ**: Frequencies at 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000 Hz. All presets are inherently zero-sum (values sum to 0, no runtime normalization needed).
+- **10-Band Parametric EQ**: Frequencies at 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000 Hz. Presets use positive gain values with intelligent safety limiting.
 - **Bass Boost**: Separate low-shelf filter at 150Hz, ±12 dB range.
 - **Treble Boost**: Separate high-shelf filter at 6kHz, ±12 dB range.
 - **Volume Safety System**: Automatic gain reduction when combined EQ + bass + treble exceeds ±12 dB limit. Prevents excessive loudness regardless of settings.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
 - **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide)
-- **EQ Presets**: 8 total (Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic) with zero-sum normalization.
+- **EQ Presets**: 10 total (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity). Bass+ is a party mode preset, Clarity is optimized for podcasts & movies.
 - **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, and virtualizer settings, designed for specific listening experiences.
 
 ### Navigation Structure
@@ -61,7 +61,7 @@ Checks for Google Play installation. Licensed users get full access; unlicensed 
 
 ### Feature Specifications
 
-- **Sound Lab**: 8 EQ presets, custom 5-band EQ editor, 5 immersive modes, bass/treble control, distortion prevention.
+- **Sound Lab**: 10 EQ presets, custom 5-band EQ editor, 6 immersive modes, bass/treble control, intelligent volume safety system.
 - **Theming**: 55 themes across 6 categories (System, Winamp, Retro, Nature, Professional, Special).
 - **Radio**: Native FM/AM radio and online streaming radio (Radio Browser API with quality filters). On Android, online radio streams go through PlaybackEngineModule/SoftwareDSPAudioProcessor for full DSP effects; web uses expo-av fallback.
 - **Playback Features**: Background playback, notification controls, queue management, shuffle/repeat, playback speed, sleep timer, favorites, recently/most played.
