@@ -45,6 +45,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private val eqGains = FloatArray(7) { 0f }
     private var bassGain = 0f
     private var trebleGain = 0f
+    private var stereoWidth = 0f  // -1.0 = mono, 0.0 = original, 1.0 = max wide (200%)
     private var isEnabled = true
 
     private var outputBuffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
@@ -126,6 +127,12 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             trebleShelfFilter.processBuffer(samples, channelCount)
         }
 
+        // Apply stereo width processing (mid-side technique)
+        // Only process if stereo (2 channels) and width is not 0 (original)
+        if (channelCount == 2 && stereoWidth != 0f) {
+            processStereoWidth(samples)
+        }
+
         limiter.processBuffer(samples, channelCount)
 
         // Write processed samples to output buffer with correct position/limit
@@ -200,6 +207,63 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         trebleShelfFilter.setGain(gainDb)
     }
 
+    /**
+     * Set stereo width for virtualizer effect.
+     * @param width Range -1.0 to 1.0
+     *   -1.0 = Full mono (0% stereo width)
+     *    0.0 = Original stereo (100% width)
+     *    1.0 = Maximum wide (200% width)
+     */
+    fun setStereoWidth(width: Float) {
+        stereoWidth = width.coerceIn(-1f, 1f)
+        android.util.Log.d("SoftwareDSP", "Stereo width set to $stereoWidth (${((1f + stereoWidth) * 100).toInt()}%)")
+    }
+
+    fun getStereoWidth(): Float = stereoWidth
+
+    /**
+     * Process stereo width using mid-side technique.
+     * Mid = (L + R) / 2 (center content)
+     * Side = (L - R) / 2 (stereo content)
+     * 
+     * Width < 0: Reduce side, more mono
+     * Width > 0: Boost side, wider stereo
+     */
+    private fun processStereoWidth(samples: ShortArray) {
+        // Calculate side multiplier based on stereoWidth
+        // -1.0 → sideGain = 0.0 (full mono)
+        //  0.0 → sideGain = 1.0 (original)
+        //  1.0 → sideGain = 2.0 (max wide)
+        val sideGain = 1f + stereoWidth
+
+        // Process samples in stereo pairs (L, R, L, R, ...)
+        var i = 0
+        while (i < samples.size - 1) {
+            val left = samples[i].toFloat()
+            val right = samples[i + 1].toFloat()
+
+            // Convert to mid-side
+            val mid = (left + right) / 2f
+            val side = (left - right) / 2f
+
+            // Apply width to side channel
+            val newSide = side * sideGain
+
+            // Convert back to left-right
+            var newLeft = mid + newSide
+            var newRight = mid - newSide
+
+            // Soft clip to prevent overflow
+            newLeft = newLeft.coerceIn(-32768f, 32767f)
+            newRight = newRight.coerceIn(-32768f, 32767f)
+
+            samples[i] = newLeft.toInt().toShort()
+            samples[i + 1] = newRight.toInt().toShort()
+
+            i += 2
+        }
+    }
+
     fun setEnabled(enabled: Boolean) {
         isEnabled = enabled
     }
@@ -219,6 +283,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         }
         bassGain = 0f
         trebleGain = 0f
+        stereoWidth = 0f
         bassShelfFilter.setGain(0f)
         trebleShelfFilter.setGain(0f)
         

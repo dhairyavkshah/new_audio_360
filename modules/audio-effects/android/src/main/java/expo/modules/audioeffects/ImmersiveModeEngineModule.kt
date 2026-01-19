@@ -175,8 +175,12 @@ class ImmersiveModeEngineModule : Module() {
                     dsp?.setBassBoost(bassGainUnits)
                     currentBassGain = bassGainUnits
                     
+                    // Apply stereo width via software DSP
+                    val stereoWidth = virtualizerStrength / 1000f
+                    dsp?.setStereoWidth(stereoWidth)
                     currentVirtualizerStrength = virtualizerStrength
-                    android.util.Log.d("ImmersiveMode", "Virtualizer strength=$virtualizerStrength (stub - no effect yet)")
+                    val widthPercent = ((1f + stereoWidth) * 100).toInt()
+                    android.util.Log.d("ImmersiveMode", "Custom: virtualizer=$virtualizerStrength (width=${widthPercent}%)")
                     
                     currentMode = "custom"
                     
@@ -208,7 +212,7 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyModeOff() {
         val dsp = SoftwareDSPAudioProcessor.getInstance()
-        dsp?.resetAll()
+        dsp?.resetAll()  // This also resets stereoWidth to 0
         currentEqGains = emptyList()
         currentBassGain = 0f
         currentVirtualizerStrength = 0
@@ -225,8 +229,14 @@ class ImmersiveModeEngineModule : Module() {
         
         dsp?.setTrebleBoost(trebleGainUnits)
         
+        // Apply stereo width via software DSP
+        // virtualizerStrength 0-1000 maps to stereoWidth 0.0-1.0
+        val stereoWidth = virtualizerStrength / 1000f
+        dsp?.setStereoWidth(stereoWidth)
         currentVirtualizerStrength = virtualizerStrength
-        android.util.Log.d("ImmersiveMode", "Mode applied: bass=$bassGainUnits, treble=$trebleGainUnits, virtualizer=$virtualizerStrength")
+        
+        val widthPercent = ((1f + stereoWidth) * 100).toInt()
+        android.util.Log.d("ImmersiveMode", "Mode applied: bass=$bassGainUnits, treble=$trebleGainUnits, virtualizer=$virtualizerStrength (width=${widthPercent}%)")
     }
     
     // Professional Immersive Mode Configurations

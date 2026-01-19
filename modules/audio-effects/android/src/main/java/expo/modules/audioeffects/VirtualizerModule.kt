@@ -38,7 +38,15 @@ class VirtualizerModule : Module() {
         Function("setEnabled") { enabled: Boolean ->
             try {
                 isEnabled = enabled
-                android.util.Log.d("VirtualizerModule", "Software DSP Virtualizer enabled=$enabled (stub - no effect yet)")
+                if (!enabled) {
+                    // Reset stereo width to original when disabled
+                    SoftwareDSPAudioProcessor.getInstance().setStereoWidth(0f)
+                } else if (currentStrength != 0) {
+                    // Re-apply current strength when enabled
+                    val width = currentStrength / 1000f
+                    SoftwareDSPAudioProcessor.getInstance().setStereoWidth(width)
+                }
+                android.util.Log.d("VirtualizerModule", "Software DSP Virtualizer enabled=$enabled")
                 return@Function mapOf("success" to true, "enabled" to enabled, "isSoftwareDSP" to true)
             } catch (e: Exception) {
                 return@Function mapOf("success" to false, "error" to e.message)
@@ -52,12 +60,11 @@ class VirtualizerModule : Module() {
                 val clampedStrength = strength.coerceIn(-1000, 1000)
                 currentStrength = clampedStrength
                 
-                // Calculate stereo width multiplier for logging
-                // -1000 = 0% (mono), 0 = 100% (original), +1000 = 200% (max wide)
-                val widthPercent = when {
-                    clampedStrength < 0 -> 100 + (clampedStrength / 10) // -1000 -> 0%, 0 -> 100%
-                    else -> 100 + (clampedStrength / 10) // 0 -> 100%, +1000 -> 200%
-                }
+                // Convert to stereo width: -1000 → -1.0, 0 → 0.0, +1000 → +1.0
+                val width = clampedStrength / 1000f
+                SoftwareDSPAudioProcessor.getInstance().setStereoWidth(width)
+                
+                val widthPercent = ((1f + width) * 100).toInt()
                 android.util.Log.d("VirtualizerModule", "Software DSP Virtualizer strength=$clampedStrength (width=${widthPercent}%)")
                 return@Function mapOf("success" to true, "strength" to clampedStrength, "isSoftwareDSP" to true)
             } catch (e: Exception) {
@@ -80,6 +87,7 @@ class VirtualizerModule : Module() {
         
         AsyncFunction("release") { promise: Promise ->
             try {
+                SoftwareDSPAudioProcessor.getInstance().setStereoWidth(0f)
                 isEnabled = false
                 currentStrength = 0
                 audioSessionId = 0
