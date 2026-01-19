@@ -16,70 +16,76 @@ export interface ImmersiveMode {
   bassBoost: number;
   trebleBoost: number;
   spatialWidth: number;
+  reverb: number; // 0-1 wet mix (0 = dry, 1 = full reverb)
 }
 
 const EQ_FREQUENCIES = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
 
 // Professional Immersive Mode Configurations
-// Based on Samsung Dolby Atmos, Sony 360 Reality Audio, and professional audio engineering standards
+// Based on Sony 360 Reality Audio, Bose soundbars, Yamaha YPAO/Cinema DSP, Samsung Q-Symphony, IMAX Enhanced
 // EQ bands: [60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz]
 // Values in gain units (-5 to +5), where 1 unit = 2.4 dB
+// Reverb: 0-1 wet mix (0 = dry, 1 = full reverb)
 const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
   music: {
-    // Balanced "smile curve" for enjoyable music listening
-    // Warm bass, slight mid scoop, sparkly highs - Samsung Music mode inspired
+    // Bose-inspired balanced music mode
+    // Moderate warm bass, subtle treble sparkle, minimal room ambience
     name: 'Music',
-    eqPreset: [2.5, 1.5, 0.5, -0.5, 0, 0.5, 1.5, 2.0, 1.5, 1.0],
-    bassBoost: 2,      // +4.8 dB at 150Hz (warm fullness)
-    trebleBoost: 1.5,  // +3.6 dB at 6kHz (presence and air)
-    spatialWidth: 0.35, // 35% - moderate widening for immersion
+    eqPreset: [2.0, 1.5, 0.5, -0.5, 0, 0.5, 1.0, 1.5, 1.0, 0.5],
+    bassBoost: 1.5,    // +3.6 dB (Bose music: moderate warm bass)
+    trebleBoost: 1.0,  // +2.4 dB (reduced for non-fatiguing warmth)
+    spatialWidth: 0.25, // 25% - subtle widening only
+    reverb: 0.05,      // 5% - minimal room ambience for natural feel
   },
   '360_reality': {
-    // Flat/neutral EQ profile - Sony 360 Reality Audio & Samsung 360 Audio inspired
-    // Preserves original sound for accurate spatial positioning in object-based audio
-    // Reference: Sony MDR-MV1 professional monitoring standard (5Hz-80kHz flat response)
+    // Sony 360 Reality Audio inspired - near-flat for accurate spatial positioning
+    // Maximum spatial immersion with significant reverb for 360° soundfield
     name: '360 Reality',
     eqPreset: [0, 0, 0, 0, 0, 0.3, 0.5, 0.3, 0, 0],
-    bassBoost: 0.5,    // +1.2 dB - subtle warmth while preserving spatial cues
-    trebleBoost: 0.5,  // +1.2 dB (subtle air for enhanced location perception)
-    spatialWidth: 0.75, // 75% - maximum spatial width for immersive 360° soundfield
+    bassBoost: 0.3,    // +0.7 dB (near-flat for accurate spatial cues)
+    trebleBoost: 0.5,  // +1.2 dB (air for spatial perception)
+    spatialWidth: 0.85, // 85% - maximum immersion for 360° soundfield
+    reverb: 0.25,      // 25% - significant reverb for true 360° surround sphere
   },
   gaming: {
-    // Competitive gaming EQ - cut bass, boost footstep frequencies (2-6kHz)
-    // Based on professional gaming headset standards
+    // Competitive gaming - cut bass, boost footstep frequencies (2-6kHz)
+    // Subtle spatial cues without muddiness
     name: 'Gaming',
     eqPreset: [-2.0, -1.5, -1.0, 0, 2.0, 3.5, 3.0, 2.0, 1.5, 1.0],
-    bassBoost: -1.0,   // -2.4 dB (reduce bass masking)
-    trebleBoost: 2.5,  // +6 dB (enhanced detail and clarity)
-    spatialWidth: 0.5, // 50% - directional awareness without blur
+    bassBoost: -1.0,   // -2.4 dB (reduce bass masking for footsteps)
+    trebleBoost: 2.0,  // +4.8 dB (slightly less to reduce fatigue)
+    spatialWidth: 0.45, // 45% - better directional accuracy
+    reverb: 0.075,     // 7.5% - subtle room cues for spatial awareness
   },
   podcast: {
-    // Voice clarity mode - enhanced 1-4kHz for speech intelligibility
-    // Reduced bass/treble extremes, no spatial processing
+    // Voice clarity mode - crystal clear speech
+    // No spatial processing, no reverb
     name: 'Podcast',
     eqPreset: [-2.0, -1.5, 0, 1.5, 2.5, 2.0, 1.0, 0, -0.5, -1.0],
     bassBoost: -1.5,   // -3.6 dB (removes rumble and boominess)
     trebleBoost: -0.5, // -1.2 dB (reduces sibilance)
     spatialWidth: 0,   // 0% - mono-focused for speech
+    reverb: 0,         // 0% - no reverb for clean voice
   },
   movie: {
-    // Cinematic experience - THX-inspired with strong LFE and dialogue clarity
-    // Sub-bass for explosions, clear mids for dialogue, detailed highs
+    // IMAX/THX-inspired cinematic experience
+    // Strong bass punch, detailed highs, cinema hall ambience
     name: 'Movie',
-    eqPreset: [3.5, 2.5, 1.0, 0, 0.5, 1.0, 1.5, 2.0, 2.0, 1.5],
-    bassBoost: 3.5,    // +8.4 dB (cinematic impact and rumble)
-    trebleBoost: 2.0,  // +4.8 dB (effects detail and sparkle)
-    spatialWidth: 0.45, // 45% - surround-like experience
+    eqPreset: [3.5, 2.5, 1.0, 0, 0.5, 1.0, 1.5, 2.5, 2.0, 1.5],
+    bassBoost: 4.0,    // +9.6 dB (IMAX Enhanced-level bass punch)
+    trebleBoost: 2.5,  // +6 dB (enhanced effects detail)
+    spatialWidth: 0.55, // 55% - proper surround experience
+    reverb: 0.15,      // 15% - cinema hall ambience (Yamaha Cinema DSP inspired)
   },
   sports: {
-    // Stadium/broadcast mode - enhanced commentary clarity with crowd atmosphere
-    // Boosted 500Hz-4kHz for commentator voices, moderate bass for stadium ambiance
-    // Slight treble reduction to minimize whistle/crowd harshness
+    // Stadium/broadcast mode - commentary clarity with crowd atmosphere
+    // Open stadium feel with arena ambience
     name: 'Sports',
     eqPreset: [1.0, 0.5, 0.5, 2.0, 2.5, 2.0, 0.5, 0, -0.5, -0.5],
-    bassBoost: 1.0,    // +2.4 dB (stadium atmosphere without overwhelming)
-    trebleBoost: -0.5, // -1.2 dB (reduce whistle/crowd peak harshness)
-    spatialWidth: 0.4, // 40% - stadium-like spatial experience
+    bassBoost: 1.5,    // +3.6 dB (slightly more for stadium atmosphere)
+    trebleBoost: 0,    // Neutral (balanced commentary clarity)
+    spatialWidth: 0.5, // 50% - stadium-like open soundstage
+    reverb: 0.125,     // 12.5% - stadium/arena open-air ambience
   },
 };
 
@@ -87,9 +93,13 @@ class WebAudioEffectsEngineClass {
   private audioContext: AudioContext | null = null;
   private eqFilters: BiquadFilterNode[] = [];
   private masterGain: GainNode | null = null;
+  private dryGain: GainNode | null = null;
+  private wetGain: GainNode | null = null;
+  private reverbDelays: { delay: any; feedback: GainNode; filter: BiquadFilterNode }[] = [];
   private isInitialized = false;
   private currentEQValues: number[] = new Array(10).fill(0);
   private currentMode: string = 'off';
+  private currentReverb: number = 0;
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {
@@ -99,9 +109,17 @@ class WebAudioEffectsEngineClass {
     try {
       this.audioContext = new AudioContext();
       
+      // Create dry/wet mix gains for reverb
+      this.dryGain = this.audioContext.createGain();
+      this.dryGain.gain.value = 1.0;
+      
+      this.wetGain = this.audioContext.createGain();
+      this.wetGain.gain.value = 0;
+      
       this.masterGain = this.audioContext.createGain();
       this.masterGain.gain.value = 1.0;
 
+      // Create EQ filters
       this.eqFilters = EQ_FREQUENCIES.map((freq, index) => {
         const filter = this.audioContext!.createBiquadFilter();
         
@@ -123,16 +141,54 @@ class WebAudioEffectsEngineClass {
         return filter;
       });
 
+      // Create multi-tap delay reverb (4 delay lines for richer sound)
+      // Delay times chosen for natural room ambience
+      const delayTimes = [0.023, 0.041, 0.067, 0.089]; // Prime-ish ratios for diffuse sound
+      const feedbacks = [0.4, 0.35, 0.3, 0.25]; // Decreasing feedback for each tap
+      const filterFreqs = [4000, 3500, 3000, 2500]; // Lowpass frequencies for natural decay
+      
+      this.reverbDelays = delayTimes.map((time, i) => {
+        const delay = this.audioContext!.createDelay(0.5);
+        delay.delayTime.value = time;
+        
+        const feedback = this.audioContext!.createGain();
+        feedback.gain.value = feedbacks[i];
+        
+        const filter = this.audioContext!.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = filterFreqs[i];
+        filter.Q.value = 0.5;
+        
+        return { delay, feedback, filter };
+      });
+
+      // Connect EQ chain
       let currentNode: any = this.eqFilters[0];
       for (let i = 1; i < this.eqFilters.length; i++) {
         currentNode.connect(this.eqFilters[i]);
         currentNode = this.eqFilters[i];
       }
-      currentNode.connect(this.masterGain);
+      
+      // EQ output splits to dry and wet paths
+      const eqOutput = this.eqFilters[this.eqFilters.length - 1];
+      eqOutput.connect(this.dryGain);
+      
+      // Connect reverb delay lines (parallel structure)
+      this.reverbDelays.forEach(({ delay, feedback, filter }) => {
+        eqOutput.connect(delay);
+        delay.connect(filter);
+        filter.connect(feedback);
+        feedback.connect(delay); // Feedback loop
+        filter.connect(this.wetGain!);
+      });
+      
+      // Mix dry and wet to master output
+      this.dryGain.connect(this.masterGain);
+      this.wetGain.connect(this.masterGain);
       this.masterGain.connect(this.audioContext.destination);
 
       this.isInitialized = true;
-      console.log('[WebAudioEffectsEngine] Initialized successfully with 10-band EQ');
+      console.log('[WebAudioEffectsEngine] Initialized with 10-band EQ and reverb');
       return true;
     } catch (error) {
       console.error('[WebAudioEffectsEngine] Failed to initialize:', error);
@@ -184,6 +240,9 @@ class WebAudioEffectsEngineClass {
       }
     });
 
+    // Reset reverb when applying standard EQ (non-immersive mode)
+    this.setReverb(0);
+
     // Limiter handles distortion prevention in PlayerContext
     // Master gain stays at 1.0 for maximum headroom
     if (this.masterGain) {
@@ -191,6 +250,7 @@ class WebAudioEffectsEngineClass {
     }
 
     this.currentEQValues = paddedBands;
+    this.currentMode = 'equalizer';
   }
 
   applyFiveBandEQ(bands: number[]): void {
@@ -240,7 +300,7 @@ class WebAudioEffectsEngineClass {
     // Immersive modes use their own dedicated settings WITHOUT zero-sum normalization
     // This allows for the full creative EQ curves designed for each mode
     // Limiter in PlayerContext still prevents distortion
-    this.applyImmersiveEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost, mode.spatialWidth);
+    this.applyImmersiveEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost, mode.spatialWidth, mode.reverb);
     this.currentMode = modeName;
   }
 
@@ -249,7 +309,7 @@ class WebAudioEffectsEngineClass {
    * Immersive modes have their own creative curves that shouldn't be balanced.
    * The limiter in PlayerContext handles distortion prevention.
    */
-  private applyImmersiveEQ(bands: number[], bassBoost: number, trebleBoost: number, spatialWidth: number): void {
+  private applyImmersiveEQ(bands: number[], bassBoost: number, trebleBoost: number, spatialWidth: number, reverb: number = 0): void {
     if (!this.isInitialized || this.eqFilters.length === 0) {
       console.log('[WebAudioEffectsEngine] Not initialized, cannot apply immersive EQ');
       return;
@@ -283,13 +343,37 @@ class WebAudioEffectsEngineClass {
       }
     });
 
+    // Apply reverb wet/dry mix
+    this.setReverb(reverb);
+
     // Master gain stays at 1.0 - limiter handles distortion prevention
     if (this.masterGain) {
       this.masterGain.gain.value = 1.0;
     }
 
     this.currentEQValues = paddedBands;
-    console.log(`[WebAudioEffectsEngine] Applied immersive mode with bass:${bassBoost}, treble:${trebleBoost}, spatial:${spatialWidth}`);
+    console.log(`[WebAudioEffectsEngine] Applied immersive mode with bass:${bassBoost}, treble:${trebleBoost}, spatial:${spatialWidth}, reverb:${reverb}`);
+  }
+
+  /**
+   * Set reverb wet/dry mix (0 = dry, 1 = full reverb)
+   * Uses equal-power crossfade for smooth blending
+   */
+  setReverb(wetMix: number): void {
+    const clampedWet = Math.max(0, Math.min(1, wetMix));
+    this.currentReverb = clampedWet;
+    
+    if (this.dryGain && this.wetGain) {
+      // Equal-power crossfade for smooth blending
+      // At 0% reverb: dry=1.0, wet=0.0 (fully dry)
+      // At 25% reverb: dry≈0.97, wet≈0.25 (mostly dry with subtle ambience)
+      // At 100% reverb: dry=0.0, wet=1.0 (fully wet)
+      const dryAmount = Math.cos(clampedWet * Math.PI / 2);
+      const wetAmount = Math.sin(clampedWet * Math.PI / 2);
+      
+      this.dryGain.gain.value = dryAmount;
+      this.wetGain.gain.value = wetAmount;
+    }
   }
 
   setMasterVolume(volume: number): void {
@@ -302,6 +386,7 @@ class WebAudioEffectsEngineClass {
     this.eqFilters.forEach(filter => {
       filter.gain.value = 0;
     });
+    this.setReverb(0); // Reset reverb to dry
     this.currentEQValues = new Array(10).fill(0);
     this.currentMode = 'off';
     console.log('[WebAudioEffectsEngine] EQ reset to flat');
@@ -331,9 +416,13 @@ class WebAudioEffectsEngineClass {
     this.audioContext = null;
     this.eqFilters = [];
     this.masterGain = null;
+    this.dryGain = null;
+    this.wetGain = null;
+    this.reverbDelays = [];
     this.isInitialized = false;
     this.currentEQValues = new Array(10).fill(0);
     this.currentMode = 'off';
+    this.currentReverb = 0;
     
     console.log('[WebAudioEffectsEngine] Released');
   }
