@@ -700,9 +700,9 @@ const styles = StyleSheet.create({
   folderItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: FluentSpacing.m,
+    padding: FluentSpacing.l,
     borderRadius: FluentControlRadius.card,
-    minHeight: 72,
+    minHeight: 56,
   },
   folderIconContainer: {
     width: FluentTouchTarget.minimum,
