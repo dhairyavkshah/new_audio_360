@@ -611,24 +611,6 @@ function RadioScreen() {
           </FluentButton>
         </View>
 
-        {error && (
-          <View style={[styles.errorCard, { backgroundColor: colors.colorPaletteRedBackground2, borderRadius: FluentRadius.large }]}>
-            <View style={styles.errorCardHeader}>
-              <MaterialCommunityIcons
-                name="alert-circle"
-                size={FluentIconSize.regular}
-                color={colors.colorPaletteRedForeground1}
-              />
-              <FluentText variant="body2" style={{ color: colors.colorPaletteRedForeground1, flex: 1, marginLeft: FluentSpacing.s }}>
-                {error}
-              </FluentText>
-              <Pressable onPress={clearOnlineError} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                <MaterialCommunityIcons name="close" size={FluentIconSize.small} color={colors.colorPaletteRedForeground1} />
-              </Pressable>
-            </View>
-          </View>
-        )}
-
         {currentStation && (
           <GlassCard style={{ ...cardStyle, ...styles.nowPlayingCard }}>
             <View style={styles.nowPlayingHeader}>
