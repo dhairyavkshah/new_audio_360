@@ -193,18 +193,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (trackIndex !== null && trackIndex >= 0) {
           const currentQueue = queueRef.current;
           if (currentQueue[trackIndex]) {
+            // Reset position immediately to prevent slider flash
+            setCurrentTime(0);
             setCurrentSong(currentQueue[trackIndex]);
             const track = await TrackPlayerService.getCurrentTrack();
             if (track?.duration) {
               setDuration(track.duration);
+            } else {
+              // Fallback to song duration from queue
+              setDuration(currentQueue[trackIndex].duration || 0);
             }
           }
         }
       },
       onProgress: (progress) => {
         if (TrackPlayerService.getPlaybackSource() !== 'music') return;
-        setCurrentTime(progress.position);
-        if (progress.duration > 0) {
+        // Only update position if it's reasonable (not greater than duration)
+        // This prevents slider flash during track transitions
+        if (progress.duration > 0 && progress.position <= progress.duration) {
+          setCurrentTime(progress.position);
+          setDuration(progress.duration);
+        } else if (progress.duration > 0) {
+          // Track just started, use new duration but reset position
+          setCurrentTime(0);
           setDuration(progress.duration);
         }
         setIsBuffering(progress.buffered < progress.position);
@@ -1263,32 +1274,45 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         return;
       }
       
-      if (isPlaying) {
-        console.log('[PlayerContext] Pausing TrackPlayer...');
-        TrackPlayerService.pause().then(() => {
+      // Verify actual player state before acting
+      try {
+        const actualState = await TrackPlayerService.getState();
+        const isActuallyPlaying = actualState === State.Playing;
+        console.log('[PlayerContext] Actual TrackPlayer state:', actualState, 'isActuallyPlaying:', isActuallyPlaying);
+        
+        if (isActuallyPlaying) {
+          console.log('[PlayerContext] Pausing TrackPlayer...');
+          await TrackPlayerService.pause();
           console.log('[PlayerContext] TrackPlayer paused');
           setIsPlaying(false);
-        }).catch((err) => {
-          console.error('[PlayerContext] TrackPlayer pause error:', err);
-        });
-      } else {
-        if (!currentSong) {
-          console.log('[PlayerContext] No current song to play');
-          return;
-        }
-        // Request playback to stop any playing radio first
-        await AudioCoordinator.requestPlayback('music');
-        // Restore playback source before playing so callbacks work correctly
-        TrackPlayerService.setPlaybackSource('music');
-        try {
+        } else {
+          if (!currentSong) {
+            console.log('[PlayerContext] No current song to play');
+            return;
+          }
+          // Request playback to stop any playing radio first
+          await AudioCoordinator.requestPlayback('music');
+          // Restore playback source before playing so callbacks work correctly
+          TrackPlayerService.setPlaybackSource('music');
+          
+          // Check if player has a track loaded
+          const currentTrack = await TrackPlayerService.getCurrentTrack();
+          if (!currentTrack) {
+            console.log('[PlayerContext] No track loaded, reloading current song');
+            loadAndPlaySong(currentSong);
+            return;
+          }
+          
           console.log('[PlayerContext] Playing TrackPlayer...');
           await TrackPlayerService.play();
           setIsPlaying(true);
           AudioCoordinator.notifyPlaybackStarted('music');
           console.log('[PlayerContext] TrackPlayer resumed');
-        } catch (error) {
-          console.warn('[PlayerContext] Failed to resume playback:', error);
-          // Try reloading the song
+        }
+      } catch (error) {
+        console.warn('[PlayerContext] TrackPlayer toggle failed:', error);
+        // Try reloading the song as fallback
+        if (currentSong) {
           console.log('[PlayerContext] Attempting to reload current song');
           loadAndPlaySong(currentSong);
         }

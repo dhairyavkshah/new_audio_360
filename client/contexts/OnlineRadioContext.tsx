@@ -245,7 +245,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     try {
       const fetchedStations = await OnlineRadioService.getStationsByCountryCode(
         countryCode,
-        200
+        250
       );
       setStations(fetchedStations);
 
@@ -273,7 +273,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     try {
       const fetchedStations = await OnlineRadioService.getPopularStations(
         countryCode,
-        200
+        250
       );
       setPopularStations(fetchedStations);
 
@@ -329,7 +329,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
-      const fetchedStations = await OnlineRadioService.searchStations(query, 200);
+      const fetchedStations = await OnlineRadioService.searchStations(query, 250);
       setStations(fetchedStations);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Search failed';

@@ -33,8 +33,9 @@ const RADIO_BROWSER_SERVERS = [
 
 const NOMINATIM_API = 'https://nominatim.openstreetmap.org';
 
-const MAX_STATIONS_PER_COUNTRY = 200;
-const MIN_BITRATE = 64;
+const MAX_STATIONS_PER_COUNTRY = 250;
+const MIN_BITRATE = 96;
+const MIN_VOTES = 5;
 const VALID_CODECS = ['MP3', 'OGG', 'AAC'];
 const REQUEST_TIMEOUT = 10000;
 
@@ -95,7 +96,8 @@ function filterAndSortStations(stations: OnlineRadioStation[]): OnlineRadioStati
   return stations
     .filter((station) => {
       if (station.lastcheckok !== 1) return false;
-      if (station.bitrate <= MIN_BITRATE) return false;
+      if (station.bitrate < MIN_BITRATE) return false;
+      if (station.votes < MIN_VOTES) return false;
       const codec = station.codec?.toUpperCase() || '';
       if (!VALID_CODECS.some(vc => codec.includes(vc))) return false;
       if (!station.url_resolved && !station.url) return false;
@@ -117,7 +119,7 @@ export const OnlineRadioService = {
         order: 'votes',
         reverse: 'true',
         hidebroken: 'true',
-        limit: String(Math.min(limit * 3, 600)),
+        limit: String(Math.min(limit * 3, 750)),
       });
       
       const stations = await fetchFromRadioBrowser(`/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?${params}`);
@@ -142,7 +144,7 @@ export const OnlineRadioService = {
         order: 'votes',
         reverse: 'true',
         hidebroken: 'true',
-        limit: String(Math.min(limit * 3, 600)),
+        limit: String(Math.min(limit * 3, 750)),
       });
       
       if (countryCode) {
@@ -169,7 +171,7 @@ export const OnlineRadioService = {
         order: 'votes',
         reverse: 'true',
         hidebroken: 'true',
-        limit: String(Math.min(limit * 3, 600)),
+        limit: String(Math.min(limit * 3, 750)),
       });
       
       let endpoint = '/json/stations/topvote';
@@ -201,7 +203,7 @@ export const OnlineRadioService = {
         order: 'votes',
         reverse: 'true',
         hidebroken: 'true',
-        limit: String(Math.min(limit * 3, 600)),
+        limit: String(Math.min(limit * 3, 750)),
       });
       
       if (countryCode) {
