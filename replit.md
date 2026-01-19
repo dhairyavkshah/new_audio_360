@@ -3,6 +3,11 @@
 ## Overview
 New Audio 360 is a premium mobile music player application built with React Native and Expo, targeting audio enthusiasts. It delivers studio-quality audio processing through pure software-based DSP, 55 stunning themes, and comprehensive music organization. The app requires a one-time purchase for lifetime access, with all data stored locally and no backend required. Its vision is to be "The top-grade intelligent music experience built for you."
 
+## Recent Changes (v26.0)
+- **Flat EQ Always Active**: The Flat preset is now always active by default and cannot be turned off. Tapping another preset and tapping it again returns to Flat instead of disabling EQ entirely.
+- **Updated Sound Lab Text**: Changed instruction text to "Flat is always active by default. Tap a preset to apply. Only one mode can be active at a time."
+- **Version Update**: Updated version to 26.0 across app.config.js, AboutScreen, and documentation.
+
 ## User Preferences
 - Concise and direct communication
 - Prioritize core functionality and architectural integrity
@@ -40,7 +45,7 @@ Source → 10-Band EQ → Bass Boost (150Hz low-shelf) → Treble Boost (6kHz hi
 - **Volume Safety System**: Automatic gain reduction when combined EQ + bass + treble exceeds ±12 dB limit. Prevents excessive loudness regardless of settings.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
 - **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide)
-- **EQ Presets**: 10 total (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity). Bass+ is a party mode preset, Clarity is optimized for podcasts & movies.
+- **EQ Presets**: 10 total (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity). Flat is always active by default and cannot be turned off. Bass+ is a party mode preset, Clarity is optimized for podcasts & movies.
 - **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, and virtualizer settings, designed for specific listening experiences.
 
 ### Navigation Structure
@@ -61,7 +66,7 @@ Checks for Google Play installation. Licensed users get full access; unlicensed 
 
 ### Feature Specifications
 
-- **Sound Lab**: 10 EQ presets, custom 5-band EQ editor, 6 immersive modes, bass/treble control, intelligent volume safety system.
+- **Sound Lab**: 10 EQ presets (Flat always active by default), custom 5-band EQ editor, 6 immersive modes, bass/treble control, intelligent volume safety system.
 - **Theming**: 55 themes across 6 categories (System, Winamp, Retro, Nature, Professional, Special).
 - **Radio**: Native FM/AM radio and online streaming radio (Radio Browser API with quality filters). On Android, online radio streams go through PlaybackEngineModule/SoftwareDSPAudioProcessor for full DSP effects; web uses expo-av fallback.
 - **Playback Features**: Background playback, notification controls, queue management, shuffle/repeat, playback speed, sleep timer, favorites, recently/most played.

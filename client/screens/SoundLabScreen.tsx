@@ -244,11 +244,24 @@ function SoundLabScreen() {
           setSoundLabMode("immersive");
         } else {
           await clearSoundMode();
-          setSoundLabMode("off");
-          setSelectedImmersive("off");
+          // Default to Flat preset instead of off
+          setSelectedEQ("Flat");
+          setSoundLabMode("equalizer");
+          await saveEQPreset("Flat");
+          const flatPreset = EQ_PRESETS.find(p => p.name === "Flat");
+          if (flatPreset) {
+            NativeEffectsManager.applyFiveBandEQ(flatPreset.bands);
+          }
         }
       } else {
-        setSoundLabMode("off");
+        // Default to Flat preset instead of off
+        setSelectedEQ("Flat");
+        setSoundLabMode("equalizer");
+        await saveEQPreset("Flat");
+        const flatPreset = EQ_PRESETS.find(p => p.name === "Flat");
+        if (flatPreset) {
+          NativeEffectsManager.applyFiveBandEQ(flatPreset.bands);
+        }
       }
     };
     loadSettings();
@@ -259,11 +272,29 @@ function SoundLabScreen() {
     
     if (preset === "Custom") {
       if (isCustomEQ && soundLabMode === "equalizer") {
-        setSoundLabMode("off");
+        // Switch back to Flat instead of turning off (Flat is always active)
         setIsCustomEQ(false);
-        await clearEQPreset();
+        setSelectedEQ("Flat");
+        await saveEQPreset("Flat");
         await NativeAudioService.setImmersiveMode('off');
-        NativeEffectsManager.disableEQ();
+        const flatPreset = EQ_PRESETS.find(p => p.name === "Flat");
+        if (flatPreset) {
+          NativeEffectsManager.applyFiveBandEQ(flatPreset.bands);
+          const newBass = flatPreset.bassControl ?? 0;
+          const newTreble = flatPreset.trebleControl ?? 0;
+          const newVirt = flatPreset.virtualizer ?? 0;
+          setBassControl(newBass);
+          setBassBoost(newBass);
+          setTrebleControl(newTreble);
+          setTrebleBoost(newTreble);
+          setVirtualizerLevel(newVirt);
+          await Promise.all([
+            saveBassControlLevel(newBass),
+            saveTrebleControlLevel(newTreble),
+            saveVirtualizerLevel(newVirt)
+          ]);
+          applyAudioEffects(newBass, newTreble, newVirt);
+        }
       } else {
         setIsCustomEQ(true);
         setSelectedEQ("");
@@ -275,11 +306,32 @@ function SoundLabScreen() {
       }
     } else {
       if (soundLabMode === "equalizer" && selectedEQ === preset && !isCustomEQ) {
-        setSoundLabMode("off");
-        setSelectedEQ("");
-        await clearEQPreset();
-        await NativeAudioService.setImmersiveMode('off');
-        NativeEffectsManager.disableEQ();
+        // When tapping the same preset, switch back to Flat (Flat is always active)
+        if (preset === "Flat") {
+          // Flat is already active, do nothing (Flat is always on)
+          return;
+        }
+        // Switch back to Flat instead of turning off
+        setSelectedEQ("Flat");
+        await saveEQPreset("Flat");
+        const flatPreset = EQ_PRESETS.find(p => p.name === "Flat");
+        if (flatPreset) {
+          NativeEffectsManager.applyFiveBandEQ(flatPreset.bands);
+          const newBass = flatPreset.bassControl ?? 0;
+          const newTreble = flatPreset.trebleControl ?? 0;
+          const newVirt = flatPreset.virtualizer ?? 0;
+          setBassControl(newBass);
+          setBassBoost(newBass);
+          setTrebleControl(newTreble);
+          setTrebleBoost(newTreble);
+          setVirtualizerLevel(newVirt);
+          await Promise.all([
+            saveBassControlLevel(newBass),
+            saveTrebleControlLevel(newTreble),
+            saveVirtualizerLevel(newVirt)
+          ]);
+          applyAudioEffects(newBass, newTreble, newVirt);
+        }
       } else {
         setSelectedEQ(preset);
         setIsCustomEQ(false);
@@ -560,7 +612,7 @@ function SoundLabScreen() {
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
         <FluentText variant="caption1" color="secondary" style={styles.sectionDesc}>
-          Tap a preset to apply, tap again to turn off. Only one mode can be active at a time.
+          Flat is always active by default. Tap a preset to apply. Only one mode can be active at a time.
         </FluentText>
 
         <View style={[styles.sectionCard, cardStyle]}>
