@@ -1,9 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
-import { Platform } from 'react-native';
 import { getEQPreset, getSoundMode } from '@/lib/storage';
 import { 
   ImmersiveModeEngineModule, 
-  EqualizerModule,
   IMMERSIVE_MODE_INFO, 
   ImmersiveMode, 
   ImmersiveModeSettings,

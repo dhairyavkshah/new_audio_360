@@ -5,8 +5,7 @@ import { Song } from '@/lib/data';
 import { DeviceSong } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
 import { useSoundLab } from '@/contexts/SoundLabContext';
-import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule, AudioSessionBridgeModule } from 'audio-effects';
-import { NativeEffectsManager } from '@/services/NativeEffectsManager';
+import { PlaybackEngineModule, PlaybackStatus, AudioSessionBridgeModule, EqualizerModule } from 'audio-effects';
 import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
 import { setMusicPlaying } from '@/lib/playbackState';
@@ -287,7 +286,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [setupTrackPlayerCallbacks]);
 
-  // PlaybackEngineModule initialization - Android only (with DSP chain)
+  // PlaybackEngineModule initialization - Android only
+  // DSP is handled via react-native-audio-api (WebAudioEffectsEngine) on both platforms
+  // WebAudioEffectsEngine syncs DSP settings to EqualizerModule for Android native processing
   useEffect(() => {
     if (useNativePlaybackRef.current) {
       PlaybackEngineModule.initialize().then(async (initResult) => {
@@ -295,22 +296,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           nativeAudioSessionIdRef.current = initResult.audioSessionId;
           console.log('[PlayerContext] PlaybackEngineModule initialized with audioSessionId:', initResult.audioSessionId);
           
-          // Attach NativeEffectsManager to the PlaybackEngineModule's audio session for DSP
-          try {
-            const attached = await NativeEffectsManager.attach(initResult.audioSessionId);
-            if (attached) {
-              console.log('[PlayerContext] NativeEffectsManager attached to PlaybackEngineModule audio session');
-            }
-            
-            // Also attach ImmersiveModeEngine for immersive audio modes
-            if (ImmersiveModeEngineModule.isAvailable()) {
-              const immersiveResult = await ImmersiveModeEngineModule.attach(initResult.audioSessionId);
-              if (immersiveResult.success) {
-                console.log('[PlayerContext] ImmersiveModeEngineModule attached to PlaybackEngineModule audio session');
+          // Attach EqualizerModule to enable DSP control via WebAudioEffectsEngine
+          if (EqualizerModule.isAvailable()) {
+            try {
+              const attachResult = await EqualizerModule.attach(initResult.audioSessionId);
+              if (attachResult.success) {
+                console.log('[PlayerContext] EqualizerModule attached to PlaybackEngineModule audio session');
               }
+            } catch (err) {
+              console.warn('[PlayerContext] EqualizerModule attach failed:', err);
             }
-          } catch (err) {
-            console.warn('[PlayerContext] Failed to attach audio effects to PlaybackEngineModule:', err);
           }
         } else if (initResult.error) {
           console.warn('[PlayerContext] PlaybackEngineModule initialization failed:', initResult.error);
@@ -320,9 +315,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     
     return () => {
       if (useNativePlaybackRef.current) {
-        NativeEffectsManager.release();
-        if (ImmersiveModeEngineModule.isAvailable()) {
-          ImmersiveModeEngineModule.release();
+        if (EqualizerModule.isAvailable()) {
+          EqualizerModule.release();
         }
         PlaybackEngineModule.release();
       }

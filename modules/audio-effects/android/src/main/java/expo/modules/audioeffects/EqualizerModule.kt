@@ -190,6 +190,32 @@ class EqualizerModule : Module() {
             }
         }
         
+        Function("setBassBoost") { gain: Double ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
+                }
+                dsp.setBassBoost(gain.toFloat())
+                return@Function mapOf("success" to true, "gain" to gain)
+            } catch (e: Exception) {
+                return@Function mapOf("success" to false, "error" to e.message)
+            }
+        }
+        
+        Function("setTrebleBoost") { gain: Double ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
+                }
+                dsp.setTrebleBoost(gain.toFloat())
+                return@Function mapOf("success" to true, "gain" to gain)
+            } catch (e: Exception) {
+                return@Function mapOf("success" to false, "error" to e.message)
+            }
+        }
+        
         Function("setLfeEnabled") { enabled: Boolean ->
             try {
                 val dsp = getDspProcessor()
