@@ -46,14 +46,15 @@ The app uses **pure software-based DSP** across all platforms, ensuring a consis
 
 **Audio Signal Chain**:
 ```
-Source → 10-Band EQ → Bass Boost (150Hz low-shelf) → Treble Boost (6kHz high-shelf) → Safety Gain → Stereo Width → Reverb → Limiter → Output
+Source → 10-Band EQ → Bass Boost (150Hz low-shelf) → Treble Boost (6kHz high-shelf) → LFE Processing (optional) → Safety Gain → Stereo Width → Reverb → Limiter → Output
 ```
 
 **Key Components**:
 - **10-Band Parametric EQ**: Frequencies at 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000 Hz. Presets use positive gain values with intelligent safety limiting.
 - **Bass Boost**: Separate low-shelf filter at 150Hz, ±12 dB range.
 - **Treble Boost**: Separate high-shelf filter at 6kHz, ±12 dB range.
-- **Volume Safety System**: Automatic gain reduction when combined EQ + bass + treble exceeds ±12 dB limit. Prevents excessive loudness regardless of settings.
+- **LFE Channel (Subwoofer Mode)**: Optional feature (disabled by default) that provides extra headroom for bass frequencies. Uses low-pass crossover filter (default 80Hz) to extract sub-bass content. When enabled, low frequencies can boost up to 18dB (vs 12dB for mid/high) before safety gain kicks in. Adjustable LFE gain for boosting sub-bass content. Does not affect sound when disabled.
+- **Volume Safety System**: Automatic gain reduction when combined EQ + bass + treble exceeds limits. Low frequencies get extra headroom (18dB) when LFE is enabled; mid/high frequencies always capped at ±12 dB.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
 - **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide)
 - **EQ Presets**: 10 total (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity). Flat is always active by default and cannot be turned off. Bass+ is a party mode preset, Clarity is optimized for podcasts & movies.
