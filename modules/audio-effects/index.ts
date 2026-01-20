@@ -260,6 +260,68 @@ interface MediaStoreScannerModuleInterface {
   getAlbumArt(albumId: string): Promise<{ success: boolean; albumArt: string | null }>;
 }
 
+// FM Radio Module Types
+export interface FMRadioCapabilities {
+  hasFM: boolean;
+  hasAM: boolean;
+  hasRDS: boolean;
+  hasStereo: boolean;
+  hasEffectsSupport: boolean;
+  minFMFrequency: number;
+  maxFMFrequency: number;
+  minAMFrequency: number;
+  maxAMFrequency: number;
+}
+
+export interface FMRadioStatus {
+  isInitialized: boolean;
+  isPlaying: boolean;
+  hasFMHardware: boolean;
+  frequency: number;
+  band: 'fm' | 'am';
+  signalStrength: number;
+  audioSessionId: number;
+}
+
+export interface FMRadioResult {
+  success: boolean;
+  error?: string;
+  hasFMHardware?: boolean;
+  audioSessionId?: number;
+  capabilities?: FMRadioCapabilities;
+  alreadyInitialized?: boolean;
+  frequency?: number;
+  band?: string;
+  signalStrength?: number;
+  isPlaying?: boolean;
+  stations?: Array<{
+    frequency: number;
+    frequencyMHz: number;
+    band: string;
+    signalStrength: number;
+  }>;
+  count?: number;
+}
+
+interface FMRadioModuleInterface {
+  isAvailable(): boolean;
+  initialize(): Promise<FMRadioResult>;
+  tune(frequency: number, band: string): Promise<FMRadioResult>;
+  play(): Promise<FMRadioResult>;
+  stop(): Promise<FMRadioResult>;
+  seekUp(): Promise<FMRadioResult>;
+  seekDown(): Promise<FMRadioResult>;
+  scan(band: string): Promise<FMRadioResult>;
+  getCapabilities(): FMRadioCapabilities;
+  getAudioSessionId(): number;
+  getCurrentFrequency(): number;
+  getCurrentBand(): string;
+  isPlaying(): boolean;
+  getSignalStrength(): number;
+  getStatus(): FMRadioStatus;
+  release(): Promise<{ success: boolean }>;
+}
+
 // Native Module Instances
 let PlaybackEngineModuleNative: PlaybackEngineModuleInterface | null = null;
 let EqualizerModuleNative: EqualizerModuleInterface | null = null;
@@ -268,6 +330,7 @@ let VirtualizerModuleNative: VirtualizerModuleInterface | null = null;
 let WaveformAnalyzerModuleNative: WaveformAnalyzerModuleInterface | null = null;
 let ImmersiveModeEngineModuleNative: ImmersiveModeEngineModuleInterface | null = null;
 let MediaStoreScannerModuleNative: MediaStoreScannerModuleInterface | null = null;
+let FMRadioModuleNative: FMRadioModuleInterface | null = null;
 
 if (Platform.OS === 'android') {
   try {
@@ -310,6 +373,12 @@ if (Platform.OS === 'android') {
     MediaStoreScannerModuleNative = requireNativeModule<MediaStoreScannerModuleInterface>('MediaStoreScannerModule');
   } catch (e) {
     console.warn('MediaStoreScannerModule not available:', e);
+  }
+  
+  try {
+    FMRadioModuleNative = requireNativeModule<FMRadioModuleInterface>('FMRadioModule');
+  } catch (e) {
+    console.warn('FMRadioModule not available:', e);
   }
 }
 
@@ -1505,6 +1574,218 @@ export const MediaStoreScannerModule = {
     } catch (error) {
       console.error('MediaStoreScannerModule.getAlbumArt error:', error);
       return { success: false, albumArt: null };
+    }
+  }
+};
+
+// FM Radio Module Export
+export const FMRadioModule = {
+  isAvailable: (): boolean => {
+    if (!FMRadioModuleNative) return false;
+    try {
+      return FMRadioModuleNative.isAvailable();
+    } catch (error) {
+      return false;
+    }
+  },
+
+  initialize: async (): Promise<FMRadioResult> => {
+    if (!FMRadioModuleNative) {
+      return { success: false, error: 'FM Radio not available on this platform', hasFMHardware: false };
+    }
+    try {
+      return await FMRadioModuleNative.initialize();
+    } catch (error) {
+      console.error('FMRadioModule.initialize error:', error);
+      return { success: false, error: String(error), hasFMHardware: false };
+    }
+  },
+
+  tune: async (frequency: number, band: 'fm' | 'am' = 'fm'): Promise<FMRadioResult> => {
+    if (!FMRadioModuleNative) {
+      return { success: false, error: 'FM Radio not available' };
+    }
+    try {
+      return await FMRadioModuleNative.tune(frequency, band);
+    } catch (error) {
+      console.error('FMRadioModule.tune error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  play: async (): Promise<FMRadioResult> => {
+    if (!FMRadioModuleNative) {
+      return { success: false, error: 'FM Radio not available' };
+    }
+    try {
+      return await FMRadioModuleNative.play();
+    } catch (error) {
+      console.error('FMRadioModule.play error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  stop: async (): Promise<FMRadioResult> => {
+    if (!FMRadioModuleNative) {
+      return { success: false, error: 'FM Radio not available' };
+    }
+    try {
+      return await FMRadioModuleNative.stop();
+    } catch (error) {
+      console.error('FMRadioModule.stop error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  seekUp: async (): Promise<FMRadioResult> => {
+    if (!FMRadioModuleNative) {
+      return { success: false, error: 'FM Radio not available' };
+    }
+    try {
+      return await FMRadioModuleNative.seekUp();
+    } catch (error) {
+      console.error('FMRadioModule.seekUp error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  seekDown: async (): Promise<FMRadioResult> => {
+    if (!FMRadioModuleNative) {
+      return { success: false, error: 'FM Radio not available' };
+    }
+    try {
+      return await FMRadioModuleNative.seekDown();
+    } catch (error) {
+      console.error('FMRadioModule.seekDown error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  scan: async (band: 'fm' | 'am' = 'fm'): Promise<FMRadioResult> => {
+    if (!FMRadioModuleNative) {
+      return { success: false, error: 'FM Radio not available', stations: [] };
+    }
+    try {
+      return await FMRadioModuleNative.scan(band);
+    } catch (error) {
+      console.error('FMRadioModule.scan error:', error);
+      return { success: false, error: String(error), stations: [] };
+    }
+  },
+
+  getCapabilities: (): FMRadioCapabilities => {
+    if (!FMRadioModuleNative) {
+      return {
+        hasFM: false,
+        hasAM: false,
+        hasRDS: false,
+        hasStereo: false,
+        hasEffectsSupport: false,
+        minFMFrequency: 87.5,
+        maxFMFrequency: 108.0,
+        minAMFrequency: 530,
+        maxAMFrequency: 1710
+      };
+    }
+    try {
+      return FMRadioModuleNative.getCapabilities();
+    } catch (error) {
+      console.error('FMRadioModule.getCapabilities error:', error);
+      return {
+        hasFM: false,
+        hasAM: false,
+        hasRDS: false,
+        hasStereo: false,
+        hasEffectsSupport: false,
+        minFMFrequency: 87.5,
+        maxFMFrequency: 108.0,
+        minAMFrequency: 530,
+        maxAMFrequency: 1710
+      };
+    }
+  },
+
+  getAudioSessionId: (): number => {
+    if (!FMRadioModuleNative) return 0;
+    try {
+      return FMRadioModuleNative.getAudioSessionId();
+    } catch (error) {
+      return 0;
+    }
+  },
+
+  getCurrentFrequency: (): number => {
+    if (!FMRadioModuleNative) return 98.3;
+    try {
+      return FMRadioModuleNative.getCurrentFrequency();
+    } catch (error) {
+      return 98.3;
+    }
+  },
+
+  getCurrentBand: (): string => {
+    if (!FMRadioModuleNative) return 'fm';
+    try {
+      return FMRadioModuleNative.getCurrentBand();
+    } catch (error) {
+      return 'fm';
+    }
+  },
+
+  isPlaying: (): boolean => {
+    if (!FMRadioModuleNative) return false;
+    try {
+      return FMRadioModuleNative.isPlaying();
+    } catch (error) {
+      return false;
+    }
+  },
+
+  getSignalStrength: (): number => {
+    if (!FMRadioModuleNative) return 0;
+    try {
+      return FMRadioModuleNative.getSignalStrength();
+    } catch (error) {
+      return 0;
+    }
+  },
+
+  getStatus: (): FMRadioStatus => {
+    if (!FMRadioModuleNative) {
+      return {
+        isInitialized: false,
+        isPlaying: false,
+        hasFMHardware: false,
+        frequency: 98.3,
+        band: 'fm',
+        signalStrength: 0,
+        audioSessionId: 0
+      };
+    }
+    try {
+      return FMRadioModuleNative.getStatus();
+    } catch (error) {
+      return {
+        isInitialized: false,
+        isPlaying: false,
+        hasFMHardware: false,
+        frequency: 98.3,
+        band: 'fm',
+        signalStrength: 0,
+        audioSessionId: 0
+      };
+    }
+  },
+
+  release: async (): Promise<{ success: boolean }> => {
+    if (!FMRadioModuleNative) {
+      return { success: true };
+    }
+    try {
+      return await FMRadioModuleNative.release();
+    } catch (error) {
+      console.error('FMRadioModule.release error:', error);
+      return { success: false };
     }
   }
 };
