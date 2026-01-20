@@ -102,6 +102,22 @@ const EQ_PRESETS = [
     trebleControl: 0,
     virtualizer: 0
   },
+  { 
+    name: "Bass+", 
+    description: "Enhanced low-end impact",
+    bands: [5, 3, 0, -1, -1],
+    bassControl: 0,
+    trebleControl: 0,
+    virtualizer: 0
+  },
+  { 
+    name: "Clarity", 
+    description: "Crystal-clear detail",
+    bands: [-2, -1, 1, 2, 3],
+    bassControl: 0,
+    trebleControl: 0,
+    virtualizer: 0
+  },
 ];
 
 
