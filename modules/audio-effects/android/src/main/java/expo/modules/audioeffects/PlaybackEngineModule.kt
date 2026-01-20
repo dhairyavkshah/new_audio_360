@@ -1,34 +1,36 @@
 package expo.modules.audioeffects
 
+import android.content.ComponentName
 import android.content.Context
-import android.media.AudioAttributes
-import android.media.AudioManager
+import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import androidx.media3.common.AudioAttributes as ExoAudioAttributes
-import androidx.media3.common.C
+import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.DefaultRenderersFactory
-import androidx.media3.exoplayer.audio.DefaultAudioSink
-import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import com.google.common.util.concurrent.MoreExecutors
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.Promise
 
+@OptIn(UnstableApi::class)
 class PlaybackEngineModule : Module() {
     private var exoPlayer: ExoPlayer? = null
-    private var mediaSession: MediaSession? = null
+    private var mediaController: MediaController? = null
     private var isInitialized = false
     private var currentIndex = 0
     private var progressHandler: Handler? = null
     private var progressRunnable: Runnable? = null
     private var progressCallback: ((Map<String, Any>) -> Unit)? = null
-    private var dspProcessor: SoftwareDSPAudioProcessor? = null
+    private var playerListener: Player.Listener? = null
     
     private val mainHandler = Handler(Looper.getMainLooper())
     
@@ -42,94 +44,57 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("initialize") { promise: Promise ->
             mainHandler.post {
                 try {
-                    if (exoPlayer != null) {
+                    val context = appContext.reactContext ?: throw Exception("Context not available")
+                    
+                    if (exoPlayer != null || PlaybackService.instance != null) {
+                        val audioSessionId = exoPlayer?.audioSessionId 
+                            ?: PlaybackService.instance?.getAudioSessionId() 
+                            ?: 0
                         promise.resolve(mapOf(
                             "success" to true, 
                             "alreadyInitialized" to true,
-                            "audioSessionId" to (exoPlayer?.audioSessionId ?: 0)
+                            "audioSessionId" to audioSessionId
                         ))
                         return@post
                     }
                     
-                    val context = appContext.reactContext ?: throw Exception("Context not available")
+                    val serviceIntent = Intent(context, PlaybackService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(serviceIntent)
+                    } else {
+                        context.startService(serviceIntent)
+                    }
                     
-                    dspProcessor = SoftwareDSPAudioProcessor.getInstance()
+                    val sessionToken = SessionToken(
+                        context, 
+                        ComponentName(context, PlaybackService::class.java)
+                    )
                     
-                    val audioSink = DefaultAudioSink.Builder(context)
-                        .setAudioProcessors(arrayOf(dspProcessor!!))
-                        .build()
-                    
-                    val renderersFactory = object : DefaultRenderersFactory(context) {
-                        override fun buildAudioSink(
-                            context: Context,
-                            enableFloatOutput: Boolean,
-                            enableAudioTrackPlaybackParams: Boolean
-                        ): androidx.media3.exoplayer.audio.AudioSink {
-                            return audioSink
+                    val controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
+                    controllerFuture.addListener({
+                        try {
+                            mediaController = controllerFuture.get()
+                            exoPlayer = PlaybackService.instance?.getPlayer()
+                            
+                            setupPlayerListener()
+                            
+                            isInitialized = true
+                            val audioSessionId = exoPlayer?.audioSessionId ?: 0
+                            
+                            android.util.Log.d("PlaybackEngineModule", "Initialized with audioSessionId: $audioSessionId")
+                            
+                            promise.resolve(mapOf(
+                                "success" to true,
+                                "audioSessionId" to audioSessionId
+                            ))
+                        } catch (e: Exception) {
+                            android.util.Log.e("PlaybackEngineModule", "Failed to get controller: ${e.message}", e)
+                            promise.reject("INIT_ERROR", e.message, e)
                         }
-                    }.setEnableAudioFloatOutput(true)
-                     .setEnableDecoderFallback(true)
-                    
-                    val audioAttributes = ExoAudioAttributes.Builder()
-                        .setUsage(C.USAGE_MEDIA)
-                        .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-                        .build()
-                    
-                    exoPlayer = ExoPlayer.Builder(context, renderersFactory)
-                        .setAudioAttributes(audioAttributes, true)
-                        .setHandleAudioBecomingNoisy(true)
-                        .build().apply {
-                            addListener(object : Player.Listener {
-                                override fun onPlaybackStateChanged(state: Int) {
-                                    sendEvent("onPlaybackStateChanged", mapOf(
-                                        "state" to when (state) {
-                                            Player.STATE_IDLE -> "idle"
-                                            Player.STATE_BUFFERING -> "buffering"
-                                            Player.STATE_READY -> "ready"
-                                            Player.STATE_ENDED -> "ended"
-                                            else -> "unknown"
-                                        }
-                                    ))
-                                }
-                                
-                                override fun onIsPlayingChanged(isPlaying: Boolean) {
-                                    sendEvent("onIsPlayingChanged", mapOf("isPlaying" to isPlaying))
-                                }
-                                
-                                override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                                    val index = exoPlayer?.currentMediaItemIndex ?: 0
-                                    currentIndex = index
-                                    sendEvent("onTrackChanged", mapOf(
-                                        "index" to index,
-                                        "reason" to when (reason) {
-                                            Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> "auto"
-                                            Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> "seek"
-                                            Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED -> "playlist"
-                                            Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> "repeat"
-                                            else -> "unknown"
-                                        }
-                                    ))
-                                }
-                                
-                                override fun onPlayerError(error: PlaybackException) {
-                                    sendEvent("onError", mapOf(
-                                        "code" to error.errorCode,
-                                        "message" to (error.message ?: "Unknown error")
-                                    ))
-                                }
-                            })
-                        }
-                    
-                    mediaSession = MediaSession.Builder(context, exoPlayer!!)
-                        .build()
-                    
-                    isInitialized = true
-                    promise.resolve(mapOf(
-                        "success" to true,
-                        "audioSessionId" to (exoPlayer?.audioSessionId ?: 0)
-                    ))
+                    }, MoreExecutors.directExecutor())
                     
                 } catch (e: Exception) {
+                    android.util.Log.e("PlaybackEngineModule", "Initialize error: ${e.message}", e)
                     promise.reject("INIT_ERROR", e.message, e)
                 }
             }
@@ -138,7 +103,7 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("setMetadata") { title: String, artist: String, album: String, artworkUri: String?, promise: Promise ->
             mainHandler.post {
                 try {
-                    val player = exoPlayer ?: throw Exception("Player not initialized")
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
                     
                     val metadataBuilder = MediaMetadata.Builder()
                         .setTitle(title)
@@ -169,7 +134,7 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("setQueue") { uris: List<String>, startIndex: Int, promise: Promise ->
             mainHandler.post {
                 try {
-                    val player = exoPlayer ?: throw Exception("Player not initialized")
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
                     
                     player.stop()
                     player.clearMediaItems()
@@ -199,7 +164,7 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("loadTrack") { uri: String, promise: Promise ->
             mainHandler.post {
                 try {
-                    val player = exoPlayer ?: throw Exception("Player not initialized")
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
                     
                     player.stop()
                     player.clearMediaItems()
@@ -212,7 +177,10 @@ class PlaybackEngineModule : Module() {
                     player.prepare()
                     currentIndex = 0
                     
-                    promise.resolve(mapOf("success" to true))
+                    promise.resolve(mapOf(
+                        "success" to true,
+                        "index" to 0
+                    ))
                     
                 } catch (e: Exception) {
                     promise.reject("LOAD_ERROR", e.message, e)
@@ -223,9 +191,8 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("play") { promise: Promise ->
             mainHandler.post {
                 try {
-                    val player = exoPlayer ?: throw Exception("Player not initialized")
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
                     player.play()
-                    startProgressUpdates()
                     promise.resolve(mapOf("success" to true))
                 } catch (e: Exception) {
                     promise.reject("PLAY_ERROR", e.message, e)
@@ -236,9 +203,8 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("pause") { promise: Promise ->
             mainHandler.post {
                 try {
-                    val player = exoPlayer ?: throw Exception("Player not initialized")
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
                     player.pause()
-                    stopProgressUpdates()
                     promise.resolve(mapOf("success" to true))
                 } catch (e: Exception) {
                     promise.reject("PAUSE_ERROR", e.message, e)
@@ -249,9 +215,8 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("stop") { promise: Promise ->
             mainHandler.post {
                 try {
-                    val player = exoPlayer ?: throw Exception("Player not initialized")
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
                     player.stop()
-                    stopProgressUpdates()
                     promise.resolve(mapOf("success" to true))
                 } catch (e: Exception) {
                     promise.reject("STOP_ERROR", e.message, e)
@@ -262,9 +227,12 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("seekTo") { positionMs: Long, promise: Promise ->
             mainHandler.post {
                 try {
-                    val player = exoPlayer ?: throw Exception("Player not initialized")
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
                     player.seekTo(positionMs)
-                    promise.resolve(mapOf("success" to true, "positionMs" to positionMs))
+                    promise.resolve(mapOf(
+                        "success" to true,
+                        "positionMs" to positionMs
+                    ))
                 } catch (e: Exception) {
                     promise.reject("SEEK_ERROR", e.message, e)
                 }
@@ -274,13 +242,17 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("skipToIndex") { index: Int, promise: Promise ->
             mainHandler.post {
                 try {
-                    val player = exoPlayer ?: throw Exception("Player not initialized")
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
+                    
                     if (index >= 0 && index < player.mediaItemCount) {
                         player.seekTo(index, 0)
                         currentIndex = index
-                        promise.resolve(mapOf("success" to true, "index" to index))
+                        promise.resolve(mapOf(
+                            "success" to true,
+                            "index" to index
+                        ))
                     } else {
-                        promise.reject("INDEX_ERROR", "Index out of bounds", null)
+                        promise.reject("INDEX_ERROR", "Invalid index: $index", null)
                     }
                 } catch (e: Exception) {
                     promise.reject("SKIP_ERROR", e.message, e)
@@ -291,16 +263,23 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("skipToNext") { promise: Promise ->
             mainHandler.post {
                 try {
-                    val player = exoPlayer ?: throw Exception("Player not initialized")
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
+                    
                     if (player.hasNextMediaItem()) {
-                        player.seekToNextMediaItem()
+                        player.seekToNext()
                         currentIndex = player.currentMediaItemIndex
-                        promise.resolve(mapOf("success" to true, "index" to currentIndex))
+                        promise.resolve(mapOf(
+                            "success" to true,
+                            "index" to currentIndex
+                        ))
                     } else {
-                        promise.resolve(mapOf("success" to false, "reason" to "No next track"))
+                        promise.resolve(mapOf(
+                            "success" to false,
+                            "reason" to "No next track"
+                        ))
                     }
                 } catch (e: Exception) {
-                    promise.reject("SKIP_ERROR", e.message, e)
+                    promise.reject("NEXT_ERROR", e.message, e)
                 }
             }
         }
@@ -308,17 +287,32 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("skipToPrevious") { promise: Promise ->
             mainHandler.post {
                 try {
-                    val player = exoPlayer ?: throw Exception("Player not initialized")
-                    if (player.hasPreviousMediaItem()) {
-                        player.seekToPreviousMediaItem()
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
+                    
+                    if (player.currentPosition > 3000) {
+                        player.seekTo(0)
+                        promise.resolve(mapOf(
+                            "success" to true,
+                            "index" to currentIndex,
+                            "seekToStart" to true
+                        ))
+                    } else if (player.hasPreviousMediaItem()) {
+                        player.seekToPrevious()
                         currentIndex = player.currentMediaItemIndex
-                        promise.resolve(mapOf("success" to true, "index" to currentIndex))
+                        promise.resolve(mapOf(
+                            "success" to true,
+                            "index" to currentIndex
+                        ))
                     } else {
                         player.seekTo(0)
-                        promise.resolve(mapOf("success" to true, "seekToStart" to true))
+                        promise.resolve(mapOf(
+                            "success" to true,
+                            "index" to currentIndex,
+                            "seekToStart" to true
+                        ))
                     }
                 } catch (e: Exception) {
-                    promise.reject("SKIP_ERROR", e.message, e)
+                    promise.reject("PREVIOUS_ERROR", e.message, e)
                 }
             }
         }
@@ -326,9 +320,13 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("setVolume") { volume: Double, promise: Promise ->
             mainHandler.post {
                 try {
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
                     val clampedVolume = volume.coerceIn(0.0, 1.0).toFloat()
-                    exoPlayer?.volume = clampedVolume
-                    promise.resolve(mapOf("success" to true, "volume" to clampedVolume))
+                    player.volume = clampedVolume
+                    promise.resolve(mapOf(
+                        "success" to true,
+                        "volume" to clampedVolume
+                    ))
                 } catch (e: Exception) {
                     promise.reject("VOLUME_ERROR", e.message, e)
                 }
@@ -338,9 +336,13 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("setPlaybackSpeed") { speed: Double, promise: Promise ->
             mainHandler.post {
                 try {
-                    val clampedSpeed = speed.coerceIn(0.25, 3.0).toFloat()
-                    exoPlayer?.setPlaybackSpeed(clampedSpeed)
-                    promise.resolve(mapOf("success" to true, "speed" to clampedSpeed))
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
+                    val clampedSpeed = speed.coerceIn(0.5, 2.0).toFloat()
+                    player.setPlaybackSpeed(clampedSpeed)
+                    promise.resolve(mapOf(
+                        "success" to true,
+                        "speed" to clampedSpeed
+                    ))
                 } catch (e: Exception) {
                     promise.reject("SPEED_ERROR", e.message, e)
                 }
@@ -350,14 +352,17 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("setRepeatMode") { mode: String, promise: Promise ->
             mainHandler.post {
                 try {
-                    val repeatMode = when (mode) {
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
+                    player.repeatMode = when (mode) {
                         "off" -> Player.REPEAT_MODE_OFF
                         "one" -> Player.REPEAT_MODE_ONE
                         "all" -> Player.REPEAT_MODE_ALL
                         else -> Player.REPEAT_MODE_OFF
                     }
-                    exoPlayer?.repeatMode = repeatMode
-                    promise.resolve(mapOf("success" to true, "mode" to mode))
+                    promise.resolve(mapOf(
+                        "success" to true,
+                        "mode" to mode
+                    ))
                 } catch (e: Exception) {
                     promise.reject("REPEAT_ERROR", e.message, e)
                 }
@@ -367,8 +372,12 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("setShuffleMode") { enabled: Boolean, promise: Promise ->
             mainHandler.post {
                 try {
-                    exoPlayer?.shuffleModeEnabled = enabled
-                    promise.resolve(mapOf("success" to true, "shuffle" to enabled))
+                    val player = getPlayer() ?: throw Exception("Player not initialized")
+                    player.shuffleModeEnabled = enabled
+                    promise.resolve(mapOf(
+                        "success" to true,
+                        "shuffle" to enabled
+                    ))
                 } catch (e: Exception) {
                     promise.reject("SHUFFLE_ERROR", e.message, e)
                 }
@@ -378,31 +387,49 @@ class PlaybackEngineModule : Module() {
         AsyncFunction("getStatus") { promise: Promise ->
             mainHandler.post {
                 try {
-                    val player = exoPlayer
-                    val result = mutableMapOf<String, Any>()
-                    result["isInitialized"] = isInitialized
-                    result["isPlaying"] = player?.isPlaying == true
-                    result["currentPositionMs"] = player?.currentPosition ?: 0L
-                    result["durationMs"] = player?.duration ?: 0L
-                    result["bufferedPositionMs"] = player?.bufferedPosition ?: 0L
-                    result["currentIndex"] = player?.currentMediaItemIndex ?: 0
-                    result["queueLength"] = player?.mediaItemCount ?: 0
-                    result["playbackState"] = when (player?.playbackState) {
-                        Player.STATE_IDLE -> "idle"
-                        Player.STATE_BUFFERING -> "buffering"
-                        Player.STATE_READY -> "ready"
-                        Player.STATE_ENDED -> "ended"
-                        else -> "unknown"
+                    val player = getPlayer()
+                    
+                    if (player == null) {
+                        promise.resolve(mapOf(
+                            "isInitialized" to false,
+                            "isPlaying" to false,
+                            "currentPositionMs" to 0,
+                            "durationMs" to 0,
+                            "bufferedPositionMs" to 0,
+                            "currentIndex" to 0,
+                            "queueLength" to 0,
+                            "playbackState" to "idle",
+                            "repeatMode" to "off",
+                            "shuffleEnabled" to false,
+                            "audioSessionId" to 0
+                        ))
+                        return@post
                     }
-                    result["repeatMode"] = when (player?.repeatMode) {
-                        Player.REPEAT_MODE_OFF -> "off"
-                        Player.REPEAT_MODE_ONE -> "one"
-                        Player.REPEAT_MODE_ALL -> "all"
-                        else -> "off"
-                    }
-                    result["shuffleEnabled"] = player?.shuffleModeEnabled == true
-                    result["audioSessionId"] = player?.audioSessionId ?: 0
-                    promise.resolve(result)
+                    
+                    promise.resolve(mapOf(
+                        "isInitialized" to isInitialized,
+                        "isPlaying" to player.isPlaying,
+                        "currentPositionMs" to player.currentPosition,
+                        "durationMs" to player.duration.coerceAtLeast(0),
+                        "bufferedPositionMs" to player.bufferedPosition,
+                        "currentIndex" to player.currentMediaItemIndex,
+                        "queueLength" to player.mediaItemCount,
+                        "playbackState" to when (player.playbackState) {
+                            Player.STATE_IDLE -> "idle"
+                            Player.STATE_BUFFERING -> "buffering"
+                            Player.STATE_READY -> "ready"
+                            Player.STATE_ENDED -> "ended"
+                            else -> "unknown"
+                        },
+                        "repeatMode" to when (player.repeatMode) {
+                            Player.REPEAT_MODE_OFF -> "off"
+                            Player.REPEAT_MODE_ONE -> "one"
+                            Player.REPEAT_MODE_ALL -> "all"
+                            else -> "off"
+                        },
+                        "shuffleEnabled" to player.shuffleModeEnabled,
+                        "audioSessionId" to (player.audioSessionId)
+                    ))
                 } catch (e: Exception) {
                     promise.reject("STATUS_ERROR", e.message, e)
                 }
@@ -411,32 +438,41 @@ class PlaybackEngineModule : Module() {
         
         AsyncFunction("getAudioSessionId") { promise: Promise ->
             mainHandler.post {
-                promise.resolve(exoPlayer?.audioSessionId ?: 0)
+                val audioSessionId = getPlayer()?.audioSessionId ?: 0
+                promise.resolve(audioSessionId)
             }
         }
         
         AsyncFunction("getCurrentPosition") { promise: Promise ->
             mainHandler.post {
-                promise.resolve(exoPlayer?.currentPosition ?: 0L)
+                val position = getPlayer()?.currentPosition ?: 0L
+                promise.resolve(position)
             }
         }
         
         AsyncFunction("getDuration") { promise: Promise ->
             mainHandler.post {
-                promise.resolve(exoPlayer?.duration ?: 0L)
+                val duration = getPlayer()?.duration?.coerceAtLeast(0) ?: 0L
+                promise.resolve(duration)
             }
         }
         
         AsyncFunction("release") { promise: Promise ->
             mainHandler.post {
                 try {
-                    stopProgressUpdates()
-                    mediaSession?.release()
-                    mediaSession = null
-                    exoPlayer?.release()
+                    removePlayerListener()
+                    
+                    mediaController?.release()
+                    mediaController = null
                     exoPlayer = null
                     isInitialized = false
-                    currentIndex = 0
+                    
+                    val context = appContext.reactContext
+                    if (context != null) {
+                        val serviceIntent = Intent(context, PlaybackService::class.java)
+                        context.stopService(serviceIntent)
+                    }
+                    
                     promise.resolve(mapOf("success" to true))
                 } catch (e: Exception) {
                     promise.reject("RELEASE_ERROR", e.message, e)
@@ -447,30 +483,60 @@ class PlaybackEngineModule : Module() {
         Events("onPlaybackStateChanged", "onIsPlayingChanged", "onTrackChanged", "onError", "onProgress")
     }
     
-    private fun startProgressUpdates() {
-        stopProgressUpdates()
-        
-        progressHandler = Handler(Looper.getMainLooper())
-        progressRunnable = object : Runnable {
-            override fun run() {
-                exoPlayer?.let { player ->
-                    if (player.isPlaying) {
-                        sendEvent("onProgress", mapOf(
-                            "positionMs" to player.currentPosition,
-                            "durationMs" to player.duration,
-                            "bufferedMs" to player.bufferedPosition
-                        ))
-                    }
-                }
-                progressHandler?.postDelayed(this, 250)
-            }
-        }
-        progressHandler?.post(progressRunnable!!)
+    private fun getPlayer(): ExoPlayer? {
+        return exoPlayer ?: PlaybackService.instance?.getPlayer()
     }
     
-    private fun stopProgressUpdates() {
-        progressRunnable?.let { progressHandler?.removeCallbacks(it) }
-        progressHandler = null
-        progressRunnable = null
+    private fun setupPlayerListener() {
+        val player = getPlayer() ?: return
+        
+        playerListener = object : Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                sendEvent("onPlaybackStateChanged", mapOf(
+                    "state" to when (state) {
+                        Player.STATE_IDLE -> "idle"
+                        Player.STATE_BUFFERING -> "buffering"
+                        Player.STATE_READY -> "ready"
+                        Player.STATE_ENDED -> "ended"
+                        else -> "unknown"
+                    }
+                ))
+            }
+            
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                sendEvent("onIsPlayingChanged", mapOf("isPlaying" to isPlaying))
+            }
+            
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                val index = getPlayer()?.currentMediaItemIndex ?: 0
+                currentIndex = index
+                sendEvent("onTrackChanged", mapOf(
+                    "index" to index,
+                    "reason" to when (reason) {
+                        Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> "auto"
+                        Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> "seek"
+                        Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED -> "playlist"
+                        Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> "repeat"
+                        else -> "unknown"
+                    }
+                ))
+            }
+            
+            override fun onPlayerError(error: PlaybackException) {
+                sendEvent("onError", mapOf(
+                    "code" to error.errorCode,
+                    "message" to (error.message ?: "Unknown error")
+                ))
+            }
+        }
+        
+        player.addListener(playerListener!!)
+    }
+    
+    private fun removePlayerListener() {
+        playerListener?.let { listener ->
+            getPlayer()?.removeListener(listener)
+        }
+        playerListener = null
     }
 }
