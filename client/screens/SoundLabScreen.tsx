@@ -104,7 +104,7 @@ const EQ_PRESETS = [
   },
   { 
     name: "Bass+", 
-    description: "Enhanced low-end impact",
+    description: "Party Mode optimized",
     bands: [5, 5, 3, 1, 0, -1, -1, -1, -1, -1],
     bassControl: 0,
     trebleControl: 0,
@@ -112,7 +112,7 @@ const EQ_PRESETS = [
   },
   { 
     name: "Clarity", 
-    description: "Crystal-clear detail",
+    description: "Podcast & Movie optimized",
     bands: [-2, -2, -1, 0, 1, 2, 2, 3, 3, 3],
     bassControl: 0,
     trebleControl: 0,
