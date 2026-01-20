@@ -110,7 +110,7 @@ Checks for Google Play installation. Licensed users get full access; unlicensed 
 
 - **Sound Lab**: 10 EQ presets (Flat always active by default), custom 5-band EQ editor, 6 immersive modes, bass/treble control, intelligent volume safety system.
 - **Theming**: 55 themes across 6 categories (System, Winamp, Retro, Nature, Professional, Special).
-- **Radio**: Native FM/AM radio and online streaming radio (Radio Browser API with quality filters). On Android, online radio streams go through PlaybackEngineModule/SoftwareDSPAudioProcessor for full DSP effects; web uses expo-av fallback.
+- **Radio**: Native FM/AM radio and online streaming radio (Radio Browser API with quality filters). On Android, online radio streams go through PlaybackEngineModule/SoftwareDSPAudioProcessor for full DSP effects; web uses expo-av fallback. FM/AM radio has hardware detection and DSP attachment structure, but real FM hardware access requires vendor-specific drivers not publicly available to third-party Android apps.
 - **Playback Features**: Background playback, notification controls, queue management, shuffle/repeat, playback speed, sleep timer, favorites, recently/most played.
 - **Library Management**: Music folder selection, paginated loading, "Hide Song" feature, full playlist CRUD.
 
