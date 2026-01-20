@@ -5,6 +5,7 @@ import { GooglePlayLicense, PurchaseInfo, PRODUCT_ID } from '@/lib/payment';
 
 const APP_ENV = Constants.expoConfig?.extra?.APP_ENV || process.env.APP_ENV || 'production';
 const DEV_MODE_BYPASS_LICENSE = false; // Production: Real license verification enabled
+const TESTING_MODE_BYPASS_LICENSE = APP_ENV === 'testing'; // Testing builds bypass license check
 
 export type LicenseStatus = 'checking' | 'unlicensed' | 'licensed';
 
@@ -54,13 +55,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const initializeLicense = async () => {
     try {
-      if (DEV_MODE_BYPASS_LICENSE) {
-        console.log('[License] Development mode - bypassing license check');
+      if (DEV_MODE_BYPASS_LICENSE || TESTING_MODE_BYPASS_LICENSE) {
+        console.log(`[License] ${TESTING_MODE_BYPASS_LICENSE ? 'Testing' : 'Development'} mode - bypassing license check`);
         const devState: LicenseState = {
           status: 'licensed',
           purchase: {
             productId: PRODUCT_ID,
-            installSource: 'development',
+            installSource: TESTING_MODE_BYPASS_LICENSE ? 'testing' : 'development',
             installTime: Date.now(),
           },
         };
