@@ -2,9 +2,9 @@
 
 **New Audio 360**
 
-**Effective Date:** January 19, 2026  
-**Last Updated:** January 19, 2026  
-**Version:** 1.0
+**Effective Date:** January 20, 2026  
+**Last Updated:** January 20, 2026  
+**Version:** 1.1
 
 ---
 
@@ -180,4 +180,4 @@ Developed by TheTeam360
 
 ---
 
-*Last Updated: January 19, 2026*
+*Last Updated: January 20, 2026*

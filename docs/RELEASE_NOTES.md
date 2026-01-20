@@ -26,11 +26,53 @@ One-time purchase. No ads. Lifetime access.
 
 ## Version 26.0 (January 20, 2026)
 
-### Audio Effects
-- **Cross-Platform DSP Consistency**: All audio effects (EQ presets, Bass Boost, Treble Boost, Virtualizer/Stereo Width, Custom EQ) now work identically on both Android and Web platforms
-- **Web Virtualizer/Stereo Width**: Proper stereo width control for Web DSP. Virtualizer level (-5 to +5) maps to stereo width (-1.0 to +1.0)
-- **Flat EQ Always Active**: Flat preset is always active by default and cannot be turned off. Tapping another preset and tapping it again returns to Flat
-- **Zero-Sum EQ Presets**: 10 balanced presets (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity) with positive and negative gains for maximum headroom
+### Major DSP Architecture Refactor
+- **Independent Platform DSP**: Web and Android now have fully independent DSP configurations
+- **Web DSP**: Uses `react-native-audio-api` (Web Audio API) via `WebAudioEffectsEngine`
+- **Android DSP**: Uses `SoftwareDSPAudioProcessor` with ExoPlayer integration
+- **No Cross-Platform Syncing**: Each platform operates autonomously with identical preset values
+- **Flat EQ Always Active**: Flat preset is always active by default and cannot be turned off
+
+### EQ Presets (10-Band: 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz)
+All presets are zero-sum for maximum headroom. Values are in gain units (multiply by 2.4 for dB).
+
+| Preset | 60Hz | 170Hz | 310Hz | 600Hz | 1kHz | 3kHz | 6kHz | 12kHz | 14kHz | 16kHz | Description |
+|--------|------|-------|-------|-------|------|------|------|-------|-------|-------|-------------|
+| Flat | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | Reference |
+| Rock | +0.4 | +0.4 | -0.3 | -1.1 | -1.1 | -0.1 | +0.9 | +1.6 | +0.7 | -0.7 | Balanced Punch |
+| Pop | +0.3 | +0.3 | -0.4 | -0.5 | -0.4 | +0.7 | +0.8 | +0.7 | -0.4 | -0.7 | Clean Vocals |
+| Jazz | -0.3 | -0.3 | -1.1 | +1.0 | +1.0 | +0.3 | -0.7 | -0.3 | -0.3 | -0.9 | Warm & Natural |
+| Classical | -0.8 | -0.8 | -0.4 | -0.4 | -0.2 | +0.2 | +0.5 | +1.0 | +0.9 | +0.4 | Wide & Open |
+| Electronic | +1.3 | +1.3 | +0.5 | -1.4 | -1.4 | -0.5 | +0.5 | +1.3 | +0.5 | -1.2 | Controlled Energy |
+| Hip-Hop | +2.4 | +2.4 | +0.7 | -1.2 | -0.6 | 0.0 | +0.4 | -0.6 | -1.4 | -2.0 | Deep Bass, Clear Mids |
+| Acoustic | -0.6 | -0.6 | -1.2 | +0.7 | +1.5 | +1.5 | +0.7 | -0.3 | -0.3 | -1.3 | Natural & Intimate |
+| Bass+ | +3.5 | +2.5 | +1.5 | -0.6 | -1.2 | -1.2 | -1.2 | -1.2 | -0.5 | -1.4 | Party Mode |
+| Clarity | -1.9 | -1.9 | -0.9 | -0.8 | +0.3 | +0.6 | +1.3 | +1.3 | +1.9 | +0.1 | Podcasts & Movies |
+
+### Immersive Modes (Full Settings)
+Each mode includes EQ curve, spatial width, reverb, and bass/treble boost. All EQ values are zero-sum.
+
+| Mode | 60Hz | 170Hz | 310Hz | 600Hz | 1kHz | 3kHz | 6kHz | 12kHz | 14kHz | 16kHz | Spatial | Reverb | Bass | Treble |
+|------|------|-------|-------|-------|------|------|------|-------|-------|-------|---------|--------|------|--------|
+| Music | +0.3 | +0.3 | -0.4 | -1.0 | -1.0 | 0.0 | +1.0 | +1.5 | +0.4 | -1.1 | 25% | 8% | +1.2dB | +1.3dB |
+| 360 Reality | 0.0 | 0.0 | -0.6 | -0.6 | -0.6 | 0.0 | +1.0 | +1.2 | +0.3 | -0.7 | 55% | 18% | +0.8dB | +1.5dB |
+| Gaming | +0.8 | +0.8 | +0.4 | -1.1 | -1.1 | 0.0 | +1.0 | +1.7 | +0.8 | -1.9 | 57% | 8% | +1.2dB | +2.1dB |
+| Podcast | -1.9 | -1.9 | -0.9 | -0.7 | +0.4 | +1.0 | +1.0 | +1.4 | +1.8 | -0.2 | 0% | 0% | -1.0dB | +2.3dB |
+| Movie | -0.8 | -0.8 | -0.4 | +0.7 | +1.1 | +1.0 | +1.0 | -0.3 | -0.5 | -1.7 | 45% | 12% | +1.8dB | +1.5dB |
+| Sports | +1.2 | +1.2 | +0.5 | -0.7 | -0.7 | 0.0 | +1.0 | +1.2 | -0.9 | -2.5 | 47% | 10% | +2.2dB | +0.8dB |
+
+### DSP Signal Chain Configuration
+
+| Component | Web | Android |
+|-----------|-----|---------|
+| 10-Band EQ Frequencies | 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000 Hz | Same |
+| Bass Boost Filter | Low-shelf @ 150Hz, +/-12dB | Same |
+| Treble Boost Filter | High-shelf @ 6kHz, +/-12dB | Same |
+| LFE Crossover | N/A | 80Hz default, 20-200Hz adjustable |
+| LFE Headroom | N/A | +6dB (up to 18dB for bass) |
+| Limiter | Web Audio DynamicsCompressor | -1dB threshold, 20:1 ratio, 1ms attack, 100ms release |
+| Stereo Width | -100% (mono) to +200% (wide) | -100% (mono) to +100% (wide) |
+| Unit Scaling | DB_PER_UNIT = 2.4 | Same |
 
 ### User Interface
 - **Floating/Draggable MiniPlayer**: MiniPlayer can now be dragged and repositioned anywhere on screen using pan gestures with smooth spring animations

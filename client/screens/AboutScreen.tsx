@@ -42,9 +42,9 @@ export default function AboutScreen() {
 
         <GlassCard style={styles.descriptionCard}>
           <FluentText variant="caption1" color="secondary" style={styles.description}>
-            A beautiful music player designed with love for audio enthusiasts. 
-            Experience your music collection like never before with our carefully 
-            crafted equalizer presets and immersive sound modes.
+            A premium music player designed for audio enthusiasts who demand studio-quality sound. 
+            Experience your music with our 10-band parametric EQ, 10 zero-sum presets, 
+            6 immersive sound modes, and 55 stunning themes.
           </FluentText>
         </GlassCard>
 
@@ -61,7 +61,7 @@ export default function AboutScreen() {
             <FeatureItem
               icon="tune-vertical"
               title="Sound Lab"
-              description="Professional equalizer presets and sound modes"
+              description="10-band EQ, 10 presets, bass/treble boost, 6 immersive modes"
               colors={colors}
               isDark={isDark}
             />
@@ -75,7 +75,7 @@ export default function AboutScreen() {
             <FeatureItem
               icon="headphones"
               title="Immersive Audio"
-              description="Cinema, Music, Sports, and 360 Reality modes"
+              description="Music, 360 Reality, Gaming, Podcast, Movie, Sports modes"
               colors={colors}
               isDark={isDark}
             />
