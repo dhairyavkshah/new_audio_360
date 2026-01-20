@@ -238,7 +238,7 @@ class ImmersiveModeEngineModule : Module() {
     // Zero-sum immersive mode presets for maximum headroom
     private fun applyModeMusic() {
         applyImmersiveSettings(
-            eqGains = listOf(0.3, 0.3, -0.4, -1.0, -1.0, 0.0, 1.0, 1.5, 0.4, -1.1),
+            eqGainsDb = listOf(0.3, 0.3, -0.4, -1.0, -1.0, 0.0, 1.0, 1.5, 0.4, -1.1),
             spatialWidth = 25,
             reverbWetMix = 0.08f,
             bassBoostDb = 1.2f,
@@ -248,7 +248,7 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyMode360Reality() {
         applyImmersiveSettings(
-            eqGains = listOf(0.0, 0.0, -0.6, -0.6, -0.6, 0.0, 1.0, 1.2, 0.3, -0.7),
+            eqGainsDb = listOf(0.0, 0.0, -0.6, -0.6, -0.6, 0.0, 1.0, 1.2, 0.3, -0.7),
             spatialWidth = 55,
             reverbWetMix = 0.18f,
             bassBoostDb = 0.8f,
@@ -258,7 +258,7 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyModeGaming() {
         applyImmersiveSettings(
-            eqGains = listOf(0.8, 0.8, 0.4, -1.1, -1.1, 0.0, 1.0, 1.7, 0.8, -1.9),
+            eqGainsDb = listOf(0.8, 0.8, 0.4, -1.1, -1.1, 0.0, 1.0, 1.7, 0.8, -1.9),
             spatialWidth = 57,
             reverbWetMix = 0.08f,
             bassBoostDb = 1.2f,
@@ -268,7 +268,7 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyModePodcast() {
         applyImmersiveSettings(
-            eqGains = listOf(-1.9, -1.9, -0.9, -0.7, 0.4, 1.0, 1.0, 1.4, 1.8, -0.2),
+            eqGainsDb = listOf(-1.9, -1.9, -0.9, -0.7, 0.4, 1.0, 1.0, 1.4, 1.8, -0.2),
             spatialWidth = 0,
             reverbWetMix = 0.0f,
             bassBoostDb = -1.0f,
@@ -278,7 +278,7 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyModeMovie() {
         applyImmersiveSettings(
-            eqGains = listOf(-0.8, -0.8, -0.4, 0.7, 1.1, 1.0, 1.0, -0.3, -0.5, -1.7),
+            eqGainsDb = listOf(-0.8, -0.8, -0.4, 0.7, 1.1, 1.0, 1.0, -0.3, -0.5, -1.7),
             spatialWidth = 45,
             reverbWetMix = 0.12f,
             bassBoostDb = 1.8f,
@@ -288,7 +288,7 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyModeSports() {
         applyImmersiveSettings(
-            eqGains = listOf(1.2, 1.2, 0.5, -0.7, -0.7, 0.0, 1.0, 1.2, -0.9, -2.5),
+            eqGainsDb = listOf(1.2, 1.2, 0.5, -0.7, -0.7, 0.0, 1.0, 1.2, -0.9, -2.5),
             spatialWidth = 47,
             reverbWetMix = 0.10f,
             bassBoostDb = 2.2f,
