@@ -735,6 +735,19 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (!loadResult.success) {
           throw new Error(loadResult.error || 'Failed to load track');
         }
+        
+        // Set metadata for lockscreen/notification display
+        try {
+          await PlaybackEngineModule.setMetadata(
+            song.title || 'Unknown Title',
+            song.artist || 'Unknown Artist',
+            song.album || '',
+            song.artwork || null
+          );
+        } catch (metaErr) {
+          console.warn('[PlayerContext] Failed to set metadata:', metaErr);
+        }
+        
         const playResult = await PlaybackEngineModule.play();
         if (playResult.success) {
           setIsPlaying(true);

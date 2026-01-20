@@ -9,17 +9,20 @@ import android.os.Looper
 import androidx.media3.common.AudioAttributes as ExoAudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.session.MediaSession
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.Promise
 
 class PlaybackEngineModule : Module() {
     private var exoPlayer: ExoPlayer? = null
+    private var mediaSession: MediaSession? = null
     private var isInitialized = false
     private var currentIndex = 0
     private var progressHandler: Handler? = null
@@ -113,6 +116,9 @@ class PlaybackEngineModule : Module() {
                             })
                         }
                     
+                    mediaSession = MediaSession.Builder(context, exoPlayer!!)
+                        .build()
+                    
                     isInitialized = true
                     promise.resolve(mapOf(
                         "success" to true,
@@ -121,6 +127,37 @@ class PlaybackEngineModule : Module() {
                     
                 } catch (e: Exception) {
                     promise.reject("INIT_ERROR", e.message, e)
+                }
+            }
+        }
+        
+        AsyncFunction("setMetadata") { title: String, artist: String, album: String, artworkUri: String?, promise: Promise ->
+            mainHandler.post {
+                try {
+                    val player = exoPlayer ?: throw Exception("Player not initialized")
+                    
+                    val metadataBuilder = MediaMetadata.Builder()
+                        .setTitle(title)
+                        .setArtist(artist)
+                        .setAlbumTitle(album)
+                    
+                    if (!artworkUri.isNullOrEmpty()) {
+                        metadataBuilder.setArtworkUri(Uri.parse(artworkUri))
+                    }
+                    
+                    val metadata = metadataBuilder.build()
+                    
+                    val currentItem = player.currentMediaItem
+                    if (currentItem != null) {
+                        val updatedItem = currentItem.buildUpon()
+                            .setMediaMetadata(metadata)
+                            .build()
+                        player.replaceMediaItem(player.currentMediaItemIndex, updatedItem)
+                    }
+                    
+                    promise.resolve(mapOf("success" to true))
+                } catch (e: Exception) {
+                    promise.reject("METADATA_ERROR", e.message, e)
                 }
             }
         }
@@ -354,6 +391,8 @@ class PlaybackEngineModule : Module() {
             mainHandler.post {
                 try {
                     stopProgressUpdates()
+                    mediaSession?.release()
+                    mediaSession = null
                     exoPlayer?.release()
                     exoPlayer = null
                     isInitialized = false

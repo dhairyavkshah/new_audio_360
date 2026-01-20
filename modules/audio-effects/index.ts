@@ -45,6 +45,7 @@ interface PlaybackEngineModuleInterface {
   setPlaybackSpeed(speed: number): { success: boolean; speed: number };
   setRepeatMode(mode: string): { success: boolean; mode: string };
   setShuffleMode(enabled: boolean): { success: boolean; shuffle: boolean };
+  setMetadata(title: string, artist: string, album: string, artworkUri: string | null): Promise<PlaybackResult>;
   getStatus(): PlaybackStatus;
   getAudioSessionId(): number;
   getCurrentPosition(): number;
@@ -636,6 +637,18 @@ export const PlaybackEngineModule = {
       return await PlaybackEngineModuleNative.release();
     } catch (error) {
       console.error('PlaybackEngineModule.release error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setMetadata: async (title: string, artist: string, album: string, artworkUri: string | null = null): Promise<PlaybackResult> => {
+    if (!PlaybackEngineModuleNative) {
+      return { success: false, error: 'Playback engine not available' };
+    }
+    try {
+      return await PlaybackEngineModuleNative.setMetadata(title, artist, album, artworkUri);
+    } catch (error) {
+      console.error('PlaybackEngineModule.setMetadata error:', error);
       return { success: false, error: String(error) };
     }
   },
