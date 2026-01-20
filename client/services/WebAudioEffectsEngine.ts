@@ -28,64 +28,58 @@ const EQ_FREQUENCIES = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000
 // Reverb: 0-1 wet mix (0 = dry, 1 = full reverb)
 const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
   music: {
-    // Bose-inspired balanced music mode
-    // Moderate warm bass, subtle treble sparkle, minimal room ambience
+    // Balanced "smile curve" - warm bass, slight mid scoop, sparkly highs
     name: 'Music',
-    eqPreset: [2.0, 1.5, 0.5, -0.5, 0, 0.5, 1.0, 1.5, 1.0, 0.5],
-    bassBoost: 1.5,    // +3.6 dB (Bose music: moderate warm bass)
-    trebleBoost: 1.0,  // +2.4 dB (reduced for non-fatiguing warmth)
-    spatialWidth: 0.25, // 25% - subtle widening only
-    reverb: 0.05,      // 5% - minimal room ambience for natural feel
+    eqPreset: [+0.3, +0.3, -0.4, -1.0, -1.0, 0.0, +1.0, +1.5, +0.4, -1.1],
+    bassBoost: 0.5,     // +1.2 dB at 150Hz
+    trebleBoost: 0.54,  // +1.3 dB at 6kHz
+    spatialWidth: 0.25, // 25% spatial width
+    reverb: 0.08,       // 8% reverb
   },
   '360_reality': {
-    // Sony 360 Reality Audio inspired - near-flat for accurate spatial positioning
-    // Maximum spatial immersion with significant reverb for 360° soundfield
+    // Sony 360 Reality Audio inspired - immersive spatial soundfield
     name: '360 Reality',
-    eqPreset: [0, 0, 0, 0, 0, 0.3, 0.5, 0.3, 0, 0],
-    bassBoost: 0.3,    // +0.7 dB (near-flat for accurate spatial cues)
-    trebleBoost: 0.5,  // +1.2 dB (air for spatial perception)
-    spatialWidth: 0.85, // 85% - maximum immersion for 360° soundfield
-    reverb: 0.25,      // 25% - significant reverb for true 360° surround sphere
+    eqPreset: [0.0, 0.0, -0.6, -0.6, -0.6, 0.0, +1.0, +1.2, +0.3, -0.7],
+    bassBoost: 0.33,    // +0.8 dB
+    trebleBoost: 0.625, // +1.5 dB
+    spatialWidth: 0.55, // 55% - wide spatial soundfield
+    reverb: 0.18,       // 18% reverb
   },
   gaming: {
-    // Competitive gaming - cut bass, boost footstep frequencies (2-6kHz)
-    // Subtle spatial cues without muddiness
+    // Competitive gaming - footstep clarity and directional awareness
     name: 'Gaming',
-    eqPreset: [-2.0, -1.5, -1.0, 0, 2.0, 3.5, 3.0, 2.0, 1.5, 1.0],
-    bassBoost: -1.0,   // -2.4 dB (reduce bass masking for footsteps)
-    trebleBoost: 2.0,  // +4.8 dB (slightly less to reduce fatigue)
-    spatialWidth: 0.45, // 45% - better directional accuracy
-    reverb: 0.075,     // 7.5% - subtle room cues for spatial awareness
+    eqPreset: [+0.8, +0.8, +0.4, -1.1, -1.1, 0.0, +1.0, +1.7, +0.8, -1.9],
+    bassBoost: 0.5,     // +1.2 dB
+    trebleBoost: 0.875, // +2.1 dB
+    spatialWidth: 0.57, // 57% spatial width
+    reverb: 0.08,       // 8% reverb
   },
   podcast: {
-    // Voice clarity mode - crystal clear speech
-    // No spatial processing, no reverb
+    // Voice clarity mode - speech intelligibility
     name: 'Podcast',
-    eqPreset: [-2.0, -1.5, 0, 1.5, 2.5, 2.0, 1.0, 0, -0.5, -1.0],
-    bassBoost: -1.5,   // -3.6 dB (removes rumble and boominess)
-    trebleBoost: -0.5, // -1.2 dB (reduces sibilance)
-    spatialWidth: 0,   // 0% - mono-focused for speech
-    reverb: 0,         // 0% - no reverb for clean voice
+    eqPreset: [-1.9, -1.9, -0.9, -0.7, +0.4, +1.0, +1.0, +1.4, +1.8, -0.2],
+    bassBoost: -0.42,   // -1.0 dB (removes rumble)
+    trebleBoost: 0.958, // +2.3 dB (clarity)
+    spatialWidth: 0,    // 0% - mono-focused for speech
+    reverb: 0,          // 0% reverb
   },
   movie: {
-    // IMAX/THX-inspired cinematic experience
-    // Strong bass punch, detailed highs, cinema hall ambience
+    // Cinematic experience - dialogue clarity and surround ambience
     name: 'Movie',
-    eqPreset: [3.5, 2.5, 1.0, 0, 0.5, 1.0, 1.5, 2.5, 2.0, 1.5],
-    bassBoost: 4.0,    // +9.6 dB (IMAX Enhanced-level bass punch)
-    trebleBoost: 2.5,  // +6 dB (enhanced effects detail)
-    spatialWidth: 0.55, // 55% - proper surround experience
-    reverb: 0.15,      // 15% - cinema hall ambience (Yamaha Cinema DSP inspired)
+    eqPreset: [-0.8, -0.8, -0.4, +0.7, +1.1, +1.0, +1.0, -0.3, -0.5, -1.7],
+    bassBoost: 0.75,    // +1.8 dB
+    trebleBoost: 0.625, // +1.5 dB
+    spatialWidth: 0.45, // 45% - surround-like experience
+    reverb: 0.12,       // 12% reverb
   },
   sports: {
     // Stadium/broadcast mode - commentary clarity with crowd atmosphere
-    // Open stadium feel with arena ambience
     name: 'Sports',
-    eqPreset: [1.0, 0.5, 0.5, 2.0, 2.5, 2.0, 0.5, 0, -0.5, -0.5],
-    bassBoost: 1.5,    // +3.6 dB (slightly more for stadium atmosphere)
-    trebleBoost: 0,    // Neutral (balanced commentary clarity)
-    spatialWidth: 0.5, // 50% - stadium-like open soundstage
-    reverb: 0.125,     // 12.5% - stadium/arena open-air ambience
+    eqPreset: [+1.2, +1.2, +0.5, -0.7, -0.7, 0.0, +1.0, +1.2, -0.9, -2.5],
+    bassBoost: 0.917,   // +2.2 dB (stadium atmosphere)
+    trebleBoost: 0.33,  // +0.8 dB
+    spatialWidth: 0.47, // 47% - stadium-like open soundstage
+    reverb: 0.10,       // 10% reverb
   },
 };
 

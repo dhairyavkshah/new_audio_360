@@ -218,7 +218,7 @@ class ImmersiveModeEngineModule : Module() {
         currentVirtualizerStrength = 0
     }
     
-    private fun applyImmersiveSettings(eqGains: List<Double>, bassGainUnits: Float, trebleGainUnits: Float, virtualizerStrength: Int) {
+    private fun applyImmersiveSettings(eqGains: List<Double>, bassGainUnits: Float, trebleGainUnits: Float, virtualizerStrength: Int, reverbWetMix: Float = 0f) {
         val dsp = SoftwareDSPAudioProcessor.getInstance()
         
         dsp?.setAllEqBandGains(eqGains)
@@ -235,80 +235,82 @@ class ImmersiveModeEngineModule : Module() {
         dsp?.setStereoWidth(stereoWidth)
         currentVirtualizerStrength = virtualizerStrength
         
+        // Apply reverb
+        dsp?.setReverb(reverbWetMix)
+        
         val widthPercent = ((1f + stereoWidth) * 100).toInt()
-        android.util.Log.d("ImmersiveMode", "Mode applied: bass=$bassGainUnits, treble=$trebleGainUnits, virtualizer=$virtualizerStrength (width=${widthPercent}%)")
+        val reverbPercent = (reverbWetMix * 100).toInt()
+        android.util.Log.d("ImmersiveMode", "Mode applied: bass=$bassGainUnits, treble=$trebleGainUnits, virtualizer=$virtualizerStrength (width=${widthPercent}%), reverb=${reverbPercent}%")
     }
     
     // Professional Immersive Mode Configurations
     // Based on Samsung Dolby Atmos, Sony 360 Reality Audio, and professional audio engineering standards
-    // EQ bands (7): 32Hz, 64Hz, 125Hz, 500Hz, 2kHz, 8kHz, 16kHz
+    // EQ bands (10): 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz
     // Values in gain units (-5 to +5), where 1 unit = 2.4 dB
     
     private fun applyModeMusic() {
         // Balanced "smile curve" - warm bass, slight mid scoop, sparkly highs
-        // Samsung Music mode inspired
         applyImmersiveSettings(
-            eqGains = listOf(2.5, 1.8, 0.5, -0.3, 0.5, 1.8, 1.2),
-            bassGainUnits = 2.0f,      // +4.8 dB at 150Hz (warm fullness)
-            trebleGainUnits = 1.5f,    // +3.6 dB at 6kHz (presence and air)
-            virtualizerStrength = 350  // 35% spatial width
+            eqGains = listOf(+0.3, +0.3, -0.4, -1.0, -1.0, 0.0, +1.0, +1.5, +0.4, -1.1),
+            bassGainUnits = 0.5f,       // +1.2 dB at 150Hz
+            trebleGainUnits = 0.54f,    // +1.3 dB at 6kHz
+            virtualizerStrength = 250,  // 25% spatial width
+            reverbWetMix = 0.08f        // 8% reverb
         )
     }
     
     private fun applyMode360Reality() {
-        // Flat/neutral EQ profile - Sony 360 Reality Audio & Samsung 360 Audio inspired
-        // Preserves original sound for accurate spatial positioning in object-based audio
-        // Reference: Sony MDR-MV1 professional monitoring standard (5Hz-80kHz flat response)
+        // Sony 360 Reality Audio inspired - immersive spatial soundfield
         applyImmersiveSettings(
-            eqGains = listOf(0.0, 0.0, 0.0, 0.0, 0.3, 0.3, 0.0),
-            bassGainUnits = 0.5f,      // +1.2 dB - subtle warmth while preserving spatial cues
-            trebleGainUnits = 0.5f,    // +1.2 dB (subtle air for enhanced location perception)
-            virtualizerStrength = 750  // 75% - maximum spatial width for immersive 360° soundfield
+            eqGains = listOf(0.0, 0.0, -0.6, -0.6, -0.6, 0.0, +1.0, +1.2, +0.3, -0.7),
+            bassGainUnits = 0.33f,      // +0.8 dB
+            trebleGainUnits = 0.625f,   // +1.5 dB
+            virtualizerStrength = 550,  // 55% - wide spatial soundfield
+            reverbWetMix = 0.18f        // 18% reverb
         )
     }
     
     private fun applyModeGaming() {
-        // Competitive gaming EQ - cut bass, boost footstep frequencies (2-6kHz)
-        // Professional gaming headset standards for footstep clarity
+        // Competitive gaming - footstep clarity and directional awareness
         applyImmersiveSettings(
-            eqGains = listOf(-2.0, -1.5, -1.0, 0.5, 3.5, 2.5, 1.5),
-            bassGainUnits = -1.0f,     // -2.4 dB (reduce bass masking)
-            trebleGainUnits = 2.5f,    // +6 dB (enhanced detail and clarity)
-            virtualizerStrength = 500  // 50% - directional awareness
+            eqGains = listOf(+0.8, +0.8, +0.4, -1.1, -1.1, 0.0, +1.0, +1.7, +0.8, -1.9),
+            bassGainUnits = 0.5f,       // +1.2 dB
+            trebleGainUnits = 0.875f,   // +2.1 dB
+            virtualizerStrength = 570,  // 57% spatial width
+            reverbWetMix = 0.08f        // 8% reverb
         )
     }
     
     private fun applyModePodcast() {
-        // Voice clarity mode - enhanced 1-4kHz for speech intelligibility
-        // Reduced bass/treble extremes, no spatial processing
+        // Voice clarity mode - speech intelligibility
         applyImmersiveSettings(
-            eqGains = listOf(-2.0, -1.5, 0.0, 2.0, 2.5, 0.5, -0.5),
-            bassGainUnits = -1.5f,     // -3.6 dB (removes rumble)
-            trebleGainUnits = -0.5f,   // -1.2 dB (reduces sibilance)
-            virtualizerStrength = 0    // 0% - mono-focused for speech
+            eqGains = listOf(-1.9, -1.9, -0.9, -0.7, +0.4, +1.0, +1.0, +1.4, +1.8, -0.2),
+            bassGainUnits = -0.42f,     // -1.0 dB (removes rumble)
+            trebleGainUnits = 0.958f,   // +2.3 dB (clarity)
+            virtualizerStrength = 0,    // 0% - mono-focused for speech
+            reverbWetMix = 0f           // 0% reverb
         )
     }
     
     private fun applyModeMovie() {
-        // Cinematic experience - THX-inspired with strong LFE and dialogue clarity
-        // Sub-bass for explosions, clear mids for dialogue, detailed highs
+        // Cinematic experience - dialogue clarity and surround ambience
         applyImmersiveSettings(
-            eqGains = listOf(3.5, 2.5, 1.0, 0.3, 1.0, 2.0, 1.5),
-            bassGainUnits = 3.5f,      // +8.4 dB (cinematic impact and rumble)
-            trebleGainUnits = 2.0f,    // +4.8 dB (effects detail and sparkle)
-            virtualizerStrength = 450  // 45% - surround-like experience
+            eqGains = listOf(-0.8, -0.8, -0.4, +0.7, +1.1, +1.0, +1.0, -0.3, -0.5, -1.7),
+            bassGainUnits = 0.75f,      // +1.8 dB
+            trebleGainUnits = 0.625f,   // +1.5 dB
+            virtualizerStrength = 450,  // 45% - surround-like experience
+            reverbWetMix = 0.12f        // 12% reverb
         )
     }
     
     private fun applyModeSports() {
-        // Stadium/broadcast mode - enhanced commentary clarity with crowd atmosphere
-        // Boosted 500Hz-4kHz for commentator voices, moderate bass for stadium ambiance
-        // Slight treble reduction to minimize whistle/crowd harshness
+        // Stadium/broadcast mode - commentary clarity with crowd atmosphere
         applyImmersiveSettings(
-            eqGains = listOf(1.0, 0.5, 0.5, 2.0, 2.5, 0.5, -0.3),
-            bassGainUnits = 1.0f,      // +2.4 dB (stadium atmosphere)
-            trebleGainUnits = -0.5f,   // -1.2 dB (reduce whistle harshness)
-            virtualizerStrength = 400  // 40% - stadium-like spatial experience
+            eqGains = listOf(+1.2, +1.2, +0.5, -0.7, -0.7, 0.0, +1.0, +1.2, -0.9, -2.5),
+            bassGainUnits = 0.917f,     // +2.2 dB (stadium atmosphere)
+            trebleGainUnits = 0.33f,    // +0.8 dB
+            virtualizerStrength = 470,  // 47% - stadium-like spatial experience
+            reverbWetMix = 0.10f        // 10% reverb
         )
     }
     

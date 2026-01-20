@@ -53,11 +53,11 @@ class EqualizerModule : Module() {
                 
                 promise.resolve(mapOf(
                     "success" to true,
-                    "numberOfBands" to 7,
+                    "numberOfBands" to 10,
                     "minLevel" to -1200,
                     "maxLevel" to 1200,
                     "bands" to bandInfo,
-                    "presets" to listOf("Flat", "Bass Boost", "Treble Boost", "Vocal", "Electronic", "Rock", "Pop", "Jazz"),
+                    "presets" to listOf("Flat", "Rock", "Pop", "Jazz", "Classical", "Electronic", "Hip-Hop", "Acoustic", "Bass+", "Clarity"),
                     "isSoftwareDSP" to true
                 ))
                 
@@ -108,24 +108,27 @@ class EqualizerModule : Module() {
                     return@Function mapOf("success" to false, "error" to "DSP not initialized")
                 }
                 
+                // 10-band EQ presets: [60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz]
                 val presetGains = when (preset) {
-                    0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-                    1 -> listOf(4.0, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0)
-                    2 -> listOf(0.0, 0.0, 0.0, 0.0, 2.0, 3.0, 4.0)
-                    3 -> listOf(-1.0, 0.0, 2.0, 3.0, 2.0, 0.0, -1.0)
-                    4 -> listOf(3.0, 2.0, 0.0, -1.0, 0.0, 2.0, 3.0)
-                    5 -> listOf(3.0, 2.0, 1.0, 0.0, 1.0, 2.0, 3.0)
-                    6 -> listOf(1.0, 2.0, 2.0, 1.0, 0.0, 1.0, 2.0)
-                    7 -> listOf(2.0, 1.0, 0.0, 1.0, 2.0, 2.0, 1.0)
-                    else -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+                    0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)           // Flat
+                    1 -> listOf(+0.4, +0.4, -0.3, -1.1, -1.1, -0.1, +0.9, +1.6, +0.7, -0.7) // Rock
+                    2 -> listOf(+0.3, +0.3, -0.4, -0.5, -0.4, +0.7, +0.8, +0.7, -0.4, -0.7) // Pop
+                    3 -> listOf(-0.3, -0.3, -1.1, +1.0, +1.0, +0.3, -0.7, -0.3, -0.3, -0.9) // Jazz
+                    4 -> listOf(-0.8, -0.8, -0.4, -0.4, -0.2, +0.2, +0.5, +1.0, +0.9, +0.4) // Classical
+                    5 -> listOf(+1.3, +1.3, +0.5, -1.4, -1.4, -0.5, +0.5, +1.3, +0.5, -1.2) // Electronic
+                    6 -> listOf(+2.4, +2.4, +0.7, -1.2, -0.6, 0.0, +0.4, -0.6, -1.4, -2.0)  // Hip-Hop
+                    7 -> listOf(-0.6, -0.6, -1.2, +0.7, +1.5, +1.5, +0.7, -0.3, -0.3, -1.3) // Acoustic
+                    8 -> listOf(+2.5, +1.8, +1.0, -0.4, -0.9, -0.9, -0.9, -0.9, -0.4, -0.9) // Bass+
+                    9 -> listOf(-1.9, -1.9, -0.9, -0.8, +0.3, +0.6, +1.3, +1.3, +1.9, +0.1) // Clarity
+                    else -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
                 }
                 
                 dsp.setAllEqBandGains(presetGains)
                 
-                // Reset stereo width to neutral (standard stereo) for EQ presets
-                // Professional standard: EQ presets only affect frequency response, not stereo field
-                // Matches Bose, Sony, Yamaha behavior
+                // Reset stereo width and reverb to neutral for EQ presets
+                // Professional standard: EQ presets only affect frequency response
                 dsp.setStereoWidth(0f)
+                dsp.setReverb(0f)
                 
                 return@Function mapOf("success" to true, "preset" to preset)
             } catch (e: Exception) {
@@ -147,8 +150,9 @@ class EqualizerModule : Module() {
                 val gains = levels.map { it.toDouble() / 100.0 }
                 dsp.setAllEqBandGains(gains)
                 
-                // Reset stereo width to neutral (standard stereo) for custom EQ
+                // Reset stereo width and reverb to neutral for custom EQ
                 dsp.setStereoWidth(0f)
+                dsp.setReverb(0f)
                 
                 return@Function mapOf("success" to true)
             } catch (e: Exception) {
@@ -166,7 +170,7 @@ class EqualizerModule : Module() {
             val dsp = getDspProcessor()
             return@Function mapOf(
                 "enabled" to (dsp?.getIsEnabled() ?: false),
-                "numberOfBands" to 7,
+                "numberOfBands" to 10,
                 "currentPreset" to -1,
                 "minLevel" to -1200,
                 "maxLevel" to 1200,
@@ -183,8 +187,9 @@ class EqualizerModule : Module() {
                 
                 dsp.setAllEqBandGains(bands)
                 
-                // Reset stereo width to neutral (standard stereo) for EQ-only mode
+                // Reset stereo width and reverb to neutral for EQ-only mode
                 dsp.setStereoWidth(0f)
+                dsp.setReverb(0f)
                 
                 return@Function mapOf("success" to true)
             } catch (e: Exception) {

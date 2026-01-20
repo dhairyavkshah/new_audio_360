@@ -13,8 +13,9 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         const val DEFAULT_Q = 1.4f
         const val SHELF_Q = 0.707f
         
-        private val EQ_FREQUENCIES = floatArrayOf(32f, 64f, 125f, 500f, 2000f, 8000f, 16000f)
-        private val EQ_NAMES = arrayOf("Sub", "Bass", "Low-Mid", "Mid", "High-Mid", "Treble", "Brilliance")
+        // 10-band EQ frequencies matching Web implementation
+        private val EQ_FREQUENCIES = floatArrayOf(60f, 170f, 310f, 600f, 1000f, 3000f, 6000f, 12000f, 14000f, 16000f)
+        private val EQ_NAMES = arrayOf("60Hz", "170Hz", "310Hz", "600Hz", "1kHz", "3kHz", "6kHz", "12kHz", "14kHz", "16kHz")
         
         const val BASS_SHELF_FREQ = 150f
         const val TREBLE_SHELF_FREQ = 6000f
@@ -35,14 +36,23 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private var isActive = false
     private var inputEnded = false
 
-    private val eqFilters = Array(7) { i ->
+    private val eqFilters = Array(10) { i ->
         BiquadFilter(FilterType.PEAKING, EQ_FREQUENCIES[i], 0f, DEFAULT_Q, 44100f)
     }
     private val bassShelfFilter = BiquadFilter(FilterType.LOWSHELF, BASS_SHELF_FREQ, 0f, SHELF_Q, 44100f)
     private val trebleShelfFilter = BiquadFilter(FilterType.HIGHSHELF, TREBLE_SHELF_FREQ, 0f, SHELF_Q, 44100f)
     private val limiter = Limiter(-1f, 20f, 1f, 100f, 44100f)
 
-    private val eqGains = FloatArray(7) { 0f }
+    private val eqGains = FloatArray(10) { 0f }
+    
+    // Multi-tap delay reverb (4 delay lines for richer sound)
+    private val DELAY_TIMES = floatArrayOf(0.023f, 0.041f, 0.067f, 0.089f) // seconds
+    private val DELAY_FEEDBACKS = floatArrayOf(0.4f, 0.35f, 0.3f, 0.25f)
+    private val MAX_DELAY_SAMPLES = 8820 // ~200ms at 44100Hz
+    private val delayBuffersL = Array(4) { FloatArray(MAX_DELAY_SAMPLES) }
+    private val delayBuffersR = Array(4) { FloatArray(MAX_DELAY_SAMPLES) }
+    private val delayIndices = IntArray(4) { 0 }
+    private var reverbWetMix = 0f // 0.0 = dry, 1.0 = full reverb
     private var bassGain = 0f
     private var trebleGain = 0f
     private var stereoWidth = 0f  // -1.0 = mono, 0.0 = original, 1.0 = max wide (200%)
@@ -63,8 +73,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         pendingFormat = inputAudioFormat
         val sampleRate = inputAudioFormat.sampleRate.toFloat()
         
-        eqFilters.forEachIndexed { i, filter ->
-            filter.configure(FilterType.PEAKING, EQ_FREQUENCIES[i], eqGains[i], DEFAULT_Q, sampleRate)
+        for (i in 0 until 10) {
+            eqFilters[i].configure(FilterType.PEAKING, EQ_FREQUENCIES[i], eqGains[i], DEFAULT_Q, sampleRate)
         }
         bassShelfFilter.configure(FilterType.LOWSHELF, BASS_SHELF_FREQ, bassGain, SHELF_Q, sampleRate)
         trebleShelfFilter.configure(FilterType.HIGHSHELF, TREBLE_SHELF_FREQ, trebleGain, SHELF_Q, sampleRate)
@@ -133,6 +143,11 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             processStereoWidth(samples)
         }
 
+        // Apply reverb if wet mix > 0
+        if (reverbWetMix > 0f && channelCount == 2) {
+            processReverb(samples)
+        }
+
         limiter.processBuffer(samples, channelCount)
 
         // Write processed samples to output buffer with correct position/limit
@@ -180,7 +195,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     }
 
     fun setEqBandGain(band: Int, gainUnits: Float) {
-        if (band in 0..6) {
+        if (band in 0..9) {
             val gainDb = (gainUnits * DB_PER_UNIT).coerceIn(-MAX_DB, MAX_DB)
             eqGains[band] = gainDb
             eqFilters[band].setGain(gainDb)
@@ -189,7 +204,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
 
     fun setAllEqBandGains(gains: List<Double>) {
         gains.forEachIndexed { index, gain ->
-            if (index < 7) {
+            if (index < 10) {
                 setEqBandGain(index, gain.toFloat())
             }
         }
@@ -220,6 +235,72 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     }
 
     fun getStereoWidth(): Float = stereoWidth
+
+    /**
+     * Set reverb wet mix (0 = dry, 1 = full reverb)
+     * Uses equal-power crossfade for smooth blending
+     */
+    fun setReverb(wetMix: Float) {
+        reverbWetMix = wetMix.coerceIn(0f, 1f)
+        android.util.Log.d("SoftwareDSP", "Reverb wet mix set to ${(reverbWetMix * 100).toInt()}%")
+    }
+
+    fun getReverb(): Float = reverbWetMix
+
+    /**
+     * Process multi-tap delay reverb
+     * Uses 4 delay lines with different times for rich, diffuse sound
+     */
+    private fun processReverb(samples: ShortArray) {
+        val sampleRate = 44100f
+        
+        // Equal-power crossfade: dry = cos, wet = sin
+        val dryGain = kotlin.math.cos(reverbWetMix * kotlin.math.PI.toFloat() / 2f)
+        val wetGain = kotlin.math.sin(reverbWetMix * kotlin.math.PI.toFloat() / 2f)
+        
+        var i = 0
+        while (i < samples.size - 1) {
+            val dryL = samples[i].toFloat()
+            val dryR = samples[i + 1].toFloat()
+            
+            var wetL = 0f
+            var wetR = 0f
+            
+            // Sum contributions from all 4 delay lines
+            for (tap in 0 until 4) {
+                val delaySamples = (DELAY_TIMES[tap] * sampleRate).toInt().coerceIn(1, MAX_DELAY_SAMPLES - 1)
+                val readIndex = (delayIndices[tap] - delaySamples + MAX_DELAY_SAMPLES) % MAX_DELAY_SAMPLES
+                
+                // Read delayed samples
+                val delayedL = delayBuffersL[tap][readIndex]
+                val delayedR = delayBuffersR[tap][readIndex]
+                
+                // Add to wet signal
+                wetL += delayedL * 0.25f // Each tap contributes 25%
+                wetR += delayedR * 0.25f
+                
+                // Write to delay buffer with feedback
+                delayBuffersL[tap][delayIndices[tap]] = dryL + delayedL * DELAY_FEEDBACKS[tap]
+                delayBuffersR[tap][delayIndices[tap]] = dryR + delayedR * DELAY_FEEDBACKS[tap]
+                
+                // Advance index
+                delayIndices[tap] = (delayIndices[tap] + 1) % MAX_DELAY_SAMPLES
+            }
+            
+            // Mix dry and wet
+            var outL = dryL * dryGain + wetL * wetGain
+            var outR = dryR * dryGain + wetR * wetGain
+            
+            // Soft clip
+            outL = outL.coerceIn(-32768f, 32767f)
+            outR = outR.coerceIn(-32768f, 32767f)
+            
+            samples[i] = outL.toInt().toShort()
+            samples[i + 1] = outR.toInt().toShort()
+            
+            i += 2
+        }
+    }
 
     /**
      * Process stereo width using mid-side technique.
@@ -274,18 +355,26 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     fun getIsEnabled(): Boolean = isEnabled
     fun getEqFrequencies(): FloatArray = EQ_FREQUENCIES.copyOf()
     fun getEqBandNames(): Array<String> = EQ_NAMES.copyOf()
-    fun getNumberOfBands(): Int = 7
+    fun getNumberOfBands(): Int = 10
 
     fun resetAll() {
-        for (i in 0..6) {
+        for (i in 0..9) {
             eqGains[i] = 0f
             eqFilters[i].setGain(0f)
         }
         bassGain = 0f
         trebleGain = 0f
         stereoWidth = 0f
+        reverbWetMix = 0f
         bassShelfFilter.setGain(0f)
         trebleShelfFilter.setGain(0f)
+        
+        // Clear reverb delay buffers
+        for (tap in 0 until 4) {
+            delayBuffersL[tap].fill(0f)
+            delayBuffersR[tap].fill(0f)
+            delayIndices[tap] = 0
+        }
         
         eqFilters.forEach { it.resetAllChannels() }
         bassShelfFilter.resetAllChannels()

@@ -24,26 +24,48 @@ export type SoundLabMode = 'equalizer' | 'immersive' | 'off';
 
 export { ImmersiveMode, ImmersiveModeSettings, ImmersiveModeInfo };
 
+// 10-band EQ presets: [60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz]
+const EQ_PRESETS_10BAND: Record<string, number[]> = {
+  Flat:       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+  Rock:       [+0.4, +0.4, -0.3, -1.1, -1.1, -0.1, +0.9, +1.6, +0.7, -0.7],
+  Pop:        [+0.3, +0.3, -0.4, -0.5, -0.4, +0.7, +0.8, +0.7, -0.4, -0.7],
+  Jazz:       [-0.3, -0.3, -1.1, +1.0, +1.0, +0.3, -0.7, -0.3, -0.3, -0.9],
+  Classical:  [-0.8, -0.8, -0.4, -0.4, -0.2, +0.2, +0.5, +1.0, +0.9, +0.4],
+  Electronic: [+1.3, +1.3, +0.5, -1.4, -1.4, -0.5, +0.5, +1.3, +0.5, -1.2],
+  'Hip-Hop':  [+2.4, +2.4, +0.7, -1.2, -0.6, 0.0, +0.4, -0.6, -1.4, -2.0],
+  Acoustic:   [-0.6, -0.6, -1.2, +0.7, +1.5, +1.5, +0.7, -0.3, -0.3, -1.3],
+  'Bass+':    [+2.5, +1.8, +1.0, -0.4, -0.9, -0.9, -0.9, -0.9, -0.4, -0.9],
+  Clarity:    [-1.9, -1.9, -0.9, -0.8, +0.3, +0.6, +1.3, +1.3, +1.9, +0.1],
+};
+
+// Legacy 7-band format for UI compatibility (mapping from 10-band)
 const EQ_PRESETS: Record<string, EQBands> = {
-  Flat: { sub: 0, bass: 0, lowMid: 0, mid: 0, highMid: 0, treble: 0, brilliance: 0 },
-  Rock: { sub: +3, bass: +2, lowMid: -2, mid: -3, highMid: +1, treble: +3, brilliance: -4 },
-  Pop: { sub: +2, bass: +2, lowMid: -1, mid: -2, highMid: +1, treble: +2, brilliance: -4 },
-  Jazz: { sub: 0, bass: +2, lowMid: +1, mid: +1, highMid: -2, treble: -1, brilliance: -1 },
-  Classical: { sub: -1, bass: 0, lowMid: -1, mid: +2, highMid: +1, treble: +2, brilliance: -3 },
-  Electronic: { sub: +4, bass: +3, lowMid: -2, mid: -3, highMid: +1, treble: +3, brilliance: -6 },
-  'Hip-Hop': { sub: +4, bass: +3, lowMid: -2, mid: -3, highMid: +1, treble: +1, brilliance: -4 },
-  Acoustic: { sub: -2, bass: -1, lowMid: +2, mid: +2, highMid: +1, treble: -1, brilliance: -1 },
+  Flat:       { sub: 0, bass: 0, lowMid: 0, mid: 0, highMid: 0, treble: 0, brilliance: 0 },
+  Rock:       { sub: +0.4, bass: -0.3, lowMid: -1.1, mid: -0.1, highMid: +0.9, treble: +1.6, brilliance: -0.7 },
+  Pop:        { sub: +0.3, bass: -0.4, lowMid: -0.5, mid: +0.7, highMid: +0.8, treble: +0.7, brilliance: -0.7 },
+  Jazz:       { sub: -0.3, bass: -1.1, lowMid: +1.0, mid: +0.3, highMid: -0.7, treble: -0.3, brilliance: -0.9 },
+  Classical:  { sub: -0.8, bass: -0.4, lowMid: -0.4, mid: +0.2, highMid: +0.5, treble: +1.0, brilliance: +0.4 },
+  Electronic: { sub: +1.3, bass: +0.5, lowMid: -1.4, mid: -0.5, highMid: +0.5, treble: +1.3, brilliance: -1.2 },
+  'Hip-Hop':  { sub: +2.4, bass: +0.7, lowMid: -1.2, mid: 0, highMid: +0.4, treble: -0.6, brilliance: -2.0 },
+  Acoustic:   { sub: -0.6, bass: -1.2, lowMid: +0.7, mid: +1.5, highMid: +0.7, treble: -0.3, brilliance: -1.3 },
+  'Bass+':    { sub: +2.5, bass: +1.0, lowMid: -0.4, mid: -0.9, highMid: -0.9, treble: -0.9, brilliance: -0.9 },
+  Clarity:    { sub: -1.9, bass: -0.9, lowMid: -0.8, mid: +0.6, highMid: +1.3, treble: +1.3, brilliance: +0.1 },
 };
 
 const EQ_FREQUENCIES = {
-  sub: 32,
-  bass: 64,
-  lowMid: 250,
-  mid: 1000,
-  highMid: 4000,
-  treble: 8000,
+  sub: 60,
+  bass: 170,
+  lowMid: 600,
+  mid: 3000,
+  highMid: 6000,
+  treble: 12000,
   brilliance: 16000,
 };
+
+// 10-band frequencies for direct DSP access
+const EQ_FREQUENCIES_10BAND = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
+
+export { EQ_PRESETS_10BAND, EQ_FREQUENCIES_10BAND };
 
 const VALID_IMMERSIVE_MODES: ImmersiveMode[] = ['off', 'music', '360_reality', 'gaming', 'podcast', 'movie', 'sports'];
 
