@@ -417,9 +417,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Propagate repeat mode to the appropriate playback engine
+  // NOTE: For Android PlaybackEngineModule, we load single tracks, so:
+  // - repeat='one' -> use native REPEAT_MODE_ONE (ExoPlayer loops the single track)
+  // - repeat='all' -> use native REPEAT_MODE_OFF and let JavaScript handle queue advancement via handleTrackEnd
+  // - repeat='off' -> use native REPEAT_MODE_OFF
   useEffect(() => {
     if (useNativePlaybackRef.current) {
-      PlaybackEngineModule.setRepeatMode(repeat);
+      // For single-track loading, only use native repeat for 'one' mode
+      // 'all' mode is handled by JavaScript queue logic in handleTrackEnd
+      const nativeRepeatMode = repeat === 'one' ? 'one' : 'off';
+      PlaybackEngineModule.setRepeatMode(nativeRepeatMode);
     } else if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
       TrackPlayerService.setRepeatMode(repeat);
     }
