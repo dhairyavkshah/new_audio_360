@@ -86,6 +86,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const useNativePlaybackRef = useRef(Platform.OS === 'android' && PlaybackEngineModule.isAvailable());
   const useTrackPlayerRef = useRef(Platform.OS === 'ios' && TrackPlayerService.isAvailable());
   const trackPlayerInitializedRef = useRef(false);
+  const playbackEngineInitializedRef = useRef(false);
   const nativeAudioSessionIdRef = useRef<number>(0);
   const progressPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastKnownPositionRef = useRef<number>(0);
@@ -296,19 +297,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (useNativePlaybackRef.current) {
       PlaybackEngineModule.initialize().then(async (initResult) => {
-        if (initResult.success && initResult.audioSessionId) {
-          nativeAudioSessionIdRef.current = initResult.audioSessionId;
-          console.log('[PlayerContext] PlaybackEngineModule initialized with audioSessionId:', initResult.audioSessionId);
-          
-          // Attach EqualizerModule to enable DSP processing
-          if (EqualizerModule.isAvailable()) {
-            try {
-              const attachResult = await EqualizerModule.attach(initResult.audioSessionId);
-              if (attachResult.success) {
-                console.log('[PlayerContext] EqualizerModule attached to PlaybackEngineModule audio session');
+        if (initResult.success || initResult.alreadyInitialized) {
+          playbackEngineInitializedRef.current = true;
+          if (initResult.audioSessionId && initResult.audioSessionId > 0) {
+            nativeAudioSessionIdRef.current = initResult.audioSessionId;
+            console.log('[PlayerContext] PlaybackEngineModule initialized with audioSessionId:', initResult.audioSessionId);
+            
+            // Attach EqualizerModule to enable DSP processing
+            if (EqualizerModule.isAvailable()) {
+              try {
+                const attachResult = await EqualizerModule.attach(initResult.audioSessionId);
+                if (attachResult.success) {
+                  console.log('[PlayerContext] EqualizerModule attached to PlaybackEngineModule audio session');
+                }
+              } catch (err) {
+                console.warn('[PlayerContext] EqualizerModule attach failed:', err);
               }
-            } catch (err) {
-              console.warn('[PlayerContext] EqualizerModule attach failed:', err);
             }
           }
         } else if (initResult.error) {
@@ -319,6 +323,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     
     return () => {
       if (useNativePlaybackRef.current) {
+        playbackEngineInitializedRef.current = false;
         if (EqualizerModule.isAvailable()) {
           EqualizerModule.release();
         }
@@ -713,21 +718,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       try {
         console.log('[PlayerContext] Using PlaybackEngineModule with DSP for music playback');
         
-        // Initialize PlaybackEngineModule if not already initialized
-        const initResult = await PlaybackEngineModule.initialize();
-        if (!initResult.success && !initResult.alreadyInitialized) {
-          throw new Error(initResult.error || 'Failed to initialize PlaybackEngineModule');
-        }
-        
-        // Store the audio session ID for DSP attachment
-        if (initResult.audioSessionId && initResult.audioSessionId > 0) {
-          nativeAudioSessionIdRef.current = initResult.audioSessionId;
-          // Attach EQ module to the audio session
-          try {
-            await EqualizerModule.attach(initResult.audioSessionId);
-            console.log('[PlayerContext] Attached EqualizerModule to audio session:', initResult.audioSessionId);
-          } catch (eqErr) {
-            console.warn('[PlayerContext] Failed to attach EQ module:', eqErr);
+        // Wait for mount-time initialization if not yet complete
+        if (!playbackEngineInitializedRef.current) {
+          console.log('[PlayerContext] Waiting for PlaybackEngineModule initialization...');
+          let attempts = 0;
+          while (!playbackEngineInitializedRef.current && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+          }
+          if (!playbackEngineInitializedRef.current) {
+            throw new Error('PlaybackEngineModule initialization timeout');
           }
         }
         
