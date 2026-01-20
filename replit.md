@@ -74,6 +74,16 @@ Source → 10-Band EQ → Bass Boost (150Hz low-shelf) → Treble Boost (6kHz hi
 | Clarity | −1.9 | −1.9 | −0.9 | −0.8 | +0.3 | +0.6 | +1.3 | +1.3 | +1.9 | +0.1 |
 - **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, and virtualizer settings, designed for specific listening experiences.
 
+**Immersive Mode Settings** (10-band EQ: 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz):
+| Mode | 60Hz | 170Hz | 310Hz | 600Hz | 1kHz | 3kHz | 6kHz | 12kHz | 14kHz | 16kHz | Spatial | Reverb | Bass | Treble |
+|------|------|-------|-------|-------|------|------|------|-------|-------|-------|---------|--------|------|--------|
+| Music | +0.3 | +0.3 | −0.4 | −1.0 | −1.0 | 0.0 | +1.0 | +1.5 | +0.4 | −1.1 | 25% | 8% | +1.2dB | +1.3dB |
+| 360 Reality | 0.0 | 0.0 | −0.6 | −0.6 | −0.6 | 0.0 | +1.0 | +1.2 | +0.3 | −0.7 | 55% | 18% | +0.8dB | +1.5dB |
+| Movies | −0.8 | −0.8 | −0.4 | +0.7 | +1.1 | +1.0 | +1.0 | −0.3 | −0.5 | −1.7 | 45% | 12% | +1.8dB | +1.5dB |
+| Sports | +1.2 | +1.2 | +0.5 | −0.7 | −0.7 | 0.0 | +1.0 | +1.2 | −0.9 | −2.5 | 47% | 10% | +2.2dB | +0.8dB |
+| Podcast | −1.9 | −1.9 | −0.9 | −0.7 | +0.4 | +1.0 | +1.0 | +1.4 | +1.8 | −0.2 | 0% | 0% | −1.0dB | +2.3dB |
+| Gaming | +0.8 | +0.8 | +0.4 | −1.1 | −1.1 | 0.0 | +1.0 | +1.7 | +0.8 | −1.9 | 57% | 8% | +1.2dB | +2.1dB |
+
 ### Navigation Structure
 A 4-tab system with a persistent MiniPlayer:
 - **ListenTab**: Main player, Now Playing, Sound Lab, Queue
