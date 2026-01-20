@@ -36,15 +36,15 @@ export default function AboutScreen() {
             New Audio 360
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.version}>
-            Version 25.0
+            Version 26.0
           </FluentText>
         </View>
 
         <GlassCard style={styles.descriptionCard}>
           <FluentText variant="caption1" color="secondary" style={styles.description}>
             A beautiful music player designed with love for audio enthusiasts. 
-            Experience your music collection like never before with our carefully 
-            crafted equalizer presets and immersive sound modes.
+            Experience your music collection like never before with our world-class 
+            audio engine, custom 10-band EQ, and immersive sound modes.
           </FluentText>
         </GlassCard>
 

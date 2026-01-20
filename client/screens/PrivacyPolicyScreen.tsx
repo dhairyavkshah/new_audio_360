@@ -53,7 +53,7 @@ export default function PrivacyPolicyScreen() {
             Privacy Policy
           </FluentText>
           <FluentText variant="caption2" color="secondary" align="center">
-            Effective Date: January 17, 2026
+            Effective Date: January 20, 2026
           </FluentText>
         </GlassCard>
 

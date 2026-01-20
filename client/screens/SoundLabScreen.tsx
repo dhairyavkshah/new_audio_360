@@ -41,7 +41,7 @@ const EQ_PRESETS = [
   { 
     name: "Flat", 
     description: "Natural, unprocessed sound",
-    bands: [0, 0, 0, 0, 0],
+    bands: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -49,7 +49,7 @@ const EQ_PRESETS = [
   { 
     name: "Rock", 
     description: "Punchy bass, crisp guitars",
-    bands: [3, 2, -1, 2, 3],
+    bands: [3, 3, 2, 1, -1, 0, 2, 2, 3, 3],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -57,7 +57,7 @@ const EQ_PRESETS = [
   { 
     name: "Pop", 
     description: "Bright vocals, balanced bass",
-    bands: [2, 1, 2, 3, 2],
+    bands: [2, 2, 1, 2, 2, 3, 3, 2, 2, 2],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -65,7 +65,7 @@ const EQ_PRESETS = [
   { 
     name: "Jazz", 
     description: "Warm mids, smooth highs",
-    bands: [2, 3, 1, -1, 0],
+    bands: [2, 2, 3, 2, 1, 0, -1, -1, 0, 0],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -73,7 +73,7 @@ const EQ_PRESETS = [
   { 
     name: "Classical", 
     description: "Wide dynamics, clear separation",
-    bands: [1, 1, 0, 2, 3],
+    bands: [1, 1, 1, 0, 0, 1, 2, 2, 3, 3],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -81,7 +81,7 @@ const EQ_PRESETS = [
   { 
     name: "Electronic", 
     description: "Deep bass, sparkling highs",
-    bands: [4, 3, -1, 2, 4],
+    bands: [4, 4, 3, 1, -1, 0, 2, 3, 4, 4],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -89,7 +89,7 @@ const EQ_PRESETS = [
   { 
     name: "Hip-Hop", 
     description: "Heavy sub-bass, clear vocals",
-    bands: [5, 3, 1, 2, 1],
+    bands: [5, 5, 3, 2, 1, 2, 2, 1, 1, 1],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -97,7 +97,7 @@ const EQ_PRESETS = [
   { 
     name: "Acoustic", 
     description: "Natural warmth, presence",
-    bands: [1, 2, 2, 1, 1],
+    bands: [1, 1, 2, 2, 2, 2, 1, 1, 1, 1],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -105,7 +105,7 @@ const EQ_PRESETS = [
   { 
     name: "Bass+", 
     description: "Enhanced low-end impact",
-    bands: [5, 3, 0, -1, -1],
+    bands: [5, 5, 3, 1, 0, -1, -1, -1, -1, -1],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -113,7 +113,7 @@ const EQ_PRESETS = [
   { 
     name: "Clarity", 
     description: "Crystal-clear detail",
-    bands: [-2, -1, 1, 2, 3],
+    bands: [-2, -2, -1, 0, 1, 2, 2, 3, 3, 3],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -121,7 +121,7 @@ const EQ_PRESETS = [
 ];
 
 
-const CUSTOM_EQ_BAND_LABELS = ["60Hz", "230Hz", "910Hz", "3.6kHz", "14kHz"];
+const CUSTOM_EQ_BAND_LABELS = ["60Hz", "170Hz", "310Hz", "600Hz", "1kHz", "3kHz", "6kHz", "12kHz", "14kHz", "16kHz"];
 
 const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
   'off', 'music', '360_reality', 'gaming', 'podcast', 'movie', 'sports'
@@ -141,7 +141,7 @@ function SoundLabScreen() {
   const [soundLabMode, setSoundLabMode] = useState<SoundLabMode>("off");
   const [selectedEQ, setSelectedEQ] = useState("Flat");
   const [isCustomEQ, setIsCustomEQ] = useState(false);
-  const [customBands, setCustomBands] = useState<number[]>([0, 0, 0, 0, 0]);
+  const [customBands, setCustomBands] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   const [customPresets, setCustomPresets] = useState<CustomEQPreset[]>([]);
   const [selectedImmersive, setSelectedImmersive] = useState<ImmersiveMode>("off");
   const [availableModes, setAvailableModes] = useState<ImmersiveModeInfo[]>([]);
@@ -271,7 +271,7 @@ function SoundLabScreen() {
         await clearSoundMode();
         await saveEQPreset("Custom");
         await NativeAudioService.setImmersiveMode('off');
-        NativeEffectsManager.applyFiveBandEQ(customBands);
+        NativeEffectsManager.applyTenBandEQ(customBands);
       }
     } else {
       if (soundLabMode === "equalizer" && selectedEQ === preset && !isCustomEQ) {
@@ -290,7 +290,7 @@ function SoundLabScreen() {
         // Apply the preset's EQ bands and load bass/treble/virtualizer values
         const presetData = EQ_PRESETS.find(p => p.name === preset);
         if (presetData) {
-          NativeEffectsManager.applyFiveBandEQ(presetData.bands);
+          NativeEffectsManager.applyTenBandEQ(presetData.bands);
           // Load bass/treble/virtualizer values from preset into state
           const newBass = presetData.bassControl ?? 0;
           const newTreble = presetData.trebleControl ?? 0;
@@ -319,15 +319,15 @@ function SoundLabScreen() {
     setCustomBands(newBands);
     await saveCustomEQBands(newBands);
     // Apply to native equalizer in real-time
-    NativeEffectsManager.applyFiveBandEQ(newBands);
+    NativeEffectsManager.applyTenBandEQ(newBands);
   };
 
   const handleResetBands = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const resetBands = [0, 0, 0, 0, 0];
+    const resetBands = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     setCustomBands(resetBands);
     await saveCustomEQBands(resetBands);
-    NativeEffectsManager.applyFiveBandEQ(resetBands);
+    NativeEffectsManager.applyTenBandEQ(resetBands);
   };
 
   const handleBassControlChange = async (level: number) => {
@@ -424,7 +424,7 @@ function SoundLabScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setCustomBands(preset.bands);
     await saveCustomEQBands(preset.bands);
-    NativeEffectsManager.applyFiveBandEQ(preset.bands);
+    NativeEffectsManager.applyTenBandEQ(preset.bands);
     
     const newBass = preset.bassControl ?? 0;
     const newTreble = preset.trebleControl ?? 0;
@@ -472,7 +472,7 @@ function SoundLabScreen() {
     setTrebleControl(presetTreble);
     setTrebleBoost(presetTreble); // Sync to context for software DSP
     setVirtualizerLevel(preset.virtualizer ?? 0);
-    NativeEffectsManager.applyFiveBandEQ(preset.bands);
+    NativeEffectsManager.applyTenBandEQ(preset.bands);
     setShowEditDialog(true);
   };
 

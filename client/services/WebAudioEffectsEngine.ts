@@ -267,6 +267,23 @@ class WebAudioEffectsEngineClass {
     this.applyEQ(tenBandValues);
   }
 
+  /**
+   * Apply 10-band EQ values directly (for Custom EQ with full 10-band control)
+   * @param bands - Array of 10 band values in range -8 to +8
+   */
+  applyTenBandEQ(bands: number[]): void {
+    if (bands.length < 10) {
+      // Pad with zeros if needed
+      const paddedBands = [...bands];
+      while (paddedBands.length < 10) {
+        paddedBands.push(0);
+      }
+      this.applyEQ(paddedBands);
+    } else {
+      this.applyEQ(bands.slice(0, 10));
+    }
+  }
+
   applySevenBandEQ(bands: { sub: number; bass: number; lowMid: number; mid: number; highMid: number; treble: number; brilliance: number }): void {
     const tenBandValues = [
       bands.sub,

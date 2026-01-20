@@ -95,6 +95,10 @@ class NativeEffectsManagerClass {
     console.log('[Web] applyFiveBandEQ (simulated):', bands);
   }
 
+  applyTenBandEQ(bands: number[]): void {
+    console.log('[Web] applyTenBandEQ (simulated):', bands);
+  }
+
   disableEQ(): void {
     console.log('[Web] disableEQ (simulated)');
   }

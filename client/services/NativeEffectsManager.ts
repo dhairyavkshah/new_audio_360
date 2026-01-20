@@ -212,10 +212,11 @@ class NativeEffectsManagerClass {
   }
 
   /**
-   * Apply 5-band EQ values directly (for use with Sound Lab presets and custom EQ)
+   * Apply EQ band values directly (for use with Sound Lab presets and custom EQ)
    * Band values should be in range -8 to +8 (user units)
    * Uses ZERO-SUM BALANCE rule: sum of all bands equals zero (no net volume change)
    * No other audio processing is applied - pure EQ only
+   * Note: This method accepts any number of bands and maps to hardware EQ
    */
   applyFiveBandEQ(bands: number[]): void {
     if (!this.isAvailable() || !this.equalizerAttached) {
@@ -265,6 +266,78 @@ class NativeEffectsManagerClass {
       input: bands, 
       average: average.toFixed(2),
       zeroSum: zeroSumBands.map(v => v.toFixed(2)), 
+      millibels: bandValues 
+    });
+    EqualizerModule.setCustomBands(bandValues);
+  }
+
+  /**
+   * Apply 10-band EQ values directly (for Custom EQ with full 10-band control)
+   * Frequencies: 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz
+   * Band values should be in range -8 to +8 (user units)
+   * Uses ZERO-SUM BALANCE rule: sum of all bands equals zero (no net volume change)
+   * Note: Maps 10 bands to available hardware EQ bands
+   */
+  applyTenBandEQ(bands: number[]): void {
+    if (!this.isAvailable() || !this.equalizerAttached) {
+      console.log('[NativeEffectsManager] Cannot apply 10-band EQ - not available or not attached');
+      return;
+    }
+
+    const numBands = this.equalizerInfo?.numberOfBands || 5;
+
+    // Map 10 bands to hardware EQ bands
+    let rawBands: number[];
+    if (numBands >= 10) {
+      // Hardware supports 10+ bands - use directly
+      rawBands = [...bands];
+      while (rawBands.length < numBands) {
+        rawBands.push(0);
+      }
+    } else if (numBands >= 5) {
+      // Map 10 bands to 5 bands by averaging adjacent pairs
+      rawBands = [
+        (bands[0] + bands[1]) / 2,  // 60Hz + 170Hz -> Low bass
+        (bands[2] + bands[3]) / 2,  // 310Hz + 600Hz -> Mid-bass
+        (bands[4] + bands[5]) / 2,  // 1kHz + 3kHz -> Mids
+        (bands[6] + bands[7]) / 2,  // 6kHz + 12kHz -> High-mids
+        (bands[8] + bands[9]) / 2,  // 14kHz + 16kHz -> Treble
+      ];
+      while (rawBands.length < numBands) {
+        rawBands.push(0);
+      }
+    } else {
+      rawBands = bands.slice(0, numBands);
+    }
+
+    // Check if all bands are zero - disable EQ entirely for pure passthrough
+    const allZero = rawBands.every(v => v === 0);
+    if (allZero) {
+      EqualizerModule.setEnabled(false);
+      console.log('[NativeEffectsManager] All EQ bands at 0 - EQ disabled (pure passthrough)');
+      return;
+    }
+
+    EqualizerModule.setEnabled(true);
+
+    // ZERO-SUM BALANCE RULE
+    const sum = rawBands.reduce((acc, v) => acc + v, 0);
+    const average = sum / rawBands.length;
+    const zeroSumBands = rawBands.map(v => v - average);
+
+    const MB_PER_UNIT = 100;
+    const minLevel = this.equalizerInfo?.minLevel ?? -1500;
+    const maxLevel = this.equalizerInfo?.maxLevel ?? 1500;
+    
+    const bandValues = zeroSumBands.map(v => {
+      const millibels = Math.round(v * MB_PER_UNIT);
+      return Math.max(minLevel, Math.min(maxLevel, millibels));
+    });
+
+    console.log('[NativeEffectsManager] Applying 10-band EQ (zero-sum balanced):', { 
+      input: bands.slice(0, 10), 
+      mappedTo: rawBands.length,
+      average: average.toFixed(2),
       millibels: bandValues 
     });
     EqualizerModule.setCustomBands(bandValues);
