@@ -9,19 +9,35 @@
 ## Google Play Store Release Note (Under 500 Characters)
 
 ```
-New Audio 360 v1.0 - Premium Music Player
+New Audio 360 v26.0 - Premium Music Player
 
-Studio-grade audio experience:
-• 7-band equalizer with 8 presets
-• Bass & Treble controls: ±12 dB range
-• Intelligent distortion prevention
-• 6 immersive audio modes
-• 55 stunning themes
-• Fast music library scanning
-• Online Radio with hundreds of stations
+What's New:
+• Cross-platform DSP: EQ, Bass, Treble, Virtualizer work identically on all devices
+• Flat EQ always active by default for pure sound
+• Floating MiniPlayer: drag anywhere on screen
+• Real-time library sync: auto-updates when songs change
+• 10 zero-sum EQ presets for maximum headroom
+• 6 immersive modes with spatial audio
 
-One-time purchase. No ads. No subscriptions. Lifetime access.
+One-time purchase. No ads. Lifetime access.
 ```
+
+---
+
+## Version 26.0 (January 20, 2026)
+
+### Audio Effects
+- **Cross-Platform DSP Consistency**: All audio effects (EQ presets, Bass Boost, Treble Boost, Virtualizer/Stereo Width, Custom EQ) now work identically on both Android and Web platforms
+- **Web Virtualizer/Stereo Width**: Proper stereo width control for Web DSP. Virtualizer level (-5 to +5) maps to stereo width (-1.0 to +1.0)
+- **Flat EQ Always Active**: Flat preset is always active by default and cannot be turned off. Tapping another preset and tapping it again returns to Flat
+- **Zero-Sum EQ Presets**: 10 balanced presets (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity) with positive and negative gains for maximum headroom
+
+### User Interface
+- **Floating/Draggable MiniPlayer**: MiniPlayer can now be dragged and repositioned anywhere on screen using pan gestures with smooth spring animations
+- **Audio Enhancement Tip**: Updated notification message displays in exactly 3 lines for better readability
+
+### Library
+- **Real-time Library Sync**: Player automatically updates when songs are added or removed from local storage without requiring a reload
 
 ---
 
@@ -160,4 +176,4 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 
 ---
 
-*Last Updated: January 19, 2026*
+*Last Updated: January 20, 2026*
