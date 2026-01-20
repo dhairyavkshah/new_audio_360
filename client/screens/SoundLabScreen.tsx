@@ -37,6 +37,7 @@ import { WebAudioEffectsEngine } from "@/services/WebAudioEffectsEngine";
 
 type SoundLabMode = "equalizer" | "immersive" | "off";
 
+// Zero-sum EQ presets (5-band simplified) for maximum headroom
 const EQ_PRESETS = [
   { 
     name: "Flat", 
@@ -48,16 +49,16 @@ const EQ_PRESETS = [
   },
   { 
     name: "Rock", 
-    description: "Punchy, clean guitars",
-    bands: [2, 1, 0, 2, 2],
+    description: "Balanced punch, clean guitars",
+    bands: [0, -1, -1, 1, 0],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
   },
   { 
     name: "Pop", 
-    description: "Vocal-clear & balanced",
-    bands: [2, 1, 1, 2, 1],
+    description: "Clean vocals, safe bass",
+    bands: [0, 0, 0, 1, -1],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -65,7 +66,7 @@ const EQ_PRESETS = [
   { 
     name: "Jazz", 
     description: "Warm & natural",
-    bands: [1, 1, 2, 1, 1],
+    bands: [0, 0, 1, -1, -1],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -73,31 +74,31 @@ const EQ_PRESETS = [
   { 
     name: "Classical", 
     description: "Wide & open, clean separation",
-    bands: [0, 1, 1, 1, 2],
+    bands: [-1, 0, 0, 1, 1],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
   },
   { 
     name: "Electronic", 
-    description: "Deep but controlled bass",
-    bands: [3, 1, 0, 2, 2],
+    description: "Controlled energy, deep bass",
+    bands: [1, 0, -1, 1, 0],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
   },
   { 
     name: "Hip-Hop", 
-    description: "Deep bass + clear vocals",
-    bands: [4, 1, 1, 2, 0],
+    description: "Deep bass + clear mids",
+    bands: [2, 0, 0, 0, -2],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
   },
   { 
     name: "Acoustic", 
-    description: "Live vocals & unplugged music",
-    bands: [1, 1, 3, 2, 1],
+    description: "Natural & intimate",
+    bands: [-1, 0, 2, 0, -1],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -105,7 +106,7 @@ const EQ_PRESETS = [
   { 
     name: "Bass+", 
     description: "Party mode, use at medium volume",
-    bands: [5, 2, 0, 0, 1],
+    bands: [3, 0, -1, -1, -1],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0
@@ -113,7 +114,7 @@ const EQ_PRESETS = [
   { 
     name: "Clarity", 
     description: "Great for podcasts & movies",
-    bands: [0, 1, 2, 3, 4],
+    bands: [-2, -1, 0, 1, 1],
     bassControl: 0,
     trebleControl: 0,
     virtualizer: 0

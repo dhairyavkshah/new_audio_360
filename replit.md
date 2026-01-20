@@ -50,14 +50,28 @@ Source → 10-Band EQ → Bass Boost (150Hz low-shelf) → Treble Boost (6kHz hi
 ```
 
 **Key Components**:
-- **10-Band Parametric EQ**: Frequencies at 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000 Hz. Presets use positive gain values with intelligent safety limiting.
+- **10-Band Parametric EQ**: Frequencies at 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000 Hz. Zero-sum presets provide maximum headroom by balancing positive and negative gains.
 - **Bass Boost**: Separate low-shelf filter at 150Hz, ±12 dB range.
 - **Treble Boost**: Separate high-shelf filter at 6kHz, ±12 dB range.
 - **LFE Channel (Subwoofer Mode)**: Optional feature (disabled by default) that provides extra headroom for bass frequencies. Uses low-pass crossover filter (default 80Hz) to extract sub-bass content. When enabled, low frequencies can boost up to 18dB (vs 12dB for mid/high) before safety gain kicks in. Adjustable LFE gain for boosting sub-bass content. Does not affect sound when disabled.
 - **Volume Safety System**: Automatic gain reduction when combined EQ + bass + treble exceeds limits. Low frequencies get extra headroom (18dB) when LFE is enabled; mid/high frequencies always capped at ±12 dB.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
 - **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide)
-- **EQ Presets**: 10 total (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity). Flat is always active by default and cannot be turned off. Bass+ is a party mode preset, Clarity is optimized for podcasts & movies.
+- **EQ Presets**: 10 zero-sum presets (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity). Flat is always active by default and cannot be turned off. Zero-sum design provides maximum headroom while shaping sound. Bass+ is a party mode preset, Clarity is optimized for podcasts & movies.
+
+**Zero-Sum EQ Preset Values** (10-band: 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz):
+| Preset | 60Hz | 170Hz | 310Hz | 600Hz | 1kHz | 3kHz | 6kHz | 12kHz | 14kHz | 16kHz |
+|--------|------|-------|-------|-------|------|------|------|-------|-------|-------|
+| Flat | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| Rock | +0.4 | +0.4 | −0.3 | −1.1 | −1.1 | −0.1 | +0.9 | +1.6 | +0.7 | −0.7 |
+| Pop | +0.3 | +0.3 | −0.4 | −0.5 | −0.4 | +0.7 | +0.8 | +0.7 | −0.4 | −0.7 |
+| Jazz | −0.3 | −0.3 | −1.1 | +1.0 | +1.0 | +0.3 | −0.7 | −0.3 | −0.3 | −0.9 |
+| Classical | −0.8 | −0.8 | −0.4 | −0.4 | −0.2 | +0.2 | +0.5 | +1.0 | +0.9 | +0.4 |
+| Electronic | +1.3 | +1.3 | +0.5 | −1.4 | −1.4 | −0.5 | +0.5 | +1.3 | +0.5 | −1.2 |
+| Hip-Hop | +2.4 | +2.4 | +0.7 | −1.2 | −0.6 | 0.0 | +0.4 | −0.6 | −1.4 | −2.0 |
+| Acoustic | −0.6 | −0.6 | −1.2 | +0.7 | +1.5 | +1.5 | +0.7 | −0.3 | −0.3 | −1.3 |
+| Bass+ | +3.5 | +2.5 | +1.5 | −0.6 | −1.2 | −1.2 | −1.2 | −1.2 | −0.5 | −1.4 |
+| Clarity | −1.9 | −1.9 | −0.9 | −0.8 | +0.3 | +0.6 | +1.3 | +1.3 | +1.9 | +0.1 |
 - **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, and virtualizer settings, designed for specific listening experiences.
 
 ### Navigation Structure
