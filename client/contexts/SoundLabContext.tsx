@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import { getEQPreset, getSoundMode } from '@/lib/storage';
 import { 
@@ -7,7 +7,8 @@ import {
   ImmersiveMode, 
   ImmersiveModeSettings,
   ImmersiveModeInfo,
-  EqualizerModule
+  EqualizerModule,
+  PlaybackEngineModule
 } from '../../modules/audio-effects';
 import { AudioSessionSource } from '@/services/NativeEffectsManager';
 import { WebAudioEffectsEngine } from '@/services/WebAudioEffectsEngine';
@@ -78,6 +79,40 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
   const [webAudioInitialized, setWebAudioInitialized] = useState(false);
   const [bassBoost, setBassBoostState] = useState(0);
   const [trebleBoost, setTrebleBoostState] = useState(0);
+  
+  const immersiveModeAttachedRef = useRef(false);
+  
+  const ensureImmersiveModeAttached = useCallback(async (): Promise<boolean> => {
+    if (Platform.OS !== 'android' || !ImmersiveModeEngineModule.isAvailable()) {
+      return false;
+    }
+    
+    if (immersiveModeAttachedRef.current) {
+      return true;
+    }
+    
+    try {
+      const currentMode = ImmersiveModeEngineModule.getCurrentMode();
+      if (currentMode.isAttached) {
+        immersiveModeAttachedRef.current = true;
+        return true;
+      }
+      
+      const status = await PlaybackEngineModule.getStatus();
+      const sessionId = status.audioSessionId || 0;
+      
+      const attachResult = await ImmersiveModeEngineModule.attach(sessionId);
+      if (attachResult.success) {
+        immersiveModeAttachedRef.current = true;
+        return true;
+      }
+      console.warn('[SoundLab] Failed to attach ImmersiveModeEngine:', attachResult.error);
+      return false;
+    } catch (error) {
+      console.warn('[SoundLab] Error attaching ImmersiveModeEngine:', error);
+      return false;
+    }
+  }, []);
 
   const setBassBoost = useCallback((value: number) => {
     const clampedValue = Math.max(-5, Math.min(5, value));
@@ -122,7 +157,7 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
     return IMMERSIVE_MODE_INFO[modeId] || IMMERSIVE_MODE_INFO.off;
   }, []);
 
-  const applyEffectsToEngine = useCallback((currentMode: SoundLabMode, currentEqBands: number[], currentImmersiveMode: ImmersiveMode, presetName: string) => {
+  const applyEffectsToEngine = useCallback(async (currentMode: SoundLabMode, currentEqBands: number[], currentImmersiveMode: ImmersiveMode, presetName: string) => {
     // Web DSP: Apply via WebAudioEffectsEngine (Web Audio API)
     if (Platform.OS === 'web' && webAudioInitialized) {
       if (currentMode === 'equalizer') {
@@ -143,7 +178,14 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
         }
       } else if (currentMode === 'immersive' && currentImmersiveMode !== 'off') {
         if (ImmersiveModeEngineModule.isAvailable()) {
-          ImmersiveModeEngineModule.setMode(IMMERSIVE_MODE_ANDROID[currentImmersiveMode] as ImmersiveMode);
+          const attached = await ensureImmersiveModeAttached();
+          if (attached) {
+            try {
+              await ImmersiveModeEngineModule.setMode(IMMERSIVE_MODE_ANDROID[currentImmersiveMode] as ImmersiveMode);
+            } catch (err) {
+              console.warn('[SoundLab] Failed to set immersive mode:', err);
+            }
+          }
         }
       } else {
         if (EqualizerModule.isAvailable()) {
@@ -151,7 +193,7 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-  }, [webAudioInitialized]);
+  }, [webAudioInitialized, ensureImmersiveModeAttached]);
 
   const setImmersiveMode = useCallback(async (newMode: ImmersiveMode): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -162,7 +204,15 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
         }
         // Android DSP
         if (Platform.OS === 'android' && ImmersiveModeEngineModule.isAvailable()) {
-          ImmersiveModeEngineModule.setMode(IMMERSIVE_MODE_ANDROID[newMode] as ImmersiveMode);
+          const attached = await ensureImmersiveModeAttached();
+          if (attached) {
+            const result = await ImmersiveModeEngineModule.setMode(IMMERSIVE_MODE_ANDROID[newMode] as ImmersiveMode);
+            if (!result.success) {
+              return { success: false, error: result.error || 'Failed to set immersive mode' };
+            }
+          } else {
+            return { success: false, error: 'Could not attach immersive mode engine' };
+          }
         }
         setImmersiveModeName(newMode);
         setMode('immersive');
@@ -171,9 +221,18 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
         if (Platform.OS === 'web' && webAudioInitialized) {
           WebAudioEffectsEngine.applyEQ(EQ_PRESETS.Flat);
         }
-        // Android DSP
-        if (Platform.OS === 'android' && EqualizerModule.isAvailable()) {
-          EqualizerModule.usePreset(0); // Flat
+        // Android DSP: Turn off immersive mode by resetting to flat EQ
+        if (Platform.OS === 'android') {
+          if (ImmersiveModeEngineModule.isAvailable() && immersiveModeAttachedRef.current) {
+            try {
+              await ImmersiveModeEngineModule.setMode('off');
+            } catch (err) {
+              console.warn('[SoundLab] Failed to turn off immersive mode:', err);
+            }
+          }
+          if (EqualizerModule.isAvailable()) {
+            EqualizerModule.usePreset(0); // Flat
+          }
         }
         setImmersiveModeName('off');
         setEqPresetName('Flat');
@@ -183,7 +242,7 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       return { success: false, error: String(error) };
     }
-  }, [webAudioInitialized]);
+  }, [webAudioInitialized, ensureImmersiveModeAttached]);
 
   const refreshSettings = useCallback(async () => {
     try {

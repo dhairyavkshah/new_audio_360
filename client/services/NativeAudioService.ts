@@ -188,35 +188,36 @@ class NativeAudioServiceClass {
     }
   }
 
-  setVolume(volume: number): { success: boolean; volume: number } {
+  async setVolume(volume: number): Promise<{ success: boolean; volume: number }> {
     return PlaybackEngineModule.setVolume(volume);
   }
 
-  setPlaybackSpeed(speed: number): { success: boolean; speed: number } {
+  async setPlaybackSpeed(speed: number): Promise<{ success: boolean; speed: number }> {
     return PlaybackEngineModule.setPlaybackSpeed(speed);
   }
 
-  setRepeatMode(mode: 'off' | 'one' | 'all'): { success: boolean; mode: string } {
+  async setRepeatMode(mode: 'off' | 'one' | 'all'): Promise<{ success: boolean; mode: string }> {
     return PlaybackEngineModule.setRepeatMode(mode);
   }
 
-  setShuffleMode(enabled: boolean): { success: boolean; shuffle: boolean } {
+  async setShuffleMode(enabled: boolean): Promise<{ success: boolean; shuffle: boolean }> {
     return PlaybackEngineModule.setShuffleMode(enabled);
   }
 
-  getStatus(): PlaybackStatus {
+  async getStatus(): Promise<PlaybackStatus> {
     return PlaybackEngineModule.getStatus();
   }
 
   getAudioSessionId(): number {
-    return this.audioSessionId || PlaybackEngineModule.getAudioSessionId();
+    // Use cached audioSessionId if available, otherwise call sync version
+    return this.audioSessionId || 0;
   }
 
-  getCurrentPosition(): number {
+  async getCurrentPosition(): Promise<number> {
     return PlaybackEngineModule.getCurrentPosition();
   }
 
-  getDuration(): number {
+  async getDuration(): Promise<number> {
     return PlaybackEngineModule.getDuration();
   }
 
@@ -425,8 +426,8 @@ class NativeAudioServiceClass {
     return WaveformAnalyzerModule.getFftSnapshot();
   }
 
-  getState(): AudioServiceState {
-    const status = this.getStatus();
+  async getState(): Promise<AudioServiceState> {
+    const status = await this.getStatus();
     const immersiveModeState = this.getCurrentImmersiveMode();
 
     return {
