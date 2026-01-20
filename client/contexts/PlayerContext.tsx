@@ -84,7 +84,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // Android: Use PlaybackEngineModule for music playback (integrates with SoftwareDSPAudioProcessor)
   // Web: Uses HTMLAudioElement with WebAudioEffectsEngine
   const nativePlaybackAvailable = Platform.OS === 'android' && PlaybackEngineModule.isAvailable();
-  console.log('[PlayerContext] Platform:', Platform.OS, 'PlaybackEngineModule.isAvailable():', PlaybackEngineModule.isAvailable(), 'useNativePlayback:', nativePlaybackAvailable);
   const useNativePlaybackRef = useRef(nativePlaybackAvailable);
   const useTrackPlayerRef = useRef(Platform.OS === 'ios' && TrackPlayerService.isAvailable());
   const trackPlayerInitializedRef = useRef(false);
@@ -297,14 +296,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // PlaybackEngineModule initialization - Android only
   // This integrates with SoftwareDSPAudioProcessor for real-time audio effects
   useEffect(() => {
-    console.log('[PlayerContext] Init useEffect - useNativePlaybackRef.current:', useNativePlaybackRef.current);
     if (useNativePlaybackRef.current) {
-      console.log('[PlayerContext] Calling PlaybackEngineModule.initialize()...');
       PlaybackEngineModule.initialize().then(async (initResult) => {
-        console.log('[PlayerContext] PlaybackEngineModule.initialize() result:', JSON.stringify(initResult));
         if (initResult.success || initResult.alreadyInitialized) {
           playbackEngineInitializedRef.current = true;
-          console.log('[PlayerContext] playbackEngineInitializedRef set to TRUE');
           if (initResult.audioSessionId && initResult.audioSessionId > 0) {
             nativeAudioSessionIdRef.current = initResult.audioSessionId;
             console.log('[PlayerContext] PlaybackEngineModule initialized with audioSessionId:', initResult.audioSessionId);
@@ -432,7 +427,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       // For single-track loading, only use native repeat for 'one' mode
       // 'all' mode is handled by JavaScript queue logic in handleTrackEnd
       const nativeRepeatMode = repeat === 'one' ? 'one' : 'off';
-      PlaybackEngineModule.setRepeatMode(nativeRepeatMode);
+      PlaybackEngineModule.setRepeatMode(nativeRepeatMode).catch(err => {
+        console.warn('[PlayerContext] Failed to set repeat mode:', err);
+      });
     } else if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
       TrackPlayerService.setRepeatMode(repeat);
     }
@@ -441,7 +438,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // Propagate shuffle mode to PlaybackEngineModule on Android
   useEffect(() => {
     if (useNativePlaybackRef.current) {
-      PlaybackEngineModule.setShuffleMode(shuffle);
+      PlaybackEngineModule.setShuffleMode(shuffle).catch(err => {
+        console.warn('[PlayerContext] Failed to set shuffle mode:', err);
+      });
     }
   }, [shuffle]);
 
@@ -531,64 +530,76 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [setupTrackPlayerCallbacks, restoreTrackPlayerQueue, currentTime, isPlaying]);
 
+  // Ref for tracking polling state to avoid closure issues
+  const isPollingActiveRef = useRef(false);
+  const pollCountRef = useRef(0);
+
   // Progress polling for PlaybackEngineModule (Android only)
   useEffect(() => {
-    console.log('[PlayerContext] Progress polling useEffect - useTrackPlayer:', useTrackPlayerRef.current, 'useNativePlayback:', useNativePlaybackRef.current, 'isPlaying:', isPlaying, 'currentSong:', !!currentSong);
     if (useTrackPlayerRef.current) return;
     if (!useNativePlaybackRef.current) return;
 
+    const pollProgress = async () => {
+      if (!isPollingActiveRef.current) return;
+      
+      try {
+        const status = await PlaybackEngineModule.getStatus();
+        pollCountRef.current++;
+        
+        if (status.currentPositionMs !== undefined && status.currentPositionMs >= 0) {
+          setCurrentTime(status.currentPositionMs / 1000);
+        }
+        
+        if (status.durationMs !== undefined && status.durationMs > 0) {
+          setDuration(status.durationMs / 1000);
+        }
+        
+        setIsBuffering(status.playbackState === 'buffering');
+        
+        if (status.playbackState === 'ended') {
+          handleTrackEnd();
+        }
+        
+        if (!status.isPlaying && isPlayingRef.current && 
+            status.playbackState !== 'buffering' && 
+            status.playbackState !== 'idle') {
+          console.log('[PlayerContext] Native playback stopped, syncing state');
+          setIsPlaying(false);
+        }
+      } catch (err) {
+        console.warn('[PlayerContext] Progress polling error:', err);
+      }
+      
+      // Schedule next poll only if still active
+      if (isPollingActiveRef.current) {
+        progressPollingRef.current = setTimeout(pollProgress, 250);
+      }
+    };
+
     if (isPlaying && currentSong) {
+      // Stop any existing polling first
       if (progressPollingRef.current) {
-        clearInterval(progressPollingRef.current);
+        clearTimeout(progressPollingRef.current);
         progressPollingRef.current = null;
       }
       
       console.log('[PlayerContext] Starting progress polling for Android');
-      let pollCount = 0;
-      progressPollingRef.current = setInterval(() => {
-        try {
-          const status = PlaybackEngineModule.getStatus();
-          // Log every 10th poll (every 2.5 seconds) to avoid spam
-          if (pollCount % 10 === 0) {
-            console.log('[PlayerContext] Progress poll status:', JSON.stringify(status));
-          }
-          pollCount++;
-          
-          if (status.currentPositionMs !== undefined && status.currentPositionMs >= 0) {
-            setCurrentTime(status.currentPositionMs / 1000);
-          }
-          
-          if (status.durationMs !== undefined && status.durationMs > 0) {
-            setDuration(status.durationMs / 1000);
-          }
-          
-          setIsBuffering(status.playbackState === 'buffering');
-          
-          if (status.playbackState === 'ended') {
-            handleTrackEnd();
-          }
-          
-          if (!status.isPlaying && isPlayingRef.current && 
-              status.playbackState !== 'buffering' && 
-              status.playbackState !== 'idle') {
-            console.log('[PlayerContext] Native playback stopped, syncing state');
-            setIsPlaying(false);
-          }
-        } catch (err) {
-          console.warn('[PlayerContext] Progress polling error:', err);
-        }
-      }, 250);
+      pollCountRef.current = 0;
+      isPollingActiveRef.current = true;
+      pollProgress();
     } else {
+      isPollingActiveRef.current = false;
       if (progressPollingRef.current) {
-        clearInterval(progressPollingRef.current);
+        clearTimeout(progressPollingRef.current);
         progressPollingRef.current = null;
         console.log('[PlayerContext] Stopped progress polling');
       }
     }
 
     return () => {
+      isPollingActiveRef.current = false;
       if (progressPollingRef.current) {
-        clearInterval(progressPollingRef.current);
+        clearTimeout(progressPollingRef.current);
         progressPollingRef.current = null;
       }
     };

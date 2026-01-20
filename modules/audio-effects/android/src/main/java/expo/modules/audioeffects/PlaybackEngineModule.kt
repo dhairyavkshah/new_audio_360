@@ -319,72 +319,108 @@ class PlaybackEngineModule : Module() {
             }
         }
         
-        Function("setVolume") { volume: Double ->
-            val clampedVolume = volume.coerceIn(0.0, 1.0).toFloat()
-            exoPlayer?.volume = clampedVolume
-            return@Function mapOf("success" to true, "volume" to clampedVolume)
-        }
-        
-        Function("setPlaybackSpeed") { speed: Double ->
-            val clampedSpeed = speed.coerceIn(0.25, 3.0).toFloat()
-            exoPlayer?.setPlaybackSpeed(clampedSpeed)
-            return@Function mapOf("success" to true, "speed" to clampedSpeed)
-        }
-        
-        Function("setRepeatMode") { mode: String ->
-            val repeatMode = when (mode) {
-                "off" -> Player.REPEAT_MODE_OFF
-                "one" -> Player.REPEAT_MODE_ONE
-                "all" -> Player.REPEAT_MODE_ALL
-                else -> Player.REPEAT_MODE_OFF
+        AsyncFunction("setVolume") { volume: Double, promise: Promise ->
+            mainHandler.post {
+                try {
+                    val clampedVolume = volume.coerceIn(0.0, 1.0).toFloat()
+                    exoPlayer?.volume = clampedVolume
+                    promise.resolve(mapOf("success" to true, "volume" to clampedVolume))
+                } catch (e: Exception) {
+                    promise.reject("VOLUME_ERROR", e.message, e)
+                }
             }
-            exoPlayer?.repeatMode = repeatMode
-            return@Function mapOf("success" to true, "mode" to mode)
         }
         
-        Function("setShuffleMode") { enabled: Boolean ->
-            exoPlayer?.shuffleModeEnabled = enabled
-            return@Function mapOf("success" to true, "shuffle" to enabled)
-        }
-        
-        Function("getStatus") {
-            val player = exoPlayer
-            val result = mutableMapOf<String, Any>()
-            result["isInitialized"] = isInitialized
-            result["isPlaying"] = player?.isPlaying == true
-            result["currentPositionMs"] = player?.currentPosition ?: 0L
-            result["durationMs"] = player?.duration ?: 0L
-            result["bufferedPositionMs"] = player?.bufferedPosition ?: 0L
-            result["currentIndex"] = player?.currentMediaItemIndex ?: 0
-            result["queueLength"] = player?.mediaItemCount ?: 0
-            result["playbackState"] = when (player?.playbackState) {
-                Player.STATE_IDLE -> "idle"
-                Player.STATE_BUFFERING -> "buffering"
-                Player.STATE_READY -> "ready"
-                Player.STATE_ENDED -> "ended"
-                else -> "unknown"
+        AsyncFunction("setPlaybackSpeed") { speed: Double, promise: Promise ->
+            mainHandler.post {
+                try {
+                    val clampedSpeed = speed.coerceIn(0.25, 3.0).toFloat()
+                    exoPlayer?.setPlaybackSpeed(clampedSpeed)
+                    promise.resolve(mapOf("success" to true, "speed" to clampedSpeed))
+                } catch (e: Exception) {
+                    promise.reject("SPEED_ERROR", e.message, e)
+                }
             }
-            result["repeatMode"] = when (player?.repeatMode) {
-                Player.REPEAT_MODE_OFF -> "off"
-                Player.REPEAT_MODE_ONE -> "one"
-                Player.REPEAT_MODE_ALL -> "all"
-                else -> "off"
+        }
+        
+        AsyncFunction("setRepeatMode") { mode: String, promise: Promise ->
+            mainHandler.post {
+                try {
+                    val repeatMode = when (mode) {
+                        "off" -> Player.REPEAT_MODE_OFF
+                        "one" -> Player.REPEAT_MODE_ONE
+                        "all" -> Player.REPEAT_MODE_ALL
+                        else -> Player.REPEAT_MODE_OFF
+                    }
+                    exoPlayer?.repeatMode = repeatMode
+                    promise.resolve(mapOf("success" to true, "mode" to mode))
+                } catch (e: Exception) {
+                    promise.reject("REPEAT_ERROR", e.message, e)
+                }
             }
-            result["shuffleEnabled"] = player?.shuffleModeEnabled == true
-            result["audioSessionId"] = player?.audioSessionId ?: 0
-            return@Function result
         }
         
-        Function("getAudioSessionId") {
-            return@Function exoPlayer?.audioSessionId ?: 0
+        AsyncFunction("setShuffleMode") { enabled: Boolean, promise: Promise ->
+            mainHandler.post {
+                try {
+                    exoPlayer?.shuffleModeEnabled = enabled
+                    promise.resolve(mapOf("success" to true, "shuffle" to enabled))
+                } catch (e: Exception) {
+                    promise.reject("SHUFFLE_ERROR", e.message, e)
+                }
+            }
         }
         
-        Function("getCurrentPosition") {
-            return@Function exoPlayer?.currentPosition ?: 0L
+        AsyncFunction("getStatus") { promise: Promise ->
+            mainHandler.post {
+                try {
+                    val player = exoPlayer
+                    val result = mutableMapOf<String, Any>()
+                    result["isInitialized"] = isInitialized
+                    result["isPlaying"] = player?.isPlaying == true
+                    result["currentPositionMs"] = player?.currentPosition ?: 0L
+                    result["durationMs"] = player?.duration ?: 0L
+                    result["bufferedPositionMs"] = player?.bufferedPosition ?: 0L
+                    result["currentIndex"] = player?.currentMediaItemIndex ?: 0
+                    result["queueLength"] = player?.mediaItemCount ?: 0
+                    result["playbackState"] = when (player?.playbackState) {
+                        Player.STATE_IDLE -> "idle"
+                        Player.STATE_BUFFERING -> "buffering"
+                        Player.STATE_READY -> "ready"
+                        Player.STATE_ENDED -> "ended"
+                        else -> "unknown"
+                    }
+                    result["repeatMode"] = when (player?.repeatMode) {
+                        Player.REPEAT_MODE_OFF -> "off"
+                        Player.REPEAT_MODE_ONE -> "one"
+                        Player.REPEAT_MODE_ALL -> "all"
+                        else -> "off"
+                    }
+                    result["shuffleEnabled"] = player?.shuffleModeEnabled == true
+                    result["audioSessionId"] = player?.audioSessionId ?: 0
+                    promise.resolve(result)
+                } catch (e: Exception) {
+                    promise.reject("STATUS_ERROR", e.message, e)
+                }
+            }
         }
         
-        Function("getDuration") {
-            return@Function exoPlayer?.duration ?: 0L
+        AsyncFunction("getAudioSessionId") { promise: Promise ->
+            mainHandler.post {
+                promise.resolve(exoPlayer?.audioSessionId ?: 0)
+            }
+        }
+        
+        AsyncFunction("getCurrentPosition") { promise: Promise ->
+            mainHandler.post {
+                promise.resolve(exoPlayer?.currentPosition ?: 0L)
+            }
+        }
+        
+        AsyncFunction("getDuration") { promise: Promise ->
+            mainHandler.post {
+                promise.resolve(exoPlayer?.duration ?: 0L)
+            }
         }
         
         AsyncFunction("release") { promise: Promise ->
