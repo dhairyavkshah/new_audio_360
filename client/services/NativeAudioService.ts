@@ -67,21 +67,41 @@ class NativeAudioServiceClass {
 
     try {
       const result = await PlaybackEngineModule.initialize();
-      if (result.success && result.audioSessionId) {
-        this.audioSessionId = result.audioSessionId;
+      if (result.success) {
+        // Get audioSessionId from result, or fetch it if not provided
+        if (result.audioSessionId) {
+          this.audioSessionId = result.audioSessionId;
+        } else {
+          // Fallback: get from getStatus if initialize didn't return it
+          try {
+            const status = await PlaybackEngineModule.getStatus();
+            this.audioSessionId = status.audioSessionId || 0;
+          } catch {
+            this.audioSessionId = 0;
+          }
+        }
+        
         this.isInitialized = true;
 
-        if (this.isImmersiveModeAvailable()) {
-          await ImmersiveModeEngineModule.attach(this.audioSessionId);
+        if (this.isImmersiveModeAvailable() && this.audioSessionId > 0) {
+          try {
+            await ImmersiveModeEngineModule.attach(this.audioSessionId);
+          } catch (attachError) {
+            console.warn('NativeAudioService: Failed to attach ImmersiveModeEngine:', attachError);
+          }
         }
 
-        if (this.isWaveformAvailable()) {
-          await WaveformAnalyzerModule.attach(this.audioSessionId);
+        if (this.isWaveformAvailable() && this.audioSessionId > 0) {
+          try {
+            await WaveformAnalyzerModule.attach(this.audioSessionId);
+          } catch (attachError) {
+            console.warn('NativeAudioService: Failed to attach WaveformAnalyzer:', attachError);
+          }
         }
 
         return { success: true, audioSessionId: this.audioSessionId };
       }
-      return { success: false, error: result.error };
+      return { success: false, error: result.error || 'Initialization failed' };
     } catch (error) {
       console.error('NativeAudioService.initialize error:', error);
       return { success: false, error: String(error) };

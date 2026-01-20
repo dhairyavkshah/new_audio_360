@@ -43,7 +43,11 @@ class PlaybackEngineModule : Module() {
             mainHandler.post {
                 try {
                     if (exoPlayer != null) {
-                        promise.resolve(mapOf("success" to true, "alreadyInitialized" to true))
+                        promise.resolve(mapOf(
+                            "success" to true, 
+                            "alreadyInitialized" to true,
+                            "audioSessionId" to (exoPlayer?.audioSessionId ?: 0)
+                        ))
                         return@post
                     }
                     
