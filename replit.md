@@ -23,7 +23,8 @@ New Audio 360 is a premium mobile music player application built with React Nati
 1. `app.config.js` - `version` field (e.g., '26.0')
 2. `app.config.js` - `android.versionCode` field (e.g., 26)
 3. `package.json` - `version` field (e.g., '26.0.0')
-4. `client/screens/AboutScreen.tsx` - version display text
+4. `android/app/build.gradle` - `versionCode` and `versionName` in defaultConfig (CRITICAL for bare workflow!)
+5. `client/screens/AboutScreen.tsx` - version display text
 
 ## System Architecture
 
