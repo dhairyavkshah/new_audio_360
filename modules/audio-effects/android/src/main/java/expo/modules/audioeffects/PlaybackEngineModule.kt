@@ -26,6 +26,8 @@ class PlaybackEngineModule : Module() {
     private var exoPlayer: ExoPlayer? = null
     private var mediaController: MediaController? = null
     private var isInitialized = false
+    private var isInitializing = false
+    private var pendingPromises = mutableListOf<Promise>()
     private var currentIndex = 0
     private var progressHandler: Handler? = null
     private var progressRunnable: Runnable? = null
@@ -46,10 +48,12 @@ class PlaybackEngineModule : Module() {
                 try {
                     val context = appContext.reactContext ?: throw Exception("Context not available")
                     
-                    if (exoPlayer != null || PlaybackService.instance != null) {
+                    // Already initialized - return immediately
+                    if (isInitialized && (exoPlayer != null || PlaybackService.instance != null)) {
                         val audioSessionId = exoPlayer?.audioSessionId 
                             ?: PlaybackService.instance?.getAudioSessionId() 
                             ?: 0
+                        android.util.Log.d("PlaybackEngineModule", "Already initialized, returning audioSessionId: $audioSessionId")
                         promise.resolve(mapOf(
                             "success" to true, 
                             "alreadyInitialized" to true,
@@ -57,6 +61,16 @@ class PlaybackEngineModule : Module() {
                         ))
                         return@post
                     }
+                    
+                    // Currently initializing - add to pending promises
+                    if (isInitializing) {
+                        android.util.Log.d("PlaybackEngineModule", "Initialization in progress, queuing promise")
+                        pendingPromises.add(promise)
+                        return@post
+                    }
+                    
+                    isInitializing = true
+                    android.util.Log.d("PlaybackEngineModule", "Starting PlaybackService initialization")
                     
                     val serviceIntent = Intent(context, PlaybackService::class.java)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -79,22 +93,43 @@ class PlaybackEngineModule : Module() {
                             setupPlayerListener()
                             
                             isInitialized = true
+                            isInitializing = false
                             val audioSessionId = exoPlayer?.audioSessionId ?: 0
                             
                             android.util.Log.d("PlaybackEngineModule", "Initialized with audioSessionId: $audioSessionId")
                             
-                            promise.resolve(mapOf(
+                            val result = mapOf(
                                 "success" to true,
                                 "audioSessionId" to audioSessionId
-                            ))
+                            )
+                            
+                            // Resolve the original promise
+                            promise.resolve(result)
+                            
+                            // Resolve all pending promises
+                            for (pendingPromise in pendingPromises) {
+                                pendingPromise.resolve(mapOf(
+                                    "success" to true,
+                                    "alreadyInitialized" to true,
+                                    "audioSessionId" to audioSessionId
+                                ))
+                            }
+                            pendingPromises.clear()
+                            
                         } catch (e: Exception) {
                             android.util.Log.e("PlaybackEngineModule", "Failed to get controller: ${e.message}", e)
+                            isInitializing = false
                             promise.reject("INIT_ERROR", e.message, e)
+                            for (pendingPromise in pendingPromises) {
+                                pendingPromise.reject("INIT_ERROR", e.message, e)
+                            }
+                            pendingPromises.clear()
                         }
                     }, MoreExecutors.directExecutor())
                     
                 } catch (e: Exception) {
                     android.util.Log.e("PlaybackEngineModule", "Initialize error: ${e.message}", e)
+                    isInitializing = false
                     promise.reject("INIT_ERROR", e.message, e)
                 }
             }
@@ -466,6 +501,8 @@ class PlaybackEngineModule : Module() {
                     mediaController = null
                     exoPlayer = null
                     isInitialized = false
+                    isInitializing = false
+                    pendingPromises.clear()
                     
                     val context = appContext.reactContext
                     if (context != null) {

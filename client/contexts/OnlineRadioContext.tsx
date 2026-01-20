@@ -85,6 +85,8 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   }, [isPlaying]);
 
   // Android: Poll PlaybackEngineModule status for error detection
+  const radioStartTimeRef = useRef<number>(0);
+  
   useEffect(() => {
     if (Platform.OS !== 'android' || !PlaybackEngineModule.isAvailable()) {
       return;
@@ -97,13 +99,22 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         radioPollingRef.current = null;
       }
 
+      // Record when we started playing for grace period
+      radioStartTimeRef.current = Date.now();
+      
       console.log('[OnlineRadioContext] Starting Android radio status polling');
-      radioPollingRef.current = setInterval(() => {
+      radioPollingRef.current = setInterval(async () => {
         try {
-          const status = PlaybackEngineModule.getStatus();
+          const status = await PlaybackEngineModule.getStatus();
           
           // Update buffering state
           setIsBuffering(status.playbackState === 'buffering');
+          
+          // Grace period: Don't check for failures in the first 5 seconds
+          const timeSinceStart = Date.now() - radioStartTimeRef.current;
+          if (timeSinceStart < 5000) {
+            return;
+          }
           
           // Check for idle state which indicates stream failure
           if (status.playbackState === 'idle' && isPlayingRef.current) {
@@ -122,18 +133,10 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
             setIsPlaying(false);
             setIsBuffering(false);
           }
-          
-          // Sync playing state from native if native stopped but React thinks playing
-          if (!status.isPlaying && isPlayingRef.current && 
-              status.playbackState !== 'buffering' && 
-              status.playbackState !== 'ready') {
-            console.log('[OnlineRadioContext] Native radio stopped, syncing state');
-            setIsPlaying(false);
-          }
         } catch (err) {
           console.warn('[OnlineRadioContext] Radio status polling error:', err);
         }
-      }, 500);
+      }, 1000);
     } else {
       if (radioPollingRef.current) {
         clearInterval(radioPollingRef.current);
