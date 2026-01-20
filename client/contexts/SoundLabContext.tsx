@@ -172,6 +172,15 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
     // Android DSP: Apply via native modules (SoftwareDSPAudioProcessor)
     if (Platform.OS === 'android') {
       if (currentMode === 'equalizer') {
+        // First reset immersive mode to clear bass/treble/virtualizer settings
+        if (ImmersiveModeEngineModule.isAvailable() && immersiveModeAttachedRef.current) {
+          try {
+            await ImmersiveModeEngineModule.setMode('off');
+          } catch (err) {
+            // Ignore errors - we're just resetting
+          }
+        }
+        // Then apply the EQ preset
         const presetIndex = PRESET_INDEX[presetName] ?? 0;
         if (EqualizerModule.isAvailable()) {
           EqualizerModule.usePreset(presetIndex);

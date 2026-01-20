@@ -126,6 +126,8 @@ class EqualizerModule : Module() {
                 dsp.setAllEqBandGains(presetGains)
                 dsp.setReverb(0f)
                 dsp.setStereoWidth(0f)
+                dsp.setBassBoost(0f)
+                dsp.setTrebleBoost(0f)
                 
                 return@Function mapOf("success" to true, "preset" to preset)
             } catch (e: Exception) {
@@ -148,6 +150,8 @@ class EqualizerModule : Module() {
                 dsp.setAllEqBandGains(gains)
                 dsp.setReverb(0f)
                 dsp.setStereoWidth(0f)
+                dsp.setBassBoost(0f)
+                dsp.setTrebleBoost(0f)
                 
                 return@Function mapOf("success" to true)
             } catch (e: Exception) {
@@ -183,6 +187,8 @@ class EqualizerModule : Module() {
                 dsp.setAllEqBandGains(bands)
                 dsp.setReverb(0f)
                 dsp.setStereoWidth(0f)
+                dsp.setBassBoost(0f)
+                dsp.setTrebleBoost(0f)
                 
                 return@Function mapOf("success" to true)
             } catch (e: Exception) {
