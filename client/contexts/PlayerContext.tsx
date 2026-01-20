@@ -333,6 +333,58 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Ref to store handleTrackEnd for event subscriptions (defined later)
+  const handleTrackEndRef = useRef<() => void>(() => {});
+
+  // Event-driven state updates for Android PlaybackEngineModule
+  // This supplements polling with immediate event responses
+  useEffect(() => {
+    if (!useNativePlaybackRef.current || !PlaybackEngineModule.isAvailable()) {
+      return;
+    }
+
+    const subscriptions: Array<{ remove: () => void } | null> = [];
+
+    // Subscribe to isPlaying changes for immediate UI updates
+    const isPlayingSubscription = PlaybackEngineModule.subscribeToIsPlaying?.((event) => {
+      console.log('[PlayerContext] Native isPlaying event:', event.isPlaying);
+      setIsPlaying(event.isPlaying);
+    });
+    if (isPlayingSubscription) subscriptions.push(isPlayingSubscription);
+
+    // Subscribe to playback state changes for buffering/error detection
+    const stateSubscription = PlaybackEngineModule.subscribeToPlaybackState?.((event) => {
+      console.log('[PlayerContext] Native playback state event:', event.state);
+      if (event.state === 'buffering') {
+        setIsBuffering(true);
+      } else if (event.state === 'ready') {
+        setIsBuffering(false);
+      } else if (event.state === 'ended') {
+        handleTrackEndRef.current();
+      } else if (event.state === 'idle') {
+        setIsBuffering(false);
+      }
+    });
+    if (stateSubscription) subscriptions.push(stateSubscription);
+
+    // Subscribe to error events
+    const errorSubscription = PlaybackEngineModule.subscribeToError?.((event) => {
+      console.error('[PlayerContext] Native playback error:', event);
+      setError(`Playback error: ${event.message}`);
+      setIsPlaying(false);
+      setIsBuffering(false);
+    });
+    if (errorSubscription) subscriptions.push(errorSubscription);
+
+    return () => {
+      subscriptions.forEach((sub) => {
+        if (sub && typeof sub.remove === 'function') {
+          sub.remove();
+        }
+      });
+    };
+  }, []);
+
   useEffect(() => {
     getPlayerState().then((state) => {
       if (state) {
@@ -652,6 +704,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       loadAndPlaySong(nextSong);
     }
   }, []);
+
+  // Update ref for event subscription usage
+  useEffect(() => {
+    handleTrackEndRef.current = handleTrackEnd;
+  }, [handleTrackEnd]);
 
   const handleStatusUpdate = useCallback((status: AudioStatus) => {
     if (status.currentTime !== undefined) {

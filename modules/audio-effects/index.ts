@@ -658,12 +658,57 @@ export const PlaybackEngineModule = {
       return null;
     }
     try {
-      const { NativeEventEmitter, NativeModules } = require('react-native');
-      const eventEmitter = new NativeEventEmitter(NativeModules.PlaybackEngineModule);
-      const subscription = eventEmitter.addListener('onError', callback);
+      const { EventEmitter } = require('expo-modules-core');
+      const emitter = new EventEmitter(PlaybackEngineModuleNative);
+      const subscription = emitter.addListener('onError', callback);
       return subscription;
     } catch (error) {
       console.error('PlaybackEngineModule.subscribeToError error:', error);
+      return null;
+    }
+  },
+
+  subscribeToPlaybackState: (callback: (event: { state: string }) => void): { remove: () => void } | null => {
+    if (!PlaybackEngineModuleNative) {
+      return null;
+    }
+    try {
+      const { EventEmitter } = require('expo-modules-core');
+      const emitter = new EventEmitter(PlaybackEngineModuleNative);
+      const subscription = emitter.addListener('onPlaybackStateChanged', callback);
+      return subscription;
+    } catch (error) {
+      console.error('PlaybackEngineModule.subscribeToPlaybackState error:', error);
+      return null;
+    }
+  },
+
+  subscribeToIsPlaying: (callback: (event: { isPlaying: boolean }) => void): { remove: () => void } | null => {
+    if (!PlaybackEngineModuleNative) {
+      return null;
+    }
+    try {
+      const { EventEmitter } = require('expo-modules-core');
+      const emitter = new EventEmitter(PlaybackEngineModuleNative);
+      const subscription = emitter.addListener('onIsPlayingChanged', callback);
+      return subscription;
+    } catch (error) {
+      console.error('PlaybackEngineModule.subscribeToIsPlaying error:', error);
+      return null;
+    }
+  },
+
+  subscribeToTrackChange: (callback: (event: { index: number; reason: string }) => void): { remove: () => void } | null => {
+    if (!PlaybackEngineModuleNative) {
+      return null;
+    }
+    try {
+      const { EventEmitter } = require('expo-modules-core');
+      const emitter = new EventEmitter(PlaybackEngineModuleNative);
+      const subscription = emitter.addListener('onTrackChanged', callback);
+      return subscription;
+    } catch (error) {
+      console.error('PlaybackEngineModule.subscribeToTrackChange error:', error);
       return null;
     }
   }

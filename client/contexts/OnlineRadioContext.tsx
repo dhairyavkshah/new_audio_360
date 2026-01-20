@@ -71,6 +71,8 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   const currentStationRef = useRef<OnlineRadioStation | null>(currentStation);
   const isPlayingRef = useRef(false);
   const radioPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const retryCountRef = useRef<number>(0);
+  const maxRetries = 2;
   
   // Web Audio API refs for DSP processing
   const webAudioElementRef = useRef<HTMLAudioElement | null>(null);
@@ -412,6 +414,8 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         try {
           console.log('[OnlineRadioContext] Using PlaybackEngineModule for radio stream on Android');
           
+          retryCountRef.current = 0;
+          
           await PlaybackEngineModule.stop();
           
           const initResult = await PlaybackEngineModule.initialize();
@@ -601,27 +605,101 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     AudioCoordinator.registerRadioStopCallback(stopPlayback);
   }, [stopPlayback]);
 
+  // Event-driven state updates for Android PlaybackEngineModule (Online Radio)
   useEffect(() => {
-    if (Platform.OS === 'android' && PlaybackEngineModule.isAvailable()) {
-      const handleError = (event: { code: number; message: string }) => {
-        if (currentStationRef.current) {
-          console.error('[OnlineRadioContext] PlaybackEngineModule error during radio playback:', event);
-          setError(`Stream error: ${event.message || 'Connection lost'}`);
+    if (Platform.OS !== 'android' || !PlaybackEngineModule.isAvailable()) {
+      return;
+    }
+
+    const subscriptions: Array<{ remove: () => void } | null> = [];
+
+    // Subscribe to playback state changes for immediate buffering updates
+    const stateSubscription = PlaybackEngineModule.subscribeToPlaybackState?.((event) => {
+      if (!currentStationRef.current) return;
+      
+      console.log('[OnlineRadioContext] Native playback state event:', event.state);
+      if (event.state === 'buffering') {
+        setIsBuffering(true);
+      } else if (event.state === 'ready') {
+        setIsBuffering(false);
+        retryCountRef.current = 0;
+      } else if (event.state === 'ended' || event.state === 'idle') {
+        const timeSinceStart = Date.now() - radioStartTimeRef.current;
+        if (timeSinceStart > 5000 && isPlayingRef.current) {
+          console.log('[OnlineRadioContext] Stream ended/idle after grace period');
+          setError('Streaming source unavailable. Please try another station.');
           setIsPlaying(false);
           setIsBuffering(false);
           currentStationRef.current = null;
           setCurrentStation(null);
           AudioCoordinator.notifyPlaybackStopped('radio');
         }
-      };
+      }
+    });
+    if (stateSubscription) subscriptions.push(stateSubscription);
+
+    // Subscribe to isPlaying changes
+    const isPlayingSubscription = PlaybackEngineModule.subscribeToIsPlaying?.((event) => {
+      if (currentStationRef.current) {
+        console.log('[OnlineRadioContext] Native isPlaying event:', event.isPlaying);
+        setIsPlaying(event.isPlaying);
+      }
+    });
+    if (isPlayingSubscription) subscriptions.push(isPlayingSubscription);
+
+    // Subscribe to error events with retry mechanism
+    const errorSubscription = PlaybackEngineModule.subscribeToError?.((event) => {
+      if (!currentStationRef.current) return;
       
-      const subscription = PlaybackEngineModule.subscribeToError(handleError);
-      return () => {
-        if (subscription && typeof subscription.remove === 'function') {
-          subscription.remove();
+      console.error('[OnlineRadioContext] PlaybackEngineModule error during radio playback:', event);
+      
+      const station = currentStationRef.current;
+      if (retryCountRef.current < maxRetries && station) {
+        retryCountRef.current++;
+        console.log(`[OnlineRadioContext] Retrying stream (attempt ${retryCountRef.current}/${maxRetries})...`);
+        setIsBuffering(true);
+        
+        setTimeout(async () => {
+          try {
+            const streamUrl = station.url_resolved || station.url;
+            if (streamUrl) {
+              await PlaybackEngineModule.stop();
+              const loadResult = await PlaybackEngineModule.loadTrack(streamUrl);
+              if (loadResult.success) {
+                await PlaybackEngineModule.play();
+                radioStartTimeRef.current = Date.now();
+              } else {
+                throw new Error('Reload failed');
+              }
+            }
+          } catch (retryErr) {
+            console.error('[OnlineRadioContext] Retry failed:', retryErr);
+            setError(`Stream error: ${event.message || 'Connection lost'}`);
+            setIsPlaying(false);
+            setIsBuffering(false);
+            currentStationRef.current = null;
+            setCurrentStation(null);
+            AudioCoordinator.notifyPlaybackStopped('radio');
+          }
+        }, 1000);
+      } else {
+        setError(`Stream error: ${event.message || 'Connection lost'}`);
+        setIsPlaying(false);
+        setIsBuffering(false);
+        currentStationRef.current = null;
+        setCurrentStation(null);
+        AudioCoordinator.notifyPlaybackStopped('radio');
+      }
+    });
+    if (errorSubscription) subscriptions.push(errorSubscription);
+
+    return () => {
+      subscriptions.forEach((sub) => {
+        if (sub && typeof sub.remove === 'function') {
+          sub.remove();
         }
-      };
-    }
+      });
+    };
   }, []);
 
   const setVolume = useCallback(async (newVolume: number): Promise<void> => {
