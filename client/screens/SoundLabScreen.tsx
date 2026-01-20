@@ -595,6 +595,10 @@ function SoundLabScreen() {
               </View>
             ) : null}
           </View>
+          
+          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
+            Premium world-class EQ presets
+          </FluentText>
 
           <View style={styles.chipsContainer}>
             {EQ_PRESETS.map((preset) => (
@@ -798,7 +802,7 @@ function SoundLabScreen() {
           </View>
           
           <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
-            Premium audio processing for an immersive experience
+            Premium world-class sound modes for an immersive experience
           </FluentText>
           
           <View style={styles.modesContainer}>
