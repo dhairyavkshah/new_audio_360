@@ -98,7 +98,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           By: Dhairya Shah (The Team 360)
         </FluentText>
         <FluentText variant="caption1" color="tertiary" align="center" style={{ marginTop: FluentSpacing.xs }}>
-          v25.0
+          v26.0
         </FluentText>
       </View>
     </View>
