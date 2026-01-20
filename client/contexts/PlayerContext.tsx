@@ -712,6 +712,25 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (useNativePlaybackRef.current) {
       try {
         console.log('[PlayerContext] Using PlaybackEngineModule with DSP for music playback');
+        
+        // Initialize PlaybackEngineModule if not already initialized
+        const initResult = await PlaybackEngineModule.initialize();
+        if (!initResult.success && !initResult.alreadyInitialized) {
+          throw new Error(initResult.error || 'Failed to initialize PlaybackEngineModule');
+        }
+        
+        // Store the audio session ID for DSP attachment
+        if (initResult.audioSessionId && initResult.audioSessionId > 0) {
+          nativeAudioSessionIdRef.current = initResult.audioSessionId;
+          // Attach EQ module to the audio session
+          try {
+            await EqualizerModule.attach(initResult.audioSessionId);
+            console.log('[PlayerContext] Attached EqualizerModule to audio session:', initResult.audioSessionId);
+          } catch (eqErr) {
+            console.warn('[PlayerContext] Failed to attach EQ module:', eqErr);
+          }
+        }
+        
         const loadResult = await PlaybackEngineModule.loadTrack(audioUrl);
         if (!loadResult.success) {
           throw new Error(loadResult.error || 'Failed to load track');
@@ -921,16 +940,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleNext = useCallback(() => {
-    if (useNativePlaybackRef.current) {
-      PlaybackEngineModule.skipToNext();
-      return;
-    }
-
+    // For iOS TrackPlayer, use native skip (queue managed natively)
     if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
       TrackPlayerService.skipToNext();
       return;
     }
 
+    // For Android PlaybackEngineModule and Web, manage queue in JavaScript
+    // We load single tracks, so we need to handle next/previous ourselves
     const song = currentSongRef.current;
     const currentQueue = queueRef.current;
     const currentShuffle = shuffleRef.current;
@@ -953,15 +970,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [loadAndPlaySong]);
 
   const handlePrevious = useCallback(() => {
-    if (useNativePlaybackRef.current) {
-      if (currentTime > 3) {
-        PlaybackEngineModule.seekTo(0);
-      } else {
-        PlaybackEngineModule.skipToPrevious();
-      }
-      return;
-    }
-
+    // For iOS TrackPlayer, use native skip (queue managed natively)
     if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
       if (currentTime > 3) {
         TrackPlayerService.seekTo(0);
@@ -971,11 +980,27 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // For Android PlaybackEngineModule, handle seek to start
+    if (useNativePlaybackRef.current && currentTime > 3) {
+      PlaybackEngineModule.seekTo(0);
+      setCurrentTime(0);
+      return;
+    }
+
+    // For Web, handle seek to start
+    if (Platform.OS === 'web' && audioElementRef.current && currentTime > 3) {
+      audioElementRef.current.currentTime = 0;
+      setCurrentTime(0);
+      return;
+    }
+
+    // Fallback seek to start
     if (currentTime > 3) {
       seek(0);
       return;
     }
 
+    // Handle previous track in JavaScript queue
     const song = currentSongRef.current;
     const currentQueue = queueRef.current;
     const currentShuffle = shuffleRef.current;
