@@ -138,7 +138,7 @@ function SoundLabScreen() {
   
   const cardStyle = getCardEffectStyle(tokens);
   
-  const [soundLabMode, setSoundLabMode] = useState<SoundLabMode>("off");
+  const [soundLabMode, setSoundLabMode] = useState<SoundLabMode>("equalizer");
   const [selectedEQ, setSelectedEQ] = useState("Flat");
   const [isCustomEQ, setIsCustomEQ] = useState(false);
   const [customBands, setCustomBands] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
@@ -248,7 +248,13 @@ function SoundLabScreen() {
           setSelectedImmersive("off");
         }
       } else {
-        setSoundLabMode("off");
+        // Default to Flat EQ when no preference saved
+        setSoundLabMode("equalizer");
+        setSelectedEQ("Flat");
+        const flatPreset = EQ_PRESETS.find(p => p.name === "Flat");
+        if (flatPreset) {
+          NativeEffectsManager.applyTenBandEQ(flatPreset.bands);
+        }
       }
     };
     loadSettings();
@@ -259,11 +265,15 @@ function SoundLabScreen() {
     
     if (preset === "Custom") {
       if (isCustomEQ && soundLabMode === "equalizer") {
-        setSoundLabMode("off");
+        // Revert to Flat instead of turning off
         setIsCustomEQ(false);
-        await clearEQPreset();
+        setSelectedEQ("Flat");
+        await saveEQPreset("Flat");
         await NativeAudioService.setImmersiveMode('off');
-        NativeEffectsManager.disableEQ();
+        const flatPreset = EQ_PRESETS.find(p => p.name === "Flat");
+        if (flatPreset) {
+          NativeEffectsManager.applyTenBandEQ(flatPreset.bands);
+        }
       } else {
         setIsCustomEQ(true);
         setSelectedEQ("");
@@ -274,12 +284,15 @@ function SoundLabScreen() {
         NativeEffectsManager.applyTenBandEQ(customBands);
       }
     } else {
-      if (soundLabMode === "equalizer" && selectedEQ === preset && !isCustomEQ) {
-        setSoundLabMode("off");
-        setSelectedEQ("");
-        await clearEQPreset();
+      if (soundLabMode === "equalizer" && selectedEQ === preset && !isCustomEQ && preset !== "Flat") {
+        // Revert to Flat instead of turning off (Flat cannot be deselected)
+        setSelectedEQ("Flat");
+        await saveEQPreset("Flat");
         await NativeAudioService.setImmersiveMode('off');
-        NativeEffectsManager.disableEQ();
+        const flatPreset = EQ_PRESETS.find(p => p.name === "Flat");
+        if (flatPreset) {
+          NativeEffectsManager.applyTenBandEQ(flatPreset.bands);
+        }
       } else {
         setSelectedEQ(preset);
         setIsCustomEQ(false);
@@ -511,9 +524,16 @@ function SoundLabScreen() {
     if (soundLabMode === "immersive" && selectedImmersive === modeId) {
       const result = await NativeAudioService.setImmersiveMode('off');
       if (result.success) {
-        setSoundLabMode("off");
+        // Revert to Flat EQ instead of turning off
+        setSoundLabMode("equalizer");
         setSelectedImmersive("off");
+        setSelectedEQ("Flat");
         await clearSoundMode();
+        await saveEQPreset("Flat");
+        const flatPreset = EQ_PRESETS.find(p => p.name === "Flat");
+        if (flatPreset) {
+          NativeEffectsManager.applyTenBandEQ(flatPreset.bands);
+        }
       }
     } else {
       const result = await NativeAudioService.setImmersiveMode(modeId);
@@ -560,7 +580,7 @@ function SoundLabScreen() {
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
         <FluentText variant="caption1" color="secondary" style={styles.sectionDesc}>
-          Tap a preset to apply, tap again to turn off. Only one mode can be active at a time.
+          Flat EQ is always on by default. Tap another preset or Immersive Mode to switch.
         </FluentText>
 
         <View style={[styles.sectionCard, cardStyle]}>
