@@ -136,7 +136,7 @@ export function AudioTipNotification({ visible, onDismiss }: AudioTipNotificatio
           </FluentText>
 
           <FluentText variant="body1" color="secondary" style={styles.message}>
-            For the best experience with New Audio 360's world-class sound engine, we recommend disabling your device's built-in audio effects.
+            For the best experience with New Audio 360's{'\n'}world-class sound engine, we recommend{'\n'}disabling your device's built-in audio effects.
           </FluentText>
 
           <View style={styles.listContainer}>

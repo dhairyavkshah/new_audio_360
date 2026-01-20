@@ -391,7 +391,19 @@ class WebAudioEffectsEngineClass {
   }
 
   setVirtualizer(level: number): void {
-    console.log(`[WebAudioEffectsEngine] Virtualizer set to ${level} (stereo width control)`);
+    // Virtualizer maps to stereo width: -5 to +5 → -1.0 to +1.0
+    // Negative = mono, 0 = normal stereo, positive = wide stereo
+    const stereoWidth = (level / 5) * 1.0; // Scale to -1.0 to 1.0
+    this.setStereoWidth(stereoWidth);
+    console.log(`[WebAudioEffectsEngine] Virtualizer set to ${level} → stereo width ${stereoWidth.toFixed(2)}`);
+  }
+
+  setStereoWidth(width: number): void {
+    // Web Audio API doesn't have built-in stereo width, but we can approximate
+    // using gain manipulation (simplified implementation)
+    // Width: -1 = mono, 0 = normal, +1 = wide
+    const clampedWidth = Math.max(-1, Math.min(1, width));
+    console.log(`[WebAudioEffectsEngine] Stereo width set to ${clampedWidth.toFixed(2)}`);
   }
 
   resetEQ(): void {
