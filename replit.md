@@ -114,7 +114,7 @@ All presets are zero-sum for maximum headroom. Values are in gain units (multipl
 | Electronic | +1.3 | +1.3 | +0.5 | -1.4 | -1.4 | -0.5 | +0.5 | +1.3 | +0.5 | -1.2 | Controlled Energy |
 | Hip-Hop | +2.4 | +2.4 | +0.7 | -1.2 | -0.6 | 0.0 | +0.4 | -0.6 | -1.4 | -2.0 | Deep Bass, Clear Mids |
 | Acoustic | -0.6 | -0.6 | -1.2 | +0.7 | +1.5 | +1.5 | +0.7 | -0.3 | -0.3 | -1.3 | Natural & Intimate |
-| Bass+ | +3.5 | +2.5 | +1.5 | -0.6 | -1.2 | -1.2 | -1.2 | -1.2 | -0.5 | -1.4 | Party Mode |
+| Bass+ | +2.5 | +1.8 | +1.0 | -0.4 | -0.9 | -0.9 | -0.9 | -0.9 | -0.4 | -0.9 | Party Mode (optimized) |
 | Clarity | -1.9 | -1.9 | -0.9 | -0.8 | +0.3 | +0.6 | +1.3 | +1.3 | +1.9 | +0.1 | Podcasts & Movies |
 
 ### Immersive Modes (Full Settings)

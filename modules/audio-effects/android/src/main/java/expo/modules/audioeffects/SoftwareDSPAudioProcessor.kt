@@ -302,9 +302,21 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         val midFreqBands = eqGains.slice(3..5)
         val highFreqBands = eqGains.slice(6..9)
         
-        val maxLowEq = lowFreqBands.maxOrNull() ?: 0f
-        val maxMidEq = midFreqBands.maxOrNull() ?: 0f
-        val maxHighEq = highFreqBands.maxOrNull() ?: 0f
+        // Use sum of positive gains with diminishing returns factor
+        // Adjacent boosted bands combine their energy, causing more potential clipping
+        val lowPositiveSum = lowFreqBands.filter { it > 0 }.sum()
+        val midPositiveSum = midFreqBands.filter { it > 0 }.sum()
+        val highPositiveSum = highFreqBands.filter { it > 0 }.sum()
+        
+        // Apply a factor to account for cumulative energy (not full sum, but significant portion)
+        // Multiple bands boosting together compounds the effect
+        val lowCumulativeFactor = if (lowFreqBands.count { it > 0 } > 1) 0.5f else 0f
+        val midCumulativeFactor = if (midFreqBands.count { it > 0 } > 1) 0.4f else 0f
+        val highCumulativeFactor = if (highFreqBands.count { it > 0 } > 1) 0.35f else 0f
+        
+        val maxLowEq = (lowFreqBands.maxOrNull() ?: 0f) + (lowPositiveSum * lowCumulativeFactor)
+        val maxMidEq = (midFreqBands.maxOrNull() ?: 0f) + (midPositiveSum * midCumulativeFactor)
+        val maxHighEq = (highFreqBands.maxOrNull() ?: 0f) + (highPositiveSum * highCumulativeFactor)
         
         val lowFreqTotal = maxLowEq + kotlin.math.max(0f, bassGainDb)
         val highFreqTotal = maxHighEq + kotlin.math.max(0f, trebleGainDb)
@@ -325,7 +337,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         
         safetyGainReduction = if (maxExcess > 0f) -maxExcess else 0f
         
-        android.util.Log.d("SoftwareDSP", "Safety gain: lowEQ=$maxLowEq+bass=$bassGainDb, highEQ=$maxHighEq+treble=$trebleGainDb, lfeEnabled=$lfeEnabled, lowFreqMaxDb=$lowFreqMaxDb, reduction=$safetyGainReduction dB")
+        android.util.Log.d("SoftwareDSP", "Safety gain: lowEQ=$maxLowEq+bass=$bassGainDb (cumul=${lowPositiveSum * lowCumulativeFactor}), highEQ=$maxHighEq+treble=$trebleGainDb, lfeEnabled=$lfeEnabled, reduction=$safetyGainReduction dB")
     }
     
     private fun applySafetyGainReduction(samples: ShortArray) {

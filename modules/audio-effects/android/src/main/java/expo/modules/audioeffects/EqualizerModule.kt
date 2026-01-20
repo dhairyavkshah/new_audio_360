@@ -118,7 +118,7 @@ class EqualizerModule : Module() {
                     5 -> listOf(1.3, 1.3, 0.5, -1.4, -1.4, -0.5, 0.5, 1.3, 0.5, -1.2)  // Electronic (Controlled Energy)
                     6 -> listOf(2.4, 2.4, 0.7, -1.2, -0.6, 0.0, 0.4, -0.6, -1.4, -2.0)  // Hip-Hop (Deep Bass, Clear Mids)
                     7 -> listOf(-0.6, -0.6, -1.2, 0.7, 1.5, 1.5, 0.7, -0.3, -0.3, -1.3)  // Acoustic (Natural & Intimate)
-                    8 -> listOf(3.5, 2.5, 1.5, -0.6, -1.2, -1.2, -1.2, -1.2, -0.5, -1.4)  // Bass+ (Party Mode)
+                    8 -> listOf(2.5, 1.8, 1.0, -0.4, -0.9, -0.9, -0.9, -0.9, -0.4, -0.9)  // Bass+ (Party Mode - reduced for headroom)
                     9 -> listOf(-1.9, -1.9, -0.9, -0.8, 0.3, 0.6, 1.3, 1.3, 1.9, 0.1)  // Clarity (Treble+)
                     else -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
                 }
