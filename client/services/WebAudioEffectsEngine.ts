@@ -1,6 +1,5 @@
 import { Platform } from 'react-native';
 import { AudioContext, BiquadFilterNode, GainNode } from 'react-native-audio-api';
-import { EqualizerModule, VirtualizerModule } from '../../modules/audio-effects';
 
 export interface EQBandConfig {
   frequency: number;
@@ -306,12 +305,6 @@ class WebAudioEffectsEngineClass {
 
     this.currentEQValues = paddedBands;
     this.currentMode = 'equalizer';
-
-    // Sync to Android native DSP (SoftwareDSPAudioProcessor via EqualizerModule)
-    // Native expects gain units (not dB) - it will internally multiply by DB_PER_UNIT
-    if (Platform.OS === 'android' && EqualizerModule.isAvailable()) {
-      EqualizerModule.setEqBands(paddedBands);
-    }
   }
 
   applyTenBandEQ(bands: number[]): void {
@@ -386,16 +379,6 @@ class WebAudioEffectsEngineClass {
     this.recalculateSafetyGain();
 
     console.log(`[WebAudioEffectsEngine] Applied immersive mode with reverb:${reverb}, bass:${bassBoostDb}dB, treble:${trebleBoostDb}dB`);
-
-    // Sync to Android native DSP (SoftwareDSPAudioProcessor via EqualizerModule)
-    // Native expects gain units (not dB) - it will internally multiply by DB_PER_UNIT
-    // EQ bands are already in units (same format as EQ_PRESETS)
-    // Bass/treble are in dB, so convert back to units by dividing by DB_PER_UNIT
-    if (Platform.OS === 'android' && EqualizerModule.isAvailable()) {
-      EqualizerModule.setEqBands(paddedBands);
-      EqualizerModule.setBassBoost(bassBoostDb / DB_PER_UNIT);
-      EqualizerModule.setTrebleBoost(trebleBoostDb / DB_PER_UNIT);
-    }
   }
 
   setBassBoost(gainUnits: number): void {
@@ -409,11 +392,6 @@ class WebAudioEffectsEngineClass {
     
     this.recalculateSafetyGain();
     console.log(`[WebAudioEffectsEngine] Bass boost set to ${clampedDb} dB`);
-
-    // Sync to Android native DSP (expects gain units, not dB)
-    if (Platform.OS === 'android' && EqualizerModule.isAvailable()) {
-      EqualizerModule.setBassBoost(gainUnits);
-    }
   }
   
   setTrebleBoost(gainUnits: number): void {
@@ -427,11 +405,6 @@ class WebAudioEffectsEngineClass {
     
     this.recalculateSafetyGain();
     console.log(`[WebAudioEffectsEngine] Treble boost set to ${clampedDb} dB`);
-
-    // Sync to Android native DSP (expects gain units, not dB)
-    if (Platform.OS === 'android' && EqualizerModule.isAvailable()) {
-      EqualizerModule.setTrebleBoost(gainUnits);
-    }
   }
   
   getBassGain(): number {
@@ -501,13 +474,6 @@ class WebAudioEffectsEngineClass {
     const stereoWidth = (level / 5) * 1.0; // Scale to -1.0 to 1.0
     this.setStereoWidth(stereoWidth);
     console.log(`[WebAudioEffectsEngine] Virtualizer set to ${level} → stereo width ${stereoWidth.toFixed(2)}`);
-
-    // Sync to Android native DSP
-    if (Platform.OS === 'android' && VirtualizerModule.isAvailable()) {
-      // Convert level (-5 to +5) to strength (0-1000)
-      const strength = Math.round(((level + 5) / 10) * 1000);
-      VirtualizerModule.setStrength(strength);
-    }
   }
 
   setStereoWidth(width: number): void {
@@ -539,13 +505,6 @@ class WebAudioEffectsEngineClass {
     this.currentEQValues = new Array(10).fill(0);
     this.currentMode = 'off';
     console.log('[WebAudioEffectsEngine] EQ reset to flat');
-
-    // Sync to Android native DSP (values in units, not dB)
-    if (Platform.OS === 'android' && EqualizerModule.isAvailable()) {
-      EqualizerModule.setEqBands(new Array(10).fill(0));
-      EqualizerModule.setBassBoost(0);
-      EqualizerModule.setTrebleBoost(0);
-    }
   }
 
   getCurrentEQValues(): number[] {

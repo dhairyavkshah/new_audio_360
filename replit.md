@@ -28,8 +28,8 @@ The app employs a **pure software-based DSP** across all platforms, ensuring a c
 The system routes audio from various sources (Music Player, Online Radio) through a `SoundLabContext` for settings management (EQ Presets, Bass/Treble Boost, Virtualizer, Immersive Modes). These settings are then passed to a `WebAudioEffectsEngine` (a single control interface) which routes them to platform-specific DSP engines: `WebAudioEffectsEngine` (Web Audio API) for web and `SoftwareDSPAudioProcessor` for Android. Both engines apply effects and output to the respective audio renderers (HTMLAudioElement or ExoPlayer).
 
 **Key Architecture Principles**:
-1.  **Two DSPs, Same Settings**: Web uses `react-native-audio-api` (Web Audio API), Android uses `SoftwareDSPAudioProcessor`. Both receive identical settings.
-2.  **Single Control Interface**: `WebAudioEffectsEngine` is the ONLY interface for DSP settings.
+1.  **Two DSPs, Same Settings**: Web uses `react-native-audio-api` (Web Audio API), Android uses `SoftwareDSPAudioProcessor`. Both have identical preset values defined independently.
+2.  **Independent Platform Control**: `SoundLabContext` calls platform-specific modules directly - `WebAudioEffectsEngine` for Web, `EqualizerModule`/`ImmersiveModeEngineModule` for Android. No cross-platform syncing.
 3.  **No Double Processing**: Each platform uses exactly ONE DSP engine.
 4.  **All Sources Processed**: Music, Online Radio, and FM/AM Radio all route through the same DSP chain.
 
@@ -71,10 +71,19 @@ A 4-tab system with a persistent MiniPlayer:
 | `modules/audio-effects/.../VirtualizerModule.kt` | Android stereo width bridge (singleton) |
 | `modules/audio-effects/.../PlaybackEngineModule.kt` | ExoPlayer wrapper with DSP integration |
 
+**DSP Control Flow**:
+- **Web**: `SoundLabContext` → `WebAudioEffectsEngine.applyEQ()` / `applyImmersiveMode()` → Web Audio API
+- **Android**: `SoundLabContext` → `EqualizerModule.usePreset()` / `ImmersiveModeEngineModule.setMode()` → `SoftwareDSPAudioProcessor`
+
 **DSP Module Attachment (Android)**:
 - `EqualizerModule.attach(audioSessionId)`: Called in PlayerContext after PlaybackEngineModule initializes
 - `VirtualizerModule`: Uses singleton pattern - no explicit attach required
 - **Unit Scaling**: UI values (gain units) passed to native code, which internally multiplies by DB_PER_UNIT (2.4)
+
+**Preset Definitions**:
+- **Web**: Defined in `WebAudioEffectsEngine.ts` (IMMERSIVE_MODES) and `SoundLabContext.tsx` (EQ_PRESETS)
+- **Android**: Defined in `EqualizerModule.kt` (usePreset function) and `ImmersiveModeEngineModule.kt` (applyMode* functions)
+- Both platforms have matching preset values for consistent audio experience
 
 ### Feature Specifications
 -   **Sound Lab**: Comprehensive audio customization including EQ presets, custom EQ, immersive modes, bass/treble control, and volume safety.
