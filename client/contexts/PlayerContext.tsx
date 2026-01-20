@@ -83,7 +83,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // iOS: Use TrackPlayerService for music playback (background playback, notification controls)
   // Android: Use PlaybackEngineModule for music playback (integrates with SoftwareDSPAudioProcessor)
   // Web: Uses HTMLAudioElement with WebAudioEffectsEngine
-  const useNativePlaybackRef = useRef(Platform.OS === 'android' && PlaybackEngineModule.isAvailable());
+  const nativePlaybackAvailable = Platform.OS === 'android' && PlaybackEngineModule.isAvailable();
+  console.log('[PlayerContext] Platform:', Platform.OS, 'PlaybackEngineModule.isAvailable():', PlaybackEngineModule.isAvailable(), 'useNativePlayback:', nativePlaybackAvailable);
+  const useNativePlaybackRef = useRef(nativePlaybackAvailable);
   const useTrackPlayerRef = useRef(Platform.OS === 'ios' && TrackPlayerService.isAvailable());
   const trackPlayerInitializedRef = useRef(false);
   const playbackEngineInitializedRef = useRef(false);
@@ -295,10 +297,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // PlaybackEngineModule initialization - Android only
   // This integrates with SoftwareDSPAudioProcessor for real-time audio effects
   useEffect(() => {
+    console.log('[PlayerContext] Init useEffect - useNativePlaybackRef.current:', useNativePlaybackRef.current);
     if (useNativePlaybackRef.current) {
+      console.log('[PlayerContext] Calling PlaybackEngineModule.initialize()...');
       PlaybackEngineModule.initialize().then(async (initResult) => {
+        console.log('[PlayerContext] PlaybackEngineModule.initialize() result:', JSON.stringify(initResult));
         if (initResult.success || initResult.alreadyInitialized) {
           playbackEngineInitializedRef.current = true;
+          console.log('[PlayerContext] playbackEngineInitializedRef set to TRUE');
           if (initResult.audioSessionId && initResult.audioSessionId > 0) {
             nativeAudioSessionIdRef.current = initResult.audioSessionId;
             console.log('[PlayerContext] PlaybackEngineModule initialized with audioSessionId:', initResult.audioSessionId);
@@ -527,6 +533,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   // Progress polling for PlaybackEngineModule (Android only)
   useEffect(() => {
+    console.log('[PlayerContext] Progress polling useEffect - useTrackPlayer:', useTrackPlayerRef.current, 'useNativePlayback:', useNativePlaybackRef.current, 'isPlaying:', isPlaying, 'currentSong:', !!currentSong);
     if (useTrackPlayerRef.current) return;
     if (!useNativePlaybackRef.current) return;
 
@@ -537,9 +544,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       
       console.log('[PlayerContext] Starting progress polling for Android');
+      let pollCount = 0;
       progressPollingRef.current = setInterval(() => {
         try {
           const status = PlaybackEngineModule.getStatus();
+          // Log every 10th poll (every 2.5 seconds) to avoid spam
+          if (pollCount % 10 === 0) {
+            console.log('[PlayerContext] Progress poll status:', JSON.stringify(status));
+          }
+          pollCount++;
           
           if (status.currentPositionMs !== undefined && status.currentPositionMs >= 0) {
             setCurrentTime(status.currentPositionMs / 1000);
