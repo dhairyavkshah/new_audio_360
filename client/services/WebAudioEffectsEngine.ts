@@ -13,84 +13,94 @@ export type BiquadFilterType = 'lowshelf' | 'peaking' | 'highshelf';
 export interface ImmersiveMode {
   name: string;
   eqPreset: number[];
+  bassBoost: number;
+  trebleBoost: number;
   spatialWidth: number;
-  reverb: number;
+  reverb: number; // 0-1 wet mix (0 = dry, 1 = full reverb)
 }
 
 const EQ_FREQUENCIES = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
-const BASS_FREQUENCY = 150;
-const TREBLE_FREQUENCY = 6000;
-const DB_PER_UNIT = 2.4;
-const MAX_DB = 12;
 
-// Zero-sum immersive mode presets for maximum headroom
-const IMMERSIVE_MODES: Record<string, ImmersiveMode & { bassBoostDb: number; trebleBoostDb: number }> = {
+// Professional Immersive Mode Configurations
+// Based on Sony 360 Reality Audio, Bose soundbars, Yamaha YPAO/Cinema DSP, Samsung Q-Symphony, IMAX Enhanced
+// EQ bands: [60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz]
+// Values in gain units (-5 to +5), where 1 unit = 2.4 dB
+// Reverb: 0-1 wet mix (0 = dry, 1 = full reverb)
+const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
   music: {
+    // Bose-inspired balanced music mode
+    // Moderate warm bass, subtle treble sparkle, minimal room ambience
     name: 'Music',
-    eqPreset: [0.3, 0.3, -0.4, -1.0, -1.0, 0.0, 1.0, 1.5, 0.4, -1.1],
-    spatialWidth: 0.25,
-    reverb: 0.08,
-    bassBoostDb: 1.2,
-    trebleBoostDb: 1.3,
+    eqPreset: [2.0, 1.5, 0.5, -0.5, 0, 0.5, 1.0, 1.5, 1.0, 0.5],
+    bassBoost: 1.5,    // +3.6 dB (Bose music: moderate warm bass)
+    trebleBoost: 1.0,  // +2.4 dB (reduced for non-fatiguing warmth)
+    spatialWidth: 0.25, // 25% - subtle widening only
+    reverb: 0.05,      // 5% - minimal room ambience for natural feel
   },
   '360_reality': {
+    // Sony 360 Reality Audio inspired - near-flat for accurate spatial positioning
+    // Maximum spatial immersion with significant reverb for 360° soundfield
     name: '360 Reality',
-    eqPreset: [0.0, 0.0, -0.6, -0.6, -0.6, 0.0, 1.0, 1.2, 0.3, -0.7],
-    spatialWidth: 0.55,
-    reverb: 0.18,
-    bassBoostDb: 0.8,
-    trebleBoostDb: 1.5,
+    eqPreset: [0, 0, 0, 0, 0, 0.3, 0.5, 0.3, 0, 0],
+    bassBoost: 0.3,    // +0.7 dB (near-flat for accurate spatial cues)
+    trebleBoost: 0.5,  // +1.2 dB (air for spatial perception)
+    spatialWidth: 0.85, // 85% - maximum immersion for 360° soundfield
+    reverb: 0.25,      // 25% - significant reverb for true 360° surround sphere
   },
   gaming: {
+    // Competitive gaming - cut bass, boost footstep frequencies (2-6kHz)
+    // Subtle spatial cues without muddiness
     name: 'Gaming',
-    eqPreset: [0.8, 0.8, 0.4, -1.1, -1.1, 0.0, 1.0, 1.7, 0.8, -1.9],
-    spatialWidth: 0.57,
-    reverb: 0.08,
-    bassBoostDb: 1.2,
-    trebleBoostDb: 2.1,
+    eqPreset: [-2.0, -1.5, -1.0, 0, 2.0, 3.5, 3.0, 2.0, 1.5, 1.0],
+    bassBoost: -1.0,   // -2.4 dB (reduce bass masking for footsteps)
+    trebleBoost: 2.0,  // +4.8 dB (slightly less to reduce fatigue)
+    spatialWidth: 0.45, // 45% - better directional accuracy
+    reverb: 0.075,     // 7.5% - subtle room cues for spatial awareness
   },
   podcast: {
+    // Voice clarity mode - crystal clear speech
+    // No spatial processing, no reverb
     name: 'Podcast',
-    eqPreset: [-1.9, -1.9, -0.9, -0.7, 0.4, 1.0, 1.0, 1.4, 1.8, -0.2],
-    spatialWidth: 0,
-    reverb: 0,
-    bassBoostDb: -1.0,
-    trebleBoostDb: 2.3,
+    eqPreset: [-2.0, -1.5, 0, 1.5, 2.5, 2.0, 1.0, 0, -0.5, -1.0],
+    bassBoost: -1.5,   // -3.6 dB (removes rumble and boominess)
+    trebleBoost: -0.5, // -1.2 dB (reduces sibilance)
+    spatialWidth: 0,   // 0% - mono-focused for speech
+    reverb: 0,         // 0% - no reverb for clean voice
   },
   movie: {
+    // IMAX/THX-inspired cinematic experience
+    // Strong bass punch, detailed highs, cinema hall ambience
     name: 'Movie',
-    eqPreset: [-0.8, -0.8, -0.4, 0.7, 1.1, 1.0, 1.0, -0.3, -0.5, -1.7],
-    spatialWidth: 0.45,
-    reverb: 0.12,
-    bassBoostDb: 1.8,
-    trebleBoostDb: 1.5,
+    eqPreset: [3.5, 2.5, 1.0, 0, 0.5, 1.0, 1.5, 2.5, 2.0, 1.5],
+    bassBoost: 4.0,    // +9.6 dB (IMAX Enhanced-level bass punch)
+    trebleBoost: 2.5,  // +6 dB (enhanced effects detail)
+    spatialWidth: 0.55, // 55% - proper surround experience
+    reverb: 0.15,      // 15% - cinema hall ambience (Yamaha Cinema DSP inspired)
   },
   sports: {
+    // Stadium/broadcast mode - commentary clarity with crowd atmosphere
+    // Open stadium feel with arena ambience
     name: 'Sports',
-    eqPreset: [1.2, 1.2, 0.5, -0.7, -0.7, 0.0, 1.0, 1.2, -0.9, -2.5],
-    spatialWidth: 0.47,
-    reverb: 0.10,
-    bassBoostDb: 2.2,
-    trebleBoostDb: 0.8,
+    eqPreset: [1.0, 0.5, 0.5, 2.0, 2.5, 2.0, 0.5, 0, -0.5, -0.5],
+    bassBoost: 1.5,    // +3.6 dB (slightly more for stadium atmosphere)
+    trebleBoost: 0,    // Neutral (balanced commentary clarity)
+    spatialWidth: 0.5, // 50% - stadium-like open soundstage
+    reverb: 0.125,     // 12.5% - stadium/arena open-air ambience
   },
 };
 
 class WebAudioEffectsEngineClass {
   private audioContext: AudioContext | null = null;
   private eqFilters: BiquadFilterNode[] = [];
-  private bassBoostFilter: BiquadFilterNode | null = null;
-  private trebleBoostFilter: BiquadFilterNode | null = null;
-  private safetyGain: GainNode | null = null;
   private masterGain: GainNode | null = null;
   private dryGain: GainNode | null = null;
   private wetGain: GainNode | null = null;
   private reverbDelays: { delay: any; feedback: GainNode; filter: BiquadFilterNode }[] = [];
   private isInitialized = false;
   private currentEQValues: number[] = new Array(10).fill(0);
-  private bassGainDb: number = 0;
-  private trebleGainDb: number = 0;
   private currentMode: string = 'off';
   private currentReverb: number = 0;
+  private currentVirtualizer: number = 0; // -5 to +5 range
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {
@@ -100,6 +110,7 @@ class WebAudioEffectsEngineClass {
     try {
       this.audioContext = new AudioContext();
       
+      // Create dry/wet mix gains for reverb
       this.dryGain = this.audioContext.createGain();
       this.dryGain.gain.value = 1.0;
       
@@ -109,6 +120,7 @@ class WebAudioEffectsEngineClass {
       this.masterGain = this.audioContext.createGain();
       this.masterGain.gain.value = 1.0;
 
+      // Create EQ filters
       this.eqFilters = EQ_FREQUENCIES.map((freq, index) => {
         const filter = this.audioContext!.createBiquadFilter();
         
@@ -129,23 +141,12 @@ class WebAudioEffectsEngineClass {
         
         return filter;
       });
-      
-      this.bassBoostFilter = this.audioContext.createBiquadFilter();
-      this.bassBoostFilter.type = 'lowshelf';
-      this.bassBoostFilter.frequency.value = BASS_FREQUENCY;
-      this.bassBoostFilter.gain.value = 0;
-      
-      this.trebleBoostFilter = this.audioContext.createBiquadFilter();
-      this.trebleBoostFilter.type = 'highshelf';
-      this.trebleBoostFilter.frequency.value = TREBLE_FREQUENCY;
-      this.trebleBoostFilter.gain.value = 0;
-      
-      this.safetyGain = this.audioContext.createGain();
-      this.safetyGain.gain.value = 1.0;
 
-      const delayTimes = [0.023, 0.041, 0.067, 0.089];
-      const feedbacks = [0.4, 0.35, 0.3, 0.25];
-      const filterFreqs = [4000, 3500, 3000, 2500];
+      // Create multi-tap delay reverb (4 delay lines for richer sound)
+      // Delay times chosen for natural room ambience
+      const delayTimes = [0.023, 0.041, 0.067, 0.089]; // Prime-ish ratios for diffuse sound
+      const feedbacks = [0.4, 0.35, 0.3, 0.25]; // Decreasing feedback for each tap
+      const filterFreqs = [4000, 3500, 3000, 2500]; // Lowpass frequencies for natural decay
       
       this.reverbDelays = delayTimes.map((time, i) => {
         const delay = this.audioContext!.createDelay(0.5);
@@ -162,26 +163,27 @@ class WebAudioEffectsEngineClass {
         return { delay, feedback, filter };
       });
 
+      // Connect EQ chain
       let currentNode: any = this.eqFilters[0];
       for (let i = 1; i < this.eqFilters.length; i++) {
         currentNode.connect(this.eqFilters[i]);
         currentNode = this.eqFilters[i];
       }
       
+      // EQ output splits to dry and wet paths
       const eqOutput = this.eqFilters[this.eqFilters.length - 1];
-      eqOutput.connect(this.bassBoostFilter!);
-      this.bassBoostFilter!.connect(this.trebleBoostFilter!);
-      this.trebleBoostFilter!.connect(this.safetyGain!);
-      this.safetyGain!.connect(this.dryGain);
+      eqOutput.connect(this.dryGain);
       
+      // Connect reverb delay lines (parallel structure)
       this.reverbDelays.forEach(({ delay, feedback, filter }) => {
-        this.safetyGain!.connect(delay);
+        eqOutput.connect(delay);
         delay.connect(filter);
         filter.connect(feedback);
-        feedback.connect(delay);
+        feedback.connect(delay); // Feedback loop
         filter.connect(this.wetGain!);
       });
       
+      // Mix dry and wet to master output
       this.dryGain.connect(this.masterGain);
       this.wetGain.connect(this.masterGain);
       this.masterGain.connect(this.audioContext.destination);
@@ -203,85 +205,7 @@ class WebAudioEffectsEngineClass {
     return this.eqFilters[0] || null;
   }
 
-  /**
-   * Create a MediaElementSource from an HTML5 Audio element and connect it to the DSP chain.
-   * This must use the engine's own AudioContext for Web Audio API compatibility.
-   */
-  createMediaElementSource(audioElement: HTMLAudioElement): { source: any; connected: boolean } | null {
-    if (!this.isInitialized || !this.audioContext || !this.eqFilters[0]) {
-      console.log('[WebAudioEffectsEngine] Not initialized, cannot create media element source');
-      return null;
-    }
-    
-    try {
-      // Use the engine's AudioContext to create the MediaElementSource
-      // This ensures all nodes are from the same context
-      const nativeContext = (this.audioContext as any)._context || this.audioContext;
-      
-      // For react-native-audio-api on web, we need to access the underlying native context
-      let mediaSource: any;
-      if (typeof nativeContext.createMediaElementSource === 'function') {
-        mediaSource = nativeContext.createMediaElementSource(audioElement);
-      } else if (typeof (window as any).AudioContext !== 'undefined') {
-        // Fallback: create a separate context for the media element
-        console.warn('[WebAudioEffectsEngine] Using fallback AudioContext for media element');
-        return null;
-      } else {
-        console.error('[WebAudioEffectsEngine] No AudioContext available for media element');
-        return null;
-      }
-      
-      // Connect media source to the first EQ filter (start of DSP chain)
-      mediaSource.connect(this.eqFilters[0]);
-      console.log('[WebAudioEffectsEngine] MediaElementSource created and connected to DSP chain');
-      
-      return { source: mediaSource, connected: true };
-    } catch (error) {
-      console.error('[WebAudioEffectsEngine] Failed to create media element source:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Disconnect and cleanup a media element source
-   */
-  disconnectMediaElementSource(source: any): void {
-    try {
-      if (source) {
-        source.disconnect();
-        console.log('[WebAudioEffectsEngine] MediaElementSource disconnected from DSP chain');
-      }
-    } catch (error) {
-      console.error('[WebAudioEffectsEngine] Failed to disconnect media element source:', error);
-    }
-  }
-
-  connectExternalSource(sourceNode: any): boolean {
-    if (!this.isInitialized || !this.eqFilters[0]) {
-      console.log('[WebAudioEffectsEngine] Not initialized, cannot connect external source');
-      return false;
-    }
-    
-    try {
-      sourceNode.connect(this.eqFilters[0]);
-      console.log('[WebAudioEffectsEngine] External source connected to DSP chain');
-      return true;
-    } catch (error) {
-      console.error('[WebAudioEffectsEngine] Failed to connect external source:', error);
-      return false;
-    }
-  }
-
-  disconnectExternalSource(sourceNode: any): void {
-    try {
-      sourceNode.disconnect();
-      console.log('[WebAudioEffectsEngine] External source disconnected from DSP chain');
-    } catch (error) {
-      console.error('[WebAudioEffectsEngine] Failed to disconnect external source:', error);
-    }
-  }
-
-  applyEQ(bands: number[]): void {
+  applyEQ(bands: number[], bassBoost: number = 0, trebleBoost: number = 0): void {
     if (!this.isInitialized || this.eqFilters.length === 0) {
       console.log('[WebAudioEffectsEngine] Not initialized, cannot apply EQ');
       return;
@@ -292,23 +216,61 @@ class WebAudioEffectsEngineClass {
       paddedBands.push(0);
     }
 
-    paddedBands.forEach((value, index) => {
+    const sum = paddedBands.reduce((acc, v) => acc + v, 0);
+    const average = sum / paddedBands.length;
+    const zeroSumBands = paddedBands.map(v => v - average);
+
+    const DB_PER_UNIT = 2.4;
+    const MAX_DB = 12;
+
+    zeroSumBands.forEach((value, index) => {
       if (this.eqFilters[index]) {
-        const dbValue = value * DB_PER_UNIT;
+        let dbValue = value * DB_PER_UNIT;
+        
+        // Bass: 60Hz, 170Hz (indices 0, 1) - true low frequencies
+        if (index <= 1) {
+          dbValue += bassBoost * DB_PER_UNIT;
+        }
+        // Treble: 7kHz, 12kHz, 14kHz, 16kHz (indices 6-9) - true high frequencies
+        if (index >= 6) {
+          dbValue += trebleBoost * DB_PER_UNIT;
+        }
+        
         const clampedDb = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
         this.eqFilters[index].gain.value = clampedDb;
       }
     });
 
+    // Reset reverb when applying standard EQ (non-immersive mode)
     this.setReverb(0);
-    this.recalculateSafetyGain();
+
+    // Limiter handles distortion prevention in PlayerContext
+    // Master gain stays at 1.0 for maximum headroom
+    if (this.masterGain) {
+      this.masterGain.gain.value = 1.0;
+    }
 
     this.currentEQValues = paddedBands;
     this.currentMode = 'equalizer';
   }
 
-  applyTenBandEQ(bands: number[]): void {
-    this.applyEQ(bands);
+  applyFiveBandEQ(bands: number[]): void {
+    if (bands.length < 5) return;
+
+    const tenBandValues = [
+      bands[0],
+      bands[0],
+      bands[1],
+      bands[1],
+      bands[2],
+      bands[2],
+      bands[3],
+      bands[3],
+      bands[4],
+      bands[4],
+    ];
+
+    this.applyEQ(tenBandValues);
   }
 
   applySevenBandEQ(bands: { sub: number; bass: number; lowMid: number; mid: number; highMid: number; treble: number; brilliance: number }): void {
@@ -336,11 +298,19 @@ class WebAudioEffectsEngineClass {
       return;
     }
 
-    this.applyImmersiveEQ(mode.eqPreset, mode.reverb, mode.bassBoostDb, mode.trebleBoostDb);
+    // Immersive modes use their own dedicated settings WITHOUT zero-sum normalization
+    // This allows for the full creative EQ curves designed for each mode
+    // Limiter in PlayerContext still prevents distortion
+    this.applyImmersiveEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost, mode.spatialWidth, mode.reverb);
     this.currentMode = modeName;
   }
 
-  private applyImmersiveEQ(bands: number[], reverb: number = 0, bassBoostDb: number = 0, trebleBoostDb: number = 0): void {
+  /**
+   * Apply EQ settings for immersive modes WITHOUT zero-sum normalization.
+   * Immersive modes have their own creative curves that shouldn't be balanced.
+   * The limiter in PlayerContext handles distortion prevention.
+   */
+  private applyImmersiveEQ(bands: number[], bassBoost: number, trebleBoost: number, spatialWidth: number, reverb: number = 0): void {
     if (!this.isInitialized || this.eqFilters.length === 0) {
       console.log('[WebAudioEffectsEngine] Not initialized, cannot apply immersive EQ');
       return;
@@ -351,109 +321,54 @@ class WebAudioEffectsEngineClass {
       paddedBands.push(0);
     }
 
-    // Immersive mode values are in dB - apply directly with ±12dB limit
+    // NO zero-sum normalization for immersive modes
+    // Each mode has its own designed EQ curve applied directly
+    const DB_PER_UNIT = 2.4;
+    const MAX_DB = 12;
+
     paddedBands.forEach((value, index) => {
       if (this.eqFilters[index]) {
-        const clampedDb = Math.max(-MAX_DB, Math.min(MAX_DB, value));
+        let dbValue = value * DB_PER_UNIT;
+        
+        // Apply immersive mode's bass boost to low frequencies
+        if (index <= 1) {
+          dbValue += bassBoost * DB_PER_UNIT;
+        }
+        // Apply immersive mode's treble boost to high frequencies
+        if (index >= 6) {
+          dbValue += trebleBoost * DB_PER_UNIT;
+        }
+        
+        const clampedDb = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
         this.eqFilters[index].gain.value = clampedDb;
       }
     });
 
-    // Apply bass and treble boost (values in dB, clamped to ±12dB)
-    if (this.bassBoostFilter) {
-      const clampedBass = Math.max(-MAX_DB, Math.min(MAX_DB, bassBoostDb));
-      this.bassBoostFilter.gain.value = clampedBass;
-      this.bassGainDb = clampedBass;
-    }
-    
-    if (this.trebleBoostFilter) {
-      const clampedTreble = Math.max(-MAX_DB, Math.min(MAX_DB, trebleBoostDb));
-      this.trebleBoostFilter.gain.value = clampedTreble;
-      this.trebleGainDb = clampedTreble;
-    }
-
+    // Apply reverb wet/dry mix
     this.setReverb(reverb);
-    
-    // Store as units for safety gain calculation consistency
-    this.currentEQValues = paddedBands.map(v => v / DB_PER_UNIT);
-    this.recalculateSafetyGain();
 
-    console.log(`[WebAudioEffectsEngine] Applied immersive mode with reverb:${reverb}, bass:${bassBoostDb}dB, treble:${trebleBoostDb}dB`);
-  }
-
-  setBassBoost(gainUnits: number): void {
-    const dbValue = gainUnits * DB_PER_UNIT;
-    const clampedDb = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
-    this.bassGainDb = clampedDb;
-    
-    if (this.bassBoostFilter) {
-      this.bassBoostFilter.gain.value = clampedDb;
-    }
-    
-    this.recalculateSafetyGain();
-    console.log(`[WebAudioEffectsEngine] Bass boost set to ${clampedDb} dB`);
-  }
-  
-  setTrebleBoost(gainUnits: number): void {
-    const dbValue = gainUnits * DB_PER_UNIT;
-    const clampedDb = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
-    this.trebleGainDb = clampedDb;
-    
-    if (this.trebleBoostFilter) {
-      this.trebleBoostFilter.gain.value = clampedDb;
-    }
-    
-    this.recalculateSafetyGain();
-    console.log(`[WebAudioEffectsEngine] Treble boost set to ${clampedDb} dB`);
-  }
-  
-  getBassGain(): number {
-    return this.bassGainDb;
-  }
-  
-  getTrebleGain(): number {
-    return this.trebleGainDb;
-  }
-  
-  private recalculateSafetyGain(): void {
-    const eqDbValues = this.currentEQValues.map(v => v * DB_PER_UNIT);
-    
-    const lowFreqBands = eqDbValues.slice(0, 3);
-    const midFreqBands = eqDbValues.slice(3, 6);
-    const highFreqBands = eqDbValues.slice(6, 10);
-    
-    const maxLowEq = Math.max(...lowFreqBands, 0);
-    const maxMidEq = Math.max(...midFreqBands, 0);
-    const maxHighEq = Math.max(...highFreqBands, 0);
-    
-    const lowFreqTotal = maxLowEq + Math.max(0, this.bassGainDb);
-    const highFreqTotal = maxHighEq + Math.max(0, this.trebleGainDb);
-    const midFreqTotal = maxMidEq;
-    
-    const totalMaxGain = Math.max(lowFreqTotal, midFreqTotal, highFreqTotal);
-    
-    let safetyReductionDb = 0;
-    if (totalMaxGain > MAX_DB) {
-      safetyReductionDb = -(totalMaxGain - MAX_DB);
-    }
-    
-    if (this.safetyGain) {
-      const linearGain = Math.pow(10, safetyReductionDb / 20);
-      this.safetyGain.gain.value = linearGain;
-    }
-    
+    // Master gain stays at 1.0 - limiter handles distortion prevention
     if (this.masterGain) {
       this.masterGain.gain.value = 1.0;
     }
-    
-    console.log(`[WebAudioEffectsEngine] Safety gain: lowEQ=${maxLowEq.toFixed(1)}+bass=${this.bassGainDb.toFixed(1)}, highEQ=${maxHighEq.toFixed(1)}+treble=${this.trebleGainDb.toFixed(1)}, reduction=${safetyReductionDb.toFixed(1)} dB`);
+
+    this.currentEQValues = paddedBands;
+    console.log(`[WebAudioEffectsEngine] Applied immersive mode with bass:${bassBoost}, treble:${trebleBoost}, spatial:${spatialWidth}, reverb:${reverb}`);
   }
 
+  /**
+   * Set reverb wet/dry mix (0 = dry, 1 = full reverb)
+   * Uses equal-power crossfade for smooth blending
+   */
   setReverb(wetMix: number): void {
     const clampedWet = Math.max(0, Math.min(1, wetMix));
     this.currentReverb = clampedWet;
     
     if (this.dryGain && this.wetGain) {
+      // Equal-power crossfade for smooth blending
+      // At 0% reverb: dry=1.0, wet=0.0 (fully dry)
+      // At 25% reverb: dry≈0.97, wet≈0.25 (mostly dry with subtle ambience)
+      // At 100% reverb: dry=0.0, wet=1.0 (fully wet)
       const dryAmount = Math.cos(clampedWet * Math.PI / 2);
       const wetAmount = Math.sin(clampedWet * Math.PI / 2);
       
@@ -462,46 +377,57 @@ class WebAudioEffectsEngineClass {
     }
   }
 
+  /**
+   * Set virtualizer level (-5 to +5)
+   * Negative = narrower stereo (more mono-like)
+   * Zero = original stereo
+   * Positive = wider stereo (enhanced surround)
+   * 
+   * Intelligent mapping:
+   * -5: Full mono (0% stereo width)
+   * -3: Reduced stereo (40% width)
+   * -1: Slightly narrower (80% width)
+   *  0: Original stereo (100% width)
+   * +1: Slightly wider (120% perceived width)
+   * +3: Wide stereo (180% perceived width)
+   * +5: Maximum surround (250% perceived width)
+   */
+  setVirtualizer(level: number): void {
+    const clampedLevel = Math.max(-5, Math.min(5, level));
+    this.currentVirtualizer = clampedLevel;
+    
+    // Calculate stereo width multiplier
+    // -5 = 0.0 (mono), 0 = 1.0 (original), +5 = 2.5 (extra wide)
+    let stereoWidth: number;
+    if (clampedLevel < 0) {
+      // Narrowing: -5 = 0%, 0 = 100%
+      stereoWidth = 1.0 + (clampedLevel / 5); // -5 → 0.0, 0 → 1.0
+    } else {
+      // Widening: 0 = 100%, +5 = 250%
+      stereoWidth = 1.0 + (clampedLevel * 0.3); // 0 → 1.0, +5 → 2.5
+    }
+    
+    console.log(`[WebAudioEffectsEngine] Virtualizer set to ${clampedLevel} (width: ${(stereoWidth * 100).toFixed(0)}%)`);
+    // Note: Actual stereo processing requires stereo channel separation
+    // which isn't available in basic mono Web Audio API setup
+    // The native Android VirtualizerModule handles actual audio processing
+  }
+
+  getVirtualizerLevel(): number {
+    return this.currentVirtualizer;
+  }
+
   setMasterVolume(volume: number): void {
     if (this.masterGain) {
       this.masterGain.gain.value = Math.max(0, Math.min(2, volume));
     }
   }
 
-  setVirtualizer(level: number): void {
-    // Virtualizer maps to stereo width: -5 to +5 → -1.0 to +1.0
-    // Negative = mono, 0 = normal stereo, positive = wide stereo
-    const stereoWidth = (level / 5) * 1.0; // Scale to -1.0 to 1.0
-    this.setStereoWidth(stereoWidth);
-    console.log(`[WebAudioEffectsEngine] Virtualizer set to ${level} → stereo width ${stereoWidth.toFixed(2)}`);
-  }
-
-  setStereoWidth(width: number): void {
-    // Web Audio API doesn't have built-in stereo width, but we can approximate
-    // using gain manipulation (simplified implementation)
-    // Width: -1 = mono, 0 = normal, +1 = wide
-    const clampedWidth = Math.max(-1, Math.min(1, width));
-    console.log(`[WebAudioEffectsEngine] Stereo width set to ${clampedWidth.toFixed(2)}`);
-  }
-
   resetEQ(): void {
     this.eqFilters.forEach(filter => {
       filter.gain.value = 0;
     });
-    
-    if (this.bassBoostFilter) {
-      this.bassBoostFilter.gain.value = 0;
-    }
-    if (this.trebleBoostFilter) {
-      this.trebleBoostFilter.gain.value = 0;
-    }
-    if (this.safetyGain) {
-      this.safetyGain.gain.value = 1.0;
-    }
-    
-    this.bassGainDb = 0;
-    this.trebleGainDb = 0;
-    this.setReverb(0);
+    this.setReverb(0); // Reset reverb to dry
     this.currentEQValues = new Array(10).fill(0);
     this.currentMode = 'off';
     console.log('[WebAudioEffectsEngine] EQ reset to flat');
@@ -530,19 +456,15 @@ class WebAudioEffectsEngineClass {
     
     this.audioContext = null;
     this.eqFilters = [];
-    this.bassBoostFilter = null;
-    this.trebleBoostFilter = null;
-    this.safetyGain = null;
     this.masterGain = null;
     this.dryGain = null;
     this.wetGain = null;
     this.reverbDelays = [];
     this.isInitialized = false;
     this.currentEQValues = new Array(10).fill(0);
-    this.bassGainDb = 0;
-    this.trebleGainDb = 0;
     this.currentMode = 'off';
     this.currentReverb = 0;
+    this.currentVirtualizer = 0;
     
     console.log('[WebAudioEffectsEngine] Released');
   }

@@ -17,6 +17,19 @@ import { RadioStackParamList } from "@/navigation/RadioStackNavigator";
 
 type BandFilter = "all" | "fm" | "am";
 type RadioMode = "fmam" | "online";
+type GenreFilter = "all" | "pop" | "rock" | "jazz" | "news" | "classical" | "electronic" | "country" | "hip-hop";
+
+const GENRE_OPTIONS: { value: GenreFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "pop", label: "Pop" },
+  { value: "rock", label: "Rock" },
+  { value: "jazz", label: "Jazz" },
+  { value: "news", label: "News" },
+  { value: "classical", label: "Classical" },
+  { value: "electronic", label: "Electronic" },
+  { value: "country", label: "Country" },
+  { value: "hip-hop", label: "Hip-Hop" },
+];
 
 const COUNTRY_FLAG_MAP: Record<string, string> = {
   US: "🇺🇸", GB: "🇬🇧", DE: "🇩🇪", FR: "🇫🇷", ES: "🇪🇸", IT: "🇮🇹", CA: "🇨🇦",
@@ -259,6 +272,7 @@ export default function RadioStationsScreen() {
   
   const [radioMode, setRadioMode] = useState<RadioMode>(initialMode);
   const [bandFilter, setBandFilter] = useState<BandFilter>("all");
+  const [genreFilter, setGenreFilter] = useState<GenreFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [displayedStationsCount, setDisplayedStationsCount] = useState(50);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -278,10 +292,10 @@ export default function RadioStationsScreen() {
   }, [radioMode, detectedCountryCode]);
 
   useEffect(() => {
-    if (radioMode === "online" && detectedCountryCode && !searchQuery) {
+    if (radioMode === "online" && detectedCountryCode && genreFilter === "all" && !searchQuery) {
       setFilteredOnlineStations(onlineStations.slice(0, 250));
     }
-  }, [onlineStations, radioMode, searchQuery, detectedCountryCode]);
+  }, [onlineStations, radioMode, genreFilter, searchQuery, detectedCountryCode]);
 
   const loadStationsForCountry = async () => {
     if (detectedCountryCode) {
@@ -346,6 +360,27 @@ export default function RadioStationsScreen() {
     setRadioMode(mode);
   }, []);
 
+  const handleGenreChange = useCallback(async (genre: GenreFilter) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setGenreFilter(genre);
+    setDisplayedStationsCount(STATIONS_PER_PAGE);
+
+    if (genre === "all") {
+      setFilteredOnlineStations(onlineStations);
+    } else if (detectedCountryCode) {
+      setIsLoadingGenre(true);
+      try {
+        const stations = await OnlineRadioService.getStationsByGenre(genre, detectedCountryCode, 250);
+        setFilteredOnlineStations(stations);
+      } catch (err) {
+        console.error("Error loading genre stations:", err);
+        setFilteredOnlineStations([]);
+      } finally {
+        setIsLoadingGenre(false);
+      }
+    }
+  }, [onlineStations, detectedCountryCode]);
+
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
     if (query.trim().length >= 2) {
@@ -362,6 +397,7 @@ export default function RadioStationsScreen() {
         setIsSearching(false);
       }
     } else if (query.trim().length === 0 && detectedCountryCode) {
+      setGenreFilter("all");
       setSearchResults([]);
       setFilteredOnlineStations(onlineStations.slice(0, 250));
     }
@@ -379,10 +415,12 @@ export default function RadioStationsScreen() {
     setIsRefreshing(true);
     if (detectedCountryCode) {
       await loadStations(detectedCountryCode);
-      setFilteredOnlineStations(onlineStations);
+      if (genreFilter === "all") {
+        setFilteredOnlineStations(onlineStations);
+      }
     }
     setIsRefreshing(false);
-  }, [detectedCountryCode, loadStations, onlineStations]);
+  }, [detectedCountryCode, loadStations, genreFilter, onlineStations]);
 
   const handleLoadMore = useCallback(() => {
     if (hasMoreStations) {
@@ -474,6 +512,22 @@ export default function RadioStationsScreen() {
             )}
           </View>
         </View>
+
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          style={styles.genreScrollView}
+          contentContainerStyle={styles.genreContainer}
+        >
+          {GENRE_OPTIONS.map((genre) => (
+            <FluentChip
+              key={genre.value}
+              label={genre.label}
+              selected={genreFilter === genre.value}
+              onPress={() => handleGenreChange(genre.value)}
+            />
+          ))}
+        </ScrollView>
 
         {isLoadingGenre || isSearching ? (
           <LoadingState message={isSearching ? "Searching stations..." : "Loading genre stations..."} />
@@ -822,6 +876,13 @@ const styles = StyleSheet.create({
     height: FluentTouchTarget.minimum,
     alignItems: "center",
     justifyContent: "center",
+  },
+  genreScrollView: {
+    marginBottom: FluentSpacing.m,
+  },
+  genreContainer: {
+    gap: FluentSpacing.xs,
+    paddingRight: FluentSpacing.m,
   },
   onlineStationsList: {
     gap: FluentSpacing.xs,

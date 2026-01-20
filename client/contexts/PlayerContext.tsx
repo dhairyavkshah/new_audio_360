@@ -4,13 +4,22 @@ import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from '
 import { Song } from '@/lib/data';
 import { DeviceSong } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
-import { useSoundLab } from '@/contexts/SoundLabContext';
-import { PlaybackEngineModule, PlaybackStatus, AudioSessionBridgeModule, EqualizerModule } from 'audio-effects';
+import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
+import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule, AudioSessionBridgeModule } from 'audio-effects';
+import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
 import { setMusicPlaying } from '@/lib/playbackState';
-import { mediaLibraryEvents, MediaLibraryEvent } from '@/lib/mediaLibraryEvents';
-import { WebAudioEffectsEngine } from '@/services/WebAudioEffectsEngine';
+
+const EQ_FREQUENCIES: Record<keyof EQBands, number> = {
+  sub: 32,
+  bass: 64,
+  lowMid: 250,
+  mid: 1000,
+  highMid: 4000,
+  treble: 8000,
+  brilliance: 16000,
+};
 
 export type PlayableSong = Song | DeviceSong;
 
@@ -52,7 +61,7 @@ interface PlayerContextType {
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
-  const { mode: soundLabMode, eqBands, immersiveModeName } = useSoundLab();
+  const { mode: soundLabMode, eqBands, immersiveEffect, bassBoost, trebleBoost } = useSoundLab();
   
   const [currentSong, setCurrentSong] = useState<PlayableSong | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -77,32 +86,31 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const shuffleRef = useRef(false);
   const repeatRef = useRef<'off' | 'one' | 'all'>('off');
   
+  const audioContextRef = useRef<AudioContext | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
-  const webMediaSourceRef = useRef<any>(null);
+  const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const limiterRef = useRef<DynamicsCompressorNode | null>(null);
+  const eqFiltersRef = useRef<BiquadFilterNode[]>([]);
+  const bassBoostFilterRef = useRef<BiquadFilterNode | null>(null);
+  const trebleBoostFilterRef = useRef<BiquadFilterNode | null>(null);
+  const stereoWidenerRef = useRef<StereoPannerNode | null>(null);
+  const delayNodeRef = useRef<DelayNode | null>(null);
+  const delayGainRef = useRef<GainNode | null>(null);
 
-  // iOS: Use TrackPlayerService for music playback (background playback, notification controls)
-  // Android: Use PlaybackEngineModule for music playback (integrates with SoftwareDSPAudioProcessor)
-  // Web: Uses HTMLAudioElement with WebAudioEffectsEngine
-  const nativePlaybackAvailable = Platform.OS === 'android' && PlaybackEngineModule.isAvailable();
-  const useNativePlaybackRef = useRef(nativePlaybackAvailable);
-  const useTrackPlayerRef = useRef(Platform.OS === 'ios' && TrackPlayerService.isAvailable());
+  const useNativePlaybackRef = useRef(Platform.OS === 'android' && PlaybackEngineModule.isAvailable());
+  const useTrackPlayerRef = useRef(TrackPlayerService.isAvailable());
   const trackPlayerInitializedRef = useRef(false);
-  const playbackEngineInitializedRef = useRef(false);
   const nativeAudioSessionIdRef = useRef<number>(0);
   const progressPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastKnownPositionRef = useRef<number>(0);
   const wasPlayingBeforeBackgroundRef = useRef<boolean>(false);
   const handleNextInternalRef = useRef<() => void>(() => {});
   const handlePreviousInternalRef = useRef<() => void>(() => {});
-  const isPlayingRef = useRef(false);
 
   useEffect(() => {
     currentSongRef.current = currentSong;
   }, [currentSong]);
-
-  useEffect(() => {
-    isPlayingRef.current = isPlaying;
-  }, [isPlaying]);
 
   useEffect(() => {
     queueRef.current = queue;
@@ -168,9 +176,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
       },
       onNext: () => {
+        // PlaybackService already called skipToNext - onTrackChange handles UI update
         console.log('[PlayerContext] Remote next callback - UI will update via onTrackChange');
       },
       onPrevious: () => {
+        // PlaybackService already called skipToPrevious - onTrackChange handles UI update
         console.log('[PlayerContext] Remote previous callback - UI will update via onTrackChange');
       },
       onSeek: (position) => {
@@ -183,12 +193,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (trackIndex !== null && trackIndex >= 0) {
           const currentQueue = queueRef.current;
           if (currentQueue[trackIndex]) {
+            // Reset position immediately to prevent slider flash
             setCurrentTime(0);
             setCurrentSong(currentQueue[trackIndex]);
             const track = await TrackPlayerService.getCurrentTrack();
             if (track?.duration) {
               setDuration(track.duration);
             } else {
+              // Fallback to song duration from queue
               setDuration(currentQueue[trackIndex].duration || 0);
             }
           }
@@ -196,10 +208,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       },
       onProgress: (progress) => {
         if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+        // Only update position if it's reasonable (not greater than duration)
+        // This prevents slider flash during track transitions
         if (progress.duration > 0 && progress.position <= progress.duration) {
           setCurrentTime(progress.position);
           setDuration(progress.duration);
         } else if (progress.duration > 0) {
+          // Track just started, use new duration but reset position
           setCurrentTime(0);
           setDuration(progress.duration);
         }
@@ -257,6 +272,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
               return true;
             }
           } catch {
+            // Service not ready
           }
           await new Promise(resolve => setTimeout(resolve, 100));
         }
@@ -271,16 +287,56 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [convertSongToTrackMetadata]);
 
-  // TrackPlayerService initialization - iOS only
   useEffect(() => {
     if (useTrackPlayerRef.current && !trackPlayerInitializedRef.current) {
       TrackPlayerService.initialize().then(async (initialized) => {
         if (initialized) {
           trackPlayerInitializedRef.current = true;
-          console.log('[PlayerContext] TrackPlayerService initialized for iOS');
+          console.log('[PlayerContext] TrackPlayerService initialized');
           
           setupTrackPlayerCallbacks();
           TrackPlayerService.setRepeatMode(repeat);
+          
+          if (Platform.OS === 'android' && NativeEffectsManager.isAvailable()) {
+            try {
+              let audioSessionId = 0;
+              
+              // Try to get TrackPlayer's audio session ID
+              if (AudioSessionBridgeModule.isAvailable()) {
+                const trackPlayerResult = await AudioSessionBridgeModule.getTrackPlayerSessionId();
+                if (trackPlayerResult.success && trackPlayerResult.sessionId > 0) {
+                  audioSessionId = trackPlayerResult.sessionId;
+                  console.log('[PlayerContext] Got TrackPlayer audio session ID:', audioSessionId);
+                } else {
+                  // Fallback: generate a new audio session ID
+                  audioSessionId = AudioSessionBridgeModule.generateAudioSessionId();
+                  if (audioSessionId > 0) {
+                    console.log('[PlayerContext] Generated audio session ID:', audioSessionId);
+                  } else {
+                    // Last resort: use session 0 (global)
+                    audioSessionId = 0;
+                    console.log('[PlayerContext] Using global audio session (0)');
+                  }
+                }
+              }
+              
+              const attached = await NativeEffectsManager.attach(audioSessionId);
+              if (attached) {
+                console.log('[PlayerContext] NativeEffectsManager attached to audio session:', audioSessionId);
+              } else {
+                console.log('[PlayerContext] NativeEffectsManager attachment returned false - effects may not work');
+              }
+              
+              if (ImmersiveModeEngineModule.isAvailable()) {
+                const immersiveResult = await ImmersiveModeEngineModule.attach(audioSessionId);
+                if (immersiveResult.success) {
+                  console.log('[PlayerContext] ImmersiveModeEngineModule attached to audio session:', audioSessionId);
+                }
+              }
+            } catch (err) {
+              console.warn('[PlayerContext] Failed to attach audio effects:', err);
+            }
+          }
         }
       });
     }
@@ -288,139 +344,46 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return () => {
       if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
         TrackPlayerService.destroy();
+        NativeEffectsManager.release();
+        if (Platform.OS === 'android' && ImmersiveModeEngineModule.isAvailable()) {
+          ImmersiveModeEngineModule.release();
+        }
         trackPlayerInitializedRef.current = false;
       }
     };
   }, [setupTrackPlayerCallbacks]);
 
-  // PlaybackEngineModule initialization - Android only
-  // This integrates with SoftwareDSPAudioProcessor for real-time audio effects
   useEffect(() => {
-    if (useNativePlaybackRef.current) {
+    if (useNativePlaybackRef.current && !useTrackPlayerRef.current) {
       PlaybackEngineModule.initialize().then(async (initResult) => {
-        if (initResult.success || initResult.alreadyInitialized) {
-          playbackEngineInitializedRef.current = true;
-          if (initResult.audioSessionId && initResult.audioSessionId > 0) {
-            nativeAudioSessionIdRef.current = initResult.audioSessionId;
-            console.log('[PlayerContext] PlaybackEngineModule initialized with audioSessionId:', initResult.audioSessionId);
-            
-            // Attach EqualizerModule to enable DSP processing
-            if (EqualizerModule.isAvailable()) {
-              try {
-                const attachResult = await EqualizerModule.attach(initResult.audioSessionId);
-                if (attachResult.success) {
-                  console.log('[PlayerContext] EqualizerModule attached to PlaybackEngineModule audio session');
-                }
-              } catch (err) {
-                console.warn('[PlayerContext] EqualizerModule attach failed:', err);
-              }
-            }
+        if (initResult.success && initResult.audioSessionId) {
+          nativeAudioSessionIdRef.current = initResult.audioSessionId;
+          console.log('PlaybackEngineModule initialized with audioSessionId:', initResult.audioSessionId);
+          
+          const attached = await NativeEffectsManager.attach(initResult.audioSessionId);
+          if (attached) {
+            console.log('NativeEffectsManager attached to audio session');
           }
         } else if (initResult.error) {
-          console.warn('[PlayerContext] PlaybackEngineModule initialization failed:', initResult.error);
+          console.warn('PlaybackEngineModule initialization failed:', initResult.error);
         }
       });
     }
     
     return () => {
-      if (useNativePlaybackRef.current) {
-        playbackEngineInitializedRef.current = false;
-        if (EqualizerModule.isAvailable()) {
-          EqualizerModule.release();
-        }
+      if (useNativePlaybackRef.current && !useTrackPlayerRef.current) {
+        NativeEffectsManager.release();
         PlaybackEngineModule.release();
       }
-    };
-  }, []);
-
-  // Ref to store handleTrackEnd for event subscriptions (defined later)
-  const handleTrackEndRef = useRef<() => void>(() => {});
-
-  // Event-driven state updates for Android PlaybackEngineModule
-  // This supplements polling with immediate event responses
-  useEffect(() => {
-    if (!useNativePlaybackRef.current || !PlaybackEngineModule.isAvailable()) {
-      return;
-    }
-
-    const subscriptions: Array<{ remove: () => void } | null> = [];
-
-    // Subscribe to isPlaying changes for immediate UI updates
-    const isPlayingSubscription = PlaybackEngineModule.subscribeToIsPlaying?.((event) => {
-      console.log('[PlayerContext] Native isPlaying event:', event.isPlaying);
-      setIsPlaying(event.isPlaying);
-    });
-    if (isPlayingSubscription) subscriptions.push(isPlayingSubscription);
-
-    // Subscribe to playback state changes for buffering/error detection
-    const stateSubscription = PlaybackEngineModule.subscribeToPlaybackState?.((event) => {
-      console.log('[PlayerContext] Native playback state event:', event.state);
-      if (event.state === 'buffering') {
-        setIsBuffering(true);
-      } else if (event.state === 'ready') {
-        setIsBuffering(false);
-      } else if (event.state === 'ended') {
-        handleTrackEndRef.current();
-      } else if (event.state === 'idle') {
-        setIsBuffering(false);
-      }
-    });
-    if (stateSubscription) subscriptions.push(stateSubscription);
-
-    // Subscribe to error events
-    const errorSubscription = PlaybackEngineModule.subscribeToError?.((event) => {
-      console.error('[PlayerContext] Native playback error:', event);
-      setError(`Playback error: ${event.message}`);
-      setIsPlaying(false);
-      setIsBuffering(false);
-    });
-    if (errorSubscription) subscriptions.push(errorSubscription);
-
-    return () => {
-      subscriptions.forEach((sub) => {
-        if (sub && typeof sub.remove === 'function') {
-          sub.remove();
-        }
-      });
     };
   }, []);
 
   useEffect(() => {
     getPlayerState().then((state) => {
       if (state) {
+        setCurrentTime(state.currentTime || 0);
         setShuffle(state.shuffle || false);
         setRepeat(state.repeat || 'off');
-        
-        if (state.lastSong) {
-          const restoredSong: PlayableSong = state.lastSong.isFromDevice 
-            ? {
-                id: state.lastSong.id,
-                title: state.lastSong.title,
-                artist: state.lastSong.artist,
-                album: state.lastSong.album || '',
-                duration: state.lastSong.duration,
-                artwork: state.lastSong.artwork,
-                uri: state.lastSong.uri || '',
-                filename: state.lastSong.filename || '',
-                modificationTime: state.lastSong.modificationTime || 0,
-                isFromDevice: true,
-              } as DeviceSong
-            : {
-                id: state.lastSong.id,
-                title: state.lastSong.title,
-                artist: state.lastSong.artist,
-                album: state.lastSong.album || '',
-                duration: state.lastSong.duration,
-                artwork: state.lastSong.artwork,
-                audioUrl: state.lastSong.audioUrl || state.lastSong.uri,
-              } as Song;
-          
-          setCurrentSong(restoredSong);
-          setCurrentTime(state.currentTime || 0);
-          setDuration(state.lastDuration || state.lastSong.duration || 0);
-          setIsPlaying(false);
-          console.log('[PlayerContext] Restored last playing song:', state.lastSong.title, 'at position:', state.currentTime);
-        }
       }
     });
     getFavorites().then(setFavorites);
@@ -429,72 +392,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const handleLibraryChange = (event: MediaLibraryEvent) => {
-      if (event.type === 'songRemoved' && event.songIds) {
-        const removedSet = new Set(event.songIds);
-        const availableSongIds = new Set(event.allSongIds);
-
-        const current = currentSongRef.current;
-        if (current && removedSet.has(current.id)) {
-          console.log('[PlayerContext] Current song was removed, stopping playback');
-          if (useNativePlaybackRef.current) {
-            PlaybackEngineModule.stop();
-          } else if (useTrackPlayerRef.current) {
-            TrackPlayerService.stop();
-          } else if (Platform.OS === 'web' && audioElementRef.current) {
-            audioElementRef.current.pause();
-          } else if (playerRef.current) {
-            playerRef.current.pause();
-          }
-          setCurrentSong(null);
-          setIsPlaying(false);
-          setCurrentTime(0);
-          setDuration(0);
-          currentSongRef.current = null;
-        }
-
-        const currentQueue = queueRef.current;
-        const filteredQueue = currentQueue.filter(song => availableSongIds.has(song.id));
-        if (filteredQueue.length !== currentQueue.length) {
-          console.log('[PlayerContext] Queue updated - removed unavailable songs');
-          setQueueState(filteredQueue);
-          queueRef.current = filteredQueue;
-        }
-      }
-    };
-
-    const unsubscribe = mediaLibraryEvents.subscribe(handleLibraryChange);
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  // Propagate repeat mode to the appropriate playback engine
-  // NOTE: For Android PlaybackEngineModule, we load single tracks, so:
-  // - repeat='one' -> use native REPEAT_MODE_ONE (ExoPlayer loops the single track)
-  // - repeat='all' -> use native REPEAT_MODE_OFF and let JavaScript handle queue advancement via handleTrackEnd
-  // - repeat='off' -> use native REPEAT_MODE_OFF
-  useEffect(() => {
-    if (useNativePlaybackRef.current) {
-      // For single-track loading, only use native repeat for 'one' mode
-      // 'all' mode is handled by JavaScript queue logic in handleTrackEnd
-      const nativeRepeatMode = repeat === 'one' ? 'one' : 'off';
-      PlaybackEngineModule.setRepeatMode(nativeRepeatMode).catch(err => {
-        console.warn('[PlayerContext] Failed to set repeat mode:', err);
-      });
-    } else if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
+    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
       TrackPlayerService.setRepeatMode(repeat);
     }
   }, [repeat]);
-
-  // Propagate shuffle mode to PlaybackEngineModule on Android
-  useEffect(() => {
-    if (useNativePlaybackRef.current) {
-      PlaybackEngineModule.setShuffleMode(shuffle).catch(err => {
-        console.warn('[PlayerContext] Failed to set shuffle mode:', err);
-      });
-    }
-  }, [shuffle]);
 
   useEffect(() => {
     const appStateRef = { current: AppState.currentState };
@@ -582,26 +483,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [setupTrackPlayerCallbacks, restoreTrackPlayerQueue, currentTime, isPlaying]);
 
-  // Ref for tracking polling state to avoid closure issues
-  const isPollingActiveRef = useRef(false);
-  const pollCountRef = useRef(0);
-
-  // Progress polling for PlaybackEngineModule (Android only)
   useEffect(() => {
     if (useTrackPlayerRef.current) return;
     if (!useNativePlaybackRef.current) return;
 
-    const pollProgress = async () => {
-      if (!isPollingActiveRef.current) return;
-      
-      try {
-        const status = await PlaybackEngineModule.getStatus();
-        pollCountRef.current++;
+    if (isPlaying && currentSong) {
+      progressPollingRef.current = setInterval(() => {
+        const status = PlaybackEngineModule.getStatus();
         
-        if (status.currentPositionMs !== undefined && status.currentPositionMs >= 0) {
+        if (status.currentPositionMs !== undefined) {
           setCurrentTime(status.currentPositionMs / 1000);
         }
-        
         if (status.durationMs !== undefined && status.durationMs > 0) {
           setDuration(status.durationMs / 1000);
         }
@@ -612,46 +504,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           handleTrackEnd();
         }
         
-        if (!status.isPlaying && isPlayingRef.current && 
-            status.playbackState !== 'buffering' && 
-            status.playbackState !== 'idle') {
-          console.log('[PlayerContext] Native playback stopped, syncing state');
+        if (!status.isPlaying && isPlaying && status.playbackState !== 'buffering') {
           setIsPlaying(false);
         }
-      } catch (err) {
-        console.warn('[PlayerContext] Progress polling error:', err);
-      }
-      
-      // Schedule next poll only if still active
-      if (isPollingActiveRef.current) {
-        progressPollingRef.current = setTimeout(pollProgress, 250);
-      }
-    };
-
-    if (isPlaying && currentSong) {
-      // Stop any existing polling first
-      if (progressPollingRef.current) {
-        clearTimeout(progressPollingRef.current);
-        progressPollingRef.current = null;
-      }
-      
-      console.log('[PlayerContext] Starting progress polling for Android');
-      pollCountRef.current = 0;
-      isPollingActiveRef.current = true;
-      pollProgress();
+      }, 250);
     } else {
-      isPollingActiveRef.current = false;
       if (progressPollingRef.current) {
-        clearTimeout(progressPollingRef.current);
+        clearInterval(progressPollingRef.current);
         progressPollingRef.current = null;
-        console.log('[PlayerContext] Stopped progress polling');
       }
     }
 
     return () => {
-      isPollingActiveRef.current = false;
       if (progressPollingRef.current) {
-        clearTimeout(progressPollingRef.current);
+        clearInterval(progressPollingRef.current);
         progressPollingRef.current = null;
       }
     };
@@ -666,17 +532,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!song) return;
 
     if (currentRepeat === 'one') {
-      if (useNativePlaybackRef.current) {
-        PlaybackEngineModule.seekTo(0).then(() => {
-          PlaybackEngineModule.play();
-        });
-      } else if (useTrackPlayerRef.current) {
+      if (useTrackPlayerRef.current) {
         TrackPlayerService.seekTo(0).then(() => {
           TrackPlayerService.play();
         });
-      } else if (Platform.OS === 'web' && audioElementRef.current) {
-        audioElementRef.current.currentTime = 0;
-        audioElementRef.current.play();
+      } else if (useNativePlaybackRef.current) {
+        PlaybackEngineModule.seekTo(0).then(() => {
+          PlaybackEngineModule.play();
+        });
       } else if (playerRef.current) {
         playerRef.current.seekTo(0);
         playerRef.current.play();
@@ -705,11 +568,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Update ref for event subscription usage
-  useEffect(() => {
-    handleTrackEndRef.current = handleTrackEnd;
-  }, [handleTrackEnd]);
-
   const handleStatusUpdate = useCallback((status: AudioStatus) => {
     if (status.currentTime !== undefined) {
       setCurrentTime(status.currentTime);
@@ -732,10 +590,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       progressPollingRef.current = null;
     }
     
-    if (useNativePlaybackRef.current) {
-      PlaybackEngineModule.stop().catch(console.error);
-    } else if (useTrackPlayerRef.current) {
+    if (useTrackPlayerRef.current) {
       TrackPlayerService.stop().catch(console.error);
+    } else if (useNativePlaybackRef.current) {
+      PlaybackEngineModule.stop().catch(console.error);
     }
     
     if (statusListenerRef.current) {
@@ -751,309 +609,576 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playerRef.current = null;
     }
     if (Platform.OS === 'web') {
-      if (webMediaSourceRef.current) {
-        try {
-          WebAudioEffectsEngine.disconnectMediaElementSource(webMediaSourceRef.current);
-        } catch {}
-        webMediaSourceRef.current = null;
-      }
       if (audioElementRef.current) {
         audioElementRef.current.pause();
         audioElementRef.current.src = '';
-        audioElementRef.current.onloadedmetadata = null;
-        audioElementRef.current.ontimeupdate = null;
-        audioElementRef.current.onended = null;
-        audioElementRef.current.onerror = null;
-        audioElementRef.current = null;
       }
+      if (mediaSourceRef.current) {
+        try { mediaSourceRef.current.disconnect(); } catch {}
+      }
+      eqFiltersRef.current.forEach(f => { try { f.disconnect(); } catch {} });
+      if (gainNodeRef.current) { try { gainNodeRef.current.disconnect(); } catch {} }
+      if (limiterRef.current) { try { limiterRef.current.disconnect(); } catch {} }
+      if (stereoWidenerRef.current) { try { stereoWidenerRef.current.disconnect(); } catch {} }
+      if (delayNodeRef.current) { try { delayNodeRef.current.disconnect(); } catch {} }
+      if (delayGainRef.current) { try { delayGainRef.current.disconnect(); } catch {} }
     }
+    AudioCoordinator.notifyPlaybackStopped('music');
   }, []);
+
+  const stopMusicForCoordinator = useCallback(async (): Promise<void> => {
+    // Stop playback but preserve the queue and position for resumption
+    // This allows resuming playback when switching back from radio
+    if (useTrackPlayerRef.current) {
+      try {
+        const progress = await TrackPlayerService.getProgress();
+        if (progress) {
+          lastKnownPositionRef.current = progress.position;
+        }
+        await TrackPlayerService.stopPreservingQueue();
+      } catch (error) {
+        console.warn('[PlayerContext] Failed to stop for coordinator:', error);
+      }
+    } else if (useNativePlaybackRef.current) {
+      PlaybackEngineModule.pause().catch(console.error);
+    } else if (Platform.OS === 'web' && audioElementRef.current) {
+      audioElementRef.current.pause();
+    } else if (playerRef.current) {
+      playerRef.current.pause();
+    }
+    
+    setIsPlaying(false);
+    AudioCoordinator.notifyPlaybackStopped('music');
+  }, []);
+
+  useEffect(() => {
+    AudioCoordinator.registerMusicStopCallback(stopMusicForCoordinator);
+  }, [stopMusicForCoordinator]);
+  
+  const createEQChain = useCallback((ctx: AudioContext): BiquadFilterNode[] => {
+    eqFiltersRef.current.forEach(f => { try { f.disconnect(); } catch {} });
+    eqFiltersRef.current = [];
+    
+    // Disconnect old bass/treble filters
+    if (bassBoostFilterRef.current) { try { bassBoostFilterRef.current.disconnect(); } catch {} }
+    if (trebleBoostFilterRef.current) { try { trebleBoostFilterRef.current.disconnect(); } catch {} }
+
+    const bands = Object.keys(EQ_FREQUENCIES) as (keyof EQBands)[];
+    const bandValues = bands.map(band => eqBands[band]);
+    const sum = bandValues.reduce((acc, v) => acc + v, 0);
+    const average = sum / bandValues.length;
+    const zeroSumBands = bandValues.map(v => v - average);
+    
+    const DB_PER_UNIT = 2.4;
+    const MAX_DB = 12;
+    
+    // Create EQ band filters (only apply preset, no bass/treble boost here)
+    bands.forEach((band, index) => {
+      const filter = ctx.createBiquadFilter();
+      
+      if (index === 0) {
+        filter.type = 'lowshelf';
+      } else if (index === bands.length - 1) {
+        filter.type = 'highshelf';
+      } else {
+        filter.type = 'peaking';
+        filter.Q.value = 1.5;
+      }
+      
+      filter.frequency.value = EQ_FREQUENCIES[band];
+      
+      if (soundLabMode === 'equalizer') {
+        const dbValue = zeroSumBands[index] * DB_PER_UNIT;
+        filter.gain.value = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
+      } else {
+        filter.gain.value = 0;
+      }
+      
+      eqFiltersRef.current.push(filter);
+    });
+
+    // Create dedicated Bass Boost filter (lowshelf at 150Hz for full bass range)
+    const bassFilter = ctx.createBiquadFilter();
+    bassFilter.type = 'lowshelf';
+    bassFilter.frequency.value = 150; // Boosts ALL frequencies below 150Hz
+    bassFilter.gain.value = soundLabMode === 'equalizer' ? bassBoost * DB_PER_UNIT : 0;
+    bassBoostFilterRef.current = bassFilter;
+    
+    // Create dedicated Treble Boost filter (highshelf at 6kHz for full treble range)
+    const trebleFilter = ctx.createBiquadFilter();
+    trebleFilter.type = 'highshelf';
+    trebleFilter.frequency.value = 6000; // Boosts ALL frequencies above 6kHz
+    trebleFilter.gain.value = soundLabMode === 'equalizer' ? trebleBoost * DB_PER_UNIT : 0;
+    trebleBoostFilterRef.current = trebleFilter;
+
+    // Connect EQ chain
+    for (let i = 0; i < eqFiltersRef.current.length - 1; i++) {
+      eqFiltersRef.current[i].connect(eqFiltersRef.current[i + 1]);
+    }
+    
+    // Connect: last EQ -> Bass Boost -> Treble Boost
+    if (eqFiltersRef.current.length > 0) {
+      eqFiltersRef.current[eqFiltersRef.current.length - 1].connect(bassFilter);
+    }
+    bassFilter.connect(trebleFilter);
+
+    return eqFiltersRef.current;
+  }, [soundLabMode, eqBands, bassBoost, trebleBoost]);
+  
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    
+    const bands = Object.keys(EQ_FREQUENCIES) as (keyof EQBands)[];
+    const bandValues = bands.map(band => eqBands[band]);
+    const sum = bandValues.reduce((acc, v) => acc + v, 0);
+    const average = sum / bandValues.length;
+    const zeroSumBands = bandValues.map(v => v - average);
+    
+    const DB_PER_UNIT = 2.4;
+    const MAX_DB = 12;
+    
+    // Update EQ band filters (preset only, no bass/treble boost)
+    eqFiltersRef.current.forEach((filter, index) => {
+      if (soundLabMode === 'equalizer') {
+        const dbValue = zeroSumBands[index] * DB_PER_UNIT;
+        filter.gain.value = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
+      } else {
+        filter.gain.value = 0;
+      }
+    });
+    
+    // Limiter is used instead of fixed gain compensation
+    // The DynamicsCompressorNode configured as a limiter handles distortion prevention intelligently
+    
+    // Update dedicated Bass Boost filter
+    if (bassBoostFilterRef.current) {
+      bassBoostFilterRef.current.gain.value = soundLabMode === 'equalizer' 
+        ? Math.max(-MAX_DB, Math.min(MAX_DB, bassBoost * DB_PER_UNIT)) 
+        : 0;
+    }
+    
+    // Update dedicated Treble Boost filter
+    if (trebleBoostFilterRef.current) {
+      trebleBoostFilterRef.current.gain.value = soundLabMode === 'equalizer' 
+        ? Math.max(-MAX_DB, Math.min(MAX_DB, trebleBoost * DB_PER_UNIT)) 
+        : 0;
+    }
+    
+    if (stereoWidenerRef.current) {
+      const pan = soundLabMode === 'immersive' ? (immersiveEffect.stereoWidth - 1) * 0.3 : 0;
+      stereoWidenerRef.current.pan.value = Math.max(-1, Math.min(1, pan));
+    }
+    if (delayGainRef.current) {
+      delayGainRef.current.gain.value = soundLabMode === 'immersive' ? immersiveEffect.reverb * 0.3 : 0;
+    }
+    if (delayNodeRef.current && soundLabMode === 'immersive') {
+      delayNodeRef.current.delayTime.value = immersiveEffect.delay / 1000;
+    }
+  }, [soundLabMode, eqBands, immersiveEffect, bassBoost, trebleBoost]);
+
+  useEffect(() => {
+    if (Platform.OS === 'android' && nativeAudioSessionIdRef.current > 0) {
+      NativeEffectsManager.applySettings(soundLabMode, eqBands);
+    }
+  }, [soundLabMode, eqBands, immersiveEffect]);
 
   const loadAndPlaySong = useCallback(async (song: PlayableSong) => {
     setIsLoading(true);
     setError(null);
     setCurrentTime(0);
-    
-    cleanupPlayer();
-
-    let audioUrl: string | undefined;
-    if (isDeviceSong(song) && song.uri) {
-      audioUrl = song.uri;
-    } else if ('audioUrl' in song && song.audioUrl) {
-      audioUrl = song.audioUrl;
-    }
-
-    if (!audioUrl) {
-      setError('No audio source available');
-      setIsLoading(false);
-      return;
-    }
-
-    setCurrentSong(song);
     setDuration(song.duration || 0);
+    setCurrentSong(song);
 
     try {
-      await addToRecentlyPlayed(song.id);
-      await incrementPlayCount(song.id);
-      const updatedRecentlyPlayed = await getRecentlyPlayed();
-      const updatedMostPlayed = await getMostPlayed(10);
-      setRecentlyPlayed(updatedRecentlyPlayed);
-      setMostPlayed(updatedMostPlayed);
-    } catch {}
+      await AudioCoordinator.requestPlayback('music');
 
-    // Android: Use PlaybackEngineModule with integrated DSP
-    if (useNativePlaybackRef.current) {
-      try {
-        console.log('[PlayerContext] Using PlaybackEngineModule with DSP for music playback');
-        
-        // Wait for mount-time initialization if not yet complete
-        if (!playbackEngineInitializedRef.current) {
-          console.log('[PlayerContext] Waiting for PlaybackEngineModule initialization...');
-          let attempts = 0;
-          while (!playbackEngineInitializedRef.current && attempts < 50) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
-          }
-          if (!playbackEngineInitializedRef.current) {
-            throw new Error('PlaybackEngineModule initialization timeout');
-          }
-        }
-        
-        const loadResult = await PlaybackEngineModule.loadTrack(audioUrl);
-        if (!loadResult.success) {
-          throw new Error(loadResult.error || 'Failed to load track');
-        }
-        
-        // Set metadata for lockscreen/notification display
-        try {
-          await PlaybackEngineModule.setMetadata(
-            song.title || 'Unknown Title',
-            song.artist || 'Unknown Artist',
-            song.album || '',
-            song.artwork || null
-          );
-        } catch (metaErr) {
-          console.warn('[PlayerContext] Failed to set metadata:', metaErr);
-        }
-        
-        const playResult = await PlaybackEngineModule.play();
-        if (playResult.success) {
-          setIsPlaying(true);
-          setIsLoading(false);
-        } else {
-          throw new Error(playResult.error || 'Playback failed');
-        }
+      let audioSource: string | null = null;
+
+      if (isDeviceSong(song) && song.uri) {
+        audioSource = song.uri;
+      } else if ('audioUrl' in song && song.audioUrl) {
+        audioSource = song.audioUrl;
+      } else {
+        const demoMessage = Platform.OS === 'web' 
+          ? 'Demo mode - add real audio files from your device'
+          : 'No audio file available for this song';
+        setError(demoMessage);
+        setIsLoading(false);
+        setCurrentSong(song);
         return;
-      } catch (err) {
-        console.error('[PlayerContext] Native playback error:', err);
-        setError('Playback failed');
+      }
+
+      if (!audioSource) {
+        setError('No audio source available');
         setIsLoading(false);
         return;
       }
-    }
 
-    // iOS: Use TrackPlayerService
-    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
-      try {
-        const trackMetadata = convertSongToTrackMetadata(song);
-        if (!trackMetadata) {
-          setError('Invalid track data');
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        cleanupPlayer();
+        
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        const ctx = audioContextRef.current;
+        
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+
+        let webAudioSource = audioSource;
+        if (audioSource.startsWith('/') && !audioSource.startsWith('//')) {
+          webAudioSource = `${window.location.origin}${audioSource}`;
+        }
+
+        const audio = new Audio();
+        audio.crossOrigin = 'anonymous';
+        audio.src = webAudioSource;
+        audioElementRef.current = audio;
+
+        await new Promise<void>((resolve, reject) => {
+          audio.onloadedmetadata = () => resolve();
+          audio.onerror = (e) => {
+            const errorCode = audio.error?.code;
+            const errorMessage = audio.error?.message || 'Unknown error';
+            console.error('[PlayerContext] Audio load error:', errorCode, errorMessage, 'URL:', webAudioSource);
+            reject(new Error(`Failed to load audio: ${errorMessage} (code: ${errorCode})`));
+          };
+          audio.load();
+        });
+
+        mediaSourceRef.current = ctx.createMediaElementSource(audio);
+
+        gainNodeRef.current = ctx.createGain();
+        gainNodeRef.current.gain.value = 1;
+
+        const eqChain = createEQChain(ctx);
+
+        stereoWidenerRef.current = ctx.createStereoPanner();
+        delayNodeRef.current = ctx.createDelay(0.5);
+        delayGainRef.current = ctx.createGain();
+        delayGainRef.current.gain.value = soundLabMode === 'immersive' ? immersiveEffect.reverb * 0.3 : 0;
+        if (soundLabMode === 'immersive') {
+          delayNodeRef.current.delayTime.value = immersiveEffect.delay / 1000;
+          const pan = (immersiveEffect.stereoWidth - 1) * 0.3;
+          stereoWidenerRef.current.pan.value = Math.max(-1, Math.min(1, pan));
+        }
+
+        // Create limiter (DynamicsCompressorNode configured as brickwall limiter)
+        // This prevents clipping when bass/treble boost pushes signal too hot
+        limiterRef.current = ctx.createDynamicsCompressor();
+        limiterRef.current.threshold.value = -1;    // Start limiting at -1 dB (just before clipping)
+        limiterRef.current.knee.value = 0;          // Hard knee for brickwall limiting
+        limiterRef.current.ratio.value = 20;        // 20:1 ratio = hard limiting
+        limiterRef.current.attack.value = 0.001;    // 1ms attack to catch transients
+        limiterRef.current.release.value = 0.1;     // 100ms release for smooth recovery
+
+        mediaSourceRef.current.connect(gainNodeRef.current);
+        
+        if (eqChain.length > 0) {
+          gainNodeRef.current.connect(eqChain[0]);
+          // EQ chain -> Bass Boost -> Treble Boost -> Stereo Widener
+          // (createEQChain already connects EQ -> Bass -> Treble)
+          if (trebleBoostFilterRef.current) {
+            trebleBoostFilterRef.current.connect(stereoWidenerRef.current);
+          } else {
+            eqChain[eqChain.length - 1].connect(stereoWidenerRef.current);
+          }
+        } else {
+          gainNodeRef.current.connect(stereoWidenerRef.current);
+        }
+
+        // Stereo Widener -> Limiter -> Destination (prevents clipping)
+        stereoWidenerRef.current.connect(limiterRef.current);
+        limiterRef.current.connect(ctx.destination);
+        // Delay/reverb path also goes through limiter
+        stereoWidenerRef.current.connect(delayNodeRef.current);
+        delayNodeRef.current.connect(delayGainRef.current);
+        delayGainRef.current.connect(limiterRef.current);
+
+        audio.onended = () => {
+          setIsPlaying(false);
+          handleTrackEnd();
+        };
+
+        audio.ontimeupdate = () => {
+          setCurrentTime(audio.currentTime);
+          if (audio.duration && !isNaN(audio.duration)) {
+            setDuration(audio.duration);
+          }
+        };
+
+        await audio.play();
+        setIsPlaying(true);
+        setIsLoading(false);
+        AudioCoordinator.notifyPlaybackStarted('music');
+      } else if (useTrackPlayerRef.current) {
+        console.log('[PlayerContext] Using TrackPlayer for playback');
+        
+        if (!trackPlayerInitializedRef.current) {
+          console.log('[PlayerContext] Initializing TrackPlayer...');
+          const initialized = await TrackPlayerService.initialize();
+          if (!initialized) {
+            console.warn('[PlayerContext] TrackPlayer failed to initialize, falling back to expo-av');
+            cleanupPlayer();
+            
+            const source = audioSource.startsWith('file://') || audioSource.startsWith('content://') 
+              ? { uri: audioSource } 
+              : audioSource;
+            const newPlayer = createAudioPlayer(source);
+            playerRef.current = newPlayer;
+
+            statusListenerRef.current = newPlayer.addListener('playbackStatusUpdate', handleStatusUpdate);
+
+            newPlayer.play();
+            setIsPlaying(true);
+            setIsLoading(false);
+            return;
+          }
+          trackPlayerInitializedRef.current = true;
+          console.log('[PlayerContext] TrackPlayer initialized successfully');
+        }
+
+        // Stop any current playback but don't reset queue yet
+        try {
+          await TrackPlayerService.pause();
+        } catch (e) {
+          console.log('[PlayerContext] Pause before load failed (may be normal):', e);
+        }
+
+        // Set source to music
+        TrackPlayerService.setPlaybackSource('music');
+        
+        // Register music callbacks fresh to prevent overwrites from other contexts
+        TrackPlayerService.setCallbacks({
+          onPlay: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              setIsPlaying(true);
+            }
+          },
+          onPause: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              setIsPlaying(false);
+            }
+          },
+          onStop: () => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              setIsPlaying(false);
+              setCurrentTime(0);
+            }
+          },
+          onNext: () => {
+            // PlaybackService already called skipToNext - onTrackChange handles UI update
+            console.log('[PlayerContext] Remote next callback - UI will update via onTrackChange');
+          },
+          onPrevious: () => {
+            // PlaybackService already called skipToPrevious - onTrackChange handles UI update
+            console.log('[PlayerContext] Remote previous callback - UI will update via onTrackChange');
+          },
+          onSeek: (position) => {
+            if (TrackPlayerService.getPlaybackSource() === 'music') {
+              setCurrentTime(position);
+            }
+          },
+          onTrackChange: async (trackIndex) => {
+            if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+            if (trackIndex !== null && trackIndex >= 0) {
+              const currentQueue = queueRef.current;
+              if (currentQueue[trackIndex]) {
+                setCurrentSong(currentQueue[trackIndex]);
+                const track = await TrackPlayerService.getCurrentTrack();
+                if (track?.duration) {
+                  setDuration(track.duration);
+                }
+              }
+            }
+          },
+          onProgress: (progress) => {
+            if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+            setCurrentTime(progress.position);
+            if (progress.duration > 0) {
+              setDuration(progress.duration);
+            }
+            setIsBuffering(progress.buffered < progress.position);
+          },
+          onStateChange: (state) => {
+            if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+            if (state === State.Playing) {
+              setIsPlaying(true);
+              setIsBuffering(false);
+            } else if (state === State.Paused) {
+              setIsPlaying(false);
+              setIsBuffering(false);
+            } else if (state === State.Buffering || state === State.Loading) {
+              setIsBuffering(true);
+            } else if (state === State.Stopped) {
+              setIsPlaying(false);
+              setCurrentTime(0);
+            }
+          },
+        });
+        
+        let currentQueue = queueRef.current;
+        console.log('[PlayerContext] Current queue length:', currentQueue.length);
+        
+        // If queue is empty, add the current song as a single-track queue
+        if (currentQueue.length === 0 && song) {
+          console.log('[PlayerContext] Queue empty, adding current song');
+          currentQueue = [song];
+          setQueueState([song]);
+        }
+        
+        const trackMetadataList: TrackMetadata[] = currentQueue
+          .map(s => convertSongToTrackMetadata(s))
+          .filter((t): t is TrackMetadata => t !== null);
+        
+        console.log('[PlayerContext] Valid tracks for TrackPlayer:', trackMetadataList.length);
+        
+        if (trackMetadataList.length === 0) {
+          // Last resort: try to create metadata from current song directly
+          const singleTrack = convertSongToTrackMetadata(song);
+          if (singleTrack) {
+            console.log('[PlayerContext] Using single track fallback');
+            trackMetadataList.push(singleTrack);
+          } else {
+            setError('No valid audio source for this song');
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        try {
+          console.log('[PlayerContext] Setting TrackPlayer queue...');
+          await TrackPlayerService.setQueue(trackMetadataList);
+          
+          const trackIndex = trackMetadataList.findIndex(t => t.id === song.id);
+          console.log('[PlayerContext] Track index in queue:', trackIndex);
+          
+          if (trackIndex >= 0) {
+            await TrackPlayerService.skipToTrack(trackIndex);
+          }
+          
+          console.log('[PlayerContext] Starting TrackPlayer playback...');
+          await TrackPlayerService.play();
+          
+          setIsPlaying(true);
+          setIsLoading(false);
+          AudioCoordinator.notifyPlaybackStarted('music');
+          console.log('[PlayerContext] TrackPlayer playback started successfully');
+        } catch (trackPlayerError) {
+          console.error('[PlayerContext] TrackPlayer error:', trackPlayerError);
+          setError('Failed to start playback');
+          setIsLoading(false);
+        }
+      } else if (useNativePlaybackRef.current) {
+        cleanupPlayer();
+        
+        const loadResult = await PlaybackEngineModule.loadTrack(audioSource);
+        
+        if (!loadResult.success) {
+          setError(loadResult.error || 'Failed to load audio with native player');
           setIsLoading(false);
           return;
         }
 
-        const currentQueue = queueRef.current;
-        const songIndex = currentQueue.findIndex(s => s.id === song.id);
-        
-        if (songIndex >= 0) {
-          const currentTrackQueue = await TrackPlayerService.getQueue();
-          if (currentTrackQueue.length === currentQueue.length) {
-            await TrackPlayerService.skipToTrack(songIndex);
-            await TrackPlayerService.play();
-          } else {
-            const trackMetadataList = currentQueue
-              .map(s => convertSongToTrackMetadata(s))
-              .filter((t): t is TrackMetadata => t !== null);
-            await TrackPlayerService.setQueue(trackMetadataList);
-            await TrackPlayerService.skipToTrack(songIndex);
-            await TrackPlayerService.play();
-          }
-        } else {
-          await TrackPlayerService.addTrack(trackMetadata);
-          const newQueue = await TrackPlayerService.getQueue();
-          await TrackPlayerService.skipToTrack(newQueue.length - 1);
-          await TrackPlayerService.play();
+        if (loadResult.audioSessionId) {
+          nativeAudioSessionIdRef.current = loadResult.audioSessionId;
         }
-        
-        setIsPlaying(true);
-        setIsLoading(false);
-        return;
-      } catch (err) {
-        console.error('[PlayerContext] TrackPlayer error:', err);
-        setError('Playback failed');
-        setIsLoading(false);
-        return;
-      }
-    }
 
-    if (Platform.OS === 'web') {
-      try {
-        await WebAudioEffectsEngine.initialize();
+        const playResult = await PlaybackEngineModule.play();
         
-        if (!audioElementRef.current) {
-          audioElementRef.current = new Audio();
-          audioElementRef.current.crossOrigin = 'anonymous';
-        }
-        
-        const audioElement = audioElementRef.current;
-        audioElement.src = audioUrl;
-        audioElement.load();
-        
-        if (!webMediaSourceRef.current) {
-          const result = WebAudioEffectsEngine.createMediaElementSource(audioElement);
-          if (result && result.connected) {
-            webMediaSourceRef.current = result.source;
-            console.log('[PlayerContext] Web music playback connected to DSP chain');
-          } else {
-            console.warn('[PlayerContext] Could not connect to WebAudioEffectsEngine, using direct playback');
-          }
-        }
-        
-        audioElement.onloadedmetadata = () => {
-          setDuration(audioElement.duration || song.duration || 0);
-        };
-        
-        audioElement.ontimeupdate = () => {
-          setCurrentTime(audioElement.currentTime);
-        };
-        
-        audioElement.onended = () => {
-          handleTrackEnd();
-        };
-        
-        audioElement.onerror = () => {
-          setError('Failed to load audio');
+        if (!playResult.success) {
+          setError(playResult.error || 'Failed to play audio');
           setIsLoading(false);
-        };
-        
-        await audioElement.play();
+          return;
+        }
+
+        const status = PlaybackEngineModule.getStatus();
+        if (status.durationMs > 0) {
+          setDuration(status.durationMs / 1000);
+        }
+
         setIsPlaying(true);
         setIsLoading(false);
+        AudioCoordinator.notifyPlaybackStarted('music');
+      } else {
+        cleanupPlayer();
         
-      } catch (err) {
-        console.error('[PlayerContext] Web audio error:', err);
-        setError('Playback failed');
-        setIsLoading(false);
-      }
-      return;
-    }
+        const source = audioSource.startsWith('file://') || audioSource.startsWith('content://') 
+          ? { uri: audioSource } 
+          : audioSource;
+        const newPlayer = createAudioPlayer(source);
+        playerRef.current = newPlayer;
 
-    // Fallback: expo-audio for iOS/Android when TrackPlayer isn't available
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      try {
-        console.log('[PlayerContext] Using expo-audio fallback');
-        const player = createAudioPlayer({ uri: audioUrl });
-        playerRef.current = player;
-        
-        statusListenerRef.current = player.addListener('playbackStatusUpdate', handleStatusUpdate);
-        
-        player.play();
+        statusListenerRef.current = newPlayer.addListener('playbackStatusUpdate', handleStatusUpdate);
+
+        newPlayer.play();
         setIsPlaying(true);
         setIsLoading(false);
-      } catch (err) {
-        console.error('[PlayerContext] Expo audio error:', err);
-        setError('Playback failed');
-        setIsLoading(false);
+        AudioCoordinator.notifyPlaybackStarted('music');
       }
-    }
-  }, [cleanupPlayer, convertSongToTrackMetadata, handleTrackEnd, handleStatusUpdate]);
 
-  const togglePlayPause = useCallback(async () => {
-    if (useNativePlaybackRef.current) {
-      if (isPlaying) {
-        await PlaybackEngineModule.pause();
-        setIsPlaying(false);
-      } else {
-        await PlaybackEngineModule.play();
-        setIsPlaying(true);
+      addToRecentlyPlayed(song.id).then(() => {
+        getRecentlyPlayed().then(setRecentlyPlayed);
+      });
+      incrementPlayCount(song.id).then(() => {
+        getMostPlayed(10).then(setMostPlayed);
+      });
+
+    } catch (e: any) {
+      console.error('Error loading song:', e?.message || e);
+      setError(e?.message || 'Audio unavailable - use development build for playback');
+      setIsLoading(false);
+      // Still set the song so UI displays correctly
+      setCurrentSong(song);
+    }
+  }, [cleanupPlayer, handleStatusUpdate, createEQChain, handleTrackEnd, soundLabMode, immersiveEffect, convertSongToTrackMetadata]);
+
+  useEffect(() => {
+    return () => {
+      cleanupPlayer();
+      if (sleepTimerRef.current) {
+        clearTimeout(sleepTimerRef.current);
       }
-      return;
-    }
+    };
+  }, [cleanupPlayer]);
 
-    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
-      if (isPlaying) {
-        await TrackPlayerService.pause();
-        setIsPlaying(false);
-      } else {
-        await TrackPlayerService.play();
-        setIsPlaying(true);
-      }
-      return;
+  useEffect(() => {
+    if (currentSong) {
+      savePlayerState({
+        currentSongId: currentSong.id,
+        isPlaying,
+        currentTime,
+        shuffle,
+        repeat,
+        queue: queue.map(s => s.id),
+      });
     }
+  }, [currentSong, isPlaying, currentTime, shuffle, repeat, queue]);
 
-    if (Platform.OS === 'web' && audioElementRef.current) {
-      if (isPlaying) {
-        audioElementRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        await audioElementRef.current.play();
-        setIsPlaying(true);
-      }
-      return;
-    }
+  const playSong = useCallback((song: PlayableSong) => {
+    loadAndPlaySong(song);
+  }, [loadAndPlaySong]);
 
-    // Fallback to expo-audio
-    if (playerRef.current) {
-      if (isPlaying) {
-        playerRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        playerRef.current.play();
-        setIsPlaying(true);
-      }
-    }
-  }, [isPlaying]);
+  const isFavorite = useCallback((songId: string) => {
+    return favorites.includes(songId);
+  }, [favorites]);
 
-  const seek = useCallback(async (time: number) => {
-    if (useNativePlaybackRef.current) {
-      await PlaybackEngineModule.seekTo(Math.round(time * 1000));
-      setCurrentTime(time);
-      return;
-    }
+  const toggleFavoriteHandler = useCallback((songId: string) => {
+    const newFavorites = favorites.includes(songId)
+      ? favorites.filter(id => id !== songId)
+      : [...favorites, songId];
+    setFavorites(newFavorites);
+    saveFavorites(newFavorites);
+  }, [favorites]);
 
-    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
-      await TrackPlayerService.seekTo(time);
-      setCurrentTime(time);
-      return;
-    }
-
-    if (Platform.OS === 'web' && audioElementRef.current) {
-      audioElementRef.current.currentTime = time;
-      setCurrentTime(time);
-      return;
-    }
-
-    // Fallback to expo-audio
-    if (playerRef.current) {
-      playerRef.current.seekTo(time);
-      setCurrentTime(time);
-    }
-  }, []);
-
-  const handleNext = useCallback(() => {
-    // For iOS TrackPlayer, use native skip (queue managed natively)
-    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
-      TrackPlayerService.skipToNext();
-      return;
-    }
-
-    // For Android PlaybackEngineModule and Web, manage queue in JavaScript
-    // We load single tracks, so we need to handle next/previous ourselves
+  const handleNextInternal = useCallback(() => {
     const song = currentSongRef.current;
     const currentQueue = queueRef.current;
     const currentShuffle = shuffleRef.current;
-
-    if (!song || currentQueue.length === 0) return;
+    const currentRepeat = repeatRef.current;
+    
+    if (!song) return;
 
     const currentIndex = currentQueue.findIndex((s) => s.id === song.id);
     let nextIndex: number;
@@ -1064,109 +1189,386 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       nextIndex = (currentIndex + 1) % currentQueue.length;
     }
 
+    if (nextIndex === 0 && currentRepeat === 'off' && !currentShuffle) {
+      setIsPlaying(false);
+      setCurrentTime(0);
+      return;
+    }
+
     const nextSong = currentQueue[nextIndex];
     if (nextSong) {
       loadAndPlaySong(nextSong);
     }
   }, [loadAndPlaySong]);
 
-  const handlePrevious = useCallback(() => {
-    // For iOS TrackPlayer, use native skip (queue managed natively)
-    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
-      if (currentTime > 3) {
-        TrackPlayerService.seekTo(0);
-      } else {
-        TrackPlayerService.skipToPrevious();
-      }
-      return;
-    }
-
-    // For Android PlaybackEngineModule, handle seek to start
-    if (useNativePlaybackRef.current && currentTime > 3) {
-      PlaybackEngineModule.seekTo(0);
-      setCurrentTime(0);
-      return;
-    }
-
-    // For Web, handle seek to start
-    if (Platform.OS === 'web' && audioElementRef.current && currentTime > 3) {
-      audioElementRef.current.currentTime = 0;
-      setCurrentTime(0);
-      return;
-    }
-
-    // Fallback seek to start
-    if (currentTime > 3) {
-      seek(0);
-      return;
-    }
-
-    // Handle previous track in JavaScript queue
+  const handlePreviousInternal = useCallback(() => {
     const song = currentSongRef.current;
     const currentQueue = queueRef.current;
-    const currentShuffle = shuffleRef.current;
-
-    if (!song || currentQueue.length === 0) return;
+    
+    if (!song) return;
 
     const currentIndex = currentQueue.findIndex((s) => s.id === song.id);
-    let prevIndex: number;
-
-    if (currentShuffle) {
-      prevIndex = Math.floor(Math.random() * currentQueue.length);
-    } else {
-      prevIndex = currentIndex > 0 ? currentIndex - 1 : currentQueue.length - 1;
-    }
-
+    const prevIndex = currentIndex === 0 ? currentQueue.length - 1 : currentIndex - 1;
     const prevSong = currentQueue[prevIndex];
     if (prevSong) {
       loadAndPlaySong(prevSong);
     }
-  }, [currentTime, seek, loadAndPlaySong]);
-
-  useEffect(() => {
-    handleNextInternalRef.current = handleNext;
-    handlePreviousInternalRef.current = handlePrevious;
-  }, [handleNext, handlePrevious]);
-
-  const playSong = useCallback(async (song: PlayableSong) => {
-    await AudioCoordinator.requestPlayback('music');
-    loadAndPlaySong(song);
   }, [loadAndPlaySong]);
 
+  useEffect(() => {
+    handleNextInternalRef.current = handleNextInternal;
+  }, [handleNextInternal]);
+
+  useEffect(() => {
+    handlePreviousInternalRef.current = handlePreviousInternal;
+  }, [handlePreviousInternal]);
+
+  const togglePlayPause = useCallback(async () => {
+    console.log('[PlayerContext] togglePlayPause called', { 
+      platform: Platform.OS, 
+      isPlaying, 
+      hasAudioElement: !!audioElementRef.current,
+      hasCurrentSong: !!currentSong 
+    });
+
+    if (Platform.OS === 'web') {
+      if (!audioElementRef.current) {
+        console.log('[PlayerContext] No audio element on web, attempting to load current song');
+        if (currentSong) {
+          loadAndPlaySong(currentSong);
+        }
+        return;
+      }
+      
+      try {
+        if (isPlaying) {
+          console.log('[PlayerContext] Web: Pausing audio');
+          audioElementRef.current.pause();
+          setIsPlaying(false);
+        } else {
+          console.log('[PlayerContext] Web: Playing audio');
+          await AudioCoordinator.requestPlayback('music');
+          if (audioContextRef.current?.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+          await audioElementRef.current.play();
+          setIsPlaying(true);
+          AudioCoordinator.notifyPlaybackStarted('music');
+        }
+      } catch (err) {
+        console.error('[PlayerContext] Web togglePlayPause error:', err);
+        setIsPlaying(false);
+      }
+      return;
+    }
+
+    if (useTrackPlayerRef.current) {
+      console.log('[PlayerContext] TrackPlayer togglePlayPause, isPlaying:', isPlaying, 'initialized:', trackPlayerInitializedRef.current);
+      
+      // Check if TrackPlayer is actually initialized
+      if (!trackPlayerInitializedRef.current) {
+        console.log('[PlayerContext] TrackPlayer not initialized, loading song first');
+        if (currentSong) {
+          loadAndPlaySong(currentSong);
+        }
+        return;
+      }
+      
+      // Verify actual player state before acting
+      try {
+        const actualState = await TrackPlayerService.getState();
+        const isActuallyPlaying = actualState === State.Playing;
+        console.log('[PlayerContext] Actual TrackPlayer state:', actualState, 'isActuallyPlaying:', isActuallyPlaying);
+        
+        if (isActuallyPlaying) {
+          console.log('[PlayerContext] Pausing TrackPlayer...');
+          await TrackPlayerService.pause();
+          console.log('[PlayerContext] TrackPlayer paused');
+          setIsPlaying(false);
+        } else {
+          if (!currentSong) {
+            console.log('[PlayerContext] No current song to play');
+            return;
+          }
+          // Request playback to stop any playing radio first
+          await AudioCoordinator.requestPlayback('music');
+          // Restore playback source before playing so callbacks work correctly
+          TrackPlayerService.setPlaybackSource('music');
+          
+          // Check if player has a track loaded
+          const currentTrack = await TrackPlayerService.getCurrentTrack();
+          if (!currentTrack) {
+            console.log('[PlayerContext] No track loaded, reloading current song');
+            loadAndPlaySong(currentSong);
+            return;
+          }
+          
+          console.log('[PlayerContext] Playing TrackPlayer...');
+          await TrackPlayerService.play();
+          setIsPlaying(true);
+          AudioCoordinator.notifyPlaybackStarted('music');
+          console.log('[PlayerContext] TrackPlayer resumed');
+        }
+      } catch (error) {
+        console.warn('[PlayerContext] TrackPlayer toggle failed:', error);
+        // Try reloading the song as fallback
+        if (currentSong) {
+          console.log('[PlayerContext] Attempting to reload current song');
+          loadAndPlaySong(currentSong);
+        }
+      }
+      return;
+    }
+
+    if (useNativePlaybackRef.current) {
+      if (isPlaying) {
+        PlaybackEngineModule.pause().then((pauseResult) => {
+          if (pauseResult.success) {
+            setIsPlaying(false);
+          }
+        });
+      } else {
+        if (!currentSong) return;
+        // Request playback to stop any playing radio first
+        await AudioCoordinator.requestPlayback('music');
+        PlaybackEngineModule.play().then((playResult) => {
+          if (playResult.success) {
+            setIsPlaying(true);
+            AudioCoordinator.notifyPlaybackStarted('music');
+          }
+        });
+      }
+      return;
+    }
+    
+    if (!playerRef.current) {
+      if (currentSong) {
+        loadAndPlaySong(currentSong);
+      }
+      return;
+    }
+
+    if (isPlaying) {
+      playerRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      // Request playback to stop any playing radio first
+      await AudioCoordinator.requestPlayback('music');
+      playerRef.current.play();
+      setIsPlaying(true);
+      AudioCoordinator.notifyPlaybackStarted('music');
+    }
+  }, [isPlaying, currentSong, loadAndPlaySong]);
+
+  const handleNext = useCallback(() => {
+    console.log('[PlayerContext] handleNext called', {
+      platform: Platform.OS,
+      hasCurrentSong: !!currentSong,
+      queueLength: queue.length,
+      useTrackPlayer: useTrackPlayerRef.current,
+    });
+
+    if (!currentSong) {
+      console.log('[PlayerContext] handleNext: No current song');
+      return;
+    }
+
+    if (useTrackPlayerRef.current) {
+      console.log('[PlayerContext] handleNext with TrackPlayer, initialized:', trackPlayerInitializedRef.current);
+      
+      if (!trackPlayerInitializedRef.current) {
+        console.log('[PlayerContext] TrackPlayer not initialized for next');
+        return;
+      }
+      
+      const currentQueue = queueRef.current;
+      const currentIndex = currentQueue.findIndex((s) => s.id === currentSong.id);
+      const currentShuffle = shuffleRef.current;
+      const currentRepeat = repeatRef.current;
+      
+      console.log('[PlayerContext] handleNext - currentIndex:', currentIndex, 'queueLength:', currentQueue.length);
+      
+      let nextIndex: number;
+      if (currentShuffle) {
+        nextIndex = Math.floor(Math.random() * currentQueue.length);
+      } else {
+        nextIndex = (currentIndex + 1) % currentQueue.length;
+      }
+
+      if (nextIndex === 0 && currentRepeat === 'off' && !currentShuffle) {
+        console.log('[PlayerContext] End of queue, stopping');
+        setIsPlaying(false);
+        setCurrentTime(0);
+        return;
+      }
+
+      console.log('[PlayerContext] Skipping to track:', nextIndex);
+      TrackPlayerService.skipToTrack(nextIndex).then(() => {
+        console.log('[PlayerContext] Playing after skip');
+        TrackPlayerService.play();
+      }).catch((err) => {
+        console.error('[PlayerContext] Skip/play error:', err);
+      });
+      return;
+    }
+
+    const currentIndex = queue.findIndex((s) => s.id === currentSong.id);
+    let nextIndex: number;
+
+    if (shuffle) {
+      nextIndex = Math.floor(Math.random() * queue.length);
+    } else {
+      nextIndex = (currentIndex + 1) % queue.length;
+    }
+
+    console.log('[PlayerContext] handleNext: currentIndex=', currentIndex, 'nextIndex=', nextIndex);
+
+    if (nextIndex === 0 && repeat === 'off' && !shuffle) {
+      console.log('[PlayerContext] handleNext: Reached end of queue, stopping');
+      setIsPlaying(false);
+      setCurrentTime(0);
+      return;
+    }
+
+    const nextSong = queue[nextIndex];
+    if (nextSong) {
+      console.log('[PlayerContext] handleNext: Loading next song:', nextSong.title);
+      loadAndPlaySong(nextSong);
+    }
+  }, [currentSong, queue, shuffle, repeat, loadAndPlaySong]);
+
+  const handlePrevious = useCallback(() => {
+    console.log('[PlayerContext] handlePrevious called', {
+      platform: Platform.OS,
+      hasCurrentSong: !!currentSong,
+      currentTime,
+      queueLength: queue.length,
+      useTrackPlayer: useTrackPlayerRef.current,
+    });
+
+    if (!currentSong) {
+      console.log('[PlayerContext] handlePrevious: No current song');
+      return;
+    }
+
+    if (currentTime > 3) {
+      console.log('[PlayerContext] handlePrevious: Seeking to start (currentTime > 3)');
+      if (Platform.OS === 'web' && audioElementRef.current) {
+        audioElementRef.current.currentTime = 0;
+        setCurrentTime(0);
+      } else if (useTrackPlayerRef.current) {
+        TrackPlayerService.seekTo(0);
+        setCurrentTime(0);
+      } else if (useNativePlaybackRef.current) {
+        PlaybackEngineModule.seekTo(0);
+        setCurrentTime(0);
+      } else if (playerRef.current) {
+        playerRef.current.seekTo(0);
+        setCurrentTime(0);
+      }
+      return;
+    }
+
+    if (useTrackPlayerRef.current) {
+      console.log('[PlayerContext] handlePrevious with TrackPlayer, initialized:', trackPlayerInitializedRef.current);
+      
+      if (!trackPlayerInitializedRef.current) {
+        console.log('[PlayerContext] TrackPlayer not initialized for previous');
+        return;
+      }
+      
+      const currentQueue = queueRef.current;
+      const currentIndex = currentQueue.findIndex((s) => s.id === currentSong.id);
+      const prevIndex = currentIndex === 0 ? currentQueue.length - 1 : currentIndex - 1;
+      
+      console.log('[PlayerContext] handlePrevious - currentIndex:', currentIndex, 'prevIndex:', prevIndex);
+      
+      TrackPlayerService.skipToTrack(prevIndex).then(() => {
+        console.log('[PlayerContext] Playing after skip to previous');
+        TrackPlayerService.play();
+      }).catch((err) => {
+        console.error('[PlayerContext] Skip to previous error:', err);
+      });
+      return;
+    }
+
+    const currentIndex = queue.findIndex((s) => s.id === currentSong.id);
+    const prevIndex = currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
+    const prevSong = queue[prevIndex];
+    console.log('[PlayerContext] handlePrevious: currentIndex=', currentIndex, 'prevIndex=', prevIndex);
+    if (prevSong) {
+      console.log('[PlayerContext] handlePrevious: Loading previous song:', prevSong.title);
+      loadAndPlaySong(prevSong);
+    }
+  }, [currentSong, queue, currentTime, loadAndPlaySong]);
+
+  const seek = useCallback((time: number) => {
+    const maxDuration = duration || currentSong?.duration || 0;
+    const targetTime = Math.max(0, Math.min(time, maxDuration));
+    
+    console.log('[PlayerContext] seek called', {
+      platform: Platform.OS,
+      requestedTime: time,
+      targetTime,
+      maxDuration,
+      hasAudioElement: !!audioElementRef.current,
+    });
+
+    setCurrentTime(targetTime);
+    
+    try {
+      if (Platform.OS === 'web') {
+        if (audioElementRef.current) {
+          console.log('[PlayerContext] Web: Setting currentTime to', targetTime);
+          audioElementRef.current.currentTime = targetTime;
+        } else {
+          console.log('[PlayerContext] Web: No audio element for seeking');
+        }
+      } else if (useTrackPlayerRef.current) {
+        console.log('[PlayerContext] TrackPlayer: Seeking to', targetTime);
+        TrackPlayerService.seekTo(targetTime).catch((err) => {
+          console.error('[PlayerContext] TrackPlayer seek error:', err);
+        });
+      } else if (useNativePlaybackRef.current) {
+        PlaybackEngineModule.seekTo(targetTime * 1000);
+      } else if (playerRef.current) {
+        playerRef.current.seekTo(targetTime);
+      }
+    } catch (err) {
+      console.error('[PlayerContext] Seek error:', err);
+    }
+  }, [duration, currentSong]);
+
   const toggleShuffle = useCallback(() => {
-    setShuffle(prev => !prev);
+    setShuffle((prev) => !prev);
   }, []);
 
   const toggleRepeat = useCallback(() => {
-    setRepeat(prev => {
+    setRepeat((prev) => {
       if (prev === 'off') return 'all';
       if (prev === 'all') return 'one';
       return 'off';
     });
   }, []);
 
-  const toggleFavorite = useCallback(async (songId: string) => {
-    const newFavorites = favorites.includes(songId)
-      ? favorites.filter(id => id !== songId)
-      : [...favorites, songId];
-    setFavorites(newFavorites);
-    await saveFavorites(newFavorites);
-  }, [favorites]);
-
-  const isFavorite = useCallback((songId: string) => {
-    return favorites.includes(songId);
-  }, [favorites]);
-
   const removeFromQueue = useCallback((songIds: string[]) => {
-    setQueueState(prev => prev.filter(song => !songIds.includes(song.id)));
+    setQueueState((prev) => {
+      return prev.filter(s => !songIds.includes(s.id));
+    });
   }, []);
 
   const clearQueue = useCallback(() => {
     setQueueState([]);
-  }, []);
+    setCurrentSong(null);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    cleanupPlayer();
+  }, [cleanupPlayer]);
 
   const setQueue = useCallback((songs: PlayableSong[]) => {
-    setQueueState(songs);
+    if (songs.length > 0) {
+      setQueueState(songs);
+    }
   }, []);
 
   const setSleepTimer = useCallback((minutes: number | null) => {
@@ -1174,120 +1576,72 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       clearTimeout(sleepTimerRef.current);
       sleepTimerRef.current = null;
     }
-
+    
+    if (minutes === null) {
+      setSleepTimerMinutesState(null);
+      return;
+    }
+    
     setSleepTimerMinutesState(minutes);
-
-    if (minutes !== null) {
-      sleepTimerRef.current = setTimeout(() => {
-        if (useNativePlaybackRef.current) {
-          PlaybackEngineModule.pause();
-        } else if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
-          TrackPlayerService.pause();
-        } else if (Platform.OS === 'web' && audioElementRef.current) {
-          audioElementRef.current.pause();
-        } else if (playerRef.current) {
-          playerRef.current.pause();
-        }
-        setIsPlaying(false);
-        setSleepTimerMinutesState(null);
-      }, minutes * 60 * 1000);
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (sleepTimerRef.current) {
-        clearTimeout(sleepTimerRef.current);
+    
+    sleepTimerRef.current = setTimeout(() => {
+      if (useTrackPlayerRef.current) {
+        TrackPlayerService.pause();
+      } else if (useNativePlaybackRef.current) {
+        PlaybackEngineModule.pause();
+      } else if (Platform.OS === 'web' && audioElementRef.current) {
+        audioElementRef.current.pause();
+      } else if (playerRef.current) {
+        playerRef.current.pause();
       }
-    };
+      setIsPlaying(false);
+      setSleepTimerMinutesState(null);
+      sleepTimerRef.current = null;
+    }, minutes * 60 * 1000);
   }, []);
 
-  useEffect(() => {
-    if (currentSong) {
-      const songForStorage = isDeviceSong(currentSong) 
-        ? {
-            id: currentSong.id,
-            title: currentSong.title,
-            artist: currentSong.artist,
-            album: currentSong.album,
-            duration: currentSong.duration,
-            artwork: currentSong.artwork,
-            uri: currentSong.uri,
-            isFromDevice: true,
-            filename: currentSong.filename,
-            modificationTime: currentSong.modificationTime,
-          }
-        : {
-            id: currentSong.id,
-            title: currentSong.title,
-            artist: currentSong.artist,
-            album: currentSong.album,
-            duration: currentSong.duration,
-            artwork: currentSong.artwork,
-            audioUrl: currentSong.audioUrl,
-            isFromDevice: false,
-          };
-      
-      savePlayerState({
-        currentSongId: currentSong.id,
-        isPlaying,
-        currentTime,
-        shuffle,
-        repeat,
-        queue: queue.map(s => s.id),
-        lastSong: songForStorage,
-        lastDuration: duration,
-      });
-    }
-  }, [currentSong, isPlaying, currentTime, shuffle, repeat, queue, duration]);
-
-  const progress = duration > 0 ? currentTime / duration : 0;
+  const value: PlayerContextType = {
+    currentSong,
+    isPlaying,
+    currentTime,
+    duration: duration || currentSong?.duration || 0,
+    shuffle,
+    repeat,
+    queue,
+    progress: (duration || currentSong?.duration) ? currentTime / (duration || currentSong?.duration || 1) : 0,
+    favorites,
+    recentlyPlayed,
+    mostPlayed,
+    sleepTimerMinutes,
+    isLoading,
+    isBuffering,
+    error,
+    isFavorite,
+    toggleFavorite: toggleFavoriteHandler,
+    playSong,
+    togglePlayPause,
+    handleNext,
+    handlePrevious,
+    seek,
+    toggleShuffle,
+    toggleRepeat,
+    removeFromQueue,
+    clearQueue,
+    setSleepTimer,
+    setQueue,
+  };
 
   return (
-    <PlayerContext.Provider
-      value={{
-        currentSong,
-        isPlaying,
-        currentTime,
-        duration,
-        shuffle,
-        repeat,
-        queue,
-        progress,
-        favorites,
-        recentlyPlayed,
-        mostPlayed,
-        sleepTimerMinutes,
-        isLoading,
-        isBuffering,
-        error,
-        isFavorite,
-        toggleFavorite,
-        playSong,
-        togglePlayPause,
-        handleNext,
-        handlePrevious,
-        seek,
-        toggleShuffle,
-        toggleRepeat,
-        removeFromQueue,
-        clearQueue,
-        setSleepTimer,
-        setQueue,
-      }}
-    >
+    <PlayerContext.Provider value={value}>
       {children}
     </PlayerContext.Provider>
   );
 }
 
-export function usePlayer() {
+export function usePlayerContext() {
   const context = useContext(PlayerContext);
-  if (!context) {
-    throw new Error('usePlayer must be used within a PlayerProvider');
+  if (context === undefined) {
+    throw new Error('usePlayerContext must be used within a PlayerProvider');
   }
   return context;
 }
-
-// Alias for backward compatibility
-export const usePlayerContext = usePlayer;

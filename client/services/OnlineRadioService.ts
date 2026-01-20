@@ -1,5 +1,3 @@
-import { Platform } from 'react-native';
-
 export interface OnlineRadioStation {
   stationuuid: string;
   name: string;
@@ -29,10 +27,8 @@ export interface OnlineRadioCountry {
 
 const RADIO_BROWSER_SERVERS = [
   'https://de1.api.radio-browser.info',
-  'https://nl1.api.radio-browser.info', 
+  'https://nl1.api.radio-browser.info',
   'https://at1.api.radio-browser.info',
-  'https://fi1.api.radio-browser.info',
-  'https://us1.api.radio-browser.info',
 ];
 
 const NOMINATIM_API = 'https://nominatim.openstreetmap.org';
@@ -41,7 +37,7 @@ const MAX_STATIONS_PER_COUNTRY = 250;
 const MIN_BITRATE = 96;
 const MIN_VOTES = 5;
 const VALID_CODECS = ['MP3', 'OGG', 'AAC'];
-const REQUEST_TIMEOUT = 15000;
+const REQUEST_TIMEOUT = 10000;
 
 let currentServerIndex = 0;
 
@@ -51,69 +47,49 @@ async function getRadioBrowserServer(): Promise<string> {
 
 function rotateServer(): void {
   currentServerIndex = (currentServerIndex + 1) % RADIO_BROWSER_SERVERS.length;
-  console.log(`[OnlineRadioService] Rotated to server index ${currentServerIndex}: ${RADIO_BROWSER_SERVERS[currentServerIndex % RADIO_BROWSER_SERVERS.length]}`);
 }
 
 async function fetchWithTimeout(url: string, timeout: number = REQUEST_TIMEOUT): Promise<Response> {
-  return new Promise((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      reject(new Error(`Request timeout after ${timeout}ms`));
-    }, timeout);
-    
-    fetch(url, {
-      method: 'GET',
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
+        'User-Agent': 'NewAudio360/1.0',
       },
-    })
-      .then((response) => {
-        clearTimeout(timeoutId);
-        resolve(response);
-      })
-      .catch((error) => {
-        clearTimeout(timeoutId);
-        reject(error);
-      });
-  });
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
-async function fetchFromRadioBrowser(endpoint: string, retries: number = 4): Promise<any> {
+async function fetchFromRadioBrowser(endpoint: string, retries: number = 2): Promise<any> {
   let lastError: Error | null = null;
   
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const server = RADIO_BROWSER_SERVERS[(currentServerIndex + attempt) % RADIO_BROWSER_SERVERS.length];
-    const url = `${server}${endpoint}`;
-    
     try {
-      console.log(`[OnlineRadioService] Attempt ${attempt + 1}/${retries + 1}: ${url}`);
+      const server = await getRadioBrowserServer();
+      const url = `${server}${endpoint}`;
+      console.log(`[OnlineRadioService] Fetching: ${url}`);
       
       const response = await fetchWithTimeout(url);
-      
-      console.log(`[OnlineRadioService] Response status: ${response.status}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      const data = await response.json();
-      console.log(`[OnlineRadioService] Success! Got ${Array.isArray(data) ? data.length : 'non-array'} items`);
-      
-      currentServerIndex = (currentServerIndex + attempt) % RADIO_BROWSER_SERVERS.length;
-      return data;
-    } catch (error: any) {
-      lastError = error;
-      const errorMessage = error?.message || String(error);
-      console.warn(`[OnlineRadioService] Attempt ${attempt + 1} failed for ${server}:`, errorMessage);
-      
-      if (errorMessage.includes('Network request failed')) {
-        console.log(`[OnlineRadioService] Network error detected, platform: ${Platform.OS}`);
-      }
+      return await response.json();
+    } catch (error) {
+      lastError = error as Error;
+      console.warn(`[OnlineRadioService] Attempt ${attempt + 1} failed:`, error);
+      rotateServer();
     }
   }
   
-  console.error(`[OnlineRadioService] All ${retries + 1} attempts failed. Last error:`, lastError?.message);
-  throw lastError || new Error('Failed to fetch from Radio Browser API after all retries');
+  throw lastError || new Error('Failed to fetch from Radio Browser API');
 }
 
 function filterAndSortStations(stations: OnlineRadioStation[]): OnlineRadioStation[] {

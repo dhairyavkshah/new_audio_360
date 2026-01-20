@@ -53,11 +53,11 @@ class EqualizerModule : Module() {
                 
                 promise.resolve(mapOf(
                     "success" to true,
-                    "numberOfBands" to 10,
+                    "numberOfBands" to 7,
                     "minLevel" to -1200,
                     "maxLevel" to 1200,
                     "bands" to bandInfo,
-                    "presets" to listOf("Flat", "Rock", "Pop", "Jazz", "Classical", "Electronic", "Hip-Hop", "Acoustic", "Bass+", "Clarity"),
+                    "presets" to listOf("Flat", "Bass Boost", "Treble Boost", "Vocal", "Electronic", "Rock", "Pop", "Jazz"),
                     "isSoftwareDSP" to true
                 ))
                 
@@ -108,26 +108,24 @@ class EqualizerModule : Module() {
                     return@Function mapOf("success" to false, "error" to "DSP not initialized")
                 }
                 
-                // Zero-sum EQ presets for maximum headroom
                 val presetGains = when (preset) {
-                    0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)  // Flat (Reference)
-                    1 -> listOf(0.4, 0.4, -0.3, -1.1, -1.1, -0.1, 0.9, 1.6, 0.7, -0.7)  // Rock (Balanced Punch)
-                    2 -> listOf(0.3, 0.3, -0.4, -0.5, -0.4, 0.7, 0.8, 0.7, -0.4, -0.7)  // Pop (Clean Vocals)
-                    3 -> listOf(-0.3, -0.3, -1.1, 1.0, 1.0, 0.3, -0.7, -0.3, -0.3, -0.9)  // Jazz (Warm & Natural)
-                    4 -> listOf(-0.8, -0.8, -0.4, -0.4, -0.2, 0.2, 0.5, 1.0, 0.9, 0.4)  // Classical (Wide & Open)
-                    5 -> listOf(1.3, 1.3, 0.5, -1.4, -1.4, -0.5, 0.5, 1.3, 0.5, -1.2)  // Electronic (Controlled Energy)
-                    6 -> listOf(2.4, 2.4, 0.7, -1.2, -0.6, 0.0, 0.4, -0.6, -1.4, -2.0)  // Hip-Hop (Deep Bass, Clear Mids)
-                    7 -> listOf(-0.6, -0.6, -1.2, 0.7, 1.5, 1.5, 0.7, -0.3, -0.3, -1.3)  // Acoustic (Natural & Intimate)
-                    8 -> listOf(2.5, 1.8, 1.0, -0.4, -0.9, -0.9, -0.9, -0.9, -0.4, -0.9)  // Bass+ (Party Mode - reduced for headroom)
-                    9 -> listOf(-1.9, -1.9, -0.9, -0.8, 0.3, 0.6, 1.3, 1.3, 1.9, 0.1)  // Clarity (Treble+)
-                    else -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+                    0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+                    1 -> listOf(4.0, 3.0, 2.0, 0.0, 0.0, 0.0, 0.0)
+                    2 -> listOf(0.0, 0.0, 0.0, 0.0, 2.0, 3.0, 4.0)
+                    3 -> listOf(-1.0, 0.0, 2.0, 3.0, 2.0, 0.0, -1.0)
+                    4 -> listOf(3.0, 2.0, 0.0, -1.0, 0.0, 2.0, 3.0)
+                    5 -> listOf(3.0, 2.0, 1.0, 0.0, 1.0, 2.0, 3.0)
+                    6 -> listOf(1.0, 2.0, 2.0, 1.0, 0.0, 1.0, 2.0)
+                    7 -> listOf(2.0, 1.0, 0.0, 1.0, 2.0, 2.0, 1.0)
+                    else -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
                 }
                 
                 dsp.setAllEqBandGains(presetGains)
-                dsp.setReverb(0f)
+                
+                // Reset stereo width to neutral (standard stereo) for EQ presets
+                // Professional standard: EQ presets only affect frequency response, not stereo field
+                // Matches Bose, Sony, Yamaha behavior
                 dsp.setStereoWidth(0f)
-                dsp.setBassBoost(0f)
-                dsp.setTrebleBoost(0f)
                 
                 return@Function mapOf("success" to true, "preset" to preset)
             } catch (e: Exception) {
@@ -148,10 +146,9 @@ class EqualizerModule : Module() {
                 
                 val gains = levels.map { it.toDouble() / 100.0 }
                 dsp.setAllEqBandGains(gains)
-                dsp.setReverb(0f)
+                
+                // Reset stereo width to neutral (standard stereo) for custom EQ
                 dsp.setStereoWidth(0f)
-                dsp.setBassBoost(0f)
-                dsp.setTrebleBoost(0f)
                 
                 return@Function mapOf("success" to true)
             } catch (e: Exception) {
@@ -169,7 +166,7 @@ class EqualizerModule : Module() {
             val dsp = getDspProcessor()
             return@Function mapOf(
                 "enabled" to (dsp?.getIsEnabled() ?: false),
-                "numberOfBands" to 10,
+                "numberOfBands" to 7,
                 "currentPreset" to -1,
                 "minLevel" to -1200,
                 "maxLevel" to 1200,
@@ -185,10 +182,9 @@ class EqualizerModule : Module() {
                 }
                 
                 dsp.setAllEqBandGains(bands)
-                dsp.setReverb(0f)
+                
+                // Reset stereo width to neutral (standard stereo) for EQ-only mode
                 dsp.setStereoWidth(0f)
-                dsp.setBassBoost(0f)
-                dsp.setTrebleBoost(0f)
                 
                 return@Function mapOf("success" to true)
             } catch (e: Exception) {
@@ -202,6 +198,7 @@ class EqualizerModule : Module() {
                 if (dsp == null) {
                     return@Function mapOf("success" to false, "error" to "DSP not initialized")
                 }
+                
                 dsp.setBassBoost(gain.toFloat())
                 return@Function mapOf("success" to true, "gain" to gain)
             } catch (e: Exception) {
@@ -215,81 +212,12 @@ class EqualizerModule : Module() {
                 if (dsp == null) {
                     return@Function mapOf("success" to false, "error" to "DSP not initialized")
                 }
+                
                 dsp.setTrebleBoost(gain.toFloat())
                 return@Function mapOf("success" to true, "gain" to gain)
             } catch (e: Exception) {
                 return@Function mapOf("success" to false, "error" to e.message)
             }
-        }
-        
-        Function("setLfeEnabled") { enabled: Boolean ->
-            try {
-                val dsp = getDspProcessor()
-                if (dsp == null) {
-                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
-                }
-                dsp.setLfeEnabled(enabled)
-                return@Function mapOf("success" to true, "enabled" to enabled)
-            } catch (e: Exception) {
-                return@Function mapOf("success" to false, "error" to e.message)
-            }
-        }
-        
-        Function("setLfeCrossoverFrequency") { freq: Double ->
-            try {
-                val dsp = getDspProcessor()
-                if (dsp == null) {
-                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
-                }
-                dsp.setLfeCrossoverFrequency(freq.toFloat())
-                return@Function mapOf("success" to true, "frequency" to freq)
-            } catch (e: Exception) {
-                return@Function mapOf("success" to false, "error" to e.message)
-            }
-        }
-        
-        Function("setLfeHeadroom") { headroom: Double ->
-            try {
-                val dsp = getDspProcessor()
-                if (dsp == null) {
-                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
-                }
-                dsp.setLfeHeadroom(headroom.toFloat())
-                return@Function mapOf("success" to true, "headroom" to headroom)
-            } catch (e: Exception) {
-                return@Function mapOf("success" to false, "error" to e.message)
-            }
-        }
-        
-        Function("setLfeGain") { gain: Double ->
-            try {
-                val dsp = getDspProcessor()
-                if (dsp == null) {
-                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
-                }
-                dsp.setLfeGain(gain.toFloat())
-                return@Function mapOf("success" to true, "gain" to gain)
-            } catch (e: Exception) {
-                return@Function mapOf("success" to false, "error" to e.message)
-            }
-        }
-        
-        Function("getLfeSettings") {
-            val dsp = getDspProcessor()
-            if (dsp == null) {
-                return@Function mapOf(
-                    "enabled" to false,
-                    "crossover" to 80.0,
-                    "headroom" to 6.0,
-                    "gain" to 0.0
-                )
-            }
-            return@Function mapOf(
-                "enabled" to dsp.getLfeEnabled(),
-                "crossover" to dsp.getLfeCrossoverFrequency().toDouble(),
-                "headroom" to dsp.getLfeHeadroom().toDouble(),
-                "gain" to dsp.getLfeGain().toDouble()
-            )
         }
         
         AsyncFunction("release") { promise: Promise ->

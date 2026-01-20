@@ -1,59 +1,66 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, ReactNode } from 'react';
-import { Platform } from 'react-native';
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
 import { getEQPreset, getSoundMode } from '@/lib/storage';
 import { 
   ImmersiveModeEngineModule, 
   IMMERSIVE_MODE_INFO, 
   ImmersiveMode, 
   ImmersiveModeSettings,
-  ImmersiveModeInfo,
-  EqualizerModule,
-  PlaybackEngineModule
+  ImmersiveModeInfo
 } from '../../modules/audio-effects';
 import { AudioSessionSource } from '@/services/NativeEffectsManager';
 import { WebAudioEffectsEngine } from '@/services/WebAudioEffectsEngine';
 
-// Preset name to index mapping for Android EqualizerModule.usePreset()
-const PRESET_INDEX: Record<string, number> = {
-  Flat: 0, Rock: 1, Pop: 2, Jazz: 3, Classical: 4,
-  Electronic: 5, 'Hip-Hop': 6, Acoustic: 7, 'Bass+': 8, Clarity: 9
-};
-
-// Immersive mode name mapping for Android ImmersiveModeEngineModule
-const IMMERSIVE_MODE_ANDROID: Record<ImmersiveMode, string> = {
-  off: 'off', music: 'music', '360_reality': '360_reality',
-  gaming: 'gaming', podcast: 'podcast', movie: 'movie', sports: 'sports', custom: 'off'
+export type EQBands = {
+  sub: number;
+  bass: number;
+  lowMid: number;
+  mid: number;
+  highMid: number;
+  treble: number;
+  brilliance: number;
 };
 
 export type SoundLabMode = 'equalizer' | 'immersive' | 'off';
 
 export { ImmersiveMode, ImmersiveModeSettings, ImmersiveModeInfo };
 
-// Zero-sum EQ presets for maximum headroom
-const EQ_PRESETS: Record<string, number[]> = {
-  Flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  Rock: [0.4, 0.4, -0.3, -1.1, -1.1, -0.1, 0.9, 1.6, 0.7, -0.7],
-  Pop: [0.3, 0.3, -0.4, -0.5, -0.4, 0.7, 0.8, 0.7, -0.4, -0.7],
-  Jazz: [-0.3, -0.3, -1.1, 1.0, 1.0, 0.3, -0.7, -0.3, -0.3, -0.9],
-  Classical: [-0.8, -0.8, -0.4, -0.4, -0.2, 0.2, 0.5, 1.0, 0.9, 0.4],
-  Electronic: [1.3, 1.3, 0.5, -1.4, -1.4, -0.5, 0.5, 1.3, 0.5, -1.2],
-  'Hip-Hop': [2.4, 2.4, 0.7, -1.2, -0.6, 0.0, 0.4, -0.6, -1.4, -2.0],
-  Acoustic: [-0.6, -0.6, -1.2, 0.7, 1.5, 1.5, 0.7, -0.3, -0.3, -1.3],
-  'Bass+': [2.5, 1.8, 1.0, -0.4, -0.9, -0.9, -0.9, -0.9, -0.4, -0.9],
-  Clarity: [-1.9, -1.9, -0.9, -0.8, 0.3, 0.6, 1.3, 1.3, 1.9, 0.1],
+const EQ_PRESETS: Record<string, EQBands> = {
+  Flat: { sub: 0, bass: 0, lowMid: 0, mid: 0, highMid: 0, treble: 0, brilliance: 0 },
+  Rock: { sub: +3, bass: +2, lowMid: -2, mid: -3, highMid: +1, treble: +3, brilliance: -4 },
+  Pop: { sub: +2, bass: +2, lowMid: -1, mid: -2, highMid: +1, treble: +2, brilliance: -4 },
+  Jazz: { sub: 0, bass: +2, lowMid: +1, mid: +1, highMid: -2, treble: -1, brilliance: -1 },
+  Classical: { sub: -1, bass: 0, lowMid: -1, mid: +2, highMid: +1, treble: +2, brilliance: -3 },
+  Electronic: { sub: +4, bass: +3, lowMid: -2, mid: -3, highMid: +1, treble: +3, brilliance: -6 },
+  'Hip-Hop': { sub: +4, bass: +3, lowMid: -2, mid: -3, highMid: +1, treble: +1, brilliance: -4 },
+  Acoustic: { sub: -2, bass: -1, lowMid: +2, mid: +2, highMid: +1, treble: -1, brilliance: -1 },
 };
 
-const EQ_FREQUENCIES = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
+const EQ_FREQUENCIES = {
+  sub: 32,
+  bass: 64,
+  lowMid: 250,
+  mid: 1000,
+  highMid: 4000,
+  treble: 8000,
+  brilliance: 16000,
+};
 
 const VALID_IMMERSIVE_MODES: ImmersiveMode[] = ['off', 'music', '360_reality', 'gaming', 'podcast', 'movie', 'sports'];
+
+interface ImmersiveEffectSettings {
+  reverb: number;
+  delay: number;
+  stereoWidth: number;
+}
 
 interface SoundLabContextType {
   mode: SoundLabMode;
   eqPresetName: string;
   immersiveModeName: ImmersiveMode;
   immersiveModeSettings: ImmersiveModeSettings | null;
-  eqBands: number[];
-  frequencies: number[];
+  immersiveEffect: ImmersiveEffectSettings;
+  eqBands: EQBands;
+  frequencies: typeof EQ_FREQUENCIES;
   availableImmersiveModes: ImmersiveModeInfo[];
   audioSource: AudioSessionSource;
   isEffectsActive: boolean;
@@ -79,66 +86,14 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
   const [webAudioInitialized, setWebAudioInitialized] = useState(false);
   const [bassBoost, setBassBoostState] = useState(0);
   const [trebleBoost, setTrebleBoostState] = useState(0);
-  
-  const immersiveModeAttachedRef = useRef(false);
-  
-  const ensureImmersiveModeAttached = useCallback(async (): Promise<boolean> => {
-    if (Platform.OS !== 'android' || !ImmersiveModeEngineModule.isAvailable()) {
-      return false;
-    }
-    
-    if (immersiveModeAttachedRef.current) {
-      return true;
-    }
-    
-    try {
-      const currentMode = ImmersiveModeEngineModule.getCurrentMode();
-      if (currentMode.isAttached) {
-        immersiveModeAttachedRef.current = true;
-        return true;
-      }
-      
-      const status = await PlaybackEngineModule.getStatus();
-      const sessionId = status.audioSessionId || 0;
-      
-      const attachResult = await ImmersiveModeEngineModule.attach(sessionId);
-      if (attachResult.success) {
-        immersiveModeAttachedRef.current = true;
-        return true;
-      }
-      console.warn('[SoundLab] Failed to attach ImmersiveModeEngine:', attachResult.error);
-      return false;
-    } catch (error) {
-      console.warn('[SoundLab] Error attaching ImmersiveModeEngine:', error);
-      return false;
-    }
-  }, []);
 
   const setBassBoost = useCallback((value: number) => {
-    const clampedValue = Math.max(-5, Math.min(5, value));
-    setBassBoostState(clampedValue);
-    // Web DSP
-    if (Platform.OS === 'web' && webAudioInitialized) {
-      WebAudioEffectsEngine.setBassBoost(clampedValue);
-    }
-    // Android DSP
-    if (Platform.OS === 'android' && EqualizerModule.isAvailable()) {
-      EqualizerModule.setBassBoost(clampedValue);
-    }
-  }, [webAudioInitialized]);
+    setBassBoostState(Math.max(-5, Math.min(5, value)));
+  }, []);
 
   const setTrebleBoost = useCallback((value: number) => {
-    const clampedValue = Math.max(-5, Math.min(5, value));
-    setTrebleBoostState(clampedValue);
-    // Web DSP
-    if (Platform.OS === 'web' && webAudioInitialized) {
-      WebAudioEffectsEngine.setTrebleBoost(clampedValue);
-    }
-    // Android DSP
-    if (Platform.OS === 'android' && EqualizerModule.isAvailable()) {
-      EqualizerModule.setTrebleBoost(clampedValue);
-    }
-  }, [webAudioInitialized]);
+    setTrebleBoostState(Math.max(-5, Math.min(5, value)));
+  }, []);
 
   const eqBands = EQ_PRESETS[eqPresetName] || EQ_PRESETS.Flat;
 
@@ -153,95 +108,39 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
     };
   }, [webAudioInitialized]);
 
+  // Immersive modes now only use zero-sum EQ - no spatial effects
+  const immersiveEffect: ImmersiveEffectSettings = useMemo(() => {
+    return { reverb: 0, delay: 0, stereoWidth: 1 };
+  }, []);
+
   const getImmersiveModeInfo = useCallback((modeId: ImmersiveMode) => {
     return IMMERSIVE_MODE_INFO[modeId] || IMMERSIVE_MODE_INFO.off;
   }, []);
 
-  const applyEffectsToEngine = useCallback(async (currentMode: SoundLabMode, currentEqBands: number[], currentImmersiveMode: ImmersiveMode, presetName: string) => {
-    // Web DSP: Apply via WebAudioEffectsEngine (Web Audio API)
-    if (Platform.OS === 'web' && webAudioInitialized) {
-      if (currentMode === 'equalizer') {
-        WebAudioEffectsEngine.applyEQ(currentEqBands);
-      } else if (currentMode === 'immersive' && currentImmersiveMode !== 'off') {
-        WebAudioEffectsEngine.applyImmersiveMode(currentImmersiveMode);
-      } else {
-        WebAudioEffectsEngine.resetEQ();
-      }
-    }
+  const applyEffectsToEngine = useCallback((currentMode: SoundLabMode, currentEqBands: EQBands, currentImmersiveMode: ImmersiveMode) => {
+    if (!webAudioInitialized) return;
     
-    // Android DSP: Apply via native modules (SoftwareDSPAudioProcessor)
-    if (Platform.OS === 'android') {
-      if (currentMode === 'equalizer') {
-        // First reset immersive mode to clear bass/treble/virtualizer settings
-        if (ImmersiveModeEngineModule.isAvailable() && immersiveModeAttachedRef.current) {
-          try {
-            await ImmersiveModeEngineModule.setMode('off');
-          } catch (err) {
-            // Ignore errors - we're just resetting
-          }
-        }
-        // Then apply the EQ preset
-        const presetIndex = PRESET_INDEX[presetName] ?? 0;
-        if (EqualizerModule.isAvailable()) {
-          EqualizerModule.usePreset(presetIndex);
-        }
-      } else if (currentMode === 'immersive' && currentImmersiveMode !== 'off') {
-        if (ImmersiveModeEngineModule.isAvailable()) {
-          const attached = await ensureImmersiveModeAttached();
-          if (attached) {
-            try {
-              await ImmersiveModeEngineModule.setMode(IMMERSIVE_MODE_ANDROID[currentImmersiveMode] as ImmersiveMode);
-            } catch (err) {
-              console.warn('[SoundLab] Failed to set immersive mode:', err);
-            }
-          }
-        }
-      } else {
-        if (EqualizerModule.isAvailable()) {
-          EqualizerModule.usePreset(0); // Flat
-        }
-      }
+    if (currentMode === 'equalizer') {
+      WebAudioEffectsEngine.applySevenBandEQ(currentEqBands);
+    } else if (currentMode === 'immersive' && currentImmersiveMode !== 'off') {
+      WebAudioEffectsEngine.applyImmersiveMode(currentImmersiveMode);
+    } else {
+      WebAudioEffectsEngine.resetEQ();
     }
-  }, [webAudioInitialized, ensureImmersiveModeAttached]);
+  }, [webAudioInitialized]);
 
   const setImmersiveMode = useCallback(async (newMode: ImmersiveMode): Promise<{ success: boolean; error?: string }> => {
     try {
       if (newMode !== 'off') {
-        // Web DSP
-        if (Platform.OS === 'web' && webAudioInitialized) {
+        if (webAudioInitialized) {
           WebAudioEffectsEngine.applyImmersiveMode(newMode);
-        }
-        // Android DSP
-        if (Platform.OS === 'android' && ImmersiveModeEngineModule.isAvailable()) {
-          const attached = await ensureImmersiveModeAttached();
-          if (attached) {
-            const result = await ImmersiveModeEngineModule.setMode(IMMERSIVE_MODE_ANDROID[newMode] as ImmersiveMode);
-            if (!result.success) {
-              return { success: false, error: result.error || 'Failed to set immersive mode' };
-            }
-          } else {
-            return { success: false, error: 'Could not attach immersive mode engine' };
-          }
         }
         setImmersiveModeName(newMode);
         setMode('immersive');
       } else {
-        // Web DSP
-        if (Platform.OS === 'web' && webAudioInitialized) {
-          WebAudioEffectsEngine.applyEQ(EQ_PRESETS.Flat);
-        }
-        // Android DSP: Turn off immersive mode by resetting to flat EQ
-        if (Platform.OS === 'android') {
-          if (ImmersiveModeEngineModule.isAvailable() && immersiveModeAttachedRef.current) {
-            try {
-              await ImmersiveModeEngineModule.setMode('off');
-            } catch (err) {
-              console.warn('[SoundLab] Failed to turn off immersive mode:', err);
-            }
-          }
-          if (EqualizerModule.isAvailable()) {
-            EqualizerModule.usePreset(0); // Flat
-          }
+        // When turning off immersive mode, switch to Flat EQ preset by default
+        if (webAudioInitialized) {
+          WebAudioEffectsEngine.applySevenBandEQ(EQ_PRESETS.Flat);
         }
         setImmersiveModeName('off');
         setEqPresetName('Flat');
@@ -251,7 +150,7 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       return { success: false, error: String(error) };
     }
-  }, [webAudioInitialized, ensureImmersiveModeAttached]);
+  }, [webAudioInitialized]);
 
   const refreshSettings = useCallback(async () => {
     try {
@@ -271,16 +170,18 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
         setImmersiveModeName(soundMode as ImmersiveMode);
         setMode('immersive');
       } else {
+        // Default to Flat EQ preset
         setEqPresetName('Flat');
         setMode('equalizer');
       }
     } catch (error) {
+      // Silent error handling
     }
   }, [webAudioInitialized]);
 
   useEffect(() => {
-    applyEffectsToEngine(mode, eqBands, immersiveModeName, eqPresetName);
-  }, [mode, eqBands, immersiveModeName, eqPresetName, applyEffectsToEngine]);
+    applyEffectsToEngine(mode, eqBands, immersiveModeName);
+  }, [mode, eqBands, immersiveModeName, applyEffectsToEngine]);
 
   useEffect(() => {
     refreshSettings();
@@ -294,6 +195,7 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
       eqPresetName,
       immersiveModeName,
       immersiveModeSettings,
+      immersiveEffect,
       eqBands,
       frequencies: EQ_FREQUENCIES,
       availableImmersiveModes,

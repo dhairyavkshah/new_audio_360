@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,7 +13,6 @@ import {
 } from '@/lib/storage';
 import { getSessionWebFolders } from '@/lib/webFolderCache';
 import { MediaStoreScannerModule } from 'audio-effects';
-import { mediaLibraryEvents } from '@/lib/mediaLibraryEvents';
 
 const HIDDEN_SONGS_KEY = '@new_audio_360_hidden_songs';
 const ONBOARDING_COMPLETE_KEY = '@new_audio_360_onboarding_complete';
@@ -74,7 +73,6 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
   const [usingMockData, setUsingMockData] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [selectedFolders, setSelectedFoldersState] = useState<string[]>([]);
-  const previousSongIdsRef = useRef<Set<string>>(new Set());
 
   const loadHiddenSongs = useCallback(async () => {
     try {
@@ -464,51 +462,6 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
       refreshSongs();
     }
   }, [initialized, isOnboardingComplete]);
-
-  useEffect(() => {
-    if (!initialized) return;
-
-    const currentSongIds = new Set(songs.map(s => s.id));
-    const previousSongIds = previousSongIdsRef.current;
-
-    if (previousSongIds.size === 0 && currentSongIds.size > 0) {
-      previousSongIdsRef.current = currentSongIds;
-      return;
-    }
-
-    const removedIds: string[] = [];
-    const addedIds: string[] = [];
-
-    previousSongIds.forEach(id => {
-      if (!currentSongIds.has(id)) {
-        removedIds.push(id);
-      }
-    });
-
-    currentSongIds.forEach(id => {
-      if (!previousSongIds.has(id)) {
-        addedIds.push(id);
-      }
-    });
-
-    const allSongIds = Array.from(currentSongIds);
-
-    if (removedIds.length > 0) {
-      console.log('[MediaLibrary] Songs removed:', removedIds);
-      mediaLibraryEvents.emitSongRemoved(removedIds, allSongIds);
-    }
-
-    if (addedIds.length > 0) {
-      console.log('[MediaLibrary] Songs added:', addedIds);
-      mediaLibraryEvents.emitSongsAdded(addedIds, allSongIds);
-    }
-
-    if (removedIds.length > 0 || addedIds.length > 0) {
-      mediaLibraryEvents.emitSongsChanged(allSongIds);
-    }
-
-    previousSongIdsRef.current = currentSongIds;
-  }, [songs, initialized]);
 
   const value: MediaLibraryContextValue = {
     songs,

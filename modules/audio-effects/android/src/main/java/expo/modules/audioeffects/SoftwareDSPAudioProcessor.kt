@@ -5,20 +5,19 @@ import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.common.audio.AudioProcessor.AudioFormat
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import kotlin.math.cos
-import kotlin.math.pow
-import kotlin.math.sin
 
 class SoftwareDSPAudioProcessor : AudioProcessor {
     companion object {
         const val DB_PER_UNIT = 2.4f
         const val MAX_DB = 12f
         const val DEFAULT_Q = 1.4f
-        const val BASS_FREQUENCY = 150f
-        const val TREBLE_FREQUENCY = 6000f
+        const val SHELF_Q = 0.707f
         
-        private val EQ_FREQUENCIES = floatArrayOf(60f, 170f, 310f, 600f, 1000f, 3000f, 6000f, 12000f, 14000f, 16000f)
-        private val EQ_NAMES = arrayOf("Sub Bass", "Bass", "Low Bass", "Low Mid", "Mid", "Upper Mid", "Presence", "Brilliance", "Air", "Ultra High")
+        private val EQ_FREQUENCIES = floatArrayOf(32f, 64f, 125f, 500f, 2000f, 8000f, 16000f)
+        private val EQ_NAMES = arrayOf("Sub", "Bass", "Low-Mid", "Mid", "High-Mid", "Treble", "Brilliance")
+        
+        const val BASS_SHELF_FREQ = 150f
+        const val TREBLE_SHELF_FREQ = 6000f
         
         @Volatile
         private var sharedInstance: SoftwareDSPAudioProcessor? = null
@@ -36,64 +35,24 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private var isActive = false
     private var inputEnded = false
 
-    private val eqFilters = Array(10) { i ->
+    private val eqFilters = Array(7) { i ->
         BiquadFilter(FilterType.PEAKING, EQ_FREQUENCIES[i], 0f, DEFAULT_Q, 44100f)
     }
-    
-    private val bassBoostFilter = BiquadFilter(FilterType.LOWSHELF, BASS_FREQUENCY, 0f, 0.707f, 44100f)
-    private val trebleBoostFilter = BiquadFilter(FilterType.HIGHSHELF, TREBLE_FREQUENCY, 0f, 0.707f, 44100f)
-    
+    private val bassShelfFilter = BiquadFilter(FilterType.LOWSHELF, BASS_SHELF_FREQ, 0f, SHELF_Q, 44100f)
+    private val trebleShelfFilter = BiquadFilter(FilterType.HIGHSHELF, TREBLE_SHELF_FREQ, 0f, SHELF_Q, 44100f)
     private val limiter = Limiter(-1f, 20f, 1f, 100f, 44100f)
-    
-    private val lfeFilter = BiquadFilter(FilterType.LOWPASS, 80f, 0f, 0.707f, 44100f)
 
-    private val eqGains = FloatArray(10) { 0f }
-    private var bassGainDb = 0f
-    private var trebleGainDb = 0f
-    private var safetyGainReduction = 0f
-    private var stereoWidth = 0f
+    private val eqGains = FloatArray(7) { 0f }
+    private var bassGain = 0f
+    private var trebleGain = 0f
+    private var stereoWidth = 0f  // -1.0 = mono, 0.0 = original, 1.0 = max wide (200%)
     private var isEnabled = true
-    
-    private var lfeEnabled = false
-    private var lfeCrossoverFrequency = 80f
-    private var lfeHeadroom = 6f
-    private var lfeGain = 0f
-    
-    private var reverbWetMix = 0f
-    private var currentSampleRate = 44100f
-    
-    private val REVERB_DELAY_TIMES = floatArrayOf(0.023f, 0.041f, 0.067f, 0.089f)
-    private val REVERB_FEEDBACK_GAINS = floatArrayOf(0.4f, 0.35f, 0.3f, 0.25f)
-    private val REVERB_LOWPASS_FREQS = floatArrayOf(4000f, 3500f, 3000f, 2500f)
-    
-    private var reverbDelayBuffersL = Array(4) { FloatArray(0) }
-    private var reverbDelayBuffersR = Array(4) { FloatArray(0) }
-    private var reverbDelayIndices = IntArray(4) { 0 }
-    
-    private var reverbLowpassStatesL = FloatArray(4) { 0f }
-    private var reverbLowpassStatesR = FloatArray(4) { 0f }
-    private var reverbLowpassCoeffs = FloatArray(4) { 0f }
 
     private var outputBuffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
     private var inputBuffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
 
     init {
         sharedInstance = this
-        initializeReverbBuffers(44100f)
-    }
-
-    private fun initializeReverbBuffers(sampleRate: Float) {
-        currentSampleRate = sampleRate
-        
-        for (i in 0..3) {
-            val delaySamples = (REVERB_DELAY_TIMES[i] * sampleRate).toInt()
-            reverbDelayBuffersL[i] = FloatArray(delaySamples)
-            reverbDelayBuffersR[i] = FloatArray(delaySamples)
-            reverbDelayIndices[i] = 0
-            
-            val omega = 2.0 * Math.PI * REVERB_LOWPASS_FREQS[i] / sampleRate
-            reverbLowpassCoeffs[i] = (omega / (1.0 + omega)).toFloat()
-        }
     }
 
     override fun configure(inputAudioFormat: AudioFormat): AudioFormat {
@@ -107,16 +66,11 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         eqFilters.forEachIndexed { i, filter ->
             filter.configure(FilterType.PEAKING, EQ_FREQUENCIES[i], eqGains[i], DEFAULT_Q, sampleRate)
         }
-        
-        bassBoostFilter.configure(FilterType.LOWSHELF, BASS_FREQUENCY, bassGainDb, 0.707f, sampleRate)
-        trebleBoostFilter.configure(FilterType.HIGHSHELF, TREBLE_FREQUENCY, trebleGainDb, 0.707f, sampleRate)
-        
-        lfeFilter.configure(FilterType.LOWPASS, lfeCrossoverFrequency, 0f, 0.707f, sampleRate)
-        
+        bassShelfFilter.configure(FilterType.LOWSHELF, BASS_SHELF_FREQ, bassGain, SHELF_Q, sampleRate)
+        trebleShelfFilter.configure(FilterType.HIGHSHELF, TREBLE_SHELF_FREQ, trebleGain, SHELF_Q, sampleRate)
         limiter.setSampleRate(sampleRate)
-        
-        initializeReverbBuffers(sampleRate)
 
+        // Set isActive immediately when format is configured
         inputFormat = inputAudioFormat
         outputFormat = inputAudioFormat
         isActive = true
@@ -133,13 +87,14 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         }
 
         if (!isEnabled) {
+            // Passthrough mode - copy input data to output buffer
             val remaining = buffer.remaining()
             if (outputBuffer.capacity() < remaining) {
                 outputBuffer = ByteBuffer.allocateDirect(remaining).order(ByteOrder.nativeOrder())
             }
             outputBuffer.clear()
-            outputBuffer.put(buffer)
-            outputBuffer.flip()
+            outputBuffer.put(buffer)  // This copies data AND advances both buffers
+            outputBuffer.flip()       // Prepare for reading: position=0, limit=bytes written
             return
         }
 
@@ -163,37 +118,28 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
                 filter.processBuffer(samples, channelCount)
             }
         }
-        
-        if (!bassBoostFilter.isPassthrough()) {
-            bassBoostFilter.processBuffer(samples, channelCount)
-        }
-        
-        if (!trebleBoostFilter.isPassthrough()) {
-            trebleBoostFilter.processBuffer(samples, channelCount)
-        }
-        
-        if (lfeEnabled && channelCount == 2) {
-            processLfe(samples)
-        }
-        
-        if (safetyGainReduction < 0f) {
-            applySafetyGainReduction(samples)
+
+        if (bassGain != 0f) {
+            bassShelfFilter.processBuffer(samples, channelCount)
         }
 
+        if (trebleGain != 0f) {
+            trebleShelfFilter.processBuffer(samples, channelCount)
+        }
+
+        // Apply stereo width processing (mid-side technique)
+        // Only process if stereo (2 channels) and width is not 0 (original)
         if (channelCount == 2 && stereoWidth != 0f) {
             processStereoWidth(samples)
         }
 
-        if (reverbWetMix > 0f && channelCount == 2) {
-            processReverb(samples)
-        }
-
         limiter.processBuffer(samples, channelCount)
 
+        // Write processed samples to output buffer with correct position/limit
         outputBuffer.clear()
         outputBuffer.asShortBuffer().put(samples)
-        outputBuffer.position(samples.size * 2)
-        outputBuffer.flip()
+        outputBuffer.position(samples.size * 2)  // Advance by bytes written
+        outputBuffer.flip()  // Sets limit = position, position = 0
     }
 
     override fun queueEndOfStream() {
@@ -214,9 +160,9 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         inputEnded = false
         
         eqFilters.forEach { it.resetAllChannels() }
-        lfeFilter.resetAllChannels()
+        bassShelfFilter.resetAllChannels()
+        trebleShelfFilter.resetAllChannels()
         limiter.reset()
-        resetReverbBuffers()
 
         if (pendingFormat != AudioFormat.NOT_SET) {
             inputFormat = pendingFormat
@@ -234,220 +180,80 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     }
 
     fun setEqBandGain(band: Int, gainUnits: Float) {
-        if (band in 0..9) {
+        if (band in 0..6) {
             val gainDb = (gainUnits * DB_PER_UNIT).coerceIn(-MAX_DB, MAX_DB)
             eqGains[band] = gainDb
             eqFilters[band].setGain(gainDb)
-            recalculateSafetyGain()
         }
     }
 
     fun setAllEqBandGains(gains: List<Double>) {
         gains.forEachIndexed { index, gain ->
-            if (index < 10) {
-                val gainDb = (gain.toFloat() * DB_PER_UNIT).coerceIn(-MAX_DB, MAX_DB)
-                eqGains[index] = gainDb
-                eqFilters[index].setGain(gainDb)
+            if (index < 7) {
+                setEqBandGain(index, gain.toFloat())
             }
         }
-        recalculateSafetyGain()
     }
-    
+
     fun setBassBoost(gainUnits: Float) {
         val gainDb = (gainUnits * DB_PER_UNIT).coerceIn(-MAX_DB, MAX_DB)
-        bassGainDb = gainDb
-        bassBoostFilter.setGain(gainDb)
-        recalculateSafetyGain()
+        bassGain = gainDb
+        bassShelfFilter.setGain(gainDb)
     }
-    
+
     fun setTrebleBoost(gainUnits: Float) {
         val gainDb = (gainUnits * DB_PER_UNIT).coerceIn(-MAX_DB, MAX_DB)
-        trebleGainDb = gainDb
-        trebleBoostFilter.setGain(gainDb)
-        recalculateSafetyGain()
-    }
-    
-    fun getBassGain(): Float = bassGainDb
-    
-    fun getTrebleGain(): Float = trebleGainDb
-    
-    fun getSafetyGainReduction(): Float = safetyGainReduction
-    
-    fun setLfeEnabled(enabled: Boolean) {
-        lfeEnabled = enabled
-        recalculateSafetyGain()
-    }
-    
-    fun setLfeCrossoverFrequency(freq: Float) {
-        lfeCrossoverFrequency = freq.coerceIn(20f, 200f)
-        lfeFilter.configure(FilterType.LOWPASS, lfeCrossoverFrequency, 0f, 0.707f, currentSampleRate)
-    }
-    
-    fun setLfeHeadroom(headroom: Float) {
-        lfeHeadroom = headroom.coerceIn(0f, 18f)
-        recalculateSafetyGain()
-    }
-    
-    fun setLfeGain(gain: Float) {
-        lfeGain = gain.coerceIn(-12f, 12f)
-    }
-    
-    fun getLfeEnabled(): Boolean = lfeEnabled
-    fun getLfeCrossoverFrequency(): Float = lfeCrossoverFrequency
-    fun getLfeHeadroom(): Float = lfeHeadroom
-    fun getLfeGain(): Float = lfeGain
-    
-    private fun recalculateSafetyGain() {
-        val lowFreqBands = eqGains.slice(0..2)
-        val midFreqBands = eqGains.slice(3..5)
-        val highFreqBands = eqGains.slice(6..9)
-        
-        // Use sum of positive gains with diminishing returns factor
-        // Adjacent boosted bands combine their energy, causing more potential clipping
-        val lowPositiveSum = lowFreqBands.filter { it > 0 }.sum()
-        val midPositiveSum = midFreqBands.filter { it > 0 }.sum()
-        val highPositiveSum = highFreqBands.filter { it > 0 }.sum()
-        
-        // Apply a factor to account for cumulative energy (not full sum, but significant portion)
-        // Multiple bands boosting together compounds the effect
-        val lowCumulativeFactor = if (lowFreqBands.count { it > 0 } > 1) 0.5f else 0f
-        val midCumulativeFactor = if (midFreqBands.count { it > 0 } > 1) 0.4f else 0f
-        val highCumulativeFactor = if (highFreqBands.count { it > 0 } > 1) 0.35f else 0f
-        
-        val maxLowEq = (lowFreqBands.maxOrNull() ?: 0f) + (lowPositiveSum * lowCumulativeFactor)
-        val maxMidEq = (midFreqBands.maxOrNull() ?: 0f) + (midPositiveSum * midCumulativeFactor)
-        val maxHighEq = (highFreqBands.maxOrNull() ?: 0f) + (highPositiveSum * highCumulativeFactor)
-        
-        val lowFreqTotal = maxLowEq + kotlin.math.max(0f, bassGainDb)
-        val highFreqTotal = maxHighEq + kotlin.math.max(0f, trebleGainDb)
-        val midFreqTotal = maxMidEq
-        
-        // Low frequencies get extra headroom when LFE is enabled
-        val lowFreqMaxDb = if (lfeEnabled) MAX_DB + lfeHeadroom else MAX_DB
-        // Mid/high frequencies always use normal headroom
-        val midHighMaxDb = MAX_DB
-        
-        // Calculate how much each frequency range exceeds its limit
-        val lowExcess = if (lowFreqTotal > lowFreqMaxDb) lowFreqTotal - lowFreqMaxDb else 0f
-        val midExcess = if (midFreqTotal > midHighMaxDb) midFreqTotal - midHighMaxDb else 0f
-        val highExcess = if (highFreqTotal > midHighMaxDb) highFreqTotal - midHighMaxDb else 0f
-        
-        // Safety gain is the maximum excess across all ranges
-        val maxExcess = kotlin.math.max(kotlin.math.max(lowExcess, midExcess), highExcess)
-        
-        safetyGainReduction = if (maxExcess > 0f) -maxExcess else 0f
-        
-        android.util.Log.d("SoftwareDSP", "Safety gain: lowEQ=$maxLowEq+bass=$bassGainDb (cumul=${lowPositiveSum * lowCumulativeFactor}), highEQ=$maxHighEq+treble=$trebleGainDb, lfeEnabled=$lfeEnabled, reduction=$safetyGainReduction dB")
-    }
-    
-    private fun applySafetyGainReduction(samples: ShortArray) {
-        val linearGain = 10.0.pow(safetyGainReduction / 20.0).toFloat()
-        for (i in samples.indices) {
-            val sample = samples[i].toFloat() * linearGain
-            samples[i] = sample.coerceIn(-32768f, 32767f).toInt().toShort()
-        }
-    }
-    
-    private fun processLfe(samples: ShortArray) {
-        val lfeSamples = samples.copyOf()
-        
-        lfeFilter.processBuffer(lfeSamples, 2)
-        
-        val lfeLinearGain = 10.0.pow(lfeGain / 20.0).toFloat()
-        
-        for (i in samples.indices) {
-            val lfeContribution = (lfeSamples[i].toFloat() * lfeLinearGain - lfeSamples[i].toFloat())
-            val mixed = samples[i].toFloat() + lfeContribution
-            samples[i] = mixed.coerceIn(-32768f, 32767f).toInt().toShort()
-        }
+        trebleGain = gainDb
+        trebleShelfFilter.setGain(gainDb)
     }
 
-    fun setReverb(wetMix: Float) {
-        reverbWetMix = wetMix.coerceIn(0f, 1f)
-    }
-
-    fun getReverb(): Float = reverbWetMix
-
-    private fun processReverb(samples: ShortArray) {
-        val dryAmount = cos(reverbWetMix * Math.PI / 2).toFloat()
-        val wetAmount = sin(reverbWetMix * Math.PI / 2).toFloat()
-        
-        var i = 0
-        while (i < samples.size - 1) {
-            val dryLeft = samples[i].toFloat() / 32768f
-            val dryRight = samples[i + 1].toFloat() / 32768f
-            
-            var wetLeft = 0f
-            var wetRight = 0f
-            
-            for (tap in 0..3) {
-                val bufferL = reverbDelayBuffersL[tap]
-                val bufferR = reverbDelayBuffersR[tap]
-                val idx = reverbDelayIndices[tap]
-                
-                if (bufferL.isEmpty() || bufferR.isEmpty()) continue
-                
-                val delayedL = bufferL[idx]
-                val delayedR = bufferR[idx]
-                
-                reverbLowpassStatesL[tap] += reverbLowpassCoeffs[tap] * (delayedL - reverbLowpassStatesL[tap])
-                reverbLowpassStatesR[tap] += reverbLowpassCoeffs[tap] * (delayedR - reverbLowpassStatesR[tap])
-                
-                val filteredL = reverbLowpassStatesL[tap]
-                val filteredR = reverbLowpassStatesR[tap]
-                
-                wetLeft += filteredL
-                wetRight += filteredR
-                
-                val feedback = REVERB_FEEDBACK_GAINS[tap]
-                bufferL[idx] = dryLeft + filteredL * feedback
-                bufferR[idx] = dryRight + filteredR * feedback
-                
-                reverbDelayIndices[tap] = (idx + 1) % bufferL.size
-            }
-            
-            val outLeft = (dryLeft * dryAmount + wetLeft * wetAmount).coerceIn(-1f, 1f)
-            val outRight = (dryRight * dryAmount + wetRight * wetAmount).coerceIn(-1f, 1f)
-            
-            samples[i] = (outLeft * 32767f).toInt().toShort()
-            samples[i + 1] = (outRight * 32767f).toInt().toShort()
-            
-            i += 2
-        }
-    }
-
-    private fun resetReverbBuffers() {
-        for (i in 0..3) {
-            reverbDelayBuffersL[i].fill(0f)
-            reverbDelayBuffersR[i].fill(0f)
-            reverbDelayIndices[i] = 0
-            reverbLowpassStatesL[i] = 0f
-            reverbLowpassStatesR[i] = 0f
-        }
-    }
-
+    /**
+     * Set stereo width for virtualizer effect.
+     * @param width Range -1.0 to 1.0
+     *   -1.0 = Full mono (0% stereo width)
+     *    0.0 = Original stereo (100% width)
+     *    1.0 = Maximum wide (200% width)
+     */
     fun setStereoWidth(width: Float) {
         stereoWidth = width.coerceIn(-1f, 1f)
+        android.util.Log.d("SoftwareDSP", "Stereo width set to $stereoWidth (${((1f + stereoWidth) * 100).toInt()}%)")
     }
 
     fun getStereoWidth(): Float = stereoWidth
 
+    /**
+     * Process stereo width using mid-side technique.
+     * Mid = (L + R) / 2 (center content)
+     * Side = (L - R) / 2 (stereo content)
+     * 
+     * Width < 0: Reduce side, more mono
+     * Width > 0: Boost side, wider stereo
+     */
     private fun processStereoWidth(samples: ShortArray) {
+        // Calculate side multiplier based on stereoWidth
+        // -1.0 → sideGain = 0.0 (full mono)
+        //  0.0 → sideGain = 1.0 (original)
+        //  1.0 → sideGain = 2.0 (max wide)
         val sideGain = 1f + stereoWidth
 
+        // Process samples in stereo pairs (L, R, L, R, ...)
         var i = 0
         while (i < samples.size - 1) {
             val left = samples[i].toFloat()
             val right = samples[i + 1].toFloat()
 
+            // Convert to mid-side
             val mid = (left + right) / 2f
             val side = (left - right) / 2f
 
+            // Apply width to side channel
             val newSide = side * sideGain
 
+            // Convert back to left-right
             var newLeft = mid + newSide
             var newRight = mid - newSide
 
+            // Soft clip to prevent overflow
             newLeft = newLeft.coerceIn(-32768f, 32767f)
             newRight = newRight.coerceIn(-32768f, 32767f)
 
@@ -463,36 +269,27 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     }
 
     fun getEqBandGains(): FloatArray = eqGains.copyOf()
+    fun getBassGain(): Float = bassGain
+    fun getTrebleGain(): Float = trebleGain
     fun getIsEnabled(): Boolean = isEnabled
     fun getEqFrequencies(): FloatArray = EQ_FREQUENCIES.copyOf()
     fun getEqBandNames(): Array<String> = EQ_NAMES.copyOf()
-    fun getNumberOfBands(): Int = 10
+    fun getNumberOfBands(): Int = 7
 
     fun resetAll() {
-        for (i in 0..9) {
+        for (i in 0..6) {
             eqGains[i] = 0f
             eqFilters[i].setGain(0f)
         }
-        
-        bassGainDb = 0f
-        trebleGainDb = 0f
-        safetyGainReduction = 0f
-        bassBoostFilter.setGain(0f)
-        trebleBoostFilter.setGain(0f)
-        
+        bassGain = 0f
+        trebleGain = 0f
         stereoWidth = 0f
-        reverbWetMix = 0f
-        
-        lfeEnabled = false
-        lfeCrossoverFrequency = 80f
-        lfeHeadroom = 6f
-        lfeGain = 0f
+        bassShelfFilter.setGain(0f)
+        trebleShelfFilter.setGain(0f)
         
         eqFilters.forEach { it.resetAllChannels() }
-        bassBoostFilter.resetAllChannels()
-        trebleBoostFilter.resetAllChannels()
-        lfeFilter.resetAllChannels()
+        bassShelfFilter.resetAllChannels()
+        trebleShelfFilter.resetAllChannels()
         limiter.reset()
-        resetReverbBuffers()
     }
 }

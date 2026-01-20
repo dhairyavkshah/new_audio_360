@@ -34,20 +34,6 @@ export interface PlayerState {
   shuffle: boolean;
   repeat: 'off' | 'one' | 'all';
   queue: string[];
-  lastSong?: {
-    id: string;
-    title: string;
-    artist: string;
-    album?: string;
-    duration: number;
-    artwork?: string;
-    uri?: string;
-    audioUrl?: string;
-    isFromDevice?: boolean;
-    filename?: string;
-    modificationTime?: number;
-  } | null;
-  lastDuration?: number;
 }
 
 export const mockSongs: Song[] = [

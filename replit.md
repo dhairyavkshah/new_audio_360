@@ -1,7 +1,7 @@
 # New Audio 360
 
 ## Overview
-New Audio 360 is a premium mobile music player application built with React Native and Expo, targeting audio enthusiasts. It delivers studio-quality audio processing through pure software-based DSP, 55 stunning themes, and comprehensive music organization. The app requires a one-time purchase for lifetime access, with all data stored locally and no backend required. Its vision is to be "The top-grade intelligent music experience built for you," aiming to be the market leader in mobile audio experiences.
+New Audio 360 is a premium mobile music player application built with React Native and Expo, targeting audio enthusiasts. It delivers studio-quality audio processing through pure software-based DSP, 55 stunning themes, and comprehensive music organization. The app requires a one-time purchase for lifetime access, with all data stored locally and no backend required. Its vision is to be "The top-grade intelligent music experience built for you."
 
 ## User Preferences
 - Concise and direct communication
@@ -16,162 +16,79 @@ New Audio 360 is a premium mobile music player application built with React Nati
 
 ### Platform & Framework
 - **Framework**: React Native with Expo SDK 53.0.0
-- **React Native**: 0.79.2 (Legacy Architecture for `react-native-track-player` compatibility)
+- **React Native**: 0.79.2 (Legacy Architecture for react-native-track-player compatibility)
 - **State Management**: React Context API with custom hooks
 - **Design System**: Microsoft Fluent 2 (4px grid, semantic tokens, elevation shadows)
 - **Data Persistence**: AsyncStorage/SecureStorage (all local, no backend)
 
 ### Audio Effects Architecture (Pure Software DSP)
-The app employs a **pure software-based DSP** across all platforms, ensuring a consistent audio experience.
+The app uses **pure software-based DSP** across all platforms, ensuring a consistent audio experience without relying on hardware audio effects.
 
-**Dual-DSP Architecture Overview**:
-The system routes audio from various sources (Music Player, Online Radio) through a `SoundLabContext` for settings management (EQ Presets, Bass/Treble Boost, Virtualizer, Immersive Modes). `SoundLabContext` calls platform-specific modules directly: `WebAudioEffectsEngine` for Web (using Web Audio API) and `EqualizerModule`/`ImmersiveModeEngineModule` for Android (using `SoftwareDSPAudioProcessor`). Each platform operates independently with no cross-platform syncing. Both engines apply effects and output to the respective audio renderers (HTMLAudioElement or ExoPlayer).
-
-**Key Architecture Principles**:
-1.  **Two DSPs, Same Settings**: Web uses `react-native-audio-api` (Web Audio API), Android uses `SoftwareDSPAudioProcessor`. Both have identical preset values defined independently.
-2.  **Independent Platform Control**: `SoundLabContext` calls platform-specific modules directly - `WebAudioEffectsEngine` for Web, `EqualizerModule`/`ImmersiveModeEngineModule` for Android. No cross-platform syncing.
-3.  **No Double Processing**: Each platform uses exactly ONE DSP engine.
-4.  **All Sources Processed**: Music, Online Radio, and FM/AM Radio all route through the same DSP chain.
+**Platform Implementations**:
+- **Web**: `react-native-audio-api` (Web Audio API with BiquadFilterNode, DynamicsCompressorNode)
+- **Android**: Custom ExoPlayer `AudioProcessor` with biquad filter algorithms (same formulas as Web Audio API)
 
 **Audio Signal Chain**:
-`Source → 10-Band EQ → Bass Boost → Treble Boost → LFE Processing (optional) → Safety Gain → Stereo Width → Reverb → Limiter → Output`
+```
+Source → Gain → 7-Band EQ → Bass Shelf Filter → Treble Shelf Filter → Stereo Widener → Limiter → Output
+```
 
 **Key Components**:
--   **10-Band Parametric EQ**: Frequencies at 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000 Hz. Features 10 zero-sum presets (e.g., Flat, Rock, Pop) and a custom editor. Flat is always active by default.
--   **Bass Boost & Treble Boost**: Separate low-shelf (150Hz) and high-shelf (6kHz) filters, ±12 dB range.
--   **LFE Channel (Subwoofer Mode)**: Optional feature with low-pass crossover (default 80Hz) and adjustable gain, providing extra headroom for sub-bass.
--   **Volume Safety System**: Automatic gain reduction to prevent clipping, with extra headroom for low frequencies when LFE is active.
--   **Intelligent Limiter**: Configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1).
--   **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide).
--   **Immersive Modes**: 6 distinct modes (Music, 360 Reality, Gaming, Podcast, Movie, Sports), each with independent EQ, bass/treble boost, and virtualizer settings for specific listening experiences.
+- **7-Band Parametric EQ**: Sub, Bass, Low-Mid, Mid, High-Mid, Treble, Brilliance with zero-sum normalization.
+- **Bass Boost Filter**: Lowshelf at 150Hz (±12 dB range).
+- **Treble Boost Filter**: Highshelf at 6kHz (±12 dB range).
+- **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
+- **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide). VirtualizerModule and ImmersiveModeEngineModule delegate to SoftwareDSPAudioProcessor.
+- **EQ Presets**: 8 total (Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic) with zero-sum normalization.
+- **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, and virtualizer settings, designed for specific listening experiences.
 
 ### Navigation Structure
 A 4-tab system with a persistent MiniPlayer:
--   **ListenTab**: Main player, Now Playing, Sound Lab, Queue
--   **LibraryTab**: Music organization, Quick Access Category Grid
--   **RadioTab**: FM/AM native radio, Online streaming radio
--   **SettingsTab**: General, Sound Lab, Appearance, License, About
+- **ListenTab**: Main player, Now Playing, Sound Lab, Queue
+- **LibraryTab**: Music organization, Quick Access Category Grid
+- **RadioTab**: FM/AM native radio, Online streaming radio
+- **SettingsTab**: General, Sound Lab, Appearance, License, About
 
 ### Native Modules (Android-specific)
--   **Audio Processing**: `SoftwareDSPAudioProcessor`, `BiquadFilter`, `Limiter`.
--   **Audio Control**: `EqualizerModule`, `BassBoostModule`, `VirtualizerModule`, `ImmersiveModeEngineModule` (all delegate to `SoftwareDSPAudioProcessor`).
--   **Playback Engine**: `PlaybackEngineModule` (ExoPlayer wrapper with DSP integration - used for music and Online Radio on Android).
--   **System Modules**: `AudioSessionBridgeModule`, `WaveformAnalyzerModule`, `FMRadioModule`, `LicenseVerificationModule`, `MediaStoreScannerModule`, `MetadataExtractorModule`. No Android hardware audio effects are used.
+- **Audio Processing**: `SoftwareDSPAudioProcessor` (core DSP engine), `BiquadFilter`, `Limiter`.
+- **Audio Control**: `EqualizerModule`, `BassBoostModule`, `VirtualizerModule`, `ImmersiveModeEngineModule` (all delegate to `SoftwareDSPAudioProcessor`).
+- **System Modules**: `AudioSessionBridgeModule`, `WaveformAnalyzerModule` (for read-only FFT), `FMRadioModule`, `LicenseVerificationModule`, `MediaStoreScannerModule` (efficient audio file scanning), `MetadataExtractorModule` (ID3 fallback).
+- No Android hardware audio effects are used for audio processing.
 
-### Playback Architecture (v26.0)
-Music playback uses platform-specific approaches to ensure proper DSP integration:
--   **iOS**: `TrackPlayerService` (react-native-track-player) for background playback, notification controls
--   **Android**: `PlaybackEngineModule` (ExoPlayer wrapper) with integrated `SoftwareDSPAudioProcessor` for real-time audio effects
--   **Web**: HTMLAudioElement with `WebAudioEffectsEngine` for DSP processing
--   **Online Radio (Android only)**: `PlaybackEngineModule` with native DSP integration
-
-**Key Architecture Decisions**:
-1. Android uses PlaybackEngineModule because SoftwareDSPAudioProcessor is integrated into ExoPlayer's audio sink
-2. iOS uses TrackPlayerService for proper background playback and notification controls (DSP effects are limited on iOS)
-3. Web uses WebAudioEffectsEngine with Web Audio API for full DSP processing
-4. Android and Web have full DSP processing with matching EQ presets and immersive modes
-
-### Key DSP Implementation Files
-| File | Purpose |
-|------|---------|
-| `client/contexts/SoundLabContext.tsx` | Manages all DSP settings (presets, modes, bass/treble) |
-| `client/services/WebAudioEffectsEngine.ts` | Web-only DSP engine (Web Audio API) |
-| `client/services/TrackPlayerService.ts` | iOS music playback service |
-| `client/contexts/PlayerContext.tsx` | Music playback + EqualizerModule attachment |
-| `client/contexts/OnlineRadioContext.tsx` | Online radio via PlaybackEngineModule (Android) |
-| `client/contexts/RadioContext.tsx` | FM/AM radio with DSP attachment |
-| `modules/audio-effects/.../SoftwareDSPAudioProcessor.kt` | Core Android DSP engine |
-| `modules/audio-effects/.../EqualizerModule.kt` | Android EQ/bass/treble bridge |
-| `modules/audio-effects/.../VirtualizerModule.kt` | Android stereo width bridge (singleton) |
-| `modules/audio-effects/.../ImmersiveModeEngineModule.kt` | Android immersive modes bridge |
-| `modules/audio-effects/.../PlaybackEngineModule.kt` | ExoPlayer wrapper with DSP (Android music + Online Radio) |
-
-**DSP Control Flow**:
-- **Web**: `SoundLabContext` → `WebAudioEffectsEngine.applyEQ()` / `applyImmersiveMode()` → Web Audio API
-- **Android**: `SoundLabContext` → `EqualizerModule.usePreset()` / `ImmersiveModeEngineModule.setMode()` → `SoftwareDSPAudioProcessor`
-- **iOS**: Uses TrackPlayerService for playback; DSP effects are limited on iOS (no native SoftwareDSPAudioProcessor integration)
-
-**DSP Module Attachment (Android)**:
-- `EqualizerModule.attach(audioSessionId)`: Called in PlayerContext after PlaybackEngineModule initializes with the returned audio session ID
-- `VirtualizerModule`: Uses singleton pattern - no explicit attach required
-- **Unit Scaling**: UI values (gain units) passed to native code, which internally multiplies by DB_PER_UNIT (2.4)
-
-**Preset Definitions**:
-- **Web**: Defined in `WebAudioEffectsEngine.ts` (IMMERSIVE_MODES) and `SoundLabContext.tsx` (EQ_PRESETS)
-- **Android**: Defined in `EqualizerModule.kt` (usePreset function) and `ImmersiveModeEngineModule.kt` (applyMode* functions)
-- Both platforms have matching preset values for consistent audio experience
-
-### EQ Presets (10-Band: 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz)
-All presets are zero-sum for maximum headroom. Values are in gain units (multiply by 2.4 for dB).
-
-| Preset | 60Hz | 170Hz | 310Hz | 600Hz | 1kHz | 3kHz | 6kHz | 12kHz | 14kHz | 16kHz | Description |
-|--------|------|-------|-------|-------|------|------|------|-------|-------|-------|-------------|
-| Flat | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | Reference |
-| Rock | +0.4 | +0.4 | -0.3 | -1.1 | -1.1 | -0.1 | +0.9 | +1.6 | +0.7 | -0.7 | Balanced Punch |
-| Pop | +0.3 | +0.3 | -0.4 | -0.5 | -0.4 | +0.7 | +0.8 | +0.7 | -0.4 | -0.7 | Clean Vocals |
-| Jazz | -0.3 | -0.3 | -1.1 | +1.0 | +1.0 | +0.3 | -0.7 | -0.3 | -0.3 | -0.9 | Warm & Natural |
-| Classical | -0.8 | -0.8 | -0.4 | -0.4 | -0.2 | +0.2 | +0.5 | +1.0 | +0.9 | +0.4 | Wide & Open |
-| Electronic | +1.3 | +1.3 | +0.5 | -1.4 | -1.4 | -0.5 | +0.5 | +1.3 | +0.5 | -1.2 | Controlled Energy |
-| Hip-Hop | +2.4 | +2.4 | +0.7 | -1.2 | -0.6 | 0.0 | +0.4 | -0.6 | -1.4 | -2.0 | Deep Bass, Clear Mids |
-| Acoustic | -0.6 | -0.6 | -1.2 | +0.7 | +1.5 | +1.5 | +0.7 | -0.3 | -0.3 | -1.3 | Natural & Intimate |
-| Bass+ | +2.5 | +1.8 | +1.0 | -0.4 | -0.9 | -0.9 | -0.9 | -0.9 | -0.4 | -0.9 | Party Mode (optimized) |
-| Clarity | -1.9 | -1.9 | -0.9 | -0.8 | +0.3 | +0.6 | +1.3 | +1.3 | +1.9 | +0.1 | Podcasts & Movies |
-
-### Immersive Modes (Full Settings)
-Each mode includes EQ curve, spatial width, reverb, and bass/treble boost. All EQ values are zero-sum.
-
-| Mode | 60Hz | 170Hz | 310Hz | 600Hz | 1kHz | 3kHz | 6kHz | 12kHz | 14kHz | 16kHz | Spatial | Reverb | Bass | Treble |
-|------|------|-------|-------|-------|------|------|------|-------|-------|-------|---------|--------|------|--------|
-| Music | +0.3 | +0.3 | -0.4 | -1.0 | -1.0 | 0.0 | +1.0 | +1.5 | +0.4 | -1.1 | 25% | 8% | +1.2dB | +1.3dB |
-| 360 Reality | 0.0 | 0.0 | -0.6 | -0.6 | -0.6 | 0.0 | +1.0 | +1.2 | +0.3 | -0.7 | 55% | 18% | +0.8dB | +1.5dB |
-| Gaming | +0.8 | +0.8 | +0.4 | -1.1 | -1.1 | 0.0 | +1.0 | +1.7 | +0.8 | -1.9 | 57% | 8% | +1.2dB | +2.1dB |
-| Podcast | -1.9 | -1.9 | -0.9 | -0.7 | +0.4 | +1.0 | +1.0 | +1.4 | +1.8 | -0.2 | 0% | 0% | -1.0dB | +2.3dB |
-| Movie | -0.8 | -0.8 | -0.4 | +0.7 | +1.1 | +1.0 | +1.0 | -0.3 | -0.5 | -1.7 | 45% | 12% | +1.8dB | +1.5dB |
-| Sports | +1.2 | +1.2 | +0.5 | -0.7 | -0.7 | 0.0 | +1.0 | +1.2 | -0.9 | -2.5 | 47% | 10% | +2.2dB | +0.8dB |
-
-### DSP Signal Chain Configuration
-
-| Component | Web | Android |
-|-----------|-----|---------|
-| 10-Band EQ Frequencies | 60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000 Hz | Same |
-| Bass Boost Filter | Low-shelf @ 150Hz, +/-12dB | Same |
-| Treble Boost Filter | High-shelf @ 6kHz, +/-12dB | Same |
-| LFE Crossover | N/A | 80Hz default, 20-200Hz adjustable |
-| LFE Headroom | N/A | +6dB (up to 18dB for bass) |
-| Limiter | Web Audio DynamicsCompressor | -1dB threshold, 20:1 ratio, 1ms attack, 100ms release |
-| Stereo Width | -100% (mono) to +200% (wide) | -100% (mono) to +100% (wide) |
-| Unit Scaling | DB_PER_UNIT = 2.4 | Same |
+### License Verification
+Checks for Google Play installation. Licensed users get full access; unlicensed users are prompted to purchase. License state is cached locally. Production uses `react-native-iap` with product ID `new_audio_360_lifetime`.
 
 ### Feature Specifications
--   **Sound Lab**: Comprehensive audio customization including EQ presets, custom EQ, immersive modes, bass/treble control, and volume safety.
--   **Theming**: 55 themes across 6 categories.
--   **Radio**: Native FM/AM radio (hardware detection) and online streaming radio via Radio Browser API. Online radio streams benefit from full DSP processing.
--   **Playback Features**: Background playback, notification controls, queue management, shuffle/repeat, playback speed, sleep timer, favorites, recently/most played.
--   **Library Management**: Music folder selection, paginated loading, "Hide Song", full playlist CRUD.
+
+- **Sound Lab**: 8 EQ presets, custom 5-band EQ editor, 5 immersive modes, bass/treble control, distortion prevention.
+- **Theming**: 55 themes across 6 categories (System, Winamp, Retro, Nature, Professional, Special).
+- **Radio**: Native FM/AM radio and online streaming radio (Radio Browser API with quality filters).
+- **Playback Features**: Background playback, notification controls, queue management, shuffle/repeat, playback speed, sleep timer, favorites, recently/most played.
+- **Library Management**: Music folder selection, paginated loading, "Hide Song" feature, full playlist CRUD.
 
 ### Build Configuration
--   **EAS Build Profiles**: `development`, `preview`, `production`, `production-apk`.
--   **Requirements**: Minimum Android 8.0 (API 26), Target Android 14 (API 34), ARM64, ARM32, x86_64 architectures.
--   **Package Name**: `com.theteam360.newaudio360`.
+- **EAS Build Profiles**: `development`, `preview`, `production`, `production-apk`.
+- **Requirements**: Minimum Android 8.0 (API 26), Target Android 14 (API 34), ARM64, ARM32, x86_64 architectures.
+- **Package Name**: `com.theteam360.newaudio360`.
 
 ## External Dependencies
 
 ### Core
--   `react-native`, `expo` (SDK 53.0.0)
--   `react-native-track-player` (background playback)
--   `expo-av` (web fallback)
--   `expo-media-library` (device media access)
+- `react-native`, `expo` (SDK 53.0.0)
+- `react-native-track-player` (background playback)
+- `expo-av` (web fallback)
+- `expo-media-library` (device media access)
 
 ### Audio Processing
--   `react-native-audio-api` (Web Audio API for software DSP)
+- `react-native-audio-api` (Web Audio API for software DSP)
 
 ### UI & Navigation
--   `@react-navigation` (navigation system)
--   `react-native-reanimated` (simple animations)
--   `MaterialCommunityIcons` (iconography)
+- `@react-navigation` (navigation system)
+- `react-native-reanimated` (simple animations)
+- `MaterialCommunityIcons` (iconography)
 
 ### Platform Services
--   `expo-notifications` (playback controls)
--   `expo-local-authentication` (biometric auth)
--   `expo-location` (online radio location)
--   `react-native-iap` (Google Play Billing for license verification)
+- `expo-notifications` (playback controls)
+- `expo-local-authentication` (biometric auth)
+- `expo-location` (online radio location)
+- `react-native-iap` (Google Play Billing)

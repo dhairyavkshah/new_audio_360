@@ -67,41 +67,21 @@ class NativeAudioServiceClass {
 
     try {
       const result = await PlaybackEngineModule.initialize();
-      if (result.success) {
-        // Get audioSessionId from result, or fetch it if not provided
-        if (result.audioSessionId) {
-          this.audioSessionId = result.audioSessionId;
-        } else {
-          // Fallback: get from getStatus if initialize didn't return it
-          try {
-            const status = await PlaybackEngineModule.getStatus();
-            this.audioSessionId = status.audioSessionId || 0;
-          } catch {
-            this.audioSessionId = 0;
-          }
-        }
-        
+      if (result.success && result.audioSessionId) {
+        this.audioSessionId = result.audioSessionId;
         this.isInitialized = true;
 
-        if (this.isImmersiveModeAvailable() && this.audioSessionId > 0) {
-          try {
-            await ImmersiveModeEngineModule.attach(this.audioSessionId);
-          } catch (attachError) {
-            console.warn('NativeAudioService: Failed to attach ImmersiveModeEngine:', attachError);
-          }
+        if (this.isImmersiveModeAvailable()) {
+          await ImmersiveModeEngineModule.attach(this.audioSessionId);
         }
 
-        if (this.isWaveformAvailable() && this.audioSessionId > 0) {
-          try {
-            await WaveformAnalyzerModule.attach(this.audioSessionId);
-          } catch (attachError) {
-            console.warn('NativeAudioService: Failed to attach WaveformAnalyzer:', attachError);
-          }
+        if (this.isWaveformAvailable()) {
+          await WaveformAnalyzerModule.attach(this.audioSessionId);
         }
 
         return { success: true, audioSessionId: this.audioSessionId };
       }
-      return { success: false, error: result.error || 'Initialization failed' };
+      return { success: false, error: result.error };
     } catch (error) {
       console.error('NativeAudioService.initialize error:', error);
       return { success: false, error: String(error) };
@@ -208,36 +188,35 @@ class NativeAudioServiceClass {
     }
   }
 
-  async setVolume(volume: number): Promise<{ success: boolean; volume: number }> {
+  setVolume(volume: number): { success: boolean; volume: number } {
     return PlaybackEngineModule.setVolume(volume);
   }
 
-  async setPlaybackSpeed(speed: number): Promise<{ success: boolean; speed: number }> {
+  setPlaybackSpeed(speed: number): { success: boolean; speed: number } {
     return PlaybackEngineModule.setPlaybackSpeed(speed);
   }
 
-  async setRepeatMode(mode: 'off' | 'one' | 'all'): Promise<{ success: boolean; mode: string }> {
+  setRepeatMode(mode: 'off' | 'one' | 'all'): { success: boolean; mode: string } {
     return PlaybackEngineModule.setRepeatMode(mode);
   }
 
-  async setShuffleMode(enabled: boolean): Promise<{ success: boolean; shuffle: boolean }> {
+  setShuffleMode(enabled: boolean): { success: boolean; shuffle: boolean } {
     return PlaybackEngineModule.setShuffleMode(enabled);
   }
 
-  async getStatus(): Promise<PlaybackStatus> {
+  getStatus(): PlaybackStatus {
     return PlaybackEngineModule.getStatus();
   }
 
   getAudioSessionId(): number {
-    // Use cached audioSessionId if available, otherwise call sync version
-    return this.audioSessionId || 0;
+    return this.audioSessionId || PlaybackEngineModule.getAudioSessionId();
   }
 
-  async getCurrentPosition(): Promise<number> {
+  getCurrentPosition(): number {
     return PlaybackEngineModule.getCurrentPosition();
   }
 
-  async getDuration(): Promise<number> {
+  getDuration(): number {
     return PlaybackEngineModule.getDuration();
   }
 
@@ -446,8 +425,8 @@ class NativeAudioServiceClass {
     return WaveformAnalyzerModule.getFftSnapshot();
   }
 
-  async getState(): Promise<AudioServiceState> {
-    const status = await this.getStatus();
+  getState(): AudioServiceState {
+    const status = this.getStatus();
     const immersiveModeState = this.getCurrentImmersiveMode();
 
     return {

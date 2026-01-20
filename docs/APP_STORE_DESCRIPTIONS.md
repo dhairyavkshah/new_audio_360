@@ -34,15 +34,15 @@ STUDIO-GRADE SOUND LAB
 
 Take full control of your audio experience:
 
-• 10-Band Parametric Equalizer - Fine-tune from 60Hz to 16kHz
-• 10 Zero-Sum EQ Presets - Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity
+• 7-Band Equalizer - Fine-tune Sub, Bass, Low-Mid, Mid, High-Mid, Treble, Brilliance
+• 8 EQ Presets - Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic
 • Bass & Treble Controls - ±12 dB adjustment for perfect sound balance
-• Intelligent Limiter - Brickwall protection keeps audio clean at any volume
-• 6 Immersive Modes - Music, 360 Reality, Gaming, Podcast, Movie, Sports with spatial audio
-• Custom EQ Editor - Create your own frequency curves
-• LFE/Subwoofer Mode - Extra bass headroom for powerful low end
+• Distortion Prevention - Intelligent limiting keeps audio clean at any volume
+• 6 Immersive Modes - Music, 360 Reality, Gaming, Podcast, Movie, Sports
+• Custom Presets - Create and save up to 5 personal EQ configurations
+• Real-time Waveform - Beautiful visualization while playing
 
-Pure software-based DSP works consistently on ALL Android devices.
+Works consistently on ALL Android devices - same great sound everywhere.
 
 55 STUNNING THEMES
 
@@ -165,4 +165,4 @@ music player, audio player, equalizer, bass boost, treble, EQ, music, mp3 player
 
 ---
 
-*Last Updated: January 20, 2026*
+*Last Updated: January 19, 2026*

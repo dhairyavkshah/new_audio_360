@@ -30,7 +30,6 @@ import {
   FluentFontWeight,
   FluentSliderSize,
 } from "@/constants/fluent2";
-import { useToast } from "@/contexts/ToastContext";
 
 const FM_MIN = 87.5;
 const FM_MAX = 108.0;
@@ -118,7 +117,6 @@ function RadioScreen() {
   } = useOnlineRadio();
 
   const { mode: soundLabMode, eqPresetName, immersiveModeName, getImmersiveModeInfo } = useSoundLab();
-  const { showError: showToastError } = useToast();
 
   const [radioMode, setRadioMode] = useState<RadioMode>('fmam');
   const [localFrequency, setLocalFrequency] = useState(currentFrequency);
@@ -149,18 +147,6 @@ function RadioScreen() {
       loadOnlineData();
     }
   }, [radioMode, hasLoadedOnline, modeLoaded]);
-
-  useEffect(() => {
-    if (onlineError && radioMode === 'online') {
-      const isStreamError = onlineError.toLowerCase().includes('stream') || 
-                           onlineError.toLowerCase().includes('playback') ||
-                           onlineError.toLowerCase().includes('failed') ||
-                           onlineError.toLowerCase().includes('unavailable');
-      if (isStreamError) {
-        showToastError('Streaming source unavailable. Please try another station.');
-      }
-    }
-  }, [onlineError, radioMode, showToastError]);
 
   const loadSavedMode = async () => {
     try {
@@ -610,6 +596,24 @@ function RadioScreen() {
             {isSearching ? 'Searching...' : 'Search'}
           </FluentButton>
         </View>
+
+        {error && (
+          <View style={[styles.errorCard, { backgroundColor: colors.colorPaletteRedBackground2, borderRadius: FluentRadius.large }]}>
+            <View style={styles.errorCardHeader}>
+              <MaterialCommunityIcons
+                name="alert-circle"
+                size={FluentIconSize.regular}
+                color={colors.colorPaletteRedForeground1}
+              />
+              <FluentText variant="body2" style={{ color: colors.colorPaletteRedForeground1, flex: 1, marginLeft: FluentSpacing.s }}>
+                {error}
+              </FluentText>
+              <Pressable onPress={clearOnlineError} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                <MaterialCommunityIcons name="close" size={FluentIconSize.small} color={colors.colorPaletteRedForeground1} />
+              </Pressable>
+            </View>
+          </View>
+        )}
 
         {currentStation && (
           <GlassCard style={{ ...cardStyle, ...styles.nowPlayingCard }}>

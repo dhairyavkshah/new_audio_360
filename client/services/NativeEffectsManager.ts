@@ -3,7 +3,7 @@ import {
   EqualizerModule, 
   EqualizerAttachResult 
 } from 'audio-effects';
-import type { SoundLabMode } from '@/contexts/SoundLabContext';
+import type { EQBands, SoundLabMode } from '@/contexts/SoundLabContext';
 
 export type AudioSessionSource = 'music' | 'radio' | 'software' | 'none';
 
@@ -29,6 +29,7 @@ class NativeEffectsManagerClass {
     this.musicSessionId = audioSessionId;
     this.currentSource = 'music';
 
+    // Only attach Equalizer - NO BassBoost or Virtualizer
     const eqResult = await EqualizerModule.attach(audioSessionId);
 
     this.equalizerAttached = eqResult.success;
@@ -63,6 +64,7 @@ class NativeEffectsManagerClass {
     await this.releaseInternal();
 
     try {
+      // Only attach Equalizer - NO BassBoost or Virtualizer
       const eqResult = await EqualizerModule.attach(sessionId);
 
       this.equalizerAttached = eqResult.success;
@@ -117,6 +119,7 @@ class NativeEffectsManagerClass {
   }
 
   private async releaseInternal(): Promise<void> {
+    // Only release Equalizer - no other effects
     await EqualizerModule.release();
     this.isInitialized = false;
     this.equalizerAttached = false;
@@ -135,20 +138,37 @@ class NativeEffectsManagerClass {
     return this.isInitialized && this.equalizerAttached;
   }
 
-  applySettings(mode: SoundLabMode, eqBands: number[]): void {
+  applySettings(mode: SoundLabMode, eqBands: EQBands): void {
     if (!this.isInitialized || !this.isAvailable()) return;
 
     if (mode === 'equalizer' && this.equalizerAttached) {
-      this.applyTenBandEQ(eqBands);
+      this.applyEqualizer(eqBands);
     } else {
       this.disableEqualizer();
     }
   }
 
-  private applyTenBandEQ(bands: number[]): void {
+  private applyEqualizer(eqBands: EQBands): void {
     if (!this.equalizerAttached) return;
 
-    const allZero = bands.every(v => v === 0);
+    const numBands = this.equalizerInfo?.numberOfBands || 5;
+
+    const rawBands: number[] = [];
+    
+    if (numBands >= 5) {
+      rawBands.push((eqBands.sub + eqBands.bass) / 2);
+      rawBands.push(eqBands.lowMid);
+      rawBands.push(eqBands.mid);
+      rawBands.push(eqBands.highMid);
+      rawBands.push((eqBands.treble + eqBands.brilliance) / 2);
+    }
+
+    for (let i = 5; i < numBands; i++) {
+      rawBands.push(0);
+    }
+
+    // Check if all bands are zero - disable EQ entirely for pure passthrough
+    const allZero = rawBands.every(v => v === 0);
     if (allZero) {
       EqualizerModule.setEnabled(false);
       console.log('[NativeEffectsManager] All EQ bands at 0 - EQ disabled (pure passthrough)');
@@ -156,8 +176,29 @@ class NativeEffectsManagerClass {
     }
 
     EqualizerModule.setEnabled(true);
-    EqualizerModule.setEqBands(bands);
-    console.log('[NativeEffectsManager] Applied 10-band EQ:', bands);
+
+    // ZERO-SUM BALANCE RULE:
+    // Subtract the average from each band so the total sum equals zero
+    // This ensures no net volume change - only frequency balance adjustment
+    const sum = rawBands.reduce((acc, v) => acc + v, 0);
+    const average = sum / rawBands.length;
+    const zeroSumBands = rawBands.map(v => v - average);
+
+    // Conservative conversion: user units to millibels
+    // Using 100 millibels per unit for stronger, more noticeable effect (2.5x increase)
+    const MB_PER_UNIT = 100;
+
+    // Convert to millibels with clamping using hardware limits
+    const minLevel = this.equalizerInfo?.minLevel ?? -1500;
+    const maxLevel = this.equalizerInfo?.maxLevel ?? 1500;
+    
+    const bandValues = zeroSumBands.map(v => {
+      const millibels = Math.round(v * MB_PER_UNIT);
+      return Math.max(minLevel, Math.min(maxLevel, millibels));
+    });
+
+    console.log('[NativeEffectsManager] Applying EQ (zero-sum balanced, 2.5x strength increase):', { input: rawBands, zeroSum: zeroSumBands, millibels: bandValues });
+    EqualizerModule.setCustomBands(bandValues);
   }
 
   private disableEqualizer(): void {
@@ -170,26 +211,28 @@ class NativeEffectsManagerClass {
     return this.equalizerInfo;
   }
 
+  /**
+   * Apply 5-band EQ values directly (for use with Sound Lab presets and custom EQ)
+   * Band values should be in range -8 to +8 (user units)
+   * Uses ZERO-SUM BALANCE rule: sum of all bands equals zero (no net volume change)
+   * No other audio processing is applied - pure EQ only
+   */
   applyFiveBandEQ(bands: number[]): void {
     if (!this.isAvailable() || !this.equalizerAttached) {
       console.log('[NativeEffectsManager] Cannot apply 5-band EQ - not available or not attached');
       return;
     }
 
-    const tenBand = [
-      bands[0] || 0,
-      bands[0] || 0,
-      bands[1] || 0,
-      bands[1] || 0,
-      bands[2] || 0,
-      bands[2] || 0,
-      bands[3] || 0,
-      bands[3] || 0,
-      bands[4] || 0,
-      bands[4] || 0,
-    ];
+    const numBands = this.equalizerInfo?.numberOfBands || 5;
 
-    const allZero = tenBand.every(v => v === 0);
+    // Copy and pad if needed
+    const rawBands = [...bands];
+    while (rawBands.length < numBands) {
+      rawBands.push(0);
+    }
+
+    // Check if all bands are zero - disable EQ entirely for pure passthrough
+    const allZero = rawBands.every(v => v === 0);
     if (allZero) {
       EqualizerModule.setEnabled(false);
       console.log('[NativeEffectsManager] All EQ bands at 0 - EQ disabled (pure passthrough)');
@@ -197,12 +240,98 @@ class NativeEffectsManagerClass {
     }
 
     EqualizerModule.setEnabled(true);
-    EqualizerModule.setEqBands(tenBand);
-    console.log('[NativeEffectsManager] Applied 5-band EQ mapped to 10-band:', tenBand);
+
+    // ZERO-SUM BALANCE RULE:
+    // Subtract the average from each band so the total sum equals zero
+    // This ensures no net volume change - only frequency balance adjustment
+    const sum = rawBands.reduce((acc, v) => acc + v, 0);
+    const average = sum / rawBands.length;
+    const zeroSumBands = rawBands.map(v => v - average);
+
+    // Conservative conversion: user units to millibels
+    // Using 100 millibels per unit for stronger, more noticeable effect (2.5x increase)
+    const MB_PER_UNIT = 100;
+
+    // Convert to millibels with clamping using hardware limits
+    const minLevel = this.equalizerInfo?.minLevel ?? -1500;
+    const maxLevel = this.equalizerInfo?.maxLevel ?? 1500;
+    
+    const bandValues = zeroSumBands.map(v => {
+      const millibels = Math.round(v * MB_PER_UNIT);
+      return Math.max(minLevel, Math.min(maxLevel, millibels));
+    });
+
+    console.log('[NativeEffectsManager] Applying 5-band EQ (zero-sum balanced, 2.5x strength increase):', { 
+      input: bands, 
+      average: average.toFixed(2),
+      zeroSum: zeroSumBands.map(v => v.toFixed(2)), 
+      millibels: bandValues 
+    });
+    EqualizerModule.setCustomBands(bandValues);
   }
 
+  /**
+   * Disable the equalizer
+   */
   disableEQ(): void {
     this.disableEqualizer();
+  }
+
+  /**
+   * Apply 7-band EQ values directly (for use with software DSP)
+   * Band order: Sub (32Hz), Bass (64Hz), Low-Mid (125Hz), Mid (500Hz), High-Mid (2kHz), Treble (8kHz), Brilliance (16kHz)
+   * Uses the new software DSP which applies biquad filters directly
+   */
+  applySevenBandEQ(bands: { sub: number; bass: number; lowMid: number; mid: number; highMid: number; treble: number; brilliance: number }): void {
+    if (!this.isAvailable() || !this.equalizerAttached) {
+      console.log('[NativeEffectsManager] Cannot apply 7-band EQ - not available or not attached');
+      return;
+    }
+
+    const bandArray = [
+      bands.sub,
+      bands.bass,
+      bands.lowMid,
+      bands.mid,
+      bands.highMid,
+      bands.treble,
+      bands.brilliance
+    ];
+
+    const allZero = bandArray.every(v => v === 0);
+    if (allZero) {
+      EqualizerModule.setEnabled(false);
+      console.log('[NativeEffectsManager] All EQ bands at 0 - EQ disabled (pure passthrough)');
+      return;
+    }
+
+    EqualizerModule.setEnabled(true);
+    EqualizerModule.setEqBands(bandArray);
+    console.log('[NativeEffectsManager] Applied 7-band EQ via software DSP:', bandArray);
+  }
+
+  /**
+   * Set bass boost using software DSP shelf filter at 150Hz
+   * @param gain Gain in user units (-5 to +5)
+   */
+  setBassBoost(gain: number): void {
+    if (!this.isAvailable() || !this.equalizerAttached) {
+      return;
+    }
+    EqualizerModule.setBassBoost(gain);
+    console.log('[NativeEffectsManager] Set bass boost:', gain);
+  }
+
+  /**
+   * Set treble boost using software DSP shelf filter at 6kHz
+   * @param gain Gain in user units (-5 to +5)
+   */
+  setTrebleBoost(gain: number): void {
+    if (!this.isAvailable() || !this.equalizerAttached) {
+      return;
+    }
+    EqualizerModule.setTrebleBoost(gain);
+    console.log('[NativeEffectsManager] Set treble boost:', gain);
   }
 
   async release(): Promise<void> {

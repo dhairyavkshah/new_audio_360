@@ -22,7 +22,6 @@ import {
   FluentDarkColors,
   FluentTouchTarget,
 } from "@/constants/fluent2";
-import { useAlbumArt } from "@/hooks/useAlbumArt";
 
 const ActionButton = ({ onPress, accessibilityLabel, children }: { 
   onPress: (e: any) => void; 
@@ -89,8 +88,7 @@ function SongCardComponent({
   const favorite = isFavorite(song.id);
   const fluentColors = useMemo(() => isDark ? FluentDarkColors : FluentLightColors, [isDark]);
   
-  const albumArt = useAlbumArt(song.id, song.artwork);
-  const artworkSource = useMemo(() => ({ uri: albumArt }), [albumArt]);
+  const artworkSource = useMemo(() => ({ uri: song.artwork }), [song.artwork]);
   
   const formatDuration = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);
