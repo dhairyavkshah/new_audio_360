@@ -6,6 +6,7 @@ import androidx.media3.common.audio.AudioProcessor.AudioFormat
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.cos
+import kotlin.math.pow
 import kotlin.math.sin
 
 class SoftwareDSPAudioProcessor : AudioProcessor {
