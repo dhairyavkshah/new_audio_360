@@ -11,6 +11,8 @@ New Audio 360 is a premium mobile music player application built with React Nati
 - **Cross-Platform DSP Consistency**: All audio effects (EQ presets, Bass Boost, Treble Boost, Virtualizer/Stereo Width, Custom EQ) now work identically on both Android and Web platforms.
 - **Web Virtualizer/Stereo Width**: Implemented proper stereo width control for Web DSP. Virtualizer level (-5 to +5) maps to stereo width (-1.0 to +1.0).
 - **Audio Enhancement Tip**: Updated notification message to display in exactly 3 lines: "For the best experience, please disable / your device's built-in audio effects / to enjoy our world-class sound engine."
+- **Android Progress Bar Fix**: Fixed track progress bar not updating on Android by properly setting playback source when music starts/resumes.
+- **Radio Stream Error Handling**: Added event listener for PlaybackEngineModule errors during radio playback. When a stream fails, the error is displayed and the "now playing" card is cleared.
 - **Version Update**: Updated version to 26.0 across app.config.js, AboutScreen, and documentation.
 
 ## User Preferences

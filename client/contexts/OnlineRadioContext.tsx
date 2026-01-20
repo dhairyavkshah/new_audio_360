@@ -67,6 +67,11 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   const [volume, setVolumeState] = useState(1.0);
 
   const soundRef = useRef<Audio.Sound | null>(null);
+  const currentStationRef = useRef<OnlineRadioStation | null>(currentStation);
+
+  useEffect(() => {
+    currentStationRef.current = currentStation;
+  }, [currentStation]);
 
   useEffect(() => {
     loadCachedData();
@@ -329,6 +334,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
             throw new Error(playResult.error || 'Failed to start radio playback');
           }
           
+          currentStationRef.current = station;
           setCurrentStation(station);
           setIsPlaying(true);
           setIsBuffering(false);
@@ -366,6 +372,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       );
 
       soundRef.current = sound;
+      currentStationRef.current = station;
       setCurrentStation(station);
       setIsPlaying(true);
       setIsBuffering(false);
@@ -384,6 +391,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       setError(message);
       setIsPlaying(false);
       setIsBuffering(false);
+      currentStationRef.current = null;
       setCurrentStation(null);
     }
   }, [volume, onPlaybackStatusUpdate, currentStation, isPlaying]);
@@ -406,6 +414,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       }
       setIsPlaying(false);
       setIsBuffering(false);
+      currentStationRef.current = null;
       setCurrentStation(null);
       AudioCoordinator.notifyPlaybackStopped('radio');
     } catch (err) {
@@ -416,6 +425,25 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     AudioCoordinator.registerRadioStopCallback(stopPlayback);
   }, [stopPlayback]);
+
+  useEffect(() => {
+    if (Platform.OS === 'android' && PlaybackEngineModule.isAvailable()) {
+      const subscription = PlaybackEngineModule.addListener('onError', (event: { code: number; message: string }) => {
+        if (currentStationRef.current) {
+          console.error('[OnlineRadioContext] PlaybackEngineModule error during radio playback:', event);
+          setError(`Stream error: ${event.message || 'Connection lost'}`);
+          setIsPlaying(false);
+          setIsBuffering(false);
+          currentStationRef.current = null;
+          setCurrentStation(null);
+          AudioCoordinator.notifyPlaybackStopped('radio');
+        }
+      });
+      return () => {
+        subscription.remove();
+      };
+    }
+  }, []);
 
   const setVolume = useCallback(async (newVolume: number): Promise<void> => {
     const clampedVolume = Math.max(0, Math.min(1, newVolume));

@@ -186,6 +186,7 @@ class TrackPlayerServiceClass {
 
   async play(): Promise<void> {
     if (!this.isInitialized) return;
+    this.playbackSource = 'music';
     await TrackPlayer.play();
   }
 
@@ -402,6 +403,7 @@ export async function PlaybackService() {
   // Remote events from notification controls - these MUST control playback directly
   TrackPlayer.addEventListener(Event.RemotePlay, async () => {
     console.log('[PlaybackService] RemotePlay event received');
+    TrackPlayerService.setPlaybackSource('music');
     await TrackPlayer.play();
     TrackPlayerService.handleRemotePlay();
   });
