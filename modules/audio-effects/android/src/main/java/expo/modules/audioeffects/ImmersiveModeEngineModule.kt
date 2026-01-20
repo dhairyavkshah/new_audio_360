@@ -210,7 +210,7 @@ class ImmersiveModeEngineModule : Module() {
     }
     
     private fun applyImmersiveSettings(
-        eqGains: List<Double>, 
+        eqGainsDb: List<Double>, 
         spatialWidth: Int, 
         reverbWetMix: Float = 0f,
         bassBoostDb: Float = 0f,
@@ -218,16 +218,21 @@ class ImmersiveModeEngineModule : Module() {
     ) {
         val dsp = SoftwareDSPAudioProcessor.getInstance()
         
-        dsp?.setAllEqBandGains(eqGains)
-        currentEqGains = eqGains
+        // Convert dB values to units for DSP functions (which multiply by DB_PER_UNIT)
+        val dbPerUnit = SoftwareDSPAudioProcessor.DB_PER_UNIT.toDouble()
+        val eqUnits = eqGainsDb.map { it / dbPerUnit }
+        dsp?.setAllEqBandGains(eqUnits)
+        currentEqGains = eqGainsDb
         
         val stereoWidth = spatialWidth / 100f
         dsp?.setStereoWidth(stereoWidth)
         currentVirtualizerStrength = (spatialWidth * 10)
         
         dsp?.setReverb(reverbWetMix)
-        dsp?.setBassBoost(bassBoostDb)
-        dsp?.setTrebleBoost(trebleBoostDb)
+        
+        // Convert dB to units for bass/treble boost
+        dsp?.setBassBoost(bassBoostDb / SoftwareDSPAudioProcessor.DB_PER_UNIT)
+        dsp?.setTrebleBoost(trebleBoostDb / SoftwareDSPAudioProcessor.DB_PER_UNIT)
     }
     
     // Zero-sum immersive mode presets for maximum headroom

@@ -23,42 +23,55 @@ const TREBLE_FREQUENCY = 6000;
 const DB_PER_UNIT = 2.4;
 const MAX_DB = 12;
 
-const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
+// Zero-sum immersive mode presets for maximum headroom
+const IMMERSIVE_MODES: Record<string, ImmersiveMode & { bassBoostDb: number; trebleBoostDb: number }> = {
   music: {
     name: 'Music',
-    eqPreset: [2.0, 1.5, 1.0, 0.5, 0.0, 0.5, 1.0, 1.5, 1.0, 0.5],
-    spatialWidth: 0.30,
+    eqPreset: [0.3, 0.3, -0.4, -1.0, -1.0, 0.0, 1.0, 1.5, 0.4, -1.1],
+    spatialWidth: 0.25,
     reverb: 0.08,
+    bassBoostDb: 1.2,
+    trebleBoostDb: 1.3,
   },
   '360_reality': {
     name: '360 Reality',
-    eqPreset: [0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 0.5, 0.5],
-    spatialWidth: 0.85,
-    reverb: 0.20,
+    eqPreset: [0.0, 0.0, -0.6, -0.6, -0.6, 0.0, 1.0, 1.2, 0.3, -0.7],
+    spatialWidth: 0.55,
+    reverb: 0.18,
+    bassBoostDb: 0.8,
+    trebleBoostDb: 1.5,
   },
   gaming: {
     name: 'Gaming',
-    eqPreset: [2.5, 2.0, 1.0, 0.5, 1.5, 2.5, 2.0, 1.0, 0.5, 0.0],
-    spatialWidth: 0.50,
-    reverb: 0.06,
+    eqPreset: [0.8, 0.8, 0.4, -1.1, -1.1, 0.0, 1.0, 1.7, 0.8, -1.9],
+    spatialWidth: 0.57,
+    reverb: 0.08,
+    bassBoostDb: 1.2,
+    trebleBoostDb: 2.1,
   },
   podcast: {
     name: 'Podcast',
-    eqPreset: [0.0, 0.5, 1.0, 2.0, 2.5, 2.0, 1.5, 1.0, 0.5, 0.0],
+    eqPreset: [-1.9, -1.9, -0.9, -0.7, 0.4, 1.0, 1.0, 1.4, 1.8, -0.2],
     spatialWidth: 0,
     reverb: 0,
+    bassBoostDb: -1.0,
+    trebleBoostDb: 2.3,
   },
   movie: {
     name: 'Movie',
-    eqPreset: [3.0, 2.5, 1.5, 1.0, 1.5, 1.0, 0.5, 1.0, 1.5, 1.0],
-    spatialWidth: 0.60,
+    eqPreset: [-0.8, -0.8, -0.4, 0.7, 1.1, 1.0, 1.0, -0.3, -0.5, -1.7],
+    spatialWidth: 0.45,
     reverb: 0.12,
+    bassBoostDb: 1.8,
+    trebleBoostDb: 1.5,
   },
   sports: {
     name: 'Sports',
-    eqPreset: [1.5, 1.0, 0.5, 1.5, 2.0, 1.5, 1.0, 0.5, 0.5, 0.0],
-    spatialWidth: 0.55,
+    eqPreset: [1.2, 1.2, 0.5, -0.7, -0.7, 0.0, 1.0, 1.2, -0.9, -2.5],
+    spatialWidth: 0.47,
     reverb: 0.10,
+    bassBoostDb: 2.2,
+    trebleBoostDb: 0.8,
   },
 };
 
@@ -245,11 +258,11 @@ class WebAudioEffectsEngineClass {
       return;
     }
 
-    this.applyImmersiveEQ(mode.eqPreset, mode.reverb);
+    this.applyImmersiveEQ(mode.eqPreset, mode.reverb, mode.bassBoostDb, mode.trebleBoostDb);
     this.currentMode = modeName;
   }
 
-  private applyImmersiveEQ(bands: number[], reverb: number = 0): void {
+  private applyImmersiveEQ(bands: number[], reverb: number = 0, bassBoostDb: number = 0, trebleBoostDb: number = 0): void {
     if (!this.isInitialized || this.eqFilters.length === 0) {
       console.log('[WebAudioEffectsEngine] Not initialized, cannot apply immersive EQ');
       return;
@@ -260,19 +273,34 @@ class WebAudioEffectsEngineClass {
       paddedBands.push(0);
     }
 
+    // Immersive mode values are in dB - apply directly with ±12dB limit
     paddedBands.forEach((value, index) => {
       if (this.eqFilters[index]) {
-        const dbValue = value * DB_PER_UNIT;
-        const clampedDb = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
+        const clampedDb = Math.max(-MAX_DB, Math.min(MAX_DB, value));
         this.eqFilters[index].gain.value = clampedDb;
       }
     });
 
+    // Apply bass and treble boost (values in dB, clamped to ±12dB)
+    if (this.bassBoostFilter) {
+      const clampedBass = Math.max(-MAX_DB, Math.min(MAX_DB, bassBoostDb));
+      this.bassBoostFilter.gain.value = clampedBass;
+      this.bassGainDb = clampedBass;
+    }
+    
+    if (this.trebleBoostFilter) {
+      const clampedTreble = Math.max(-MAX_DB, Math.min(MAX_DB, trebleBoostDb));
+      this.trebleBoostFilter.gain.value = clampedTreble;
+      this.trebleGainDb = clampedTreble;
+    }
+
     this.setReverb(reverb);
+    
+    // Store as units for safety gain calculation consistency
+    this.currentEQValues = paddedBands.map(v => v / DB_PER_UNIT);
     this.recalculateSafetyGain();
 
-    this.currentEQValues = paddedBands;
-    console.log(`[WebAudioEffectsEngine] Applied immersive mode with reverb:${reverb}`);
+    console.log(`[WebAudioEffectsEngine] Applied immersive mode with reverb:${reverb}, bass:${bassBoostDb}dB, treble:${trebleBoostDb}dB`);
   }
 
   setBassBoost(gainUnits: number): void {
