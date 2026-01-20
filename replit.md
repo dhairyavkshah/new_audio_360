@@ -25,7 +25,7 @@ New Audio 360 is a premium mobile music player application built with React Nati
 The app employs a **pure software-based DSP** across all platforms, ensuring a consistent audio experience.
 
 **Dual-DSP Architecture Overview**:
-The system routes audio from various sources (Music Player, Online Radio) through a `SoundLabContext` for settings management (EQ Presets, Bass/Treble Boost, Virtualizer, Immersive Modes). These settings are then passed to a `WebAudioEffectsEngine` (a single control interface) which routes them to platform-specific DSP engines: `WebAudioEffectsEngine` (Web Audio API) for web and `SoftwareDSPAudioProcessor` for Android. Both engines apply effects and output to the respective audio renderers (HTMLAudioElement or ExoPlayer).
+The system routes audio from various sources (Music Player, Online Radio) through a `SoundLabContext` for settings management (EQ Presets, Bass/Treble Boost, Virtualizer, Immersive Modes). `SoundLabContext` calls platform-specific modules directly: `WebAudioEffectsEngine` for Web (using Web Audio API) and `EqualizerModule`/`ImmersiveModeEngineModule` for Android (using `SoftwareDSPAudioProcessor`). Each platform operates independently with no cross-platform syncing. Both engines apply effects and output to the respective audio renderers (HTMLAudioElement or ExoPlayer).
 
 **Key Architecture Principles**:
 1.  **Two DSPs, Same Settings**: Web uses `react-native-audio-api` (Web Audio API), Android uses `SoftwareDSPAudioProcessor`. Both have identical preset values defined independently.
@@ -62,13 +62,14 @@ A 4-tab system with a persistent MiniPlayer:
 | File | Purpose |
 |------|---------|
 | `client/contexts/SoundLabContext.tsx` | Manages all DSP settings (presets, modes, bass/treble) |
-| `client/services/WebAudioEffectsEngine.ts` | Single DSP control interface - applies to Web, syncs to Android |
+| `client/services/WebAudioEffectsEngine.ts` | Web-only DSP engine (Web Audio API) - independent, no Android syncing |
 | `client/contexts/PlayerContext.tsx` | Music playback + EqualizerModule attachment on Android |
 | `client/contexts/OnlineRadioContext.tsx` | Online radio via PlaybackEngineModule with full DSP |
 | `client/contexts/RadioContext.tsx` | FM/AM radio with DSP attachment |
 | `modules/audio-effects/.../SoftwareDSPAudioProcessor.kt` | Core Android DSP engine |
 | `modules/audio-effects/.../EqualizerModule.kt` | Android EQ/bass/treble bridge |
 | `modules/audio-effects/.../VirtualizerModule.kt` | Android stereo width bridge (singleton) |
+| `modules/audio-effects/.../ImmersiveModeEngineModule.kt` | Android immersive modes bridge |
 | `modules/audio-effects/.../PlaybackEngineModule.kt` | ExoPlayer wrapper with DSP integration |
 
 **DSP Control Flow**:
