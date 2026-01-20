@@ -284,7 +284,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     }
     
     private fun applySafetyGainReduction(samples: ShortArray) {
-        val linearGain = kotlin.math.pow(10.0, safetyGainReduction / 20.0).toFloat()
+        val linearGain = 10.0.pow(safetyGainReduction / 20.0).toFloat()
         for (i in samples.indices) {
             val sample = samples[i].toFloat() * linearGain
             samples[i] = sample.coerceIn(-32768f, 32767f).toInt().toShort()
