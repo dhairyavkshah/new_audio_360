@@ -30,17 +30,18 @@ The app uses **pure software-based DSP** across all platforms, ensuring a consis
 
 **Audio Signal Chain**:
 ```
-Source → Gain → 7-Band EQ → Bass Shelf Filter → Treble Shelf Filter → Stereo Widener → Limiter → Output
+Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter → Stereo Widener → Reverb → Limiter → Output
 ```
 
 **Key Components**:
-- **7-Band Parametric EQ**: Sub, Bass, Low-Mid, Mid, High-Mid, Treble, Brilliance with zero-sum normalization.
+- **10-Band Parametric EQ**: 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz with zero-sum normalization.
 - **Bass Boost Filter**: Lowshelf at 150Hz (±12 dB range).
 - **Treble Boost Filter**: Highshelf at 6kHz (±12 dB range).
+- **Multi-Tap Delay Reverb**: 4 delay lines (23ms, 41ms, 67ms, 89ms) with equal-power crossfade wet/dry mixing.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
 - **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide). VirtualizerModule and ImmersiveModeEngineModule delegate to SoftwareDSPAudioProcessor.
-- **EQ Presets**: 8 total (Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic) with zero-sum normalization.
-- **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, and virtualizer settings, designed for specific listening experiences.
+- **EQ Presets**: 10 total (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity) with zero-sum normalization.
+- **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, stereo width, and reverb settings. Reverb levels: Music 8%, 360 Reality 18%, Gaming 8%, Podcast 0%, Movie 12%, Sports 10%.
 
 ### Navigation Structure
 A 4-tab system with a persistent MiniPlayer:
@@ -60,7 +61,7 @@ Checks for Google Play installation. Licensed users get full access; unlicensed 
 
 ### Feature Specifications
 
-- **Sound Lab**: 8 EQ presets, custom 5-band EQ editor, 5 immersive modes, bass/treble control, distortion prevention.
+- **Sound Lab**: 10 EQ presets, custom 5-band EQ editor, 6 immersive modes, bass/treble control, distortion prevention.
 - **Theming**: 55 themes across 6 categories (System, Winamp, Retro, Nature, Professional, Special).
 - **Radio**: Native FM/AM radio and online streaming radio (Radio Browser API with quality filters).
 - **Playback Features**: Background playback, notification controls, queue management, shuffle/repeat, playback speed, sleep timer, favorites, recently/most played.
