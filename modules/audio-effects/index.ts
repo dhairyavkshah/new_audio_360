@@ -70,6 +70,13 @@ export interface EqualizerAttachResult {
   presets?: string[];
 }
 
+export interface LfeSettings {
+  enabled: boolean;
+  crossover: number;
+  headroom: number;
+  gain: number;
+}
+
 interface EqualizerModuleInterface {
   isAvailable(): boolean;
   attach(sessionId: number): Promise<EqualizerAttachResult>;
@@ -84,6 +91,11 @@ interface EqualizerModuleInterface {
   setEqBands(bands: number[]): { success: boolean; error?: string };
   setBassBoost(gain: number): { success: boolean; gain?: number; error?: string };
   setTrebleBoost(gain: number): { success: boolean; gain?: number; error?: string };
+  setLfeEnabled(enabled: boolean): { success: boolean; error?: string };
+  setLfeCrossoverFrequency(freq: number): { success: boolean; error?: string };
+  setLfeHeadroom(headroom: number): { success: boolean; error?: string };
+  setLfeGain(gain: number): { success: boolean; error?: string };
+  getLfeSettings(): LfeSettings;
   release(): Promise<{ success: boolean }>;
 }
 
@@ -707,6 +719,66 @@ export const EqualizerModule = {
     } catch (error) {
       console.error('EqualizerModule.setTrebleBoost error:', error);
       return { success: false, error: String(error) };
+    }
+  },
+
+  setLfeEnabled: (enabled: boolean): { success: boolean; error?: string } => {
+    if (!EqualizerModuleNative) {
+      return { success: false, error: 'Equalizer not available' };
+    }
+    try {
+      return EqualizerModuleNative.setLfeEnabled(enabled);
+    } catch (error) {
+      console.error('EqualizerModule.setLfeEnabled error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setLfeCrossoverFrequency: (freq: number): { success: boolean; error?: string } => {
+    if (!EqualizerModuleNative) {
+      return { success: false, error: 'Equalizer not available' };
+    }
+    try {
+      return EqualizerModuleNative.setLfeCrossoverFrequency(freq);
+    } catch (error) {
+      console.error('EqualizerModule.setLfeCrossoverFrequency error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setLfeHeadroom: (headroom: number): { success: boolean; error?: string } => {
+    if (!EqualizerModuleNative) {
+      return { success: false, error: 'Equalizer not available' };
+    }
+    try {
+      return EqualizerModuleNative.setLfeHeadroom(headroom);
+    } catch (error) {
+      console.error('EqualizerModule.setLfeHeadroom error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setLfeGain: (gain: number): { success: boolean; error?: string } => {
+    if (!EqualizerModuleNative) {
+      return { success: false, error: 'Equalizer not available' };
+    }
+    try {
+      return EqualizerModuleNative.setLfeGain(gain);
+    } catch (error) {
+      console.error('EqualizerModule.setLfeGain error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  getLfeSettings: (): LfeSettings => {
+    if (!EqualizerModuleNative) {
+      return { enabled: false, crossover: 80, headroom: 6, gain: 0 };
+    }
+    try {
+      return EqualizerModuleNative.getLfeSettings();
+    } catch (error) {
+      console.error('EqualizerModule.getLfeSettings error:', error);
+      return { enabled: false, crossover: 80, headroom: 6, gain: 0 };
     }
   },
 

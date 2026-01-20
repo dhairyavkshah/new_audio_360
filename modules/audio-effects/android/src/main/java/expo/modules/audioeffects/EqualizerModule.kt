@@ -189,6 +189,76 @@ class EqualizerModule : Module() {
             }
         }
         
+        Function("setLfeEnabled") { enabled: Boolean ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
+                }
+                dsp.setLfeEnabled(enabled)
+                return@Function mapOf("success" to true, "enabled" to enabled)
+            } catch (e: Exception) {
+                return@Function mapOf("success" to false, "error" to e.message)
+            }
+        }
+        
+        Function("setLfeCrossoverFrequency") { freq: Double ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
+                }
+                dsp.setLfeCrossoverFrequency(freq.toFloat())
+                return@Function mapOf("success" to true, "frequency" to freq)
+            } catch (e: Exception) {
+                return@Function mapOf("success" to false, "error" to e.message)
+            }
+        }
+        
+        Function("setLfeHeadroom") { headroom: Double ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
+                }
+                dsp.setLfeHeadroom(headroom.toFloat())
+                return@Function mapOf("success" to true, "headroom" to headroom)
+            } catch (e: Exception) {
+                return@Function mapOf("success" to false, "error" to e.message)
+            }
+        }
+        
+        Function("setLfeGain") { gain: Double ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
+                }
+                dsp.setLfeGain(gain.toFloat())
+                return@Function mapOf("success" to true, "gain" to gain)
+            } catch (e: Exception) {
+                return@Function mapOf("success" to false, "error" to e.message)
+            }
+        }
+        
+        Function("getLfeSettings") {
+            val dsp = getDspProcessor()
+            if (dsp == null) {
+                return@Function mapOf(
+                    "enabled" to false,
+                    "crossover" to 80.0,
+                    "headroom" to 6.0,
+                    "gain" to 0.0
+                )
+            }
+            return@Function mapOf(
+                "enabled" to dsp.getLfeEnabled(),
+                "crossover" to dsp.getLfeCrossoverFrequency().toDouble(),
+                "headroom" to dsp.getLfeHeadroom().toDouble(),
+                "gain" to dsp.getLfeGain().toDouble()
+            )
+        }
+        
         AsyncFunction("release") { promise: Promise ->
             try {
                 val dsp = getDspProcessor()

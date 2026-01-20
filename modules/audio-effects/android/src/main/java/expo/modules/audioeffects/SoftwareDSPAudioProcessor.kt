@@ -44,6 +44,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private val trebleBoostFilter = BiquadFilter(FilterType.HIGHSHELF, TREBLE_FREQUENCY, 0f, 0.707f, 44100f)
     
     private val limiter = Limiter(-1f, 20f, 1f, 100f, 44100f)
+    
+    private val lfeFilter = BiquadFilter(FilterType.LOWPASS, 80f, 0f, 0.707f, 44100f)
 
     private val eqGains = FloatArray(10) { 0f }
     private var bassGainDb = 0f
@@ -51,6 +53,11 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private var safetyGainReduction = 0f
     private var stereoWidth = 0f
     private var isEnabled = true
+    
+    private var lfeEnabled = false
+    private var lfeCrossoverFrequency = 80f
+    private var lfeHeadroom = 6f
+    private var lfeGain = 0f
     
     private var reverbWetMix = 0f
     private var currentSampleRate = 44100f
@@ -103,6 +110,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         
         bassBoostFilter.configure(FilterType.LOWSHELF, BASS_FREQUENCY, bassGainDb, 0.707f, sampleRate)
         trebleBoostFilter.configure(FilterType.HIGHSHELF, TREBLE_FREQUENCY, trebleGainDb, 0.707f, sampleRate)
+        
+        lfeFilter.configure(FilterType.LOWPASS, lfeCrossoverFrequency, 0f, 0.707f, sampleRate)
         
         limiter.setSampleRate(sampleRate)
         
@@ -163,6 +172,10 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             trebleBoostFilter.processBuffer(samples, channelCount)
         }
         
+        if (lfeEnabled && channelCount == 2) {
+            processLfe(samples)
+        }
+        
         if (safetyGainReduction < 0f) {
             applySafetyGainReduction(samples)
         }
@@ -201,6 +214,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         inputEnded = false
         
         eqFilters.forEach { it.resetAllChannels() }
+        lfeFilter.resetAllChannels()
         limiter.reset()
         resetReverbBuffers()
 
@@ -259,6 +273,30 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     
     fun getSafetyGainReduction(): Float = safetyGainReduction
     
+    fun setLfeEnabled(enabled: Boolean) {
+        lfeEnabled = enabled
+        recalculateSafetyGain()
+    }
+    
+    fun setLfeCrossoverFrequency(freq: Float) {
+        lfeCrossoverFrequency = freq.coerceIn(20f, 200f)
+        lfeFilter.configure(FilterType.LOWPASS, lfeCrossoverFrequency, 0f, 0.707f, currentSampleRate)
+    }
+    
+    fun setLfeHeadroom(headroom: Float) {
+        lfeHeadroom = headroom.coerceIn(0f, 18f)
+        recalculateSafetyGain()
+    }
+    
+    fun setLfeGain(gain: Float) {
+        lfeGain = gain.coerceIn(-12f, 12f)
+    }
+    
+    fun getLfeEnabled(): Boolean = lfeEnabled
+    fun getLfeCrossoverFrequency(): Float = lfeCrossoverFrequency
+    fun getLfeHeadroom(): Float = lfeHeadroom
+    fun getLfeGain(): Float = lfeGain
+    
     private fun recalculateSafetyGain() {
         val lowFreqBands = eqGains.slice(0..2)
         val midFreqBands = eqGains.slice(3..5)
@@ -272,15 +310,22 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         val highFreqTotal = maxHighEq + kotlin.math.max(0f, trebleGainDb)
         val midFreqTotal = maxMidEq
         
-        val totalMaxGain = kotlin.math.max(kotlin.math.max(lowFreqTotal, midFreqTotal), highFreqTotal)
+        // Low frequencies get extra headroom when LFE is enabled
+        val lowFreqMaxDb = if (lfeEnabled) MAX_DB + lfeHeadroom else MAX_DB
+        // Mid/high frequencies always use normal headroom
+        val midHighMaxDb = MAX_DB
         
-        safetyGainReduction = if (totalMaxGain > MAX_DB) {
-            -(totalMaxGain - MAX_DB)
-        } else {
-            0f
-        }
+        // Calculate how much each frequency range exceeds its limit
+        val lowExcess = if (lowFreqTotal > lowFreqMaxDb) lowFreqTotal - lowFreqMaxDb else 0f
+        val midExcess = if (midFreqTotal > midHighMaxDb) midFreqTotal - midHighMaxDb else 0f
+        val highExcess = if (highFreqTotal > midHighMaxDb) highFreqTotal - midHighMaxDb else 0f
         
-        android.util.Log.d("SoftwareDSP", "Safety gain: lowEQ=$maxLowEq+bass=$bassGainDb, highEQ=$maxHighEq+treble=$trebleGainDb, reduction=$safetyGainReduction dB")
+        // Safety gain is the maximum excess across all ranges
+        val maxExcess = kotlin.math.max(kotlin.math.max(lowExcess, midExcess), highExcess)
+        
+        safetyGainReduction = if (maxExcess > 0f) -maxExcess else 0f
+        
+        android.util.Log.d("SoftwareDSP", "Safety gain: lowEQ=$maxLowEq+bass=$bassGainDb, highEQ=$maxHighEq+treble=$trebleGainDb, lfeEnabled=$lfeEnabled, lowFreqMaxDb=$lowFreqMaxDb, reduction=$safetyGainReduction dB")
     }
     
     private fun applySafetyGainReduction(samples: ShortArray) {
@@ -288,6 +333,20 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         for (i in samples.indices) {
             val sample = samples[i].toFloat() * linearGain
             samples[i] = sample.coerceIn(-32768f, 32767f).toInt().toShort()
+        }
+    }
+    
+    private fun processLfe(samples: ShortArray) {
+        val lfeSamples = samples.copyOf()
+        
+        lfeFilter.processBuffer(lfeSamples, 2)
+        
+        val lfeLinearGain = 10.0.pow(lfeGain / 20.0).toFloat()
+        
+        for (i in samples.indices) {
+            val lfeContribution = (lfeSamples[i].toFloat() * lfeLinearGain - lfeSamples[i].toFloat())
+            val mixed = samples[i].toFloat() + lfeContribution
+            samples[i] = mixed.coerceIn(-32768f, 32767f).toInt().toShort()
         }
     }
 
@@ -412,9 +471,15 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         stereoWidth = 0f
         reverbWetMix = 0f
         
+        lfeEnabled = false
+        lfeCrossoverFrequency = 80f
+        lfeHeadroom = 6f
+        lfeGain = 0f
+        
         eqFilters.forEach { it.resetAllChannels() }
         bassBoostFilter.resetAllChannels()
         trebleBoostFilter.resetAllChannels()
+        lfeFilter.resetAllChannels()
         limiter.reset()
         resetReverbBuffers()
     }
