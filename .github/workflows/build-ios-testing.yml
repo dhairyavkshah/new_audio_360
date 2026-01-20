@@ -1,0 +1,54 @@
+name: Build iOS Testing (Preview)
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Build message'
+        required: false
+        default: 'iOS Testing build'
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build iOS Testing
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Expo & EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build iOS Testing
+        run: eas build --platform ios --profile preview --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Complete
+        run: |
+          echo "================================================"
+          echo "iOS Testing build submitted to EAS!"
+          echo "================================================"
+          echo ""
+          echo "This is a PREVIEW build for internal testing."
+          echo "Install via TestFlight or ad-hoc distribution."
+          echo ""
+          echo "Download from:"
+          echo "https://expo.dev/accounts/shahdhairyavk/projects/new-audio-360/builds"
+          echo "================================================"
