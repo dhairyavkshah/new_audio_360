@@ -18,6 +18,7 @@ import {
 } from '@/services/OnlineRadioService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
 import { PlaybackEngineModule } from '../../modules/audio-effects';
+import { WebAudioEffectsEngine } from '@/services/WebAudioEffectsEngine';
 
 const STORAGE_KEY_COUNTRY = '@new_audio_360_online_radio_country';
 const STORAGE_KEY_STATIONS_CACHE = '@new_audio_360_online_radio_stations';
@@ -68,6 +69,10 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
   const soundRef = useRef<Audio.Sound | null>(null);
   const currentStationRef = useRef<OnlineRadioStation | null>(currentStation);
+  
+  // Web Audio API refs for DSP processing
+  const webAudioElementRef = useRef<HTMLAudioElement | null>(null);
+  const webMediaSourceRef = useRef<any>(null);
 
   useEffect(() => {
     currentStationRef.current = currentStation;
@@ -107,15 +112,30 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   };
 
   const cleanupSound = async () => {
+    // Cleanup expo-av sound (used as fallback)
     if (soundRef.current) {
       try {
-        // Stop playback first, then unload
         await soundRef.current.stopAsync();
         await soundRef.current.unloadAsync();
       } catch (err) {
-        console.warn('[OnlineRadioContext] Error cleaning up sound:', err);
+        console.warn('[OnlineRadioContext] Error cleaning up expo-av sound:', err);
       }
       soundRef.current = null;
+    }
+    
+    // Cleanup Web Audio API elements
+    if (webAudioElementRef.current) {
+      try {
+        webAudioElementRef.current.pause();
+        webAudioElementRef.current.src = '';
+        if (webMediaSourceRef.current) {
+          WebAudioEffectsEngine.disconnectMediaElementSource(webMediaSourceRef.current);
+        }
+      } catch (err) {
+        console.warn('[OnlineRadioContext] Error cleaning up web audio:', err);
+      }
+      webAudioElementRef.current = null;
+      webMediaSourceRef.current = null;
     }
   };
 
@@ -350,6 +370,67 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
       await cleanupSound();
 
+      // Web platform: Use Web Audio API with DSP processing
+      if (Platform.OS === 'web') {
+        try {
+          console.log('[OnlineRadioContext] Using Web Audio API with DSP for radio stream on Web');
+          
+          // Initialize WebAudioEffectsEngine if needed
+          await WebAudioEffectsEngine.initialize();
+          
+          // Create HTML5 Audio element
+          const audioElement = new Audio();
+          audioElement.crossOrigin = 'anonymous';
+          audioElement.src = streamUrl;
+          audioElement.volume = volume;
+          webAudioElementRef.current = audioElement;
+          
+          // Use WebAudioEffectsEngine to create and connect the media source
+          // This ensures the same AudioContext is used throughout the DSP chain
+          const result = WebAudioEffectsEngine.createMediaElementSource(audioElement);
+          if (result && result.connected) {
+            webMediaSourceRef.current = result.source;
+            console.log('[OnlineRadioContext] Radio stream connected to WebAudioEffectsEngine DSP chain');
+          } else {
+            // DSP not available, will use HTML5 Audio directly (no DSP effects)
+            console.warn('[OnlineRadioContext] DSP not available, using HTML5 Audio directly');
+          }
+          
+          // Set up event handlers
+          audioElement.oncanplay = () => {
+            setIsBuffering(false);
+          };
+          
+          audioElement.onwaiting = () => {
+            setIsBuffering(true);
+          };
+          
+          audioElement.onerror = () => {
+            setError('Streaming source unavailable');
+            setIsPlaying(false);
+            setIsBuffering(false);
+            currentStationRef.current = null;
+            setCurrentStation(null);
+          };
+          
+          // Start playback
+          await audioElement.play();
+          
+          currentStationRef.current = station;
+          setCurrentStation(station);
+          setIsPlaying(true);
+          setIsBuffering(false);
+          AudioCoordinator.notifyPlaybackStarted('radio');
+          
+          OnlineRadioService.reportStationClick(station.stationuuid).catch(() => {});
+          console.log('[OnlineRadioContext] Radio stream started via Web Audio API with DSP:', station.name);
+          return;
+        } catch (webErr) {
+          console.warn('[OnlineRadioContext] Web Audio API failed, falling back to expo-av:', webErr);
+        }
+      }
+
+      // Fallback: expo-av for iOS or when Web Audio fails
       await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
@@ -407,11 +488,29 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // Stop Web Audio API playback
+      if (webAudioElementRef.current) {
+        try {
+          webAudioElementRef.current.pause();
+          webAudioElementRef.current.src = '';
+          if (webMediaSourceRef.current) {
+            WebAudioEffectsEngine.disconnectMediaElementSource(webMediaSourceRef.current);
+          }
+          console.log('[OnlineRadioContext] Radio stopped via Web Audio API');
+        } catch (webErr) {
+          console.warn('[OnlineRadioContext] Web Audio cleanup failed:', webErr);
+        }
+        webAudioElementRef.current = null;
+        webMediaSourceRef.current = null;
+      }
+
+      // Stop expo-av sound
       if (soundRef.current) {
         await soundRef.current.stopAsync();
         await soundRef.current.unloadAsync();
         soundRef.current = null;
       }
+      
       setIsPlaying(false);
       setIsBuffering(false);
       currentStationRef.current = null;
@@ -457,6 +556,16 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Web Audio API volume control
+    if (webAudioElementRef.current) {
+      try {
+        webAudioElementRef.current.volume = clampedVolume;
+      } catch (err) {
+        console.warn('[OnlineRadioContext] Web Audio setVolume error:', err);
+      }
+    }
+
+    // expo-av volume control
     if (soundRef.current) {
       try {
         await soundRef.current.setVolumeAsync(clampedVolume);

@@ -203,6 +203,84 @@ class WebAudioEffectsEngineClass {
     return this.eqFilters[0] || null;
   }
 
+  /**
+   * Create a MediaElementSource from an HTML5 Audio element and connect it to the DSP chain.
+   * This must use the engine's own AudioContext for Web Audio API compatibility.
+   */
+  createMediaElementSource(audioElement: HTMLAudioElement): { source: any; connected: boolean } | null {
+    if (!this.isInitialized || !this.audioContext || !this.eqFilters[0]) {
+      console.log('[WebAudioEffectsEngine] Not initialized, cannot create media element source');
+      return null;
+    }
+    
+    try {
+      // Use the engine's AudioContext to create the MediaElementSource
+      // This ensures all nodes are from the same context
+      const nativeContext = (this.audioContext as any)._context || this.audioContext;
+      
+      // For react-native-audio-api on web, we need to access the underlying native context
+      let mediaSource: any;
+      if (typeof nativeContext.createMediaElementSource === 'function') {
+        mediaSource = nativeContext.createMediaElementSource(audioElement);
+      } else if (typeof (window as any).AudioContext !== 'undefined') {
+        // Fallback: create a separate context for the media element
+        console.warn('[WebAudioEffectsEngine] Using fallback AudioContext for media element');
+        return null;
+      } else {
+        console.error('[WebAudioEffectsEngine] No AudioContext available for media element');
+        return null;
+      }
+      
+      // Connect media source to the first EQ filter (start of DSP chain)
+      mediaSource.connect(this.eqFilters[0]);
+      console.log('[WebAudioEffectsEngine] MediaElementSource created and connected to DSP chain');
+      
+      return { source: mediaSource, connected: true };
+    } catch (error) {
+      console.error('[WebAudioEffectsEngine] Failed to create media element source:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Disconnect and cleanup a media element source
+   */
+  disconnectMediaElementSource(source: any): void {
+    try {
+      if (source) {
+        source.disconnect();
+        console.log('[WebAudioEffectsEngine] MediaElementSource disconnected from DSP chain');
+      }
+    } catch (error) {
+      console.error('[WebAudioEffectsEngine] Failed to disconnect media element source:', error);
+    }
+  }
+
+  connectExternalSource(sourceNode: any): boolean {
+    if (!this.isInitialized || !this.eqFilters[0]) {
+      console.log('[WebAudioEffectsEngine] Not initialized, cannot connect external source');
+      return false;
+    }
+    
+    try {
+      sourceNode.connect(this.eqFilters[0]);
+      console.log('[WebAudioEffectsEngine] External source connected to DSP chain');
+      return true;
+    } catch (error) {
+      console.error('[WebAudioEffectsEngine] Failed to connect external source:', error);
+      return false;
+    }
+  }
+
+  disconnectExternalSource(sourceNode: any): void {
+    try {
+      sourceNode.disconnect();
+      console.log('[WebAudioEffectsEngine] External source disconnected from DSP chain');
+    } catch (error) {
+      console.error('[WebAudioEffectsEngine] Failed to disconnect external source:', error);
+    }
+  }
+
   applyEQ(bands: number[]): void {
     if (!this.isInitialized || this.eqFilters.length === 0) {
       console.log('[WebAudioEffectsEngine] Not initialized, cannot apply EQ');
