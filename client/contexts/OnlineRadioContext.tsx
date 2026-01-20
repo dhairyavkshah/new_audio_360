@@ -378,8 +378,9 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
           // Initialize WebAudioEffectsEngine if needed
           await WebAudioEffectsEngine.initialize();
           
-          // Create HTML5 Audio element
-          const audioElement = new Audio();
+          // Create HTML5 Audio element (use window.Audio to avoid TypeScript conflict with expo-av Audio)
+          const AudioConstructor = (window as any).Audio || HTMLAudioElement;
+          const audioElement = new AudioConstructor() as HTMLAudioElement;
           audioElement.crossOrigin = 'anonymous';
           audioElement.src = streamUrl;
           audioElement.volume = volume;
@@ -527,7 +528,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (Platform.OS === 'android' && PlaybackEngineModule.isAvailable()) {
-      const subscription = PlaybackEngineModule.addListener('onError', (event: { code: number; message: string }) => {
+      const handleError = (event: { code: number; message: string }) => {
         if (currentStationRef.current) {
           console.error('[OnlineRadioContext] PlaybackEngineModule error during radio playback:', event);
           setError(`Stream error: ${event.message || 'Connection lost'}`);
@@ -537,9 +538,13 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
           setCurrentStation(null);
           AudioCoordinator.notifyPlaybackStopped('radio');
         }
-      });
+      };
+      
+      const subscription = PlaybackEngineModule.subscribeToError(handleError);
       return () => {
-        subscription.remove();
+        if (subscription && typeof subscription.remove === 'function') {
+          subscription.remove();
+        }
       };
     }
   }, []);

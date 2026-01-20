@@ -638,6 +638,21 @@ export const PlaybackEngineModule = {
       console.error('PlaybackEngineModule.release error:', error);
       return { success: false, error: String(error) };
     }
+  },
+
+  subscribeToError: (callback: (event: { code: number; message: string }) => void): { remove: () => void } | null => {
+    if (!PlaybackEngineModuleNative) {
+      return null;
+    }
+    try {
+      const { NativeEventEmitter, NativeModules } = require('react-native');
+      const eventEmitter = new NativeEventEmitter(NativeModules.PlaybackEngineModule);
+      const subscription = eventEmitter.addListener('onError', callback);
+      return subscription;
+    } catch (error) {
+      console.error('PlaybackEngineModule.subscribeToError error:', error);
+      return null;
+    }
   }
 };
 

@@ -11,6 +11,7 @@ import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/serv
 import { AudioCoordinator } from '@/services/AudioCoordinator';
 import { setMusicPlaying } from '@/lib/playbackState';
 import { mediaLibraryEvents, MediaLibraryEvent } from '@/lib/mediaLibraryEvents';
+import { WebAudioEffectsEngine } from '@/services/WebAudioEffectsEngine';
 
 export type PlayableSong = Song | DeviceSong;
 
@@ -77,20 +78,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const shuffleRef = useRef(false);
   const repeatRef = useRef<'off' | 'one' | 'all'>('off');
   
-  const audioContextRef = useRef<AudioContext | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
-  const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
-  const limiterRef = useRef<DynamicsCompressorNode | null>(null);
-  const eqFiltersRef = useRef<BiquadFilterNode[]>([]);
-  const bassBoostFilterRef = useRef<BiquadFilterNode | null>(null);
-  const trebleBoostFilterRef = useRef<BiquadFilterNode | null>(null);
-  const stereoWidenerRef = useRef<StereoPannerNode | null>(null);
-  const delayNodeRef = useRef<DelayNode | null>(null);
-  const delayGainRef = useRef<GainNode | null>(null);
+  const webMediaSourceRef = useRef<any>(null);
 
   const useNativePlaybackRef = useRef(Platform.OS === 'android' && PlaybackEngineModule.isAvailable());
-  const useTrackPlayerRef = useRef(TrackPlayerService.isAvailable());
+  const useTrackPlayerRef = useRef(TrackPlayerService.isAvailable() && !PlaybackEngineModule.isAvailable());
   const trackPlayerInitializedRef = useRef(false);
   const nativeAudioSessionIdRef = useRef<number>(0);
   const progressPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -658,6 +650,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playerRef.current = null;
     }
     if (Platform.OS === 'web') {
+      if (webMediaSourceRef.current) {
+        try {
+          WebAudioEffectsEngine.disconnectMediaElementSource(webMediaSourceRef.current);
+        } catch {}
+        webMediaSourceRef.current = null;
+      }
       if (audioElementRef.current) {
         audioElementRef.current.pause();
         audioElementRef.current.src = '';
@@ -667,40 +665,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         audioElementRef.current.onerror = null;
         audioElementRef.current = null;
       }
-      if (mediaSourceRef.current) {
-        try { mediaSourceRef.current.disconnect(); } catch {}
-      }
-      eqFiltersRef.current.forEach(f => { try { f.disconnect(); } catch {} });
-      eqFiltersRef.current = [];
-      if (bassBoostFilterRef.current) {
-        try { bassBoostFilterRef.current.disconnect(); } catch {}
-        bassBoostFilterRef.current = null;
-      }
-      if (trebleBoostFilterRef.current) {
-        try { trebleBoostFilterRef.current.disconnect(); } catch {}
-        trebleBoostFilterRef.current = null;
-      }
-      if (gainNodeRef.current) {
-        try { gainNodeRef.current.disconnect(); } catch {}
-        gainNodeRef.current = null;
-      }
-      if (limiterRef.current) {
-        try { limiterRef.current.disconnect(); } catch {}
-        limiterRef.current = null;
-      }
-      if (stereoWidenerRef.current) {
-        try { stereoWidenerRef.current.disconnect(); } catch {}
-        stereoWidenerRef.current = null;
-      }
-      if (delayNodeRef.current) {
-        try { delayNodeRef.current.disconnect(); } catch {}
-        delayNodeRef.current = null;
-      }
-      if (delayGainRef.current) {
-        try { delayGainRef.current.disconnect(); } catch {}
-        delayGainRef.current = null;
-      }
-      mediaSourceRef.current = null;
     }
   }, []);
 
@@ -735,6 +699,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setRecentlyPlayed(updatedRecentlyPlayed);
       setMostPlayed(updatedMostPlayed);
     } catch {}
+
+    if (useNativePlaybackRef.current) {
+      try {
+        console.log('[PlayerContext] Using PlaybackEngineModule with DSP for music playback');
+        const loadResult = await PlaybackEngineModule.loadTrack(audioUrl);
+        if (!loadResult.success) {
+          throw new Error(loadResult.error || 'Failed to load track');
+        }
+        const playResult = await PlaybackEngineModule.play();
+        if (playResult.success) {
+          setIsPlaying(true);
+          setIsLoading(false);
+        } else {
+          throw new Error(playResult.error || 'Playback failed');
+        }
+        return;
+      } catch (err) {
+        console.error('[PlayerContext] Native playback error:', err);
+        setError('Playback failed');
+        setIsLoading(false);
+        return;
+      }
+    }
 
     if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
       try {
@@ -779,35 +766,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    if (useNativePlaybackRef.current) {
-      try {
-        const loadResult = await PlaybackEngineModule.loadTrack(audioUrl);
-        if (!loadResult.success) {
-          throw new Error(loadResult.error || 'Failed to load track');
-        }
-        const playResult = await PlaybackEngineModule.play();
-        if (playResult.success) {
-          setIsPlaying(true);
-          setIsLoading(false);
-        } else {
-          throw new Error(playResult.error || 'Playback failed');
-        }
-        return;
-      } catch (err) {
-        console.error('[PlayerContext] Native playback error:', err);
-        setError('Playback failed');
-        setIsLoading(false);
-        return;
-      }
-    }
-
     if (Platform.OS === 'web') {
       try {
-        if (!audioContextRef.current) {
-          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        }
-        
-        const audioContext = audioContextRef.current;
+        await WebAudioEffectsEngine.initialize();
         
         if (!audioElementRef.current) {
           audioElementRef.current = new Audio();
@@ -818,27 +779,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         audioElement.src = audioUrl;
         audioElement.load();
         
-        if (!mediaSourceRef.current) {
-          mediaSourceRef.current = audioContext.createMediaElementSource(audioElement);
+        if (!webMediaSourceRef.current) {
+          const result = WebAudioEffectsEngine.createMediaElementSource(audioElement);
+          if (result && result.connected) {
+            webMediaSourceRef.current = result.source;
+            console.log('[PlayerContext] Web music playback connected to DSP chain');
+          } else {
+            console.warn('[PlayerContext] Could not connect to WebAudioEffectsEngine, using direct playback');
+          }
         }
-        
-        if (!gainNodeRef.current) {
-          gainNodeRef.current = audioContext.createGain();
-          gainNodeRef.current.gain.value = 1.0;
-        }
-        
-        if (!limiterRef.current) {
-          limiterRef.current = audioContext.createDynamicsCompressor();
-          limiterRef.current.threshold.value = -3;
-          limiterRef.current.knee.value = 6;
-          limiterRef.current.ratio.value = 12;
-          limiterRef.current.attack.value = 0.003;
-          limiterRef.current.release.value = 0.1;
-        }
-        
-        mediaSourceRef.current.connect(gainNodeRef.current);
-        gainNodeRef.current.connect(limiterRef.current);
-        limiterRef.current.connect(audioContext.destination);
         
         audioElement.onloadedmetadata = () => {
           setDuration(audioElement.duration || song.duration || 0);
@@ -886,23 +835,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [cleanupPlayer, convertSongToTrackMetadata, handleTrackEnd, handleStatusUpdate]);
 
   const togglePlayPause = useCallback(async () => {
-    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
-      if (isPlaying) {
-        await TrackPlayerService.pause();
-        setIsPlaying(false);
-      } else {
-        await TrackPlayerService.play();
-        setIsPlaying(true);
-      }
-      return;
-    }
-
     if (useNativePlaybackRef.current) {
       if (isPlaying) {
         await PlaybackEngineModule.pause();
         setIsPlaying(false);
       } else {
         await PlaybackEngineModule.play();
+        setIsPlaying(true);
+      }
+      return;
+    }
+
+    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
+      if (isPlaying) {
+        await TrackPlayerService.pause();
+        setIsPlaying(false);
+      } else {
+        await TrackPlayerService.play();
         setIsPlaying(true);
       }
       return;
@@ -931,14 +880,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [isPlaying]);
 
   const seek = useCallback(async (time: number) => {
-    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
-      await TrackPlayerService.seekTo(time);
+    if (useNativePlaybackRef.current) {
+      await PlaybackEngineModule.seekTo(Math.round(time * 1000));
       setCurrentTime(time);
       return;
     }
 
-    if (useNativePlaybackRef.current) {
-      await PlaybackEngineModule.seekTo(Math.round(time * 1000));
+    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
+      await TrackPlayerService.seekTo(time);
       setCurrentTime(time);
       return;
     }
@@ -956,6 +905,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleNext = useCallback(() => {
+    if (useNativePlaybackRef.current) {
+      PlaybackEngineModule.skipToNext();
+      return;
+    }
+
     if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
       TrackPlayerService.skipToNext();
       return;
@@ -983,6 +937,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [loadAndPlaySong]);
 
   const handlePrevious = useCallback(() => {
+    if (useNativePlaybackRef.current) {
+      if (currentTime > 3) {
+        PlaybackEngineModule.seekTo(0);
+      } else {
+        PlaybackEngineModule.skipToPrevious();
+      }
+      return;
+    }
+
     if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
       if (currentTime > 3) {
         TrackPlayerService.seekTo(0);
