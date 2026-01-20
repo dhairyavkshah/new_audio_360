@@ -80,8 +80,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const webMediaSourceRef = useRef<any>(null);
 
-  // Android: Use PlaybackEngineModule exclusively for DSP-enabled playback
-  // iOS: Use TrackPlayerService for native playback
+  // iOS: Use TrackPlayerService for music playback (background playback, notification controls)
+  // Android: Use PlaybackEngineModule for music playback (integrates with SoftwareDSPAudioProcessor)
   // Web: Uses HTMLAudioElement with WebAudioEffectsEngine
   const useNativePlaybackRef = useRef(Platform.OS === 'android' && PlaybackEngineModule.isAvailable());
   const useTrackPlayerRef = useRef(Platform.OS === 'ios' && TrackPlayerService.isAvailable());
@@ -92,10 +92,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const wasPlayingBeforeBackgroundRef = useRef<boolean>(false);
   const handleNextInternalRef = useRef<() => void>(() => {});
   const handlePreviousInternalRef = useRef<() => void>(() => {});
+  const isPlayingRef = useRef(false);
 
   useEffect(() => {
     currentSongRef.current = currentSong;
   }, [currentSong]);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
   useEffect(() => {
     queueRef.current = queue;
@@ -287,8 +292,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [setupTrackPlayerCallbacks]);
 
   // PlaybackEngineModule initialization - Android only
-  // DSP is handled via react-native-audio-api (WebAudioEffectsEngine) on both platforms
-  // WebAudioEffectsEngine syncs DSP settings to EqualizerModule for Android native processing
+  // This integrates with SoftwareDSPAudioProcessor for real-time audio effects
   useEffect(() => {
     if (useNativePlaybackRef.current) {
       PlaybackEngineModule.initialize().then(async (initResult) => {
@@ -296,7 +300,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           nativeAudioSessionIdRef.current = initResult.audioSessionId;
           console.log('[PlayerContext] PlaybackEngineModule initialized with audioSessionId:', initResult.audioSessionId);
           
-          // Attach EqualizerModule to enable DSP control via WebAudioEffectsEngine
+          // Attach EqualizerModule to enable DSP processing
           if (EqualizerModule.isAvailable()) {
             try {
               const attachResult = await EqualizerModule.attach(initResult.audioSessionId);
@@ -381,7 +385,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             TrackPlayerService.stop();
           } else if (Platform.OS === 'web' && audioElementRef.current) {
             audioElementRef.current.pause();
-          } else if (Platform.OS === 'ios' && playerRef.current) {
+          } else if (playerRef.current) {
             playerRef.current.pause();
           }
           setCurrentSong(null);
@@ -410,10 +414,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // Propagate repeat mode to the appropriate playback engine
   useEffect(() => {
     if (useNativePlaybackRef.current) {
-      // Android: Use PlaybackEngineModule
       PlaybackEngineModule.setRepeatMode(repeat);
     } else if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
-      // iOS: Use TrackPlayerService
       TrackPlayerService.setRepeatMode(repeat);
     }
   }, [repeat]);
@@ -511,35 +513,51 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [setupTrackPlayerCallbacks, restoreTrackPlayerQueue, currentTime, isPlaying]);
 
+  // Progress polling for PlaybackEngineModule (Android only)
   useEffect(() => {
     if (useTrackPlayerRef.current) return;
     if (!useNativePlaybackRef.current) return;
 
     if (isPlaying && currentSong) {
+      if (progressPollingRef.current) {
+        clearInterval(progressPollingRef.current);
+        progressPollingRef.current = null;
+      }
+      
+      console.log('[PlayerContext] Starting progress polling for Android');
       progressPollingRef.current = setInterval(() => {
-        const status = PlaybackEngineModule.getStatus();
-        
-        if (status.currentPositionMs !== undefined) {
-          setCurrentTime(status.currentPositionMs / 1000);
-        }
-        if (status.durationMs !== undefined && status.durationMs > 0) {
-          setDuration(status.durationMs / 1000);
-        }
-        
-        setIsBuffering(status.playbackState === 'buffering');
-        
-        if (status.playbackState === 'ended') {
-          handleTrackEnd();
-        }
-        
-        if (!status.isPlaying && isPlaying && status.playbackState !== 'buffering') {
-          setIsPlaying(false);
+        try {
+          const status = PlaybackEngineModule.getStatus();
+          
+          if (status.currentPositionMs !== undefined && status.currentPositionMs >= 0) {
+            setCurrentTime(status.currentPositionMs / 1000);
+          }
+          
+          if (status.durationMs !== undefined && status.durationMs > 0) {
+            setDuration(status.durationMs / 1000);
+          }
+          
+          setIsBuffering(status.playbackState === 'buffering');
+          
+          if (status.playbackState === 'ended') {
+            handleTrackEnd();
+          }
+          
+          if (!status.isPlaying && isPlayingRef.current && 
+              status.playbackState !== 'buffering' && 
+              status.playbackState !== 'idle') {
+            console.log('[PlayerContext] Native playback stopped, syncing state');
+            setIsPlaying(false);
+          }
+        } catch (err) {
+          console.warn('[PlayerContext] Progress polling error:', err);
         }
       }, 250);
     } else {
       if (progressPollingRef.current) {
         clearInterval(progressPollingRef.current);
         progressPollingRef.current = null;
+        console.log('[PlayerContext] Stopped progress polling');
       }
     }
 
@@ -561,20 +579,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     if (currentRepeat === 'one') {
       if (useNativePlaybackRef.current) {
-        // Android: Use PlaybackEngineModule
         PlaybackEngineModule.seekTo(0).then(() => {
           PlaybackEngineModule.play();
         });
       } else if (useTrackPlayerRef.current) {
-        // iOS: Use TrackPlayerService
         TrackPlayerService.seekTo(0).then(() => {
           TrackPlayerService.play();
         });
       } else if (Platform.OS === 'web' && audioElementRef.current) {
         audioElementRef.current.currentTime = 0;
         audioElementRef.current.play();
-      } else if (Platform.OS === 'ios' && playerRef.current) {
-        // iOS fallback to expo-audio
+      } else if (playerRef.current) {
         playerRef.current.seekTo(0);
         playerRef.current.play();
       }
@@ -693,6 +708,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setMostPlayed(updatedMostPlayed);
     } catch {}
 
+    // Android: Use PlaybackEngineModule with integrated DSP
     if (useNativePlaybackRef.current) {
       try {
         console.log('[PlayerContext] Using PlaybackEngineModule with DSP for music playback');
@@ -716,6 +732,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // iOS: Use TrackPlayerService
     if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
       try {
         const trackMetadata = convertSongToTrackMetadata(song);
@@ -811,11 +828,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // iOS fallback: Use expo-audio if TrackPlayerService isn't available
-    // Android should never reach here - PlaybackEngineModule is the exclusive Android engine
-    if (Platform.OS === 'ios') {
+    // Fallback: expo-audio for iOS/Android when TrackPlayer isn't available
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
       try {
-        console.log('[PlayerContext] Using expo-audio fallback for iOS');
+        console.log('[PlayerContext] Using expo-audio fallback');
         const player = createAudioPlayer({ uri: audioUrl });
         playerRef.current = player;
         
@@ -829,14 +845,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setError('Playback failed');
         setIsLoading(false);
       }
-      return;
-    }
-    
-    // Android without PlaybackEngineModule should not reach here
-    if (Platform.OS === 'android') {
-      console.error('[PlayerContext] Android playback failed - PlaybackEngineModule not available');
-      setError('Native audio engine not available');
-      setIsLoading(false);
     }
   }, [cleanupPlayer, convertSongToTrackMetadata, handleTrackEnd, handleStatusUpdate]);
 
@@ -874,8 +882,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // iOS fallback to expo-audio (Android never reaches here)
-    if (Platform.OS === 'ios' && playerRef.current) {
+    // Fallback to expo-audio
+    if (playerRef.current) {
       if (isPlaying) {
         playerRef.current.pause();
         setIsPlaying(false);
@@ -905,8 +913,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // iOS fallback to expo-audio (Android never reaches here)
-    if (Platform.OS === 'ios' && playerRef.current) {
+    // Fallback to expo-audio
+    if (playerRef.current) {
       playerRef.current.seekTo(time);
       setCurrentTime(time);
     }
@@ -1046,15 +1054,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (minutes !== null) {
       sleepTimerRef.current = setTimeout(() => {
         if (useNativePlaybackRef.current) {
-          // Android: Use PlaybackEngineModule
           PlaybackEngineModule.pause();
         } else if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
-          // iOS: Use TrackPlayerService
           TrackPlayerService.pause();
         } else if (Platform.OS === 'web' && audioElementRef.current) {
           audioElementRef.current.pause();
-        } else if (Platform.OS === 'ios' && playerRef.current) {
-          // iOS fallback to expo-audio
+        } else if (playerRef.current) {
           playerRef.current.pause();
         }
         setIsPlaying(false);

@@ -55,29 +55,44 @@ A 4-tab system with a persistent MiniPlayer:
 ### Native Modules (Android-specific)
 -   **Audio Processing**: `SoftwareDSPAudioProcessor`, `BiquadFilter`, `Limiter`.
 -   **Audio Control**: `EqualizerModule`, `BassBoostModule`, `VirtualizerModule`, `ImmersiveModeEngineModule` (all delegate to `SoftwareDSPAudioProcessor`).
--   **Playback Engine**: `PlaybackEngineModule` (ExoPlayer wrapper with DSP integration for music and online radio).
+-   **Playback Engine**: `PlaybackEngineModule` (ExoPlayer wrapper with DSP integration - used for music and Online Radio on Android).
 -   **System Modules**: `AudioSessionBridgeModule`, `WaveformAnalyzerModule`, `FMRadioModule`, `LicenseVerificationModule`, `MediaStoreScannerModule`, `MetadataExtractorModule`. No Android hardware audio effects are used.
+
+### Playback Architecture (v26.0)
+Music playback uses platform-specific approaches to ensure proper DSP integration:
+-   **iOS**: `TrackPlayerService` (react-native-track-player) for background playback, notification controls
+-   **Android**: `PlaybackEngineModule` (ExoPlayer wrapper) with integrated `SoftwareDSPAudioProcessor` for real-time audio effects
+-   **Web**: HTMLAudioElement with `WebAudioEffectsEngine` for DSP processing
+-   **Online Radio (Android only)**: `PlaybackEngineModule` with native DSP integration
+
+**Key Architecture Decisions**:
+1. Android uses PlaybackEngineModule because SoftwareDSPAudioProcessor is integrated into ExoPlayer's audio sink
+2. iOS uses TrackPlayerService for proper background playback and notification controls (DSP effects are limited on iOS)
+3. Web uses WebAudioEffectsEngine with Web Audio API for full DSP processing
+4. Android and Web have full DSP processing with matching EQ presets and immersive modes
 
 ### Key DSP Implementation Files
 | File | Purpose |
 |------|---------|
 | `client/contexts/SoundLabContext.tsx` | Manages all DSP settings (presets, modes, bass/treble) |
-| `client/services/WebAudioEffectsEngine.ts` | Web-only DSP engine (Web Audio API) - independent, no Android syncing |
-| `client/contexts/PlayerContext.tsx` | Music playback + EqualizerModule attachment on Android |
-| `client/contexts/OnlineRadioContext.tsx` | Online radio via PlaybackEngineModule with full DSP |
+| `client/services/WebAudioEffectsEngine.ts` | Web-only DSP engine (Web Audio API) |
+| `client/services/TrackPlayerService.ts` | iOS music playback service |
+| `client/contexts/PlayerContext.tsx` | Music playback + EqualizerModule attachment |
+| `client/contexts/OnlineRadioContext.tsx` | Online radio via PlaybackEngineModule (Android) |
 | `client/contexts/RadioContext.tsx` | FM/AM radio with DSP attachment |
 | `modules/audio-effects/.../SoftwareDSPAudioProcessor.kt` | Core Android DSP engine |
 | `modules/audio-effects/.../EqualizerModule.kt` | Android EQ/bass/treble bridge |
 | `modules/audio-effects/.../VirtualizerModule.kt` | Android stereo width bridge (singleton) |
 | `modules/audio-effects/.../ImmersiveModeEngineModule.kt` | Android immersive modes bridge |
-| `modules/audio-effects/.../PlaybackEngineModule.kt` | ExoPlayer wrapper with DSP integration |
+| `modules/audio-effects/.../PlaybackEngineModule.kt` | ExoPlayer wrapper with DSP (Android music + Online Radio) |
 
 **DSP Control Flow**:
 - **Web**: `SoundLabContext` → `WebAudioEffectsEngine.applyEQ()` / `applyImmersiveMode()` → Web Audio API
 - **Android**: `SoundLabContext` → `EqualizerModule.usePreset()` / `ImmersiveModeEngineModule.setMode()` → `SoftwareDSPAudioProcessor`
+- **iOS**: Uses TrackPlayerService for playback; DSP effects are limited on iOS (no native SoftwareDSPAudioProcessor integration)
 
 **DSP Module Attachment (Android)**:
-- `EqualizerModule.attach(audioSessionId)`: Called in PlayerContext after PlaybackEngineModule initializes
+- `EqualizerModule.attach(audioSessionId)`: Called in PlayerContext after PlaybackEngineModule initializes with the returned audio session ID
 - `VirtualizerModule`: Uses singleton pattern - no explicit attach required
 - **Unit Scaling**: UI values (gain units) passed to native code, which internally multiplies by DB_PER_UNIT (2.4)
 

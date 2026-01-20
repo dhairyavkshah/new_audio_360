@@ -69,6 +69,8 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
   const soundRef = useRef<Audio.Sound | null>(null);
   const currentStationRef = useRef<OnlineRadioStation | null>(currentStation);
+  const isPlayingRef = useRef(false);
+  const radioPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   // Web Audio API refs for DSP processing
   const webAudioElementRef = useRef<HTMLAudioElement | null>(null);
@@ -77,6 +79,76 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     currentStationRef.current = currentStation;
   }, [currentStation]);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  // Android: Poll PlaybackEngineModule status for error detection
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !PlaybackEngineModule.isAvailable()) {
+      return;
+    }
+
+    if (isPlaying && currentStation) {
+      // Clear any existing interval
+      if (radioPollingRef.current) {
+        clearInterval(radioPollingRef.current);
+        radioPollingRef.current = null;
+      }
+
+      console.log('[OnlineRadioContext] Starting Android radio status polling');
+      radioPollingRef.current = setInterval(() => {
+        try {
+          const status = PlaybackEngineModule.getStatus();
+          
+          // Update buffering state
+          setIsBuffering(status.playbackState === 'buffering');
+          
+          // Check for idle state which indicates stream failure
+          if (status.playbackState === 'idle' && isPlayingRef.current) {
+            console.log('[OnlineRadioContext] Android radio stream stopped unexpectedly');
+            setError('Streaming source unavailable. Please try another station.');
+            setIsPlaying(false);
+            setIsBuffering(false);
+            currentStationRef.current = null;
+            setCurrentStation(null);
+            AudioCoordinator.notifyPlaybackStopped('radio');
+          }
+          
+          // Check for ended state
+          if (status.playbackState === 'ended' && isPlayingRef.current) {
+            console.log('[OnlineRadioContext] Android radio stream ended');
+            setIsPlaying(false);
+            setIsBuffering(false);
+          }
+          
+          // Sync playing state from native if native stopped but React thinks playing
+          if (!status.isPlaying && isPlayingRef.current && 
+              status.playbackState !== 'buffering' && 
+              status.playbackState !== 'ready') {
+            console.log('[OnlineRadioContext] Native radio stopped, syncing state');
+            setIsPlaying(false);
+          }
+        } catch (err) {
+          console.warn('[OnlineRadioContext] Radio status polling error:', err);
+        }
+      }, 500);
+    } else {
+      if (radioPollingRef.current) {
+        clearInterval(radioPollingRef.current);
+        radioPollingRef.current = null;
+        console.log('[OnlineRadioContext] Stopped Android radio status polling');
+      }
+    }
+
+    return () => {
+      if (radioPollingRef.current) {
+        clearInterval(radioPollingRef.current);
+        radioPollingRef.current = null;
+      }
+    };
+  }, [isPlaying, currentStation]);
 
   useEffect(() => {
     loadCachedData();
