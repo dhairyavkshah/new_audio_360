@@ -19,6 +19,12 @@ New Audio 360 is a premium mobile music player application built with React Nati
 
 **Git Workflow**: Replit is always the source of truth. Never merge changes from GitHub to Replit. Use `git push --force` if needed.
 
+**Version Updates Rule**: When updating the version number, ALWAYS update ALL of these files to ensure EAS builds with the correct version:
+1. `app.config.js` - `version` field (e.g., '26.0')
+2. `app.config.js` - `android.versionCode` field (e.g., 26)
+3. `package.json` - `version` field (e.g., '26.0.0')
+4. `client/screens/AboutScreen.tsx` - version display text
+
 ## System Architecture
 
 ### Platform & Framework
