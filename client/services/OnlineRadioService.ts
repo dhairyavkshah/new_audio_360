@@ -34,8 +34,9 @@ const RADIO_BROWSER_SERVERS = [
 const NOMINATIM_API = 'https://nominatim.openstreetmap.org';
 
 const MAX_STATIONS_PER_COUNTRY = 250;
-const MIN_BITRATE = 96;
-const MIN_VOTES = 5;
+const MIN_BITRATE = 128; // Professional broadcast quality (upgraded from 96)
+const MIN_VOTES = 20; // Community validated stations (upgraded from 5)
+const MIN_CLICKCOUNT = 500; // Actively listened to stations
 const VALID_CODECS = ['MP3', 'OGG', 'AAC'];
 const REQUEST_TIMEOUT = 10000;
 
@@ -95,14 +96,22 @@ async function fetchFromRadioBrowser(endpoint: string, retries: number = 2): Pro
 function filterAndSortStations(stations: OnlineRadioStation[]): OnlineRadioStation[] {
   return stations
     .filter((station) => {
+      // Only verified working stations
       if (station.lastcheckok !== 1) return false;
+      // Professional broadcast quality (128+ kbps)
       if (station.bitrate < MIN_BITRATE) return false;
+      // Community validated (20+ votes)
       if (station.votes < MIN_VOTES) return false;
+      // Actively listened to (500+ clicks)
+      if (station.clickcount < MIN_CLICKCOUNT) return false;
+      // Standard audio codecs only
       const codec = station.codec?.toUpperCase() || '';
       if (!VALID_CODECS.some(vc => codec.includes(vc))) return false;
+      // Must have valid stream URL
       if (!station.url_resolved && !station.url) return false;
       return true;
     })
+    // Sort by votes (highest first) for most reliable stations
     .sort((a, b) => b.votes - a.votes)
     .slice(0, MAX_STATIONS_PER_COUNTRY);
 }
