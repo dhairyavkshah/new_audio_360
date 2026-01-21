@@ -54,6 +54,11 @@ const INVALID_URL_PATTERNS = [
   /\?sid=/i, // Session IDs often expire
 ];
 
+// Blacklisted station name patterns (low quality or inappropriate content)
+const BLACKLISTED_STATION_PATTERNS = [
+  /schizoid/i, // Radio Schizoid - remove all variants
+];
+
 let currentServerIndex = 0;
 
 async function getRadioBrowserServer(): Promise<string> {
@@ -123,11 +128,19 @@ function isValidStreamUrl(url: string): boolean {
   return true;
 }
 
+function isBlacklistedStation(name: string): boolean {
+  if (!name) return false;
+  return BLACKLISTED_STATION_PATTERNS.some(pattern => pattern.test(name));
+}
+
 function filterAndSortStations(stations: OnlineRadioStation[]): OnlineRadioStation[] {
   return stations
     .filter((station) => {
       // Only stations verified as currently streaming
       if (station.lastcheckok !== 1) return false;
+      
+      // Remove blacklisted stations (e.g., Radio Schizoid)
+      if (isBlacklistedStation(station.name)) return false;
       
       // Get the best available URL
       const streamUrl = station.url_resolved || station.url;
