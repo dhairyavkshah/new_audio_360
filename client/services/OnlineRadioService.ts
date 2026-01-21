@@ -34,11 +34,25 @@ const RADIO_BROWSER_SERVERS = [
 const NOMINATIM_API = 'https://nominatim.openstreetmap.org';
 
 const MAX_STATIONS_PER_COUNTRY = 250;
-const MIN_BITRATE = 32; // Accept any bitrate (32+ kbps - covers all formats)
-const MIN_VOTES = 1; // Minimal community validation
-const MIN_CLICKCOUNT = 10; // Minimal usage (keeps active stations)
-const VALID_CODECS = ['MP3', 'OGG', 'AAC', 'FLAC', 'WMA', 'OPUS'];
-const REQUEST_TIMEOUT = 10000;
+const API_FETCH_LIMIT = 1500; // Fetch more from API to ensure we get 250+ after filtering
+const REQUEST_TIMEOUT = 15000;
+
+// Valid stream URL patterns (must be HTTP/HTTPS with standard audio extensions or streams)
+const VALID_URL_PATTERNS = [
+  /^https?:\/\/.+\.(mp3|aac|ogg|m3u8|pls|m4a|flac)$/i,
+  /^https?:\/\/.+\/stream/i,
+  /^https?:\/\/.+\/listen/i,
+  /^https?:\/\/.+\/live/i,
+  /^https?:\/\/.+\:\d+\/?$/i, // IP:port format
+  /^https?:\/\/.+\/[^;]+$/i, // Any URL without semicolon (problematic format)
+];
+
+// Problematic URL patterns that should be rejected
+const INVALID_URL_PATTERNS = [
+  /;stream$/i, // SHOUTcast v1 format - often broken
+  /;$/i, // Trailing semicolon
+  /\?sid=/i, // Session IDs often expire
+];
 
 let currentServerIndex = 0;
 
@@ -93,22 +107,37 @@ async function fetchFromRadioBrowser(endpoint: string, retries: number = 2): Pro
   throw lastError || new Error('Failed to fetch from Radio Browser API');
 }
 
+function isValidStreamUrl(url: string): boolean {
+  if (!url) return false;
+  
+  // Check for invalid/problematic patterns first
+  for (const pattern of INVALID_URL_PATTERNS) {
+    if (pattern.test(url)) return false;
+  }
+  
+  // Must start with http/https
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return false;
+  }
+  
+  return true;
+}
+
 function filterAndSortStations(stations: OnlineRadioStation[]): OnlineRadioStation[] {
   return stations
     .filter((station) => {
       // Only stations verified as currently streaming
       if (station.lastcheckok !== 1) return false;
+      
+      // Get the best available URL
+      const streamUrl = station.url_resolved || station.url;
+      
       // Must have valid stream URL
-      if (!station.url_resolved && !station.url) return false;
-      // Accept any reasonable bitrate (32+ kbps covers all formats including low-bandwidth streams)
-      if (station.bitrate > 0 && station.bitrate < MIN_BITRATE) return false;
-      // Minimal community validation (at least 1 vote)
-      if (station.votes < MIN_VOTES) return false;
-      // Minimal activity (at least 10 clicks - keeps active stations)
-      if (station.clickcount < MIN_CLICKCOUNT) return false;
-      // Standard audio codecs (expanded list)
-      const codec = station.codec?.toUpperCase() || '';
-      if (codec && !VALID_CODECS.some(vc => codec.includes(vc))) return false;
+      if (!streamUrl) return false;
+      
+      // Validate URL format (reject problematic formats like ;stream)
+      if (!isValidStreamUrl(streamUrl)) return false;
+      
       return true;
     })
     // Sort by votes (highest first) - popular/professional stations come first
@@ -128,7 +157,7 @@ export const OnlineRadioService = {
         order: 'votes',
         reverse: 'true',
         hidebroken: 'true',
-        limit: String(Math.min(limit * 3, 750)),
+        limit: String(API_FETCH_LIMIT),
       });
       
       const stations = await fetchFromRadioBrowser(`/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?${params}`);
@@ -153,7 +182,7 @@ export const OnlineRadioService = {
         order: 'votes',
         reverse: 'true',
         hidebroken: 'true',
-        limit: String(Math.min(limit * 3, 750)),
+        limit: String(API_FETCH_LIMIT),
       });
       
       if (countryCode) {
@@ -180,7 +209,7 @@ export const OnlineRadioService = {
         order: 'votes',
         reverse: 'true',
         hidebroken: 'true',
-        limit: String(Math.min(limit * 3, 750)),
+        limit: String(API_FETCH_LIMIT),
       });
       
       let endpoint = '/json/stations/topvote';
@@ -212,7 +241,7 @@ export const OnlineRadioService = {
         order: 'votes',
         reverse: 'true',
         hidebroken: 'true',
-        limit: String(Math.min(limit * 3, 750)),
+        limit: String(API_FETCH_LIMIT),
       });
       
       if (countryCode) {
