@@ -34,10 +34,10 @@ const RADIO_BROWSER_SERVERS = [
 const NOMINATIM_API = 'https://nominatim.openstreetmap.org';
 
 const MAX_STATIONS_PER_COUNTRY = 250;
-const MIN_BITRATE = 64; // Accept any reasonable bitrate (64+ kbps)
-const MIN_VOTES = 10; // Community validated (balanced threshold)
-const MIN_CLICKCOUNT = 100; // Actively used stations
-const VALID_CODECS = ['MP3', 'OGG', 'AAC'];
+const MIN_BITRATE = 32; // Accept any bitrate (32+ kbps - covers all formats)
+const MIN_VOTES = 1; // Minimal community validation
+const MIN_CLICKCOUNT = 10; // Minimal usage (keeps active stations)
+const VALID_CODECS = ['MP3', 'OGG', 'AAC', 'FLAC', 'WMA', 'OPUS'];
 const REQUEST_TIMEOUT = 10000;
 
 let currentServerIndex = 0;
@@ -96,22 +96,22 @@ async function fetchFromRadioBrowser(endpoint: string, retries: number = 2): Pro
 function filterAndSortStations(stations: OnlineRadioStation[]): OnlineRadioStation[] {
   return stations
     .filter((station) => {
-      // Only stations verified as currently streaming (lastcheckok = 1)
+      // Only stations verified as currently streaming
       if (station.lastcheckok !== 1) return false;
-      // Basic bitrate requirement (any reasonable quality 64+ kbps)
-      if (station.bitrate < MIN_BITRATE) return false;
-      // Community validated (10+ votes)
-      if (station.votes < MIN_VOTES) return false;
-      // Actively used (100+ clicks)
-      if (station.clickcount < MIN_CLICKCOUNT) return false;
-      // Standard audio codecs only
-      const codec = station.codec?.toUpperCase() || '';
-      if (!VALID_CODECS.some(vc => codec.includes(vc))) return false;
       // Must have valid stream URL
       if (!station.url_resolved && !station.url) return false;
+      // Accept any reasonable bitrate (32+ kbps covers all formats including low-bandwidth streams)
+      if (station.bitrate > 0 && station.bitrate < MIN_BITRATE) return false;
+      // Minimal community validation (at least 1 vote)
+      if (station.votes < MIN_VOTES) return false;
+      // Minimal activity (at least 10 clicks - keeps active stations)
+      if (station.clickcount < MIN_CLICKCOUNT) return false;
+      // Standard audio codecs (expanded list)
+      const codec = station.codec?.toUpperCase() || '';
+      if (codec && !VALID_CODECS.some(vc => codec.includes(vc))) return false;
       return true;
     })
-    // Sort by votes (highest first) for most popular/reliable stations
+    // Sort by votes (highest first) - popular/professional stations come first
     .sort((a, b) => b.votes - a.votes)
     .slice(0, MAX_STATIONS_PER_COUNTRY);
 }
