@@ -12,6 +12,60 @@ export interface CuratedRadioStation {
 }
 
 export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
+  // ============================================
+  // NEWLY ADDED STATIONS (User Requested)
+  // ============================================
+  {
+    id: "ar-rahman-lite-radio",
+    name: "AR Rahman Lite Radio",
+    streamUrl: "https://psrlive2.listenon.in/arrlite?ah=0e81749e37789e5fb8c290926ce87e3f",
+    website: "https://southradios.com/",
+    country: "India",
+    countryCode: "IN",
+    language: "tamil",
+    genre: "Tamil Cinema Music",
+    bitrate: 64,
+    favicon: "https://southradios.com/assets/images/logo/logo90.webp",
+  },
+  {
+    id: "ar-rahman-radio",
+    name: "AR Rahman Radio",
+    streamUrl: "https://psrlive2.listenon.in/arr?ah=0e81749e37789e5fb8c290926ce87e3f",
+    website: "https://southradios.com/",
+    country: "India",
+    countryCode: "IN",
+    language: "tamil",
+    genre: "Tamil Cinema Music",
+    bitrate: 64,
+    favicon: "https://southradios.com/assets/images/logo/logo90.webp",
+  },
+  {
+    id: "tamil-80s-radio",
+    name: "Tamil 80's Radio",
+    streamUrl: "https://psrlive2.listenon.in/80?station=tamil80shitsradio",
+    website: "https://www.tamilradios.com/tamil-80s-radio",
+    country: "India",
+    countryCode: "IN",
+    language: "tamil",
+    genre: "Tamil & South Indian",
+    bitrate: 64,
+    favicon: "https://www.tamilradios.com/assets/img/radio-logos/tamil-80s-radio.jpg",
+  },
+  {
+    id: "classic-radio-bhakti-sangeet",
+    name: "Classic Radio Bhakti Sangeet",
+    streamUrl: "https://stream.zeno.fm/epylmeu4zf7vv",
+    website: "https://www.radioindia.in/classic-radio-bhakti-sangeet",
+    country: "India",
+    countryCode: "IN",
+    language: "hindi",
+    genre: "Devotional",
+    bitrate: 128,
+    favicon: "",
+  },
+  // ============================================
+  // EXISTING STATIONS
+  // ============================================
   {
     id: "60sforever",
     name: "60sforever",
