@@ -383,14 +383,41 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const playStation = useCallback(async (station: OnlineRadioStation): Promise<void> => {
-    if (currentStation?.stationuuid === station.stationuuid && isPlaying) {
-      console.log('[OnlineRadioContext] Station already playing:', station.name);
-      setError('This station is already playing');
-      setTimeout(() => setError(null), 2000);
+    // Helper function to stop any current playback
+    const stopCurrentPlayback = async () => {
+      try {
+        if (TrackPlayerService.isAvailable()) {
+          await TrackPlayerService.stop();
+        }
+        if (soundRef.current) {
+          await soundRef.current.stopAsync();
+          await soundRef.current.unloadAsync();
+          soundRef.current = null;
+        }
+        setIsPlaying(false);
+        setIsBuffering(false);
+        setCurrentStation(null);
+        AudioCoordinator.notifyPlaybackStopped('radio');
+      } catch (err) {
+        console.warn('[OnlineRadioContext] Error stopping playback:', err);
+      }
+    };
+
+    // If same station is tapped and already playing or buffering, toggle it off
+    if (currentStation?.stationuuid === station.stationuuid && (isPlaying || isBuffering)) {
+      console.log('[OnlineRadioContext] Same station tapped, stopping:', station.name);
+      await stopCurrentPlayback();
       return;
     }
 
     setError(null);
+    
+    // Always stop any current playback first before starting new station
+    if (currentStation || isPlaying || isBuffering) {
+      console.log('[OnlineRadioContext] Stopping current playback before starting new station');
+      await stopCurrentPlayback();
+    }
+    
     setIsBuffering(true);
 
     try {
@@ -469,7 +496,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       setIsBuffering(false);
       setCurrentStation(null);
     }
-  }, [volume, onPlaybackStatusUpdate, currentStation, isPlaying]);
+  }, [volume, onPlaybackStatusUpdate, currentStation, isPlaying, isBuffering]);
 
   const stopPlayback = useCallback(async (): Promise<void> => {
     try {
