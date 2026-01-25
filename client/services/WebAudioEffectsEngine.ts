@@ -1,6 +1,11 @@
 import { Platform } from 'react-native';
 import { AudioContext, BiquadFilterNode, GainNode } from 'react-native-audio-api';
 
+// Native Web Audio API types for M/S stereo processing (available in browser)
+type NativeAudioContext = globalThis.AudioContext;
+type ChannelSplitterNode = globalThis.ChannelSplitterNode;
+type ChannelMergerNode = globalThis.ChannelMergerNode;
+
 export interface EQBandConfig {
   frequency: number;
   type: BiquadFilterType;
@@ -95,6 +100,20 @@ class WebAudioEffectsEngineClass {
   private currentMode: string = 'off';
   private currentReverb: number = 0;
   private currentVirtualizer: number = 0; // -5 to +5 range
+  
+  // M/S Stereo Width Processing nodes
+  private stereoSplitter: ChannelSplitterNode | null = null;
+  private stereoMerger: ChannelMergerNode | null = null;
+  private midGainL: GainNode | null = null;  // L contribution to Mid
+  private midGainR: GainNode | null = null;  // R contribution to Mid
+  private sideGainL: GainNode | null = null; // L contribution to Side
+  private sideGainR: GainNode | null = null; // R (inverted) contribution to Side
+  private sideWidth: GainNode | null = null; // Controls stereo width
+  private midToL: GainNode | null = null;    // Mid to Left output
+  private midToR: GainNode | null = null;    // Mid to Right output
+  private sideToL: GainNode | null = null;   // Side to Left output
+  private sideToR: GainNode | null = null;   // Side (inverted) to Right output
+  private stereoWidthEnabled: boolean = false;
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {
@@ -156,6 +175,10 @@ class WebAudioEffectsEngineClass {
         
         return { delay, feedback, filter };
       });
+      
+      // Create M/S Stereo Width Processing nodes
+      // Uses native Web Audio API ChannelSplitter/Merger for true stereo processing
+      this.initializeStereoWidthProcessor();
 
       // Connect EQ chain
       let currentNode: any = this.eqFilters[0];
@@ -177,9 +200,19 @@ class WebAudioEffectsEngineClass {
         filter.connect(this.wetGain!);
       });
       
-      // Mix dry and wet to master output
-      this.dryGain.connect(this.masterGain);
-      this.wetGain.connect(this.masterGain);
+      // Mix dry and wet, then through stereo width processing, then to master output
+      // Signal chain: EQ → Dry/Wet Mix → Stereo Width → Master → Destination
+      if (this.stereoWidthEnabled && this.stereoSplitter && this.stereoMerger) {
+        // Connect dry/wet to stereo splitter
+        this.dryGain.connect(this.stereoSplitter);
+        this.wetGain.connect(this.stereoSplitter);
+        // Stereo merger output to master
+        this.stereoMerger.connect(this.masterGain);
+      } else {
+        // Fallback: bypass stereo width processing
+        this.dryGain.connect(this.masterGain);
+        this.wetGain.connect(this.masterGain);
+      }
       this.masterGain.connect(this.audioContext.destination);
 
       this.isInitialized = true;
@@ -193,6 +226,123 @@ class WebAudioEffectsEngineClass {
 
   isAvailable(): boolean {
     return Platform.OS !== 'web' || typeof window !== 'undefined';
+  }
+
+  /**
+   * Initialize M/S (Mid-Side) Stereo Width Processing
+   * 
+   * Signal Flow:
+   * Input (Stereo) → Splitter → [M/S Encode] → [Width Control] → [M/S Decode] → Merger → Output
+   * 
+   * M/S Encoding:
+   *   Mid = (L + R) / 2  (center/mono content)
+   *   Side = (L - R) / 2  (stereo difference)
+   * 
+   * Width Control:
+   *   Side signal is multiplied by width factor (0 = mono, 1 = original, 2+ = wider)
+   * 
+   * M/S Decoding:
+   *   L = Mid + Side
+   *   R = Mid - Side
+   */
+  private initializeStereoWidthProcessor(): void {
+    if (!this.audioContext || Platform.OS !== 'web') {
+      console.log('[WebAudioEffectsEngine] Stereo width: Not available (non-web platform)');
+      return;
+    }
+
+    try {
+      // Access native Web Audio API methods through the context
+      const nativeCtx = this.audioContext as unknown as NativeAudioContext;
+      
+      // Check if native methods are available
+      if (typeof nativeCtx.createChannelSplitter !== 'function' || 
+          typeof nativeCtx.createChannelMerger !== 'function') {
+        console.log('[WebAudioEffectsEngine] Stereo width: Native channel nodes not available');
+        return;
+      }
+
+      // Create splitter (2 channels: L, R)
+      this.stereoSplitter = nativeCtx.createChannelSplitter(2);
+      
+      // Create merger (2 channels: L, R)
+      this.stereoMerger = nativeCtx.createChannelMerger(2);
+      
+      // Create M/S encoding gain nodes
+      // Mid = (L + R) / 2: Both L and R contribute with gain 0.5
+      this.midGainL = nativeCtx.createGain() as unknown as GainNode;
+      this.midGainL.gain.value = 0.5;
+      this.midGainR = nativeCtx.createGain() as unknown as GainNode;
+      this.midGainR.gain.value = 0.5;
+      
+      // Side = (L - R) / 2: L contributes +0.5, R contributes -0.5
+      this.sideGainL = nativeCtx.createGain() as unknown as GainNode;
+      this.sideGainL.gain.value = 0.5;
+      this.sideGainR = nativeCtx.createGain() as unknown as GainNode;
+      this.sideGainR.gain.value = -0.5; // Inverted for subtraction
+      
+      // Width control: multiplies Side signal (default 1.0 = original stereo)
+      this.sideWidth = nativeCtx.createGain() as unknown as GainNode;
+      this.sideWidth.gain.value = 1.0;
+      
+      // Create M/S decoding gain nodes
+      // L = Mid + Side: Both contribute with gain 1.0
+      this.midToL = nativeCtx.createGain() as unknown as GainNode;
+      this.midToL.gain.value = 1.0;
+      this.sideToL = nativeCtx.createGain() as unknown as GainNode;
+      this.sideToL.gain.value = 1.0;
+      
+      // R = Mid - Side: Mid contributes +1.0, Side contributes -1.0
+      this.midToR = nativeCtx.createGain() as unknown as GainNode;
+      this.midToR.gain.value = 1.0;
+      this.sideToR = nativeCtx.createGain() as unknown as GainNode;
+      this.sideToR.gain.value = -1.0; // Inverted for subtraction
+      
+      // Create intermediate sum nodes for Mid and Side
+      const midSum = nativeCtx.createGain();
+      midSum.gain.value = 1.0;
+      const sideSum = nativeCtx.createGain();
+      sideSum.gain.value = 1.0;
+      
+      // Connect M/S Encoding:
+      // Splitter[0] (L) → midGainL → midSum
+      // Splitter[1] (R) → midGainR → midSum
+      this.stereoSplitter.connect(this.midGainL as unknown as globalThis.GainNode, 0);
+      this.stereoSplitter.connect(this.midGainR as unknown as globalThis.GainNode, 1);
+      (this.midGainL as unknown as globalThis.GainNode).connect(midSum);
+      (this.midGainR as unknown as globalThis.GainNode).connect(midSum);
+      
+      // Splitter[0] (L) → sideGainL → sideSum
+      // Splitter[1] (R) → sideGainR (inverted) → sideSum
+      this.stereoSplitter.connect(this.sideGainL as unknown as globalThis.GainNode, 0);
+      this.stereoSplitter.connect(this.sideGainR as unknown as globalThis.GainNode, 1);
+      (this.sideGainL as unknown as globalThis.GainNode).connect(sideSum);
+      (this.sideGainR as unknown as globalThis.GainNode).connect(sideSum);
+      
+      // sideSum → sideWidth (width control)
+      sideSum.connect(this.sideWidth as unknown as globalThis.GainNode);
+      
+      // Connect M/S Decoding:
+      // midSum → midToL → Merger[0] (L)
+      // sideWidth → sideToL → Merger[0] (L)
+      midSum.connect(this.midToL as unknown as globalThis.GainNode);
+      (this.midToL as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 0);
+      (this.sideWidth as unknown as globalThis.GainNode).connect(this.sideToL as unknown as globalThis.GainNode);
+      (this.sideToL as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 0);
+      
+      // midSum → midToR → Merger[1] (R)
+      // sideWidth → sideToR (inverted) → Merger[1] (R)
+      midSum.connect(this.midToR as unknown as globalThis.GainNode);
+      (this.midToR as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 1);
+      (this.sideWidth as unknown as globalThis.GainNode).connect(this.sideToR as unknown as globalThis.GainNode);
+      (this.sideToR as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 1);
+      
+      this.stereoWidthEnabled = true;
+      console.log('[WebAudioEffectsEngine] Stereo width: M/S processing initialized');
+    } catch (error) {
+      console.error('[WebAudioEffectsEngine] Stereo width: Failed to initialize:', error);
+      this.stereoWidthEnabled = false;
+    }
   }
 
   getInputNode(): BiquadFilterNode | null {
@@ -357,6 +507,12 @@ class WebAudioEffectsEngineClass {
 
     // Apply reverb wet/dry mix
     this.setReverb(reverb);
+    
+    // Apply stereo width via M/S processing
+    // spatialWidth: 0 = original stereo, 0.5 = +50% width, 1.0 = +100% (double width)
+    // Convert to virtualizer level: 0 → 0, 0.5 → +2.5, 1.0 → +5
+    const virtualizerLevel = spatialWidth * 5;
+    this.setVirtualizer(virtualizerLevel);
 
     // Master gain stays at 1.0 - limiter handles distortion prevention
     if (this.masterGain) {
@@ -394,20 +550,22 @@ class WebAudioEffectsEngineClass {
    * Zero = original stereo
    * Positive = wider stereo (enhanced surround)
    * 
-   * Intelligent mapping:
-   * -5: Full mono (0% stereo width)
-   * -3: Reduced stereo (40% width)
-   * -1: Slightly narrower (80% width)
-   *  0: Original stereo (100% width)
-   * +1: Slightly wider (120% perceived width)
-   * +3: Wide stereo (180% perceived width)
-   * +5: Maximum surround (250% perceived width)
+   * Intelligent mapping (matches Android SoftwareDSPAudioProcessor):
+   * -5: Full mono (0% stereo width) - sideWidth = 0.0
+   * -3: Reduced stereo (40% width) - sideWidth = 0.4
+   * -1: Slightly narrower (80% width) - sideWidth = 0.8
+   *  0: Original stereo (100% width) - sideWidth = 1.0
+   * +1: Slightly wider (120% perceived width) - sideWidth = 1.3
+   * +3: Wide stereo (180% perceived width) - sideWidth = 1.9
+   * +5: Maximum surround (250% perceived width) - sideWidth = 2.5
+   * 
+   * Uses M/S (Mid-Side) processing for true stereo width control.
    */
   setVirtualizer(level: number): void {
     const clampedLevel = Math.max(-5, Math.min(5, level));
     this.currentVirtualizer = clampedLevel;
     
-    // Calculate stereo width multiplier
+    // Calculate stereo width multiplier (matches Android formula)
     // -5 = 0.0 (mono), 0 = 1.0 (original), +5 = 2.5 (extra wide)
     let stereoWidth: number;
     if (clampedLevel < 0) {
@@ -418,10 +576,13 @@ class WebAudioEffectsEngineClass {
       stereoWidth = 1.0 + (clampedLevel * 0.3); // 0 → 1.0, +5 → 2.5
     }
     
-    console.log(`[WebAudioEffectsEngine] Virtualizer set to ${clampedLevel} (width: ${(stereoWidth * 100).toFixed(0)}%)`);
-    // Note: Actual stereo processing requires stereo channel separation
-    // which isn't available in basic mono Web Audio API setup
-    // The native Android VirtualizerModule handles actual audio processing
+    // Apply stereo width via M/S processing
+    if (this.stereoWidthEnabled && this.sideWidth) {
+      this.sideWidth.gain.value = stereoWidth;
+      console.log(`[WebAudioEffectsEngine] Virtualizer set to ${clampedLevel} (M/S width: ${(stereoWidth * 100).toFixed(0)}%)`);
+    } else {
+      console.log(`[WebAudioEffectsEngine] Virtualizer set to ${clampedLevel} (width: ${(stereoWidth * 100).toFixed(0)}%) - M/S not available`);
+    }
   }
 
   getVirtualizerLevel(): number {
@@ -439,6 +600,7 @@ class WebAudioEffectsEngineClass {
       filter.gain.value = 0;
     });
     this.setReverb(0); // Reset reverb to dry
+    this.setVirtualizer(0); // Reset stereo width to original
     this.currentEQValues = new Array(10).fill(0);
     this.currentMode = 'off';
     console.log('[WebAudioEffectsEngine] EQ reset to flat');
@@ -471,6 +633,21 @@ class WebAudioEffectsEngineClass {
     this.dryGain = null;
     this.wetGain = null;
     this.reverbDelays = [];
+    
+    // Clean up M/S stereo width processing nodes
+    this.stereoSplitter = null;
+    this.stereoMerger = null;
+    this.midGainL = null;
+    this.midGainR = null;
+    this.sideGainL = null;
+    this.sideGainR = null;
+    this.sideWidth = null;
+    this.midToL = null;
+    this.midToR = null;
+    this.sideToL = null;
+    this.sideToR = null;
+    this.stereoWidthEnabled = false;
+    
     this.isInitialized = false;
     this.currentEQValues = new Array(10).fill(0);
     this.currentMode = 'off';
