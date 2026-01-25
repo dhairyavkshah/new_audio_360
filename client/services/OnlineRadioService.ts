@@ -110,13 +110,35 @@ async function fetchWithTimeout(url: string, timeout: number = REQUEST_TIMEOUT):
       },
     });
     return response;
+  } catch (error: unknown) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new Error(`Request timeout after ${timeout}ms`);
+      }
+      throw error;
+    }
+    throw new Error('Network request failed');
   } finally {
     clearTimeout(timeoutId);
   }
 }
 
+function ensureError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error;
+  }
+  if (typeof error === 'string') {
+    return new Error(error);
+  }
+  if (error && typeof error === 'object' && 'message' in error) {
+    return new Error(String((error as { message: unknown }).message));
+  }
+  return new Error('An unknown error occurred');
+}
+
 async function fetchFromRadioBrowser(endpoint: string, retries: number = 2): Promise<any> {
-  let lastError: Error | null = null;
+  let lastError: Error = new Error('Failed to fetch from Radio Browser API');
   
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -131,14 +153,14 @@ async function fetchFromRadioBrowser(endpoint: string, retries: number = 2): Pro
       }
       
       return await response.json();
-    } catch (error) {
-      lastError = error as Error;
-      console.warn(`[OnlineRadioService] Attempt ${attempt + 1} failed:`, error);
+    } catch (error: unknown) {
+      lastError = ensureError(error);
+      console.warn(`[OnlineRadioService] Attempt ${attempt + 1} failed:`, lastError.message);
       rotateServer();
     }
   }
   
-  throw lastError || new Error('Failed to fetch from Radio Browser API');
+  throw lastError;
 }
 
 function isValidStreamUrl(url: string): boolean {
@@ -345,7 +367,7 @@ export const OnlineRadioService = {
         }));
       
       // Ensure curated countries are always included
-      const existingCountryCodes = new Set(processedCountries.map(c => c.iso_3166_1));
+      const existingCountryCodes = new Set(processedCountries.map((c: OnlineRadioCountry) => c.iso_3166_1));
       for (const [countryCode, info] of Object.entries(curatedCountryInfo)) {
         if (!existingCountryCodes.has(countryCode)) {
           console.log(`[OnlineRadioService] Injecting curated country: ${countryCode}`);
@@ -358,7 +380,7 @@ export const OnlineRadioService = {
       }
       
       // Sort with priority countries first
-      processedCountries.sort((a, b) => {
+      processedCountries.sort((a: OnlineRadioCountry, b: OnlineRadioCountry) => {
         const aIndex = priorityCountries.indexOf(a.iso_3166_1);
         const bIndex = priorityCountries.indexOf(b.iso_3166_1);
         
