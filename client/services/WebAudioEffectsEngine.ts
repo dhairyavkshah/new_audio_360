@@ -135,6 +135,15 @@ class WebAudioEffectsEngineClass {
   private sideToR: GainNode | null = null;   // Side (inverted) to Right output
   private stereoWidthEnabled: boolean = false;
 
+  // Psychoacoustic Stereo Enhancement nodes
+  private sideHighpass: globalThis.BiquadFilterNode | null = null;  // Highpass for side (no bass widening)
+  private sideDelay: globalThis.DelayNode | null = null;            // ITD delay (0.3ms)
+  private allPass1: globalThis.BiquadFilterNode | null = null;      // Decorrelation filter 1
+  private allPass2: globalThis.BiquadFilterNode | null = null;      // Decorrelation filter 2
+  private sidePsychoGain: globalThis.GainNode | null = null;        // Side boost (max 2.2 = 120%)
+  private midAttenuation: globalThis.GainNode | null = null;        // Mid compensation
+  spatialEnhancementEnabled: boolean = false;
+
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {
       return true;
@@ -237,8 +246,11 @@ class WebAudioEffectsEngineClass {
       }
       this.masterGain.connect(this.audioContext.destination);
 
+      // Initialize psychoacoustic processor (configures nodes in disabled state)
+      this.initializePsychoacousticProcessor();
+
       this.isInitialized = true;
-      console.log('[WebAudioEffectsEngine] Initialized with 10-band EQ and reverb');
+      console.log('[WebAudioEffectsEngine] Initialized with 10-band EQ, reverb, and psychoacoustic enhancement');
       return true;
     } catch (error) {
       console.error('[WebAudioEffectsEngine] Failed to initialize:', error);
@@ -331,6 +343,32 @@ class WebAudioEffectsEngineClass {
       const sideSum = nativeCtx.createGain();
       sideSum.gain.value = 1.0;
       
+      // Create psychoacoustic enhancement nodes
+      // These are inserted AFTER the existing side processing (sideWidth)
+      this.sideHighpass = nativeCtx.createBiquadFilter();
+      this.sideHighpass.type = 'highpass';
+      this.sideHighpass.frequency.value = 1; // Start bypassed (1Hz passes everything)
+      this.sideHighpass.Q.value = 0.707;
+      
+      this.sideDelay = nativeCtx.createDelay(0.01); // Max 10ms
+      this.sideDelay.delayTime.value = 0; // Start bypassed
+      
+      this.allPass1 = nativeCtx.createBiquadFilter();
+      this.allPass1.type = 'allpass';
+      this.allPass1.frequency.value = 3000;
+      this.allPass1.Q.value = 0.7;
+      
+      this.allPass2 = nativeCtx.createBiquadFilter();
+      this.allPass2.type = 'allpass';
+      this.allPass2.frequency.value = 5000;
+      this.allPass2.Q.value = 0.7;
+      
+      this.sidePsychoGain = nativeCtx.createGain();
+      this.sidePsychoGain.gain.value = 1.0; // Start at passthrough (disabled state)
+      
+      this.midAttenuation = nativeCtx.createGain();
+      this.midAttenuation.gain.value = 1.0; // Start at passthrough (disabled state)
+      
       // Connect M/S Encoding:
       // Splitter[0] (L) → midGainL → midSum
       // Splitter[1] (R) → midGainR → midSum
@@ -346,29 +384,151 @@ class WebAudioEffectsEngineClass {
       (this.sideGainL as unknown as globalThis.GainNode).connect(sideSum);
       (this.sideGainR as unknown as globalThis.GainNode).connect(sideSum);
       
-      // sideSum → sideWidth (width control)
+      // sideSum → sideWidth (existing width control)
       sideSum.connect(this.sideWidth as unknown as globalThis.GainNode);
       
-      // Connect M/S Decoding:
-      // midSum → midToL → Merger[0] (L)
-      // sideWidth → sideToL → Merger[0] (L)
-      midSum.connect(this.midToL as unknown as globalThis.GainNode);
-      (this.midToL as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 0);
-      (this.sideWidth as unknown as globalThis.GainNode).connect(this.sideToL as unknown as globalThis.GainNode);
-      (this.sideToL as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 0);
+      // Connect psychoacoustic chain AFTER sideWidth:
+      // sideWidth → sideHighpass → sideDelay → allPass1 → allPass2 → sidePsychoGain
+      (this.sideWidth as unknown as globalThis.GainNode).connect(this.sideHighpass);
+      this.sideHighpass.connect(this.sideDelay);
+      this.sideDelay.connect(this.allPass1);
+      this.allPass1.connect(this.allPass2);
+      this.allPass2.connect(this.sidePsychoGain);
       
-      // midSum → midToR → Merger[1] (R)
-      // sideWidth → sideToR (inverted) → Merger[1] (R)
-      midSum.connect(this.midToR as unknown as globalThis.GainNode);
+      // Connect M/S Decoding:
+      // Mid path: midSum → midAttenuation → midToL/midToR → Merger
+      midSum.connect(this.midAttenuation);
+      this.midAttenuation.connect(this.midToL as unknown as globalThis.GainNode);
+      this.midAttenuation.connect(this.midToR as unknown as globalThis.GainNode);
+      (this.midToL as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 0);
       (this.midToR as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 1);
-      (this.sideWidth as unknown as globalThis.GainNode).connect(this.sideToR as unknown as globalThis.GainNode);
+      
+      // Side path: sidePsychoGain → sideToL/sideToR → Merger
+      this.sidePsychoGain.connect(this.sideToL as unknown as globalThis.GainNode);
+      this.sidePsychoGain.connect(this.sideToR as unknown as globalThis.GainNode);
+      (this.sideToL as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 0);
       (this.sideToR as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 1);
       
       this.stereoWidthEnabled = true;
-      console.log('[WebAudioEffectsEngine] Stereo width: M/S processing initialized');
+      console.log('[WebAudioEffectsEngine] Stereo width: M/S processing with psychoacoustic chain initialized');
     } catch (error) {
       console.error('[WebAudioEffectsEngine] Stereo width: Failed to initialize:', error);
       this.stereoWidthEnabled = false;
+    }
+  }
+
+  /**
+   * Initialize Psychoacoustic Processor configuration
+   * Called at end of initialize() to configure the psychoacoustic enhancement nodes
+   * The nodes are already created and connected in initializeStereoWidthProcessor()
+   * This method just ensures they start in disabled (passthrough) state
+   */
+  private initializePsychoacousticProcessor(): void {
+    if (!this.stereoWidthEnabled || !this.sideHighpass || !this.sideDelay || 
+        !this.sidePsychoGain || !this.midAttenuation) {
+      console.log('[WebAudioEffectsEngine] Psychoacoustic: Cannot configure (stereo width not available)');
+      return;
+    }
+
+    // Ensure psychoacoustic processing starts disabled (passthrough state)
+    // Highpass at 1Hz effectively passes all audio
+    this.sideHighpass.frequency.value = 1;
+    this.sideHighpass.Q.value = 0.707;
+    
+    // No ITD delay when disabled
+    this.sideDelay.delayTime.value = 0;
+    
+    // All-pass filters always pass audio, but with configured frequencies for when enabled
+    if (this.allPass1) {
+      this.allPass1.frequency.value = 3000;
+      this.allPass1.Q.value = 0.7;
+    }
+    if (this.allPass2) {
+      this.allPass2.frequency.value = 5000;
+      this.allPass2.Q.value = 0.7;
+    }
+    
+    // Gains at passthrough (1.0) when disabled
+    this.sidePsychoGain.gain.value = 1.0;
+    this.midAttenuation.gain.value = 1.0;
+    
+    this.spatialEnhancementEnabled = false;
+    console.log('[WebAudioEffectsEngine] Psychoacoustic: Processor configured (disabled state)');
+  }
+
+  /**
+   * Set Spatial Enhancement (Psychoacoustic Stereo Enhancement)
+   * 
+   * When enabled:
+   * - Applies 150Hz highpass to Side signal (no bass widening)
+   * - Adds 0.3ms ITD delay for spatial perception
+   * - Applies all-pass filters for high-frequency decorrelation
+   * - Boosts side signal by 50% (clamped to max 2.2 = 120%)
+   * - Attenuates mid signal by 0.9 to compensate for widening
+   * 
+   * When disabled:
+   * - Bypasses psychoacoustic processing (passthrough mode)
+   * - Preserves existing stereo width functionality
+   * 
+   * @param enabled - Whether to enable psychoacoustic spatial enhancement
+   */
+  setSpatialEnhancement(enabled: boolean): void {
+    // Mono safety: don't apply if stereo width processing isn't available
+    if (!this.stereoWidthEnabled) {
+      console.log('[WebAudioEffectsEngine] Psychoacoustic: Cannot enable (stereo width not available)');
+      this.spatialEnhancementEnabled = false;
+      return;
+    }
+
+    if (!this.sideHighpass || !this.sideDelay || !this.sidePsychoGain || !this.midAttenuation) {
+      console.log('[WebAudioEffectsEngine] Psychoacoustic: Nodes not initialized');
+      this.spatialEnhancementEnabled = false;
+      return;
+    }
+
+    this.spatialEnhancementEnabled = enabled;
+
+    if (enabled) {
+      // Enable psychoacoustic processing
+      
+      // Highpass at 150Hz - only widen frequencies above 150Hz (no bass widening)
+      this.sideHighpass.frequency.value = 150;
+      this.sideHighpass.Q.value = 0.707;
+      
+      // ITD delay of 0.3ms for spatial perception
+      this.sideDelay.delayTime.value = 0.0003;
+      
+      // All-pass filters are always connected and configured
+      // They decorrelate high frequencies for enhanced spatial perception
+      
+      // Calculate psychoacoustic gain: 1.5 base, or current width * 1.2
+      // Clamped to max 2.2 (120% boost) for mono safety
+      const currentWidth = this.sideWidth?.gain.value ?? 1.0;
+      let psychoGain = Math.max(1.5, currentWidth * 1.2);
+      psychoGain = Math.min(psychoGain, 2.2); // Max 2.2 (120% boost)
+      this.sidePsychoGain.gain.value = psychoGain;
+      
+      // Attenuate mid signal to compensate for side boost
+      this.midAttenuation.gain.value = 0.9;
+      
+      console.log(`[WebAudioEffectsEngine] Psychoacoustic: Enabled (gain: ${psychoGain.toFixed(2)}, mid: 0.9)`);
+    } else {
+      // Disable psychoacoustic processing (passthrough mode)
+      
+      // Highpass at 1Hz - effectively passes all audio
+      this.sideHighpass.frequency.value = 1;
+      
+      // No delay when disabled
+      this.sideDelay.delayTime.value = 0;
+      
+      // Set psychoacoustic gain to match sideWidth (passthrough for width control)
+      const currentWidth = this.sideWidth?.gain.value ?? 1.0;
+      this.sidePsychoGain.gain.value = 1.0; // Passthrough, sideWidth already applies width
+      
+      // No mid attenuation when disabled
+      this.midAttenuation.gain.value = 1.0;
+      
+      console.log(`[WebAudioEffectsEngine] Psychoacoustic: Disabled (passthrough)`);
     }
   }
 
@@ -677,6 +837,15 @@ class WebAudioEffectsEngineClass {
     this.sideToR = null;
     this.stereoWidthEnabled = false;
     
+    // Clean up psychoacoustic enhancement nodes
+    this.sideHighpass = null;
+    this.sideDelay = null;
+    this.allPass1 = null;
+    this.allPass2 = null;
+    this.sidePsychoGain = null;
+    this.midAttenuation = null;
+    this.spatialEnhancementEnabled = false;
+    
     this.isInitialized = false;
     this.currentEQValues = new Array(10).fill(0);
     this.currentMode = 'off';
@@ -707,6 +876,9 @@ class WebAudioEffectsEngineClass {
       virtualizerActive: this.stereoWidthEnabled && this.currentVirtualizer !== 0,
       reverbActive: this.currentReverb > 0,
       stereoWidthPercent: ((1 + this.currentVirtualizer / 5) * 100).toFixed(0) + '%',
+      spatialEnhancementActive: this.spatialEnhancementEnabled,
+      psychoacousticGain: this.sidePsychoGain?.gain.value ?? 1.0,
+      midAttenuation: this.midAttenuation?.gain.value ?? 1.0,
     };
   }
 }

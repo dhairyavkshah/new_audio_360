@@ -9,7 +9,10 @@ import kotlin.math.sqrt
 enum class FilterType {
     PEAKING,
     LOWSHELF,
-    HIGHSHELF
+    HIGHSHELF,
+    LOWPASS,
+    HIGHPASS,
+    ALLPASS
 }
 
 /**
@@ -126,6 +129,30 @@ class BiquadFilter(
                 a0Temp = (A + 1.0) - (A - 1.0) * cosOmega + sqrtA2Alpha
                 a1Temp = 2.0 * ((A - 1.0) - (A + 1.0) * cosOmega)
                 a2Temp = (A + 1.0) - (A - 1.0) * cosOmega - sqrtA2Alpha
+            }
+            FilterType.LOWPASS -> {
+                b0Temp = (1.0 - cosOmega) / 2.0
+                b1Temp = 1.0 - cosOmega
+                b2Temp = (1.0 - cosOmega) / 2.0
+                a0Temp = 1.0 + alpha
+                a1Temp = -2.0 * cosOmega
+                a2Temp = 1.0 - alpha
+            }
+            FilterType.HIGHPASS -> {
+                b0Temp = (1.0 + cosOmega) / 2.0
+                b1Temp = -(1.0 + cosOmega)
+                b2Temp = (1.0 + cosOmega) / 2.0
+                a0Temp = 1.0 + alpha
+                a1Temp = -2.0 * cosOmega
+                a2Temp = 1.0 - alpha
+            }
+            FilterType.ALLPASS -> {
+                b0Temp = 1.0 - alpha
+                b1Temp = -2.0 * cosOmega
+                b2Temp = 1.0 + alpha
+                a0Temp = 1.0 + alpha
+                a1Temp = -2.0 * cosOmega
+                a2Temp = 1.0 - alpha
             }
         }
 

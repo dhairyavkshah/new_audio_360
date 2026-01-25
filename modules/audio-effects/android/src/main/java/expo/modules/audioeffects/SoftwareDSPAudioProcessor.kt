@@ -41,6 +41,16 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         const val BASS_SHELF_FREQ = 150f
         const val TREBLE_SHELF_FREQ = 6000f
         
+        // Psychoacoustic Stereo Enhancement constants
+        private const val BASS_MONO_FREQ = 150f
+        private const val SIDE_BOOST = 0.5f  // 50% boost = 1.5x, capped at 2.0x (100%)
+        private const val ITD_DELAY_MS = 0.3f
+        private const val MAX_ITD_DELAY_MS = 0.6f
+        private const val CORRELATION_THRESHOLD = 0.3f
+        private const val CORRELATION_ALPHA = 0.995f  // EMA smoothing
+        private const val ALLPASS_Q = 0.7f
+        private const val MID_ATTENUATION = 0.9f  // Mid channel attenuation (0.85-0.95)
+        
         @Volatile
         private var sharedInstance: SoftwareDSPAudioProcessor? = null
         
@@ -85,6 +95,34 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private var trebleGain = 0f
     private var stereoWidth = 0f  // -1.0 = mono, 0.0 = original, 1.0 = max wide (200%)
     private var isEnabled = true
+    
+    // Psychoacoustic Stereo Enhancement
+    private var spatialEnhancementEnabled: Boolean = false
+    
+    // Bass mono enforcement filters (lowpass at 150Hz to extract bass for mono-sum)
+    private val bassMonoLowpassL = BiquadFilter(FilterType.LOWPASS, BASS_MONO_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val bassMonoLowpassR = BiquadFilter(FilterType.LOWPASS, BASS_MONO_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val bassMonoHighpassL = BiquadFilter(FilterType.HIGHPASS, BASS_MONO_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val bassMonoHighpassR = BiquadFilter(FilterType.HIGHPASS, BASS_MONO_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    
+    // Side channel highpass filter (150Hz) - no bass widening
+    private val sideHighpassFilter = BiquadFilter(FilterType.HIGHPASS, BASS_MONO_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    
+    // All-pass decorrelation filters for Side channel (above 2kHz)
+    private val allpassFilter1 = BiquadFilter(FilterType.ALLPASS, 3000f, 0f, ALLPASS_Q, STANDARD_SAMPLE_RATE)
+    private val allpassFilter2 = BiquadFilter(FilterType.ALLPASS, 5000f, 0f, ALLPASS_Q, STANDARD_SAMPLE_RATE)
+    
+    // ITD delay buffer for Side channel (max 0.6ms = ~29 samples at 48kHz)
+    private val MAX_ITD_DELAY_SAMPLES = 64 // Enough for 0.6ms at 96kHz
+    private val itdDelayBuffer = FloatArray(MAX_ITD_DELAY_SAMPLES)
+    private var itdDelayWriteIndex = 0
+    private var itdDelaySamples = 0 // Actual delay in samples at current sample rate
+    
+    // Correlation monitor state (EMA)
+    private var correlationSum = 0.0
+    private var leftSquaredSum = 0.0
+    private var rightSquaredSum = 0.0
+    private var runningCorrelation = 1.0f // Start assuming full correlation
 
     private var outputBuffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
     private var inputBuffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
@@ -117,13 +155,25 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         bassShelfFilter.configure(FilterType.LOWSHELF, BASS_SHELF_FREQ, bassGain, SHELF_Q, currentSampleRate)
         trebleShelfFilter.configure(FilterType.HIGHSHELF, TREBLE_SHELF_FREQ, trebleGain, SHELF_Q, currentSampleRate)
         limiter.setSampleRate(currentSampleRate)
+        
+        // Configure psychoacoustic stereo enhancement filters
+        bassMonoLowpassL.configure(FilterType.LOWPASS, BASS_MONO_FREQ, 0f, SHELF_Q, currentSampleRate)
+        bassMonoLowpassR.configure(FilterType.LOWPASS, BASS_MONO_FREQ, 0f, SHELF_Q, currentSampleRate)
+        bassMonoHighpassL.configure(FilterType.HIGHPASS, BASS_MONO_FREQ, 0f, SHELF_Q, currentSampleRate)
+        bassMonoHighpassR.configure(FilterType.HIGHPASS, BASS_MONO_FREQ, 0f, SHELF_Q, currentSampleRate)
+        sideHighpassFilter.configure(FilterType.HIGHPASS, BASS_MONO_FREQ, 0f, SHELF_Q, currentSampleRate)
+        allpassFilter1.configure(FilterType.ALLPASS, 3000f, 0f, ALLPASS_Q, currentSampleRate)
+        allpassFilter2.configure(FilterType.ALLPASS, 5000f, 0f, ALLPASS_Q, currentSampleRate)
+        
+        // Calculate ITD delay in samples (0.3ms at current sample rate)
+        itdDelaySamples = ((ITD_DELAY_MS / 1000f) * currentSampleRate).toInt().coerceIn(1, MAX_ITD_DELAY_SAMPLES - 1)
 
         inputFormat = inputAudioFormat
         outputFormat = inputAudioFormat
         isActive = true
         
         val bitDepth = if (encoding == C.ENCODING_PCM_16BIT) 16 else 24
-        android.util.Log.d("SoftwareDSP", "Configured: ${bitDepth}-bit PCM @ ${currentSampleRate.toInt()} Hz, 32-bit float internal")
+        android.util.Log.d("SoftwareDSP", "Configured: ${bitDepth}-bit PCM @ ${currentSampleRate.toInt()} Hz, 32-bit float internal, ITD delay: $itdDelaySamples samples")
 
         return inputAudioFormat
     }
@@ -200,12 +250,17 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             processStereoWidthFloat(floatSamples)
         }
 
-        // 5. Multi-Tap Delay Reverb (true stereo)
+        // 5. Psychoacoustic Stereo Enhancement (true stereo)
+        if (spatialEnhancementEnabled && channelCount == 2) {
+            processPsychoacousticStereo(floatSamples)
+        }
+
+        // 6. Multi-Tap Delay Reverb (true stereo)
         if (reverbWetMix > 0f && channelCount == 2) {
             processReverbFloat(floatSamples)
         }
 
-        // 6. Brickwall Limiter (linked stereo - industry standard)
+        // 7. Brickwall Limiter (linked stereo - industry standard)
         limiter.processBufferFloat(floatSamples, channelCount)
 
         // =========================================
@@ -302,6 +357,21 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         bassShelfFilter.resetAllChannels()
         trebleShelfFilter.resetAllChannels()
         limiter.reset()
+        
+        // Reset psychoacoustic stereo enhancement filters
+        bassMonoLowpassL.resetAllChannels()
+        bassMonoLowpassR.resetAllChannels()
+        bassMonoHighpassL.resetAllChannels()
+        bassMonoHighpassR.resetAllChannels()
+        sideHighpassFilter.resetAllChannels()
+        allpassFilter1.resetAllChannels()
+        allpassFilter2.resetAllChannels()
+        itdDelayBuffer.fill(0f)
+        itdDelayWriteIndex = 0
+        correlationSum = 0.0
+        leftSquaredSum = 0.0
+        rightSquaredSum = 0.0
+        runningCorrelation = 1.0f
 
         if (pendingFormat != AudioFormat.NOT_SET) {
             inputFormat = pendingFormat
@@ -359,6 +429,122 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     }
 
     fun getStereoWidth(): Float = stereoWidth
+
+    /**
+     * Enable or disable psychoacoustic stereo enhancement.
+     * This applies frequency-dependent M/S processing, ITD, and correlation-guarded widening.
+     */
+    fun setSpatialEnhancement(enabled: Boolean) {
+        spatialEnhancementEnabled = enabled
+        android.util.Log.d("SoftwareDSP", "Spatial enhancement ${if (enabled) "enabled" else "disabled"}")
+    }
+
+    fun getSpatialEnhancement(): Boolean = spatialEnhancementEnabled
+
+    /**
+     * Process psychoacoustic stereo enhancement (32-bit float version).
+     * Implements frequency-dependent M/S processing with ITD, all-pass decorrelation,
+     * and correlation-guarded side boost.
+     * 
+     * Signal flow:
+     * 1. Bass Mono Enforcement (below 150Hz)
+     * 2. M/S Conversion with frequency-dependent processing
+     * 3. ITD delay on Side channel
+     * 4. All-pass decorrelation on Side channel
+     * 5. Correlation monitoring and adaptive side gain
+     * 6. Back to L/R conversion
+     */
+    private fun processPsychoacousticStereo(samples: FloatArray) {
+        var i = 0
+        while (i < samples.size - 1) {
+            val left = samples[i]
+            val right = samples[i + 1]
+            
+            // =========================================
+            // A. Bass Mono Enforcement (below 150Hz)
+            // =========================================
+            // Extract bass content using lowpass filters
+            val bassL = bassMonoLowpassL.processSample(left, 0)
+            val bassR = bassMonoLowpassR.processSample(right, 0)
+            // Sum bass to mono
+            val bassMono = (bassL + bassR) / 2f
+            
+            // Extract high content (above 150Hz) - this retains stereo
+            val highL = bassMonoHighpassL.processSample(left, 0)
+            val highR = bassMonoHighpassR.processSample(right, 0)
+            
+            // Reconstruct with mono bass and stereo highs
+            val monoBasedL = bassMono + highL
+            val monoBasedR = bassMono + highR
+            
+            // =========================================
+            // B. Frequency-Dependent M/S Processing
+            // =========================================
+            // Convert to Mid-Side
+            val mid = (monoBasedL + monoBasedR) / 2f
+            var side = (monoBasedL - monoBasedR) / 2f
+            
+            // Apply highpass to Side channel (no bass widening)
+            side = sideHighpassFilter.processSample(side, 0)
+            
+            // =========================================
+            // C. Interaural Time Difference (ITD)
+            // =========================================
+            // Read delayed side from circular buffer
+            val readIndex = (itdDelayWriteIndex - itdDelaySamples + MAX_ITD_DELAY_SAMPLES) % MAX_ITD_DELAY_SAMPLES
+            val delayedSide = itdDelayBuffer[readIndex]
+            
+            // Write current side to buffer
+            itdDelayBuffer[itdDelayWriteIndex] = side
+            itdDelayWriteIndex = (itdDelayWriteIndex + 1) % MAX_ITD_DELAY_SAMPLES
+            
+            // Use delayed side
+            side = delayedSide
+            
+            // =========================================
+            // D. All-Pass Decorrelation (above 2kHz)
+            // =========================================
+            // Apply cascaded all-pass filters to side channel
+            side = allpassFilter1.processSample(side, 0)
+            side = allpassFilter2.processSample(side, 0)
+            
+            // =========================================
+            // E. Correlation Monitor/Guard
+            // =========================================
+            // Update running correlation (EMA)
+            correlationSum = CORRELATION_ALPHA * correlationSum + (1.0 - CORRELATION_ALPHA) * (left * right).toDouble()
+            leftSquaredSum = CORRELATION_ALPHA * leftSquaredSum + (1.0 - CORRELATION_ALPHA) * (left * left).toDouble()
+            rightSquaredSum = CORRELATION_ALPHA * rightSquaredSum + (1.0 - CORRELATION_ALPHA) * (right * right).toDouble()
+            
+            val denominator = kotlin.math.sqrt(leftSquaredSum * rightSquaredSum)
+            if (denominator > 1e-10) {
+                runningCorrelation = (correlationSum / denominator).toFloat().coerceIn(-1f, 1f)
+            }
+            
+            // Calculate side boost with correlation guard
+            var sideBoostMultiplier = (1f + SIDE_BOOST).coerceAtMost(2f)  // 1.5x, capped at 2.0x
+            
+            // If correlation drops below threshold, reduce side gain by 10-20%
+            if (runningCorrelation < CORRELATION_THRESHOLD) {
+                val reductionFactor = 0.8f + 0.1f * (runningCorrelation / CORRELATION_THRESHOLD).coerceIn(0f, 1f)
+                sideBoostMultiplier *= reductionFactor
+            }
+            
+            // Apply side boost
+            side *= sideBoostMultiplier
+            
+            // Apply Mid attenuation to preserve loudness
+            val attenuatedMid = mid * MID_ATTENUATION
+            
+            // =========================================
+            // F. Output - Convert back to L/R
+            // =========================================
+            samples[i] = (attenuatedMid + side).coerceIn(-1f, 1f)
+            samples[i + 1] = (attenuatedMid - side).coerceIn(-1f, 1f)
+            
+            i += 2
+        }
+    }
 
     /**
      * Set reverb wet mix (0 = dry, 1 = full reverb)
@@ -475,6 +661,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         trebleGain = 0f
         stereoWidth = 0f
         reverbWetMix = 0f
+        spatialEnhancementEnabled = false
         bassShelfFilter.setGain(0f)
         trebleShelfFilter.setGain(0f)
         
@@ -484,6 +671,21 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             delayBuffersR[tap].fill(0f)
             delayIndices[tap] = 0
         }
+        
+        // Reset psychoacoustic stereo enhancement
+        bassMonoLowpassL.resetAllChannels()
+        bassMonoLowpassR.resetAllChannels()
+        bassMonoHighpassL.resetAllChannels()
+        bassMonoHighpassR.resetAllChannels()
+        sideHighpassFilter.resetAllChannels()
+        allpassFilter1.resetAllChannels()
+        allpassFilter2.resetAllChannels()
+        itdDelayBuffer.fill(0f)
+        itdDelayWriteIndex = 0
+        correlationSum = 0.0
+        leftSquaredSum = 0.0
+        rightSquaredSum = 0.0
+        runningCorrelation = 1.0f
         
         eqFilters.forEach { it.resetAllChannels() }
         bassShelfFilter.resetAllChannels()
@@ -509,7 +711,10 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             "bassBoostActive" to (bassGain != 0f),
             "trebleBoostActive" to (trebleGain != 0f),
             "virtualizerActive" to (stereoWidth != 0f),
-            "reverbActive" to (reverbWetMix > 0f)
+            "reverbActive" to (reverbWetMix > 0f),
+            "spatialEnhancementActive" to spatialEnhancementEnabled,
+            "itdDelaySamples" to itdDelaySamples,
+            "runningCorrelation" to runningCorrelation
         )
     }
 }

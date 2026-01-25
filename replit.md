@@ -30,7 +30,7 @@ The app uses **pure software-based DSP** across all platforms, ensuring a consis
 
 **Audio Signal Chain**:
 ```
-Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter → Stereo Widener → Reverb → Limiter → Output
+Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter → Stereo Widener → Spatial Enhancement → Reverb → Limiter → Output
 ```
 
 **Key Components**:
@@ -40,6 +40,7 @@ Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter →
 - **Multi-Tap Delay Reverb**: 4 delay lines (23ms, 41ms, 67ms, 89ms) with equal-power crossfade wet/dry mixing.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
 - **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide). VirtualizerModule and ImmersiveModeEngineModule delegate to SoftwareDSPAudioProcessor.
+- **Spatial Enhancement**: Psychoacoustic stereo enhancement with frequency-dependent M/S processing. Features: bass mono enforcement (below 150Hz), ITD micro-delay (0.3ms on Side channel), all-pass decorrelation (3kHz/5kHz), correlation monitor with 0.3 threshold guard. Side boost: 50% (capped at 100% Android, 120% Web).
 - **EQ Presets**: 10 total (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity) with zero-sum normalization.
 - **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, stereo width, and reverb settings. Reverb levels: Music 8%, 360 Reality 18%, Gaming 8%, Podcast 0%, Movie 12%, Sports 10%.
 
@@ -87,6 +88,8 @@ Audio Source
      ↓
  Stereo Width (Mid-Side Processing, -100% to +200%)
      ↓
+ Spatial Enhancement (Psychoacoustic: bass mono, ITD 0.3ms, all-pass decorrelation)
+     ↓
  Multi-Tap Reverb (23ms, 41ms, 67ms, 89ms delay lines)
      ↓
  Brickwall Limiter (-1dB threshold, 20:1 ratio)
@@ -125,8 +128,9 @@ Audio Source
 | File | Description |
 |------|-------------|
 | `modules/audio-effects/android/src/main/java/expo/modules/audioeffects/SoftwareDSPAudioProcessor.kt` | Core Android DSP engine with biquad filters |
-| `modules/audio-effects/android/src/main/java/expo/modules/audioeffects/BiquadFilter.kt` | Biquad filter implementation (peaking, shelf, lowpass, highpass) |
+| `modules/audio-effects/android/src/main/java/expo/modules/audioeffects/BiquadFilter.kt` | Biquad filter implementation (peaking, shelf, lowpass, highpass, allpass) |
 | `modules/audio-effects/android/src/main/java/expo/modules/audioeffects/Limiter.kt` | Brickwall limiter implementation |
+| `modules/audio-effects/android/src/main/java/expo/modules/audioeffects/SpatialEnhancementModule.kt` | Spatial Enhancement native module bridge |
 | `modules/audio-effects/android/src/main/java/expo/modules/audioeffects/ImmersiveModeEngineModule.kt` | Immersive mode coordination |
 | `client/services/WebAudioEffectsEngine.ts` | Web platform DSP engine using Web Audio API |
 | `client/screens/SoundLabScreen.tsx` | Sound Lab UI with EQ presets and custom editor |

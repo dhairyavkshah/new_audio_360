@@ -21,6 +21,7 @@ import {
   getBassControlLevel, saveBassControlLevel,
   getTrebleControlLevel, saveTrebleControlLevel,
   getVirtualizerLevel, saveVirtualizerLevel,
+  getSpatialEnhancement, saveSpatialEnhancement,
   CustomEQPreset
 } from "@/lib/storage";
 import { 
@@ -29,7 +30,8 @@ import {
   ImmersiveMode,
   ImmersiveModeInfo,
   BassBoostModule,
-  VirtualizerModule
+  VirtualizerModule,
+  SpatialEnhancementModule
 } from "../../modules/audio-effects";
 import NativeAudioService from "@/services/NativeAudioService";
 import { NativeEffectsManager } from "@/services/NativeEffectsManager";
@@ -157,6 +159,7 @@ function SoundLabScreen() {
   const [bassControl, setBassControl] = useState(0);
   const [trebleControl, setTrebleControl] = useState(0);
   const [virtualizerLevel, setVirtualizerLevel] = useState(0);
+  const [spatialEnhancement, setSpatialEnhancement] = useState(false);
 
   const MAX_CUSTOM_PRESETS = 5;
 
@@ -213,14 +216,15 @@ function SoundLabScreen() {
       const modes = ImmersiveModeEngineModule.getAvailableModes();
       setAvailableModes(modes);
 
-      const [eqPreset, soundMode, bands, presets, bassLvl, trebleLvl, virtLvl] = await Promise.all([
+      const [eqPreset, soundMode, bands, presets, bassLvl, trebleLvl, virtLvl, spatialEnabled] = await Promise.all([
         getEQPreset(),
         getSoundMode(),
         getCustomEQBands(),
         getCustomEQPresets(),
         getBassControlLevel(),
         getTrebleControlLevel(),
-        getVirtualizerLevel()
+        getVirtualizerLevel(),
+        getSpatialEnhancement()
       ]);
       
       setCustomBands(bands);
@@ -230,6 +234,7 @@ function SoundLabScreen() {
       setTrebleControl(trebleLvl);
       setTrebleBoost(trebleLvl); // Sync to context for software DSP
       setVirtualizerLevel(virtLvl);
+      setSpatialEnhancement(spatialEnabled);
       
       if (eqPreset) {
         if (eqPreset === "Custom") {
@@ -396,6 +401,30 @@ function SoundLabScreen() {
           // Negative = narrow toward mono, Positive = widen stereo
           VirtualizerModule.setStrength(level * 200); // -1000 to +1000 range
         }
+      } catch (error) {
+        // Silently handle error in production
+      }
+    }
+  };
+
+  const handleSpatialEnhancementChange = async (enabled: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSpatialEnhancement(enabled);
+    await saveSpatialEnhancement(enabled);
+    
+    // Apply spatial enhancement on web
+    if (Platform.OS === 'web') {
+      // WebAudioEffectsEngine.setSpatialEnhancement will be implemented
+      if (typeof (WebAudioEffectsEngine as any).setSpatialEnhancement === 'function') {
+        (WebAudioEffectsEngine as any).setSpatialEnhancement(enabled);
+      }
+      return;
+    }
+    
+    // Apply spatial enhancement on Android via SpatialEnhancementModule
+    if (SpatialEnhancementModule.isAvailable()) {
+      try {
+        SpatialEnhancementModule.setEnabled(enabled);
       } catch (error) {
         // Silently handle error in production
       }
@@ -706,6 +735,37 @@ function SoundLabScreen() {
                   />
                   <FluentText variant="caption1" color="secondary">+5</FluentText>
                 </View>
+              </View>
+
+              <View style={styles.effectToggleRow}>
+                <Pressable
+                  style={styles.effectToggleContent}
+                  onPress={() => handleSpatialEnhancementChange(!spatialEnhancement)}
+                >
+                  <MaterialCommunityIcons name="axis-x-rotate-counterclockwise" size={FluentIconSize.regular} color={tokens.colors.primary} />
+                  <View style={styles.effectToggleText}>
+                    <FluentText variant="body2" style={{ flex: 1 }}>Spatial Enhancement</FluentText>
+                    <FluentText variant="caption1" color="secondary">Psychoacoustic stereo processing</FluentText>
+                  </View>
+                  <Pressable
+                    onPress={() => handleSpatialEnhancementChange(!spatialEnhancement)}
+                    style={[
+                      styles.toggleSwitch,
+                      { 
+                        backgroundColor: spatialEnhancement ? tokens.colors.primary : tokens.colors.surface,
+                        borderColor: spatialEnhancement ? tokens.colors.primary : colors.colorNeutralStroke1
+                      }
+                    ]}
+                  >
+                    <View style={[
+                      styles.toggleKnob,
+                      { 
+                        backgroundColor: spatialEnhancement ? tokens.colors.onPrimary : colors.colorNeutralStroke1,
+                        transform: [{ translateX: spatialEnhancement ? 14 : 0 }]
+                      }
+                    ]} />
+                  </Pressable>
+                </Pressable>
               </View>
             </View>
           ) : null}
@@ -1087,6 +1147,34 @@ const styles = StyleSheet.create({
   effectSlider: {
     flex: 1,
     height: FluentControlHeight.medium,
+  },
+  effectToggleRow: {
+    marginTop: FluentSpacing.s,
+    paddingTop: FluentSpacing.s,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(128,128,128,0.15)",
+  },
+  effectToggleContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: FluentSpacing.s,
+  },
+  effectToggleText: {
+    flex: 1,
+    gap: FluentSpacing.xs / 2,
+  },
+  toggleSwitch: {
+    width: 38,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    padding: 2,
+    justifyContent: "center",
+  },
+  toggleKnob: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
   },
   customEQContainer: {
     marginTop: FluentSpacing.m,

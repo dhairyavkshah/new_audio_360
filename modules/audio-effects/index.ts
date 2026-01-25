@@ -125,6 +125,14 @@ interface VirtualizerModuleInterface {
   release(): Promise<{ success: boolean }>;
 }
 
+// Spatial Enhancement Module Types
+interface SpatialEnhancementModuleInterface {
+  isAvailable(): boolean;
+  setEnabled(enabled: boolean): { success: boolean; enabled?: boolean; error?: string };
+  getEnabled(): boolean;
+  getProperties(): { enabled: boolean; isSoftwareDSP: boolean };
+}
+
 // Waveform Analyzer Module Types
 export interface WaveformData {
   waveform: number[];
@@ -253,6 +261,7 @@ let PlaybackEngineModuleNative: PlaybackEngineModuleInterface | null = null;
 let EqualizerModuleNative: EqualizerModuleInterface | null = null;
 let BassBoostModuleNative: BassBoostModuleInterface | null = null;
 let VirtualizerModuleNative: VirtualizerModuleInterface | null = null;
+let SpatialEnhancementModuleNative: SpatialEnhancementModuleInterface | null = null;
 let WaveformAnalyzerModuleNative: WaveformAnalyzerModuleInterface | null = null;
 let ImmersiveModeEngineModuleNative: ImmersiveModeEngineModuleInterface | null = null;
 let MediaStoreScannerModuleNative: MediaStoreScannerModuleInterface | null = null;
@@ -280,6 +289,12 @@ if (Platform.OS === 'android') {
     VirtualizerModuleNative = requireNativeModule<VirtualizerModuleInterface>('VirtualizerModule');
   } catch (e) {
     console.warn('VirtualizerModule not available:', e);
+  }
+  
+  try {
+    SpatialEnhancementModuleNative = requireNativeModule<SpatialEnhancementModuleInterface>('SpatialEnhancementModule');
+  } catch (e) {
+    console.warn('SpatialEnhancementModule not available:', e);
   }
   
   try {
@@ -877,6 +892,49 @@ export const VirtualizerModule = {
     } catch (error) {
       console.error('VirtualizerModule.release error:', error);
       return { success: false };
+    }
+  }
+};
+
+// Spatial Enhancement Module Export
+export const SpatialEnhancementModule = {
+  isAvailable: (): boolean => {
+    return Platform.OS === 'android' && SpatialEnhancementModuleNative !== null;
+  },
+
+  setEnabled: (enabled: boolean): { success: boolean; enabled?: boolean; error?: string } => {
+    if (!SpatialEnhancementModuleNative) {
+      return { success: false, error: 'Spatial Enhancement not available on this platform' };
+    }
+    try {
+      return SpatialEnhancementModuleNative.setEnabled(enabled);
+    } catch (error) {
+      console.error('SpatialEnhancementModule.setEnabled error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  getEnabled: (): boolean => {
+    if (!SpatialEnhancementModuleNative) {
+      return false;
+    }
+    try {
+      return SpatialEnhancementModuleNative.getEnabled();
+    } catch (error) {
+      console.error('SpatialEnhancementModule.getEnabled error:', error);
+      return false;
+    }
+  },
+
+  getProperties: (): { enabled: boolean; isSoftwareDSP: boolean } => {
+    if (!SpatialEnhancementModuleNative) {
+      return { enabled: false, isSoftwareDSP: true };
+    }
+    try {
+      return SpatialEnhancementModuleNative.getProperties();
+    } catch (error) {
+      console.error('SpatialEnhancementModule.getProperties error:', error);
+      return { enabled: false, isSoftwareDSP: true };
     }
   }
 };

@@ -27,6 +27,7 @@ const STORAGE_KEYS = {
   BASS_CONTROL_LEVEL: '@new_audio_360_bass_control_level',
   TREBLE_CONTROL_LEVEL: '@new_audio_360_treble_control_level',
   VIRTUALIZER_LEVEL: '@new_audio_360_virtualizer_level',
+  SPATIAL_ENHANCEMENT: '@new_audio_360_spatial_enhancement',
 };
 
 export interface CustomEQPreset {
@@ -596,5 +597,23 @@ export async function getVirtualizerLevel(): Promise<number> {
   } catch (error) {
     console.error('Error getting virtualizer level:', error);
     return 0;
+  }
+}
+
+export async function saveSpatialEnhancement(enabled: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.SPATIAL_ENHANCEMENT, JSON.stringify(enabled));
+  } catch (error) {
+    console.error('Error saving spatial enhancement:', error);
+  }
+}
+
+export async function getSpatialEnhancement(): Promise<boolean> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.SPATIAL_ENHANCEMENT);
+    return data ? JSON.parse(data) : false;
+  } catch (error) {
+    console.error('Error getting spatial enhancement:', error);
+    return false;
   }
 }
