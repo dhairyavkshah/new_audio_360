@@ -104,6 +104,7 @@ class WebAudioEffectsEngineClass {
   // M/S Stereo Width Processing nodes
   private stereoSplitter: ChannelSplitterNode | null = null;
   private stereoMerger: ChannelMergerNode | null = null;
+  private stereoMixNode: GainNode | null = null; // Sums dry+wet before stereo splitting
   private midGainL: GainNode | null = null;  // L contribution to Mid
   private midGainR: GainNode | null = null;  // R contribution to Mid
   private sideGainL: GainNode | null = null; // L contribution to Side
@@ -202,10 +203,12 @@ class WebAudioEffectsEngineClass {
       
       // Mix dry and wet, then through stereo width processing, then to master output
       // Signal chain: EQ → Dry/Wet Mix → Stereo Width → Master → Destination
-      if (this.stereoWidthEnabled && this.stereoSplitter && this.stereoMerger) {
-        // Connect dry/wet to stereo splitter
-        this.dryGain.connect(this.stereoSplitter);
-        this.wetGain.connect(this.stereoSplitter);
+      if (this.stereoWidthEnabled && this.stereoSplitter && this.stereoMerger && this.stereoMixNode) {
+        // Connect dry/wet to mix node first (preserves stereo before splitting)
+        this.dryGain.connect(this.stereoMixNode);
+        this.wetGain.connect(this.stereoMixNode);
+        // Mix node to stereo splitter
+        this.stereoMixNode.connect(this.stereoSplitter);
         // Stereo merger output to master
         this.stereoMerger.connect(this.masterGain);
       } else {
@@ -262,6 +265,11 @@ class WebAudioEffectsEngineClass {
         return;
       }
 
+      // Create mix node to sum dry+wet before stereo processing
+      // This preserves stereo content before splitting to L/R
+      this.stereoMixNode = nativeCtx.createGain() as unknown as GainNode;
+      this.stereoMixNode.gain.value = 1.0;
+      
       // Create splitter (2 channels: L, R)
       this.stereoSplitter = nativeCtx.createChannelSplitter(2);
       
@@ -555,25 +563,26 @@ class WebAudioEffectsEngineClass {
    * -3: Reduced stereo (40% width) - sideWidth = 0.4
    * -1: Slightly narrower (80% width) - sideWidth = 0.8
    *  0: Original stereo (100% width) - sideWidth = 1.0
-   * +1: Slightly wider (120% perceived width) - sideWidth = 1.3
-   * +3: Wide stereo (180% perceived width) - sideWidth = 1.9
-   * +5: Maximum surround (250% perceived width) - sideWidth = 2.5
+   * +1: Slightly wider (120% perceived width) - sideWidth = 1.2
+   * +3: Wide stereo (160% perceived width) - sideWidth = 1.6
+   * +5: Maximum surround (200% perceived width) - sideWidth = 2.0
    * 
    * Uses M/S (Mid-Side) processing for true stereo width control.
+   * Width capped at 2.0 (200%) to match Android implementation.
    */
   setVirtualizer(level: number): void {
     const clampedLevel = Math.max(-5, Math.min(5, level));
     this.currentVirtualizer = clampedLevel;
     
     // Calculate stereo width multiplier (matches Android formula)
-    // -5 = 0.0 (mono), 0 = 1.0 (original), +5 = 2.5 (extra wide)
+    // -5 = 0.0 (mono), 0 = 1.0 (original), +5 = 2.0 (double width)
     let stereoWidth: number;
     if (clampedLevel < 0) {
       // Narrowing: -5 = 0%, 0 = 100%
       stereoWidth = 1.0 + (clampedLevel / 5); // -5 → 0.0, 0 → 1.0
     } else {
-      // Widening: 0 = 100%, +5 = 250%
-      stereoWidth = 1.0 + (clampedLevel * 0.3); // 0 → 1.0, +5 → 2.5
+      // Widening: 0 = 100%, +5 = 200% (matches Android's max width)
+      stereoWidth = 1.0 + (clampedLevel * 0.2); // 0 → 1.0, +5 → 2.0
     }
     
     // Apply stereo width via M/S processing
@@ -637,6 +646,7 @@ class WebAudioEffectsEngineClass {
     // Clean up M/S stereo width processing nodes
     this.stereoSplitter = null;
     this.stereoMerger = null;
+    this.stereoMixNode = null;
     this.midGainL = null;
     this.midGainR = null;
     this.sideGainL = null;
