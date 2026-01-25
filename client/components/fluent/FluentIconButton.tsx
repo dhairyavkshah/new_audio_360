@@ -32,6 +32,7 @@ export interface FluentIconButtonProps extends PressableProps {
   variant?: IconButtonVariant;
   size?: IconButtonSize;
   selected?: boolean;
+  iconColor?: string;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -48,6 +49,7 @@ export function FluentIconButton({
   size = 'medium',
   selected = false,
   disabled = false,
+  iconColor,
   onPress,
   onPressIn,
   onPressOut,
@@ -177,7 +179,7 @@ export function FluentIconButton({
       {...props}
     >
       {React.cloneElement(icon as React.ReactElement<{ color?: string; size?: number }>, {
-        color: getIconColor(),
+        color: iconColor || getIconColor(),
         size: iconSize,
       })}
     </AnimatedPressable>

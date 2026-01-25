@@ -185,9 +185,10 @@ function OnlineStationCard({ station, onPlay, isPlaying, isFavorite, onToggleFav
       </View>
       
       <FluentIconButton
-        icon={<MaterialCommunityIcons name={isFavorite ? "heart" : "heart-outline"} size={24} color={isFavorite ? colors.colorPaletteRedForeground1 : colors.colorNeutralForeground3} />}
+        icon={<MaterialCommunityIcons name={isFavorite ? "heart" : "heart-outline"} />}
         variant="subtle"
         size="large"
+        iconColor={isFavorite ? colors.colorPaletteRedForeground1 : colors.colorNeutralForeground3}
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onToggleFavorite();
