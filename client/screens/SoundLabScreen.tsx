@@ -716,32 +716,6 @@ function SoundLabScreen() {
 
               <View style={styles.effectSliderRow}>
                 <View style={styles.effectSliderHeader}>
-                  <MaterialCommunityIcons name="surround-sound" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Virtualizer</FluentText>
-                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
-                    {virtualizerLevel === 0 ? "Off" : virtualizerLevel > 0 ? `+${virtualizerLevel}` : `${virtualizerLevel}`}
-                  </FluentText>
-                </View>
-                <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">-5</FluentText>
-                  <CrossPlatformSlider
-                    style={styles.effectSlider}
-                    minimumValue={-5}
-                    maximumValue={5}
-                    step={1}
-                    value={virtualizerLevel}
-                    onValueChange={(value) => handleVirtualizerLevelChange(value)}
-                    minimumTrackTintColor={colors.colorBrandForeground1}
-                    maximumTrackTintColor={colors.colorNeutralStroke1}
-                    thumbTintColor={colors.colorBrandForeground1}
-                    trackHeight={FluentSliderSize.trackMedium}
-                  />
-                  <FluentText variant="caption1" color="secondary">+5</FluentText>
-                </View>
-              </View>
-
-              <View style={styles.effectSliderRow}>
-                <View style={styles.effectSliderHeader}>
                   <MaterialCommunityIcons name="axis-x-rotate-counterclockwise" size={FluentIconSize.regular} color={tokens.colors.primary} />
                   <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Spatial Enhancement</FluentText>
                   <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
