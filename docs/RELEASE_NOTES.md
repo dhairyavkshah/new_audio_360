@@ -14,7 +14,7 @@ New Audio 360 v1.0 - Premium Music Player
 Studio-grade audio experience:
 • 10-band parametric EQ with 10 presets
 • Bass & Treble controls: ±12 dB range
-• Stereo width and multi-tap reverb
+• Spatial Enhancement (0-5 levels) and multi-tap reverb
 • Intelligent brickwall limiting
 • 6 immersive audio modes
 • 55 stunning themes
@@ -45,8 +45,9 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 - Treble control: ±12 dB range
 - Independent sliders for precise adjustment
 
-#### Stereo Width & Reverb
-- Stereo width control: -100% (mono) to +200% (wide)
+#### Spatial Enhancement & Reverb
+- Spatial Enhancement: 6 intensity levels (0=Off to 5=Maximum)
+- Bose-inspired psychoacoustic processing with ITD (50-700µs), side boost (1.0-2.0x)
 - Multi-tap delay reverb with 4 delay lines (23ms, 41ms, 67ms, 89ms)
 - Equal-power crossfade wet/dry mixing
 
@@ -55,12 +56,12 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 - No clipping or distortion even with maximum settings
 
 #### Immersive Modes
-- **Music** - Enhanced listening experience
-- **360 Reality** - Spatial audio effect
-- **Gaming** - Clear directional audio
-- **Podcast** - Voice clarity optimization
-- **Movie** - Cinematic sound
-- **Sports** - Stadium broadcast feel
+- **Music** - Spatial level 2 (310µs ITD, 1.4x side boost)
+- **360 Reality** - Maximum spatial level 5 (700µs ITD, 2.0x side boost)
+- **Gaming** - Spatial level 3 (440µs ITD, 1.6x side boost)
+- **Podcast** - Spatial off for speech clarity
+- **Movie** - Spatial level 4 (570µs ITD, 1.8x side boost)
+- **Sports** - Spatial level 2 (310µs ITD, 1.4x side boost)
 - **Off** - Pure, unprocessed audio
 
 ---

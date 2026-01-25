@@ -37,7 +37,7 @@ Take full control of your audio experience:
 • 10-Band Parametric Equalizer - Fine-tune 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz
 • 10 EQ Presets - Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity
 • Bass & Treble Controls - ±12 dB adjustment for perfect sound balance
-• Stereo Width Control - Adjust stereo width from mono (-100%) to wide (+200%)
+• Spatial Enhancement - 6-level Bose-inspired psychoacoustic processing (ITD, side boost)
 • Multi-Tap Reverb - Add room ambience with 4 delay lines
 • Distortion Prevention - Intelligent brickwall limiting keeps audio clean at any volume
 • 6 Immersive Modes - Music, 360 Reality, Gaming, Podcast, Movie, Sports
@@ -112,7 +112,7 @@ Version 1.0 - Initial Release
 
 • 10-band parametric equalizer with 10 presets
 • Bass & Treble controls with ±12 dB range
-• Stereo width control and multi-tap reverb
+• Spatial Enhancement (0-5 levels) and multi-tap reverb
 • Intelligent brickwall limiting
 • 6 immersive audio modes
 • 55 themes across 6 categories

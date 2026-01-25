@@ -44,7 +44,7 @@ export default function AboutScreen() {
           <FluentText variant="caption1" color="secondary" style={styles.description}>
             A beautiful music player designed with love for audio enthusiasts. 
             Experience your music collection like never before with our world-class 
-            audio engine, custom 10-band EQ, and immersive sound modes.
+            audio engine, custom 10-band EQ, Bose-inspired spatial enhancement, and immersive sound modes.
           </FluentText>
         </GlassCard>
 
@@ -75,7 +75,7 @@ export default function AboutScreen() {
             <FeatureItem
               icon="headphones"
               title="Immersive Audio"
-              description="Cinema, Music, Sports, and 360 Reality modes"
+              description="6 modes with Bose-inspired spatial enhancement"
               colors={colors}
               isDark={isDark}
             />
