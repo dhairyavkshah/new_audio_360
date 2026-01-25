@@ -22,7 +22,7 @@ import java.nio.ByteOrder
  * operates at the source sample rate (typically 44.1kHz or 48kHz).
  * 
  * Signal Chain:
- * Input → 10-Band EQ → Bass Shelf → Treble Shelf → Stereo Width → Reverb → Limiter → Output
+ * Input → 10-Band EQ → Bass Shelf → Treble Shelf → Spatial Enhancement → Reverb → Limiter → Output
  */
 class SoftwareDSPAudioProcessor : AudioProcessor {
     companion object {
@@ -95,7 +95,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private var reverbWetMix = 0f // 0.0 = dry, 1.0 = full reverb
     private var bassGain = 0f
     private var trebleGain = 0f
-    private var stereoWidth = 0f  // -1.0 = mono, 0.0 = original, 1.0 = max wide (200%)
     private var isEnabled = true
     
     // Psychoacoustic Stereo Enhancement
@@ -254,22 +253,17 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             trebleShelfFilter.processBufferFloat(floatSamples, channelCount)
         }
 
-        // 4. Stereo Width / Virtualizer (M/S processing, true stereo)
-        if (channelCount == 2 && stereoWidth != 0f) {
-            processStereoWidthFloat(floatSamples)
-        }
-
-        // 5. Psychoacoustic Stereo Enhancement (true stereo)
+        // 4. Psychoacoustic Stereo Enhancement (true stereo)
         if (spatialEnhancementLevel > 0 && channelCount == 2) {
             processPsychoacousticStereo(floatSamples)
         }
 
-        // 6. Multi-Tap Delay Reverb (true stereo)
+        // 5. Multi-Tap Delay Reverb (true stereo)
         if (reverbWetMix > 0f && channelCount == 2) {
             processReverbFloat(floatSamples)
         }
 
-        // 7. Brickwall Limiter (linked stereo - industry standard)
+        // 6. Brickwall Limiter (linked stereo - industry standard)
         limiter.processBufferFloat(floatSamples, channelCount)
 
         // =========================================
@@ -424,20 +418,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         trebleGain = gainDb
         trebleShelfFilter.setGain(gainDb)
     }
-
-    /**
-     * Set stereo width for virtualizer effect.
-     * @param width Range -1.0 to 1.0
-     *   -1.0 = Full mono (0% stereo width)
-     *    0.0 = Original stereo (100% width)
-     *    1.0 = Maximum wide (200% width)
-     */
-    fun setStereoWidth(width: Float) {
-        stereoWidth = width.coerceIn(-1f, 1f)
-        android.util.Log.d("SoftwareDSP", "Stereo width set to $stereoWidth (${((1f + stereoWidth) * 100).toInt()}%)")
-    }
-
-    fun getStereoWidth(): Float = stereoWidth
 
     /**
      * Set spatial enhancement intensity level (0-5).
@@ -713,42 +693,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         }
     }
 
-    /**
-     * Process stereo width using mid-side technique (32-bit float version).
-     * Mid = (L + R) / 2 (center content)
-     * Side = (L - R) / 2 (stereo content)
-     * 
-     * Width < 0: Reduce side, more mono
-     * Width > 0: Boost side, wider stereo
-     */
-    private fun processStereoWidthFloat(samples: FloatArray) {
-        // Calculate side multiplier based on stereoWidth
-        // -1.0 → sideGain = 0.0 (full mono)
-        //  0.0 → sideGain = 1.0 (original)
-        //  1.0 → sideGain = 2.0 (max wide)
-        val sideGain = 1f + stereoWidth
-
-        // Process samples in stereo pairs (L, R, L, R, ...)
-        var i = 0
-        while (i < samples.size - 1) {
-            val left = samples[i]
-            val right = samples[i + 1]
-
-            // Convert to mid-side
-            val mid = (left + right) / 2f
-            val side = (left - right) / 2f
-
-            // Apply width to side channel
-            val newSide = side * sideGain
-
-            // Convert back to left-right (soft clip at ±1.0)
-            samples[i] = (mid + newSide).coerceIn(-1f, 1f)
-            samples[i + 1] = (mid - newSide).coerceIn(-1f, 1f)
-
-            i += 2
-        }
-    }
-
     fun setEnabled(enabled: Boolean) {
         isEnabled = enabled
     }
@@ -768,7 +712,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         }
         bassGain = 0f
         trebleGain = 0f
-        stereoWidth = 0f
         reverbWetMix = 0f
         spatialEnhancementLevel = 0
         bassShelfFilter.setGain(0f)
@@ -819,7 +762,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             "eqActive" to eqGains.any { it != 0f },
             "bassBoostActive" to (bassGain != 0f),
             "trebleBoostActive" to (trebleGain != 0f),
-            "virtualizerActive" to (stereoWidth != 0f),
             "reverbActive" to (reverbWetMix > 0f),
             "spatialEnhancementActive" to (spatialEnhancementLevel > 0),
             "spatialEnhancementLevel" to spatialEnhancementLevel,

@@ -5,7 +5,6 @@
       "expo.modules.audioeffects.PlaybackEngineModule",
       "expo.modules.audioeffects.EqualizerModule",
       "expo.modules.audioeffects.BassBoostModule",
-      "expo.modules.audioeffects.VirtualizerModule",
       "expo.modules.audioeffects.SpatialEnhancementModule",
       "expo.modules.audioeffects.WaveformAnalyzerModule",
       "expo.modules.audioeffects.ImmersiveModeEngineModule",

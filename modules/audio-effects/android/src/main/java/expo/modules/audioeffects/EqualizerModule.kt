@@ -125,9 +125,8 @@ class EqualizerModule : Module() {
                 
                 dsp.setAllEqBandGains(presetGains)
                 
-                // Reset stereo width and reverb to neutral for EQ presets
+                // Reset reverb to neutral for EQ presets
                 // Professional standard: EQ presets only affect frequency response
-                dsp.setStereoWidth(0f)
                 dsp.setReverb(0f)
                 
                 return@Function mapOf("success" to true, "preset" to preset)
@@ -150,8 +149,7 @@ class EqualizerModule : Module() {
                 val gains = levels.map { it.toDouble() / 100.0 }
                 dsp.setAllEqBandGains(gains)
                 
-                // Reset stereo width and reverb to neutral for custom EQ
-                dsp.setStereoWidth(0f)
+                // Reset reverb to neutral for custom EQ
                 dsp.setReverb(0f)
                 
                 return@Function mapOf("success" to true)
@@ -187,8 +185,7 @@ class EqualizerModule : Module() {
                 
                 dsp.setAllEqBandGains(bands)
                 
-                // Reset stereo width and reverb to neutral for EQ-only mode
-                dsp.setStereoWidth(0f)
+                // Reset reverb to neutral for EQ-only mode
                 dsp.setReverb(0f)
                 
                 return@Function mapOf("success" to true)
