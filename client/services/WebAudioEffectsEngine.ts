@@ -520,16 +520,18 @@ class WebAudioEffectsEngineClass {
       this.sideHighpass.frequency.value = 150;
       this.sideHighpass.Q.value = 0.707;
       
-      // ITD delay: 0.0001 + (0.0004 * intensity) → 0.1ms to 0.5ms
-      this.sideDelay.delayTime.value = 0.0001 + (0.0004 * intensity);
+      // ITD delay: 0.00005 + (0.00065 * intensity) → 50µs to 700µs (full human perceptual range)
+      // Standard: 700µs maximum at 90° azimuth, detection threshold ~10µs
+      this.sideDelay.delayTime.value = 0.00005 + (0.00065 * intensity);
       
-      // Side psychoacoustic gain: 1.0 + (0.5 * intensity) → 1.1 to 1.5, capped at 2.2
-      let psychoGain = 1.0 + (0.5 * intensity);
-      psychoGain = Math.min(psychoGain, 2.2); // Max 2.2 for mono safety
+      // Side psychoacoustic gain: 1.0 + (1.0 * intensity) → 1.0 to 2.0 (0 to +6dB, industry standard)
+      // Conservative vs full 15-20dB ILD range to avoid artifacts
+      let psychoGain = 1.0 + (1.0 * intensity);
+      psychoGain = Math.min(psychoGain, 2.2); // Max 2.2 for safety on web
       this.sidePsychoGain.gain.value = psychoGain;
       
-      // Mid attenuation: 1.0 - (0.15 * intensity) → 0.97 to 0.85
-      this.midAttenuation.gain.value = 1.0 - (0.15 * intensity);
+      // Mid attenuation: 1.0 - (0.20 * intensity) → 1.0 to 0.80 (more pronounced center reduction)
+      this.midAttenuation.gain.value = 1.0 - (0.20 * intensity);
       
       console.log(`[WebAudioEffectsEngine] Spatial enhancement level set to ${clampedLevel} (intensity: ${(intensity * 100).toFixed(0)}%)`);
     }

@@ -41,15 +41,17 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         const val BASS_SHELF_FREQ = 150f
         const val TREBLE_SHELF_FREQ = 6000f
         
-        // Psychoacoustic Stereo Enhancement constants
+        // Psychoacoustic Stereo Enhancement constants (Industry-standard Bose-like ranges)
+        // ITD: Human maximum is ~700µs (0.7ms) for 90° lateral position
+        // ILD: Up to 15-20dB for high frequencies at 90° azimuth
         private const val BASS_MONO_FREQ = 150f
-        private const val SIDE_BOOST = 0.5f  // 50% boost = 1.5x, capped at 2.0x (100%)
-        private const val ITD_DELAY_MS = 0.3f
-        private const val MAX_ITD_DELAY_MS = 0.6f
+        private const val SIDE_BOOST = 1.0f  // 100% boost = 2.0x at max level (industry standard)
+        private const val ITD_DELAY_MS = 0.35f  // Base ITD (not used directly, scaled by level)
+        private const val MAX_ITD_DELAY_MS = 0.7f  // Human maximum ~700µs
         private const val CORRELATION_THRESHOLD = 0.3f
         private const val CORRELATION_ALPHA = 0.995f  // EMA smoothing
         private const val ALLPASS_Q = 0.7f
-        private const val MID_ATTENUATION = 0.9f  // Mid channel attenuation (0.85-0.95)
+        private const val MID_ATTENUATION = 0.85f  // Mid channel attenuation for maximum widening
         
         @Volatile
         private var sharedInstance: SoftwareDSPAudioProcessor? = null
@@ -481,16 +483,17 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         // Calculate intensity from level (0-5 → 0.0-1.0)
         val intensity = spatialEnhancementLevel / 5.0f
         
-        // Scale parameters based on intensity:
-        // Side boost: 1 + (SIDE_BOOST * intensity) = 1.0 to 1.5
+        // Scale parameters based on intensity (Industry-standard Bose-like ranges):
+        // Side boost: 1 + (SIDE_BOOST * intensity) = 1.0 to 2.0 (0 to +6dB, conservative vs 15-20dB max)
         val scaledSideBoost = SIDE_BOOST * intensity
         
-        // ITD delay: 0.1ms + (0.4ms * intensity) = 0.1ms to 0.5ms
-        val scaledItdMs = 0.1f + (0.4f * intensity)
+        // ITD delay: 0.05ms + (0.65ms * intensity) = 50µs to 700µs (full human perceptual range)
+        // Standard: 700µs maximum at 90° azimuth, detection threshold ~10µs
+        val scaledItdMs = 0.05f + (0.65f * intensity)
         val scaledItdSamples = ((scaledItdMs / 1000f) * currentSampleRate).toInt().coerceIn(1, MAX_ITD_DELAY_SAMPLES - 1)
         
-        // Mid attenuation: 1.0 - (0.15 * intensity) = 1.0 to 0.85
-        val scaledMidAttenuation = 1.0f - (0.15f * intensity)
+        // Mid attenuation: 1.0 - (0.20 * intensity) = 1.0 to 0.80 (more pronounced center reduction)
+        val scaledMidAttenuation = 1.0f - (0.20f * intensity)
         
         var i = 0
         while (i < samples.size - 1) {
