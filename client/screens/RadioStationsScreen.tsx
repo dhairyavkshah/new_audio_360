@@ -255,7 +255,7 @@ export default function RadioStationsScreen() {
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   
   const { 
-    stations, 
+    stations: rawStations, 
     scanResults, 
     isScanning, 
     scan, 
@@ -266,6 +266,8 @@ export default function RadioStationsScreen() {
     isInitialized,
     initialize,
   } = useRadio();
+
+  const stations = Array.isArray(rawStations) ? rawStations : [];
 
   const {
     isLoading: isOnlineLoading,
