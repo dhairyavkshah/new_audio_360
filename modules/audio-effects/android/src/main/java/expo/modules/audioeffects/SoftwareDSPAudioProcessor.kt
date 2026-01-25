@@ -99,7 +99,14 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private var isEnabled = true
     
     // Psychoacoustic Stereo Enhancement
-    private var spatialEnhancementLevel: Int = 0  // 0-5 intensity level
+    private var spatialEnhancementLevel: Int = 0  // 0-5 intensity level (legacy)
+    
+    // Explicit spatial parameters (used when set via setSpatialEnhancementParams)
+    private var explicitSpatialParams: Boolean = false
+    private var spatialSideGainPercent: Float = 0f      // Side gain boost in % (+6 = 1.06x)
+    private var spatialItdMs: Float = 0f                 // ITD in milliseconds (0-0.7)
+    private var spatialDecorrelation: Float = 0f         // Decorrelation amount in % (0-100)
+    private var spatialWetMix: Float = 0f                // Wet mix in % (0-100)
     
     // Bass mono enforcement filters (lowpass at 150Hz to extract bass for mono-sum)
     private val bassMonoLowpassL = BiquadFilter(FilterType.LOWPASS, BASS_MONO_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
@@ -443,6 +450,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      */
     fun setSpatialEnhancementLevel(level: Int) {
         spatialEnhancementLevel = level.coerceIn(0, 5)
+        explicitSpatialParams = false // Switch back to level-based mode
         android.util.Log.d("SoftwareDSP", "Spatial enhancement level set to $spatialEnhancementLevel (${spatialEnhancementLevel * 20}%)")
     }
 
@@ -457,6 +465,38 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     }
 
     fun getSpatialEnhancement(): Boolean = spatialEnhancementLevel > 0
+    
+    /**
+     * Set explicit spatial enhancement parameters for immersive modes.
+     * This provides fine-grained control over each spatial effect parameter.
+     *
+     * @param sideGain Side channel gain boost in % (+6 = 1.06x multiplier)
+     * @param itdMs Inter-aural Time Difference in milliseconds (0-0.7ms)
+     * @param decorrelation Decorrelation amount in % (0-100, controls all-pass filter Q)
+     * @param wetMix Wet mix in % (0-100, blends processed with original)
+     */
+    fun setSpatialEnhancementParams(sideGain: Float, itdMs: Float, decorrelation: Float, wetMix: Float) {
+        spatialSideGainPercent = sideGain.coerceIn(0f, 50f)
+        spatialItdMs = itdMs.coerceIn(0f, 0.7f)
+        spatialDecorrelation = decorrelation.coerceIn(0f, 100f)
+        spatialWetMix = wetMix.coerceIn(0f, 100f)
+        explicitSpatialParams = true
+        
+        // Set pseudo-level for compatibility (based on wetMix)
+        spatialEnhancementLevel = if (wetMix <= 0f) 0 else kotlin.math.ceil(wetMix / 20f).toInt().coerceIn(1, 5)
+        
+        android.util.Log.d("SoftwareDSP", "Spatial params set: sideGain=$sideGain%, ITD=${itdMs}ms, decorr=$decorrelation%, wetMix=$wetMix%")
+    }
+    
+    /**
+     * Get the current explicit spatial parameters.
+     */
+    fun getSpatialEnhancementParams(): Map<String, Float> = mapOf(
+        "sideGain" to spatialSideGainPercent,
+        "itdMs" to spatialItdMs,
+        "decorrelation" to spatialDecorrelation,
+        "wetMix" to spatialWetMix
+    )
 
     /**
      * Process psychoacoustic stereo enhancement (32-bit float version).
@@ -480,20 +520,48 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      * 6. Back to L/R conversion
      */
     private fun processPsychoacousticStereo(samples: FloatArray) {
-        // Calculate intensity from level (0-5 → 0.0-1.0)
-        val intensity = spatialEnhancementLevel / 5.0f
+        // Calculate parameters based on explicit settings or level
+        val scaledSideBoost: Float
+        val scaledItdMs: Float
+        val scaledMidAttenuation: Float
+        val wetFactor: Float
+        val decorrelationQ: Float
         
-        // Scale parameters based on intensity (industry-standard ranges):
-        // Side boost: 1 + (SIDE_BOOST * intensity) = 1.0 to 2.0 (0 to +6dB, conservative vs 15-20dB max)
-        val scaledSideBoost = SIDE_BOOST * intensity
+        if (explicitSpatialParams) {
+            // Use explicit parameters set via setSpatialEnhancementParams
+            wetFactor = spatialWetMix / 100f
+            
+            // Side gain: Convert percentage to multiplier, scaled by wetMix
+            // sideGain +6% means 1.06x base multiplier
+            // Then scale the boost portion by wetMix (0% = no boost, 100% = full boost)
+            val baseSideMultiplier = 1.0f + (spatialSideGainPercent / 100f)
+            scaledSideBoost = ((baseSideMultiplier - 1.0f) * wetFactor)
+            
+            scaledItdMs = spatialItdMs
+            
+            // Mid attenuation: scale with wetMix (0% = 1.0, 100% = 0.85)
+            scaledMidAttenuation = 1.0f - (0.15f * wetFactor)
+            
+            // Decorrelation Q: map 0-100% to 0.3-1.5 (matching Web implementation)
+            decorrelationQ = 0.3f + (spatialDecorrelation / 100f) * 1.2f
+            
+            // Update all-pass filter Q values for decorrelation
+            allpassFilter1.setQ(decorrelationQ)
+            allpassFilter2.setQ(decorrelationQ * 0.85f) // Slightly lower for second stage
+        } else {
+            // Legacy level-based calculation (0-5 → 0.0-1.0)
+            val intensity = spatialEnhancementLevel / 5.0f
+            
+            // Side boost: 1 + (SIDE_BOOST * intensity) = 1.0 to 2.0 (0 to +6dB)
+            scaledSideBoost = SIDE_BOOST * intensity
+            scaledItdMs = 0.05f + (0.65f * intensity)
+            scaledMidAttenuation = 1.0f - (0.20f * intensity)
+            wetFactor = intensity
+            decorrelationQ = 0.3f + (intensity * 1.2f)
+        }
         
-        // ITD delay: 0.05ms + (0.65ms * intensity) = 50µs to 700µs (full human perceptual range)
-        // Standard: 700µs maximum at 90° azimuth, detection threshold ~10µs
-        val scaledItdMs = 0.05f + (0.65f * intensity)
+        // ITD delay samples
         val scaledItdSamples = ((scaledItdMs / 1000f) * currentSampleRate).toInt().coerceIn(1, MAX_ITD_DELAY_SAMPLES - 1)
-        
-        // Mid attenuation: 1.0 - (0.20 * intensity) = 1.0 to 0.80 (more pronounced center reduction)
-        val scaledMidAttenuation = 1.0f - (0.20f * intensity)
         
         var i = 0
         while (i < samples.size - 1) {
@@ -562,7 +630,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             }
             
             // Calculate side boost with correlation guard - scaled by intensity
-            var sideBoostMultiplier = (1f + scaledSideBoost).coerceAtMost(2f)
+            // Cap at 2.2 to match Web implementation for safety
+            var sideBoostMultiplier = (1f + scaledSideBoost).coerceAtMost(2.2f)
             
             // If correlation drops below threshold, reduce side gain by 10-20%
             if (runningCorrelation < CORRELATION_THRESHOLD) {

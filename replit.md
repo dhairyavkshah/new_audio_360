@@ -40,9 +40,9 @@ Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter →
 - **Multi-Tap Delay Reverb**: 4 delay lines (23ms, 41ms, 67ms, 89ms) with equal-power crossfade wet/dry mixing.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
 - **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide). VirtualizerModule and ImmersiveModeEngineModule delegate to SoftwareDSPAudioProcessor.
-- **Spatial Enhancement**: Psychoacoustic stereo enhancement (0-5 intensity levels). Features: bass mono enforcement (below 150Hz), ITD micro-delay (50-700µs scaled by level, matching human maximum), all-pass decorrelation (3kHz/5kHz), correlation monitor with 0.3 threshold guard. Side boost scales 1.0-2.0x based on level (+6dB, conservative vs 15-20dB industry max). Mid attenuation scales 1.0-0.8x. Levels: 0=off, 1=20%, 2=40%, 3=60%, 4=80%, 5=100% intensity.
+- **Spatial Enhancement**: Psychoacoustic stereo enhancement with explicit per-mode parameters. Features: bass mono enforcement (below 150Hz), ITD micro-delay (0-0.7ms), all-pass decorrelation (3kHz/5kHz), wet/dry mixing. Each immersive mode has explicit settings: Side Gain (0-16%), ITD (0-0.45ms), Decorrelation (0-12%), Wet Mix (0-45%).
 - **EQ Presets**: 10 total (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity) with zero-sum normalization.
-- **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, stereo width, reverb, and spatial enhancement settings. Reverb levels: Music 8%, 360 Reality 18%, Gaming 8%, Podcast 0%, Movie 12%, Sports 10%. Spatial levels: Music 2, 360 Reality 5, Gaming 3, Podcast 0, Movie 4, Sports 2.
+- **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, reverb, and explicit spatial enhancement parameters (Side Gain, ITD, Decorrelation, Wet Mix).
 
 ## DSP Architecture
 
@@ -112,16 +112,20 @@ Audio Source
 
 ### Immersive Modes Settings
 
-| Mode | EQ Preset | Bass Boost | Treble Boost | Reverb | Spatial Level | Spatial Effect |
-|------|-----------|------------|--------------|--------|---------------|----------------|
-| **Music** | Flat | 0 | 0 | 8% | 2 | 310µs ITD, 1.4x side boost |
-| **360 Reality** | Custom (spatial) | +2 | +1 | 18% | 5 | 700µs ITD, 2.0x side boost |
-| **Gaming** | Rock | +3 | +2 | 8% | 3 | 440µs ITD, 1.6x side boost |
-| **Podcast** | Clarity | -2 | +1 | 0% | 0 | Off (speech clarity) |
-| **Movie** | Classical | +2 | +1 | 12% | 4 | 570µs ITD, 1.8x side boost |
-| **Sports** | Pop | +1 | +2 | 10% | 2 | 310µs ITD, 1.4x side boost |
+| Mode | EQ Preset | Bass Boost | Treble Boost | Reverb | Side Gain | ITD (ms) | Decorrelation | Wet Mix | Notes |
+|------|-----------|------------|--------------|--------|-----------|----------|---------------|---------|-------|
+| **Music** | Custom | +1.2 dB | +1.3 dB | 8% | +6% | 0.15 | 5% | 20% | Subtle openness, vocals locked |
+| **360 Reality** | Custom | +0.8 dB | +1.5 dB | 18% | +14% | 0.45 | 12% | 40% | Maximum safe width, cinematic |
+| **Gaming** | Custom | +1.2 dB | +2.1 dB | 8% | +16% | 0.35 | 8% | 35% | Strong positional cues |
+| **Podcast** | Custom | -1.0 dB | +2.3 dB | 0% | 0% | 0 | 0% | 0% | Pure, untouched signal |
+| **Movie** | Custom | +1.8 dB | +1.5 dB | 12% | +12% | 0.30 | 10% | 45% | Dialogue-safe cinematic stage |
+| **Sports** | Custom | +2.2 dB | +0.8 dB | 10% | +10% | 0.25 | 7% | 30% | Wide ambience, focused commentary |
 
-*Note: All spatial processing is bundled into Spatial Enhancement (stereo width removed as separate control).*
+**Spatial Enhancement Parameters:**
+- **Side Gain**: Side channel boost percentage (+6% = 1.06x multiplier)
+- **ITD**: Inter-aural Time Difference in milliseconds (0-0.7ms, human max ~700µs)
+- **Decorrelation**: All-pass filter decorrelation intensity (controls phase variation)
+- **Wet Mix**: Blend of processed vs original signal (0% = bypass, 100% = full effect)
 
 ### Key Files Reference
 

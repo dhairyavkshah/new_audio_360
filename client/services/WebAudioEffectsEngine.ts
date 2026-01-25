@@ -34,6 +34,13 @@ export interface EQBandConfig {
 
 export type BiquadFilterType = 'lowshelf' | 'peaking' | 'highshelf';
 
+export interface SpatialEnhancementParams {
+  sideGain: number;        // Side channel gain boost in % (+6 means 1.06x gain)
+  itdMs: number;           // Inter-aural Time Difference in milliseconds (0-0.7ms)
+  decorrelation: number;   // Decorrelation amount in % (0-100)
+  wetMix: number;          // Wet mix for psychoacoustic effect in % (0-100)
+}
+
 export interface ImmersiveMode {
   name: string;
   eqPreset: number[];
@@ -41,7 +48,8 @@ export interface ImmersiveMode {
   trebleBoost: number;
   spatialWidth: number;
   reverb: number; // 0-1 wet mix (0 = dry, 1 = full reverb)
-  spatialEnhancement: number; // 0-5 level (psychoacoustic processing)
+  spatialEnhancement: number; // Legacy 0-5 level (kept for backward compatibility)
+  spatialParams: SpatialEnhancementParams; // Explicit spatial parameters
 }
 
 const EQ_FREQUENCIES = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
@@ -51,68 +59,74 @@ const EQ_FREQUENCIES = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000
 // EQ bands: [60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz]
 // Values in gain units (-5 to +5), where 1 unit = 2.4 dB
 // Reverb: 0-1 wet mix (0 = dry, 1 = full reverb)
-// Immersive Modes: All spatial processing bundled into spatialEnhancement
-// spatialWidth set to 0 since spatialEnhancement already includes M/S processing with side boost
+// Spatial Parameters: sideGain (%), itdMs (milliseconds), decorrelation (%), wetMix (%)
 const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
   music: {
     // Balanced "smile curve" - warm bass, slight mid scoop, sparkly highs
+    // Subtle openness, vocals locked
     name: 'Music',
     eqPreset: [+0.3, +0.3, -0.4, -1.0, -1.0, 0.0, +1.0, +1.5, +0.4, -1.1],
     bassBoost: 0.5,     // +1.2 dB at 150Hz
     trebleBoost: 0.54,  // +1.3 dB at 6kHz
-    spatialWidth: 0,    // Handled by spatialEnhancement
+    spatialWidth: 0,    // Handled by spatialParams
     reverb: 0.08,       // 8% reverb
-    spatialEnhancement: 2, // Level 2: 310µs ITD, 1.4x side boost, 0.92 mid atten
+    spatialEnhancement: 2, // Legacy level (backward compatibility)
+    spatialParams: { sideGain: 6, itdMs: 0.15, decorrelation: 5, wetMix: 20 },
   },
   '360_reality': {
-    // Sony 360 Reality Audio inspired - immersive spatial soundfield
+    // Sony 360 Reality Audio inspired - maximum safe width, cinematic
     name: '360 Reality',
     eqPreset: [0.0, 0.0, -0.6, -0.6, -0.6, 0.0, +1.0, +1.2, +0.3, -0.7],
     bassBoost: 0.33,    // +0.8 dB
     trebleBoost: 0.625, // +1.5 dB
-    spatialWidth: 0,    // Handled by spatialEnhancement
+    spatialWidth: 0,    // Handled by spatialParams
     reverb: 0.18,       // 18% reverb
-    spatialEnhancement: 5, // Level 5: 700µs ITD, 2.0x side boost, 0.80 mid atten (maximum)
+    spatialEnhancement: 5, // Legacy level (backward compatibility)
+    spatialParams: { sideGain: 14, itdMs: 0.45, decorrelation: 12, wetMix: 40 },
   },
   gaming: {
-    // Competitive gaming - footstep clarity and directional awareness
+    // Competitive gaming - strong positional cues
     name: 'Gaming',
     eqPreset: [+0.8, +0.8, +0.4, -1.1, -1.1, 0.0, +1.0, +1.7, +0.8, -1.9],
     bassBoost: 0.5,     // +1.2 dB
     trebleBoost: 0.875, // +2.1 dB
-    spatialWidth: 0,    // Handled by spatialEnhancement
+    spatialWidth: 0,    // Handled by spatialParams
     reverb: 0.08,       // 8% reverb
-    spatialEnhancement: 3, // Level 3: 440µs ITD, 1.6x side boost, 0.88 mid atten
+    spatialEnhancement: 3, // Legacy level (backward compatibility)
+    spatialParams: { sideGain: 16, itdMs: 0.35, decorrelation: 8, wetMix: 35 },
   },
   podcast: {
-    // Voice clarity mode - speech intelligibility
+    // Voice clarity mode - pure, untouched signal
     name: 'Podcast',
     eqPreset: [-1.9, -1.9, -0.9, -0.7, +0.4, +1.0, +1.0, +1.4, +1.8, -0.2],
     bassBoost: -0.42,   // -1.0 dB (removes rumble)
     trebleBoost: 0.958, // +2.3 dB (clarity)
     spatialWidth: 0,    // No spatial processing for speech
     reverb: 0,          // 0% reverb
-    spatialEnhancement: 0, // Off - focused mono for speech
+    spatialEnhancement: 0, // Legacy level (backward compatibility)
+    spatialParams: { sideGain: 0, itdMs: 0, decorrelation: 0, wetMix: 0 },
   },
   movie: {
-    // Cinematic experience - dialogue clarity and surround ambience
+    // Cinematic experience - dialogue-safe cinematic stage
     name: 'Movie',
     eqPreset: [-0.8, -0.8, -0.4, +0.7, +1.1, +1.0, +1.0, -0.3, -0.5, -1.7],
     bassBoost: 0.75,    // +1.8 dB
     trebleBoost: 0.625, // +1.5 dB
-    spatialWidth: 0,    // Handled by spatialEnhancement
+    spatialWidth: 0,    // Handled by spatialParams
     reverb: 0.12,       // 12% reverb
-    spatialEnhancement: 4, // Level 4: 570µs ITD, 1.8x side boost, 0.84 mid atten
+    spatialEnhancement: 4, // Legacy level (backward compatibility)
+    spatialParams: { sideGain: 12, itdMs: 0.30, decorrelation: 10, wetMix: 45 },
   },
   sports: {
-    // Stadium/broadcast mode - commentary clarity with crowd atmosphere
+    // Stadium/broadcast mode - wide ambience, focused commentary
     name: 'Sports',
     eqPreset: [+1.2, +1.2, +0.5, -0.7, -0.7, 0.0, +1.0, +1.2, -0.9, -2.5],
     bassBoost: 0.917,   // +2.2 dB (stadium atmosphere)
     trebleBoost: 0.33,  // +0.8 dB
-    spatialWidth: 0,    // Handled by spatialEnhancement
+    spatialWidth: 0,    // Handled by spatialParams
     reverb: 0.10,       // 10% reverb
-    spatialEnhancement: 2, // Level 2: 310µs ITD, 1.4x side boost, 0.92 mid atten
+    spatialEnhancement: 2, // Legacy level (backward compatibility)
+    spatialParams: { sideGain: 10, itdMs: 0.25, decorrelation: 7, wetMix: 30 },
   },
 };
 
@@ -539,6 +553,83 @@ class WebAudioEffectsEngineClass {
     }
   }
 
+  /**
+   * Apply Spatial Enhancement with explicit parameters
+   * 
+   * Uses user-defined values for each immersive mode instead of level-based scaling.
+   * 
+   * @param params - Explicit spatial enhancement parameters
+   *   - sideGain: Side channel gain boost in % (+6 means 1.06x = +0.5dB)
+   *   - itdMs: Inter-aural Time Difference in milliseconds (0-0.7ms)
+   *   - decorrelation: Decorrelation amount in % (controls all-pass filter intensity)
+   *   - wetMix: Wet mix for psychoacoustic effect in % (blends processed/unprocessed)
+   */
+  applySpatialEnhancementParams(params: SpatialEnhancementParams): void {
+    // Mono safety: don't apply if stereo width processing isn't available
+    if (!this.stereoWidthEnabled) {
+      console.log('[WebAudioEffectsEngine] Psychoacoustic: Cannot enable (stereo width not available)');
+      this.spatialEnhancementLevel = 0;
+      return;
+    }
+
+    if (!this.sideHighpass || !this.sideDelay || !this.sidePsychoGain || !this.midAttenuation) {
+      console.log('[WebAudioEffectsEngine] Psychoacoustic: Nodes not initialized');
+      this.spatialEnhancementLevel = 0;
+      return;
+    }
+
+    const { sideGain, itdMs, decorrelation, wetMix } = params;
+
+    // Check if spatial enhancement should be disabled (all params at 0)
+    if (sideGain === 0 && itdMs === 0 && decorrelation === 0 && wetMix === 0) {
+      // Disable psychoacoustic processing (passthrough mode)
+      this.sideHighpass.frequency.value = 1; // Bypass highpass
+      this.sideDelay.delayTime.value = 0;
+      this.sidePsychoGain.gain.value = 1.0;
+      this.midAttenuation.gain.value = 1.0;
+      this.spatialEnhancementLevel = 0;
+      console.log('[WebAudioEffectsEngine] Spatial enhancement disabled (all params zero)');
+      return;
+    }
+
+    // Mark as active (use wetMix as pseudo-level for compatibility)
+    this.spatialEnhancementLevel = Math.ceil(wetMix / 20); // Rough mapping to 0-5
+
+    // Highpass at 150Hz - only widen frequencies above 150Hz (protects bass from widening)
+    this.sideHighpass.frequency.value = 150;
+    this.sideHighpass.Q.value = 0.707;
+    
+    // ITD delay: Convert milliseconds to seconds (clamp to 0-0.7ms range)
+    const clampedItdMs = Math.max(0, Math.min(0.7, itdMs));
+    this.sideDelay.delayTime.value = clampedItdMs / 1000;
+    
+    // Side psychoacoustic gain: Convert percentage to gain multiplier
+    // sideGain +6% means 1.06x, +16% means 1.16x
+    const sideGainMultiplier = 1.0 + (sideGain / 100);
+    // Apply wetMix to blend with original (wetMix 0% = no effect, 100% = full effect)
+    const wetFactor = wetMix / 100;
+    const effectiveSideGain = 1.0 + ((sideGainMultiplier - 1.0) * wetFactor);
+    const clampedSideGain = Math.min(effectiveSideGain, 2.2); // Max 2.2 for safety
+    this.sidePsychoGain.gain.value = clampedSideGain;
+    
+    // Mid attenuation: Scale with wetMix
+    // Higher wetMix = more center reduction for width perception
+    // Range: 1.0 (no attenuation) to 0.85 (15% reduction at max wetMix)
+    const midAttenuation = 1.0 - (0.15 * wetFactor);
+    this.midAttenuation.gain.value = midAttenuation;
+    
+    // Configure all-pass decorrelation filters
+    // decorrelation % controls the Q factor (higher = more phase shift)
+    if (this.allPass1 && this.allPass2) {
+      // Q range: 0.3 (subtle) to 1.5 (aggressive) based on decorrelation %
+      const decorrelationQ = 0.3 + (decorrelation / 100) * 1.2;
+      this.allPass1.Q.value = decorrelationQ;
+      this.allPass2.Q.value = decorrelationQ * 0.85; // Slightly lower for second stage
+    }
+
+    console.log(`[WebAudioEffectsEngine] Spatial params applied: sideGain:${sideGain}% (${clampedSideGain.toFixed(2)}x), ITD:${clampedItdMs.toFixed(2)}ms, decorr:${decorrelation}%, wetMix:${wetMix}%`);
+  }
+
   getInputNode(): BiquadFilterNode | null {
     return this.eqFilters[0] || null;
   }
@@ -656,7 +747,7 @@ class WebAudioEffectsEngineClass {
     // Immersive modes use their own dedicated settings WITHOUT zero-sum normalization
     // This allows for the full creative EQ curves designed for each mode
     // Limiter in PlayerContext still prevents distortion
-    this.applyImmersiveEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost, mode.spatialWidth, mode.reverb, mode.spatialEnhancement);
+    this.applyImmersiveEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost, mode.spatialWidth, mode.reverb, mode.spatialParams);
     this.currentMode = modeName;
   }
 
@@ -665,7 +756,7 @@ class WebAudioEffectsEngineClass {
    * Immersive modes have their own creative curves that shouldn't be balanced.
    * The limiter in PlayerContext handles distortion prevention.
    */
-  private applyImmersiveEQ(bands: number[], bassBoost: number, trebleBoost: number, spatialWidth: number, reverb: number = 0, spatialEnhancement: number = 0): void {
+  private applyImmersiveEQ(bands: number[], bassBoost: number, trebleBoost: number, spatialWidth: number, reverb: number = 0, spatialParams?: SpatialEnhancementParams): void {
     if (!this.isInitialized || this.eqFilters.length === 0) {
       console.log('[WebAudioEffectsEngine] Not initialized, cannot apply immersive EQ');
       return;
@@ -713,11 +804,18 @@ class WebAudioEffectsEngineClass {
       this.masterGain.gain.value = 1.0;
     }
 
-    // Apply spatial enhancement (psychoacoustic processing)
-    this.setSpatialEnhancement(spatialEnhancement);
+    // Apply spatial enhancement with explicit parameters
+    if (spatialParams) {
+      this.applySpatialEnhancementParams(spatialParams);
+    } else {
+      this.setSpatialEnhancement(0); // Default to off
+    }
 
     this.currentEQValues = paddedBands;
-    console.log(`[WebAudioEffectsEngine] Applied immersive mode with bass:${bassBoost}, treble:${trebleBoost}, spatial:${spatialWidth}, reverb:${reverb}, spatialEnhancement:${spatialEnhancement}`);
+    const paramsStr = spatialParams 
+      ? `sideGain:${spatialParams.sideGain}%, ITD:${spatialParams.itdMs}ms, decorr:${spatialParams.decorrelation}%, wetMix:${spatialParams.wetMix}%`
+      : 'disabled';
+    console.log(`[WebAudioEffectsEngine] Applied immersive mode with bass:${bassBoost}, treble:${trebleBoost}, reverb:${reverb}, spatial:[${paramsStr}]`);
   }
 
   /**

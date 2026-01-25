@@ -74,6 +74,13 @@ class BiquadFilter(
             calculateCoefficients()
         }
     }
+    
+    fun setQ(q: Float) {
+        if (this.q != q) {
+            this.q = q
+            calculateCoefficients()
+        }
+    }
 
     fun setSampleRate(sampleRate: Float) {
         if (this.sampleRate != sampleRate) {
