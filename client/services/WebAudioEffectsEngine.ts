@@ -41,6 +41,7 @@ export interface ImmersiveMode {
   trebleBoost: number;
   spatialWidth: number;
   reverb: number; // 0-1 wet mix (0 = dry, 1 = full reverb)
+  spatialEnhancement: number; // 0-5 level (Bose-inspired psychoacoustic processing)
 }
 
 const EQ_FREQUENCIES = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
@@ -59,6 +60,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     trebleBoost: 0.54,  // +1.3 dB at 6kHz
     spatialWidth: 0.25, // 25% spatial width
     reverb: 0.08,       // 8% reverb
+    spatialEnhancement: 2, // Mild psychoacoustic enhancement
   },
   '360_reality': {
     // Sony 360 Reality Audio inspired - immersive spatial soundfield
@@ -68,6 +70,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     trebleBoost: 0.625, // +1.5 dB
     spatialWidth: 0.55, // 55% - wide spatial soundfield
     reverb: 0.18,       // 18% reverb
+    spatialEnhancement: 5, // Maximum - full immersive psychoacoustic
   },
   gaming: {
     // Competitive gaming - footstep clarity and directional awareness
@@ -77,6 +80,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     trebleBoost: 0.875, // +2.1 dB
     spatialWidth: 0.57, // 57% spatial width
     reverb: 0.08,       // 8% reverb
+    spatialEnhancement: 3, // Moderate - positional clarity
   },
   podcast: {
     // Voice clarity mode - speech intelligibility
@@ -86,6 +90,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     trebleBoost: 0.958, // +2.3 dB (clarity)
     spatialWidth: 0,    // 0% - mono-focused for speech
     reverb: 0,          // 0% reverb
+    spatialEnhancement: 0, // Off - focused mono for speech
   },
   movie: {
     // Cinematic experience - dialogue clarity and surround ambience
@@ -95,6 +100,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     trebleBoost: 0.625, // +1.5 dB
     spatialWidth: 0.45, // 45% - surround-like experience
     reverb: 0.12,       // 12% reverb
+    spatialEnhancement: 4, // Enhanced - cinematic surround
   },
   sports: {
     // Stadium/broadcast mode - commentary clarity with crowd atmosphere
@@ -104,6 +110,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     trebleBoost: 0.33,  // +0.8 dB
     spatialWidth: 0.47, // 47% - stadium-like open soundstage
     reverb: 0.10,       // 10% reverb
+    spatialEnhancement: 2, // Mild - broadcast clarity
   },
 };
 
@@ -142,7 +149,7 @@ class WebAudioEffectsEngineClass {
   private allPass2: globalThis.BiquadFilterNode | null = null;      // Decorrelation filter 2
   private sidePsychoGain: globalThis.GainNode | null = null;        // Side boost (max 2.2 = 120%)
   private midAttenuation: globalThis.GainNode | null = null;        // Mid compensation
-  spatialEnhancementEnabled: boolean = false;
+  spatialEnhancementLevel: number = 0;
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {
@@ -452,83 +459,79 @@ class WebAudioEffectsEngineClass {
     this.sidePsychoGain.gain.value = 1.0;
     this.midAttenuation.gain.value = 1.0;
     
-    this.spatialEnhancementEnabled = false;
+    this.spatialEnhancementLevel = 0;
     console.log('[WebAudioEffectsEngine] Psychoacoustic: Processor configured (disabled state)');
   }
 
   /**
-   * Set Spatial Enhancement (Psychoacoustic Stereo Enhancement)
+   * Set Spatial Enhancement Level (Psychoacoustic Stereo Enhancement)
    * 
-   * When enabled:
-   * - Applies 150Hz highpass to Side signal (no bass widening)
-   * - Adds 0.3ms ITD delay for spatial perception
-   * - Applies all-pass filters for high-frequency decorrelation
-   * - Boosts side signal by 50% (clamped to max 2.2 = 120%)
-   * - Attenuates mid signal by 0.9 to compensate for widening
+   * Level 0: Disabled (bypass all psychoacoustic processing)
+   * Levels 1-5: Scale the effect intensity
    * 
-   * When disabled:
-   * - Bypasses psychoacoustic processing (passthrough mode)
-   * - Preserves existing stereo width functionality
+   * Parameters scaled by level:
+   * - sidePsychoGain: 1.0 (off) → 1.1-1.5 (on), capped at 2.2
+   * - sideDelay: 0 (off) → 0.1ms-0.5ms (on)
+   * - midAttenuation: 1.0 (off) → 0.97-0.85 (on)
+   * - sideHighpass: 1Hz (bypass) → 150Hz (protects bass from widening)
    * 
-   * @param enabled - Whether to enable psychoacoustic spatial enhancement
+   * @param level - Spatial enhancement level 0-5 (0 = off, 5 = max)
    */
-  setSpatialEnhancement(enabled: boolean): void {
+  setSpatialEnhancement(level: number): void {
+    // Clamp level to valid range
+    const clampedLevel = Math.max(0, Math.min(5, Math.round(level)));
+    
     // Mono safety: don't apply if stereo width processing isn't available
     if (!this.stereoWidthEnabled) {
       console.log('[WebAudioEffectsEngine] Psychoacoustic: Cannot enable (stereo width not available)');
-      this.spatialEnhancementEnabled = false;
+      this.spatialEnhancementLevel = 0;
       return;
     }
 
     if (!this.sideHighpass || !this.sideDelay || !this.sidePsychoGain || !this.midAttenuation) {
       console.log('[WebAudioEffectsEngine] Psychoacoustic: Nodes not initialized');
-      this.spatialEnhancementEnabled = false;
+      this.spatialEnhancementLevel = 0;
       return;
     }
 
-    this.spatialEnhancementEnabled = enabled;
+    this.spatialEnhancementLevel = clampedLevel;
+    
+    // Calculate intensity (0.0 to 1.0)
+    const intensity = clampedLevel / 5;
 
-    if (enabled) {
-      // Enable psychoacoustic processing
-      
-      // Highpass at 150Hz - only widen frequencies above 150Hz (no bass widening)
-      this.sideHighpass.frequency.value = 150;
-      this.sideHighpass.Q.value = 0.707;
-      
-      // ITD delay of 0.3ms for spatial perception
-      this.sideDelay.delayTime.value = 0.0003;
-      
-      // All-pass filters are always connected and configured
-      // They decorrelate high frequencies for enhanced spatial perception
-      
-      // Calculate psychoacoustic gain: 1.5 base, or current width * 1.2
-      // Clamped to max 2.2 (120% boost) for mono safety
-      const currentWidth = this.sideWidth?.gain.value ?? 1.0;
-      let psychoGain = Math.max(1.5, currentWidth * 1.2);
-      psychoGain = Math.min(psychoGain, 2.2); // Max 2.2 (120% boost)
-      this.sidePsychoGain.gain.value = psychoGain;
-      
-      // Attenuate mid signal to compensate for side boost
-      this.midAttenuation.gain.value = 0.9;
-      
-      console.log(`[WebAudioEffectsEngine] Psychoacoustic: Enabled (gain: ${psychoGain.toFixed(2)}, mid: 0.9)`);
-    } else {
+    if (clampedLevel === 0) {
       // Disable psychoacoustic processing (passthrough mode)
       
-      // Highpass at 1Hz - effectively passes all audio
+      // Highpass at 1Hz - effectively passes all audio (bypass)
       this.sideHighpass.frequency.value = 1;
       
       // No delay when disabled
       this.sideDelay.delayTime.value = 0;
       
-      // Set psychoacoustic gain to match sideWidth (passthrough for width control)
-      const currentWidth = this.sideWidth?.gain.value ?? 1.0;
-      this.sidePsychoGain.gain.value = 1.0; // Passthrough, sideWidth already applies width
-      
-      // No mid attenuation when disabled
+      // Passthrough gains
+      this.sidePsychoGain.gain.value = 1.0;
       this.midAttenuation.gain.value = 1.0;
       
-      console.log(`[WebAudioEffectsEngine] Psychoacoustic: Disabled (passthrough)`);
+      console.log(`[WebAudioEffectsEngine] Spatial enhancement level set to ${clampedLevel} (intensity: ${(intensity * 100).toFixed(0)}%)`);
+    } else {
+      // Enable psychoacoustic processing with level-based scaling
+      
+      // Highpass at 150Hz - only widen frequencies above 150Hz (protects bass from widening)
+      this.sideHighpass.frequency.value = 150;
+      this.sideHighpass.Q.value = 0.707;
+      
+      // ITD delay: 0.0001 + (0.0004 * intensity) → 0.1ms to 0.5ms
+      this.sideDelay.delayTime.value = 0.0001 + (0.0004 * intensity);
+      
+      // Side psychoacoustic gain: 1.0 + (0.5 * intensity) → 1.1 to 1.5, capped at 2.2
+      let psychoGain = 1.0 + (0.5 * intensity);
+      psychoGain = Math.min(psychoGain, 2.2); // Max 2.2 for mono safety
+      this.sidePsychoGain.gain.value = psychoGain;
+      
+      // Mid attenuation: 1.0 - (0.15 * intensity) → 0.97 to 0.85
+      this.midAttenuation.gain.value = 1.0 - (0.15 * intensity);
+      
+      console.log(`[WebAudioEffectsEngine] Spatial enhancement level set to ${clampedLevel} (intensity: ${(intensity * 100).toFixed(0)}%)`);
     }
   }
 
@@ -649,7 +652,7 @@ class WebAudioEffectsEngineClass {
     // Immersive modes use their own dedicated settings WITHOUT zero-sum normalization
     // This allows for the full creative EQ curves designed for each mode
     // Limiter in PlayerContext still prevents distortion
-    this.applyImmersiveEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost, mode.spatialWidth, mode.reverb);
+    this.applyImmersiveEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost, mode.spatialWidth, mode.reverb, mode.spatialEnhancement);
     this.currentMode = modeName;
   }
 
@@ -658,7 +661,7 @@ class WebAudioEffectsEngineClass {
    * Immersive modes have their own creative curves that shouldn't be balanced.
    * The limiter in PlayerContext handles distortion prevention.
    */
-  private applyImmersiveEQ(bands: number[], bassBoost: number, trebleBoost: number, spatialWidth: number, reverb: number = 0): void {
+  private applyImmersiveEQ(bands: number[], bassBoost: number, trebleBoost: number, spatialWidth: number, reverb: number = 0, spatialEnhancement: number = 0): void {
     if (!this.isInitialized || this.eqFilters.length === 0) {
       console.log('[WebAudioEffectsEngine] Not initialized, cannot apply immersive EQ');
       return;
@@ -706,8 +709,11 @@ class WebAudioEffectsEngineClass {
       this.masterGain.gain.value = 1.0;
     }
 
+    // Apply spatial enhancement (Bose-inspired psychoacoustic processing)
+    this.setSpatialEnhancement(spatialEnhancement);
+
     this.currentEQValues = paddedBands;
-    console.log(`[WebAudioEffectsEngine] Applied immersive mode with bass:${bassBoost}, treble:${trebleBoost}, spatial:${spatialWidth}, reverb:${reverb}`);
+    console.log(`[WebAudioEffectsEngine] Applied immersive mode with bass:${bassBoost}, treble:${trebleBoost}, spatial:${spatialWidth}, reverb:${reverb}, spatialEnhancement:${spatialEnhancement}`);
   }
 
   /**
@@ -844,7 +850,7 @@ class WebAudioEffectsEngineClass {
     this.allPass2 = null;
     this.sidePsychoGain = null;
     this.midAttenuation = null;
-    this.spatialEnhancementEnabled = false;
+    this.spatialEnhancementLevel = 0;
     
     this.isInitialized = false;
     this.currentEQValues = new Array(10).fill(0);
@@ -876,7 +882,8 @@ class WebAudioEffectsEngineClass {
       virtualizerActive: this.stereoWidthEnabled && this.currentVirtualizer !== 0,
       reverbActive: this.currentReverb > 0,
       stereoWidthPercent: ((1 + this.currentVirtualizer / 5) * 100).toFixed(0) + '%',
-      spatialEnhancementActive: this.spatialEnhancementEnabled,
+      spatialEnhancementLevel: this.spatialEnhancementLevel,
+      spatialEnhancementActive: this.spatialEnhancementLevel > 0,
       psychoacousticGain: this.sidePsychoGain?.gain.value ?? 1.0,
       midAttenuation: this.midAttenuation?.gain.value ?? 1.0,
     };

@@ -40,9 +40,9 @@ Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter →
 - **Multi-Tap Delay Reverb**: 4 delay lines (23ms, 41ms, 67ms, 89ms) with equal-power crossfade wet/dry mixing.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
 - **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide). VirtualizerModule and ImmersiveModeEngineModule delegate to SoftwareDSPAudioProcessor.
-- **Spatial Enhancement**: Psychoacoustic stereo enhancement with frequency-dependent M/S processing. Features: bass mono enforcement (below 150Hz), ITD micro-delay (0.3ms on Side channel), all-pass decorrelation (3kHz/5kHz), correlation monitor with 0.3 threshold guard. Side boost: 50% (capped at 100% Android, 120% Web).
+- **Spatial Enhancement**: Psychoacoustic stereo enhancement (0-5 intensity levels) with Bose-inspired processing. Features: bass mono enforcement (below 150Hz), ITD micro-delay (0.1-0.5ms scaled by level), all-pass decorrelation (3kHz/5kHz), correlation monitor with 0.3 threshold guard. Side boost scales 1.0-1.5x based on level (capped at 100% Android, 120% Web). Levels: 0=off, 1=20%, 2=40%, 3=60%, 4=80%, 5=100% intensity.
 - **EQ Presets**: 10 total (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity) with zero-sum normalization.
-- **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, stereo width, and reverb settings. Reverb levels: Music 8%, 360 Reality 18%, Gaming 8%, Podcast 0%, Movie 12%, Sports 10%.
+- **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, stereo width, reverb, and spatial enhancement settings. Reverb levels: Music 8%, 360 Reality 18%, Gaming 8%, Podcast 0%, Movie 12%, Sports 10%. Spatial levels: Music 2, 360 Reality 5, Gaming 3, Podcast 0, Movie 4, Sports 2.
 
 ## DSP Architecture
 
@@ -114,14 +114,14 @@ Audio Source
 
 ### Immersive Modes Settings
 
-| Mode | EQ Preset | Bass Boost | Treble Boost | Stereo Width | Reverb |
-|------|-----------|------------|--------------|--------------|--------|
-| **Music** | Flat | 0 | 0 | +20% | 8% |
-| **360 Reality** | Custom (spatial) | +2 | +1 | +100% | 18% |
-| **Gaming** | Rock | +3 | +2 | +50% | 8% |
-| **Podcast** | Clarity | -2 | +1 | 0% | 0% |
-| **Movie** | Classical | +2 | +1 | +80% | 12% |
-| **Sports** | Pop | +1 | +2 | +40% | 10% |
+| Mode | EQ Preset | Bass Boost | Treble Boost | Stereo Width | Reverb | Spatial |
+|------|-----------|------------|--------------|--------------|--------|---------|
+| **Music** | Flat | 0 | 0 | +20% | 8% | 2 |
+| **360 Reality** | Custom (spatial) | +2 | +1 | +100% | 18% | 5 |
+| **Gaming** | Rock | +3 | +2 | +50% | 8% | 3 |
+| **Podcast** | Clarity | -2 | +1 | 0% | 0% | 0 |
+| **Movie** | Classical | +2 | +1 | +80% | 12% | 4 |
+| **Sports** | Pop | +1 | +2 | +40% | 10% | 2 |
 
 ### Key Files Reference
 

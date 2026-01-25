@@ -129,8 +129,10 @@ interface VirtualizerModuleInterface {
 interface SpatialEnhancementModuleInterface {
   isAvailable(): boolean;
   setEnabled(enabled: boolean): { success: boolean; enabled?: boolean; error?: string };
+  setLevel(level: number): { success: boolean; level?: number; error?: string };
   getEnabled(): boolean;
-  getProperties(): { enabled: boolean; isSoftwareDSP: boolean };
+  getLevel(): number;
+  getProperties(): { enabled: boolean; level: number; isSoftwareDSP: boolean };
 }
 
 // Waveform Analyzer Module Types
@@ -196,6 +198,7 @@ export interface ImmersiveModeSettings {
   bassBoostStrength?: number;
   virtualizerEnabled?: boolean;
   virtualizerStrength?: number;
+  spatialEnhancementLevel?: number;
 }
 
 export interface ImmersiveModeAttachResult {
@@ -914,6 +917,18 @@ export const SpatialEnhancementModule = {
     }
   },
 
+  setLevel: (level: number): { success: boolean; level?: number; error?: string } => {
+    if (!SpatialEnhancementModuleNative) {
+      return { success: false, error: 'Spatial Enhancement not available on this platform' };
+    }
+    try {
+      return SpatialEnhancementModuleNative.setLevel(level);
+    } catch (error) {
+      console.error('SpatialEnhancementModule.setLevel error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
   getEnabled: (): boolean => {
     if (!SpatialEnhancementModuleNative) {
       return false;
@@ -926,15 +941,27 @@ export const SpatialEnhancementModule = {
     }
   },
 
-  getProperties: (): { enabled: boolean; isSoftwareDSP: boolean } => {
+  getLevel: (): number => {
     if (!SpatialEnhancementModuleNative) {
-      return { enabled: false, isSoftwareDSP: true };
+      return 0;
+    }
+    try {
+      return SpatialEnhancementModuleNative.getLevel();
+    } catch (error) {
+      console.error('SpatialEnhancementModule.getLevel error:', error);
+      return 0;
+    }
+  },
+
+  getProperties: (): { enabled: boolean; level: number; isSoftwareDSP: boolean } => {
+    if (!SpatialEnhancementModuleNative) {
+      return { enabled: false, level: 0, isSoftwareDSP: true };
     }
     try {
       return SpatialEnhancementModuleNative.getProperties();
     } catch (error) {
       console.error('SpatialEnhancementModule.getProperties error:', error);
-      return { enabled: false, isSoftwareDSP: true };
+      return { enabled: false, level: 0, isSoftwareDSP: true };
     }
   }
 };

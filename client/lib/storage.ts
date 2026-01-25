@@ -600,20 +600,27 @@ export async function getVirtualizerLevel(): Promise<number> {
   }
 }
 
-export async function saveSpatialEnhancement(enabled: boolean): Promise<void> {
+export async function saveSpatialEnhancement(level: number): Promise<void> {
   try {
-    await AsyncStorage.setItem(STORAGE_KEYS.SPATIAL_ENHANCEMENT, JSON.stringify(enabled));
+    await AsyncStorage.setItem(STORAGE_KEYS.SPATIAL_ENHANCEMENT, JSON.stringify(level));
   } catch (error) {
     console.error('Error saving spatial enhancement:', error);
   }
 }
 
-export async function getSpatialEnhancement(): Promise<boolean> {
+export async function getSpatialEnhancement(): Promise<number> {
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.SPATIAL_ENHANCEMENT);
-    return data ? JSON.parse(data) : false;
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (typeof parsed === 'boolean') {
+        return parsed ? 3 : 0;
+      }
+      return parsed;
+    }
+    return 0;
   } catch (error) {
     console.error('Error getting spatial enhancement:', error);
-    return false;
+    return 0;
   }
 }

@@ -161,6 +161,7 @@ class ImmersiveModeEngineModule : Module() {
             virtualizerStrength: Int, 
             loudnessGain: Int,
             eqPreset: Int,
+            spatialEnhancementLevel: Int,
             promise: Promise ->
             mainHandler.post {
                 try {
@@ -180,7 +181,11 @@ class ImmersiveModeEngineModule : Module() {
                     dsp?.setStereoWidth(stereoWidth)
                     currentVirtualizerStrength = virtualizerStrength
                     val widthPercent = ((1f + stereoWidth) * 100).toInt()
-                    android.util.Log.d("ImmersiveMode", "Custom: virtualizer=$virtualizerStrength (width=${widthPercent}%)")
+                    
+                    // Apply spatial enhancement
+                    dsp?.setSpatialEnhancementLevel(spatialEnhancementLevel)
+                    
+                    android.util.Log.d("ImmersiveMode", "Custom: virtualizer=$virtualizerStrength (width=${widthPercent}%), spatial=$spatialEnhancementLevel")
                     
                     currentMode = "custom"
                     
@@ -213,12 +218,13 @@ class ImmersiveModeEngineModule : Module() {
     private fun applyModeOff() {
         val dsp = SoftwareDSPAudioProcessor.getInstance()
         dsp?.resetAll()  // This also resets stereoWidth to 0
+        dsp?.setSpatialEnhancementLevel(0)
         currentEqGains = emptyList()
         currentBassGain = 0f
         currentVirtualizerStrength = 0
     }
     
-    private fun applyImmersiveSettings(eqGains: List<Double>, bassGainUnits: Float, trebleGainUnits: Float, virtualizerStrength: Int, reverbWetMix: Float = 0f) {
+    private fun applyImmersiveSettings(eqGains: List<Double>, bassGainUnits: Float, trebleGainUnits: Float, virtualizerStrength: Int, reverbWetMix: Float = 0f, spatialEnhancementLevel: Int = 0) {
         val dsp = SoftwareDSPAudioProcessor.getInstance()
         
         dsp?.setAllEqBandGains(eqGains)
@@ -238,9 +244,12 @@ class ImmersiveModeEngineModule : Module() {
         // Apply reverb
         dsp?.setReverb(reverbWetMix)
         
+        // Apply spatial enhancement
+        dsp?.setSpatialEnhancementLevel(spatialEnhancementLevel)
+        
         val widthPercent = ((1f + stereoWidth) * 100).toInt()
         val reverbPercent = (reverbWetMix * 100).toInt()
-        android.util.Log.d("ImmersiveMode", "Mode applied: bass=$bassGainUnits, treble=$trebleGainUnits, virtualizer=$virtualizerStrength (width=${widthPercent}%), reverb=${reverbPercent}%")
+        android.util.Log.d("ImmersiveMode", "Mode applied: bass=$bassGainUnits, treble=$trebleGainUnits, virtualizer=$virtualizerStrength (width=${widthPercent}%), reverb=${reverbPercent}%, spatial=$spatialEnhancementLevel")
     }
     
     // Professional Immersive Mode Configurations
@@ -255,7 +264,8 @@ class ImmersiveModeEngineModule : Module() {
             bassGainUnits = 0.5f,       // +1.2 dB at 150Hz
             trebleGainUnits = 0.54f,    // +1.3 dB at 6kHz
             virtualizerStrength = 250,  // 25% spatial width
-            reverbWetMix = 0.08f        // 8% reverb
+            reverbWetMix = 0.08f,       // 8% reverb
+            spatialEnhancementLevel = 2 // mild, balanced listening
         )
     }
     
@@ -266,7 +276,8 @@ class ImmersiveModeEngineModule : Module() {
             bassGainUnits = 0.33f,      // +0.8 dB
             trebleGainUnits = 0.625f,   // +1.5 dB
             virtualizerStrength = 550,  // 55% - wide spatial soundfield
-            reverbWetMix = 0.18f        // 18% reverb
+            reverbWetMix = 0.18f,       // 18% reverb
+            spatialEnhancementLevel = 5 // maximum, full immersive
         )
     }
     
@@ -277,7 +288,8 @@ class ImmersiveModeEngineModule : Module() {
             bassGainUnits = 0.5f,       // +1.2 dB
             trebleGainUnits = 0.875f,   // +2.1 dB
             virtualizerStrength = 570,  // 57% spatial width
-            reverbWetMix = 0.08f        // 8% reverb
+            reverbWetMix = 0.08f,       // 8% reverb
+            spatialEnhancementLevel = 3 // moderate, positional clarity
         )
     }
     
@@ -288,7 +300,8 @@ class ImmersiveModeEngineModule : Module() {
             bassGainUnits = -0.42f,     // -1.0 dB (removes rumble)
             trebleGainUnits = 0.958f,   // +2.3 dB (clarity)
             virtualizerStrength = 0,    // 0% - mono-focused for speech
-            reverbWetMix = 0f           // 0% reverb
+            reverbWetMix = 0f,          // 0% reverb
+            spatialEnhancementLevel = 0 // off, focused mono for speech
         )
     }
     
@@ -299,7 +312,8 @@ class ImmersiveModeEngineModule : Module() {
             bassGainUnits = 0.75f,      // +1.8 dB
             trebleGainUnits = 0.625f,   // +1.5 dB
             virtualizerStrength = 450,  // 45% - surround-like experience
-            reverbWetMix = 0.12f        // 12% reverb
+            reverbWetMix = 0.12f,       // 12% reverb
+            spatialEnhancementLevel = 4 // enhanced, cinematic surround
         )
     }
     
@@ -310,7 +324,8 @@ class ImmersiveModeEngineModule : Module() {
             bassGainUnits = 0.917f,     // +2.2 dB (stadium atmosphere)
             trebleGainUnits = 0.33f,    // +0.8 dB
             virtualizerStrength = 470,  // 47% - stadium-like spatial experience
-            reverbWetMix = 0.10f        // 10% reverb
+            reverbWetMix = 0.10f,       // 10% reverb
+            spatialEnhancementLevel = 2 // mild, broadcast clarity
         )
     }
     
@@ -326,6 +341,7 @@ class ImmersiveModeEngineModule : Module() {
             "bassBoostStrength" to ((currentBassGain / 5.0f) * 1000).toInt().coerceIn(0, 1000),
             "virtualizerEnabled" to (currentVirtualizerStrength > 0),
             "virtualizerStrength" to currentVirtualizerStrength,
+            "spatialEnhancementLevel" to (dsp?.getSpatialEnhancementLevel() ?: 0),
             "isSoftwareDSP" to true
         )
     }

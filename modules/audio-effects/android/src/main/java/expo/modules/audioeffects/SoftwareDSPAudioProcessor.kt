@@ -97,7 +97,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private var isEnabled = true
     
     // Psychoacoustic Stereo Enhancement
-    private var spatialEnhancementEnabled: Boolean = false
+    private var spatialEnhancementLevel: Int = 0  // 0-5 intensity level
     
     // Bass mono enforcement filters (lowpass at 150Hz to extract bass for mono-sum)
     private val bassMonoLowpassL = BiquadFilter(FilterType.LOWPASS, BASS_MONO_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
@@ -251,7 +251,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         }
 
         // 5. Psychoacoustic Stereo Enhancement (true stereo)
-        if (spatialEnhancementEnabled && channelCount == 2) {
+        if (spatialEnhancementLevel > 0 && channelCount == 2) {
             processPsychoacousticStereo(floatSamples)
         }
 
@@ -431,30 +431,67 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     fun getStereoWidth(): Float = stereoWidth
 
     /**
-     * Enable or disable psychoacoustic stereo enhancement.
+     * Set spatial enhancement intensity level (0-5).
+     * Level 0: Disabled (no processing)
+     * Level 1: Subtle - 20% effect
+     * Level 2: Mild - 40% effect
+     * Level 3: Moderate - 60% effect (default for music)
+     * Level 4: Enhanced - 80% effect
+     * Level 5: Maximum - 100% effect
+     */
+    fun setSpatialEnhancementLevel(level: Int) {
+        spatialEnhancementLevel = level.coerceIn(0, 5)
+        android.util.Log.d("SoftwareDSP", "Spatial enhancement level set to $spatialEnhancementLevel (${spatialEnhancementLevel * 20}%)")
+    }
+
+    fun getSpatialEnhancementLevel(): Int = spatialEnhancementLevel
+
+    /**
+     * Enable or disable psychoacoustic stereo enhancement (backward compatibility).
      * This applies frequency-dependent M/S processing, ITD, and correlation-guarded widening.
      */
     fun setSpatialEnhancement(enabled: Boolean) {
-        spatialEnhancementEnabled = enabled
-        android.util.Log.d("SoftwareDSP", "Spatial enhancement ${if (enabled) "enabled" else "disabled"}")
+        setSpatialEnhancementLevel(if (enabled) 1 else 0)
     }
 
-    fun getSpatialEnhancement(): Boolean = spatialEnhancementEnabled
+    fun getSpatialEnhancement(): Boolean = spatialEnhancementLevel > 0
 
     /**
      * Process psychoacoustic stereo enhancement (32-bit float version).
      * Implements frequency-dependent M/S processing with ITD, all-pass decorrelation,
      * and correlation-guarded side boost.
      * 
+     * Parameters scale based on spatialEnhancementLevel (0-5):
+     * - Level 0: Disabled (no processing)
+     * - Level 1: Subtle - 20% effect
+     * - Level 2: Mild - 40% effect
+     * - Level 3: Moderate - 60% effect (default for music)
+     * - Level 4: Enhanced - 80% effect
+     * - Level 5: Maximum - 100% effect
+     * 
      * Signal flow:
      * 1. Bass Mono Enforcement (below 150Hz)
      * 2. M/S Conversion with frequency-dependent processing
-     * 3. ITD delay on Side channel
+     * 3. ITD delay on Side channel (scaled by level)
      * 4. All-pass decorrelation on Side channel
-     * 5. Correlation monitoring and adaptive side gain
+     * 5. Correlation monitoring and adaptive side gain (scaled by level)
      * 6. Back to L/R conversion
      */
     private fun processPsychoacousticStereo(samples: FloatArray) {
+        // Calculate intensity from level (0-5 → 0.0-1.0)
+        val intensity = spatialEnhancementLevel / 5.0f
+        
+        // Scale parameters based on intensity:
+        // Side boost: 1 + (SIDE_BOOST * intensity) = 1.0 to 1.5
+        val scaledSideBoost = SIDE_BOOST * intensity
+        
+        // ITD delay: 0.1ms + (0.4ms * intensity) = 0.1ms to 0.5ms
+        val scaledItdMs = 0.1f + (0.4f * intensity)
+        val scaledItdSamples = ((scaledItdMs / 1000f) * currentSampleRate).toInt().coerceIn(1, MAX_ITD_DELAY_SAMPLES - 1)
+        
+        // Mid attenuation: 1.0 - (0.15 * intensity) = 1.0 to 0.85
+        val scaledMidAttenuation = 1.0f - (0.15f * intensity)
+        
         var i = 0
         while (i < samples.size - 1) {
             val left = samples[i]
@@ -488,10 +525,10 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             side = sideHighpassFilter.processSample(side, 0)
             
             // =========================================
-            // C. Interaural Time Difference (ITD)
+            // C. Interaural Time Difference (ITD) - Scaled by level
             // =========================================
-            // Read delayed side from circular buffer
-            val readIndex = (itdDelayWriteIndex - itdDelaySamples + MAX_ITD_DELAY_SAMPLES) % MAX_ITD_DELAY_SAMPLES
+            // Read delayed side from circular buffer using scaled delay
+            val readIndex = (itdDelayWriteIndex - scaledItdSamples + MAX_ITD_DELAY_SAMPLES) % MAX_ITD_DELAY_SAMPLES
             val delayedSide = itdDelayBuffer[readIndex]
             
             // Write current side to buffer
@@ -509,7 +546,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             side = allpassFilter2.processSample(side, 0)
             
             // =========================================
-            // E. Correlation Monitor/Guard
+            // E. Correlation Monitor/Guard (active for all levels)
             // =========================================
             // Update running correlation (EMA)
             correlationSum = CORRELATION_ALPHA * correlationSum + (1.0 - CORRELATION_ALPHA) * (left * right).toDouble()
@@ -521,8 +558,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
                 runningCorrelation = (correlationSum / denominator).toFloat().coerceIn(-1f, 1f)
             }
             
-            // Calculate side boost with correlation guard
-            var sideBoostMultiplier = (1f + SIDE_BOOST).coerceAtMost(2f)  // 1.5x, capped at 2.0x
+            // Calculate side boost with correlation guard - scaled by intensity
+            var sideBoostMultiplier = (1f + scaledSideBoost).coerceAtMost(2f)
             
             // If correlation drops below threshold, reduce side gain by 10-20%
             if (runningCorrelation < CORRELATION_THRESHOLD) {
@@ -533,8 +570,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             // Apply side boost
             side *= sideBoostMultiplier
             
-            // Apply Mid attenuation to preserve loudness
-            val attenuatedMid = mid * MID_ATTENUATION
+            // Apply Mid attenuation to preserve loudness - scaled by intensity
+            val attenuatedMid = mid * scaledMidAttenuation
             
             // =========================================
             // F. Output - Convert back to L/R
@@ -661,7 +698,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         trebleGain = 0f
         stereoWidth = 0f
         reverbWetMix = 0f
-        spatialEnhancementEnabled = false
+        spatialEnhancementLevel = 0
         bassShelfFilter.setGain(0f)
         trebleShelfFilter.setGain(0f)
         
@@ -712,7 +749,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             "trebleBoostActive" to (trebleGain != 0f),
             "virtualizerActive" to (stereoWidth != 0f),
             "reverbActive" to (reverbWetMix > 0f),
-            "spatialEnhancementActive" to spatialEnhancementEnabled,
+            "spatialEnhancementActive" to (spatialEnhancementLevel > 0),
+            "spatialEnhancementLevel" to spatialEnhancementLevel,
             "itdDelaySamples" to itdDelaySamples,
             "runningCorrelation" to runningCorrelation
         )

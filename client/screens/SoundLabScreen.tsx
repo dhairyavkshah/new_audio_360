@@ -159,7 +159,7 @@ function SoundLabScreen() {
   const [bassControl, setBassControl] = useState(0);
   const [trebleControl, setTrebleControl] = useState(0);
   const [virtualizerLevel, setVirtualizerLevel] = useState(0);
-  const [spatialEnhancement, setSpatialEnhancement] = useState(false);
+  const [spatialEnhancement, setSpatialEnhancement] = useState(0);
 
   const MAX_CUSTOM_PRESETS = 5;
 
@@ -407,16 +407,15 @@ function SoundLabScreen() {
     }
   };
 
-  const handleSpatialEnhancementChange = async (enabled: boolean) => {
+  const handleSpatialEnhancementChange = async (level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSpatialEnhancement(enabled);
-    await saveSpatialEnhancement(enabled);
+    setSpatialEnhancement(level);
+    await saveSpatialEnhancement(level);
     
     // Apply spatial enhancement on web
     if (Platform.OS === 'web') {
-      // WebAudioEffectsEngine.setSpatialEnhancement will be implemented
       if (typeof (WebAudioEffectsEngine as any).setSpatialEnhancement === 'function') {
-        (WebAudioEffectsEngine as any).setSpatialEnhancement(enabled);
+        (WebAudioEffectsEngine as any).setSpatialEnhancement(level);
       }
       return;
     }
@@ -424,7 +423,11 @@ function SoundLabScreen() {
     // Apply spatial enhancement on Android via SpatialEnhancementModule
     if (SpatialEnhancementModule.isAvailable()) {
       try {
-        SpatialEnhancementModule.setEnabled(enabled);
+        if (typeof (SpatialEnhancementModule as any).setLevel === 'function') {
+          (SpatialEnhancementModule as any).setLevel(level);
+        } else {
+          SpatialEnhancementModule.setEnabled(level > 0);
+        }
       } catch (error) {
         // Silently handle error in production
       }
@@ -737,35 +740,30 @@ function SoundLabScreen() {
                 </View>
               </View>
 
-              <View style={styles.effectToggleRow}>
-                <Pressable
-                  style={styles.effectToggleContent}
-                  onPress={() => handleSpatialEnhancementChange(!spatialEnhancement)}
-                >
+              <View style={styles.effectSliderRow}>
+                <View style={styles.effectSliderHeader}>
                   <MaterialCommunityIcons name="axis-x-rotate-counterclockwise" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                  <View style={styles.effectToggleText}>
-                    <FluentText variant="body2" style={{ flex: 1 }}>Spatial Enhancement</FluentText>
-                    <FluentText variant="caption1" color="secondary">Psychoacoustic stereo processing</FluentText>
-                  </View>
-                  <Pressable
-                    onPress={() => handleSpatialEnhancementChange(!spatialEnhancement)}
-                    style={[
-                      styles.toggleSwitch,
-                      { 
-                        backgroundColor: spatialEnhancement ? tokens.colors.primary : tokens.colors.surface,
-                        borderColor: spatialEnhancement ? tokens.colors.primary : colors.colorNeutralStroke1
-                      }
-                    ]}
-                  >
-                    <View style={[
-                      styles.toggleKnob,
-                      { 
-                        backgroundColor: spatialEnhancement ? tokens.colors.onPrimary : colors.colorNeutralStroke1,
-                        transform: [{ translateX: spatialEnhancement ? 14 : 0 }]
-                      }
-                    ]} />
-                  </Pressable>
-                </Pressable>
+                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Spatial Enhancement</FluentText>
+                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
+                    {spatialEnhancement === 0 ? "Off" : spatialEnhancement}
+                  </FluentText>
+                </View>
+                <View style={styles.effectSliderContainer}>
+                  <FluentText variant="caption1" color="secondary">0</FluentText>
+                  <CrossPlatformSlider
+                    style={styles.effectSlider}
+                    minimumValue={0}
+                    maximumValue={5}
+                    step={1}
+                    value={spatialEnhancement}
+                    onValueChange={(value) => handleSpatialEnhancementChange(value)}
+                    minimumTrackTintColor={colors.colorBrandForeground1}
+                    maximumTrackTintColor={colors.colorNeutralStroke1}
+                    thumbTintColor={colors.colorBrandForeground1}
+                    trackHeight={FluentSliderSize.trackMedium}
+                  />
+                  <FluentText variant="caption1" color="secondary">5</FluentText>
+                </View>
               </View>
             </View>
           ) : null}
