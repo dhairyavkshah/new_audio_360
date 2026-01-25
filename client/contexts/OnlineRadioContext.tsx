@@ -21,6 +21,10 @@ import { AudioCoordinator } from '@/services/AudioCoordinator';
 const STORAGE_KEY_COUNTRY = '@new_audio_360_online_radio_country';
 const STORAGE_KEY_STATIONS_CACHE = '@new_audio_360_online_radio_stations';
 const STORAGE_KEY_POPULAR_CACHE = '@new_audio_360_online_radio_popular';
+const STORAGE_KEY_CACHE_VERSION = '@new_audio_360_radio_cache_version';
+
+const CURRENT_CACHE_VERSION = '2'; // Increment to invalidate old cache
+const CURATED_COUNTRIES = ['IN']; // Countries that use curated stations
 
 const DEFAULT_COUNTRY_CODE = 'US';
 const DEFAULT_COUNTRY = 'United States';
@@ -128,24 +132,48 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
   const loadCachedData = async () => {
     try {
-      const [cachedCountry, cachedStations, cachedPopular] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEY_COUNTRY),
-        AsyncStorage.getItem(STORAGE_KEY_STATIONS_CACHE),
-        AsyncStorage.getItem(STORAGE_KEY_POPULAR_CACHE),
-      ]);
+      // Check cache version - invalidate if outdated
+      const cachedVersion = await AsyncStorage.getItem(STORAGE_KEY_CACHE_VERSION);
+      const needsCacheInvalidation = cachedVersion !== CURRENT_CACHE_VERSION;
+      
+      if (needsCacheInvalidation) {
+        console.log('[OnlineRadioContext] Cache version changed, invalidating old cache');
+        await Promise.all([
+          AsyncStorage.removeItem(STORAGE_KEY_STATIONS_CACHE),
+          AsyncStorage.removeItem(STORAGE_KEY_POPULAR_CACHE),
+          AsyncStorage.setItem(STORAGE_KEY_CACHE_VERSION, CURRENT_CACHE_VERSION),
+        ]);
+        // Continue to load country info even after invalidation
+      }
+      
+      const cachedCountry = await AsyncStorage.getItem(STORAGE_KEY_COUNTRY);
 
       if (cachedCountry) {
         const { countryCode, country } = JSON.parse(cachedCountry);
         setDetectedCountryCode(countryCode);
         setDetectedCountry(country);
+        
+        // For curated countries, don't load cached stations - will be loaded fresh
+        if (CURATED_COUNTRIES.includes(countryCode)) {
+          console.log(`[OnlineRadioContext] Curated country ${countryCode}, will load fresh curated stations`);
+          return; // Skip loading cached stations for curated countries
+        }
       }
 
-      if (cachedStations) {
-        setStations(JSON.parse(cachedStations));
-      }
+      // Only load cached stations for non-curated countries and when cache wasn't invalidated
+      if (!needsCacheInvalidation) {
+        const [cachedStations, cachedPopular] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEY_STATIONS_CACHE),
+          AsyncStorage.getItem(STORAGE_KEY_POPULAR_CACHE),
+        ]);
 
-      if (cachedPopular) {
-        setPopularStations(JSON.parse(cachedPopular));
+        if (cachedStations) {
+          setStations(JSON.parse(cachedStations));
+        }
+
+        if (cachedPopular) {
+          setPopularStations(JSON.parse(cachedPopular));
+        }
       }
     } catch (err) {
       console.warn('[OnlineRadioContext] Error loading cached data:', err);

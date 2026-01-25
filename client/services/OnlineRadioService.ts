@@ -1,3 +1,5 @@
+import { getCuratedStationsByCountry, CuratedRadioStation, CURATED_RADIO_STATIONS } from './CuratedRadioStations';
+
 export interface OnlineRadioStation {
   stationuuid: string;
   name: string;
@@ -24,6 +26,33 @@ export interface OnlineRadioCountry {
   iso_3166_1: string;
   stationcount: number;
 }
+
+// Convert curated station to OnlineRadioStation format
+function curatedToOnlineStation(curated: CuratedRadioStation, index: number): OnlineRadioStation {
+  return {
+    stationuuid: `curated-${curated.id}`,
+    name: curated.name,
+    url: curated.streamUrl,
+    url_resolved: curated.streamUrl,
+    homepage: curated.website,
+    favicon: curated.favicon,
+    country: curated.country,
+    countrycode: curated.countryCode,
+    state: '',
+    language: curated.language,
+    languagecodes: curated.language,
+    tags: curated.genre,
+    codec: 'MP3',
+    bitrate: curated.bitrate,
+    votes: 10000 + (CURATED_RADIO_STATIONS.length - index), // Higher votes for curated to prioritize them
+    clickcount: 1000,
+    lastcheckok: 1,
+    hls: 0,
+  };
+}
+
+// Countries that use curated stations instead of Radio Browser API
+const CURATED_COUNTRIES = ['IN'];
 
 const RADIO_BROWSER_SERVERS = [
   'https://de1.api.radio-browser.info',
@@ -163,9 +192,22 @@ export const OnlineRadioService = {
     countryCode: string,
     limit: number = MAX_STATIONS_PER_COUNTRY
   ): Promise<OnlineRadioStation[]> {
+    const upperCountryCode = countryCode.toUpperCase();
+    
+    // Use curated stations for countries with curated lists
+    if (CURATED_COUNTRIES.includes(upperCountryCode)) {
+      const curatedStations = getCuratedStationsByCountry(upperCountryCode);
+      const convertedStations = curatedStations.map((station, index) => 
+        curatedToOnlineStation(station, index)
+      );
+      console.log(`[OnlineRadioService] Using ${convertedStations.length} curated stations for ${countryCode}`);
+      return convertedStations.slice(0, limit);
+    }
+    
+    // For other countries, use Radio Browser API
     try {
       const params = new URLSearchParams({
-        countrycode: countryCode.toUpperCase(),
+        countrycode: upperCountryCode,
         lastcheckok: '1',
         order: 'votes',
         reverse: 'true',
@@ -173,7 +215,7 @@ export const OnlineRadioService = {
         limit: String(API_FETCH_LIMIT),
       });
       
-      const stations = await fetchFromRadioBrowser(`/json/stations/bycountrycodeexact/${countryCode.toUpperCase()}?${params}`);
+      const stations = await fetchFromRadioBrowser(`/json/stations/bycountrycodeexact/${upperCountryCode}?${params}`);
       const filtered = filterAndSortStations(stations);
       console.log(`[OnlineRadioService] Found ${filtered.length} working stations for ${countryCode}`);
       return filtered.slice(0, limit);
@@ -216,6 +258,17 @@ export const OnlineRadioService = {
     countryCode?: string,
     limit: number = MAX_STATIONS_PER_COUNTRY
   ): Promise<OnlineRadioStation[]> {
+    // Use curated stations for countries with curated lists
+    if (countryCode && CURATED_COUNTRIES.includes(countryCode.toUpperCase())) {
+      const curatedStations = getCuratedStationsByCountry(countryCode.toUpperCase());
+      const convertedStations = curatedStations.map((station, index) => 
+        curatedToOnlineStation(station, index)
+      );
+      console.log(`[OnlineRadioService] Using ${convertedStations.length} curated popular stations for ${countryCode}`);
+      return convertedStations.slice(0, limit);
+    }
+    
+    // For other countries, use Radio Browser API
     try {
       const params = new URLSearchParams({
         lastcheckok: '1',
@@ -276,24 +329,47 @@ export const OnlineRadioService = {
       
       const priorityCountries = ['IN', 'US', 'GB', 'DE', 'FR', 'ES', 'IT', 'JP', 'BR', 'CA', 'AU'];
       
-      const sorted = countries
-        .filter((c: any) => c.stationcount > 10)
-        .sort((a: any, b: any) => {
-          const aIndex = priorityCountries.indexOf(a.iso_3166_1);
-          const bIndex = priorityCountries.indexOf(b.iso_3166_1);
-          
-          if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
-          if (aIndex !== -1) return -1;
-          if (bIndex !== -1) return 1;
-          
-          return b.stationcount - a.stationcount;
-        });
+      // Get curated station counts and info for override/injection
+      const curatedCountryInfo: Record<string, { name: string; count: number }> = {
+        'IN': { name: 'India', count: getCuratedStationsByCountry('IN').length },
+      };
       
-      return sorted.map((c: any) => ({
-        name: c.name,
-        iso_3166_1: c.iso_3166_1,
-        stationcount: c.stationcount,
-      }));
+      // Filter and map API countries
+      let processedCountries = countries
+        .filter((c: any) => c.stationcount > 10)
+        .map((c: any) => ({
+          name: c.name,
+          iso_3166_1: c.iso_3166_1,
+          // Use curated count for curated countries, otherwise use API count
+          stationcount: curatedCountryInfo[c.iso_3166_1]?.count || c.stationcount,
+        }));
+      
+      // Ensure curated countries are always included
+      const existingCountryCodes = new Set(processedCountries.map(c => c.iso_3166_1));
+      for (const [countryCode, info] of Object.entries(curatedCountryInfo)) {
+        if (!existingCountryCodes.has(countryCode)) {
+          console.log(`[OnlineRadioService] Injecting curated country: ${countryCode}`);
+          processedCountries.push({
+            name: info.name,
+            iso_3166_1: countryCode,
+            stationcount: info.count,
+          });
+        }
+      }
+      
+      // Sort with priority countries first
+      processedCountries.sort((a, b) => {
+        const aIndex = priorityCountries.indexOf(a.iso_3166_1);
+        const bIndex = priorityCountries.indexOf(b.iso_3166_1);
+        
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        
+        return b.stationcount - a.stationcount;
+      });
+      
+      return processedCountries;
     } catch (error) {
       console.error('[OnlineRadioService] getCountries error:', error);
       throw new Error('Failed to fetch countries.');
