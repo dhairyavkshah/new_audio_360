@@ -47,7 +47,7 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 
 #### Spatial Enhancement & Reverb
 - Spatial Enhancement: 6 intensity levels (0=Off to 5=Maximum)
-- Bose-inspired psychoacoustic processing with ITD (50-700µs), side boost (1.0-2.0x)
+- Psychoacoustic processing with ITD (50-700µs), side boost (1.0-2.0x)
 - Multi-tap delay reverb with 4 delay lines (23ms, 41ms, 67ms, 89ms)
 - Equal-power crossfade wet/dry mixing
 

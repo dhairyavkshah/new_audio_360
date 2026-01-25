@@ -41,7 +41,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         const val BASS_SHELF_FREQ = 150f
         const val TREBLE_SHELF_FREQ = 6000f
         
-        // Psychoacoustic Stereo Enhancement constants (Industry-standard Bose-like ranges)
+        // Psychoacoustic Stereo Enhancement constants (industry-standard ranges)
         // ITD: Human maximum is ~700µs (0.7ms) for 90° lateral position
         // ILD: Up to 15-20dB for high frequencies at 90° azimuth
         private const val BASS_MONO_FREQ = 150f
@@ -483,7 +483,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         // Calculate intensity from level (0-5 → 0.0-1.0)
         val intensity = spatialEnhancementLevel / 5.0f
         
-        // Scale parameters based on intensity (Industry-standard Bose-like ranges):
+        // Scale parameters based on intensity (industry-standard ranges):
         // Side boost: 1 + (SIDE_BOOST * intensity) = 1.0 to 2.0 (0 to +6dB, conservative vs 15-20dB max)
         val scaledSideBoost = SIDE_BOOST * intensity
         

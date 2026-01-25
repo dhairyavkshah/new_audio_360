@@ -41,17 +41,17 @@ export interface ImmersiveMode {
   trebleBoost: number;
   spatialWidth: number;
   reverb: number; // 0-1 wet mix (0 = dry, 1 = full reverb)
-  spatialEnhancement: number; // 0-5 level (Bose-inspired psychoacoustic processing)
+  spatialEnhancement: number; // 0-5 level (psychoacoustic processing)
 }
 
 const EQ_FREQUENCIES = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
 
 // Professional Immersive Mode Configurations
-// Based on Sony 360 Reality Audio, Bose soundbars, Yamaha YPAO/Cinema DSP, Samsung Q-Symphony, IMAX Enhanced
+// Based on Sony 360 Reality Audio, Yamaha YPAO/Cinema DSP, Samsung Q-Symphony, IMAX Enhanced
 // EQ bands: [60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz]
 // Values in gain units (-5 to +5), where 1 unit = 2.4 dB
 // Reverb: 0-1 wet mix (0 = dry, 1 = full reverb)
-// Immersive Modes: Following Bose approach - all spatial processing bundled into spatialEnhancement
+// Immersive Modes: All spatial processing bundled into spatialEnhancement
 // spatialWidth set to 0 since spatialEnhancement already includes M/S processing with side boost
 const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
   music: {
@@ -60,7 +60,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [+0.3, +0.3, -0.4, -1.0, -1.0, 0.0, +1.0, +1.5, +0.4, -1.1],
     bassBoost: 0.5,     // +1.2 dB at 150Hz
     trebleBoost: 0.54,  // +1.3 dB at 6kHz
-    spatialWidth: 0,    // Handled by spatialEnhancement (Bose-style bundled)
+    spatialWidth: 0,    // Handled by spatialEnhancement
     reverb: 0.08,       // 8% reverb
     spatialEnhancement: 2, // Level 2: 310µs ITD, 1.4x side boost, 0.92 mid atten
   },
@@ -70,7 +70,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [0.0, 0.0, -0.6, -0.6, -0.6, 0.0, +1.0, +1.2, +0.3, -0.7],
     bassBoost: 0.33,    // +0.8 dB
     trebleBoost: 0.625, // +1.5 dB
-    spatialWidth: 0,    // Handled by spatialEnhancement (Bose-style bundled)
+    spatialWidth: 0,    // Handled by spatialEnhancement
     reverb: 0.18,       // 18% reverb
     spatialEnhancement: 5, // Level 5: 700µs ITD, 2.0x side boost, 0.80 mid atten (maximum)
   },
@@ -80,7 +80,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [+0.8, +0.8, +0.4, -1.1, -1.1, 0.0, +1.0, +1.7, +0.8, -1.9],
     bassBoost: 0.5,     // +1.2 dB
     trebleBoost: 0.875, // +2.1 dB
-    spatialWidth: 0,    // Handled by spatialEnhancement (Bose-style bundled)
+    spatialWidth: 0,    // Handled by spatialEnhancement
     reverb: 0.08,       // 8% reverb
     spatialEnhancement: 3, // Level 3: 440µs ITD, 1.6x side boost, 0.88 mid atten
   },
@@ -100,7 +100,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [-0.8, -0.8, -0.4, +0.7, +1.1, +1.0, +1.0, -0.3, -0.5, -1.7],
     bassBoost: 0.75,    // +1.8 dB
     trebleBoost: 0.625, // +1.5 dB
-    spatialWidth: 0,    // Handled by spatialEnhancement (Bose-style bundled)
+    spatialWidth: 0,    // Handled by spatialEnhancement
     reverb: 0.12,       // 12% reverb
     spatialEnhancement: 4, // Level 4: 570µs ITD, 1.8x side boost, 0.84 mid atten
   },
@@ -110,7 +110,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [+1.2, +1.2, +0.5, -0.7, -0.7, 0.0, +1.0, +1.2, -0.9, -2.5],
     bassBoost: 0.917,   // +2.2 dB (stadium atmosphere)
     trebleBoost: 0.33,  // +0.8 dB
-    spatialWidth: 0,    // Handled by spatialEnhancement (Bose-style bundled)
+    spatialWidth: 0,    // Handled by spatialEnhancement
     reverb: 0.10,       // 10% reverb
     spatialEnhancement: 2, // Level 2: 310µs ITD, 1.4x side boost, 0.92 mid atten
   },
@@ -713,7 +713,7 @@ class WebAudioEffectsEngineClass {
       this.masterGain.gain.value = 1.0;
     }
 
-    // Apply spatial enhancement (Bose-inspired psychoacoustic processing)
+    // Apply spatial enhancement (psychoacoustic processing)
     this.setSpatialEnhancement(spatialEnhancement);
 
     this.currentEQValues = paddedBands;

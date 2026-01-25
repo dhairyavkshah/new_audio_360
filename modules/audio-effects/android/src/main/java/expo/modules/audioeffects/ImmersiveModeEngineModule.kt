@@ -254,7 +254,7 @@ class ImmersiveModeEngineModule : Module() {
     
     // Professional Immersive Mode Configurations
     // Based on Samsung Dolby Atmos, Sony 360 Reality Audio, and professional audio engineering standards
-    // Following Bose approach: all spatial processing bundled into spatialEnhancement (virtualizerStrength=0)
+    // All spatial processing bundled into spatialEnhancement (virtualizerStrength=0)
     // EQ bands (10): 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz
     // Values in gain units (-5 to +5), where 1 unit = 2.4 dB
     
@@ -264,7 +264,7 @@ class ImmersiveModeEngineModule : Module() {
             eqGains = listOf(+0.3, +0.3, -0.4, -1.0, -1.0, 0.0, +1.0, +1.5, +0.4, -1.1),
             bassGainUnits = 0.5f,       // +1.2 dB at 150Hz
             trebleGainUnits = 0.54f,    // +1.3 dB at 6kHz
-            virtualizerStrength = 0,    // Handled by spatialEnhancement (Bose-style bundled)
+            virtualizerStrength = 0,    // Handled by spatialEnhancement
             reverbWetMix = 0.08f,       // 8% reverb
             spatialEnhancementLevel = 2 // Level 2: 310µs ITD, 1.4x side boost
         )
@@ -276,7 +276,7 @@ class ImmersiveModeEngineModule : Module() {
             eqGains = listOf(0.0, 0.0, -0.6, -0.6, -0.6, 0.0, +1.0, +1.2, +0.3, -0.7),
             bassGainUnits = 0.33f,      // +0.8 dB
             trebleGainUnits = 0.625f,   // +1.5 dB
-            virtualizerStrength = 0,    // Handled by spatialEnhancement (Bose-style bundled)
+            virtualizerStrength = 0,    // Handled by spatialEnhancement
             reverbWetMix = 0.18f,       // 18% reverb
             spatialEnhancementLevel = 5 // Level 5: 700µs ITD, 2.0x side boost (maximum)
         )
@@ -288,7 +288,7 @@ class ImmersiveModeEngineModule : Module() {
             eqGains = listOf(+0.8, +0.8, +0.4, -1.1, -1.1, 0.0, +1.0, +1.7, +0.8, -1.9),
             bassGainUnits = 0.5f,       // +1.2 dB
             trebleGainUnits = 0.875f,   // +2.1 dB
-            virtualizerStrength = 0,    // Handled by spatialEnhancement (Bose-style bundled)
+            virtualizerStrength = 0,    // Handled by spatialEnhancement
             reverbWetMix = 0.08f,       // 8% reverb
             spatialEnhancementLevel = 3 // Level 3: 440µs ITD, 1.6x side boost
         )
@@ -312,7 +312,7 @@ class ImmersiveModeEngineModule : Module() {
             eqGains = listOf(-0.8, -0.8, -0.4, +0.7, +1.1, +1.0, +1.0, -0.3, -0.5, -1.7),
             bassGainUnits = 0.75f,      // +1.8 dB
             trebleGainUnits = 0.625f,   // +1.5 dB
-            virtualizerStrength = 0,    // Handled by spatialEnhancement (Bose-style bundled)
+            virtualizerStrength = 0,    // Handled by spatialEnhancement
             reverbWetMix = 0.12f,       // 12% reverb
             spatialEnhancementLevel = 4 // Level 4: 570µs ITD, 1.8x side boost
         )
@@ -324,7 +324,7 @@ class ImmersiveModeEngineModule : Module() {
             eqGains = listOf(+1.2, +1.2, +0.5, -0.7, -0.7, 0.0, +1.0, +1.2, -0.9, -2.5),
             bassGainUnits = 0.917f,     // +2.2 dB (stadium atmosphere)
             trebleGainUnits = 0.33f,    // +0.8 dB
-            virtualizerStrength = 0,    // Handled by spatialEnhancement (Bose-style bundled)
+            virtualizerStrength = 0,    // Handled by spatialEnhancement
             reverbWetMix = 0.10f,       // 10% reverb
             spatialEnhancementLevel = 2 // Level 2: 310µs ITD, 1.4x side boost
         )

@@ -40,7 +40,7 @@ Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter →
 - **Multi-Tap Delay Reverb**: 4 delay lines (23ms, 41ms, 67ms, 89ms) with equal-power crossfade wet/dry mixing.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
 - **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide). VirtualizerModule and ImmersiveModeEngineModule delegate to SoftwareDSPAudioProcessor.
-- **Spatial Enhancement**: Psychoacoustic stereo enhancement (0-5 intensity levels) with Bose-inspired processing. Features: bass mono enforcement (below 150Hz), ITD micro-delay (50-700µs scaled by level, matching human maximum), all-pass decorrelation (3kHz/5kHz), correlation monitor with 0.3 threshold guard. Side boost scales 1.0-2.0x based on level (+6dB, conservative vs 15-20dB industry max). Mid attenuation scales 1.0-0.8x. Levels: 0=off, 1=20%, 2=40%, 3=60%, 4=80%, 5=100% intensity.
+- **Spatial Enhancement**: Psychoacoustic stereo enhancement (0-5 intensity levels). Features: bass mono enforcement (below 150Hz), ITD micro-delay (50-700µs scaled by level, matching human maximum), all-pass decorrelation (3kHz/5kHz), correlation monitor with 0.3 threshold guard. Side boost scales 1.0-2.0x based on level (+6dB, conservative vs 15-20dB industry max). Mid attenuation scales 1.0-0.8x. Levels: 0=off, 1=20%, 2=40%, 3=60%, 4=80%, 5=100% intensity.
 - **EQ Presets**: 10 total (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity) with zero-sum normalization.
 - **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, stereo width, reverb, and spatial enhancement settings. Reverb levels: Music 8%, 360 Reality 18%, Gaming 8%, Podcast 0%, Movie 12%, Sports 10%. Spatial levels: Music 2, 360 Reality 5, Gaming 3, Podcast 0, Movie 4, Sports 2.
 
@@ -121,7 +121,7 @@ Audio Source
 | **Movie** | Classical | +2 | +1 | 12% | 4 | 570µs ITD, 1.8x side boost |
 | **Sports** | Pop | +1 | +2 | 10% | 2 | 310µs ITD, 1.4x side boost |
 
-*Note: Following Bose approach, all spatial processing is bundled into Spatial Enhancement (stereo width removed as separate control).*
+*Note: All spatial processing is bundled into Spatial Enhancement (stereo width removed as separate control).*
 
 ### Key Files Reference
 
