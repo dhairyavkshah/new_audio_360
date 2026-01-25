@@ -53,6 +53,20 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         private const val ALLPASS_Q = 0.7f
         private const val MID_ATTENUATION = 0.85f  // Mid channel attenuation for maximum widening
         
+        // 6-Level Spatial Enhancement Slider System
+        // Level 0: Off, Level 1: Subtle, Level 2: Mild, Level 3: Moderate, Level 4: Enhanced, Level 5: Maximum
+        private val SLIDER_SIDE_GAIN = floatArrayOf(0f, 3f, 6f, 10f, 14f, 18f)        // Side Gain (%)
+        private val SLIDER_ITD_MS = floatArrayOf(0f, 0.10f, 0.15f, 0.25f, 0.40f, 0.60f) // ITD (ms)
+        private val SLIDER_DECORRELATION = floatArrayOf(0f, 3f, 5f, 8f, 12f, 18f)     // Decorrelation (%)
+        private val SLIDER_WET_MIX = floatArrayOf(0f, 10f, 20f, 30f, 40f, 55f)         // Wet Mix (%)
+        private val SLIDER_MULTIPLIERS = floatArrayOf(0.0f, 0.5f, 1.0f, 1.25f, 1.4f, 1.5f) // Multipliers
+        
+        // Hard Safety Caps (NEVER EXCEED)
+        private const val MAX_SIDE_GAIN_PERCENT = 18f   // max 18%
+        private const val MAX_ITD_MS = 0.6f             // max 0.6ms
+        private const val MAX_DECORRELATION = 18f       // max 18%
+        private const val MAX_WET_MIX = 55f             // max 55%
+        
         @Volatile
         private var sharedInstance: SoftwareDSPAudioProcessor? = null
         
@@ -420,19 +434,32 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     }
 
     /**
-     * Set spatial enhancement intensity level (0-5).
-     * Level 0: Disabled (no processing)
-     * Level 1: Subtle - 20% effect
-     * Level 2: Mild - 40% effect
-     * Level 3: Moderate - 60% effect (default for music)
-     * Level 4: Enhanced - 80% effect
-     * Level 5: Maximum - 100% effect
+     * Set spatial enhancement intensity level (0-5) using the 6-level slider system.
+     * Level 0: Off - No processing (0.0x multiplier)
+     * Level 1: Subtle - 3% sideGain, 0.10ms ITD, 3% decorr, 10% wet (0.5x multiplier)
+     * Level 2: Mild - 6% sideGain, 0.15ms ITD, 5% decorr, 20% wet (1.0x multiplier)
+     * Level 3: Moderate - 10% sideGain, 0.25ms ITD, 8% decorr, 30% wet (1.25x multiplier)
+     * Level 4: Enhanced - 14% sideGain, 0.40ms ITD, 12% decorr, 40% wet (1.4x multiplier)
+     * Level 5: Maximum - 18% sideGain, 0.60ms ITD, 18% decorr, 55% wet (1.5x multiplier)
      */
     fun setSpatialEnhancementLevel(level: Int) {
         spatialEnhancementLevel = level.coerceIn(0, 5)
         explicitSpatialParams = false // Switch back to level-based mode
-        android.util.Log.d("SoftwareDSP", "Spatial enhancement level set to $spatialEnhancementLevel (${spatialEnhancementLevel * 20}%)")
+        
+        // Apply slider-based spatial parameters
+        spatialSideGainPercent = SLIDER_SIDE_GAIN[spatialEnhancementLevel]
+        spatialItdMs = SLIDER_ITD_MS[spatialEnhancementLevel]
+        spatialDecorrelation = SLIDER_DECORRELATION[spatialEnhancementLevel]
+        spatialWetMix = SLIDER_WET_MIX[spatialEnhancementLevel]
+        
+        val levelNames = arrayOf("Off", "Subtle", "Mild", "Moderate", "Enhanced", "Maximum")
+        android.util.Log.d("SoftwareDSP", "Spatial enhancement level: ${levelNames[spatialEnhancementLevel]} (${SLIDER_MULTIPLIERS[spatialEnhancementLevel]}x multiplier)")
     }
+    
+    /**
+     * Get the current slider multiplier based on the spatial enhancement level.
+     */
+    fun getSliderMultiplier(): Float = SLIDER_MULTIPLIERS[spatialEnhancementLevel.coerceIn(0, 5)]
 
     fun getSpatialEnhancementLevel(): Int = spatialEnhancementLevel
 
@@ -449,6 +476,9 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     /**
      * Set explicit spatial enhancement parameters for immersive modes.
      * This provides fine-grained control over each spatial effect parameter.
+     * Values are applied directly with safety caps (no combination with slider).
+     * The slider and immersive modes work independently - when immersive mode is active,
+     * it uses its own fixed spatial params; when slider is used, it applies its level values.
      *
      * @param sideGain Side channel gain boost in % (+6 = 1.06x multiplier)
      * @param itdMs Inter-aural Time Difference in milliseconds (0-0.7ms)
@@ -456,16 +486,17 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      * @param wetMix Wet mix in % (0-100, blends processed with original)
      */
     fun setSpatialEnhancementParams(sideGain: Float, itdMs: Float, decorrelation: Float, wetMix: Float) {
-        spatialSideGainPercent = sideGain.coerceIn(0f, 50f)
-        spatialItdMs = itdMs.coerceIn(0f, 0.7f)
-        spatialDecorrelation = decorrelation.coerceIn(0f, 100f)
-        spatialWetMix = wetMix.coerceIn(0f, 100f)
+        // Apply hard safety caps directly (no slider multiplier combination)
+        spatialSideGainPercent = sideGain.coerceIn(0f, MAX_SIDE_GAIN_PERCENT)
+        spatialItdMs = itdMs.coerceIn(0f, MAX_ITD_MS)
+        spatialDecorrelation = decorrelation.coerceIn(0f, MAX_DECORRELATION)
+        spatialWetMix = wetMix.coerceIn(0f, MAX_WET_MIX)
         explicitSpatialParams = true
         
         // Set pseudo-level for compatibility (based on wetMix)
-        spatialEnhancementLevel = if (wetMix <= 0f) 0 else kotlin.math.ceil(wetMix / 20f).toInt().coerceIn(1, 5)
+        spatialEnhancementLevel = if (spatialWetMix <= 0f) 0 else kotlin.math.ceil(spatialWetMix / 11f).toInt().coerceIn(1, 5)
         
-        android.util.Log.d("SoftwareDSP", "Spatial params set: sideGain=$sideGain%, ITD=${itdMs}ms, decorr=$decorrelation%, wetMix=$wetMix%")
+        android.util.Log.d("SoftwareDSP", "Spatial params set: sideGain=$spatialSideGainPercent%, ITD=${spatialItdMs}ms, decorr=$spatialDecorrelation%, wetMix=$spatialWetMix%")
     }
     
     /**
@@ -508,36 +539,38 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         val decorrelationQ: Float
         
         if (explicitSpatialParams) {
-            // Use explicit parameters set via setSpatialEnhancementParams
-            wetFactor = spatialWetMix / 100f
+            // Use explicit parameters set via setSpatialEnhancementParams (already clamped to safety caps)
+            wetFactor = spatialWetMix / MAX_WET_MIX // Normalize to 0-1 based on max
             
             // Side gain: Convert percentage to multiplier, scaled by wetMix
             // sideGain +6% means 1.06x base multiplier
-            // Then scale the boost portion by wetMix (0% = no boost, 100% = full boost)
+            // Then scale the boost portion by wetMix (0% = no boost, max% = full boost)
             val baseSideMultiplier = 1.0f + (spatialSideGainPercent / 100f)
             scaledSideBoost = ((baseSideMultiplier - 1.0f) * wetFactor)
             
+            // ITD already clamped to MAX_ITD_MS in setSpatialEnhancementParams
             scaledItdMs = spatialItdMs
             
-            // Mid attenuation: scale with wetMix (0% = 1.0, 100% = 0.85)
+            // Mid attenuation: scale with wetFactor (0% = 1.0, max = 0.85)
             scaledMidAttenuation = 1.0f - (0.15f * wetFactor)
             
-            // Decorrelation Q: map 0-100% to 0.3-1.5 (matching Web implementation)
-            decorrelationQ = 0.3f + (spatialDecorrelation / 100f) * 1.2f
+            // Decorrelation Q: map 0-MAX_DECORRELATION% to 0.3-1.5 (matching Web implementation)
+            decorrelationQ = 0.3f + (spatialDecorrelation / MAX_DECORRELATION) * 1.2f
             
             // Update all-pass filter Q values for decorrelation
             allpassFilter1.setQ(decorrelationQ)
             allpassFilter2.setQ(decorrelationQ * 0.85f) // Slightly lower for second stage
         } else {
-            // Legacy level-based calculation (0-5 → 0.0-1.0)
-            val intensity = spatialEnhancementLevel / 5.0f
+            // Level-based calculation using 6-level slider system
+            // Parameters already set in setSpatialEnhancementLevel()
+            wetFactor = spatialWetMix / MAX_WET_MIX // Normalize to 0-1
             
-            // Side boost: 1 + (SIDE_BOOST * intensity) = 1.0 to 2.0 (0 to +6dB)
-            scaledSideBoost = SIDE_BOOST * intensity
-            scaledItdMs = 0.05f + (0.65f * intensity)
-            scaledMidAttenuation = 1.0f - (0.20f * intensity)
-            wetFactor = intensity
-            decorrelationQ = 0.3f + (intensity * 1.2f)
+            // Side boost from slider values
+            val baseSideMultiplier = 1.0f + (spatialSideGainPercent / 100f)
+            scaledSideBoost = ((baseSideMultiplier - 1.0f) * wetFactor)
+            scaledItdMs = spatialItdMs
+            scaledMidAttenuation = 1.0f - (0.15f * wetFactor)
+            decorrelationQ = 0.3f + (spatialDecorrelation / MAX_DECORRELATION) * 1.2f
         }
         
         // ITD delay samples

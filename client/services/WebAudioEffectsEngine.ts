@@ -53,6 +53,21 @@ export interface ImmersiveMode {
 
 const EQ_FREQUENCIES = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
 
+// 6-Level Spatial Enhancement Slider System
+// Level 0: Off, Level 1: Subtle, Level 2: Mild, Level 3: Moderate, Level 4: Enhanced, Level 5: Maximum
+const SLIDER_SIDE_GAIN = [0, 3, 6, 10, 14, 18];        // Side Gain (%)
+const SLIDER_ITD_MS = [0, 0.10, 0.15, 0.25, 0.40, 0.60]; // ITD (ms)
+const SLIDER_DECORRELATION = [0, 3, 5, 8, 12, 18];     // Decorrelation (%)
+const SLIDER_WET_MIX = [0, 10, 20, 30, 40, 55];         // Wet Mix (%)
+const SLIDER_MULTIPLIERS = [0.0, 0.5, 1.0, 1.25, 1.4, 1.5]; // Multipliers
+const SLIDER_LEVEL_NAMES = ['Off', 'Subtle', 'Mild', 'Moderate', 'Enhanced', 'Maximum'];
+
+// Hard Safety Caps (NEVER EXCEED)
+const MAX_SIDE_GAIN_PERCENT = 18;   // max 18%
+const MAX_ITD_MS = 0.6;             // max 0.6ms
+const MAX_DECORRELATION = 18;       // max 18%
+const MAX_WET_MIX = 55;             // max 55%
+
 // Professional Immersive Mode Configurations
 // Based on Sony 360 Reality Audio, Yamaha YPAO/Cinema DSP, Samsung Q-Symphony, IMAX Enhanced
 // EQ bands: [60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz]
@@ -471,24 +486,20 @@ class WebAudioEffectsEngineClass {
   }
 
   /**
-   * Set Spatial Enhancement Level (Psychoacoustic Stereo Enhancement)
+   * Set Spatial Enhancement Level using the 6-Level Slider System
    * 
-   * Level 0: Disabled (bypass all psychoacoustic processing)
-   * Levels 1-5: Scale the effect intensity
-   * 
-   * Parameters scaled by level:
-   * - sidePsychoGain: 1.0 (off) → 1.1-1.5 (on), capped at 2.2
-   * - sideDelay: 0 (off) → 0.1ms-0.5ms (on)
-   * - midAttenuation: 1.0 (off) → 0.97-0.85 (on)
-   * - sideHighpass: 1Hz (bypass) → 150Hz (protects bass from widening)
+   * Level 0: Off - No processing (0.0x multiplier)
+   * Level 1: Subtle - 3% sideGain, 0.10ms ITD, 3% decorr, 10% wet (0.5x multiplier)
+   * Level 2: Mild - 6% sideGain, 0.15ms ITD, 5% decorr, 20% wet (1.0x multiplier)
+   * Level 3: Moderate - 10% sideGain, 0.25ms ITD, 8% decorr, 30% wet (1.25x multiplier)
+   * Level 4: Enhanced - 14% sideGain, 0.40ms ITD, 12% decorr, 40% wet (1.4x multiplier)
+   * Level 5: Maximum - 18% sideGain, 0.60ms ITD, 18% decorr, 55% wet (1.5x multiplier)
    * 
    * @param level - Spatial enhancement level 0-5 (0 = off, 5 = max)
    */
   setSpatialEnhancement(level: number): void {
-    // Clamp level to valid range
     const clampedLevel = Math.max(0, Math.min(5, Math.round(level)));
     
-    // Mono safety: don't apply if M/S processing isn't available
     if (!this.msProcessingEnabled) {
       console.log('[WebAudioEffectsEngine] Psychoacoustic: Cannot enable (M/S processing not available)');
       this.spatialEnhancementLevel = 0;
@@ -503,51 +514,60 @@ class WebAudioEffectsEngineClass {
 
     this.spatialEnhancementLevel = clampedLevel;
     
-    // Calculate intensity (0.0 to 1.0)
-    const intensity = clampedLevel / 5;
+    // Get slider values for this level
+    const sideGainPercent = SLIDER_SIDE_GAIN[clampedLevel];
+    const itdMs = SLIDER_ITD_MS[clampedLevel];
+    const decorrelation = SLIDER_DECORRELATION[clampedLevel];
+    const wetMix = SLIDER_WET_MIX[clampedLevel];
+    const multiplier = SLIDER_MULTIPLIERS[clampedLevel];
+    const levelName = SLIDER_LEVEL_NAMES[clampedLevel];
 
     if (clampedLevel === 0) {
-      // Disable psychoacoustic processing (passthrough mode)
-      
-      // Highpass at 1Hz - effectively passes all audio (bypass)
       this.sideHighpass.frequency.value = 1;
-      
-      // No delay when disabled
       this.sideDelay.delayTime.value = 0;
-      
-      // Passthrough gains
       this.sidePsychoGain.gain.value = 1.0;
       this.midAttenuation.gain.value = 1.0;
-      
-      console.log(`[WebAudioEffectsEngine] Spatial enhancement level set to ${clampedLevel} (intensity: ${(intensity * 100).toFixed(0)}%)`);
+      console.log(`[WebAudioEffectsEngine] Spatial: ${levelName} (${multiplier}x)`);
     } else {
-      // Enable psychoacoustic processing with level-based scaling
-      
-      // Highpass at 150Hz - only widen frequencies above 150Hz (protects bass from widening)
       this.sideHighpass.frequency.value = 150;
       this.sideHighpass.Q.value = 0.707;
       
-      // ITD delay: 0.00005 + (0.00065 * intensity) → 50µs to 700µs (full human perceptual range)
-      // Standard: 700µs maximum at 90° azimuth, detection threshold ~10µs
-      this.sideDelay.delayTime.value = 0.00005 + (0.00065 * intensity);
+      // ITD delay from slider values (ms to seconds)
+      this.sideDelay.delayTime.value = Math.min(itdMs, MAX_ITD_MS) / 1000;
       
-      // Side psychoacoustic gain: 1.0 + (1.0 * intensity) → 1.0 to 2.0 (0 to +6dB, industry standard)
-      // Conservative vs full 15-20dB ILD range to avoid artifacts
-      let psychoGain = 1.0 + (1.0 * intensity);
-      psychoGain = Math.min(psychoGain, 2.2); // Max 2.2 for safety on web
+      // Side gain from slider values
+      const wetFactor = wetMix / MAX_WET_MIX;
+      const baseSideMultiplier = 1.0 + (sideGainPercent / 100);
+      let psychoGain = 1.0 + ((baseSideMultiplier - 1.0) * wetFactor);
+      psychoGain = Math.min(psychoGain, 1.0 + (MAX_SIDE_GAIN_PERCENT / 100)); // Safety cap
       this.sidePsychoGain.gain.value = psychoGain;
       
-      // Mid attenuation: 1.0 - (0.20 * intensity) → 1.0 to 0.80 (more pronounced center reduction)
-      this.midAttenuation.gain.value = 1.0 - (0.20 * intensity);
+      // Mid attenuation
+      this.midAttenuation.gain.value = 1.0 - (0.15 * wetFactor);
       
-      console.log(`[WebAudioEffectsEngine] Spatial enhancement level set to ${clampedLevel} (intensity: ${(intensity * 100).toFixed(0)}%)`);
+      // Configure all-pass decorrelation
+      if (this.allPass1 && this.allPass2) {
+        const decorrelationQ = 0.3 + (decorrelation / MAX_DECORRELATION) * 1.2;
+        this.allPass1.Q.value = decorrelationQ;
+        this.allPass2.Q.value = decorrelationQ * 0.85;
+      }
+      
+      console.log(`[WebAudioEffectsEngine] Spatial: ${levelName} (${multiplier}x) - sideGain:${sideGainPercent}%, ITD:${itdMs}ms, decorr:${decorrelation}%, wet:${wetMix}%`);
     }
+  }
+  
+  /**
+   * Get the current slider multiplier based on the spatial enhancement level.
+   */
+  getSliderMultiplier(): number {
+    return SLIDER_MULTIPLIERS[Math.max(0, Math.min(5, this.spatialEnhancementLevel))];
   }
 
   /**
    * Apply Spatial Enhancement with explicit parameters
-   * 
-   * Uses user-defined values for each immersive mode instead of level-based scaling.
+   * Values are applied directly with safety caps (no combination with slider).
+   * The slider and immersive modes work independently - when immersive mode is active,
+   * it uses its own fixed spatial params; when slider is used, it applies its level values.
    * 
    * @param params - Explicit spatial enhancement parameters
    *   - sideGain: Side channel gain boost in % (+6 means 1.06x = +0.5dB)
@@ -556,7 +576,6 @@ class WebAudioEffectsEngineClass {
    *   - wetMix: Wet mix for psychoacoustic effect in % (blends processed/unprocessed)
    */
   applySpatialEnhancementParams(params: SpatialEnhancementParams): void {
-    // Mono safety: don't apply if M/S processing isn't available
     if (!this.msProcessingEnabled) {
       console.log('[WebAudioEffectsEngine] Psychoacoustic: Cannot enable (M/S processing not available)');
       this.spatialEnhancementLevel = 0;
@@ -570,11 +589,16 @@ class WebAudioEffectsEngineClass {
     }
 
     const { sideGain, itdMs, decorrelation, wetMix } = params;
+    
+    // Apply hard safety caps directly (no slider multiplier combination)
+    const finalSideGain = Math.min(Math.max(0, sideGain), MAX_SIDE_GAIN_PERCENT);
+    const finalItdMs = Math.min(Math.max(0, itdMs), MAX_ITD_MS);
+    const finalDecorrelation = Math.min(Math.max(0, decorrelation), MAX_DECORRELATION);
+    const finalWetMix = Math.min(Math.max(0, wetMix), MAX_WET_MIX);
 
-    // Check if spatial enhancement should be disabled (all params at 0)
-    if (sideGain === 0 && itdMs === 0 && decorrelation === 0 && wetMix === 0) {
-      // Disable psychoacoustic processing (passthrough mode)
-      this.sideHighpass.frequency.value = 1; // Bypass highpass
+    // Check if spatial enhancement should be disabled
+    if (finalSideGain === 0 && finalItdMs === 0 && finalDecorrelation === 0 && finalWetMix === 0) {
+      this.sideHighpass.frequency.value = 1;
       this.sideDelay.delayTime.value = 0;
       this.sidePsychoGain.gain.value = 1.0;
       this.midAttenuation.gain.value = 1.0;
@@ -583,42 +607,35 @@ class WebAudioEffectsEngineClass {
       return;
     }
 
-    // Mark as active (use wetMix as pseudo-level for compatibility)
-    this.spatialEnhancementLevel = Math.ceil(wetMix / 20); // Rough mapping to 0-5
+    // Set pseudo-level for compatibility (based on finalWetMix)
+    this.spatialEnhancementLevel = finalWetMix <= 0 ? 0 : Math.ceil(finalWetMix / 11);
 
-    // Highpass at 150Hz - only widen frequencies above 150Hz (protects bass from widening)
+    // Highpass at 150Hz - protects bass from widening
     this.sideHighpass.frequency.value = 150;
     this.sideHighpass.Q.value = 0.707;
     
-    // ITD delay: Convert milliseconds to seconds (clamp to 0-0.7ms range)
-    const clampedItdMs = Math.max(0, Math.min(0.7, itdMs));
-    this.sideDelay.delayTime.value = clampedItdMs / 1000;
+    // ITD delay (ms to seconds)
+    this.sideDelay.delayTime.value = finalItdMs / 1000;
     
-    // Side psychoacoustic gain: Convert percentage to gain multiplier
-    // sideGain +6% means 1.06x, +16% means 1.16x
-    const sideGainMultiplier = 1.0 + (sideGain / 100);
-    // Apply wetMix to blend with original (wetMix 0% = no effect, 100% = full effect)
-    const wetFactor = wetMix / 100;
-    const effectiveSideGain = 1.0 + ((sideGainMultiplier - 1.0) * wetFactor);
-    const clampedSideGain = Math.min(effectiveSideGain, 2.2); // Max 2.2 for safety
-    this.sidePsychoGain.gain.value = clampedSideGain;
+    // Side gain with safety cap
+    const wetFactor = finalWetMix / MAX_WET_MIX;
+    const baseSideMultiplier = 1.0 + (finalSideGain / 100);
+    let effectiveSideGain = 1.0 + ((baseSideMultiplier - 1.0) * wetFactor);
+    effectiveSideGain = Math.min(effectiveSideGain, 1.0 + (MAX_SIDE_GAIN_PERCENT / 100));
+    this.sidePsychoGain.gain.value = effectiveSideGain;
     
-    // Mid attenuation: Scale with wetMix
-    // Higher wetMix = more center reduction for width perception
-    // Range: 1.0 (no attenuation) to 0.85 (15% reduction at max wetMix)
+    // Mid attenuation
     const midAttenuation = 1.0 - (0.15 * wetFactor);
     this.midAttenuation.gain.value = midAttenuation;
     
     // Configure all-pass decorrelation filters
-    // decorrelation % controls the Q factor (higher = more phase shift)
     if (this.allPass1 && this.allPass2) {
-      // Q range: 0.3 (subtle) to 1.5 (aggressive) based on decorrelation %
-      const decorrelationQ = 0.3 + (decorrelation / 100) * 1.2;
+      const decorrelationQ = 0.3 + (finalDecorrelation / MAX_DECORRELATION) * 1.2;
       this.allPass1.Q.value = decorrelationQ;
-      this.allPass2.Q.value = decorrelationQ * 0.85; // Slightly lower for second stage
+      this.allPass2.Q.value = decorrelationQ * 0.85;
     }
 
-    console.log(`[WebAudioEffectsEngine] Spatial params applied: sideGain:${sideGain}% (${clampedSideGain.toFixed(2)}x), ITD:${clampedItdMs.toFixed(2)}ms, decorr:${decorrelation}%, wetMix:${wetMix}%`);
+    console.log(`[WebAudioEffectsEngine] Spatial params set: sideGain:${finalSideGain.toFixed(1)}%, ITD:${finalItdMs.toFixed(2)}ms, decorr:${finalDecorrelation.toFixed(1)}%, wet:${finalWetMix.toFixed(1)}%`);
   }
 
   getInputNode(): BiquadFilterNode | null {

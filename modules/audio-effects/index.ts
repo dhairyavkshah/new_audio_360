@@ -107,13 +107,24 @@ interface BassBoostModuleInterface {
 }
 
 // Spatial Enhancement Module Types
+// 6-Level Slider System: Off(0), Subtle(1), Mild(2), Moderate(3), Enhanced(4), Maximum(5)
+export type SpatialEnhancementLevelName = 'Off' | 'Subtle' | 'Mild' | 'Moderate' | 'Enhanced' | 'Maximum';
+
+export interface SpatialEnhancementLevelInfo {
+  level: number;
+  levelName: SpatialEnhancementLevelName;
+  multiplier: number;
+}
+
 interface SpatialEnhancementModuleInterface {
   isAvailable(): boolean;
-  setEnabled(enabled: boolean): { success: boolean; enabled?: boolean; error?: string };
-  setLevel(level: number): { success: boolean; level?: number; error?: string };
+  setEnabled(enabled: boolean): { success: boolean; enabled?: boolean; level?: number; error?: string };
+  setLevel(level: number): { success: boolean; level?: number; levelName?: string; multiplier?: number; error?: string };
   getEnabled(): boolean;
   getLevel(): number;
-  getProperties(): { enabled: boolean; level: number; isSoftwareDSP: boolean };
+  getLevelInfo?(): SpatialEnhancementLevelInfo;
+  getMultiplier?(): number;
+  getProperties(): { enabled: boolean; level: number; levelName?: string; multiplier?: number; isSoftwareDSP: boolean };
 }
 
 // Waveform Analyzer Module Types
@@ -792,12 +803,25 @@ export const BassBoostModule = {
 };
 
 // Spatial Enhancement Module Export
+// 6-Level Slider System Constants (for external use)
+export const SPATIAL_SLIDER_LEVELS = {
+  OFF: 0,
+  SUBTLE: 1,
+  MILD: 2,
+  MODERATE: 3,
+  ENHANCED: 4,
+  MAXIMUM: 5,
+} as const;
+
+export const SPATIAL_SLIDER_NAMES: SpatialEnhancementLevelName[] = ['Off', 'Subtle', 'Mild', 'Moderate', 'Enhanced', 'Maximum'];
+export const SPATIAL_SLIDER_MULTIPLIERS = [0.0, 0.5, 1.0, 1.25, 1.4, 1.5];
+
 export const SpatialEnhancementModule = {
   isAvailable: (): boolean => {
     return Platform.OS === 'android' && SpatialEnhancementModuleNative !== null;
   },
 
-  setEnabled: (enabled: boolean): { success: boolean; enabled?: boolean; error?: string } => {
+  setEnabled: (enabled: boolean): { success: boolean; enabled?: boolean; level?: number; error?: string } => {
     if (!SpatialEnhancementModuleNative) {
       return { success: false, error: 'Spatial Enhancement not available on this platform' };
     }
@@ -809,7 +833,7 @@ export const SpatialEnhancementModule = {
     }
   },
 
-  setLevel: (level: number): { success: boolean; level?: number; error?: string } => {
+  setLevel: (level: number): { success: boolean; level?: number; levelName?: string; multiplier?: number; error?: string } => {
     if (!SpatialEnhancementModuleNative) {
       return { success: false, error: 'Spatial Enhancement not available on this platform' };
     }
@@ -845,15 +869,40 @@ export const SpatialEnhancementModule = {
     }
   },
 
-  getProperties: (): { enabled: boolean; level: number; isSoftwareDSP: boolean } => {
+  getLevelInfo: (): SpatialEnhancementLevelInfo => {
+    if (!SpatialEnhancementModuleNative || !SpatialEnhancementModuleNative.getLevelInfo) {
+      const level = 0;
+      return { level, levelName: SPATIAL_SLIDER_NAMES[level], multiplier: SPATIAL_SLIDER_MULTIPLIERS[level] };
+    }
+    try {
+      return SpatialEnhancementModuleNative.getLevelInfo();
+    } catch (error) {
+      console.error('SpatialEnhancementModule.getLevelInfo error:', error);
+      return { level: 0, levelName: 'Off', multiplier: 0.0 };
+    }
+  },
+
+  getMultiplier: (): number => {
+    if (!SpatialEnhancementModuleNative || !SpatialEnhancementModuleNative.getMultiplier) {
+      return SPATIAL_SLIDER_MULTIPLIERS[0];
+    }
+    try {
+      return SpatialEnhancementModuleNative.getMultiplier();
+    } catch (error) {
+      console.error('SpatialEnhancementModule.getMultiplier error:', error);
+      return 0.0;
+    }
+  },
+
+  getProperties: (): { enabled: boolean; level: number; levelName?: string; multiplier?: number; isSoftwareDSP: boolean } => {
     if (!SpatialEnhancementModuleNative) {
-      return { enabled: false, level: 0, isSoftwareDSP: true };
+      return { enabled: false, level: 0, levelName: 'Off', multiplier: 0.0, isSoftwareDSP: true };
     }
     try {
       return SpatialEnhancementModuleNative.getProperties();
     } catch (error) {
       console.error('SpatialEnhancementModule.getProperties error:', error);
-      return { enabled: false, level: 0, isSoftwareDSP: true };
+      return { enabled: false, level: 0, levelName: 'Off', multiplier: 0.0, isSoftwareDSP: true };
     }
   }
 };
