@@ -718,12 +718,12 @@ function SoundLabScreen() {
                 <View style={styles.effectSliderHeader}>
                   <MaterialCommunityIcons name="axis-x-rotate-counterclockwise" size={FluentIconSize.regular} color={tokens.colors.primary} />
                   <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Spatial Enhancement</FluentText>
-                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
-                    {spatialEnhancement === 0 ? "Off" : spatialEnhancement}
+                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 70, textAlign: 'right' }}>
+                    {["Off", "Subtle", "Mild", "Moderate", "Enhanced", "Maximum"][spatialEnhancement] || "Off"}
                   </FluentText>
                 </View>
                 <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">0</FluentText>
+                  <FluentText variant="caption1" color="secondary">Off</FluentText>
                   <CrossPlatformSlider
                     style={styles.effectSlider}
                     minimumValue={0}
@@ -736,7 +736,7 @@ function SoundLabScreen() {
                     thumbTintColor={colors.colorBrandForeground1}
                     trackHeight={FluentSliderSize.trackMedium}
                   />
-                  <FluentText variant="caption1" color="secondary">5</FluentText>
+                  <FluentText variant="caption1" color="secondary">Max</FluentText>
                 </View>
               </View>
             </View>
