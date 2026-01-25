@@ -131,10 +131,12 @@ interface OnlineStationCardProps {
   station: OnlineRadioStation;
   onPlay: () => void;
   isPlaying: boolean;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
   colors: typeof FluentLightColors;
 }
 
-function OnlineStationCard({ station, onPlay, isPlaying, colors }: OnlineStationCardProps) {
+function OnlineStationCard({ station, onPlay, isPlaying, isFavorite, onToggleFavorite, colors }: OnlineStationCardProps) {
   const tags = station.tags ? station.tags.split(",").slice(0, 3).map(t => t.trim()).filter(Boolean) : [];
   
   return (
@@ -181,6 +183,18 @@ function OnlineStationCard({ station, onPlay, isPlaying, colors }: OnlineStation
           )}
         </View>
       </View>
+      
+      <FluentIconButton
+        icon={<MaterialCommunityIcons name={isFavorite ? "heart" : "heart-outline"} />}
+        variant="subtle"
+        size="large"
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onToggleFavorite();
+        }}
+        accessibilityLabel={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        style={{ marginRight: FluentSpacing.xs }}
+      />
       
       <FluentIconButton
         icon={<MaterialCommunityIcons name={isPlaying ? "pause" : "play"} />}
@@ -268,7 +282,20 @@ export default function RadioStationsScreen() {
     playStation,
     stopPlayback,
     clearError,
+    addStationToFavorites,
+    removeStationFromFavorites,
+    isStationFavorite,
+    getFavoriteCount,
   } = useOnlineRadio();
+  
+  const handleToggleOnlineFavorite = useCallback(async (station: OnlineRadioStation) => {
+    const isFav = isStationFavorite(station.stationuuid);
+    if (isFav) {
+      await removeStationFromFavorites(station.stationuuid);
+    } else {
+      await addStationToFavorites(station);
+    }
+  }, [isStationFavorite, addStationToFavorites, removeStationFromFavorites]);
   
   const [radioMode, setRadioMode] = useState<RadioMode>(initialMode);
   const [bandFilter, setBandFilter] = useState<BandFilter>("all");
@@ -547,6 +574,8 @@ export default function RadioStationsScreen() {
                 station={station}
                 onPlay={() => handlePlayOnlineStation(station)}
                 isPlaying={currentStation?.stationuuid === station.stationuuid && isOnlinePlaying}
+                isFavorite={isStationFavorite(station.stationuuid)}
+                onToggleFavorite={() => handleToggleOnlineFavorite(station)}
                 colors={colors}
               />
             ))}

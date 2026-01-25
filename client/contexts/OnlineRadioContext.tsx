@@ -22,12 +22,19 @@ const STORAGE_KEY_COUNTRY = '@new_audio_360_online_radio_country';
 const STORAGE_KEY_STATIONS_CACHE = '@new_audio_360_online_radio_stations';
 const STORAGE_KEY_POPULAR_CACHE = '@new_audio_360_online_radio_popular';
 const STORAGE_KEY_CACHE_VERSION = '@new_audio_360_radio_cache_version';
+const STORAGE_KEY_FAVORITES = '@new_audio_360_radio_favorites';
 
 const CURRENT_CACHE_VERSION = '2'; // Increment to invalidate old cache
 const CURATED_COUNTRIES = ['IN']; // Countries that use curated stations
+const MAX_FAVORITES_PER_COUNTRY = 25;
 
 const DEFAULT_COUNTRY_CODE = 'US';
 const DEFAULT_COUNTRY = 'United States';
+
+// Type for storing favorites per country
+interface CountryFavorites {
+  [countryCode: string]: OnlineRadioStation[];
+}
 
 interface OnlineRadioContextType {
   isLoading: boolean;
@@ -37,6 +44,7 @@ interface OnlineRadioContextType {
   availableCountries: OnlineRadioCountry[];
   stations: OnlineRadioStation[];
   popularStations: OnlineRadioStation[];
+  favoriteStations: OnlineRadioStation[];
   currentStation: OnlineRadioStation | null;
   isPlaying: boolean;
   isBuffering: boolean;
@@ -52,6 +60,10 @@ interface OnlineRadioContextType {
   stopPlayback: () => Promise<void>;
   setVolume: (volume: number) => Promise<void>;
   clearError: () => void;
+  addStationToFavorites: (station: OnlineRadioStation) => Promise<boolean>;
+  removeStationFromFavorites: (stationUuid: string) => Promise<void>;
+  isStationFavorite: (stationUuid: string) => boolean;
+  getFavoriteCount: () => number;
 }
 
 const OnlineRadioContext = createContext<OnlineRadioContextType | undefined>(undefined);
@@ -64,6 +76,8 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   const [availableCountries, setAvailableCountries] = useState<OnlineRadioCountry[]>([]);
   const [stations, setStations] = useState<OnlineRadioStation[]>([]);
   const [popularStations, setPopularStations] = useState<OnlineRadioStation[]>([]);
+  const [favoriteStations, setFavoriteStations] = useState<OnlineRadioStation[]>([]);
+  const [allFavorites, setAllFavorites] = useState<CountryFavorites>({});
   const [currentStation, setCurrentStation] = useState<OnlineRadioStation | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
@@ -510,6 +524,97 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     setError(null);
   }, []);
 
+  const loadFavorites = useCallback(async () => {
+    try {
+      const stored = await AsyncStorage.getItem(STORAGE_KEY_FAVORITES);
+      if (stored) {
+        const parsed: CountryFavorites = JSON.parse(stored);
+        setAllFavorites(parsed);
+      }
+    } catch (err) {
+      console.warn('[OnlineRadioContext] Error loading favorites:', err);
+    }
+  }, []);
+
+  const saveFavorites = useCallback(async (favorites: CountryFavorites) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_FAVORITES, JSON.stringify(favorites));
+    } catch (err) {
+      console.warn('[OnlineRadioContext] Error saving favorites:', err);
+    }
+  }, []);
+
+  const addStationToFavorites = useCallback(async (station: OnlineRadioStation): Promise<boolean> => {
+    const countryCode = detectedCountryCode || DEFAULT_COUNTRY_CODE;
+    
+    return new Promise((resolve) => {
+      setAllFavorites((prev) => {
+        const currentFavorites = prev[countryCode] || [];
+        
+        if (currentFavorites.length >= MAX_FAVORITES_PER_COUNTRY) {
+          setError(`Maximum ${MAX_FAVORITES_PER_COUNTRY} favorites per country reached`);
+          resolve(false);
+          return prev;
+        }
+        
+        if (currentFavorites.some(s => s.stationuuid === station.stationuuid)) {
+          resolve(false);
+          return prev;
+        }
+        
+        const updatedCountryFavorites = [...currentFavorites, station];
+        const updatedAllFavorites = {
+          ...prev,
+          [countryCode]: updatedCountryFavorites,
+        };
+        
+        saveFavorites(updatedAllFavorites);
+        console.log(`[OnlineRadioContext] Added ${station.name} to favorites for ${countryCode}`);
+        resolve(true);
+        return updatedAllFavorites;
+      });
+    });
+  }, [detectedCountryCode, saveFavorites]);
+
+  const removeStationFromFavorites = useCallback(async (stationUuid: string): Promise<void> => {
+    const countryCode = detectedCountryCode || DEFAULT_COUNTRY_CODE;
+    
+    setAllFavorites((prev) => {
+      const currentFavorites = prev[countryCode] || [];
+      const updatedCountryFavorites = currentFavorites.filter(s => s.stationuuid !== stationUuid);
+      const updatedAllFavorites = {
+        ...prev,
+        [countryCode]: updatedCountryFavorites,
+      };
+      
+      saveFavorites(updatedAllFavorites);
+      console.log(`[OnlineRadioContext] Removed station from favorites for ${countryCode}`);
+      return updatedAllFavorites;
+    });
+  }, [detectedCountryCode, saveFavorites]);
+
+  const isStationFavorite = useCallback((stationUuid: string): boolean => {
+    const countryCode = detectedCountryCode || DEFAULT_COUNTRY_CODE;
+    const currentFavorites = allFavorites[countryCode] || [];
+    return currentFavorites.some(s => s.stationuuid === stationUuid);
+  }, [detectedCountryCode, allFavorites]);
+
+  const getFavoriteCount = useCallback((): number => {
+    const countryCode = detectedCountryCode || DEFAULT_COUNTRY_CODE;
+    return (allFavorites[countryCode] || []).length;
+  }, [detectedCountryCode, allFavorites]);
+
+  useEffect(() => {
+    if (detectedCountryCode) {
+      const countryFavorites = allFavorites[detectedCountryCode] || [];
+      setFavoriteStations(countryFavorites);
+    }
+  }, [detectedCountryCode, allFavorites]);
+
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
   return (
     <OnlineRadioContext.Provider
       value={{
@@ -520,6 +625,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         availableCountries,
         stations,
         popularStations,
+        favoriteStations,
         currentStation,
         isPlaying,
         isBuffering,
@@ -534,6 +640,10 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         stopPlayback,
         setVolume,
         clearError,
+        addStationToFavorites,
+        removeStationFromFavorites,
+        isStationFavorite,
+        getFavoriteCount,
       }}
     >
       {children}

@@ -103,6 +103,7 @@ function RadioScreen() {
     detectedCountryCode,
     availableCountries,
     popularStations,
+    favoriteStations,
     currentStation,
     isPlaying: isOnlinePlaying,
     isBuffering,
@@ -114,6 +115,10 @@ function RadioScreen() {
     playStation,
     stopPlayback: onlineStop,
     clearError: clearOnlineError,
+    addStationToFavorites,
+    removeStationFromFavorites,
+    isStationFavorite,
+    getFavoriteCount,
   } = useOnlineRadio();
 
   const { mode: soundLabMode, eqPresetName, immersiveModeName, getImmersiveModeInfo } = useSoundLab();
@@ -673,13 +678,13 @@ function RadioScreen() {
           </View>
         )}
 
-        {!isOnlineLoading && popularStations.length > 0 && (
+        {!isOnlineLoading && favoriteStations.length > 0 && (
           <View style={styles.stationsSection}>
             <FluentText variant="title3" style={styles.sectionTitle}>
-              Popular Stations
+              Favorites ({getFavoriteCount()}/25)
             </FluentText>
             <View style={styles.stationsGrid}>
-              {popularStations.slice(0, 8).map((station) => (
+              {favoriteStations.slice(0, 8).map((station) => (
                 <Pressable
                   key={station.stationuuid}
                   style={[
@@ -732,6 +737,17 @@ function RadioScreen() {
                         {station.tags?.split(',')[0] || station.country}
                       </FluentText>
                     </View>
+                    <Pressable
+                      onPress={() => removeStationFromFavorites(station.stationuuid)}
+                      style={{ padding: FluentSpacing.xs }}
+                      accessibilityLabel={`Remove ${station.name} from favorites`}
+                    >
+                      <MaterialCommunityIcons
+                        name="heart"
+                        size={FluentIconSize.small}
+                        color={colors.colorPaletteRedForeground1 || '#e74c3c'}
+                      />
+                    </Pressable>
                     {currentStation?.stationuuid === station.stationuuid && isOnlinePlaying && (
                       <MaterialCommunityIcons
                         name="volume-high"
@@ -742,6 +758,24 @@ function RadioScreen() {
                   </View>
                 </Pressable>
               ))}
+            </View>
+          </View>
+        )}
+
+        {!isOnlineLoading && favoriteStations.length === 0 && (
+          <View style={styles.stationsSection}>
+            <FluentText variant="title3" style={styles.sectionTitle}>
+              Favorites ({getFavoriteCount()}/25)
+            </FluentText>
+            <View style={[styles.emptyState, { backgroundColor: colors.colorNeutralBackground2, borderRadius: FluentRadius.medium, padding: FluentSpacing.l }]}>
+              <MaterialCommunityIcons
+                name="heart-outline"
+                size={40}
+                color={colors.colorNeutralForeground3}
+              />
+              <FluentText variant="body2" color="secondary" style={{ marginTop: FluentSpacing.s, textAlign: 'center' }}>
+                No favorite stations yet. Browse stations and tap the heart icon to add favorites.
+              </FluentText>
             </View>
           </View>
         )}
@@ -1633,6 +1667,10 @@ const styles = StyleSheet.create({
   },
   countryInfo: {
     flex: 1,
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
