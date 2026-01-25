@@ -51,6 +51,8 @@ const EQ_FREQUENCIES = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000
 // EQ bands: [60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz]
 // Values in gain units (-5 to +5), where 1 unit = 2.4 dB
 // Reverb: 0-1 wet mix (0 = dry, 1 = full reverb)
+// Immersive Modes: Following Bose approach - all spatial processing bundled into spatialEnhancement
+// spatialWidth set to 0 since spatialEnhancement already includes M/S processing with side boost
 const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
   music: {
     // Balanced "smile curve" - warm bass, slight mid scoop, sparkly highs
@@ -58,9 +60,9 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [+0.3, +0.3, -0.4, -1.0, -1.0, 0.0, +1.0, +1.5, +0.4, -1.1],
     bassBoost: 0.5,     // +1.2 dB at 150Hz
     trebleBoost: 0.54,  // +1.3 dB at 6kHz
-    spatialWidth: 0.25, // 25% spatial width
+    spatialWidth: 0,    // Handled by spatialEnhancement (Bose-style bundled)
     reverb: 0.08,       // 8% reverb
-    spatialEnhancement: 2, // Mild psychoacoustic enhancement
+    spatialEnhancement: 2, // Level 2: 310µs ITD, 1.4x side boost, 0.92 mid atten
   },
   '360_reality': {
     // Sony 360 Reality Audio inspired - immersive spatial soundfield
@@ -68,9 +70,9 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [0.0, 0.0, -0.6, -0.6, -0.6, 0.0, +1.0, +1.2, +0.3, -0.7],
     bassBoost: 0.33,    // +0.8 dB
     trebleBoost: 0.625, // +1.5 dB
-    spatialWidth: 0.55, // 55% - wide spatial soundfield
+    spatialWidth: 0,    // Handled by spatialEnhancement (Bose-style bundled)
     reverb: 0.18,       // 18% reverb
-    spatialEnhancement: 5, // Maximum - full immersive psychoacoustic
+    spatialEnhancement: 5, // Level 5: 700µs ITD, 2.0x side boost, 0.80 mid atten (maximum)
   },
   gaming: {
     // Competitive gaming - footstep clarity and directional awareness
@@ -78,9 +80,9 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [+0.8, +0.8, +0.4, -1.1, -1.1, 0.0, +1.0, +1.7, +0.8, -1.9],
     bassBoost: 0.5,     // +1.2 dB
     trebleBoost: 0.875, // +2.1 dB
-    spatialWidth: 0.57, // 57% spatial width
+    spatialWidth: 0,    // Handled by spatialEnhancement (Bose-style bundled)
     reverb: 0.08,       // 8% reverb
-    spatialEnhancement: 3, // Moderate - positional clarity
+    spatialEnhancement: 3, // Level 3: 440µs ITD, 1.6x side boost, 0.88 mid atten
   },
   podcast: {
     // Voice clarity mode - speech intelligibility
@@ -88,7 +90,7 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [-1.9, -1.9, -0.9, -0.7, +0.4, +1.0, +1.0, +1.4, +1.8, -0.2],
     bassBoost: -0.42,   // -1.0 dB (removes rumble)
     trebleBoost: 0.958, // +2.3 dB (clarity)
-    spatialWidth: 0,    // 0% - mono-focused for speech
+    spatialWidth: 0,    // No spatial processing for speech
     reverb: 0,          // 0% reverb
     spatialEnhancement: 0, // Off - focused mono for speech
   },
@@ -98,9 +100,9 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [-0.8, -0.8, -0.4, +0.7, +1.1, +1.0, +1.0, -0.3, -0.5, -1.7],
     bassBoost: 0.75,    // +1.8 dB
     trebleBoost: 0.625, // +1.5 dB
-    spatialWidth: 0.45, // 45% - surround-like experience
+    spatialWidth: 0,    // Handled by spatialEnhancement (Bose-style bundled)
     reverb: 0.12,       // 12% reverb
-    spatialEnhancement: 4, // Enhanced - cinematic surround
+    spatialEnhancement: 4, // Level 4: 570µs ITD, 1.8x side boost, 0.84 mid atten
   },
   sports: {
     // Stadium/broadcast mode - commentary clarity with crowd atmosphere
@@ -108,9 +110,9 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [+1.2, +1.2, +0.5, -0.7, -0.7, 0.0, +1.0, +1.2, -0.9, -2.5],
     bassBoost: 0.917,   // +2.2 dB (stadium atmosphere)
     trebleBoost: 0.33,  // +0.8 dB
-    spatialWidth: 0.47, // 47% - stadium-like open soundstage
+    spatialWidth: 0,    // Handled by spatialEnhancement (Bose-style bundled)
     reverb: 0.10,       // 10% reverb
-    spatialEnhancement: 2, // Mild - broadcast clarity
+    spatialEnhancement: 2, // Level 2: 310µs ITD, 1.4x side boost, 0.92 mid atten
   },
 };
 

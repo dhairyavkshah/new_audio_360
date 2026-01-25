@@ -86,9 +86,7 @@ Audio Source
      ↓
  Treble Shelf Filter (6kHz, ±12dB)
      ↓
- Stereo Width (Mid-Side Processing, -100% to +200%)
-     ↓
- Spatial Enhancement (Psychoacoustic: bass mono, ITD 0.3ms, all-pass decorrelation)
+ Spatial Enhancement (Psychoacoustic: bass mono, ITD 50-700µs, M/S side boost 1.0-2.0x, all-pass decorrelation)
      ↓
  Multi-Tap Reverb (23ms, 41ms, 67ms, 89ms delay lines)
      ↓
@@ -114,14 +112,16 @@ Audio Source
 
 ### Immersive Modes Settings
 
-| Mode | EQ Preset | Bass Boost | Treble Boost | Stereo Width | Reverb | Spatial |
-|------|-----------|------------|--------------|--------------|--------|---------|
-| **Music** | Flat | 0 | 0 | +20% | 8% | 2 |
-| **360 Reality** | Custom (spatial) | +2 | +1 | +100% | 18% | 5 |
-| **Gaming** | Rock | +3 | +2 | +50% | 8% | 3 |
-| **Podcast** | Clarity | -2 | +1 | 0% | 0% | 0 |
-| **Movie** | Classical | +2 | +1 | +80% | 12% | 4 |
-| **Sports** | Pop | +1 | +2 | +40% | 10% | 2 |
+| Mode | EQ Preset | Bass Boost | Treble Boost | Reverb | Spatial Level | Spatial Effect |
+|------|-----------|------------|--------------|--------|---------------|----------------|
+| **Music** | Flat | 0 | 0 | 8% | 2 | 310µs ITD, 1.4x side boost |
+| **360 Reality** | Custom (spatial) | +2 | +1 | 18% | 5 | 700µs ITD, 2.0x side boost |
+| **Gaming** | Rock | +3 | +2 | 8% | 3 | 440µs ITD, 1.6x side boost |
+| **Podcast** | Clarity | -2 | +1 | 0% | 0 | Off (speech clarity) |
+| **Movie** | Classical | +2 | +1 | 12% | 4 | 570µs ITD, 1.8x side boost |
+| **Sports** | Pop | +1 | +2 | 10% | 2 | 310µs ITD, 1.4x side boost |
+
+*Note: Following Bose approach, all spatial processing is bundled into Spatial Enhancement (stereo width removed as separate control).*
 
 ### Key Files Reference
 
