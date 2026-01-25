@@ -84,6 +84,10 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   const [volume, setVolumeState] = useState(1.0);
 
   const soundRef = useRef<Audio.Sound | null>(null);
+  const playRequestIdRef = useRef<number>(0); // Track play request sequence to prevent race conditions
+  const currentStationIdRef = useRef<string | null>(null); // Track current station ID for callback validation
+  const isSwitchingStationsRef = useRef<boolean>(false); // Flag to distinguish switch vs true stop
+  const isStoppingRef = useRef<boolean>(false); // Track if a stop is in progress to prevent duplicate notifications
 
   useEffect(() => {
     loadCachedData();
@@ -113,25 +117,42 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   const setupTrackPlayerCallbacks = () => {
     TrackPlayerService.setCallbacks({
       onPlay: () => {
-        if (TrackPlayerService.getPlaybackSource() === 'radio') {
+        // Only update state if radio is the playback source, we have a current station, and not switching
+        if (TrackPlayerService.getPlaybackSource() === 'radio' && 
+            currentStationIdRef.current && 
+            !isSwitchingStationsRef.current) {
           setIsPlaying(true);
           setIsBuffering(false);
         }
       },
       onPause: () => {
-        if (TrackPlayerService.getPlaybackSource() === 'radio') {
+        if (TrackPlayerService.getPlaybackSource() === 'radio' && 
+            currentStationIdRef.current && 
+            !isSwitchingStationsRef.current) {
           setIsPlaying(false);
         }
       },
       onStop: () => {
-        if (TrackPlayerService.getPlaybackSource() === 'radio') {
+        // Only handle true stops (not during station switching or explicit stopPlayback)
+        if (TrackPlayerService.getPlaybackSource() === 'radio' && 
+            !isSwitchingStationsRef.current && 
+            !isStoppingRef.current) {
+          // True stop (stream error, remote control, etc.) - clear state
           setIsPlaying(false);
-          setCurrentStation(null);
           setIsBuffering(false);
+          if (currentStationIdRef.current) {
+            // Only clear if we have a current station and it's a true stop
+            setCurrentStation(null);
+            currentStationIdRef.current = null;
+            AudioCoordinator.notifyPlaybackStopped('radio');
+          }
         }
       },
       onStateChange: (state: typeof State) => {
         if (TrackPlayerService.getPlaybackSource() !== 'radio') return;
+        // Only apply state changes if we have a current station and not switching
+        if (!currentStationIdRef.current || isSwitchingStationsRef.current) return;
+        
         if (state === State.Buffering) {
           setIsBuffering(true);
         } else if (state === State.Playing) {
@@ -207,13 +228,53 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Create a callback factory that binds to the current sound instance and request ID
+  const createPlaybackStatusCallback = useCallback((boundRequestId: number) => {
+    return (status: AVPlaybackStatus) => {
+      // Ignore stale callbacks from previous play requests
+      if (playRequestIdRef.current !== boundRequestId) {
+        return;
+      }
+      
+      // Ignore callbacks during switching or stopping
+      if (isSwitchingStationsRef.current || isStoppingRef.current) {
+        return;
+      }
+      
+      if (!status.isLoaded) {
+        if (status.error) {
+          console.error('[OnlineRadioContext] Playback error:', status.error);
+          setError('Stream playback failed. The station may be temporarily unavailable.');
+          // True stop due to stream error - clear state and notify
+          setIsPlaying(false);
+          setIsBuffering(false);
+          setCurrentStation(null);
+          currentStationIdRef.current = null;
+          AudioCoordinator.notifyPlaybackStopped('radio');
+        }
+        return;
+      }
+
+      setIsPlaying(status.isPlaying);
+      setIsBuffering(status.isBuffering);
+    };
+  }, []);
+  
+  // Keep the old callback for backwards compatibility (won't be used, but keeps signature)
   const onPlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
+    // This is a fallback, actual callbacks are bound per-request
+    if (isSwitchingStationsRef.current || isStoppingRef.current) return;
+    
     if (!status.isLoaded) {
       if (status.error) {
         console.error('[OnlineRadioContext] Playback error:', status.error);
         setError('Stream playback failed. The station may be temporarily unavailable.');
+        // True stop due to stream error - clear state and notify
         setIsPlaying(false);
         setIsBuffering(false);
+        setCurrentStation(null);
+        currentStationIdRef.current = null;
+        AudioCoordinator.notifyPlaybackStopped('radio');
       }
       return;
     }
@@ -383,8 +444,38 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const playStation = useCallback(async (station: OnlineRadioStation): Promise<void> => {
-    // Helper function to stop any current playback
-    const stopCurrentPlayback = async () => {
+    // Increment play request ID to track this specific request
+    const thisRequestId = ++playRequestIdRef.current;
+    
+    // Helper to check if this request is still valid (no newer request has started)
+    const isRequestStale = () => playRequestIdRef.current !== thisRequestId;
+    
+    // Helper function to stop current playback without notifying (for switching)
+    const stopCurrentPlaybackForSwitch = async () => {
+      try {
+        if (TrackPlayerService.isAvailable()) {
+          await TrackPlayerService.stop();
+        }
+        if (soundRef.current) {
+          await soundRef.current.stopAsync();
+          await soundRef.current.unloadAsync();
+          soundRef.current = null;
+        }
+        // Don't notify AudioCoordinator when switching - only clear local state
+        setIsPlaying(false);
+        setIsBuffering(false);
+        currentStationIdRef.current = null;
+      } catch (err) {
+        console.warn('[OnlineRadioContext] Error stopping playback for switch:', err);
+      }
+    };
+    
+    // Helper function to stop playback with notification (user toggle)
+    const stopCurrentPlaybackWithNotify = async () => {
+      // Invalidate pending requests and set stopping flag to prevent duplicate notifications
+      playRequestIdRef.current++;
+      isStoppingRef.current = true;
+      
       try {
         if (TrackPlayerService.isAvailable()) {
           await TrackPlayerService.stop();
@@ -397,31 +488,51 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         setIsPlaying(false);
         setIsBuffering(false);
         setCurrentStation(null);
+        currentStationIdRef.current = null;
         AudioCoordinator.notifyPlaybackStopped('radio');
       } catch (err) {
         console.warn('[OnlineRadioContext] Error stopping playback:', err);
+      } finally {
+        isStoppingRef.current = false;
       }
     };
 
     // If same station is tapped and already playing or buffering, toggle it off
-    if (currentStation?.stationuuid === station.stationuuid && (isPlaying || isBuffering)) {
+    if (currentStationIdRef.current === station.stationuuid && (isPlaying || isBuffering)) {
       console.log('[OnlineRadioContext] Same station tapped, stopping:', station.name);
-      await stopCurrentPlayback();
+      await stopCurrentPlaybackWithNotify();
       return;
     }
 
     setError(null);
     
-    // Always stop any current playback first before starting new station
-    if (currentStation || isPlaying || isBuffering) {
+    // Always stop any current playback first before starting new station (without notify)
+    if (currentStationIdRef.current || isPlaying || isBuffering) {
       console.log('[OnlineRadioContext] Stopping current playback before starting new station');
-      await stopCurrentPlayback();
+      // Set switching flag to prevent TrackPlayer callbacks from interfering
+      isSwitchingStationsRef.current = true;
+      await stopCurrentPlaybackForSwitch();
+    }
+    
+    // Check if request is stale after async operation
+    if (isRequestStale()) {
+      console.log('[OnlineRadioContext] Play request stale after stop, aborting');
+      isSwitchingStationsRef.current = false;
+      return;
     }
     
     setIsBuffering(true);
+    currentStationIdRef.current = station.stationuuid;
 
     try {
       await AudioCoordinator.requestPlayback('radio');
+      
+      // Check staleness after async operation
+      if (isRequestStale()) {
+        console.log('[OnlineRadioContext] Play request stale after coordinator, aborting');
+        isSwitchingStationsRef.current = false;
+        return;
+      }
 
       const streamUrl = station.url_resolved || station.url;
       if (!streamUrl) {
@@ -431,6 +542,13 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       if (TrackPlayerService.isAvailable()) {
         try {
           await TrackPlayerService.stop();
+          
+          // Check staleness
+          if (isRequestStale()) {
+            console.log('[OnlineRadioContext] Play request stale, aborting TrackPlayer setup');
+            isSwitchingStationsRef.current = false;
+            return;
+          }
           
           TrackPlayerService.setPlaybackSource('radio');
           
@@ -445,6 +563,17 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
           await TrackPlayerService.setQueue([trackMetadata]);
           await TrackPlayerService.play();
+          
+          // Final staleness check before updating state
+          if (isRequestStale()) {
+            console.log('[OnlineRadioContext] Play request stale after play, cleaning up');
+            await TrackPlayerService.stop();
+            isSwitchingStationsRef.current = false;
+            return;
+          }
+          
+          // Clear switching flag - playback started successfully
+          isSwitchingStationsRef.current = false;
           setCurrentStation(station);
           setIsPlaying(true);
           setIsBuffering(false);
@@ -454,10 +583,19 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
           return;
         } catch (nativeErr) {
           console.warn('[OnlineRadioContext] TrackPlayerService failed, falling back to expo-av:', nativeErr);
+          // Clear switching flag before falling back to expo-av so callbacks work correctly
+          isSwitchingStationsRef.current = false;
         }
       }
 
       await cleanupSound();
+      
+      // Check staleness
+      if (isRequestStale()) {
+        console.log('[OnlineRadioContext] Play request stale after cleanup, aborting');
+        isSwitchingStationsRef.current = false;
+        return;
+      }
 
       await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
@@ -468,6 +606,9 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
       console.log('[OnlineRadioContext] Loading stream:', streamUrl);
       
+      // Create a bound callback that validates against this specific request ID
+      const boundStatusCallback = createPlaybackStatusCallback(thisRequestId);
+      
       const { sound } = await Audio.Sound.createAsync(
         { uri: streamUrl },
         { 
@@ -477,9 +618,20 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
           positionMillis: 0,
           isLooping: false,
         },
-        onPlaybackStatusUpdate
+        boundStatusCallback
       );
+      
+      // Final staleness check
+      if (isRequestStale()) {
+        console.log('[OnlineRadioContext] Play request stale after sound creation, cleaning up');
+        await sound.stopAsync();
+        await sound.unloadAsync();
+        isSwitchingStationsRef.current = false;
+        return;
+      }
 
+      // Clear switching flag - playback started successfully
+      isSwitchingStationsRef.current = false;
       soundRef.current = sound;
       setCurrentStation(station);
       setIsPlaying(true);
@@ -489,16 +641,28 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
 
       OnlineRadioService.reportStationClick(station.stationuuid).catch(() => {});
     } catch (err) {
-      console.error('[OnlineRadioContext] playStation error:', err);
-      const message = err instanceof Error ? err.message : 'Failed to play station';
-      setError(message);
-      setIsPlaying(false);
-      setIsBuffering(false);
-      setCurrentStation(null);
+      // Clear switching flag on error
+      isSwitchingStationsRef.current = false;
+      // Only update error state if this request is still current
+      if (!isRequestStale()) {
+        console.error('[OnlineRadioContext] playStation error:', err);
+        const message = err instanceof Error ? err.message : 'Failed to play station';
+        setError(message);
+        setIsPlaying(false);
+        setIsBuffering(false);
+        setCurrentStation(null);
+        currentStationIdRef.current = null;
+      }
     }
-  }, [volume, onPlaybackStatusUpdate, currentStation, isPlaying, isBuffering]);
+  }, [volume, createPlaybackStatusCallback, isPlaying, isBuffering]);
 
   const stopPlayback = useCallback(async (): Promise<void> => {
+    // Invalidate any pending play requests
+    playRequestIdRef.current++;
+    
+    // Set stopping flag to prevent duplicate notifications from callbacks
+    isStoppingRef.current = true;
+    
     try {
       if (TrackPlayerService.isAvailable()) {
         try {
@@ -516,9 +680,13 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
       setIsPlaying(false);
       setIsBuffering(false);
       setCurrentStation(null);
+      currentStationIdRef.current = null;
       AudioCoordinator.notifyPlaybackStopped('radio');
     } catch (err) {
       console.error('[OnlineRadioContext] stopPlayback error:', err);
+    } finally {
+      // Clear stopping flag
+      isStoppingRef.current = false;
     }
   }, []);
 
