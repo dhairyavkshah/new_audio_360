@@ -106,25 +106,6 @@ interface BassBoostModuleInterface {
   release(): Promise<{ success: boolean }>;
 }
 
-// Virtualizer Module Types
-export interface VirtualizerAttachResult {
-  success: boolean;
-  error?: string;
-  strengthSupported?: boolean;
-  minStrength?: number;
-  maxStrength?: number;
-}
-
-interface VirtualizerModuleInterface {
-  isAvailable(): boolean;
-  attach(sessionId: number): Promise<VirtualizerAttachResult>;
-  setEnabled(enabled: boolean): { success: boolean; enabled?: boolean; error?: string };
-  setStrength(strength: number): { success: boolean; strength?: number; error?: string };
-  getStrength(): number;
-  getProperties(): { enabled: boolean; strengthSupported: boolean; strength: number };
-  release(): Promise<{ success: boolean }>;
-}
-
 // Spatial Enhancement Module Types
 interface SpatialEnhancementModuleInterface {
   isAvailable(): boolean;
@@ -196,8 +177,6 @@ export interface ImmersiveModeSettings {
   equalizerBandLevels: number[];
   bassBoostEnabled?: boolean;
   bassBoostStrength?: number;
-  virtualizerEnabled?: boolean;
-  virtualizerStrength?: number;
   spatialEnhancementLevel?: number;
 }
 
@@ -223,7 +202,6 @@ interface ImmersiveModeEngineModuleInterface {
   getAvailableModes(): ImmersiveModeInfo[];
   setCustomParameters(
     bassStrength: number,
-    virtualizerStrength: number,
     loudnessGain: number,
     eqPreset: number
   ): Promise<ImmersiveModeResult>;
@@ -263,7 +241,6 @@ interface MediaStoreScannerModuleInterface {
 let PlaybackEngineModuleNative: PlaybackEngineModuleInterface | null = null;
 let EqualizerModuleNative: EqualizerModuleInterface | null = null;
 let BassBoostModuleNative: BassBoostModuleInterface | null = null;
-let VirtualizerModuleNative: VirtualizerModuleInterface | null = null;
 let SpatialEnhancementModuleNative: SpatialEnhancementModuleInterface | null = null;
 let WaveformAnalyzerModuleNative: WaveformAnalyzerModuleInterface | null = null;
 let ImmersiveModeEngineModuleNative: ImmersiveModeEngineModuleInterface | null = null;
@@ -286,12 +263,6 @@ if (Platform.OS === 'android') {
     BassBoostModuleNative = requireNativeModule<BassBoostModuleInterface>('BassBoostModule');
   } catch (e) {
     console.warn('BassBoostModule not available:', e);
-  }
-  
-  try {
-    VirtualizerModuleNative = requireNativeModule<VirtualizerModuleInterface>('VirtualizerModule');
-  } catch (e) {
-    console.warn('VirtualizerModule not available:', e);
   }
   
   try {
@@ -820,85 +791,6 @@ export const BassBoostModule = {
   }
 };
 
-// Virtualizer Module Export
-export const VirtualizerModule = {
-  isAvailable: (): boolean => {
-    return Platform.OS === 'android' && VirtualizerModuleNative !== null;
-  },
-
-  attach: async (audioSessionId: number): Promise<VirtualizerAttachResult> => {
-    if (!VirtualizerModuleNative) {
-      return { success: false, error: 'Virtualizer not available on this platform' };
-    }
-    try {
-      return await VirtualizerModuleNative.attach(audioSessionId);
-    } catch (error) {
-      console.error('VirtualizerModule.attach error:', error);
-      return { success: false, error: String(error) };
-    }
-  },
-
-  setEnabled: (enabled: boolean): { success: boolean; error?: string } => {
-    if (!VirtualizerModuleNative) {
-      return { success: false, error: 'Virtualizer not available' };
-    }
-    try {
-      return VirtualizerModuleNative.setEnabled(enabled);
-    } catch (error) {
-      console.error('VirtualizerModule.setEnabled error:', error);
-      return { success: false, error: String(error) };
-    }
-  },
-
-  setStrength: (strength: number): { success: boolean; error?: string } => {
-    if (!VirtualizerModuleNative) {
-      return { success: false, error: 'Virtualizer not available' };
-    }
-    try {
-      return VirtualizerModuleNative.setStrength(strength);
-    } catch (error) {
-      console.error('VirtualizerModule.setStrength error:', error);
-      return { success: false, error: String(error) };
-    }
-  },
-
-  getStrength: (): number => {
-    if (!VirtualizerModuleNative) {
-      return 0;
-    }
-    try {
-      return VirtualizerModuleNative.getStrength();
-    } catch (error) {
-      console.error('VirtualizerModule.getStrength error:', error);
-      return 0;
-    }
-  },
-
-  getProperties: (): { enabled: boolean; strengthSupported: boolean; strength: number } => {
-    if (!VirtualizerModuleNative) {
-      return { enabled: false, strengthSupported: false, strength: 0 };
-    }
-    try {
-      return VirtualizerModuleNative.getProperties();
-    } catch (error) {
-      console.error('VirtualizerModule.getProperties error:', error);
-      return { enabled: false, strengthSupported: false, strength: 0 };
-    }
-  },
-
-  release: async (): Promise<{ success: boolean }> => {
-    if (!VirtualizerModuleNative) {
-      return { success: true };
-    }
-    try {
-      return await VirtualizerModuleNative.release();
-    } catch (error) {
-      console.error('VirtualizerModule.release error:', error);
-      return { success: false };
-    }
-  }
-};
-
 // Spatial Enhancement Module Export
 export const SpatialEnhancementModule = {
   isAvailable: (): boolean => {
@@ -1228,7 +1120,6 @@ export const ImmersiveModeEngineModule = {
 
   setCustomParameters: async (
     bassStrength: number,
-    virtualizerStrength: number,
     loudnessGain: number,
     eqPreset: number = -1
   ): Promise<ImmersiveModeResult> => {
@@ -1238,7 +1129,7 @@ export const ImmersiveModeEngineModule = {
     try {
       return await ImmersiveModeEngineModuleNative.setCustomParameters(
         bassStrength,
-        virtualizerStrength,
+        0,
         loudnessGain,
         eqPreset
       );

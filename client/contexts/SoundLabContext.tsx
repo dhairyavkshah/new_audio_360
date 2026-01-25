@@ -72,7 +72,6 @@ const VALID_IMMERSIVE_MODES: ImmersiveMode[] = ['off', 'music', '360_reality', '
 interface ImmersiveEffectSettings {
   reverb: number;
   delay: number;
-  stereoWidth: number;
 }
 
 interface SoundLabContextType {
@@ -132,7 +131,7 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
 
   // Immersive modes now only use zero-sum EQ - no spatial effects
   const immersiveEffect: ImmersiveEffectSettings = useMemo(() => {
-    return { reverb: 0, delay: 0, stereoWidth: 1 };
+    return { reverb: 0, delay: 0 };
   }, []);
 
   const getImmersiveModeInfo = useCallback((modeId: ImmersiveMode) => {

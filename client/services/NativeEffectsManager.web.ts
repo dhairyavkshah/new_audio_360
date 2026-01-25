@@ -3,7 +3,6 @@ import type { EQBands, SoundLabMode } from '@/contexts/SoundLabContext';
 interface ImmersiveEffect {
   reverb: number;
   delay: number;
-  stereoWidth: number;
 }
 
 export type AudioSessionSource = 'music' | 'radio' | 'none';

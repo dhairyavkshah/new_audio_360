@@ -39,8 +39,7 @@ Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter →
 - **Treble Boost Filter**: Highshelf at 6kHz (±12 dB range).
 - **Multi-Tap Delay Reverb**: 4 delay lines (23ms, 41ms, 67ms, 89ms) with equal-power crossfade wet/dry mixing.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
-- **Stereo Width/Virtualizer**: Mid-side processing for stereo width control (-100% mono to +200% wide). VirtualizerModule and ImmersiveModeEngineModule delegate to SoftwareDSPAudioProcessor.
-- **Spatial Enhancement**: Psychoacoustic stereo enhancement with explicit per-mode parameters. Features: bass mono enforcement (below 150Hz), ITD micro-delay (0-0.7ms), all-pass decorrelation (3kHz/5kHz), wet/dry mixing. Each immersive mode has explicit settings: Side Gain (0-16%), ITD (0-0.45ms), Decorrelation (0-12%), Wet Mix (0-45%).
+- **Spatial Enhancement**: Psychoacoustic stereo enhancement with explicit per-mode parameters. Features: Mid/Side processing, bass mono enforcement (below 150Hz), ITD micro-delay (0-0.7ms), all-pass decorrelation (3kHz/5kHz), wet/dry mixing. Each immersive mode has explicit settings: Side Gain (0-16%), ITD (0-0.45ms), Decorrelation (0-12%), Wet Mix (0-45%).
 - **EQ Presets**: 10 total (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity) with zero-sum normalization.
 - **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, reverb, and explicit spatial enhancement parameters (Side Gain, ITD, Decorrelation, Wet Mix).
 
@@ -149,7 +148,7 @@ A 4-tab system with a persistent MiniPlayer:
 
 ### Native Modules (Android-specific)
 - **Audio Processing**: `SoftwareDSPAudioProcessor` (core DSP engine), `BiquadFilter`, `Limiter`.
-- **Audio Control**: `EqualizerModule`, `BassBoostModule`, `VirtualizerModule`, `ImmersiveModeEngineModule` (all delegate to `SoftwareDSPAudioProcessor`).
+- **Audio Control**: `EqualizerModule`, `BassBoostModule`, `SpatialEnhancementModule`, `ImmersiveModeEngineModule` (all delegate to `SoftwareDSPAudioProcessor`).
 - **System Modules**: `AudioSessionBridgeModule`, `WaveformAnalyzerModule` (for read-only FFT), `FMRadioModule`, `LicenseVerificationModule`, `MediaStoreScannerModule` (efficient audio file scanning), `MetadataExtractorModule` (ID3 fallback).
 - No Android hardware audio effects are used for audio processing.
 

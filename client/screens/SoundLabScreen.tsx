@@ -20,7 +20,6 @@ import {
   getCustomEQPresets, saveCustomEQPresets,
   getBassControlLevel, saveBassControlLevel,
   getTrebleControlLevel, saveTrebleControlLevel,
-  getVirtualizerLevel, saveVirtualizerLevel,
   getSpatialEnhancement, saveSpatialEnhancement,
   CustomEQPreset
 } from "@/lib/storage";
@@ -30,7 +29,6 @@ import {
   ImmersiveMode,
   ImmersiveModeInfo,
   BassBoostModule,
-  VirtualizerModule,
   SpatialEnhancementModule
 } from "../../modules/audio-effects";
 import NativeAudioService from "@/services/NativeAudioService";
@@ -45,80 +43,70 @@ const EQ_PRESETS = [
     description: "Natural, unprocessed sound",
     bands: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     bassControl: 0,
-    trebleControl: 0,
-    virtualizer: 0
+    trebleControl: 0
   },
   { 
     name: "Rock", 
     description: "Punchy bass, crisp guitars",
     bands: [3, 3, 2, 1, -1, 0, 2, 2, 3, 3],
     bassControl: 0,
-    trebleControl: 0,
-    virtualizer: 0
+    trebleControl: 0
   },
   { 
     name: "Pop", 
     description: "Bright vocals, balanced bass",
     bands: [2, 2, 1, 2, 2, 3, 3, 2, 2, 2],
     bassControl: 0,
-    trebleControl: 0,
-    virtualizer: 0
+    trebleControl: 0
   },
   { 
     name: "Jazz", 
     description: "Warm mids, smooth highs",
     bands: [2, 2, 3, 2, 1, 0, -1, -1, 0, 0],
     bassControl: 0,
-    trebleControl: 0,
-    virtualizer: 0
+    trebleControl: 0
   },
   { 
     name: "Classical", 
     description: "Wide dynamics, clear separation",
     bands: [1, 1, 1, 0, 0, 1, 2, 2, 3, 3],
     bassControl: 0,
-    trebleControl: 0,
-    virtualizer: 0
+    trebleControl: 0
   },
   { 
     name: "Electronic", 
     description: "Deep bass, sparkling highs",
     bands: [4, 4, 3, 1, -1, 0, 2, 3, 4, 4],
     bassControl: 0,
-    trebleControl: 0,
-    virtualizer: 0
+    trebleControl: 0
   },
   { 
     name: "Hip-Hop", 
     description: "Heavy sub-bass, clear vocals",
     bands: [5, 5, 3, 2, 1, 2, 2, 1, 1, 1],
     bassControl: 0,
-    trebleControl: 0,
-    virtualizer: 0
+    trebleControl: 0
   },
   { 
     name: "Acoustic", 
     description: "Natural warmth, presence",
     bands: [1, 1, 2, 2, 2, 2, 1, 1, 1, 1],
     bassControl: 0,
-    trebleControl: 0,
-    virtualizer: 0
+    trebleControl: 0
   },
   { 
     name: "Bass+", 
     description: "Party Mode optimized",
     bands: [5, 5, 3, 1, 0, -1, -1, -1, -1, -1],
     bassControl: 0,
-    trebleControl: 0,
-    virtualizer: 0
+    trebleControl: 0
   },
   { 
     name: "Clarity", 
     description: "Podcast & Movie optimized",
     bands: [-2, -2, -1, 0, 1, 2, 2, 3, 3, 3],
     bassControl: 0,
-    trebleControl: 0,
-    virtualizer: 0
+    trebleControl: 0
   },
 ];
 
@@ -158,7 +146,6 @@ function SoundLabScreen() {
   
   const [bassControl, setBassControl] = useState(0);
   const [trebleControl, setTrebleControl] = useState(0);
-  const [virtualizerLevel, setVirtualizerLevel] = useState(0);
   const [spatialEnhancement, setSpatialEnhancement] = useState(0);
 
   const MAX_CUSTOM_PRESETS = 5;
@@ -174,10 +161,8 @@ function SoundLabScreen() {
     }));
   }, []);
 
-  const applyAudioEffects = useCallback((bass: number, treble: number, virtualizer: number) => {
-    // Apply virtualizer on web
+  const applyAudioEffects = useCallback((bass: number, treble: number) => {
     if (Platform.OS === 'web') {
-      WebAudioEffectsEngine.setVirtualizer(virtualizer);
       return;
     }
     
@@ -194,21 +179,6 @@ function SoundLabScreen() {
         // Silently handle error in production
       }
     }
-    
-    // Android Virtualizer via software DSP - supports both narrowing and widening
-    if (VirtualizerModule.isAvailable()) {
-      try {
-        if (virtualizer === 0) {
-          VirtualizerModule.setEnabled(false);
-        } else {
-          VirtualizerModule.setEnabled(true);
-          // Software DSP handles direction: negative = narrow, positive = widen
-          VirtualizerModule.setStrength(virtualizer * 200);
-        }
-      } catch (error) {
-        // Silently handle error in production
-      }
-    }
   }, []);
 
   useEffect(() => {
@@ -216,14 +186,13 @@ function SoundLabScreen() {
       const modes = ImmersiveModeEngineModule.getAvailableModes();
       setAvailableModes(modes);
 
-      const [eqPreset, soundMode, bands, presets, bassLvl, trebleLvl, virtLvl, spatialEnabled] = await Promise.all([
+      const [eqPreset, soundMode, bands, presets, bassLvl, trebleLvl, spatialEnabled] = await Promise.all([
         getEQPreset(),
         getSoundMode(),
         getCustomEQBands(),
         getCustomEQPresets(),
         getBassControlLevel(),
         getTrebleControlLevel(),
-        getVirtualizerLevel(),
         getSpatialEnhancement()
       ]);
       
@@ -233,7 +202,6 @@ function SoundLabScreen() {
       setBassBoost(bassLvl); // Sync to context for software DSP
       setTrebleControl(trebleLvl);
       setTrebleBoost(trebleLvl); // Sync to context for software DSP
-      setVirtualizerLevel(virtLvl);
       setSpatialEnhancement(spatialEnabled);
       
       if (eqPreset) {
@@ -305,27 +273,24 @@ function SoundLabScreen() {
         await clearSoundMode();
         await saveEQPreset(preset);
         await NativeAudioService.setImmersiveMode('off');
-        // Apply the preset's EQ bands and load bass/treble/virtualizer values
+        // Apply the preset's EQ bands and load bass/treble values
         const presetData = EQ_PRESETS.find(p => p.name === preset);
         if (presetData) {
           NativeEffectsManager.applyTenBandEQ(presetData.bands);
-          // Load bass/treble/virtualizer values from preset into state
+          // Load bass/treble values from preset into state
           const newBass = presetData.bassControl ?? 0;
           const newTreble = presetData.trebleControl ?? 0;
-          const newVirt = presetData.virtualizer ?? 0;
           setBassControl(newBass);
           setBassBoost(newBass); // Sync to context for software DSP
           setTrebleControl(newTreble);
           setTrebleBoost(newTreble); // Sync to context for software DSP
-          setVirtualizerLevel(newVirt);
           // Persist to storage
           await Promise.all([
             saveBassControlLevel(newBass),
-            saveTrebleControlLevel(newTreble),
-            saveVirtualizerLevel(newVirt)
+            saveTrebleControlLevel(newTreble)
           ]);
           // Apply effects to native audio
-          applyAudioEffects(newBass, newTreble, newVirt);
+          applyAudioEffects(newBass, newTreble);
         }
       }
     }
@@ -376,37 +341,6 @@ function SoundLabScreen() {
     await saveTrebleControlLevel(level);
   };
 
-  const handleVirtualizerLevelChange = async (level: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setVirtualizerLevel(level);
-    await saveVirtualizerLevel(level);
-    
-    // Apply virtualizer on web using WebAudioEffectsEngine
-    if (Platform.OS === 'web') {
-      WebAudioEffectsEngine.setVirtualizer(level);
-      return;
-    }
-    
-    // Apply virtualizer on Android via software DSP (SoftwareDSPAudioProcessor)
-    // Negative values = narrower stereo (toward mono)
-    // Zero = disable effect (original stereo)
-    // Positive values = wider stereo field
-    if (VirtualizerModule.isAvailable()) {
-      try {
-        if (level === 0) {
-          VirtualizerModule.setEnabled(false);
-        } else {
-          VirtualizerModule.setEnabled(true);
-          // Pass level directly (-5 to +5) - software DSP handles direction
-          // Negative = narrow toward mono, Positive = widen stereo
-          VirtualizerModule.setStrength(level * 200); // -1000 to +1000 range
-        }
-      } catch (error) {
-        // Silently handle error in production
-      }
-    }
-  };
-
   const handleSpatialEnhancementChange = async (level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSpatialEnhancement(level);
@@ -452,8 +386,7 @@ function SoundLabScreen() {
       name: newPresetName.trim(),
       bands: [...customBands],
       bassControl,
-      trebleControl,
-      virtualizer: virtualizerLevel
+      trebleControl
     };
     
     const updatedPresets = [...customPresets, newPreset];
@@ -473,19 +406,16 @@ function SoundLabScreen() {
     
     const newBass = preset.bassControl ?? 0;
     const newTreble = preset.trebleControl ?? 0;
-    const newVirt = preset.virtualizer ?? 0;
     setBassControl(newBass);
     setBassBoost(newBass); // Sync to context for software DSP
     setTrebleControl(newTreble);
     setTrebleBoost(newTreble); // Sync to context for software DSP
-    setVirtualizerLevel(newVirt);
     await Promise.all([
       saveBassControlLevel(newBass),
-      saveTrebleControlLevel(newTreble),
-      saveVirtualizerLevel(newVirt)
+      saveTrebleControlLevel(newTreble)
     ]);
     // Apply effects to native audio
-    applyAudioEffects(newBass, newTreble, newVirt);
+    applyAudioEffects(newBass, newTreble);
   };
 
   const handleDeletePreset = (preset: CustomEQPreset) => {
@@ -516,7 +446,6 @@ function SoundLabScreen() {
     setBassBoost(presetBass); // Sync to context for software DSP
     setTrebleControl(presetTreble);
     setTrebleBoost(presetTreble); // Sync to context for software DSP
-    setVirtualizerLevel(preset.virtualizer ?? 0);
     NativeEffectsManager.applyTenBandEQ(preset.bands);
     setShowEditDialog(true);
   };
@@ -531,7 +460,7 @@ function SoundLabScreen() {
     
     const updatedPresets = customPresets.map(p => 
       p.id === editingPreset.id 
-        ? { ...p, name: editPresetName.trim(), bands: [...customBands], bassControl, trebleControl, virtualizer: virtualizerLevel }
+        ? { ...p, name: editPresetName.trim(), bands: [...customBands], bassControl, trebleControl }
         : p
     );
     

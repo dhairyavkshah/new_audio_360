@@ -765,8 +765,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     
     if (stereoWidenerRef.current) {
-      const pan = soundLabMode === 'immersive' ? (immersiveEffect.stereoWidth - 1) * 0.3 : 0;
-      stereoWidenerRef.current.pan.value = Math.max(-1, Math.min(1, pan));
+      stereoWidenerRef.current.pan.value = 0;
     }
     if (delayGainRef.current) {
       delayGainRef.current.gain.value = soundLabMode === 'immersive' ? immersiveEffect.reverb * 0.3 : 0;
@@ -860,8 +859,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         delayGainRef.current.gain.value = soundLabMode === 'immersive' ? immersiveEffect.reverb * 0.3 : 0;
         if (soundLabMode === 'immersive') {
           delayNodeRef.current.delayTime.value = immersiveEffect.delay / 1000;
-          const pan = (immersiveEffect.stereoWidth - 1) * 0.3;
-          stereoWidenerRef.current.pan.value = Math.max(-1, Math.min(1, pan));
+          stereoWidenerRef.current.pan.value = 0;
         }
 
         // Create limiter (DynamicsCompressorNode configured as brickwall limiter)

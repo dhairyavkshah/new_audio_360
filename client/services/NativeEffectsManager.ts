@@ -29,7 +29,7 @@ class NativeEffectsManagerClass {
     this.musicSessionId = audioSessionId;
     this.currentSource = 'music';
 
-    // Only attach Equalizer - NO BassBoost or Virtualizer
+    // Only attach Equalizer
     const eqResult = await EqualizerModule.attach(audioSessionId);
 
     this.equalizerAttached = eqResult.success;
@@ -64,7 +64,7 @@ class NativeEffectsManagerClass {
     await this.releaseInternal();
 
     try {
-      // Only attach Equalizer - NO BassBoost or Virtualizer
+      // Only attach Equalizer
       const eqResult = await EqualizerModule.attach(sessionId);
 
       this.equalizerAttached = eqResult.success;

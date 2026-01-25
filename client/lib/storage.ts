@@ -19,14 +19,11 @@ const STORAGE_KEYS = {
   SELECTED_FOLDERS: '@new_audio_360_selected_folders',
   WEB_FOLDER_DATA: '@new_audio_360_web_folder_data',
   BASS_BOOST_ENABLED: '@new_audio_360_bass_boost_enabled',
-  VIRTUALIZER_ENABLED: '@new_audio_360_virtualizer_enabled',
   BASS_BOOST_STRENGTH: '@new_audio_360_bass_boost_strength',
-  VIRTUALIZER_STRENGTH: '@new_audio_360_virtualizer_strength',
   CUSTOM_EQ_BANDS: '@new_audio_360_custom_eq_bands',
   CUSTOM_EQ_PRESETS: '@new_audio_360_custom_eq_presets',
   BASS_CONTROL_LEVEL: '@new_audio_360_bass_control_level',
   TREBLE_CONTROL_LEVEL: '@new_audio_360_treble_control_level',
-  VIRTUALIZER_LEVEL: '@new_audio_360_virtualizer_level',
   SPATIAL_ENHANCEMENT: '@new_audio_360_spatial_enhancement',
 };
 
@@ -36,7 +33,6 @@ export interface CustomEQPreset {
   bands: number[];
   bassControl?: number;
   trebleControl?: number;
-  virtualizer?: number;
 }
 
 export interface WebFolderSong {
@@ -223,24 +219,6 @@ export async function getBassBoostEnabled(): Promise<boolean> {
     return data ? JSON.parse(data) : false;
   } catch (error) {
     console.error('Error getting bass boost setting:', error);
-    return false;
-  }
-}
-
-export async function saveVirtualizerEnabled(enabled: boolean): Promise<void> {
-  try {
-    await AsyncStorage.setItem(STORAGE_KEYS.VIRTUALIZER_ENABLED, JSON.stringify(enabled));
-  } catch (error) {
-    console.error('Error saving virtualizer setting:', error);
-  }
-}
-
-export async function getVirtualizerEnabled(): Promise<boolean> {
-  try {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.VIRTUALIZER_ENABLED);
-    return data ? JSON.parse(data) : false;
-  } catch (error) {
-    console.error('Error getting virtualizer setting:', error);
     return false;
   }
 }
@@ -492,24 +470,6 @@ export async function getBassBoostStrength(): Promise<number> {
   }
 }
 
-export async function saveVirtualizerStrength(strength: number): Promise<void> {
-  try {
-    await AsyncStorage.setItem(STORAGE_KEYS.VIRTUALIZER_STRENGTH, JSON.stringify(strength));
-  } catch (error) {
-    console.error('Error saving virtualizer strength:', error);
-  }
-}
-
-export async function getVirtualizerStrength(): Promise<number> {
-  try {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.VIRTUALIZER_STRENGTH);
-    return data ? JSON.parse(data) : 200;
-  } catch (error) {
-    console.error('Error getting virtualizer strength:', error);
-    return 200;
-  }
-}
-
 export async function saveCustomEQBands(bands: number[]): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_EQ_BANDS, JSON.stringify(bands));
@@ -578,24 +538,6 @@ export async function getTrebleControlLevel(): Promise<number> {
     return data ? JSON.parse(data) : 0;
   } catch (error) {
     console.error('Error getting treble control level:', error);
-    return 0;
-  }
-}
-
-export async function saveVirtualizerLevel(level: number): Promise<void> {
-  try {
-    await AsyncStorage.setItem(STORAGE_KEYS.VIRTUALIZER_LEVEL, JSON.stringify(level));
-  } catch (error) {
-    console.error('Error saving virtualizer level:', error);
-  }
-}
-
-export async function getVirtualizerLevel(): Promise<number> {
-  try {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.VIRTUALIZER_LEVEL);
-    return data ? JSON.parse(data) : 0;
-  } catch (error) {
-    console.error('Error getting virtualizer level:', error);
     return 0;
   }
 }

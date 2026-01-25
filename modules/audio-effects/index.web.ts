@@ -44,12 +44,6 @@ export interface BassBoostAttachResult {
   strengthSupported?: boolean;
 }
 
-export interface VirtualizerAttachResult {
-  success: boolean;
-  error?: string;
-  strengthSupported?: boolean;
-}
-
 export interface WaveformData {
   waveform: number[];
   rms: number;
@@ -133,17 +127,6 @@ export const BassBoostModule = {
   release: async () => ({ success: true }),
 };
 
-// Web stub for VirtualizerModule
-export const VirtualizerModule = {
-  isAvailable: () => false,
-  attach: async (): Promise<VirtualizerAttachResult> => ({ success: false, error: 'Not available on web' }),
-  setEnabled: () => ({ success: false, error: 'Not available on web' }),
-  setStrength: () => ({ success: false, error: 'Not available on web' }),
-  getStrength: () => 0,
-  getProperties: () => ({ enabled: false, strengthSupported: false, strength: 0 }),
-  release: async () => ({ success: true }),
-};
-
 // Web stub for WaveformAnalyzerModule
 export const WaveformAnalyzerModule = {
   isAvailable: () => false,
@@ -180,8 +163,6 @@ export interface ImmersiveModeSettings {
   equalizerEnabled: boolean;
   bassBoostEnabled: boolean;
   bassBoostStrength: number;
-  virtualizerEnabled: boolean;
-  virtualizerStrength: number;
   loudnessEnhancerEnabled: boolean;
   loudnessGain: number;
   equalizerBandLevels: number[];
@@ -193,7 +174,6 @@ export interface ImmersiveModeAttachResult {
   audioSessionId?: number;
   equalizerBands?: number;
   bassBoostSupported?: boolean;
-  virtualizerSupported?: boolean;
   loudnessEnhancerAvailable?: boolean;
 }
 
@@ -216,8 +196,6 @@ export const ImmersiveModeEngineModule = {
       equalizerEnabled: false,
       bassBoostEnabled: false,
       bassBoostStrength: 0,
-      virtualizerEnabled: false,
-      virtualizerStrength: 0,
       loudnessEnhancerEnabled: false,
       loudnessGain: 0,
       equalizerBandLevels: []

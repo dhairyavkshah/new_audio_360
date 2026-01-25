@@ -308,7 +308,6 @@ class NativeAudioServiceClass {
 
   async setCustomAudioParameters(
     bassStrength: number,
-    virtualizerStrength: number,
     loudnessGain: number,
     eqPreset: number = -1
   ): Promise<{ success: boolean; error?: string }> {
@@ -319,7 +318,6 @@ class NativeAudioServiceClass {
     try {
       const result = await ImmersiveModeEngineModule.setCustomParameters(
         bassStrength,
-        virtualizerStrength,
         loudnessGain,
         eqPreset
       );

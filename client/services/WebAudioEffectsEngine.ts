@@ -10,7 +10,7 @@ import { AudioContext, BiquadFilterNode, GainNode } from 'react-native-audio-api
  * - True stereo processing with independent L/R channel states per BiquadFilterNode
  * 
  * Signal Chain:
- * Input → 10-Band EQ → Dry/Wet Mix → Stereo Width (M/S) → Limiter → Output
+ * Input → 10-Band EQ → Dry/Wet Mix → M/S Processing (Spatial) → Limiter → Output
  *                    ↑ Multi-Tap Reverb
  * 
  * Web Audio API Compliance:
@@ -141,9 +141,8 @@ class WebAudioEffectsEngineClass {
   private currentEQValues: number[] = new Array(10).fill(0);
   private currentMode: string = 'off';
   private currentReverb: number = 0;
-  private currentVirtualizer: number = 0; // -5 to +5 range
   
-  // M/S Stereo Width Processing nodes
+  // M/S Processing nodes (for spatial enhancement)
   private stereoSplitter: ChannelSplitterNode | null = null;
   private stereoMerger: ChannelMergerNode | null = null;
   private stereoMixNode: GainNode | null = null; // Sums dry+wet before stereo splitting
@@ -151,12 +150,11 @@ class WebAudioEffectsEngineClass {
   private midGainR: GainNode | null = null;  // R contribution to Mid
   private sideGainL: GainNode | null = null; // L contribution to Side
   private sideGainR: GainNode | null = null; // R (inverted) contribution to Side
-  private sideWidth: GainNode | null = null; // Controls stereo width
+  private sideWidth: GainNode | null = null; // Side channel gain for spatial processing
   private midToL: GainNode | null = null;    // Mid to Left output
   private midToR: GainNode | null = null;    // Mid to Right output
   private sideToL: GainNode | null = null;   // Side to Left output
   private sideToR: GainNode | null = null;   // Side (inverted) to Right output
-  private stereoWidthEnabled: boolean = false;
 
   // Psychoacoustic Stereo Enhancement nodes
   private sideHighpass: globalThis.BiquadFilterNode | null = null;  // Highpass for side (no bass widening)
@@ -228,7 +226,7 @@ class WebAudioEffectsEngineClass {
         return { delay, feedback, filter };
       });
       
-      // Create M/S Stereo Width Processing nodes
+      // Create M/S processing nodes for spatial enhancement
       // Uses native Web Audio API ChannelSplitter/Merger for true stereo processing
       this.initializeStereoWidthProcessor();
 
@@ -252,9 +250,9 @@ class WebAudioEffectsEngineClass {
         filter.connect(this.wetGain!);
       });
       
-      // Mix dry and wet, then through stereo width processing, then to master output
-      // Signal chain: EQ → Dry/Wet Mix → Stereo Width → Master → Destination
-      if (this.stereoWidthEnabled && this.stereoSplitter && this.stereoMerger && this.stereoMixNode) {
+      // Mix dry and wet, then through M/S processing for spatial enhancement, then to master output
+      // Signal chain: EQ → Dry/Wet Mix → M/S Processing → Master → Destination
+      if (this.msProcessingEnabled && this.stereoSplitter && this.stereoMerger && this.stereoMixNode) {
         // Connect dry/wet to mix node first (preserves stereo before splitting)
         this.dryGain.connect(this.stereoMixNode);
         this.wetGain.connect(this.stereoMixNode);
@@ -263,7 +261,7 @@ class WebAudioEffectsEngineClass {
         // Stereo merger output to master (cast to any for native Web Audio API cross-type connection)
         (this.stereoMerger as any).connect(this.masterGain);
       } else {
-        // Fallback: bypass stereo width processing
+        // Fallback: bypass M/S processing
         this.dryGain.connect(this.masterGain);
         this.wetGain.connect(this.masterGain);
       }
@@ -286,7 +284,7 @@ class WebAudioEffectsEngineClass {
   }
 
   /**
-   * Initialize M/S (Mid-Side) Stereo Width Processing
+   * Initialize M/S (Mid-Side) processing for spatial enhancement
    * 
    * Signal Flow:
    * Input (Stereo) → Splitter → [M/S Encode] → [Width Control] → [M/S Decode] → Merger → Output
@@ -304,7 +302,7 @@ class WebAudioEffectsEngineClass {
    */
   private initializeStereoWidthProcessor(): void {
     if (!this.audioContext || Platform.OS !== 'web') {
-      console.log('[WebAudioEffectsEngine] Stereo width: Not available (non-web platform)');
+      console.log('[WebAudioEffectsEngine] M/S Processing: Not available (non-web platform)');
       return;
     }
 
@@ -315,7 +313,7 @@ class WebAudioEffectsEngineClass {
       // Check if native methods are available
       if (typeof nativeCtx.createChannelSplitter !== 'function' || 
           typeof nativeCtx.createChannelMerger !== 'function') {
-        console.log('[WebAudioEffectsEngine] Stereo width: Native channel nodes not available');
+        console.log('[WebAudioEffectsEngine] M/S Processing: Native channel nodes not available');
         return;
       }
 
@@ -432,11 +430,11 @@ class WebAudioEffectsEngineClass {
       (this.sideToL as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 0);
       (this.sideToR as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 1);
       
-      this.stereoWidthEnabled = true;
-      console.log('[WebAudioEffectsEngine] Stereo width: M/S processing with psychoacoustic chain initialized');
+      this.msProcessingEnabled = true;
+      console.log('[WebAudioEffectsEngine] M/S processing with psychoacoustic chain initialized');
     } catch (error) {
-      console.error('[WebAudioEffectsEngine] Stereo width: Failed to initialize:', error);
-      this.stereoWidthEnabled = false;
+      console.error('[WebAudioEffectsEngine] M/S processing: Failed to initialize:', error);
+      this.msProcessingEnabled = false;
     }
   }
 
@@ -447,9 +445,9 @@ class WebAudioEffectsEngineClass {
    * This method just ensures they start in disabled (passthrough) state
    */
   private initializePsychoacousticProcessor(): void {
-    if (!this.stereoWidthEnabled || !this.sideHighpass || !this.sideDelay || 
+    if (!this.msProcessingEnabled || !this.sideHighpass || !this.sideDelay || 
         !this.sidePsychoGain || !this.midAttenuation) {
-      console.log('[WebAudioEffectsEngine] Psychoacoustic: Cannot configure (stereo width not available)');
+      console.log('[WebAudioEffectsEngine] Psychoacoustic: Cannot configure (M/S processing not available)');
       return;
     }
 
@@ -497,9 +495,9 @@ class WebAudioEffectsEngineClass {
     // Clamp level to valid range
     const clampedLevel = Math.max(0, Math.min(5, Math.round(level)));
     
-    // Mono safety: don't apply if stereo width processing isn't available
-    if (!this.stereoWidthEnabled) {
-      console.log('[WebAudioEffectsEngine] Psychoacoustic: Cannot enable (stereo width not available)');
+    // Mono safety: don't apply if M/S processing isn't available
+    if (!this.msProcessingEnabled) {
+      console.log('[WebAudioEffectsEngine] Psychoacoustic: Cannot enable (M/S processing not available)');
       this.spatialEnhancementLevel = 0;
       return;
     }
@@ -565,9 +563,9 @@ class WebAudioEffectsEngineClass {
    *   - wetMix: Wet mix for psychoacoustic effect in % (blends processed/unprocessed)
    */
   applySpatialEnhancementParams(params: SpatialEnhancementParams): void {
-    // Mono safety: don't apply if stereo width processing isn't available
-    if (!this.stereoWidthEnabled) {
-      console.log('[WebAudioEffectsEngine] Psychoacoustic: Cannot enable (stereo width not available)');
+    // Mono safety: don't apply if M/S processing isn't available
+    if (!this.msProcessingEnabled) {
+      console.log('[WebAudioEffectsEngine] Psychoacoustic: Cannot enable (M/S processing not available)');
       this.spatialEnhancementLevel = 0;
       return;
     }
@@ -792,12 +790,6 @@ class WebAudioEffectsEngineClass {
 
     // Apply reverb wet/dry mix
     this.setReverb(reverb);
-    
-    // Apply stereo width via M/S processing
-    // spatialWidth: 0 = original stereo, 0.5 = +50% width, 1.0 = +100% (double width)
-    // Convert to virtualizer level: 0 → 0, 0.5 → +2.5, 1.0 → +5
-    const virtualizerLevel = spatialWidth * 5;
-    this.setVirtualizer(virtualizerLevel);
 
     // Master gain stays at 1.0 - limiter handles distortion prevention
     if (this.masterGain) {
@@ -839,52 +831,6 @@ class WebAudioEffectsEngineClass {
     }
   }
 
-  /**
-   * Set virtualizer level (-5 to +5)
-   * Negative = narrower stereo (more mono-like)
-   * Zero = original stereo
-   * Positive = wider stereo (enhanced surround)
-   * 
-   * Intelligent mapping (matches Android SoftwareDSPAudioProcessor):
-   * -5: Full mono (0% stereo width) - sideWidth = 0.0
-   * -3: Reduced stereo (40% width) - sideWidth = 0.4
-   * -1: Slightly narrower (80% width) - sideWidth = 0.8
-   *  0: Original stereo (100% width) - sideWidth = 1.0
-   * +1: Slightly wider (120% perceived width) - sideWidth = 1.2
-   * +3: Wide stereo (160% perceived width) - sideWidth = 1.6
-   * +5: Maximum surround (200% perceived width) - sideWidth = 2.0
-   * 
-   * Uses M/S (Mid-Side) processing for true stereo width control.
-   * Width capped at 2.0 (200%) to match Android implementation.
-   */
-  setVirtualizer(level: number): void {
-    const clampedLevel = Math.max(-5, Math.min(5, level));
-    this.currentVirtualizer = clampedLevel;
-    
-    // Calculate stereo width multiplier (matches Android formula)
-    // -5 = 0.0 (mono), 0 = 1.0 (original), +5 = 2.0 (double width)
-    let stereoWidth: number;
-    if (clampedLevel < 0) {
-      // Narrowing: -5 = 0%, 0 = 100%
-      stereoWidth = 1.0 + (clampedLevel / 5); // -5 → 0.0, 0 → 1.0
-    } else {
-      // Widening: 0 = 100%, +5 = 200% (matches Android's max width)
-      stereoWidth = 1.0 + (clampedLevel * 0.2); // 0 → 1.0, +5 → 2.0
-    }
-    
-    // Apply stereo width via M/S processing
-    if (this.stereoWidthEnabled && this.sideWidth) {
-      this.sideWidth.gain.value = stereoWidth;
-      console.log(`[WebAudioEffectsEngine] Virtualizer set to ${clampedLevel} (M/S width: ${(stereoWidth * 100).toFixed(0)}%)`);
-    } else {
-      console.log(`[WebAudioEffectsEngine] Virtualizer set to ${clampedLevel} (width: ${(stereoWidth * 100).toFixed(0)}%) - M/S not available`);
-    }
-  }
-
-  getVirtualizerLevel(): number {
-    return this.currentVirtualizer;
-  }
-
   setMasterVolume(volume: number): void {
     if (this.masterGain) {
       this.masterGain.gain.value = Math.max(0, Math.min(2, volume));
@@ -896,7 +842,6 @@ class WebAudioEffectsEngineClass {
       filter.gain.value = 0;
     });
     this.setReverb(0); // Reset reverb to dry
-    this.setVirtualizer(0); // Reset stereo width to original
     this.currentEQValues = new Array(10).fill(0);
     this.currentMode = 'off';
     console.log('[WebAudioEffectsEngine] EQ reset to flat');
@@ -930,7 +875,7 @@ class WebAudioEffectsEngineClass {
     this.wetGain = null;
     this.reverbDelays = [];
     
-    // Clean up M/S stereo width processing nodes
+    // Clean up M/S processing nodes
     this.stereoSplitter = null;
     this.stereoMerger = null;
     this.stereoMixNode = null;
@@ -943,7 +888,6 @@ class WebAudioEffectsEngineClass {
     this.midToR = null;
     this.sideToL = null;
     this.sideToR = null;
-    this.stereoWidthEnabled = false;
     
     // Clean up psychoacoustic enhancement nodes
     this.sideHighpass = null;
@@ -958,7 +902,6 @@ class WebAudioEffectsEngineClass {
     this.currentEQValues = new Array(10).fill(0);
     this.currentMode = 'off';
     this.currentReverb = 0;
-    this.currentVirtualizer = 0;
     
     console.log('[WebAudioEffectsEngine] Released');
   }
@@ -981,9 +924,7 @@ class WebAudioEffectsEngineClass {
       eqActive: this.currentEQValues.some(v => v !== 0),
       bassBoostActive: false, // Integrated into EQ
       trebleBoostActive: false, // Integrated into EQ
-      virtualizerActive: this.stereoWidthEnabled && this.currentVirtualizer !== 0,
       reverbActive: this.currentReverb > 0,
-      stereoWidthPercent: ((1 + this.currentVirtualizer / 5) * 100).toFixed(0) + '%',
       spatialEnhancementLevel: this.spatialEnhancementLevel,
       spatialEnhancementActive: this.spatialEnhancementLevel > 0,
       psychoacousticGain: this.sidePsychoGain?.gain.value ?? 1.0,
