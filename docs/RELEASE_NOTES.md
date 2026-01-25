@@ -12,9 +12,10 @@
 New Audio 360 v1.0 - Premium Music Player
 
 Studio-grade audio experience:
-• 7-band equalizer with 8 presets
+• 10-band parametric EQ with 10 presets
 • Bass & Treble controls: ±12 dB range
-• Intelligent distortion prevention
+• Stereo width and multi-tap reverb
+• Intelligent brickwall limiting
 • 6 immersive audio modes
 • 55 stunning themes
 • Fast music library scanning
@@ -34,18 +35,23 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 ### Sound Lab
 
 #### Equalizer
-- 7-band equalizer: Sub, Bass, Low-Mid, Mid, High-Mid, Treble, Brilliance
-- 8 presets: Flat, Rock, Pop, Jazz, Classical, Hip-Hop, Electronic, Acoustic
-- Custom preset editor with save/load (up to 5 custom presets)
-- Balanced presets prevent volume jumps when switching
+- 10-band parametric equalizer: 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz
+- 10 presets: Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity
+- Zero-sum normalization prevents volume jumps when switching
+- Custom 10-band EQ editor for personal tuning
 
 #### Bass & Treble
 - Bass control: ±12 dB range
 - Treble control: ±12 dB range
 - Independent sliders for precise adjustment
 
+#### Stereo Width & Reverb
+- Stereo width control: -100% (mono) to +200% (wide)
+- Multi-tap delay reverb with 4 delay lines (23ms, 41ms, 67ms, 89ms)
+- Equal-power crossfade wet/dry mixing
+
 #### Distortion Prevention
-- Intelligent limiting keeps audio clean at any boost level
+- Brickwall limiter: -1dB threshold, 20:1 ratio
 - No clipping or distortion even with maximum settings
 
 #### Immersive Modes
@@ -160,4 +166,4 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 
 ---
 
-*Last Updated: January 19, 2026*
+*Last Updated: January 25, 2026*

@@ -100,7 +100,7 @@ export default function OpenSourceLicensesScreen() {
             TRADEMARK NOTICE: "New Audio 360" and "The Team 360" are trademarks or registered trademarks of Dhairya Shah. All other trademarks, service marks, and trade names referenced herein are the property of their respective owners.
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={[styles.copyrightText, { marginTop: FluentSpacing.s }]}>
-            For licensing inquiries, permissions, or legal matters:{"\n"}legal@theteam360.com
+            For licensing inquiries, permissions, or related matters:{"\n"}support@theteam360.com
           </FluentText>
         </GlassCard>
 
@@ -165,8 +165,8 @@ export default function OpenSourceLicensesScreen() {
 
         <View style={styles.footer}>
           <FluentText variant="caption2" color="tertiary" align="center">
-            This legal notice was last updated on January 20, 2026.{"\n"}
-            Document Version: 1.0.0
+            This legal notice was last updated on January 25, 2026.{"\n"}
+            Document Version: 1.0.1
           </FluentText>
         </View>
       </ScrollView>
