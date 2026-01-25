@@ -970,7 +970,7 @@ function RadioScreen() {
 
         <View style={styles.actionsRow}>
           <FluentIconButton
-            icon={<MaterialCommunityIcons name={isFavorite ? "heart" : "heart-outline"} />}
+            icon={<MaterialCommunityIcons name={isFavorite ? "heart" : "heart-outline"} size={24} color={isFavorite ? colors.colorPaletteRedForeground1 : colors.colorNeutralForeground3} />}
             size="large"
             variant={isFavorite ? "primary" : "subtle"}
             onPress={handleToggleFavorite}
