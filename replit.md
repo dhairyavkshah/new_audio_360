@@ -30,7 +30,7 @@ The app uses **pure software-based DSP** across all platforms, ensuring a consis
 
 **Audio Signal Chain**:
 ```
-Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter → Stereo Widener → Spatial Enhancement → Reverb → Limiter → Output
+Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter → Spatial Enhancement → Reverb → Limiter → Output
 ```
 
 **Key Components**:
@@ -56,7 +56,7 @@ Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter →
 - All audio processing uses 32-bit float internally for maximum precision
 - 64-bit double precision for filter coefficients and envelope detection
 - Filters configured at input sample rate for accurate frequency response
-- True stereo processing (independent L/R channel states) for EQ, Bass, Treble, Stereo Width, and Reverb
+- True stereo processing (independent L/R channel states) for EQ, Bass, Treble, Spatial Enhancement, and Reverb
 - Linked stereo for limiter (industry standard to prevent stereo image shift)
 - No resampling performed - operates at source sample rate
 

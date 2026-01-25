@@ -46,7 +46,6 @@ export interface ImmersiveMode {
   eqPreset: number[];
   bassBoost: number;
   trebleBoost: number;
-  spatialWidth: number;
   reverb: number; // 0-1 wet mix (0 = dry, 1 = full reverb)
   spatialEnhancement: number; // Legacy 0-5 level (kept for backward compatibility)
   spatialParams: SpatialEnhancementParams; // Explicit spatial parameters
@@ -68,7 +67,6 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [+0.3, +0.3, -0.4, -1.0, -1.0, 0.0, +1.0, +1.5, +0.4, -1.1],
     bassBoost: 0.5,     // +1.2 dB at 150Hz
     trebleBoost: 0.54,  // +1.3 dB at 6kHz
-    spatialWidth: 0,    // Handled by spatialParams
     reverb: 0.08,       // 8% reverb
     spatialEnhancement: 2, // Legacy level (backward compatibility)
     spatialParams: { sideGain: 6, itdMs: 0.15, decorrelation: 5, wetMix: 20 },
@@ -79,7 +77,6 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [0.0, 0.0, -0.6, -0.6, -0.6, 0.0, +1.0, +1.2, +0.3, -0.7],
     bassBoost: 0.33,    // +0.8 dB
     trebleBoost: 0.625, // +1.5 dB
-    spatialWidth: 0,    // Handled by spatialParams
     reverb: 0.18,       // 18% reverb
     spatialEnhancement: 5, // Legacy level (backward compatibility)
     spatialParams: { sideGain: 14, itdMs: 0.45, decorrelation: 12, wetMix: 40 },
@@ -90,7 +87,6 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [+0.8, +0.8, +0.4, -1.1, -1.1, 0.0, +1.0, +1.7, +0.8, -1.9],
     bassBoost: 0.5,     // +1.2 dB
     trebleBoost: 0.875, // +2.1 dB
-    spatialWidth: 0,    // Handled by spatialParams
     reverb: 0.08,       // 8% reverb
     spatialEnhancement: 3, // Legacy level (backward compatibility)
     spatialParams: { sideGain: 16, itdMs: 0.35, decorrelation: 8, wetMix: 35 },
@@ -101,7 +97,6 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [-1.9, -1.9, -0.9, -0.7, +0.4, +1.0, +1.0, +1.4, +1.8, -0.2],
     bassBoost: -0.42,   // -1.0 dB (removes rumble)
     trebleBoost: 0.958, // +2.3 dB (clarity)
-    spatialWidth: 0,    // No spatial processing for speech
     reverb: 0,          // 0% reverb
     spatialEnhancement: 0, // Legacy level (backward compatibility)
     spatialParams: { sideGain: 0, itdMs: 0, decorrelation: 0, wetMix: 0 },
@@ -112,7 +107,6 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [-0.8, -0.8, -0.4, +0.7, +1.1, +1.0, +1.0, -0.3, -0.5, -1.7],
     bassBoost: 0.75,    // +1.8 dB
     trebleBoost: 0.625, // +1.5 dB
-    spatialWidth: 0,    // Handled by spatialParams
     reverb: 0.12,       // 12% reverb
     spatialEnhancement: 4, // Legacy level (backward compatibility)
     spatialParams: { sideGain: 12, itdMs: 0.30, decorrelation: 10, wetMix: 45 },
@@ -123,7 +117,6 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     eqPreset: [+1.2, +1.2, +0.5, -0.7, -0.7, 0.0, +1.0, +1.2, -0.9, -2.5],
     bassBoost: 0.917,   // +2.2 dB (stadium atmosphere)
     trebleBoost: 0.33,  // +0.8 dB
-    spatialWidth: 0,    // Handled by spatialParams
     reverb: 0.10,       // 10% reverb
     spatialEnhancement: 2, // Legacy level (backward compatibility)
     spatialParams: { sideGain: 10, itdMs: 0.25, decorrelation: 7, wetMix: 30 },
@@ -745,7 +738,7 @@ class WebAudioEffectsEngineClass {
     // Immersive modes use their own dedicated settings WITHOUT zero-sum normalization
     // This allows for the full creative EQ curves designed for each mode
     // Limiter in PlayerContext still prevents distortion
-    this.applyImmersiveEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost, mode.spatialWidth, mode.reverb, mode.spatialParams);
+    this.applyImmersiveEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost, mode.reverb, mode.spatialParams);
     this.currentMode = modeName;
   }
 
@@ -754,7 +747,7 @@ class WebAudioEffectsEngineClass {
    * Immersive modes have their own creative curves that shouldn't be balanced.
    * The limiter in PlayerContext handles distortion prevention.
    */
-  private applyImmersiveEQ(bands: number[], bassBoost: number, trebleBoost: number, spatialWidth: number, reverb: number = 0, spatialParams?: SpatialEnhancementParams): void {
+  private applyImmersiveEQ(bands: number[], bassBoost: number, trebleBoost: number, reverb: number = 0, spatialParams?: SpatialEnhancementParams): void {
     if (!this.isInitialized || this.eqFilters.length === 0) {
       console.log('[WebAudioEffectsEngine] Not initialized, cannot apply immersive EQ');
       return;
