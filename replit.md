@@ -45,6 +45,21 @@ Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter →
 
 ## DSP Architecture
 
+### Audio Processing Standards
+
+| Platform | Internal Processing | Input/Output Format | Sample Rate |
+|----------|---------------------|---------------------|-------------|
+| **Android** | 32-bit float | PCM16/PCM24 | Input rate (typically 48 kHz) |
+| **Web** | 32-bit float | Web Audio API native | Device native rate |
+
+**Processing Chain**:
+- All audio processing uses 32-bit float internally for maximum precision
+- 64-bit double precision for filter coefficients and envelope detection
+- Filters configured at input sample rate for accurate frequency response
+- True stereo processing (independent L/R channel states) for EQ, Bass, Treble, Stereo Width, and Reverb
+- Linked stereo for limiter (industry standard to prevent stereo image shift)
+- No resampling performed - operates at source sample rate
+
 ### Platform Overview
 
 | Platform | DSP Engine | Technology |

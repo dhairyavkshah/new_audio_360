@@ -12,22 +12,33 @@ enum class FilterType {
     HIGHSHELF
 }
 
+/**
+ * Biquad filter implementation using Robert Bristow-Johnson's Audio EQ Cookbook formulas.
+ * Supports true stereo processing with independent filter states per channel.
+ * 
+ * Audio Processing Standards:
+ * - Internal processing: 32-bit float (Float) / 64-bit double for coefficients
+ * - Maintains per-channel state for true stereo processing
+ */
 class BiquadFilter(
     private var type: FilterType = FilterType.PEAKING,
     private var frequency: Float = 1000f,
     private var gainDb: Float = 0f,
     private var q: Float = 1.0f,
-    private var sampleRate: Float = 44100f
+    private var sampleRate: Float = 48000f
 ) {
+    // 64-bit double precision for filter coefficients (prevents numerical instability)
     private var b0: Double = 1.0
     private var b1: Double = 0.0
     private var b2: Double = 0.0
     private var a1: Double = 0.0
     private var a2: Double = 0.0
 
+    // Per-channel state for true stereo processing
     private val channelStates = mutableMapOf<Int, ChannelState>()
 
     private class ChannelState {
+        // 64-bit double precision for filter state (prevents accumulation errors)
         var x1: Double = 0.0
         var x2: Double = 0.0
         var y1: Double = 0.0
@@ -69,6 +80,10 @@ class BiquadFilter(
         }
     }
 
+    /**
+     * Calculate biquad filter coefficients using Bristow-Johnson formulas.
+     * Uses 64-bit double precision for numerical stability.
+     */
     private fun calculateCoefficients() {
         val omega = 2.0 * PI * frequency / sampleRate
         val sinOmega = sin(omega)
@@ -125,25 +140,52 @@ class BiquadFilter(
         return channelStates.getOrPut(channel) { ChannelState() }
     }
 
-    fun processSample(sample: Double, channel: Int): Double {
+    /**
+     * Process a single sample with 64-bit double precision internally.
+     * @param sample Input sample in normalized float range [-1.0, 1.0]
+     * @param channel Channel index (0=L, 1=R) for true stereo processing
+     * @return Processed sample in normalized float range
+     */
+    fun processSample(sample: Float, channel: Int): Float {
         val state = getChannelState(channel)
+        val sampleD = sample.toDouble()
         
-        val output = b0 * sample + b1 * state.x1 + b2 * state.x2 - a1 * state.y1 - a2 * state.y2
+        val output = b0 * sampleD + b1 * state.x1 + b2 * state.x2 - a1 * state.y1 - a2 * state.y2
         
         state.x2 = state.x1
-        state.x1 = sample
+        state.x1 = sampleD
         state.y2 = state.y1
         state.y1 = output
         
-        return output
+        return output.toFloat()
     }
 
+    /**
+     * Process buffer of 32-bit float samples (normalized [-1.0, 1.0]).
+     * True stereo processing with independent filter states per channel.
+     * 
+     * @param samples Interleaved float samples [L, R, L, R, ...]
+     * @param channelCount Number of channels (1=mono, 2=stereo)
+     */
+    fun processBufferFloat(samples: FloatArray, channelCount: Int) {
+        for (i in samples.indices) {
+            val channel = i % channelCount
+            samples[i] = processSample(samples[i], channel)
+        }
+    }
+
+    /**
+     * Legacy method for ShortArray processing (PCM16).
+     * Converts to float internally, processes, then converts back.
+     * @deprecated Use processBufferFloat for 32-bit float processing chain
+     */
+    @Deprecated("Use processBufferFloat for 32-bit float processing chain")
     fun processBuffer(samples: ShortArray, channelCount: Int) {
         for (i in samples.indices) {
             val channel = i % channelCount
-            val sample = samples[i].toDouble() / 32768.0
+            val sample = samples[i].toFloat() / 32768f
             val processed = processSample(sample, channel)
-            samples[i] = (processed * 32768.0).coerceIn(-32768.0, 32767.0).toInt().toShort()
+            samples[i] = (processed * 32768f).coerceIn(-32768f, 32767f).toInt().toShort()
         }
     }
 

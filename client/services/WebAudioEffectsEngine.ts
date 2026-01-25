@@ -1,6 +1,25 @@
 import { Platform } from 'react-native';
 import { AudioContext, BiquadFilterNode, GainNode } from 'react-native-audio-api';
 
+/**
+ * WebAudioEffectsEngine - Pure software DSP for Web platform
+ * 
+ * Audio Processing Standards:
+ * - Internal processing: 32-bit float (Web Audio API specification)
+ * - Output: 16/24-bit PCM @ device sample rate (handled by AudioContext destination)
+ * - True stereo processing with independent L/R channel states per BiquadFilterNode
+ * 
+ * Signal Chain:
+ * Input → 10-Band EQ → Dry/Wet Mix → Stereo Width (M/S) → Limiter → Output
+ *                    ↑ Multi-Tap Reverb
+ * 
+ * Web Audio API Compliance:
+ * - All BiquadFilterNode instances process channels independently (true stereo)
+ * - DynamicsCompressorNode uses linked stereo envelope (industry standard for limiters)
+ * - Sample rate follows AudioContext.sampleRate (device native rate)
+ * - 32-bit float audio graph throughout, converted to output format at destination
+ */
+
 // Native Web Audio API types for M/S stereo processing (available in browser)
 type NativeAudioContext = globalThis.AudioContext;
 type ChannelSplitterNode = globalThis.ChannelSplitterNode;
@@ -207,10 +226,10 @@ class WebAudioEffectsEngineClass {
         // Connect dry/wet to mix node first (preserves stereo before splitting)
         this.dryGain.connect(this.stereoMixNode);
         this.wetGain.connect(this.stereoMixNode);
-        // Mix node to stereo splitter
-        this.stereoMixNode.connect(this.stereoSplitter);
-        // Stereo merger output to master
-        this.stereoMerger.connect(this.masterGain);
+        // Mix node to stereo splitter (cast to any for native Web Audio API cross-type connection)
+        (this.stereoMixNode as any).connect(this.stereoSplitter);
+        // Stereo merger output to master (cast to any for native Web Audio API cross-type connection)
+        (this.stereoMerger as any).connect(this.masterGain);
       } else {
         // Fallback: bypass stereo width processing
         this.dryGain.connect(this.masterGain);
@@ -669,6 +688,26 @@ class WebAudioEffectsEngineClass {
 
   getAudioContext(): AudioContext | null {
     return this.audioContext;
+  }
+
+  /**
+   * Get current audio processing information for debugging.
+   * Matches Android SoftwareDSPAudioProcessor.getProcessingInfo() interface.
+   */
+  getProcessingInfo(): Record<string, any> {
+    return {
+      internalFormat: '32-bit float',
+      inputEncoding: 'Web Audio API (32-bit float)',
+      sampleRate: this.audioContext?.sampleRate ?? 'Not initialized',
+      designSampleRate: 'Device native rate',
+      enabled: this.isInitialized,
+      eqActive: this.currentEQValues.some(v => v !== 0),
+      bassBoostActive: false, // Integrated into EQ
+      trebleBoostActive: false, // Integrated into EQ
+      virtualizerActive: this.stereoWidthEnabled && this.currentVirtualizer !== 0,
+      reverbActive: this.currentReverb > 0,
+      stereoWidthPercent: ((1 + this.currentVirtualizer / 5) * 100).toFixed(0) + '%',
+    };
   }
 }
 

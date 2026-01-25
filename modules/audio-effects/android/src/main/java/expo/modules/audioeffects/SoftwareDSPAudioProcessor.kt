@@ -6,12 +6,33 @@ import androidx.media3.common.audio.AudioProcessor.AudioFormat
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
+/**
+ * Pure software-based DSP audio processor for Android.
+ * 
+ * Audio Processing Standards:
+ * - Input: PCM16 (16-bit) or PCM24 (24-bit) at any sample rate
+ * - Internal: 32-bit float processing throughout the signal chain
+ * - Output: Same format as input (PCM16 or PCM24) at input sample rate
+ * - Filters: Configured at input sample rate for accurate frequency response
+ * - Design reference: 48 kHz (Android native output rate, most common)
+ * - True stereo processing with independent L/R channel states
+ * 
+ * Note: Filters are always configured at the input sample rate to ensure
+ * correct frequency response. No resampling is performed - the processor
+ * operates at the source sample rate (typically 44.1kHz or 48kHz).
+ * 
+ * Signal Chain:
+ * Input → 10-Band EQ → Bass Shelf → Treble Shelf → Stereo Width → Reverb → Limiter → Output
+ */
 class SoftwareDSPAudioProcessor : AudioProcessor {
     companion object {
         const val DB_PER_UNIT = 2.4f
         const val MAX_DB = 12f
         const val DEFAULT_Q = 1.4f
         const val SHELF_Q = 0.707f
+        
+        // Standard sample rate for filter design (48 kHz industry standard)
+        const val STANDARD_SAMPLE_RATE = 48000f
         
         // 10-band EQ frequencies matching Web implementation
         private val EQ_FREQUENCIES = floatArrayOf(60f, 170f, 310f, 600f, 1000f, 3000f, 6000f, 12000f, 14000f, 16000f)
@@ -35,23 +56,30 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private var pendingFormat: AudioFormat = AudioFormat.NOT_SET
     private var isActive = false
     private var inputEnded = false
+    
+    // Current input format properties
+    private var currentEncoding: Int = C.ENCODING_PCM_16BIT
+    private var currentSampleRate: Float = STANDARD_SAMPLE_RATE
 
+    // All filters configured at 48 kHz (reconfigured at runtime if input differs)
     private val eqFilters = Array(10) { i ->
-        BiquadFilter(FilterType.PEAKING, EQ_FREQUENCIES[i], 0f, DEFAULT_Q, 44100f)
+        BiquadFilter(FilterType.PEAKING, EQ_FREQUENCIES[i], 0f, DEFAULT_Q, STANDARD_SAMPLE_RATE)
     }
-    private val bassShelfFilter = BiquadFilter(FilterType.LOWSHELF, BASS_SHELF_FREQ, 0f, SHELF_Q, 44100f)
-    private val trebleShelfFilter = BiquadFilter(FilterType.HIGHSHELF, TREBLE_SHELF_FREQ, 0f, SHELF_Q, 44100f)
-    private val limiter = Limiter(-1f, 20f, 1f, 100f, 44100f)
+    private val bassShelfFilter = BiquadFilter(FilterType.LOWSHELF, BASS_SHELF_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val trebleShelfFilter = BiquadFilter(FilterType.HIGHSHELF, TREBLE_SHELF_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val limiter = Limiter(-1f, 20f, 1f, 100f, STANDARD_SAMPLE_RATE)
 
     private val eqGains = FloatArray(10) { 0f }
     
     // Multi-tap delay reverb (4 delay lines for richer sound)
+    // Max delay sized for 48 kHz (industry standard sample rate)
     private val DELAY_TIMES = floatArrayOf(0.023f, 0.041f, 0.067f, 0.089f) // seconds
     private val DELAY_FEEDBACKS = floatArrayOf(0.4f, 0.35f, 0.3f, 0.25f)
-    private val MAX_DELAY_SAMPLES = 8820 // ~200ms at 44100Hz
+    private val MAX_DELAY_SAMPLES = 9600 // ~200ms at 48kHz
     private val delayBuffersL = Array(4) { FloatArray(MAX_DELAY_SAMPLES) }
     private val delayBuffersR = Array(4) { FloatArray(MAX_DELAY_SAMPLES) }
     private val delayIndices = IntArray(4) { 0 }
+    
     private var reverbWetMix = 0f // 0.0 = dry, 1.0 = full reverb
     private var bassGain = 0f
     private var trebleGain = 0f
@@ -60,30 +88,42 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
 
     private var outputBuffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
     private var inputBuffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
+    
+    // Reusable float buffer for 32-bit internal processing
+    private var floatSamples: FloatArray = FloatArray(0)
 
     init {
         sharedInstance = this
+        android.util.Log.d("SoftwareDSP", "Initialized with 32-bit float internal processing @ $STANDARD_SAMPLE_RATE Hz")
     }
 
     override fun configure(inputAudioFormat: AudioFormat): AudioFormat {
-        if (inputAudioFormat.encoding != C.ENCODING_PCM_16BIT) {
+        // Support both 16-bit and 24-bit PCM input
+        val encoding = inputAudioFormat.encoding
+        if (encoding != C.ENCODING_PCM_16BIT && encoding != C.ENCODING_PCM_24BIT) {
+            android.util.Log.w("SoftwareDSP", "Unsupported encoding: $encoding, only PCM16 and PCM24 supported")
             return AudioFormat.NOT_SET
         }
 
         pendingFormat = inputAudioFormat
-        val sampleRate = inputAudioFormat.sampleRate.toFloat()
+        currentEncoding = encoding
+        currentSampleRate = inputAudioFormat.sampleRate.toFloat()
         
+        // Configure all filters at the input sample rate
+        // (allows playback at any rate while maintaining correct frequency response)
         for (i in 0 until 10) {
-            eqFilters[i].configure(FilterType.PEAKING, EQ_FREQUENCIES[i], eqGains[i], DEFAULT_Q, sampleRate)
+            eqFilters[i].configure(FilterType.PEAKING, EQ_FREQUENCIES[i], eqGains[i], DEFAULT_Q, currentSampleRate)
         }
-        bassShelfFilter.configure(FilterType.LOWSHELF, BASS_SHELF_FREQ, bassGain, SHELF_Q, sampleRate)
-        trebleShelfFilter.configure(FilterType.HIGHSHELF, TREBLE_SHELF_FREQ, trebleGain, SHELF_Q, sampleRate)
-        limiter.setSampleRate(sampleRate)
+        bassShelfFilter.configure(FilterType.LOWSHELF, BASS_SHELF_FREQ, bassGain, SHELF_Q, currentSampleRate)
+        trebleShelfFilter.configure(FilterType.HIGHSHELF, TREBLE_SHELF_FREQ, trebleGain, SHELF_Q, currentSampleRate)
+        limiter.setSampleRate(currentSampleRate)
 
-        // Set isActive immediately when format is configured
         inputFormat = inputAudioFormat
         outputFormat = inputAudioFormat
         isActive = true
+        
+        val bitDepth = if (encoding == C.ENCODING_PCM_16BIT) 16 else 24
+        android.util.Log.d("SoftwareDSP", "Configured: ${bitDepth}-bit PCM @ ${currentSampleRate.toInt()} Hz, 32-bit float internal")
 
         return inputAudioFormat
     }
@@ -103,58 +143,142 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
                 outputBuffer = ByteBuffer.allocateDirect(remaining).order(ByteOrder.nativeOrder())
             }
             outputBuffer.clear()
-            outputBuffer.put(buffer)  // This copies data AND advances both buffers
-            outputBuffer.flip()       // Prepare for reading: position=0, limit=bytes written
+            outputBuffer.put(buffer)
+            outputBuffer.flip()
             return
         }
 
         val channelCount = inputFormat.channelCount
         val remaining = buffer.remaining()
-        val sampleCount = remaining / 2
+        
+        // Convert input PCM to 32-bit float for internal processing
+        val sampleCount: Int
+        when (currentEncoding) {
+            C.ENCODING_PCM_16BIT -> {
+                sampleCount = remaining / 2
+                if (floatSamples.size < sampleCount) {
+                    floatSamples = FloatArray(sampleCount)
+                }
+                pcm16ToFloat(buffer, floatSamples, sampleCount)
+            }
+            C.ENCODING_PCM_24BIT -> {
+                sampleCount = remaining / 3
+                if (floatSamples.size < sampleCount) {
+                    floatSamples = FloatArray(sampleCount)
+                }
+                pcm24ToFloat(buffer, floatSamples, sampleCount)
+            }
+            else -> {
+                outputBuffer = buffer
+                return
+            }
+        }
 
+        // =========================================
+        // 32-BIT FLOAT SIGNAL CHAIN
+        // =========================================
+        
+        // 1. 10-Band Parametric EQ (true stereo)
+        for (filter in eqFilters) {
+            if (!filter.isPassthrough()) {
+                filter.processBufferFloat(floatSamples, channelCount)
+            }
+        }
+
+        // 2. Bass Shelf Filter (true stereo)
+        if (bassGain != 0f) {
+            bassShelfFilter.processBufferFloat(floatSamples, channelCount)
+        }
+
+        // 3. Treble Shelf Filter (true stereo)
+        if (trebleGain != 0f) {
+            trebleShelfFilter.processBufferFloat(floatSamples, channelCount)
+        }
+
+        // 4. Stereo Width / Virtualizer (M/S processing, true stereo)
+        if (channelCount == 2 && stereoWidth != 0f) {
+            processStereoWidthFloat(floatSamples)
+        }
+
+        // 5. Multi-Tap Delay Reverb (true stereo)
+        if (reverbWetMix > 0f && channelCount == 2) {
+            processReverbFloat(floatSamples)
+        }
+
+        // 6. Brickwall Limiter (linked stereo - industry standard)
+        limiter.processBufferFloat(floatSamples, channelCount)
+
+        // =========================================
+        // Convert 32-bit float back to output PCM format
+        // =========================================
+        
         if (outputBuffer.capacity() < remaining) {
             outputBuffer = ByteBuffer.allocateDirect(remaining).order(ByteOrder.nativeOrder())
         } else {
             outputBuffer.clear()
         }
-
-        val samples = ShortArray(sampleCount)
-        val shortBuffer = buffer.asShortBuffer()
-        shortBuffer.get(samples)
-        buffer.position(buffer.position() + samples.size * 2)
-
-        for (filter in eqFilters) {
-            if (!filter.isPassthrough()) {
-                filter.processBuffer(samples, channelCount)
+        
+        when (currentEncoding) {
+            C.ENCODING_PCM_16BIT -> {
+                floatToPcm16(floatSamples, outputBuffer, sampleCount)
+            }
+            C.ENCODING_PCM_24BIT -> {
+                floatToPcm24(floatSamples, outputBuffer, sampleCount)
             }
         }
+        
+        outputBuffer.flip()
+    }
 
-        if (bassGain != 0f) {
-            bassShelfFilter.processBuffer(samples, channelCount)
+    /**
+     * Convert PCM16 (16-bit signed) to normalized float [-1.0, 1.0].
+     */
+    private fun pcm16ToFloat(input: ByteBuffer, output: FloatArray, sampleCount: Int) {
+        val shortBuffer = input.asShortBuffer()
+        for (i in 0 until sampleCount) {
+            output[i] = shortBuffer.get() / 32768f
         }
+        input.position(input.position() + sampleCount * 2)
+    }
 
-        if (trebleGain != 0f) {
-            trebleShelfFilter.processBuffer(samples, channelCount)
+    /**
+     * Convert PCM24 (24-bit signed, packed) to normalized float [-1.0, 1.0].
+     */
+    private fun pcm24ToFloat(input: ByteBuffer, output: FloatArray, sampleCount: Int) {
+        val startPos = input.position()
+        for (i in 0 until sampleCount) {
+            // Read 3 bytes as little-endian 24-bit signed integer
+            val b0 = input.get().toInt() and 0xFF
+            val b1 = input.get().toInt() and 0xFF
+            val b2 = input.get().toInt() // Sign-extended
+            val sample24 = b0 or (b1 shl 8) or (b2 shl 16)
+            output[i] = sample24 / 8388608f  // 2^23 = 8388608
         }
+    }
 
-        // Apply stereo width processing (mid-side technique)
-        // Only process if stereo (2 channels) and width is not 0 (original)
-        if (channelCount == 2 && stereoWidth != 0f) {
-            processStereoWidth(samples)
+    /**
+     * Convert normalized float [-1.0, 1.0] to PCM16 (16-bit signed).
+     */
+    private fun floatToPcm16(input: FloatArray, output: ByteBuffer, sampleCount: Int) {
+        val shortBuffer = output.asShortBuffer()
+        for (i in 0 until sampleCount) {
+            val clamped = input[i].coerceIn(-1f, 1f)
+            shortBuffer.put((clamped * 32767f).toInt().toShort())
         }
+        output.position(sampleCount * 2)
+    }
 
-        // Apply reverb if wet mix > 0
-        if (reverbWetMix > 0f && channelCount == 2) {
-            processReverb(samples)
+    /**
+     * Convert normalized float [-1.0, 1.0] to PCM24 (24-bit signed, packed).
+     */
+    private fun floatToPcm24(input: FloatArray, output: ByteBuffer, sampleCount: Int) {
+        for (i in 0 until sampleCount) {
+            val clamped = input[i].coerceIn(-1f, 1f)
+            val sample24 = (clamped * 8388607f).toInt()  // 2^23 - 1 = 8388607
+            output.put((sample24 and 0xFF).toByte())
+            output.put(((sample24 shr 8) and 0xFF).toByte())
+            output.put(((sample24 shr 16) and 0xFF).toByte())
         }
-
-        limiter.processBuffer(samples, channelCount)
-
-        // Write processed samples to output buffer with correct position/limit
-        outputBuffer.clear()
-        outputBuffer.asShortBuffer().put(samples)
-        outputBuffer.position(samples.size * 2)  // Advance by bytes written
-        outputBuffer.flip()  // Sets limit = position, position = 0
     }
 
     override fun queueEndOfStream() {
@@ -248,27 +372,26 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     fun getReverb(): Float = reverbWetMix
 
     /**
-     * Process multi-tap delay reverb
-     * Uses 4 delay lines with different times for rich, diffuse sound
+     * Process multi-tap delay reverb (32-bit float version).
+     * Uses 4 delay lines with different times for rich, diffuse sound.
+     * True stereo with independent L/R delay buffers.
      */
-    private fun processReverb(samples: ShortArray) {
-        val sampleRate = 44100f
-        
+    private fun processReverbFloat(samples: FloatArray) {
         // Equal-power crossfade: dry = cos, wet = sin
         val dryGain = kotlin.math.cos(reverbWetMix * kotlin.math.PI.toFloat() / 2f)
         val wetGain = kotlin.math.sin(reverbWetMix * kotlin.math.PI.toFloat() / 2f)
         
         var i = 0
         while (i < samples.size - 1) {
-            val dryL = samples[i].toFloat()
-            val dryR = samples[i + 1].toFloat()
+            val dryL = samples[i]
+            val dryR = samples[i + 1]
             
             var wetL = 0f
             var wetR = 0f
             
             // Sum contributions from all 4 delay lines
             for (tap in 0 until 4) {
-                val delaySamples = (DELAY_TIMES[tap] * sampleRate).toInt().coerceIn(1, MAX_DELAY_SAMPLES - 1)
+                val delaySamples = (DELAY_TIMES[tap] * currentSampleRate).toInt().coerceIn(1, MAX_DELAY_SAMPLES - 1)
                 val readIndex = (delayIndices[tap] - delaySamples + MAX_DELAY_SAMPLES) % MAX_DELAY_SAMPLES
                 
                 // Read delayed samples
@@ -279,7 +402,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
                 wetL += delayedL * 0.25f // Each tap contributes 25%
                 wetR += delayedR * 0.25f
                 
-                // Write to delay buffer with feedback
+                // Write to delay buffer with feedback (normalized float scale)
                 delayBuffersL[tap][delayIndices[tap]] = dryL + delayedL * DELAY_FEEDBACKS[tap]
                 delayBuffersR[tap][delayIndices[tap]] = dryR + delayedR * DELAY_FEEDBACKS[tap]
                 
@@ -287,30 +410,23 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
                 delayIndices[tap] = (delayIndices[tap] + 1) % MAX_DELAY_SAMPLES
             }
             
-            // Mix dry and wet
-            var outL = dryL * dryGain + wetL * wetGain
-            var outR = dryR * dryGain + wetR * wetGain
-            
-            // Soft clip
-            outL = outL.coerceIn(-32768f, 32767f)
-            outR = outR.coerceIn(-32768f, 32767f)
-            
-            samples[i] = outL.toInt().toShort()
-            samples[i + 1] = outR.toInt().toShort()
+            // Mix dry and wet (soft clip at ±1.0 for float headroom)
+            samples[i] = (dryL * dryGain + wetL * wetGain).coerceIn(-1f, 1f)
+            samples[i + 1] = (dryR * dryGain + wetR * wetGain).coerceIn(-1f, 1f)
             
             i += 2
         }
     }
 
     /**
-     * Process stereo width using mid-side technique.
+     * Process stereo width using mid-side technique (32-bit float version).
      * Mid = (L + R) / 2 (center content)
      * Side = (L - R) / 2 (stereo content)
      * 
      * Width < 0: Reduce side, more mono
      * Width > 0: Boost side, wider stereo
      */
-    private fun processStereoWidth(samples: ShortArray) {
+    private fun processStereoWidthFloat(samples: FloatArray) {
         // Calculate side multiplier based on stereoWidth
         // -1.0 → sideGain = 0.0 (full mono)
         //  0.0 → sideGain = 1.0 (original)
@@ -320,8 +436,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         // Process samples in stereo pairs (L, R, L, R, ...)
         var i = 0
         while (i < samples.size - 1) {
-            val left = samples[i].toFloat()
-            val right = samples[i + 1].toFloat()
+            val left = samples[i]
+            val right = samples[i + 1]
 
             // Convert to mid-side
             val mid = (left + right) / 2f
@@ -330,16 +446,9 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             // Apply width to side channel
             val newSide = side * sideGain
 
-            // Convert back to left-right
-            var newLeft = mid + newSide
-            var newRight = mid - newSide
-
-            // Soft clip to prevent overflow
-            newLeft = newLeft.coerceIn(-32768f, 32767f)
-            newRight = newRight.coerceIn(-32768f, 32767f)
-
-            samples[i] = newLeft.toInt().toShort()
-            samples[i + 1] = newRight.toInt().toShort()
+            // Convert back to left-right (soft clip at ±1.0)
+            samples[i] = (mid + newSide).coerceIn(-1f, 1f)
+            samples[i + 1] = (mid - newSide).coerceIn(-1f, 1f)
 
             i += 2
         }
@@ -380,5 +489,27 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         bassShelfFilter.resetAllChannels()
         trebleShelfFilter.resetAllChannels()
         limiter.reset()
+    }
+    
+    /**
+     * Get current audio processing information for debugging.
+     */
+    fun getProcessingInfo(): Map<String, Any> {
+        return mapOf(
+            "internalFormat" to "32-bit float",
+            "inputEncoding" to when (currentEncoding) {
+                C.ENCODING_PCM_16BIT -> "PCM16"
+                C.ENCODING_PCM_24BIT -> "PCM24"
+                else -> "Unknown"
+            },
+            "sampleRate" to currentSampleRate.toInt(),
+            "designSampleRate" to STANDARD_SAMPLE_RATE.toInt(),
+            "enabled" to isEnabled,
+            "eqActive" to eqGains.any { it != 0f },
+            "bassBoostActive" to (bassGain != 0f),
+            "trebleBoostActive" to (trebleGain != 0f),
+            "virtualizerActive" to (stereoWidth != 0f),
+            "reverbActive" to (reverbWetMix > 0f)
+        )
     }
 }
