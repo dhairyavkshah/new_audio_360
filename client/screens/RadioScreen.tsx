@@ -77,7 +77,7 @@ function RadioScreen() {
     isPlaying: isFmPlaying,
     signalStrength,
     rdsData,
-    stations,
+    stations: rawStations,
     scanResults,
     isScanning,
     needsHeadphoneAntenna,
@@ -95,6 +95,8 @@ function RadioScreen() {
     addFavorite,
     removeFavorite,
   } = useRadio();
+
+  const stations = Array.isArray(rawStations) ? rawStations : [];
 
   const {
     isLoading: isOnlineLoading,
