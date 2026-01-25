@@ -651,6 +651,9 @@ function SoundLabScreen() {
                     {["Off", "Subtle", "Mild", "Moderate", "Enhanced", "Maximum"][spatialEnhancement] || "Off"}
                   </FluentText>
                 </View>
+                <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.xs }}>
+                  Adjusts soundstage depth and width. Safe for all content.
+                </FluentText>
                 <View style={styles.effectSliderContainer}>
                   <FluentText variant="caption1" color="secondary">Off</FluentText>
                   <CrossPlatformSlider

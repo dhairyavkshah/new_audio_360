@@ -39,7 +39,7 @@ Source → Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter →
 - **Treble Boost Filter**: Highshelf at 6kHz (±12 dB range).
 - **Multi-Tap Delay Reverb**: 4 delay lines (23ms, 41ms, 67ms, 89ms) with equal-power crossfade wet/dry mixing.
 - **Intelligent Limiter**: DynamicsCompressorNode configured as a brickwall limiter (Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms).
-- **Spatial Enhancement**: Psychoacoustic stereo enhancement with explicit per-mode parameters. Features: Mid/Side processing, bass mono enforcement (below 150Hz), ITD micro-delay (0-0.7ms), all-pass decorrelation (3kHz/5kHz), wet/dry mixing. Each immersive mode has explicit settings: Side Gain (0-16%), ITD (0-0.45ms), Decorrelation (0-12%), Wet Mix (0-45%).
+- **Spatial Enhancement**: Psychoacoustic stereo enhancement with 6-level slider (Off, Subtle, Mild, Moderate, Enhanced, Maximum). Features: Mid/Side processing, bass mono enforcement (below 150Hz), ITD micro-delay, all-pass decorrelation, correlation guard (≥0.30). Hard safety caps: Side Gain (max 18%), ITD (max 0.6ms), Decorrelation (max 18%), Wet Mix (max 55%).
 - **EQ Presets**: 10 total (Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity) with zero-sum normalization.
 - **Immersive Modes**: 6 total (Music, 360 Reality, Gaming, Podcast, Movie, Sports) each with independent EQ, bass/treble boost, reverb, and explicit spatial enhancement parameters (Side Gain, ITD, Decorrelation, Wet Mix).
 
@@ -109,6 +109,25 @@ Audio Source
 | **Bass+** | 5 | 5 | 3 | 1 | 0 | -1 | -1 | -1 | -1 | -1 |
 | **Clarity** | -2 | -2 | -1 | 0 | 1 | 2 | 2 | 3 | 3 | 3 |
 
+### Spatial Enhancement Slider Levels
+
+| Level | Side Gain (%) | ITD (ms) | Decorrelation (%) | Wet Mix (%) | Description |
+|-------|---------------|----------|-------------------|-------------|-------------|
+| **Off** | 0 | 0.00 | 0 | 0 | Pure stereo / reference |
+| **Subtle** | 3 | 0.10 | 3 | 10 | Slight openness, barely audible |
+| **Mild** | 6 | 0.15 | 5 | 20 | Natural widening, safe default |
+| **Moderate** | 10 | 0.25 | 8 | 30 | Clearly wider, still balanced |
+| **Enhanced** | 14 | 0.40 | 12 | 40 | Cinematic, immersive |
+| **Maximum** | 18 | 0.60 | 18 | 55 | Absolute safe limit (guarded) |
+
+**Hard Safety Caps (Never Exceed):**
+- Side Gain: max 18%
+- ITD: max 0.6ms
+- Decorrelation: max 18%
+- Wet Mix: max 55%
+- Bass stereo: Never (mono below 150Hz)
+- Correlation: ≥0.30 (auto-scale down if violated)
+
 ### Immersive Modes Settings
 
 | Mode | EQ Preset | Bass Boost | Treble Boost | Reverb | Side Gain | ITD (ms) | Decorrelation | Wet Mix | Notes |
@@ -122,9 +141,11 @@ Audio Source
 
 **Spatial Enhancement Parameters:**
 - **Side Gain**: Side channel boost percentage (+6% = 1.06x multiplier)
-- **ITD**: Inter-aural Time Difference in milliseconds (0-0.7ms, human max ~700µs)
+- **ITD**: Inter-aural Time Difference in milliseconds (0-0.6ms max)
 - **Decorrelation**: All-pass filter decorrelation intensity (controls phase variation)
-- **Wet Mix**: Blend of processed vs original signal (0% = bypass, 100% = full effect)
+- **Wet Mix**: Blend of processed vs original signal (0% = bypass, 55% max)
+
+**Design Philosophy:** Immersive modes define character. Spatial Enhancement slider defines intensity. Safety guards ensure truth.
 
 ### Key Files Reference
 
