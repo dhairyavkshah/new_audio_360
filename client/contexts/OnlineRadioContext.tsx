@@ -24,7 +24,7 @@ const STORAGE_KEY_POPULAR_CACHE = '@new_audio_360_online_radio_popular';
 const STORAGE_KEY_CACHE_VERSION = '@new_audio_360_radio_cache_version';
 const STORAGE_KEY_FAVORITES = '@new_audio_360_radio_favorites';
 
-const CURRENT_CACHE_VERSION = '2'; // Increment to invalidate old cache
+const CURRENT_CACHE_VERSION = '3'; // Increment to invalidate old cache - Updated stream URLs to remove token-based URLs
 const CURATED_COUNTRIES = ['IN']; // Countries that use curated stations
 const MAX_FAVORITES_PER_COUNTRY = 25;
 

@@ -381,7 +381,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "best-of-ar-rahman-tamil-songs",
     name: "BEST OF AR RAHMAN TAMIL SONGS",
-    streamUrl: "https://stream-176.zeno.fm/p7b0e3ms97zuv?zt=eyJhbGciOiJIUzI1NiJ9.eyJzdHJlYW0iOiJwN2IwZTNtczk3enV2IiwiaG9zdCI6InN0cmVhbS0xNzYuemVuby5mbSIsInJ0dGwiOjUsImp0aSI6IklNa3dEVmF0VEYtVVo5ekQxUURkRVEiLCJpYXQiOjE3MjM3MjM0NTMsImV4cCI6MTcyMzcyMzUxM30.5coumX6SC7zgvRPEriGg9pnWNV6801uGjs4phyhSy6Q",
+    streamUrl: "https://stream.zeno.fm/p7b0e3ms97zuv",
     website: "https://zeno.fm/",
     country: "India",
     countryCode: "IN",
@@ -465,8 +465,8 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "bollywood-90s-radio",
     name: "bollywood 90s radio",
-    streamUrl: "https://stream-159.zeno.fm/rm4i9pdex3cuv?zt=eyJhbGciOiJIUzI1NiJ9.eyJzdHJlYW0iOiJybTRpOXBkZXgzY3V2IiwiaG9zdCI6InN0cmVhbS0xNTkuemVuby5mbSIsInJ0dGwiOjUsImp0aSI6IlMzMHdNYU40UUZtNml2WnR3UFRhSmciLCJpYXQiOjE",
-    website: "https://stream-159.zeno.fm/rm4i9pdex3cuv?zt=eyJhbGciOiJIUzI1NiJ9.eyJzdHJlYW0iOiJybTRpOXBkZXgzY3V2IiwiaG9zdCI6InN0cmVhbS0xNTkuemVuby5mbSIsInJ0dGwiOjUsImp0aSI6IlMzMHdNYU40UUZtNml2WnR3UFRhSmciLCJpYXQiOjE",
+    streamUrl: "https://stream.zeno.fm/rm4i9pdex3cuv",
+    website: "https://www.radioindia.in/radio-retro-bollywood-90s",
     country: "India",
     countryCode: "IN",
     language: "hindi",
@@ -477,8 +477,8 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "bollywood-classic-songs-",
     name: "Bollywood classic songs ",
-    streamUrl: "https://node-12.zeno.fm/60ef4p33vxquv?rj-ttl=5&rj-tok=AAABc-OCFngAs_AvDsY_StEpMg",
-    website: "https://node-12.zeno.fm/60ef4p33vxquv?rj-ttl=5&rj-tok=AAABc-OCFngAs_AvDsY_StEpMg",
+    streamUrl: "https://stream.zeno.fm/60ef4p33vxquv",
+    website: "https://www.radioindia.in/",
     country: "India",
     countryCode: "IN",
     language: "hindi",
@@ -585,7 +585,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "filmy-mirchi",
     name: "Filmy Mirchi",
-    streamUrl: "https://stream-142.zeno.fm/6n6ewddtad0uv?zs=cKmM_ShzRUaR2AGnxhugOg",
+    streamUrl: "https://stream.zeno.fm/6n6ewddtad0uv",
     website: "",
     country: "India",
     countryCode: "IN",
@@ -909,7 +909,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "ks-chitra",
     name: "KS CHITRA",
-    streamUrl: "https://stream-46.zeno.fm/aad4e51qz7zuv?zs=KFvl1-YuQkuqY2m7VeO4hQ",
+    streamUrl: "https://stream.zeno.fm/aad4e51qz7zuv",
     website: "https://liveradios.in/ks-chitra-radio.html",
     country: "India",
     countryCode: "IN",
@@ -1137,7 +1137,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "new-hits-of-bollywood",
     name: "New Hits Of Bollywood",
-    streamUrl: "https://stream-146.zeno.fm/rqqps6cbe3quv?zs=loHp_DNyRPiAxC52AL95hg",
+    streamUrl: "https://stream.zeno.fm/rqqps6cbe3quv",
     website: "http://www.hitsofbollywood.com/",
     country: "India",
     countryCode: "IN",
@@ -1245,7 +1245,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "radio-bollywood-gaane-purane",
     name: "Radio Bollywood Gaane Purane",
-    streamUrl: "https://stream-145.zeno.fm/6n6ewddtad0uv?zs=Hc47dloSRx-vBgJnNOT8DA",
+    streamUrl: "https://stream.zeno.fm/6n6ewddtad0uv",
     website: "https://gaanepurane.my-free.website/",
     country: "India",
     countryCode: "IN",
@@ -1257,7 +1257,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "radio-city-hindi",
     name: "Radio City Hindi",
-    streamUrl: "https://stream-60.zeno.fm/pxc55r5uyc9uv?zs=xkD7f1ttQe20opARKqWXuA",
+    streamUrl: "http://prclive4.listenon.in/Hindi",
     website: "https://www.radiocity.in/",
     country: "India",
     countryCode: "IN",
@@ -1269,7 +1269,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "radio-city-hiphop",
     name: "Radio City Hip-Hop",
-    streamUrl: "https://stream-62.zeno.fm/gut7ff5uyc9uv?zs=SJN4wL6OR8GqeQ3G2gSILA",
+    streamUrl: "http://prclive1.listenon.in:9960/",
     website: "https://www.radiocity.in/",
     country: "India",
     countryCode: "IN",
@@ -1449,7 +1449,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "rafi-hit-songs",
     name: "Rafi hit songs",
-    streamUrl: "https://stream-143.zeno.fm/0zkr7x8ztm0uv?zs=WTPQx8TiQXSo11XU0iyTAQ",
+    streamUrl: "https://stream.zeno.fm/0zkr7x8ztm0uv",
     website: "http://www.hitsofbollywood.com/",
     country: "India",
     countryCode: "IN",
@@ -1461,7 +1461,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "red-fm-935",
     name: "Red FM 93.5",
-    streamUrl: "https://stream-174.zeno.fm/q97eczydqrhvv?zt=eyJhbGciOiJIUzI1NiJ9.eyJzdHJlYW0iOiJxOTdlY3p5ZHFyaHZ2IiwiaG9zdCI6InN0cmVhbS0xNzQuemVuby5mbSIsInJ0dGwiOjUsImp0aSI6InRhOHAxeTRDVDdHenYtN2NoeFQxRmciLCJpYXQiOjE3NDIwNDA3NDEsImV4cCI6MTc0MjA0MDgwMX0.MkjhfjpDcWKnjIHhgkq3SGxg9gH8U901CrsfPZ42PGM",
+    streamUrl: "https://stream.zeno.fm/q97eczydqrhvv",
     website: "https://www.redfmindia.in/delhi",
     country: "India",
     countryCode: "IN",
@@ -1485,7 +1485,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "sakkath-radio-kannada",
     name: "Sakkath Radio Kannada",
-    streamUrl: "https://node-31.zeno.fm/fcsk9ryerd0uv?rj-ttl=5&rj-tok=AAABdXnVZ3sA-61zQpwDIgRWvw",
+    streamUrl: "https://stream.zeno.fm/fcsk9ryerd0uv",
     website: "",
     country: "India",
     countryCode: "IN",
