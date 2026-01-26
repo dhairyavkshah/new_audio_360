@@ -119,7 +119,12 @@ class NativeEffectsManagerClass {
   }
 
   private async releaseInternal(): Promise<void> {
-    // Only release Equalizer - no other effects
+    if (!this.isAvailable()) {
+      this.isInitialized = false;
+      this.equalizerAttached = false;
+      this.audioSessionId = 0;
+      return;
+    }
     await EqualizerModule.release();
     this.isInitialized = false;
     this.equalizerAttached = false;
@@ -388,7 +393,7 @@ class NativeEffectsManagerClass {
    * @param gain Gain in user units (-5 to +5)
    */
   setBassBoost(gain: number): void {
-    if (!this.isAvailable() || !this.equalizerAttached) {
+    if (Platform.OS !== 'android' || !this.isAvailable() || !this.equalizerAttached) {
       return;
     }
     EqualizerModule.setBassBoost(gain);
@@ -400,7 +405,7 @@ class NativeEffectsManagerClass {
    * @param gain Gain in user units (-5 to +5)
    */
   setTrebleBoost(gain: number): void {
-    if (!this.isAvailable() || !this.equalizerAttached) {
+    if (Platform.OS !== 'android' || !this.isAvailable() || !this.equalizerAttached) {
       return;
     }
     EqualizerModule.setTrebleBoost(gain);

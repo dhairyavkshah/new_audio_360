@@ -36,6 +36,17 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: getAppIdentifier(),
+      buildNumber: '25',
+      infoPlist: {
+        NSAppleMusicUsageDescription: 'Allow $(PRODUCT_NAME) to access your music library to play your songs.',
+        NSMicrophoneUsageDescription: 'Allow $(PRODUCT_NAME) to access your microphone for voice recording and audio testing.',
+        NSPhotoLibraryUsageDescription: 'Allow $(PRODUCT_NAME) to access your photos to display album artwork.',
+        UIBackgroundModes: ['audio'],
+        NSAppTransportSecurity: {
+          NSAllowsArbitraryLoads: false,
+          NSAllowsLocalNetworking: true,
+        },
+      },
     },
     android: {
       adaptiveIcon: {

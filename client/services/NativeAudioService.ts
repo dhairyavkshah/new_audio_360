@@ -189,34 +189,70 @@ class NativeAudioServiceClass {
   }
 
   setVolume(volume: number): { success: boolean; volume: number } {
+    if (!this.isNativeAvailable()) {
+      return { success: false, volume };
+    }
     return PlaybackEngineModule.setVolume(volume);
   }
 
   setPlaybackSpeed(speed: number): { success: boolean; speed: number } {
+    if (!this.isNativeAvailable()) {
+      return { success: false, speed };
+    }
     return PlaybackEngineModule.setPlaybackSpeed(speed);
   }
 
   setRepeatMode(mode: 'off' | 'one' | 'all'): { success: boolean; mode: string } {
+    if (!this.isNativeAvailable()) {
+      return { success: false, mode };
+    }
     return PlaybackEngineModule.setRepeatMode(mode);
   }
 
   setShuffleMode(enabled: boolean): { success: boolean; shuffle: boolean } {
+    if (!this.isNativeAvailable()) {
+      return { success: false, shuffle: enabled };
+    }
     return PlaybackEngineModule.setShuffleMode(enabled);
   }
 
   getStatus(): PlaybackStatus {
+    if (!this.isNativeAvailable()) {
+      return {
+        isInitialized: false,
+        isPlaying: false,
+        currentPositionMs: 0,
+        durationMs: 0,
+        bufferedPositionMs: 0,
+        currentIndex: 0,
+        queueLength: 0,
+        playbackState: 'idle',
+        repeatMode: 'off',
+        shuffleEnabled: false,
+        audioSessionId: 0,
+      };
+    }
     return PlaybackEngineModule.getStatus();
   }
 
   getAudioSessionId(): number {
+    if (!this.isNativeAvailable()) {
+      return 0;
+    }
     return this.audioSessionId || PlaybackEngineModule.getAudioSessionId();
   }
 
   getCurrentPosition(): number {
+    if (!this.isNativeAvailable()) {
+      return 0;
+    }
     return PlaybackEngineModule.getCurrentPosition();
   }
 
   getDuration(): number {
+    if (!this.isNativeAvailable()) {
+      return 0;
+    }
     return PlaybackEngineModule.getDuration();
   }
 
@@ -453,17 +489,19 @@ class NativeAudioServiceClass {
         await WaveformAnalyzerModule.release();
       }
 
-      if (this.isImmersiveModeAvailable()) {
+      if (this.isImmersiveModeAvailable() && Platform.OS === 'android') {
         await ImmersiveModeEngineModule.release();
       }
 
-      const result = await PlaybackEngineModule.release();
+      if (this.isNativeAvailable()) {
+        await PlaybackEngineModule.release();
+      }
 
       this.isInitialized = false;
       this.audioSessionId = 0;
       this.immersiveMode = 'off';
 
-      return result;
+      return { success: true };
     } catch (error) {
       console.error('NativeAudioService.release error:', error);
       return { success: false };
