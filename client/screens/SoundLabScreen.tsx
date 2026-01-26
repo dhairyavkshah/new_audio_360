@@ -885,7 +885,7 @@ function SoundLabScreen() {
             <View style={styles.effectSliderRow}>
               <View style={styles.effectSliderHeader}>
                 <MaterialCommunityIcons name="waveform" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Bass Enhancement</FluentText>
+                <FluentText variant="body1" style={{ marginLeft: FluentSpacing.xs, flex: 1, fontWeight: FluentFontWeight.semibold }}>Bass Enhancement</FluentText>
                 <FluentToggle
                   value={pbeEnabled}
                   onValueChange={handlePBEToggle}
@@ -899,7 +899,7 @@ function SoundLabScreen() {
             <View style={styles.effectSliderRow}>
               <View style={styles.effectSliderHeader}>
                 <MaterialCommunityIcons name="arrow-up-bold-hexagon-outline" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Audio Upscaling</FluentText>
+                <FluentText variant="body1" style={{ marginLeft: FluentSpacing.xs, flex: 1, fontWeight: FluentFontWeight.semibold }}>Audio Upscaling</FluentText>
                 <FluentToggle
                   value={sbrEnabled}
                   onValueChange={handleSBRToggle}
@@ -913,7 +913,7 @@ function SoundLabScreen() {
             <View style={styles.effectSliderRow}>
               <View style={styles.effectSliderHeader}>
                 <MaterialCommunityIcons name="volume-high" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Volume Optimization</FluentText>
+                <FluentText variant="body1" style={{ marginLeft: FluentSpacing.xs, flex: 1, fontWeight: FluentFontWeight.semibold }}>Volume Optimization</FluentText>
                 <FluentToggle
                   value={dynamicEQEnabled}
                   onValueChange={handleDynamicEQToggle}
