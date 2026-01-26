@@ -47,6 +47,7 @@ const OPEN_SOURCE_LIBRARIES = [
   { name: "Expo Secure Store", license: "MIT License", version: "~14.x" },
   { name: "Async Storage", license: "MIT License", version: "2.x" },
   { name: "Material Community Icons", license: "SIL Open Font License 1.1", version: "7.x" },
+  { name: "Radio Browser API", license: "CC BY-SA 4.0", version: "Community API" },
 ];
 
 export default function OpenSourceLicensesScreen() {
@@ -157,6 +158,12 @@ export default function OpenSourceLicensesScreen() {
             content={'This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL\n\nThe fonts are free to use, study, modify and redistribute, subject to the conditions in the license. The fonts cannot be sold by themselves but can be bundled with other software.'}
             colors={colors}
           />
+
+          <LicenseSection
+            title="Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)"
+            content={'Radio Browser API data is licensed under Creative Commons Attribution-ShareAlike 4.0 International License.\n\nYou are free to share (copy and redistribute) and adapt (remix, transform, build upon) the material for any purpose, even commercially, under the following terms:\n\nAttribution: You must give appropriate credit, provide a link to the license, and indicate if changes were made.\n\nShareAlike: If you remix, transform, or build upon the material, you must distribute your contributions under the same license.\n\nMore info: https://creativecommons.org/licenses/by-sa/4.0/'}
+            colors={colors}
+          />
         </View>
 
         <View style={styles.disclaimerSection}>
@@ -168,7 +175,7 @@ export default function OpenSourceLicensesScreen() {
         <View style={styles.footer}>
           <FluentText variant="caption2" color="tertiary" align="center">
             This legal notice was last updated on January 26, 2026.{"\n"}
-            Document Version: 1.0.2
+            Document Version: 1.0.3
           </FluentText>
         </View>
       </ScrollView>

@@ -20,7 +20,7 @@
 ## Short Description (80 characters max)
 
 ```
-Premium music player with studio-grade sound, 55 themes, and online radio.
+Premium music player with studio-grade DSP, 55 themes & intelligent radio.
 ```
 
 ---
@@ -32,54 +32,59 @@ New Audio 360 delivers a top-grade music experience crafted for audio enthusiast
 
 STUDIO-GRADE SOUND LAB
 
-Take full control of your audio experience:
+Pure software-based DSP for consistent, professional audio on every Android device:
 
-• 10-Band Parametric Equalizer - Fine-tune 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz
-• 10 EQ Presets - Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity
-• Bass & Treble Controls - ±12 dB adjustment for perfect sound balance
-• Spatial Enhancement - 6-level psychoacoustic processing (ITD, side boost)
-• Multi-Tap Reverb - Add room ambience with 4 delay lines
-• Distortion Prevention - Intelligent brickwall limiting keeps audio clean at any volume
-• 6 Immersive Modes - Music, 360 Reality, Gaming, Podcast, Movie, Sports
-• Real-time Waveform - Beautiful visualization while playing
+- 10-Band Parametric Equalizer - Fine-tune 60Hz to 16kHz frequencies
+- 10 EQ Presets - Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity
+- Bass & Treble Controls - Precise shelf filters with up to 12 dB boost
+- 6-Level Spatial Enhancement - Psychoacoustic stereo widening with ITD processing
+- Multi-Tap Reverb - Rich room ambience with 4 delay lines
+- Brickwall Limiter - Intelligent distortion prevention at any volume
+- 6 Immersive Modes - Music, 360 Reality, Gaming, Podcast, Movie, Sports
+- Real-time Waveform Visualization
 
-Works consistently on ALL Android devices - same great sound everywhere.
+Same studio-quality sound on ALL Android devices.
 
 55 STUNNING THEMES
 
-Express yourself with our extensive theme collection:
+Express yourself with our extensive theme collection across 6 categories:
 
-• System (5) - Fluent Light, Dark, Night AMOLED, Warm Neutral, Cool Blue
-• Winamp (10) - Classic, Modern, Bento, and nostalgic styles
-• Retro (10) - VHS, Cassette, Vaporwave, Cyberpunk aesthetics
-• Nature (10) - Forest, Ocean, Sunset, Aurora environments
-• Professional (10) - Midnight, Corporate, Slate, Graphite
-• Special (10) - Neon, Holographic, Candy, Galaxy effects
+- System (5) - Fluent Light, Dark, Night AMOLED, Warm Neutral, Cool Blue
+- Winamp (10) - Classic, Modern, Bento, and nostalgic styles
+- Retro (10) - VHS, Cassette, Vaporwave, Cyberpunk aesthetics
+- Nature (10) - Forest, Ocean, Sunset, Aurora environments
+- Professional (10) - Midnight, Corporate, Slate, Graphite
+- Special (10) - Neon, Holographic, Candy, Galaxy effects
 
-DUAL RADIO EXPERIENCE
+INTELLIGENT RADIO DISCOVERY
 
-• FM/AM Radio - Native tuning on supported Android devices
-• Online Radio - Hundreds of verified stations worldwide
-  - Quality streams only
-  - Location-based discovery finds local stations
-  - Apply Sound Lab effects to live radio
+Access 40,000+ radio stations worldwide with our smart discovery system:
+
+- Auto-Discovery - Scans Radio Browser API for quality stations
+- Country-Based - Up to 1000 stations per country, sorted by popularity
+- Quality Filtering - Only verified, working streams
+- Smart Caching - 30-day cache with manual refresh option
+- Location Awareness - Finds local stations automatically
+- Sound Lab Integration - Apply audio effects to live radio
+
+Plus native FM/AM radio support on compatible devices.
 
 POWERFUL LIBRARY MANAGEMENT
 
-• Instant Library Loading - Fast scanning of your music collection
-• Folder Selection - Choose specific music folders
-• Smart Categories - Recently Played, Most Played, Favorites
-• Hide Songs - Remove tracks from view without deleting
-• Full Playlist Support - Create, edit, reorder, delete playlists
+- Fast Library Scanning - Quick indexing of your music collection
+- Folder Selection - Choose specific music directories
+- Smart Categories - Recently Played, Most Played, Favorites
+- Hide Songs - Remove tracks from view without deleting
+- Full Playlist Support - Create, edit, reorder, delete playlists
 
 SEAMLESS PLAYBACK
 
-• Background playback with notification controls
-• Queue management with drag-to-reorder
-• Shuffle and repeat modes
-• Playback speed (0.5x to 2.0x)
-• Sleep timer for bedtime listening
-• Lock screen album art
+- Background playback with notification controls
+- Queue management with drag-to-reorder
+- Shuffle and repeat modes
+- Playback speed adjustment (0.5x to 2.0x)
+- Sleep timer for bedtime listening
+- Lock screen album art display
 
 ONE-TIME PURCHASE, LIFETIME ACCESS
 
@@ -87,18 +92,19 @@ No subscriptions. No ads. No limitations. No data collection. Pay once, own fore
 
 PRIVACY-FIRST DESIGN
 
-• All data stored locally on your device
-• No analytics or tracking
-• No cloud storage required
-• Works fully offline after purchase
+- All data stored locally on your device
+- No analytics or tracking
+- No cloud storage required
+- Works fully offline after purchase
 
 WHY CHOOSE NEW AUDIO 360?
 
-✓ Professional Sound Quality - Studio-grade audio on any device
-✓ Beautiful Design - Microsoft Fluent 2 interface
-✓ 55 Unique Themes - Personalize your experience
-✓ Regular Updates - New features and improvements
-✓ Built by audio enthusiasts, for audio enthusiasts
+- Professional Sound Quality - Studio-grade DSP on any device
+- Beautiful Design - Microsoft Fluent 2 interface
+- 55 Unique Themes - Complete personalization
+- 40,000+ Radio Stations - Intelligent discovery worldwide
+- Regular Updates - New features and improvements
+- Built by audio enthusiasts, for audio enthusiasts
 
 Download now and elevate your music experience!
 ```
@@ -108,21 +114,21 @@ Download now and elevate your music experience!
 ## What's New (500 characters max)
 
 ```
-New Audio 360 v26.0
+v26.1 - Intelligent Radio Discovery
 
-Premium Music Player for Audio Enthusiasts
+NEW: Access 40,000+ radio stations worldwide
+- Smart scanning via Radio Browser API
+- Up to 1000 stations per country
+- Quality-filtered, popularity-sorted
+- 30-day cache with manual refresh
+- Location-based station discovery
 
-• 10-Band Parametric EQ with 10 presets
-• Bass & Treble boost controls
-• 6-level Spatial Enhancement
-• 6 Immersive Modes (Music, 360 Reality, Gaming & more)
-• Brickwall Limiter for distortion-free audio
-• 55 stunning themes across 6 categories
-• Online Radio: 130+ curated Indian stations
-• Pure software DSP for studio-quality sound
-• One-time purchase, lifetime access
+IMPROVED:
+- Enhanced API reliability (30s timeout)
+- Better visual feedback during scans
+- Optimized station list performance
 
-© Dhairya Vipulkumar Shah | The Team 360
+One-time purchase, lifetime access.
 ```
 
 ---
@@ -130,7 +136,7 @@ Premium Music Player for Audio Enthusiasts
 ## Keywords/Tags
 
 ```
-music player, audio player, equalizer, bass boost, treble, EQ, music, mp3 player, radio, fm radio, themes, audiophile, hifi, sound quality, playlist, music library, audio effects, offline music, premium player
+music player, audio player, equalizer, bass boost, treble, EQ, radio, online radio, fm radio, themes, audiophile, hifi, sound quality, playlist, music library, audio effects, offline music, premium player, internet radio, dsp
 ```
 
 ---
@@ -154,7 +160,7 @@ music player, audio player, equalizer, bass boost, treble, EQ, music, mp3 player
 4. Immersive Modes - 6 mode selection
 5. Theme Gallery - Multiple themes
 6. Music Library - Album grid view
-7. Online Radio - Station list
+7. Intelligent Radio - Station discovery
 8. Playlist View - User playlists
 
 ---
@@ -164,7 +170,7 @@ music player, audio player, equalizer, bass boost, treble, EQ, music, mp3 player
 | Data Type | Collected | Shared |
 |-----------|-----------|--------|
 | Audio files | No | No |
-| Location | Optional (radio) | No |
+| Location | Optional (radio discovery) | No |
 | App activity | No | No |
 | Device info | No | No |
 
