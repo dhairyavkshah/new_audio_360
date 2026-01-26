@@ -28,20 +28,39 @@ windows/
 
 ## Building the Windows Package
 
-### Option 1: GitHub Actions (Recommended)
+### Step 1: Build the Web App (GitHub Actions)
 
 1. Go to **Actions** > **Build Windows Store Package**
 2. Click **Run workflow**
 3. Enter the version number (e.g., `26.0.0`)
-4. Select build type:
-   - `store` - For Microsoft Store submission (unsigned)
-   - `sideload` - For testing (self-signed)
-5. Click **Run workflow**
-6. Download the artifact when complete
+4. Click **Run workflow**
+5. Download the **web-build** artifact when complete
 
-### Option 2: Manual Build
+### Step 2: Deploy the Web App
 
-1. **Build the web application:**
+Deploy the web-build folder to any web hosting service:
+- GitHub Pages
+- Netlify
+- Vercel
+- Your own server
+
+### Step 3: Create MSIX Package (PWABuilder Website)
+
+1. Go to https://www.pwabuilder.com
+2. Enter your deployed web app URL
+3. Click **Start** to analyze your PWA
+4. Click **Package for stores**
+5. Select **Windows**
+6. Configure options:
+   - Package ID: `TheTeam360.NewAudio360`
+   - Publisher Display Name: `The Team 360`
+   - Publisher ID: Your Microsoft Partner Center publisher ID
+7. Click **Generate**
+8. Download the MSIX package
+
+### Alternative: Manual Build
+
+1. **Build the web application locally:**
    ```bash
    npm ci
    npx expo export --platform web
@@ -52,20 +71,9 @@ windows/
    cp public/manifest.json dist/
    cp public/sw.js dist/
    mkdir -p dist/icons
-   # Copy generated icons
    ```
 
-3. **Use PWABuilder:**
-   - Visit https://www.pwabuilder.com/
-   - Enter your deployed web app URL
-   - Or upload the `dist/manifest.json`
-   - Generate Windows package
-
-4. **Or use PWABuilder CLI:**
-   ```bash
-   npm install -g @pwabuilder/cli
-   pwabuilder package -p windows10 -m dist/manifest.json
-   ```
+3. **Deploy and use PWABuilder website** (as described above)
 
 ## Generating Icons
 

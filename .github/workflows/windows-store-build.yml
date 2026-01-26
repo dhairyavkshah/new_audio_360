@@ -7,14 +7,6 @@ on:
         description: 'Version number (e.g., 26.0.0)'
         required: true
         default: '26.0.0'
-      build_type:
-        description: 'Build type'
-        required: true
-        default: 'store'
-        type: choice
-        options:
-          - store
-          - sideload
 
 env:
   NODE_VERSION: '20'
@@ -50,62 +42,20 @@ jobs:
           mkdir -p dist/icons
           cp -r windows/assets/icons/* dist/icons/ 2>/dev/null || true
 
+      - name: Create version info
+        run: |
+          echo "Version: ${{ github.event.inputs.version }}" > dist/version.txt
+          echo "Build Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> dist/version.txt
+          echo "Commit: ${{ github.sha }}" >> dist/version.txt
+
       - name: Upload web build
         uses: actions/upload-artifact@v4
         with:
-          name: web-build
+          name: web-build-${{ github.event.inputs.version }}
           path: dist/
-          retention-days: 1
-
-  package-windows:
-    name: Package Windows Store App
-    runs-on: windows-latest
-    needs: build-web
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download web build
-        uses: actions/download-artifact@v4
-        with:
-          name: web-build
-          path: web-build/
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Generate Windows package
-        run: |
-          npx @pwabuilder/cli package -p windows10 -m web-build/manifest.json -d ./windows-output
-        env:
-          VERSION: ${{ github.event.inputs.version }}
-
-      - name: Setup Certificate for Store Build
-        if: github.event.inputs.build_type == 'store'
-        run: |
-          echo "Store submission package will be unsigned - Microsoft signs during submission"
-
-      - name: Create Self-Signed Certificate for Sideload
-        if: github.event.inputs.build_type == 'sideload'
-        run: |
-          $cert = New-SelfSignedCertificate -Type Custom -Subject "CN=The Team 360" -KeyUsage DigitalSignature -FriendlyName "New Audio 360 Dev Certificate" -CertStoreLocation "Cert:\CurrentUser\My" -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
-          $pwd = ConvertTo-SecureString -String "TempPassword123!" -Force -AsPlainText
-          Export-PfxCertificate -cert $cert -FilePath windows-output/certificate.pfx -Password $pwd
-        shell: pwsh
-
-      - name: Upload Windows Package
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-store-package-${{ github.event.inputs.version }}
-          path: |
-            windows-output/*.msix
-            windows-output/*.msixbundle
-            windows-output/*.appxbundle
           retention-days: 30
 
-      - name: Upload Store Submission Assets
+      - name: Upload store assets
         uses: actions/upload-artifact@v4
         with:
           name: store-submission-assets-${{ github.event.inputs.version }}
@@ -114,39 +64,18 @@ jobs:
             docs/MICROSOFT_STORE_SUBMISSION.md
           retention-days: 30
 
-  create-release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-    needs: package-windows
-    if: github.event.inputs.build_type == 'store'
-    steps:
-      - name: Download Windows Package
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-store-package-${{ github.event.inputs.version }}
-          path: release-assets/
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: windows-v${{ github.event.inputs.version }}
-          name: Windows Store v${{ github.event.inputs.version }}
-          body: |
-            ## New Audio 360 - Windows Store Release v${{ github.event.inputs.version }}
-
-            ### Installation
-            This package is intended for Microsoft Store submission.
-
-            ### What's Included
-            - MSIX package for Windows 10/11
-            - Full PWA functionality
-            - Offline support
-            - Windows Music folder integration
-
-            ### Requirements
-            - Windows 10 version 1809 or later
-            - Windows 11 (all versions)
-          files: release-assets/*
-          draft: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Summary
+        run: |
+          echo "## Build Complete! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ github.event.inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps to Create Windows Package:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download the **web-build** artifact above" >> $GITHUB_STEP_SUMMARY
+          echo "2. Deploy it to a web server (or use GitHub Pages)" >> $GITHUB_STEP_SUMMARY
+          echo "3. Go to [PWABuilder.com](https://www.pwabuilder.com)" >> $GITHUB_STEP_SUMMARY
+          echo "4. Enter your deployed URL" >> $GITHUB_STEP_SUMMARY
+          echo "5. Click **Package for stores** → **Windows**" >> $GITHUB_STEP_SUMMARY
+          echo "6. Download the MSIX package" >> $GITHUB_STEP_SUMMARY
+          echo "7. Submit to Microsoft Store" >> $GITHUB_STEP_SUMMARY
