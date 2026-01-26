@@ -31,7 +31,6 @@ const OPEN_SOURCE_LIBRARIES = [
   { name: "React Navigation", license: "MIT License", version: "7.x" },
   { name: "React Native Reanimated", license: "MIT License", version: "3.x" },
   { name: "React Native Track Player", license: "Apache License 2.0", version: "4.x" },
-  { name: "React Native Audio API", license: "MIT License", version: "0.x" },
   { name: "React Native IAP", license: "MIT License", version: "12.x" },
   { name: "Expo AV", license: "MIT License", version: "~15.x" },
   { name: "Expo Media Library", license: "MIT License", version: "~17.x" },
