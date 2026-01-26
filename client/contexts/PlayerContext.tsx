@@ -114,6 +114,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playbackRestoredRef = useRef<boolean>(false);
   const lastProgressUpdateRef = useRef<number>(0);
   const progressThrottleMs = 500; // Throttle progress updates to reduce re-renders
+  
+  // Calculated progress approach - track start time and position, calculate elapsed
+  const playbackStartTimeRef = useRef<number>(0); // When playback started (Date.now())
+  const playbackStartPositionRef = useRef<number>(0); // Position when playback started (seconds)
+  const calculatedProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isPlayingRef = useRef<boolean>(false); // Track playing state for timer
 
   useEffect(() => {
     currentSongRef.current = currentSong;
@@ -137,7 +143,56 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMusicPlaying(isPlaying);
+    isPlayingRef.current = isPlaying;
   }, [isPlaying]);
+
+  // Start calculated progress timer - updates UI using math, no async calls
+  const startCalculatedProgressTimer = useCallback((startPosition: number = 0) => {
+    // Stop any existing timer
+    if (calculatedProgressTimerRef.current) {
+      clearInterval(calculatedProgressTimerRef.current);
+    }
+    
+    // Record when we started and from what position
+    playbackStartTimeRef.current = Date.now();
+    playbackStartPositionRef.current = startPosition;
+    
+    // Start timer that calculates position every 250ms
+    calculatedProgressTimerRef.current = setInterval(() => {
+      if (!isPlayingRef.current) return;
+      
+      const elapsedMs = Date.now() - playbackStartTimeRef.current;
+      const calculatedPosition = playbackStartPositionRef.current + (elapsedMs / 1000);
+      
+      // Update UI with calculated position
+      setCurrentTime(calculatedPosition);
+      currentTimeRef.current = calculatedPosition;
+    }, 250);
+  }, []);
+
+  // Stop calculated progress timer and record current position
+  const stopCalculatedProgressTimer = useCallback(() => {
+    if (calculatedProgressTimerRef.current) {
+      clearInterval(calculatedProgressTimerRef.current);
+      calculatedProgressTimerRef.current = null;
+    }
+    
+    // Calculate final position
+    if (playbackStartTimeRef.current > 0) {
+      const elapsedMs = Date.now() - playbackStartTimeRef.current;
+      const finalPosition = playbackStartPositionRef.current + (elapsedMs / 1000);
+      playbackStartPositionRef.current = finalPosition;
+      currentTimeRef.current = finalPosition;
+    }
+  }, []);
+
+  // Update calculated progress when seeking
+  const updateCalculatedPosition = useCallback((newPosition: number) => {
+    playbackStartPositionRef.current = newPosition;
+    playbackStartTimeRef.current = Date.now();
+    setCurrentTime(newPosition);
+    currentTimeRef.current = newPosition;
+  }, []);
 
   useEffect(() => {
     setAudioModeAsync({
