@@ -34,6 +34,7 @@ const OPEN_SOURCE_LIBRARIES = [
   { name: "React Native IAP", license: "MIT License", version: "12.x" },
   { name: "React Native Audio API", license: "MIT License", version: "0.x" },
   { name: "AndroidX Media3 ExoPlayer", license: "Apache License 2.0", version: "1.2.1" },
+  { name: "Google Play Billing Library", license: "Apache License 2.0", version: "6.1.0" },
   { name: "AndroidX Security Crypto", license: "Apache License 2.0", version: "1.1.0" },
   { name: "Expo AV", license: "MIT License", version: "~15.x" },
   { name: "Expo Media Library", license: "MIT License", version: "~17.x" },
