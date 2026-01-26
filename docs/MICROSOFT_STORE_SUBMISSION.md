@@ -138,16 +138,7 @@ audiophile, dsp, sound lab, radio, fm radio, streaming radio
 
 ---
 
-## Pricing & Availability
-
-### Pricing
-
-| Market | Price (USD Equivalent) |
-|--------|------------------------|
-| Base Price | $4.99 |
-| India | ₹399 |
-| Europe | €4.99 |
-| UK | £3.99 |
+## Availability
 
 ### Markets
 - Available in all markets where Microsoft Store operates
