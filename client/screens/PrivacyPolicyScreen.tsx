@@ -3,7 +3,6 @@ import { View, StyleSheet, ScrollView } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
-import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 
@@ -45,7 +44,7 @@ export default function PrivacyPolicyScreen() {
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
-        <GlassCard style={styles.headerCard}>
+        <View style={styles.headerCard}>
           <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
             <MaterialCommunityIcons name="shield-lock" size={32} color={colors.colorBrandForeground1} />
           </View>
@@ -55,13 +54,13 @@ export default function PrivacyPolicyScreen() {
           <FluentText variant="caption2" color="secondary" align="center">
             Effective Date: January 25, 2026
           </FluentText>
-        </GlassCard>
+        </View>
 
-        <GlassCard style={styles.introCard}>
+        <View style={styles.introCard}>
           <FluentText variant="caption1" color="secondary" style={styles.introText}>
             This Privacy Policy describes how New Audio 360, developed and operated by Dhairya Shah under The Team 360, handles information in connection with your use of the New Audio 360 mobile application. By installing or using the Application, you acknowledge that you have read and understood this Policy.
           </FluentText>
-        </GlassCard>
+        </View>
 
         <View style={styles.sectionsContainer}>
           <PolicySection

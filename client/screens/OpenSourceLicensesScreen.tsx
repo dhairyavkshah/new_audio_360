@@ -3,7 +3,6 @@ import { View, StyleSheet, ScrollView } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
-import { GlassCard } from "@/components/GlassCard";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 
@@ -62,7 +61,7 @@ export default function OpenSourceLicensesScreen() {
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
-        <GlassCard style={styles.headerCard}>
+        <View style={styles.headerCard}>
           <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
             <MaterialCommunityIcons name="scale-balance" size={32} color={colors.colorBrandForeground1} />
           </View>
@@ -72,9 +71,9 @@ export default function OpenSourceLicensesScreen() {
           <FluentText variant="caption2" color="secondary" align="center">
             Open Source Software Acknowledgments
           </FluentText>
-        </GlassCard>
+        </View>
 
-        <GlassCard style={styles.copyrightCard}>
+        <View style={styles.copyrightCard}>
           <View style={[styles.warningIcon, { backgroundColor: colors.colorBrandForeground1 + "20" }]}>
             <MaterialCommunityIcons name="copyright" size={24} color={colors.colorBrandForeground1} />
           </View>
@@ -102,7 +101,7 @@ export default function OpenSourceLicensesScreen() {
           <FluentText variant="caption1" color="secondary" style={[styles.copyrightText, { marginTop: FluentSpacing.s }]}>
             For licensing inquiries, permissions, or related matters:{"\n"}support@theteam360.com
           </FluentText>
-        </GlassCard>
+        </View>
 
         <View style={styles.sectionsContainer}>
           <FluentText variant="subtitle2" style={styles.sectionHeader}>

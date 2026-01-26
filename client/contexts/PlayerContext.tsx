@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import { Platform, AppState, AppStateStatus } from 'react-native';
 import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from 'expo-audio';
-import { Song } from '@/lib/data';
-import { DeviceSong } from '@/contexts/MediaLibraryContext';
+import { Song, mockSongs } from '@/lib/data';
+import { DeviceSong, useMediaLibraryContext } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
 import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
 import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule, AudioSessionBridgeModule } from 'audio-effects';
@@ -62,6 +62,7 @@ const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const { mode: soundLabMode, eqBands, immersiveEffect, bassBoost, trebleBoost } = useSoundLab();
+  const { songs: mediaLibrarySongs, isLoading: mediaLibraryLoading } = useMediaLibraryContext();
   
   const [currentSong, setCurrentSong] = useState<PlayableSong | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -107,6 +108,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const wasPlayingBeforeBackgroundRef = useRef<boolean>(false);
   const handleNextInternalRef = useRef<() => void>(() => {});
   const handlePreviousInternalRef = useRef<() => void>(() => {});
+  const lastSaveTimeRef = useRef<number>(0);
+  const progressSaveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentTimeRef = useRef<number>(0);
+  const playbackRestoredRef = useRef<boolean>(false);
 
   useEffect(() => {
     currentSongRef.current = currentSong;
@@ -123,6 +128,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     repeatRef.current = repeat;
   }, [repeat]);
+
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
 
   useEffect(() => {
     setMusicPlaying(isPlaying);
@@ -391,6 +400,81 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     getMostPlayed(10).then(setMostPlayed);
   }, []);
 
+  // Full playback state restoration when media library is available
+  useEffect(() => {
+    // Only restore once
+    if (playbackRestoredRef.current) return;
+    
+    // Wait for media library to finish loading
+    if (mediaLibraryLoading) return;
+    
+    const restorePlaybackState = async () => {
+      try {
+        const state = await getPlayerState();
+        if (!state || !state.currentSongId) {
+          playbackRestoredRef.current = true;
+          return;
+        }
+        
+        console.log('[PlayerContext] Restoring playback state:', {
+          currentSongId: state.currentSongId,
+          queueLength: state.queue?.length || 0,
+          currentTime: state.currentTime
+        });
+        
+        // Helper function to find a song by ID
+        const findSongById = (id: string): PlayableSong | undefined => {
+          // First check media library songs
+          const deviceSong = mediaLibrarySongs.find(s => s.id === id);
+          if (deviceSong) return deviceSong;
+          
+          // Fallback to mock songs
+          const mockSong = mockSongs.find(s => s.id === id);
+          if (mockSong) return mockSong;
+          
+          return undefined;
+        };
+        
+        // Restore queue from saved song IDs
+        let restoredQueue: PlayableSong[] = [];
+        if (state.queue && state.queue.length > 0) {
+          restoredQueue = state.queue
+            .map(id => findSongById(id))
+            .filter((song): song is PlayableSong => song !== undefined);
+        }
+        
+        // Find the current song
+        const currentSongToRestore = findSongById(state.currentSongId);
+        
+        if (currentSongToRestore) {
+          console.log('[PlayerContext] Restored song:', currentSongToRestore.title);
+          
+          // If queue is empty but we have a current song, create a queue with just that song
+          if (restoredQueue.length === 0) {
+            restoredQueue = [currentSongToRestore];
+          }
+          
+          // Set the queue and current song without auto-playing
+          setQueueState(restoredQueue);
+          setCurrentSong(currentSongToRestore);
+          setDuration(currentSongToRestore.duration || 0);
+          
+          // currentTime was already restored in the previous effect
+          console.log('[PlayerContext] Playback state restored successfully (paused at', state.currentTime, 'seconds)');
+        } else {
+          console.log('[PlayerContext] Could not find saved song in library:', state.currentSongId);
+        }
+        
+        playbackRestoredRef.current = true;
+      } catch (error) {
+        console.error('[PlayerContext] Error restoring playback state:', error);
+        playbackRestoredRef.current = true;
+      }
+    };
+    
+    restorePlaybackState();
+  }, [mediaLibraryLoading, mediaLibrarySongs]);
+
   useEffect(() => {
     if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
       TrackPlayerService.setRepeatMode(repeat);
@@ -403,21 +487,37 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (nextAppState.match(/inactive|background/) && appStateRef.current === 'active') {
         console.log('[PlayerContext] App going to background - saving state');
+        let positionToSave = currentTimeRef.current;
+        let wasPlaying = false;
+        
         if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
           try {
             const progress = await TrackPlayerService.getProgress();
             const state = await TrackPlayerService.getState();
             if (progress) {
               lastKnownPositionRef.current = progress.position;
+              positionToSave = progress.position;
             }
             wasPlayingBeforeBackgroundRef.current = state === State.Playing;
+            wasPlaying = state === State.Playing;
           } catch {
-            lastKnownPositionRef.current = currentTime;
-            wasPlayingBeforeBackgroundRef.current = isPlaying;
+            lastKnownPositionRef.current = currentTimeRef.current;
+            wasPlayingBeforeBackgroundRef.current = false;
           }
         } else {
-          lastKnownPositionRef.current = currentTime;
-          wasPlayingBeforeBackgroundRef.current = isPlaying;
+          lastKnownPositionRef.current = currentTimeRef.current;
+          wasPlayingBeforeBackgroundRef.current = false;
+        }
+        
+        if (currentSongRef.current) {
+          savePlayerState({
+            currentSongId: currentSongRef.current.id,
+            isPlaying: wasPlaying,
+            currentTime: positionToSave,
+            shuffle: shuffleRef.current,
+            repeat: repeatRef.current,
+            queue: queueRef.current.map(s => s.id),
+          });
         }
       }
       
@@ -481,7 +581,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription.remove();
     };
-  }, [setupTrackPlayerCallbacks, restoreTrackPlayerQueue, currentTime, isPlaying]);
+  }, [setupTrackPlayerCallbacks, restoreTrackPlayerQueue]);
 
   useEffect(() => {
     if (useTrackPlayerRef.current) return;
@@ -1138,21 +1238,52 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (sleepTimerRef.current) {
         clearTimeout(sleepTimerRef.current);
       }
+      if (progressSaveIntervalRef.current) {
+        clearInterval(progressSaveIntervalRef.current);
+        progressSaveIntervalRef.current = null;
+      }
     };
   }, [cleanupPlayer]);
 
   useEffect(() => {
     if (currentSong) {
+      lastSaveTimeRef.current = Date.now();
       savePlayerState({
         currentSongId: currentSong.id,
         isPlaying,
-        currentTime,
+        currentTime: currentTimeRef.current,
         shuffle,
         repeat,
         queue: queue.map(s => s.id),
       });
     }
-  }, [currentSong, isPlaying, currentTime, shuffle, repeat, queue]);
+  }, [currentSong, isPlaying, shuffle, repeat, queue]);
+
+  useEffect(() => {
+    if (isPlaying && currentSong) {
+      progressSaveIntervalRef.current = setInterval(() => {
+        const now = Date.now();
+        if (now - lastSaveTimeRef.current >= 5000) {
+          lastSaveTimeRef.current = now;
+          savePlayerState({
+            currentSongId: currentSongRef.current?.id || '',
+            isPlaying: true,
+            currentTime: currentTimeRef.current,
+            shuffle: shuffleRef.current,
+            repeat: repeatRef.current,
+            queue: queueRef.current.map(s => s.id),
+          });
+        }
+      }, 5000);
+    }
+
+    return () => {
+      if (progressSaveIntervalRef.current) {
+        clearInterval(progressSaveIntervalRef.current);
+        progressSaveIntervalRef.current = null;
+      }
+    };
+  }, [isPlaying, currentSong]);
 
   const playSong = useCallback((song: PlayableSong) => {
     loadAndPlaySong(song);
