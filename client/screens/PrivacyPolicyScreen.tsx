@@ -52,13 +52,13 @@ export default function PrivacyPolicyScreen() {
             Privacy Policy
           </FluentText>
           <FluentText variant="caption2" color="secondary" align="center">
-            Effective Date: January 25, 2026
+            Effective Date: January 26, 2026
           </FluentText>
         </View>
 
         <View style={styles.introCard}>
           <FluentText variant="caption1" color="secondary" style={styles.introText}>
-            This Privacy Policy describes how New Audio 360, developed and operated by Dhairya Vipulkumar Shah under The Team 360, handles information in connection with your use of the New Audio 360 mobile application. By installing or using the Application, you acknowledge that you have read and understood this Policy.
+            This Privacy Policy describes how New Audio 360, developed and operated by Dhairya Vipulkumar Shah under The Team 360, handles information in connection with your use of the New Audio 360 Android application available on Google Play Store. By installing or using the Application, you acknowledge that you have read and understood this Policy.
           </FluentText>
         </View>
 
@@ -82,7 +82,7 @@ export default function PrivacyPolicyScreen() {
           <PolicySection
             icon="music-box-multiple"
             title="3. Device Permissions"
-            content="The Application requests certain device permissions solely for functionality purposes: (a) Media Library Access - to read and display audio files stored on your device; (b) Storage Access - to access music files and save user preferences; (c) Notification Permission - to display media playback controls; (d) Location Permission - solely for online radio country detection, processed locally without transmission. These permissions are used exclusively for stated purposes and do not involve data transmission to external servers."
+            content="The Application requests certain Android device permissions solely for functionality purposes: (a) READ_MEDIA_AUDIO / READ_EXTERNAL_STORAGE - to read and display audio files stored on your device; (b) FOREGROUND_SERVICE_MEDIA_PLAYBACK - for background audio playback; (c) POST_NOTIFICATIONS - to display media playback controls in the notification panel; (d) ACCESS_COARSE_LOCATION - solely for online radio country detection, processed locally without transmission. These permissions are used exclusively for stated purposes and do not involve data transmission to external servers."
             colors={colors}
 
           />
@@ -106,7 +106,7 @@ export default function PrivacyPolicyScreen() {
           <PolicySection
             icon="shield-check"
             title="6. Data Security"
-            content="We implement industry-standard security measures to protect locally stored data. Sensitive information such as license status is encrypted using device-level secure storage (Android Keystore). While we take reasonable precautions, no method of electronic storage is 100% secure, and we cannot guarantee absolute security of data stored on your device."
+            content="We implement industry-standard security measures to protect locally stored data. Sensitive information such as license status is encrypted using Android Keystore with AES-256-GCM encryption and HMAC integrity verification. Device-bound encryption keys ensure data cannot be transferred between devices. While we take reasonable precautions, no method of electronic storage is 100% secure, and we cannot guarantee absolute security of data stored on your device."
             colors={colors}
 
           />

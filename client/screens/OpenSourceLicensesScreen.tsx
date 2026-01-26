@@ -163,8 +163,8 @@ export default function OpenSourceLicensesScreen() {
 
         <View style={styles.footer}>
           <FluentText variant="caption2" color="tertiary" align="center">
-            This legal notice was last updated on January 25, 2026.{"\n"}
-            Document Version: 1.0.1
+            This legal notice was last updated on January 26, 2026.{"\n"}
+            Document Version: 1.0.2
           </FluentText>
         </View>
       </ScrollView>

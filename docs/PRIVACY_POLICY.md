@@ -3,14 +3,14 @@
 **New Audio 360**
 
 **Effective Date:** January 19, 2026  
-**Last Updated:** January 25, 2026  
-**Version:** 1.0.1
+**Last Updated:** January 26, 2026  
+**Version:** 1.0.2
 
 ---
 
 ## 1. Introduction
 
-New Audio 360 ("the App," "we," "our," or "us") is a premium music player application developed by TheTeam360. This Privacy Policy describes how we collect, use, and protect your information when you use our application.
+New Audio 360 ("the App," "we," "our," or "us") is a premium Android music player application developed by Dhairya Vipulkumar Shah under The Team 360 and available exclusively on Google Play Store. This Privacy Policy describes how we collect, use, and protect your information when you use our application.
 
 **Our Privacy Commitment:** New Audio 360 is designed with privacy as a core principle. The App operates primarily offline, stores all user data locally on your device, and does not transmit personal information to external servers.
 
@@ -71,13 +71,13 @@ When using Online Radio features:
 
 ## 4. Device Permissions
 
-| Permission | Purpose | Required |
+| Android Permission | Purpose | Required |
 |------------|---------|----------|
-| Media Library | Access music files on your device | Yes |
-| Storage | Read music from folders | Yes |
-| Location | Discover local radio stations | Optional |
-| Notifications | Display playback controls | Optional |
-| Internet | Online radio, license check | Yes |
+| READ_MEDIA_AUDIO / READ_EXTERNAL_STORAGE | Access music files on your device | Yes |
+| FOREGROUND_SERVICE_MEDIA_PLAYBACK | Background audio playback | Yes |
+| ACCESS_COARSE_LOCATION | Discover local radio stations | Optional |
+| POST_NOTIFICATIONS | Display playback controls | Optional |
+| INTERNET | Online radio, license check | Yes |
 
 All permissions are requested with clear explanations. You may deny optional permissions.
 
@@ -100,9 +100,10 @@ We do not use your information for advertising, profiling, or sale to third part
 
 ## 6. Data Security
 
-- Sensitive data stored using encrypted storage
+- Sensitive data stored using Android Keystore with AES-256-GCM encryption
+- Device-bound encryption keys with HMAC integrity verification
 - User data never leaves your device
-- All network requests use encrypted connections
+- All network requests use encrypted HTTPS connections
 - No cloud backup of app data
 
 ---
@@ -175,9 +176,9 @@ If you do not agree, please do not install or use the Application.
 ---
 
 **New Audio 360**  
-Developed by TheTeam360  
+Developed by Dhairya Vipulkumar Shah | The Team 360  
 *"The top-grade intelligent music experience built for you"*
 
 ---
 
-*Last Updated: January 25, 2026*
+*Last Updated: January 26, 2026*

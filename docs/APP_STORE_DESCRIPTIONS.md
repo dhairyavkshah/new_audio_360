@@ -108,18 +108,21 @@ Download now and elevate your music experience!
 ## What's New (500 characters max)
 
 ```
-Version 1.0 - Initial Release
+New Audio 360 v26.0
 
-• 10-band parametric equalizer with 10 presets
-• Bass & Treble controls with ±12 dB range
-• Spatial Enhancement (0-5 levels) and multi-tap reverb
-• Intelligent brickwall limiting
-• 6 immersive audio modes
-• 55 themes across 6 categories
-• Fast music library scanning
-• Online Radio with hundreds of stations
-• Background playback with notification controls
-• Beautiful Fluent design
+Premium Music Player for Audio Enthusiasts
+
+• 10-Band Parametric EQ with 10 presets
+• Bass & Treble boost controls
+• 6-level Spatial Enhancement
+• 6 Immersive Modes (Music, 360 Reality, Gaming & more)
+• Brickwall Limiter for distortion-free audio
+• 55 stunning themes across 6 categories
+• Online Radio: 130+ curated Indian stations
+• Pure software DSP for studio-quality sound
+• One-time purchase, lifetime access
+
+© Dhairya Vipulkumar Shah | The Team 360
 ```
 
 ---
@@ -167,4 +170,4 @@ music player, audio player, equalizer, bass boost, treble, EQ, music, mp3 player
 
 ---
 
-*Last Updated: January 25, 2026*
+*Last Updated: January 26, 2026*
