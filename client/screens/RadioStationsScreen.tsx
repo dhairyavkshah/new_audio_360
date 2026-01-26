@@ -417,9 +417,12 @@ export default function RadioStationsScreen() {
   const handleForceRefresh = useCallback(async () => {
     if (!detectedCountryCode || isRefreshingStations) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await forceRefreshStations(detectedCountryCode);
-    setSearchQuery("");
+    
+    setFilteredOnlineStations([]);
     setDisplayedStationsCount(50);
+    setSearchQuery("");
+    
+    await forceRefreshStations(detectedCountryCode);
   }, [detectedCountryCode, forceRefreshStations, isRefreshingStations]);
 
   const handleLoadMore = useCallback(() => {
