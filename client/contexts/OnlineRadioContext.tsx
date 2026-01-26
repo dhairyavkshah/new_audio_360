@@ -460,7 +460,8 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   }, [availableCountries.length]);
 
   const setCountryManual = useCallback(async (countryCode: string, countryName: string): Promise<void> => {
-    // Clear old popular stations immediately when country changes
+    // Clear old stations immediately when country changes
+    setStations([]);
     setPopularStations([]);
     setDetectedCountryCode(countryCode);
     setDetectedCountry(countryName);
@@ -613,6 +614,8 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
           };
 
           await TrackPlayerService.setQueue([trackMetadata]);
+          // Small delay to ensure track is loaded before playing (fixes Android autoplay issue)
+          await new Promise(resolve => setTimeout(resolve, 100));
           await TrackPlayerService.play();
           
           // Final staleness check before updating state
