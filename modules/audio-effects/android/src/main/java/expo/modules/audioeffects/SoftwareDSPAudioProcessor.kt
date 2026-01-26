@@ -93,7 +93,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     }
     private val bassShelfFilter = BiquadFilter(FilterType.LOWSHELF, BASS_SHELF_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
     private val trebleShelfFilter = BiquadFilter(FilterType.HIGHSHELF, TREBLE_SHELF_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
-    private val limiter = Limiter(-1f, 20f, 1f, 100f, STANDARD_SAMPLE_RATE)
+    private val limiter = Limiter(-0.1f, 20f, 1f, 100f, STANDARD_SAMPLE_RATE)
 
     private val eqGains = FloatArray(10) { 0f }
     

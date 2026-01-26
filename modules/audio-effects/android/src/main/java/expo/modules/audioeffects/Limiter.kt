@@ -11,10 +11,10 @@ import kotlin.math.max
  * Audio Processing Standards:
  * - Internal processing: 64-bit double precision for envelope and gain calculations
  * - Uses linked stereo (max of L/R) to prevent stereo image shift (industry standard)
- * - Threshold: -1 dB, Ratio: 20:1, Attack: 1ms, Release: 100ms
+ * - Threshold: -0.1 dB (industry standard for streaming), Ratio: 20:1, Attack: 1ms, Release: 100ms
  */
 class Limiter(
-    private var thresholdDb: Float = -1f,
+    private var thresholdDb: Float = -0.1f,
     private var ratio: Float = 20f,
     private var attackMs: Float = 1f,
     private var releaseMs: Float = 100f,
