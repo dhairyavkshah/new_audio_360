@@ -21,6 +21,28 @@ New Audio 360 is a premium mobile music player application built with React Nati
 - **Design System**: Microsoft Fluent 2 (4px grid, semantic tokens, elevation shadows)
 - **Data Persistence**: AsyncStorage/SecureStorage (all local, no backend)
 
+### Platform Modes (iPhone Mode)
+The app supports three platform modes with graceful degradation:
+
+| Platform | Mode | Audio Engine | Native Modules | FM Radio |
+|----------|------|--------------|----------------|----------|
+| **Android** | Full | SoftwareDSPAudioProcessor | Full native support | Available |
+| **iOS** | iPhone Mode | WebAudioEffectsEngine | Fallback to web | Not available |
+| **Web** | Web Mode | WebAudioEffectsEngine | Web-only | Not available |
+
+**iPhone Mode Implementation**:
+- **PlatformModeContext**: Detects Android/iPhone/Web and provides capability flags
+- **License Verification**: Uses react-native-iap getReceiptIOS() for fail-closed App Store receipt validation
+- **Audio Effects**: Falls back to WebAudioEffectsEngine (simulated in browser)
+- **FM Radio**: Shows "Not available on iPhone" message, online radio works normally
+- **Settings**: Hides Android-only options (Music Folders, Close App)
+
+**Key Files**:
+- `client/contexts/PlatformModeContext.tsx` - Platform detection context
+- `client/lib/payment.ts` - Platform-specific license verification
+- `client/services/NativeEffectsManager.ts` - Android/iOS audio effects handling
+- `client/services/NativeAudioService.ts` - Native playback with iOS fallbacks
+
 ### Audio Effects Architecture (Pure Software DSP)
 The app uses **pure software-based DSP** across all platforms, ensuring a consistent audio experience without relying on hardware audio effects.
 
