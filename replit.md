@@ -44,7 +44,7 @@ The app utilizes pure software-based DSP across all platforms for a consistent a
 A 4-tab system with a persistent MiniPlayer:
 - **ListenTab**: Main player, Now Playing, Sound Lab, Queue.
 - **LibraryTab**: Music organization, Quick Access Category Grid.
-- **RadioTab**: FM/AM native radio, Online streaming radio.
+- **RadioTab**: FM/AM native radio, Online streaming radio with Intelligent Radio Discovery.
 - **SettingsTab**: General, Sound Lab, Appearance, License, About.
 
 ### Native Modules (Android-specific)
@@ -73,7 +73,8 @@ A two-check system: initial Google Play Billing validation and daily re-validati
 ### Feature Specifications
 - **Sound Lab**: 10 EQ presets, custom 10-band EQ editor, 6 immersive modes, bass/treble control.
 - **Theming**: 55 themes across 6 categories.
-- **Radio**: Native FM/AM and online streaming radio (Radio Browser API).
+- **Radio**: Native FM/AM and online streaming radio with Intelligent Radio Discovery.
+- **Intelligent Radio Discovery**: Automatic station scanning via Radio Browser API with 7-day refresh cycle, up to 1000 stations per country, quality filtering (lastcheckok=1, sorted by votes+clickcount), curated station fallback, and manual re-scan button.
 - **Playback**: Background playback, notification controls, queue, shuffle/repeat, playback speed, sleep timer, favorites.
 - **Library Management**: Music folder selection, paginated loading, "Hide Song" feature, playlist CRUD.
 

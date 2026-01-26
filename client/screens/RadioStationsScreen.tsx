@@ -276,6 +276,8 @@ export default function RadioStationsScreen() {
     removeStationFromFavorites,
     isStationFavorite,
     getFavoriteCount,
+    forceRefreshStations,
+    isRefreshingStations,
   } = useOnlineRadio();
   
   const handleToggleOnlineFavorite = useCallback(async (station: OnlineRadioStation) => {
@@ -413,6 +415,14 @@ export default function RadioStationsScreen() {
     setIsRefreshing(false);
   }, [detectedCountryCode, loadStations, onlineStations]);
 
+  const handleForceRefresh = useCallback(async () => {
+    if (!detectedCountryCode || isRefreshingStations) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await forceRefreshStations(detectedCountryCode);
+    setSearchQuery("");
+    setDisplayedStationsCount(50);
+  }, [detectedCountryCode, forceRefreshStations, isRefreshingStations]);
+
   const handleLoadMore = useCallback(() => {
     if (hasMoreStations) {
       setDisplayedStationsCount(prev => prev + STATIONS_PER_PAGE);
@@ -456,10 +466,27 @@ export default function RadioStationsScreen() {
     return (
       <>
         <View style={[styles.countryHeader, { backgroundColor: colors.colorNeutralBackground2 }]}>
-          <FluentText variant="title2">
+          <FluentText variant="title2" style={styles.countryHeaderText}>
             {getCountryFlag(detectedCountryCode)} {detectedCountry || "Detecting location..."}
           </FluentText>
+          <FluentIconButton
+            icon={<MaterialCommunityIcons name="refresh" />}
+            variant="subtle"
+            size="large"
+            onPress={handleForceRefresh}
+            disabled={isRefreshingStations || !detectedCountryCode}
+            accessibilityLabel="Re-scan for radio stations"
+          />
         </View>
+        
+        {isRefreshingStations && (
+          <View style={styles.refreshingBanner}>
+            <ActivityIndicator size="small" color={colors.colorBrandForeground1} />
+            <FluentText variant="caption1" color="secondary" style={styles.refreshingText}>
+              Scanning for radio stations...
+            </FluentText>
+          </View>
+        )}
 
         <View style={styles.searchContainer}>
           <View style={[styles.searchInputWrapper, { backgroundColor: colors.colorNeutralBackground3, borderColor: colors.colorNeutralStroke1 }]}>
@@ -825,9 +852,26 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   countryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: FluentSpacing.m,
     borderRadius: FluentControlRadius.button,
     marginBottom: FluentSpacing.m,
+  },
+  countryHeaderText: {
+    flex: 1,
+  },
+  refreshingBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: FluentSpacing.s,
+    paddingHorizontal: FluentSpacing.m,
+    marginBottom: FluentSpacing.m,
+  },
+  refreshingText: {
+    marginLeft: FluentSpacing.s,
   },
   searchContainer: {
     marginBottom: FluentSpacing.m,
