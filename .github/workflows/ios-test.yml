@@ -1,0 +1,53 @@
+name: iOS Test Build (TestFlight)
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - development
+          - preview
+
+env:
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+jobs:
+  build:
+    name: Build iOS Test IPA (No License Check)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build iOS Test (TestFlight)
+        run: eas build --platform ios --profile ${{ github.event.inputs.profile }} --non-interactive
+        env:
+          APP_ENV: ${{ github.event.inputs.profile }}
+
+      - name: Get build URL
+        run: |
+          echo "Build submitted to EAS Build"
+          echo "Check status at: https://expo.dev/accounts/theteam360/projects/new-audio-360/builds"
+          echo ""
+          echo "Note: This is a TEST build with license check bypassed."
+          echo "Development/Preview builds auto-license for testing purposes."

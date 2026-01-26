@@ -1,0 +1,49 @@
+name: iOS Production Build (App Store)
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+
+env:
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+jobs:
+  build:
+    name: Build iOS Production IPA
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build iOS Production (App Store)
+        run: eas build --platform ios --profile production --non-interactive
+        env:
+          APP_ENV: production
+
+      - name: Get build URL
+        run: |
+          echo "Build submitted to EAS Build"
+          echo "Check status at: https://expo.dev/accounts/theteam360/projects/new-audio-360/builds"
