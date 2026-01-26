@@ -351,33 +351,14 @@ export const OnlineRadioService = {
       
       const priorityCountries = ['IN', 'US', 'GB', 'DE', 'FR', 'ES', 'IT', 'JP', 'BR', 'CA', 'AU'];
       
-      // Get curated station counts and info for override/injection
-      const curatedCountryInfo: Record<string, { name: string; count: number }> = {
-        'IN': { name: 'India', count: getCuratedStationsByCountry('IN').length },
-      };
-      
-      // Filter and map API countries
+      // Filter and map API countries - use dynamic counts from Radio Browser API
       let processedCountries = countries
         .filter((c: any) => c.stationcount > 10)
         .map((c: any) => ({
           name: c.name,
           iso_3166_1: c.iso_3166_1,
-          // Use curated count for curated countries, otherwise use API count
-          stationcount: curatedCountryInfo[c.iso_3166_1]?.count || c.stationcount,
+          stationcount: Math.min(c.stationcount, MAX_STATIONS_PER_COUNTRY),
         }));
-      
-      // Ensure curated countries are always included
-      const existingCountryCodes = new Set(processedCountries.map((c: OnlineRadioCountry) => c.iso_3166_1));
-      for (const [countryCode, info] of Object.entries(curatedCountryInfo)) {
-        if (!existingCountryCodes.has(countryCode)) {
-          console.log(`[OnlineRadioService] Injecting curated country: ${countryCode}`);
-          processedCountries.push({
-            name: info.name,
-            iso_3166_1: countryCode,
-            stationcount: info.count,
-          });
-        }
-      }
       
       // Sort with priority countries first
       processedCountries.sort((a: OnlineRadioCountry, b: OnlineRadioCountry) => {
