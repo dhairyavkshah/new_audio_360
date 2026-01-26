@@ -7,7 +7,7 @@ packages = ["jq"]
 
 [deployment]
 deploymentTarget = "static"
-build = ["npx", "expo", "export", "--platform", "web"]
+build = ["sh", "-c", "npx expo export --platform web && cp public/manifest.json dist/ && cp public/sw.js dist/"]
 run = ["npm", "run", "server:prod"]
 publicDir = "dist"
 
