@@ -42,8 +42,8 @@ class EqualizerModule : Module() {
                 val dsp = getDspProcessor()
                 isAttached = true
                 
-                val frequencies = dsp?.getEqFrequencies() ?: listOf(60f, 170f, 310f, 600f, 1000f, 3000f, 6000f, 12000f, 14000f, 16000f)
-                val bandNames = dsp?.getEqBandNames() ?: listOf("60Hz", "170Hz", "310Hz", "600Hz", "1kHz", "3kHz", "6kHz", "12kHz", "14kHz", "16kHz")
+                val frequencies = dsp?.getEqFrequencies() ?: floatArrayOf(60f, 170f, 310f, 600f, 1000f, 3000f, 6000f, 12000f, 14000f, 16000f)
+                val bandNames = dsp?.getEqBandNames() ?: arrayOf("60Hz", "170Hz", "310Hz", "600Hz", "1kHz", "3kHz", "6kHz", "12kHz", "14kHz", "16kHz")
                 val bandInfo = mutableListOf<Map<String, Any>>()
                 
                 for (i in frequencies.indices) {
