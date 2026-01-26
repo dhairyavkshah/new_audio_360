@@ -6,9 +6,10 @@ channel = "stable-24_05"
 packages = ["jq"]
 
 [deployment]
-deploymentTarget = "cloudrun"
-build = ["sh", "-c", "npm run expo:static:build && npm run server:build"]
+deploymentTarget = "static"
+build = ["npx", "expo", "export", "--platform", "web"]
 run = ["npm", "run", "server:prod"]
+publicDir = "dist"
 
 [[ports]]
 localPort = 3001
