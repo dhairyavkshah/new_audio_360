@@ -59,14 +59,6 @@ The app utilizes pure software-based DSP across all platforms for a consistent a
 - **Android DSP**: Custom ExoPlayer `AudioProcessor` with biquad filter algorithms.
 - **Web DSP**: `WebAudioEffectsEngine` leveraging Web Audio API.
 
-### Playback Progress Tracking
-Uses a **calculated progress approach** instead of constant async polling:
-- **Timer-based calculation**: Records `startTime` and `startPosition` when playback begins, calculates `currentPosition = startPosition + elapsedTime` every 250ms
-- **Zero async overhead**: Pure math calculation during playback, no player API calls
-- **Key event sync**: Only syncs with actual player at play/pause/seek/track-change/foreground events
-- **Consistent across backends**: Applied to TrackPlayer (Android), Web Audio, Native Playback, and Expo Audio paths
-- **Benefits**: Eliminates micro-lag from frequent async calls, provides smoother progress bar updates
-
 ### Navigation Structure
 A 4-tab system with a persistent MiniPlayer:
 - **ListenTab**: Main player, Now Playing, Sound Lab, Queue.
