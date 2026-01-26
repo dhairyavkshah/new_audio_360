@@ -15,6 +15,7 @@ import {
   OnlineRadioStation,
   OnlineRadioCountry,
 } from '@/services/OnlineRadioService';
+import { IntelligentRadioDiscovery, CachedRadioStation } from '@/services/IntelligentRadioDiscovery';
 import { TrackPlayerService, TrackMetadata, State, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
 
@@ -64,6 +65,8 @@ interface OnlineRadioContextType {
   removeStationFromFavorites: (stationUuid: string) => Promise<void>;
   isStationFavorite: (stationUuid: string) => boolean;
   getFavoriteCount: () => number;
+  forceRefreshStations: (countryCode: string) => Promise<void>;
+  isRefreshingStations: boolean;
 }
 
 const OnlineRadioContext = createContext<OnlineRadioContextType | undefined>(undefined);
@@ -88,6 +91,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   const currentStationIdRef = useRef<string | null>(null); // Track current station ID for callback validation
   const isSwitchingStationsRef = useRef<boolean>(false); // Flag to distinguish switch vs true stop
   const isStoppingRef = useRef<boolean>(false); // Track if a stop is in progress to prevent duplicate notifications
+  const [isRefreshingStations, setIsRefreshingStations] = useState(false);
 
   useEffect(() => {
     loadCachedData();
@@ -346,26 +350,73 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
-      const fetchedStations = await OnlineRadioService.getStationsByCountryCode(
-        countryCode,
-        250
-      );
+      const cachedStations = await IntelligentRadioDiscovery.getStationsForCountry(countryCode);
+      const fetchedStations: OnlineRadioStation[] = cachedStations.map(s => ({
+        stationuuid: s.stationuuid,
+        name: s.name,
+        url: s.url,
+        url_resolved: s.url_resolved,
+        homepage: s.homepage,
+        favicon: s.favicon,
+        country: s.country,
+        countrycode: s.countrycode,
+        state: s.state,
+        language: s.language,
+        languagecodes: s.languagecodes,
+        tags: s.tags,
+        codec: s.codec,
+        bitrate: s.bitrate,
+        votes: s.votes,
+        clickcount: s.clickcount,
+        lastcheckok: s.lastcheckok,
+        hls: s.hls,
+      }));
       setStations(fetchedStations);
-
-      try {
-        await AsyncStorage.setItem(
-          STORAGE_KEY_STATIONS_CACHE,
-          JSON.stringify(fetchedStations)
-        );
-      } catch (cacheErr) {
-        console.warn('[OnlineRadioContext] Error caching stations:', cacheErr);
-      }
+      console.log(`[OnlineRadioContext] Loaded ${fetchedStations.length} stations for ${countryCode} via IntelligentRadioDiscovery`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load stations';
       setError(message);
       console.error('[OnlineRadioContext] loadStations error:', err);
     } finally {
       setIsLoading(false);
+    }
+  }, []);
+
+  const forceRefreshStations = useCallback(async (countryCode: string): Promise<void> => {
+    setIsRefreshingStations(true);
+    setError(null);
+
+    try {
+      console.log(`[OnlineRadioContext] Force refreshing stations for ${countryCode}...`);
+      const cachedStations = await IntelligentRadioDiscovery.forceRefreshCountry(countryCode);
+      const fetchedStations: OnlineRadioStation[] = cachedStations.map(s => ({
+        stationuuid: s.stationuuid,
+        name: s.name,
+        url: s.url,
+        url_resolved: s.url_resolved,
+        homepage: s.homepage,
+        favicon: s.favicon,
+        country: s.country,
+        countrycode: s.countrycode,
+        state: s.state,
+        language: s.language,
+        languagecodes: s.languagecodes,
+        tags: s.tags,
+        codec: s.codec,
+        bitrate: s.bitrate,
+        votes: s.votes,
+        clickcount: s.clickcount,
+        lastcheckok: s.lastcheckok,
+        hls: s.hls,
+      }));
+      setStations(fetchedStations);
+      console.log(`[OnlineRadioContext] Force refreshed ${fetchedStations.length} stations for ${countryCode}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to refresh stations';
+      setError(message);
+      console.error('[OnlineRadioContext] forceRefreshStations error:', err);
+    } finally {
+      setIsRefreshingStations(false);
     }
   }, []);
 
@@ -839,6 +890,8 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         removeStationFromFavorites,
         isStationFavorite,
         getFavoriteCount,
+        forceRefreshStations,
+        isRefreshingStations,
       }}
     >
       {children}
