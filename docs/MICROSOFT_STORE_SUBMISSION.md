@@ -263,4 +263,4 @@ audiophile, dsp, sound lab, radio, fm radio, streaming radio
 - **Developer**: Dhairya Vipulkumar Shah
 - **Publisher**: The Team 360
 - **Technical Support**: support@theteam360.com
-- **Business Inquiries**: business@theteam360.com
+- **Business Inquiries**: dhairyashah@theteam360.com
