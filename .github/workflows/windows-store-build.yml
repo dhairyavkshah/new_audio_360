@@ -76,12 +76,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install PWABuilder CLI
-        run: npm install -g @pwabuilder/cli
-
       - name: Generate Windows package
         run: |
-          pwabuilder package -p windows10 -m web-build/manifest.json -d ./windows-output
+          npx @pwabuilder/cli package -p windows10 -m web-build/manifest.json -d ./windows-output
         env:
           VERSION: ${{ github.event.inputs.version }}
 
