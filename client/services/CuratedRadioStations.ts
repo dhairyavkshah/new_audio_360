@@ -16,49 +16,11 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   // TOP PRIORITY: ARTIST RADIOS (Most Popular First)
   // ============================================
 
-  // A.R. Rahman Stations
-  {
-    id: "ar-rahman-radio",
-    name: "AR Rahman Radio",
-    streamUrl: "https://psrlive2.listenon.in/arr?ah=0e81749e37789e5fb8c290926ce87e3f",
-    website: "https://southradios.com/",
-    country: "India",
-    countryCode: "IN",
-    language: "tamil",
-    genre: "Tamil Cinema Music",
-    bitrate: 64,
-    favicon: "https://southradios.com/assets/images/logo/logo90.webp",
-  },
-  {
-    id: "ar-rahman-lite-radio",
-    name: "AR Rahman Lite Radio",
-    streamUrl: "https://psrlive2.listenon.in/arrlite?ah=0e81749e37789e5fb8c290926ce87e3f",
-    website: "https://southradios.com/",
-    country: "India",
-    countryCode: "IN",
-    language: "tamil",
-    genre: "Tamil Cinema Music",
-    bitrate: 64,
-    favicon: "https://southradios.com/assets/images/logo/logo90.webp",
-  },
-  {
-    id: "best-of-ar-rahman-tamil-songs",
-    name: "BEST OF AR RAHMAN TAMIL SONGS",
-    streamUrl: "https://stream.zeno.fm/p7b0e3ms97zuv",
-    website: "https://zeno.fm/",
-    country: "India",
-    countryCode: "IN",
-    language: "Hindi",
-    genre: "ar rahman tamil hit songs,tamil melodies",
-    bitrate: 128,
-    favicon: "https://tools.zeno.fm/accounts/agxzfnplbm8tc3RhdHNyGAsSC0JpbGxpbmdCYXNlGICAkJOgobULDKIBBHplbm8/microsite",
-  },
-
   // Arijit Singh
   {
     id: "arijitsingh",
     name: "arijitsingh",
-    streamUrl: "https://nl4.mystreaming.net/uber/bollywoodaruitsingh/icecast.audio",
+    streamUrl: "https://drive.uber.radio/uber/bollywoodaruitsingh/icecast.audio",
     website: "",
     country: "India",
     countryCode: "IN",
@@ -69,18 +31,6 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   },
 
   // Kishore Kumar
-  {
-    id: "radio-city-kishore-kumar",
-    name: "Radio City Kishore Kumar",
-    streamUrl: "http://prclive1.listenon.in:8834/",
-    website: "https://www.radiocity.in/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/kishore-kumar-radio.jpg",
-  },
   {
     id: "kishorekumarradio",
     name: "kishorekumarradio",
@@ -122,18 +72,6 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
 
   // Mohammed Rafi
   {
-    id: "radio-city-mohammed-rafi",
-    name: "Radio City Mohammed Rafi",
-    streamUrl: "http://prclive1.listenon.in:8814/",
-    website: "https://www.radiocity.in/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/mohammed-rafi-radio.jpg",
-  },
-  {
     id: "mohammed-rafi",
     name: "Mohammed Rafi",
     streamUrl: "https://stream.zeno.fm/6yqvumgfxtzuv",
@@ -162,7 +100,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "bollywood-shreya-ghoshal",
     name: "Bollywood Shreya Ghoshal",
-    streamUrl: "https://nl4.mystreaming.net/uber/bollywoodshreyaghosal/icecast.audio",
+    streamUrl: "https://drive.uber.radio/uber/bollywoodshreyaghosal/icecast.audio",
     website: "https://bollywood.radio/",
     country: "India",
     countryCode: "IN",
@@ -186,25 +124,11 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
     favicon: "",
   },
 
-  // Kumar Sanu
-  {
-    id: "radio-city-kumar-sanu",
-    name: "Radio City Kumar Sanu",
-    streamUrl: "https://streaming.exclusive.radio/uber/bollywoodkumarsanu/icecast.audio",
-    website: "https://www.radiocity.in/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/kumar-sanu-radio.jpg",
-  },
-
   // Alka Yagnik
   {
     id: "bollywood-alka-yagnik",
     name: "Bollywood Alka Yagnik",
-    streamUrl: "https://nl4.mystreaming.net/uber/bollywoodalkayagnik/icecast.audio",
+    streamUrl: "https://drive.uber.radio/uber/bollywoodalkayagnik/icecast.audio",
     website: "",
     country: "India",
     countryCode: "IN",
@@ -538,7 +462,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "mirchi-love",
     name: "Mirchi Love",
-    streamUrl: "https://nl4.mystreaming.net/uber/bollywoodlove/icecast.audio",
+    streamUrl: "https://drive.uber.radio/uber/bollywoodlove/icecast.audio",
     website: "http://mirchi.in/",
     country: "India",
     countryCode: "IN",
@@ -648,20 +572,6 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
     genre: "Telugu",
     bitrate: 126,
     favicon: "https://radiosindia.com/images/fmrainbow.jpg",
-  },
-
-  // Red FM
-  {
-    id: "red-fm-935",
-    name: "Red FM 93.5",
-    streamUrl: "https://stream.zeno.fm/q97eczydqrhvv",
-    website: "https://www.redfmindia.in/delhi",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Commercial FM Stations",
-    bitrate: 128,
-    favicon: "https://radiobarfi.com/wp-content/uploads/2024/04/Red-FM-93.5-Live-Online.png.webp",
   },
 
   // Fever FM
@@ -864,7 +774,7 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   {
     id: "tinder-radio",
     name: "Tinder Radio",
-    streamUrl: "https://nl4.mystreaming.net/er/bollywood/icecast.audio",
+    streamUrl: "https://drive.uber.radio/er/bollywood/icecast.audio",
     website: "https://streaming.exclusive.radio/",
     country: "India",
     countryCode: "IN",
