@@ -6,10 +6,10 @@
     "displayName": "Dhairya Vipulkumar Shah (The Team 360)",
     "commonName": "CN=The Team 360"
   },
-  "version": "27.0.0.0",
+  "version": "26.0.0.0",
   "classicPackage": {
     "generate": true,
-    "version": "27.0.0.0"
+    "version": "26.0.0.0"
   },
   "resourceLanguage": "en-US",
   "packageIdentityName": "TheTeam360.NewAudio360",

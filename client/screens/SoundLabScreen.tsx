@@ -5,7 +5,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText, FluentButton, FluentModal } from "@/components/fluent";
-import { FluentToggle } from "@/components/FluentToggle";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -30,8 +29,7 @@ import {
   ImmersiveMode,
   ImmersiveModeInfo,
   BassBoostModule,
-  SpatialEnhancementModule,
-  PremiumEffectsModule
+  SpatialEnhancementModule
 } from "../../modules/audio-effects";
 import NativeAudioService from "@/services/NativeAudioService";
 import { NativeEffectsManager } from "@/services/NativeEffectsManager";
@@ -149,10 +147,6 @@ function SoundLabScreen() {
   const [bassControl, setBassControl] = useState(0);
   const [trebleControl, setTrebleControl] = useState(0);
   const [spatialEnhancement, setSpatialEnhancement] = useState(0);
-
-  const [pbeEnabled, setPbeEnabled] = useState(false);
-  const [sbrEnabled, setSbrEnabled] = useState(false);
-  const [dynamicEQEnabled, setDynamicEQEnabled] = useState(false);
 
   const MAX_CUSTOM_PRESETS = 5;
 
@@ -373,36 +367,6 @@ function SoundLabScreen() {
       }
     }
   };
-
-  const handlePBEToggle = useCallback((enabled: boolean) => {
-    setPbeEnabled(enabled);
-    if (Platform.OS === 'android') {
-      PremiumEffectsModule.setPBEEnabled(enabled);
-    } else if (typeof (WebAudioEffectsEngine as any).setPBEEnabled === 'function') {
-      (WebAudioEffectsEngine as any).setPBEEnabled(enabled);
-    }
-    Haptics.selectionAsync();
-  }, []);
-
-  const handleSBRToggle = useCallback((enabled: boolean) => {
-    setSbrEnabled(enabled);
-    if (Platform.OS === 'android') {
-      PremiumEffectsModule.setSBREnabled(enabled);
-    } else if (typeof (WebAudioEffectsEngine as any).setSBREnabled === 'function') {
-      (WebAudioEffectsEngine as any).setSBREnabled(enabled);
-    }
-    Haptics.selectionAsync();
-  }, []);
-
-  const handleDynamicEQToggle = useCallback((enabled: boolean) => {
-    setDynamicEQEnabled(enabled);
-    if (Platform.OS === 'android') {
-      PremiumEffectsModule.setDynamicEQEnabled(enabled);
-    } else if (typeof (WebAudioEffectsEngine as any).setDynamicEQEnabled === 'function') {
-      (WebAudioEffectsEngine as any).setDynamicEQEnabled(enabled);
-    }
-    Haptics.selectionAsync();
-  }, []);
 
   const handleSavePreset = async () => {
     if (customPresets.length >= MAX_CUSTOM_PRESETS) {
@@ -866,63 +830,6 @@ function SoundLabScreen() {
                 </View>
               </Pressable>
             ))}
-          </View>
-        </View>
-
-        <View style={[styles.sectionCard, cardStyle]}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="tune-vertical" size={FluentIconSize.regular} color={tokens.colors.primary} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Premium Audio Effects
-            </FluentText>
-          </View>
-          
-          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
-            Advanced DSP for richer, fuller sound
-          </FluentText>
-
-          <View style={[styles.effectControlsSection, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: FluentRadius.large }]}>
-            <View style={styles.effectSliderRow}>
-              <View style={styles.effectSliderHeader}>
-                <MaterialCommunityIcons name="waveform" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                <FluentText variant="body1" style={{ marginLeft: FluentSpacing.xs, flex: 1, fontWeight: FluentFontWeight.semibold }}>Bass Enhancement</FluentText>
-                <FluentToggle
-                  value={pbeEnabled}
-                  onValueChange={handlePBEToggle}
-                />
-              </View>
-              <FluentText variant="caption1" color="secondary">
-                Generates harmonics for richer, fuller bass on small speakers
-              </FluentText>
-            </View>
-
-            <View style={styles.effectSliderRow}>
-              <View style={styles.effectSliderHeader}>
-                <MaterialCommunityIcons name="arrow-up-bold-hexagon-outline" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                <FluentText variant="body1" style={{ marginLeft: FluentSpacing.xs, flex: 1, fontWeight: FluentFontWeight.semibold }}>Audio Upscaling</FluentText>
-                <FluentToggle
-                  value={sbrEnabled}
-                  onValueChange={handleSBRToggle}
-                />
-              </View>
-              <FluentText variant="caption1" color="secondary">
-                Restores high-frequency detail lost in MP3/streaming compression
-              </FluentText>
-            </View>
-
-            <View style={styles.effectSliderRow}>
-              <View style={styles.effectSliderHeader}>
-                <MaterialCommunityIcons name="volume-high" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                <FluentText variant="body1" style={{ marginLeft: FluentSpacing.xs, flex: 1, fontWeight: FluentFontWeight.semibold }}>Volume Optimization</FluentText>
-                <FluentToggle
-                  value={dynamicEQEnabled}
-                  onValueChange={handleDynamicEQToggle}
-                />
-              </View>
-              <FluentText variant="caption1" color="secondary">
-                Auto-adjusts bass/treble at low volumes for consistent fullness
-              </FluentText>
-            </View>
           </View>
         </View>
 

@@ -10,18 +10,8 @@ import { AudioContext, BiquadFilterNode, GainNode } from 'react-native-audio-api
  * - True stereo processing with independent L/R channel states per BiquadFilterNode
  * 
  * Signal Chain:
- * Input → 10-Band EQ → Dynamic EQ → PBE → SBR → Dry/Wet Mix → M/S Processing (Spatial + HRTF) → Master → Output
- *                                                ↑ Multi-Tap Reverb
- * 
- * Premium Effects:
- * - Dynamic EQ: Fletcher-Munson compensation (bass/treble boost at low volumes)
- * - PBE: Psychoacoustic Bass Enhancement (harmonic generation for sub-bass)
- * - SBR: Spectral Band Replication (audio upscaling for high frequencies)
- * 
- * HRTF (Head-Related Transfer Function) Components:
- * - Head Shadow: High-frequency attenuation simulating sound diffraction around the head
- * - Pinna Filtering: Notch filters at 8kHz/10.5kHz for externalization ("outside head" perception)
- * - ILD Enhancement: Frequency-dependent side channel boost for enhanced stereo imaging
+ * Input → 10-Band EQ → Dry/Wet Mix → M/S Processing (Spatial) → Limiter → Output
+ *                    ↑ Multi-Tap Reverb
  * 
  * Web Audio API Compliance:
  * - All BiquadFilterNode instances process channels independently (true stereo)
@@ -77,19 +67,6 @@ const MAX_SIDE_GAIN_PERCENT = 18;   // max 18%
 const MAX_ITD_MS = 0.6;             // max 0.6ms
 const MAX_DECORRELATION = 18;       // max 18%
 const MAX_WET_MIX = 55;             // max 55%
-
-// HRTF (Head-Related Transfer Function) constants
-// Based on MIT KEMAR dataset and research on human spatial hearing
-const HRTF_HEAD_SHADOW_FREQ = 2000;       // Frequency where head shadow begins
-const HRTF_HEAD_SHADOW_MAX_DB = -6;       // Maximum attenuation at high frequencies
-// Pinna (outer ear) notches: Create elevation cues and "outside head" perception
-const HRTF_PINNA_NOTCH1_FREQ = 8000;      // Primary pinna notch frequency
-const HRTF_PINNA_NOTCH2_FREQ = 10500;     // Secondary pinna notch frequency
-const HRTF_PINNA_NOTCH_Q = 4.0;           // Narrow Q for notch character
-const HRTF_PINNA_NOTCH_DEPTH = -4;        // Notch depth in dB
-// ILD (Interaural Level Difference): Frequency-dependent level difference
-const HRTF_ILD_SHELF_FREQ = 3000;         // ILD emphasis starts here
-const HRTF_ILD_MAX_DB = 3;                // Maximum ILD boost for highs in side channel
 
 // Professional Immersive Mode Configurations
 // Based on Sony 360 Reality Audio, Yamaha YPAO/Cinema DSP, Samsung Q-Symphony, IMAX Enhanced
@@ -174,7 +151,6 @@ class WebAudioEffectsEngineClass {
   private currentReverb: number = 0;
   
   // M/S Processing nodes (for spatial enhancement)
-  private msProcessingEnabled: boolean = false;
   private stereoSplitter: ChannelSplitterNode | null = null;
   private stereoMerger: ChannelMergerNode | null = null;
   private stereoMixNode: GainNode | null = null; // Sums dry+wet before stereo splitting
@@ -196,52 +172,6 @@ class WebAudioEffectsEngineClass {
   private sidePsychoGain: globalThis.GainNode | null = null;        // Side boost (max 2.2 = 120%)
   private midAttenuation: globalThis.GainNode | null = null;        // Mid compensation
   spatialEnhancementLevel: number = 0;
-
-  // Premium Effects: Psychoacoustic Bass Enhancement (PBE)
-  private pbeEnabled: boolean = false;
-  private pbeIntensity: number = 0.5;
-  private pbeInputGain: globalThis.GainNode | null = null;        // Input to PBE chain
-  private pbeLowpass: globalThis.BiquadFilterNode | null = null;  // 100Hz lowpass to extract sub-bass
-  private pbeWaveshaper: globalThis.WaveShaperNode | null = null; // Polynomial curve for harmonics
-  private pbeBandpass: globalThis.BiquadFilterNode | null = null; // 100-400Hz bandpass for useful harmonics
-  private pbeHarmonicsGain: globalThis.GainNode | null = null;    // Blend harmonics with original
-  private pbeBypassGain: globalThis.GainNode | null = null;       // Bypass path (dry signal)
-  private pbeOutputGain: globalThis.GainNode | null = null;       // Output mixer
-
-  // Premium Effects: Spectral Band Replication (SBR) - Audio Upscaling
-  private sbrEnabled: boolean = false;
-  private sbrIntensity: number = 0.5;
-  private sbrInputGain: globalThis.GainNode | null = null;        // Input to SBR chain
-  private sbrHighpass: globalThis.BiquadFilterNode | null = null; // 8kHz highpass to isolate upper harmonics
-  private sbrWaveshaper: globalThis.WaveShaperNode | null = null; // Soft tanh curve for harmonic extension
-  private sbrHighshelf: globalThis.BiquadFilterNode | null = null;// High-shelf boost above 16kHz
-  private sbrHarmonicsGain: globalThis.GainNode | null = null;    // Blend extended harmonics (10-30%)
-  private sbrBypassGain: globalThis.GainNode | null = null;       // Bypass path (dry signal)
-  private sbrOutputGain: globalThis.GainNode | null = null;       // Output mixer
-
-  // Premium Effects: Dynamic Volume EQ (Fletcher-Munson Compensation)
-  private dynamicEQEnabled: boolean = false;
-  private dynamicEQStrength: number = 0.5;
-  private dynamicEQAnalyser: globalThis.AnalyserNode | null = null;   // RMS level tracking
-  private dynamicEQBassShelf: globalThis.BiquadFilterNode | null = null;  // 100Hz lowshelf
-  private dynamicEQTrebleShelf: globalThis.BiquadFilterNode | null = null; // 8kHz highshelf
-  private dynamicEQInputGain: globalThis.GainNode | null = null;      // Input routing
-  private dynamicEQOutputGain: globalThis.GainNode | null = null;     // Output routing
-  private dynamicEQAnimationFrame: number | null = null;              // RAF handle for RMS tracking
-  private dynamicEQCurrentRMS: number = 0;                            // Smoothed RMS level
-
-  // HRTF (Head-Related Transfer Function) nodes for binaural externalization
-  private hrtfEnabled: boolean = false;
-  private hrtfIntensity: number = 0;                                   // 0-1 intensity from spatial level
-  private hrtfHeadShadowL: globalThis.BiquadFilterNode | null = null;  // Head shadow left channel
-  private hrtfHeadShadowR: globalThis.BiquadFilterNode | null = null;  // Head shadow right channel
-  private hrtfPinnaNotch1L: globalThis.BiquadFilterNode | null = null; // Primary pinna notch L
-  private hrtfPinnaNotch1R: globalThis.BiquadFilterNode | null = null; // Primary pinna notch R
-  private hrtfPinnaNotch2L: globalThis.BiquadFilterNode | null = null; // Secondary pinna notch L
-  private hrtfPinnaNotch2R: globalThis.BiquadFilterNode | null = null; // Secondary pinna notch R
-  private hrtfIldShelf: globalThis.BiquadFilterNode | null = null;     // ILD high-frequency emphasis for side channel
-  private hrtfOutputSplitter: ChannelSplitterNode | null = null;       // Split merged output for per-channel HRTF
-  private hrtfOutputMerger: ChannelMergerNode | null = null;           // Merge HRTF processed channels
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {
@@ -308,9 +238,6 @@ class WebAudioEffectsEngineClass {
       // Uses native Web Audio API ChannelSplitter/Merger for true stereo processing
       this.initializeStereoWidthProcessor();
 
-      // Initialize premium effects (PBE, SBR, Dynamic EQ)
-      this.initializePremiumEffects();
-
       // Connect EQ chain
       let currentNode: any = this.eqFilters[0];
       for (let i = 1; i < this.eqFilters.length; i++) {
@@ -318,52 +245,29 @@ class WebAudioEffectsEngineClass {
         currentNode = this.eqFilters[i];
       }
       
-      // Signal chain: EQ → Dynamic EQ → PBE → SBR → Dry/Wet (Reverb)
+      // EQ output splits to dry and wet paths
       const eqOutput = this.eqFilters[this.eqFilters.length - 1];
+      eqOutput.connect(this.dryGain);
       
-      // Connect premium effects chain: EQ → DynamicEQ → PBE → SBR → Reverb
-      let premiumChainOutput: globalThis.AudioNode | BiquadFilterNode = eqOutput;
-      
-      // Dynamic EQ comes first (Fletcher-Munson compensation)
-      if (this.dynamicEQInputGain && this.dynamicEQOutputGain) {
-        eqOutput.connect(this.dynamicEQInputGain as unknown as GainNode);
-        premiumChainOutput = this.dynamicEQOutputGain;
-      }
-      
-      // PBE (Psychoacoustic Bass Enhancement) comes second
-      if (this.pbeInputGain && this.pbeOutputGain) {
-        (premiumChainOutput as any).connect(this.pbeInputGain);
-        premiumChainOutput = this.pbeOutputGain;
-      }
-      
-      // SBR (Spectral Band Replication) comes third
-      if (this.sbrInputGain && this.sbrOutputGain) {
-        (premiumChainOutput as any).connect(this.sbrInputGain);
-        premiumChainOutput = this.sbrOutputGain;
-      }
-      
-      // Premium chain output connects to dry/wet paths for reverb
-      (premiumChainOutput as any).connect(this.dryGain);
-      
-      // Connect reverb delay lines (parallel structure) - from premium chain output
+      // Connect reverb delay lines (parallel structure)
       this.reverbDelays.forEach(({ delay, feedback, filter }) => {
-        (premiumChainOutput as any).connect(delay);
+        eqOutput.connect(delay);
         delay.connect(filter);
         filter.connect(feedback);
         feedback.connect(delay); // Feedback loop
         filter.connect(this.wetGain!);
       });
       
-      // Mix dry and wet, then through M/S processing for spatial enhancement, then HRTF, then to master output
-      // Signal chain: EQ → Dry/Wet Mix → M/S Processing → HRTF → Master → Destination
-      if (this.msProcessingEnabled && this.stereoSplitter && this.stereoMerger && this.stereoMixNode && this.hrtfOutputMerger) {
+      // Mix dry and wet, then through M/S processing for spatial enhancement, then to master output
+      // Signal chain: EQ → Dry/Wet Mix → M/S Processing → Master → Destination
+      if (this.msProcessingEnabled && this.stereoSplitter && this.stereoMerger && this.stereoMixNode) {
         // Connect dry/wet to mix node first (preserves stereo before splitting)
         this.dryGain.connect(this.stereoMixNode);
         this.wetGain.connect(this.stereoMixNode);
         // Mix node to stereo splitter (cast to any for native Web Audio API cross-type connection)
         (this.stereoMixNode as any).connect(this.stereoSplitter);
-        // HRTF output merger to master (stereoMerger → HRTF chain → hrtfOutputMerger → master)
-        (this.hrtfOutputMerger as any).connect(this.masterGain);
+        // Stereo merger output to master (cast to any for native Web Audio API cross-type connection)
+        (this.stereoMerger as any).connect(this.masterGain);
       } else {
         // Fallback: bypass M/S processing
         this.dryGain.connect(this.masterGain);
@@ -494,52 +398,6 @@ class WebAudioEffectsEngineClass {
       this.midAttenuation = nativeCtx.createGain();
       this.midAttenuation.gain.value = 1.0; // Start at passthrough (disabled state)
       
-      // HRTF ILD high-shelf for side channel (frequency-dependent level difference)
-      this.hrtfIldShelf = nativeCtx.createBiquadFilter();
-      this.hrtfIldShelf.type = 'highshelf';
-      this.hrtfIldShelf.frequency.value = HRTF_ILD_SHELF_FREQ;
-      this.hrtfIldShelf.gain.value = 0; // Start bypassed
-      
-      // HRTF output processing (per-channel filters for externalization)
-      this.hrtfOutputSplitter = nativeCtx.createChannelSplitter(2);
-      this.hrtfOutputMerger = nativeCtx.createChannelMerger(2);
-      
-      // Head shadow filters (high-frequency attenuation)
-      this.hrtfHeadShadowL = nativeCtx.createBiquadFilter();
-      this.hrtfHeadShadowL.type = 'highshelf';
-      this.hrtfHeadShadowL.frequency.value = HRTF_HEAD_SHADOW_FREQ;
-      this.hrtfHeadShadowL.gain.value = 0; // Start bypassed
-      
-      this.hrtfHeadShadowR = nativeCtx.createBiquadFilter();
-      this.hrtfHeadShadowR.type = 'highshelf';
-      this.hrtfHeadShadowR.frequency.value = HRTF_HEAD_SHADOW_FREQ;
-      this.hrtfHeadShadowR.gain.value = 0; // Start bypassed
-      
-      // Pinna notch filters for "outside head" externalization
-      this.hrtfPinnaNotch1L = nativeCtx.createBiquadFilter();
-      this.hrtfPinnaNotch1L.type = 'peaking';
-      this.hrtfPinnaNotch1L.frequency.value = HRTF_PINNA_NOTCH1_FREQ;
-      this.hrtfPinnaNotch1L.Q.value = HRTF_PINNA_NOTCH_Q;
-      this.hrtfPinnaNotch1L.gain.value = 0; // Start bypassed
-      
-      this.hrtfPinnaNotch1R = nativeCtx.createBiquadFilter();
-      this.hrtfPinnaNotch1R.type = 'peaking';
-      this.hrtfPinnaNotch1R.frequency.value = HRTF_PINNA_NOTCH1_FREQ;
-      this.hrtfPinnaNotch1R.Q.value = HRTF_PINNA_NOTCH_Q;
-      this.hrtfPinnaNotch1R.gain.value = 0; // Start bypassed
-      
-      this.hrtfPinnaNotch2L = nativeCtx.createBiquadFilter();
-      this.hrtfPinnaNotch2L.type = 'peaking';
-      this.hrtfPinnaNotch2L.frequency.value = HRTF_PINNA_NOTCH2_FREQ;
-      this.hrtfPinnaNotch2L.Q.value = HRTF_PINNA_NOTCH_Q;
-      this.hrtfPinnaNotch2L.gain.value = 0; // Start bypassed
-      
-      this.hrtfPinnaNotch2R = nativeCtx.createBiquadFilter();
-      this.hrtfPinnaNotch2R.type = 'peaking';
-      this.hrtfPinnaNotch2R.frequency.value = HRTF_PINNA_NOTCH2_FREQ;
-      this.hrtfPinnaNotch2R.Q.value = HRTF_PINNA_NOTCH_Q;
-      this.hrtfPinnaNotch2R.gain.value = 0; // Start bypassed
-      
       // Connect M/S Encoding:
       // Splitter[0] (L) → midGainL → midSum
       // Splitter[1] (R) → midGainR → midSum
@@ -559,13 +417,12 @@ class WebAudioEffectsEngineClass {
       sideSum.connect(this.sideWidth as unknown as globalThis.GainNode);
       
       // Connect psychoacoustic chain AFTER sideWidth:
-      // sideWidth → sideHighpass → sideDelay → allPass1 → allPass2 → hrtfIldShelf → sidePsychoGain
+      // sideWidth → sideHighpass → sideDelay → allPass1 → allPass2 → sidePsychoGain
       (this.sideWidth as unknown as globalThis.GainNode).connect(this.sideHighpass);
       this.sideHighpass.connect(this.sideDelay);
       this.sideDelay.connect(this.allPass1);
       this.allPass1.connect(this.allPass2);
-      this.allPass2.connect(this.hrtfIldShelf);  // HRTF ILD high-frequency emphasis
-      this.hrtfIldShelf.connect(this.sidePsychoGain);
+      this.allPass2.connect(this.sidePsychoGain);
       
       // Connect M/S Decoding:
       // Mid path: midSum → midAttenuation → midToL/midToR → Merger
@@ -581,26 +438,8 @@ class WebAudioEffectsEngineClass {
       (this.sideToL as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 0);
       (this.sideToR as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 1);
       
-      // Connect HRTF output processing chain:
-      // stereoMerger → hrtfOutputSplitter → [L: HeadShadow → Pinna1 → Pinna2] → hrtfOutputMerger
-      //                                   → [R: HeadShadow → Pinna1 → Pinna2] →
-      this.stereoMerger.connect(this.hrtfOutputSplitter);
-      
-      // Left channel: HeadShadow → Pinna1 → Pinna2 → Merger[0]
-      this.hrtfOutputSplitter.connect(this.hrtfHeadShadowL, 0);
-      this.hrtfHeadShadowL.connect(this.hrtfPinnaNotch1L);
-      this.hrtfPinnaNotch1L.connect(this.hrtfPinnaNotch2L);
-      this.hrtfPinnaNotch2L.connect(this.hrtfOutputMerger, 0, 0);
-      
-      // Right channel: HeadShadow → Pinna1 → Pinna2 → Merger[1]
-      this.hrtfOutputSplitter.connect(this.hrtfHeadShadowR, 1);
-      this.hrtfHeadShadowR.connect(this.hrtfPinnaNotch1R);
-      this.hrtfPinnaNotch1R.connect(this.hrtfPinnaNotch2R);
-      this.hrtfPinnaNotch2R.connect(this.hrtfOutputMerger, 0, 1);
-      
-      this.hrtfEnabled = true;
       this.msProcessingEnabled = true;
-      console.log('[WebAudioEffectsEngine] M/S processing with HRTF and psychoacoustic chain initialized');
+      console.log('[WebAudioEffectsEngine] M/S processing with psychoacoustic chain initialized');
     } catch (error) {
       console.error('[WebAudioEffectsEngine] M/S processing: Failed to initialize:', error);
       this.msProcessingEnabled = false;
@@ -647,394 +486,6 @@ class WebAudioEffectsEngineClass {
   }
 
   /**
-   * Initialize Premium Effects: PBE, SBR, and Dynamic EQ
-   * All processing uses 32-bit float throughout
-   */
-  private initializePremiumEffects(): void {
-    if (!this.audioContext || Platform.OS !== 'web') {
-      console.log('[WebAudioEffectsEngine] Premium Effects: Not available (non-web platform)');
-      return;
-    }
-
-    try {
-      const nativeCtx = this.audioContext as unknown as NativeAudioContext;
-
-      // ==========================================
-      // Dynamic Volume EQ (Fletcher-Munson Compensation)
-      // Signal: Input → Analyser → BassShelf → TrebleShelf → Output
-      // ==========================================
-      this.dynamicEQInputGain = nativeCtx.createGain();
-      this.dynamicEQInputGain.gain.value = 1.0;
-      
-      this.dynamicEQAnalyser = nativeCtx.createAnalyser();
-      this.dynamicEQAnalyser.fftSize = 2048;
-      this.dynamicEQAnalyser.smoothingTimeConstant = 0.8;
-      
-      this.dynamicEQBassShelf = nativeCtx.createBiquadFilter();
-      this.dynamicEQBassShelf.type = 'lowshelf';
-      this.dynamicEQBassShelf.frequency.value = 100;
-      this.dynamicEQBassShelf.gain.value = 0; // Start flat
-      
-      this.dynamicEQTrebleShelf = nativeCtx.createBiquadFilter();
-      this.dynamicEQTrebleShelf.type = 'highshelf';
-      this.dynamicEQTrebleShelf.frequency.value = 8000;
-      this.dynamicEQTrebleShelf.gain.value = 0; // Start flat
-      
-      this.dynamicEQOutputGain = nativeCtx.createGain();
-      this.dynamicEQOutputGain.gain.value = 1.0;
-      
-      // Connect Dynamic EQ chain
-      this.dynamicEQInputGain.connect(this.dynamicEQAnalyser);
-      this.dynamicEQAnalyser.connect(this.dynamicEQBassShelf);
-      this.dynamicEQBassShelf.connect(this.dynamicEQTrebleShelf);
-      this.dynamicEQTrebleShelf.connect(this.dynamicEQOutputGain);
-
-      // ==========================================
-      // Psychoacoustic Bass Enhancement (PBE)
-      // Signal: Input → [Lowpass → Waveshaper → Bandpass → HarmonicsGain] + [BypassGain] → Output
-      // ==========================================
-      this.pbeInputGain = nativeCtx.createGain();
-      this.pbeInputGain.gain.value = 1.0;
-      
-      // Lowpass filter at 100Hz to extract sub-bass
-      this.pbeLowpass = nativeCtx.createBiquadFilter();
-      this.pbeLowpass.type = 'lowpass';
-      this.pbeLowpass.frequency.value = 100;
-      this.pbeLowpass.Q.value = 0.707;
-      
-      // Waveshaper with polynomial curve: y = x + 0.5*x² + 0.25*x³
-      this.pbeWaveshaper = nativeCtx.createWaveShaper();
-      this.pbeWaveshaper.curve = this.createPBEWaveshaperCurve();
-      this.pbeWaveshaper.oversample = '4x'; // High quality processing
-      
-      // Bandpass filter 100-400Hz to keep useful harmonics
-      this.pbeBandpass = nativeCtx.createBiquadFilter();
-      this.pbeBandpass.type = 'bandpass';
-      this.pbeBandpass.frequency.value = 200; // Center frequency
-      this.pbeBandpass.Q.value = 0.667; // Q for ~100-400Hz range
-      
-      // Harmonics gain (wet signal)
-      this.pbeHarmonicsGain = nativeCtx.createGain();
-      this.pbeHarmonicsGain.gain.value = 0; // Start disabled
-      
-      // Bypass gain (dry signal)
-      this.pbeBypassGain = nativeCtx.createGain();
-      this.pbeBypassGain.gain.value = 1.0;
-      
-      // Output mixer
-      this.pbeOutputGain = nativeCtx.createGain();
-      this.pbeOutputGain.gain.value = 1.0;
-      
-      // Connect PBE chain
-      // Wet path: Input → Lowpass → Waveshaper → Bandpass → HarmonicsGain → Output
-      this.pbeInputGain.connect(this.pbeLowpass);
-      this.pbeLowpass.connect(this.pbeWaveshaper);
-      this.pbeWaveshaper.connect(this.pbeBandpass);
-      this.pbeBandpass.connect(this.pbeHarmonicsGain);
-      this.pbeHarmonicsGain.connect(this.pbeOutputGain);
-      
-      // Dry path: Input → BypassGain → Output
-      this.pbeInputGain.connect(this.pbeBypassGain);
-      this.pbeBypassGain.connect(this.pbeOutputGain);
-
-      // ==========================================
-      // Spectral Band Replication (SBR) - Audio Upscaling
-      // Signal: Input → [Highpass → Waveshaper → Highshelf → HarmonicsGain] + [BypassGain] → Output
-      // ==========================================
-      this.sbrInputGain = nativeCtx.createGain();
-      this.sbrInputGain.gain.value = 1.0;
-      
-      // Highpass filter at 8kHz to isolate upper harmonics
-      this.sbrHighpass = nativeCtx.createBiquadFilter();
-      this.sbrHighpass.type = 'highpass';
-      this.sbrHighpass.frequency.value = 8000;
-      this.sbrHighpass.Q.value = 0.707;
-      
-      // Waveshaper with soft tanh curve for harmonic extension
-      this.sbrWaveshaper = nativeCtx.createWaveShaper();
-      this.sbrWaveshaper.curve = this.createSBRWaveshaperCurve();
-      this.sbrWaveshaper.oversample = '4x'; // High quality processing
-      
-      // High-shelf filter boosting above 16kHz
-      this.sbrHighshelf = nativeCtx.createBiquadFilter();
-      this.sbrHighshelf.type = 'highshelf';
-      this.sbrHighshelf.frequency.value = 16000;
-      this.sbrHighshelf.gain.value = 6; // +6dB boost
-      
-      // Harmonics gain (wet signal) - 10-30% blend
-      this.sbrHarmonicsGain = nativeCtx.createGain();
-      this.sbrHarmonicsGain.gain.value = 0; // Start disabled
-      
-      // Bypass gain (dry signal)
-      this.sbrBypassGain = nativeCtx.createGain();
-      this.sbrBypassGain.gain.value = 1.0;
-      
-      // Output mixer
-      this.sbrOutputGain = nativeCtx.createGain();
-      this.sbrOutputGain.gain.value = 1.0;
-      
-      // Connect SBR chain
-      // Wet path: Input → Highpass → Waveshaper → Highshelf → HarmonicsGain → Output
-      this.sbrInputGain.connect(this.sbrHighpass);
-      this.sbrHighpass.connect(this.sbrWaveshaper);
-      this.sbrWaveshaper.connect(this.sbrHighshelf);
-      this.sbrHighshelf.connect(this.sbrHarmonicsGain);
-      this.sbrHarmonicsGain.connect(this.sbrOutputGain);
-      
-      // Dry path: Input → BypassGain → Output
-      this.sbrInputGain.connect(this.sbrBypassGain);
-      this.sbrBypassGain.connect(this.sbrOutputGain);
-
-      console.log('[WebAudioEffectsEngine] Premium Effects initialized: PBE, SBR, Dynamic EQ');
-    } catch (error) {
-      console.error('[WebAudioEffectsEngine] Premium Effects: Failed to initialize:', error);
-    }
-  }
-
-  /**
-   * Create PBE waveshaper curve: y = x + 0.5*x² + 0.25*x³
-   * Generates even (2nd) and odd (3rd) harmonics for bass enhancement
-   */
-  private createPBEWaveshaperCurve(): Float32Array {
-    const samples = 8192;
-    const curve = new Float32Array(samples);
-    for (let i = 0; i < samples; i++) {
-      const x = (i * 2) / samples - 1; // Map to -1 to 1
-      // Polynomial: y = x + 0.5*x² + 0.25*x³
-      let y = x + 0.5 * x * x + 0.25 * x * x * x;
-      // Soft clip to prevent harsh distortion
-      y = Math.tanh(y);
-      curve[i] = y;
-    }
-    return curve;
-  }
-
-  /**
-   * Create SBR waveshaper curve: soft tanh for harmonic extension
-   * Gentle saturation to create higher harmonics from existing content
-   */
-  private createSBRWaveshaperCurve(): Float32Array {
-    const samples = 8192;
-    const curve = new Float32Array(samples);
-    for (let i = 0; i < samples; i++) {
-      const x = (i * 2) / samples - 1; // Map to -1 to 1
-      // Soft tanh curve with slight drive for harmonic generation
-      const drive = 1.5;
-      curve[i] = Math.tanh(x * drive);
-    }
-    return curve;
-  }
-
-  /**
-   * Start Dynamic EQ RMS tracking loop
-   * Adjusts bass/treble shelves based on output level (Fletcher-Munson curves)
-   */
-  private startDynamicEQTracking(): void {
-    if (!this.dynamicEQAnalyser || !this.dynamicEQBassShelf || !this.dynamicEQTrebleShelf) {
-      return;
-    }
-    
-    const bufferLength = this.dynamicEQAnalyser.fftSize;
-    const dataArray = new Float32Array(bufferLength);
-    
-    const updateDynamicEQ = () => {
-      if (!this.dynamicEQEnabled || !this.dynamicEQAnalyser) {
-        this.dynamicEQAnimationFrame = null;
-        return;
-      }
-      
-      // Get time domain data for RMS calculation
-      this.dynamicEQAnalyser.getFloatTimeDomainData(dataArray);
-      
-      // Calculate RMS
-      let sumSquares = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        sumSquares += dataArray[i] * dataArray[i];
-      }
-      const rms = Math.sqrt(sumSquares / bufferLength);
-      
-      // Smooth RMS with exponential moving average
-      const smoothingFactor = 0.1;
-      this.dynamicEQCurrentRMS = this.dynamicEQCurrentRMS * (1 - smoothingFactor) + rms * smoothingFactor;
-      
-      // Convert RMS to dB (reference: 1.0 = 0dB)
-      const rmsDb = 20 * Math.log10(Math.max(this.dynamicEQCurrentRMS, 0.0001));
-      
-      // Fletcher-Munson compensation:
-      // At low levels (-40dB and below): boost bass and treble
-      // At high levels (-10dB and above): flatten to neutral
-      // Smooth interpolation between
-      const minDb = -40;
-      const maxDb = -10;
-      const normalizedLevel = Math.max(0, Math.min(1, (rmsDb - minDb) / (maxDb - minDb)));
-      
-      // At low levels, we need more bass and treble boost (inverse of Fletcher-Munson)
-      // Maximum boost at lowest levels, no boost at highest levels
-      const compensationFactor = (1 - normalizedLevel) * this.dynamicEQStrength;
-      
-      // Bass boost: up to +8dB at 100Hz at low levels
-      const bassBoostDb = compensationFactor * 8;
-      // Treble boost: up to +6dB at 8kHz at low levels
-      const trebleBoostDb = compensationFactor * 6;
-      
-      // Apply with smooth transitions
-      if (this.dynamicEQBassShelf) {
-        this.dynamicEQBassShelf.gain.value = bassBoostDb;
-      }
-      if (this.dynamicEQTrebleShelf) {
-        this.dynamicEQTrebleShelf.gain.value = trebleBoostDb;
-      }
-      
-      // Continue tracking
-      this.dynamicEQAnimationFrame = requestAnimationFrame(updateDynamicEQ);
-    };
-    
-    // Start the tracking loop
-    this.dynamicEQAnimationFrame = requestAnimationFrame(updateDynamicEQ);
-  }
-
-  /**
-   * Stop Dynamic EQ RMS tracking loop
-   */
-  private stopDynamicEQTracking(): void {
-    if (this.dynamicEQAnimationFrame !== null) {
-      cancelAnimationFrame(this.dynamicEQAnimationFrame);
-      this.dynamicEQAnimationFrame = null;
-    }
-    
-    // Reset to flat response
-    if (this.dynamicEQBassShelf) {
-      this.dynamicEQBassShelf.gain.value = 0;
-    }
-    if (this.dynamicEQTrebleShelf) {
-      this.dynamicEQTrebleShelf.gain.value = 0;
-    }
-    
-    this.dynamicEQCurrentRMS = 0;
-  }
-
-  // ==========================================
-  // Premium Effects Control Methods
-  // ==========================================
-
-  /**
-   * Enable/disable Psychoacoustic Bass Enhancement
-   */
-  setPBEEnabled(enabled: boolean): void {
-    this.pbeEnabled = enabled;
-    this.updatePBEGains();
-    console.log(`[WebAudioEffectsEngine] PBE: ${enabled ? 'Enabled' : 'Disabled'}`);
-  }
-
-  /**
-   * Set PBE intensity (0-1)
-   * Controls how much harmonic content is blended with original
-   */
-  setPBEIntensity(intensity: number): void {
-    this.pbeIntensity = Math.max(0, Math.min(1, intensity));
-    this.updatePBEGains();
-    console.log(`[WebAudioEffectsEngine] PBE Intensity: ${(this.pbeIntensity * 100).toFixed(0)}%`);
-  }
-
-  private updatePBEGains(): void {
-    if (!this.pbeHarmonicsGain || !this.pbeBypassGain) return;
-    
-    if (this.pbeEnabled) {
-      // Wet/dry crossfade based on intensity
-      // At 0 intensity: full dry, no harmonics
-      // At 1 intensity: 50% dry, 50% harmonics (never fully wet)
-      const wetAmount = this.pbeIntensity * 0.5;
-      const dryAmount = 1.0 - (this.pbeIntensity * 0.3); // Slight reduction of dry
-      
-      this.pbeHarmonicsGain.gain.value = wetAmount;
-      this.pbeBypassGain.gain.value = dryAmount;
-    } else {
-      // Disabled: full bypass
-      this.pbeHarmonicsGain.gain.value = 0;
-      this.pbeBypassGain.gain.value = 1.0;
-    }
-  }
-
-  /**
-   * Enable/disable Spectral Band Replication
-   */
-  setSBREnabled(enabled: boolean): void {
-    this.sbrEnabled = enabled;
-    this.updateSBRGains();
-    console.log(`[WebAudioEffectsEngine] SBR: ${enabled ? 'Enabled' : 'Disabled'}`);
-  }
-
-  /**
-   * Set SBR intensity (0-1)
-   * Controls blend amount (maps to 10-30% range)
-   */
-  setSBRIntensity(intensity: number): void {
-    this.sbrIntensity = Math.max(0, Math.min(1, intensity));
-    this.updateSBRGains();
-    console.log(`[WebAudioEffectsEngine] SBR Intensity: ${(this.sbrIntensity * 100).toFixed(0)}%`);
-  }
-
-  private updateSBRGains(): void {
-    if (!this.sbrHarmonicsGain || !this.sbrBypassGain) return;
-    
-    if (this.sbrEnabled) {
-      // Map intensity to 10-30% wet blend range
-      const wetAmount = 0.1 + (this.sbrIntensity * 0.2); // 10-30%
-      this.sbrHarmonicsGain.gain.value = wetAmount;
-      this.sbrBypassGain.gain.value = 1.0; // Keep full dry
-    } else {
-      // Disabled: full bypass
-      this.sbrHarmonicsGain.gain.value = 0;
-      this.sbrBypassGain.gain.value = 1.0;
-    }
-  }
-
-  /**
-   * Enable/disable Dynamic Volume EQ (Fletcher-Munson Compensation)
-   */
-  setDynamicEQEnabled(enabled: boolean): void {
-    this.dynamicEQEnabled = enabled;
-    
-    if (enabled) {
-      this.startDynamicEQTracking();
-    } else {
-      this.stopDynamicEQTracking();
-    }
-    
-    console.log(`[WebAudioEffectsEngine] Dynamic EQ: ${enabled ? 'Enabled' : 'Disabled'}`);
-  }
-
-  /**
-   * Set Dynamic EQ strength (0-1)
-   * Controls how much compensation is applied at low levels
-   */
-  setDynamicEQStrength(strength: number): void {
-    this.dynamicEQStrength = Math.max(0, Math.min(1, strength));
-    console.log(`[WebAudioEffectsEngine] Dynamic EQ Strength: ${(this.dynamicEQStrength * 100).toFixed(0)}%`);
-  }
-
-  /**
-   * Get current status of all premium effects
-   */
-  getPremiumEffectsStatus(): {
-    pbeEnabled: boolean;
-    pbeIntensity: number;
-    sbrEnabled: boolean;
-    sbrIntensity: number;
-    dynamicEQEnabled: boolean;
-    dynamicEQStrength: number;
-  } {
-    return {
-      pbeEnabled: this.pbeEnabled,
-      pbeIntensity: this.pbeIntensity,
-      sbrEnabled: this.sbrEnabled,
-      sbrIntensity: this.sbrIntensity,
-      dynamicEQEnabled: this.dynamicEQEnabled,
-      dynamicEQStrength: this.dynamicEQStrength,
-    };
-  }
-
-  /**
    * Set Spatial Enhancement Level using the 6-Level Slider System
    * 
    * Level 0: Off - No processing (0.0x multiplier)
@@ -1076,8 +527,6 @@ class WebAudioEffectsEngineClass {
       this.sideDelay.delayTime.value = 0;
       this.sidePsychoGain.gain.value = 1.0;
       this.midAttenuation.gain.value = 1.0;
-      // Disable HRTF when spatial is off
-      this.configureHRTF(0);
       console.log(`[WebAudioEffectsEngine] Spatial: ${levelName} (${multiplier}x)`);
     } else {
       this.sideHighpass.frequency.value = 150;
@@ -1102,9 +551,6 @@ class WebAudioEffectsEngineClass {
         this.allPass1.Q.value = decorrelationQ;
         this.allPass2.Q.value = decorrelationQ * 0.85;
       }
-      
-      // Configure HRTF based on spatial intensity
-      this.configureHRTF(wetFactor);
       
       console.log(`[WebAudioEffectsEngine] Spatial: ${levelName} (${multiplier}x) - sideGain:${sideGainPercent}%, ITD:${itdMs}ms, decorr:${decorrelation}%, wet:${wetMix}%`);
     }
@@ -1188,50 +634,8 @@ class WebAudioEffectsEngineClass {
       this.allPass1.Q.value = decorrelationQ;
       this.allPass2.Q.value = decorrelationQ * 0.85;
     }
-    
-    // Configure HRTF filters based on spatial intensity
-    this.configureHRTF(wetFactor);
 
     console.log(`[WebAudioEffectsEngine] Spatial params set: sideGain:${finalSideGain.toFixed(1)}%, ITD:${finalItdMs.toFixed(2)}ms, decorr:${finalDecorrelation.toFixed(1)}%, wet:${finalWetMix.toFixed(1)}%`);
-  }
-  
-  /**
-   * Configure HRTF (Head-Related Transfer Function) filters for binaural externalization.
-   * HRTF intensity scales with spatial wetFactor (0 = bypassed, 1 = full effect).
-   * 
-   * Components:
-   * - Head Shadow: High-frequency attenuation (simulates sound diffraction around head)
-   * - Pinna Notches: Characteristic notches at 8kHz/10.5kHz for "outside head" perception
-   * - ILD Emphasis: Frequency-dependent side channel boost for enhanced imaging
-   * 
-   * @param intensity - HRTF intensity from 0 (bypassed) to 1 (full effect)
-   */
-  private configureHRTF(intensity: number): void {
-    this.hrtfIntensity = intensity;
-    
-    if (!this.hrtfEnabled) {
-      return;
-    }
-    
-    // Head shadow: high-frequency roll-off (full -6dB at max intensity)
-    const headShadowDb = HRTF_HEAD_SHADOW_MAX_DB * intensity;
-    if (this.hrtfHeadShadowL) this.hrtfHeadShadowL.gain.value = headShadowDb;
-    if (this.hrtfHeadShadowR) this.hrtfHeadShadowR.gain.value = headShadowDb;
-    
-    // Pinna notches: create externalization effect
-    const pinnaNotchDb = HRTF_PINNA_NOTCH_DEPTH * intensity;
-    if (this.hrtfPinnaNotch1L) this.hrtfPinnaNotch1L.gain.value = pinnaNotchDb;
-    if (this.hrtfPinnaNotch1R) this.hrtfPinnaNotch1R.gain.value = pinnaNotchDb;
-    if (this.hrtfPinnaNotch2L) this.hrtfPinnaNotch2L.gain.value = pinnaNotchDb * 0.7; // Secondary notch shallower
-    if (this.hrtfPinnaNotch2R) this.hrtfPinnaNotch2R.gain.value = pinnaNotchDb * 0.7;
-    
-    // ILD emphasis: boost high frequencies in side channel
-    const ildBoostDb = HRTF_ILD_MAX_DB * intensity;
-    if (this.hrtfIldShelf) this.hrtfIldShelf.gain.value = ildBoostDb;
-    
-    if (intensity > 0) {
-      console.log(`[WebAudioEffectsEngine] HRTF configured: headShadow:${headShadowDb.toFixed(1)}dB, pinnaNotch:${pinnaNotchDb.toFixed(1)}dB, ILD:${ildBoostDb.toFixed(1)}dB`);
-    }
   }
 
   getInputNode(): BiquadFilterNode | null {
@@ -1466,9 +870,6 @@ class WebAudioEffectsEngineClass {
   }
 
   async release(): Promise<void> {
-    // Stop Dynamic EQ tracking before closing context
-    this.stopDynamicEQTracking();
-    
     if (this.audioContext) {
       try {
         await this.audioContext.close();
@@ -1506,39 +907,6 @@ class WebAudioEffectsEngineClass {
     this.sidePsychoGain = null;
     this.midAttenuation = null;
     this.spatialEnhancementLevel = 0;
-    this.msProcessingEnabled = false;
-    
-    // Clean up Premium Effects: PBE
-    this.pbeInputGain = null;
-    this.pbeLowpass = null;
-    this.pbeWaveshaper = null;
-    this.pbeBandpass = null;
-    this.pbeHarmonicsGain = null;
-    this.pbeBypassGain = null;
-    this.pbeOutputGain = null;
-    this.pbeEnabled = false;
-    this.pbeIntensity = 0.5;
-    
-    // Clean up Premium Effects: SBR
-    this.sbrInputGain = null;
-    this.sbrHighpass = null;
-    this.sbrWaveshaper = null;
-    this.sbrHighshelf = null;
-    this.sbrHarmonicsGain = null;
-    this.sbrBypassGain = null;
-    this.sbrOutputGain = null;
-    this.sbrEnabled = false;
-    this.sbrIntensity = 0.5;
-    
-    // Clean up Premium Effects: Dynamic EQ
-    this.dynamicEQInputGain = null;
-    this.dynamicEQAnalyser = null;
-    this.dynamicEQBassShelf = null;
-    this.dynamicEQTrebleShelf = null;
-    this.dynamicEQOutputGain = null;
-    this.dynamicEQEnabled = false;
-    this.dynamicEQStrength = 0.5;
-    this.dynamicEQCurrentRMS = 0;
     
     this.isInitialized = false;
     this.currentEQValues = new Array(10).fill(0);
@@ -1571,20 +939,6 @@ class WebAudioEffectsEngineClass {
       spatialEnhancementActive: this.spatialEnhancementLevel > 0,
       psychoacousticGain: this.sidePsychoGain?.gain.value ?? 1.0,
       midAttenuation: this.midAttenuation?.gain.value ?? 1.0,
-      // Premium Effects status
-      premiumEffects: {
-        pbeEnabled: this.pbeEnabled,
-        pbeIntensity: this.pbeIntensity,
-        pbeHarmonicsGain: this.pbeHarmonicsGain?.gain.value ?? 0,
-        sbrEnabled: this.sbrEnabled,
-        sbrIntensity: this.sbrIntensity,
-        sbrHarmonicsGain: this.sbrHarmonicsGain?.gain.value ?? 0,
-        dynamicEQEnabled: this.dynamicEQEnabled,
-        dynamicEQStrength: this.dynamicEQStrength,
-        dynamicEQCurrentRMS: this.dynamicEQCurrentRMS,
-        dynamicEQBassBoost: this.dynamicEQBassShelf?.gain.value ?? 0,
-        dynamicEQTrebleBoost: this.dynamicEQTrebleShelf?.gain.value ?? 0,
-      },
     };
   }
 }
