@@ -54,9 +54,9 @@ jobs:
 
       - name: Copy PWA assets to dist
         run: |
-          Copy-Item public/manifest.json dist/
-          Copy-Item public/sw.js dist/
-          if (Test-Path public/icons) { Copy-Item -Recurse public/icons dist/ }
+          Copy-Item -Force public/manifest.json dist/
+          Copy-Item -Force public/sw.js dist/
+          if (Test-Path public/icons) { Copy-Item -Recurse -Force public/icons dist/ }
         shell: pwsh
 
       - name: Update version in package.json
