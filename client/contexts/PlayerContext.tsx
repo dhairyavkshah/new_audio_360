@@ -112,6 +112,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const progressSaveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentTimeRef = useRef<number>(0);
   const playbackRestoredRef = useRef<boolean>(false);
+  const lastProgressUpdateRef = useRef<number>(0);
+  const progressThrottleMs = 500; // Throttle progress updates to reduce re-renders
 
   useEffect(() => {
     currentSongRef.current = currentSong;
@@ -217,6 +219,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       },
       onProgress: (progress) => {
         if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+        // Throttle progress updates to reduce React re-renders and prevent lag
+        const now = Date.now();
+        if (now - lastProgressUpdateRef.current < progressThrottleMs) return;
+        lastProgressUpdateRef.current = now;
+        
         // Only update position if it's reasonable (not greater than duration)
         // This prevents slider flash during track transitions
         if (progress.duration > 0 && progress.position <= progress.duration) {
@@ -550,23 +557,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
               setupTrackPlayerCallbacks();
             }
             
-            if (trackPlayerInitializedRef.current) {
-              const state = await TrackPlayerService.getState();
-              const progress = await TrackPlayerService.getProgress();
+            if (trackPlayerInitializedRef.current && TrackPlayerService.getPlaybackSource() === 'music') {
+              // Batch state and progress calls to reduce lag on foreground return
+              const [state, progress] = await Promise.all([
+                TrackPlayerService.getState(),
+                TrackPlayerService.getProgress()
+              ]);
               
-              if (TrackPlayerService.getPlaybackSource() === 'music') {
-                const isCurrentlyPlaying = state === State.Playing;
-                setIsPlaying(isCurrentlyPlaying);
-                
-                if (progress) {
-                  setCurrentTime(progress.position);
-                  if (progress.duration > 0) {
-                    setDuration(progress.duration);
-                  }
+              const isCurrentlyPlaying = state === State.Playing;
+              setIsPlaying(isCurrentlyPlaying);
+              
+              if (progress) {
+                setCurrentTime(progress.position);
+                if (progress.duration > 0) {
+                  setDuration(progress.duration);
                 }
-                
-                setIsBuffering(state === State.Buffering || state === State.Loading);
               }
+              
+              setIsBuffering(state === State.Buffering || state === State.Loading);
             }
           } catch (err) {
             console.warn('[PlayerContext] Failed to sync state on foreground:', err);
@@ -1037,11 +1045,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           console.log('[PlayerContext] TrackPlayer initialized successfully');
         }
 
-        // Stop any current playback but don't reset queue yet
+        // Stop and reset current playback before loading new track
+        // This prevents lag from old track continuing in background
         try {
-          await TrackPlayerService.pause();
+          await TrackPlayerService.stop();
         } catch (e) {
-          console.log('[PlayerContext] Pause before load failed (may be normal):', e);
+          console.log('[PlayerContext] Stop before load failed (may be normal):', e);
         }
 
         // Set source to music
@@ -1093,6 +1102,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           },
           onProgress: (progress) => {
             if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+            // Throttle progress updates to reduce React re-renders and prevent lag
+            const now = Date.now();
+            if (now - lastProgressUpdateRef.current < progressThrottleMs) return;
+            lastProgressUpdateRef.current = now;
+            
             setCurrentTime(progress.position);
             if (progress.duration > 0) {
               setDuration(progress.duration);
