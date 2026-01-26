@@ -67,27 +67,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         private const val MAX_DECORRELATION = 18f       // max 18%
         private const val MAX_WET_MIX = 55f             // max 55%
         
-        // HRTF Binaural Processing constants
-        // Head shadow: ~6dB attenuation above 2kHz for contralateral ear at 90° azimuth
-        private const val HRTF_HEAD_SHADOW_FREQ = 2000f
-        private const val HRTF_HEAD_SHADOW_Q = 0.7f
-        // ILD: Up to 10dB level difference at high frequencies
-        private const val HRTF_MAX_ILD_DB = 10f
-        // Pinna notch: Characteristic 8kHz notch for elevation cues
-        private const val HRTF_PINNA_NOTCH_FREQ = 8000f
-        private const val HRTF_PINNA_NOTCH_Q = 3.0f
-        private const val HRTF_PINNA_NOTCH_DEPTH_DB = -6f
-        // HRTF intensity per spatial level (0=off, 5=max)
-        private val HRTF_INTENSITY = floatArrayOf(0f, 0.15f, 0.30f, 0.50f, 0.70f, 1.0f)
-        
-        // Volume Optimization (Loudness Compensation) constants
-        // Fletcher-Munson compensation for low-volume listening
-        private const val VOLUME_OPT_LOW_THRESHOLD_DB = -40f   // Below this, apply full compensation
-        private const val VOLUME_OPT_HIGH_THRESHOLD_DB = -20f  // Above this, no compensation
-        private const val VOLUME_OPT_BASS_BOOST_MAX_DB = 6f    // Max bass boost at low volume
-        private const val VOLUME_OPT_TREBLE_BOOST_MAX_DB = 4f  // Max treble boost at low volume
-        private const val VOLUME_OPT_RMS_ALPHA = 0.995f        // RMS smoothing factor
-        
         @Volatile
         private var sharedInstance: SoftwareDSPAudioProcessor? = null
         
@@ -166,27 +145,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private var leftSquaredSum = 0.0
     private var rightSquaredSum = 0.0
     private var runningCorrelation = 1.0f // Start assuming full correlation
-    
-    // HRTF Binaural Processing filters
-    // Head shadow filter: Low-pass for contralateral (far) ear simulation
-    private val hrtfHeadShadowFilterL = BiquadFilter(FilterType.LOWPASS, HRTF_HEAD_SHADOW_FREQ, 0f, HRTF_HEAD_SHADOW_Q, STANDARD_SAMPLE_RATE)
-    private val hrtfHeadShadowFilterR = BiquadFilter(FilterType.LOWPASS, HRTF_HEAD_SHADOW_FREQ, 0f, HRTF_HEAD_SHADOW_Q, STANDARD_SAMPLE_RATE)
-    // Pinna notch filter: Simulates pinna reflection for elevation cues
-    private val hrtfPinnaNotchFilterL = BiquadFilter(FilterType.PEAKING, HRTF_PINNA_NOTCH_FREQ, HRTF_PINNA_NOTCH_DEPTH_DB, HRTF_PINNA_NOTCH_Q, STANDARD_SAMPLE_RATE)
-    private val hrtfPinnaNotchFilterR = BiquadFilter(FilterType.PEAKING, HRTF_PINNA_NOTCH_FREQ, HRTF_PINNA_NOTCH_DEPTH_DB, HRTF_PINNA_NOTCH_Q, STANDARD_SAMPLE_RATE)
-    // High-shelf for ILD simulation
-    private val hrtfIldShelfFilterL = BiquadFilter(FilterType.HIGHSHELF, 3000f, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
-    private val hrtfIldShelfFilterR = BiquadFilter(FilterType.HIGHSHELF, 3000f, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
-    private var hrtfIntensity = 0f // Current HRTF intensity (0-1)
-    
-    // Volume Optimization (Loudness Compensation)
-    private var volumeOptimizationEnabled = false
-    private var runningRmsDb = -30.0 // Smoothed RMS level in dB
-    // Dynamic compensation filters (applied based on signal level)
-    private val volumeOptBassFilter = BiquadFilter(FilterType.LOWSHELF, 100f, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
-    private val volumeOptTrebleFilter = BiquadFilter(FilterType.HIGHSHELF, 8000f, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
-    private var currentVolumeOptBassGain = 0f
-    private var currentVolumeOptTrebleGain = 0f
 
     private var outputBuffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
     private var inputBuffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
@@ -231,18 +189,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         
         // Calculate ITD delay in samples (0.3ms at current sample rate)
         itdDelaySamples = ((ITD_DELAY_MS / 1000f) * currentSampleRate).toInt().coerceIn(1, MAX_ITD_DELAY_SAMPLES - 1)
-        
-        // Configure HRTF binaural filters
-        hrtfHeadShadowFilterL.configure(FilterType.LOWPASS, HRTF_HEAD_SHADOW_FREQ, 0f, HRTF_HEAD_SHADOW_Q, currentSampleRate)
-        hrtfHeadShadowFilterR.configure(FilterType.LOWPASS, HRTF_HEAD_SHADOW_FREQ, 0f, HRTF_HEAD_SHADOW_Q, currentSampleRate)
-        hrtfPinnaNotchFilterL.configure(FilterType.PEAKING, HRTF_PINNA_NOTCH_FREQ, HRTF_PINNA_NOTCH_DEPTH_DB, HRTF_PINNA_NOTCH_Q, currentSampleRate)
-        hrtfPinnaNotchFilterR.configure(FilterType.PEAKING, HRTF_PINNA_NOTCH_FREQ, HRTF_PINNA_NOTCH_DEPTH_DB, HRTF_PINNA_NOTCH_Q, currentSampleRate)
-        hrtfIldShelfFilterL.configure(FilterType.HIGHSHELF, 3000f, 0f, SHELF_Q, currentSampleRate)
-        hrtfIldShelfFilterR.configure(FilterType.HIGHSHELF, 3000f, 0f, SHELF_Q, currentSampleRate)
-        
-        // Configure Volume Optimization filters
-        volumeOptBassFilter.configure(FilterType.LOWSHELF, 100f, 0f, SHELF_Q, currentSampleRate)
-        volumeOptTrebleFilter.configure(FilterType.HIGHSHELF, 8000f, 0f, SHELF_Q, currentSampleRate)
 
         inputFormat = inputAudioFormat
         outputFormat = inputAudioFormat
@@ -321,26 +267,17 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             trebleShelfFilter.processBufferFloat(floatSamples, channelCount)
         }
 
-        // 4. Psychoacoustic Stereo Enhancement with HRTF (true stereo)
+        // 4. Psychoacoustic Stereo Enhancement (true stereo)
         if (spatialEnhancementLevel > 0 && channelCount == 2) {
             processPsychoacousticStereo(floatSamples)
-            // HRTF binaural processing is integrated into spatial enhancement
-            if (hrtfIntensity > 0f) {
-                processHrtfBinaural(floatSamples)
-            }
         }
 
         // 5. Multi-Tap Delay Reverb (true stereo)
         if (reverbWetMix > 0f && channelCount == 2) {
             processReverbFloat(floatSamples)
         }
-        
-        // 6. Volume Optimization (Loudness Compensation for low volumes)
-        if (volumeOptimizationEnabled && channelCount == 2) {
-            processVolumeOptimization(floatSamples)
-        }
 
-        // 7. Brickwall Limiter (linked stereo - industry standard)
+        // 6. Brickwall Limiter (linked stereo - industry standard)
         limiter.processBufferFloat(floatSamples, channelCount)
 
         // =========================================
@@ -515,11 +452,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         spatialDecorrelation = SLIDER_DECORRELATION[spatialEnhancementLevel]
         spatialWetMix = SLIDER_WET_MIX[spatialEnhancementLevel]
         
-        // Set HRTF intensity based on spatial level (integrated into spatial enhancement)
-        hrtfIntensity = HRTF_INTENSITY[spatialEnhancementLevel]
-        
         val levelNames = arrayOf("Off", "Subtle", "Mild", "Moderate", "Enhanced", "Maximum")
-        android.util.Log.d("SoftwareDSP", "Spatial enhancement level: ${levelNames[spatialEnhancementLevel]} (${SLIDER_MULTIPLIERS[spatialEnhancementLevel]}x multiplier, HRTF: ${(hrtfIntensity * 100).toInt()}%)")
+        android.util.Log.d("SoftwareDSP", "Spatial enhancement level: ${levelNames[spatialEnhancementLevel]} (${SLIDER_MULTIPLIERS[spatialEnhancementLevel]}x multiplier)")
     }
     
     /**
@@ -550,9 +484,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      * @param itdMs Inter-aural Time Difference in milliseconds (0-0.7ms)
      * @param decorrelation Decorrelation amount in % (0-100, controls all-pass filter Q)
      * @param wetMix Wet mix in % (0-100, blends processed with original)
-     * @param hrtf HRTF binaural intensity (0-1, default calculated from wetMix)
      */
-    fun setSpatialEnhancementParams(sideGain: Float, itdMs: Float, decorrelation: Float, wetMix: Float, hrtf: Float = -1f) {
+    fun setSpatialEnhancementParams(sideGain: Float, itdMs: Float, decorrelation: Float, wetMix: Float) {
         // Apply hard safety caps directly (no slider multiplier combination)
         spatialSideGainPercent = sideGain.coerceIn(0f, MAX_SIDE_GAIN_PERCENT)
         spatialItdMs = itdMs.coerceIn(0f, MAX_ITD_MS)
@@ -563,14 +496,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         // Set pseudo-level for compatibility (based on wetMix)
         spatialEnhancementLevel = if (spatialWetMix <= 0f) 0 else kotlin.math.ceil(spatialWetMix / 11f).toInt().coerceIn(1, 5)
         
-        // Set HRTF intensity (if not specified, derive from wetMix percentage)
-        hrtfIntensity = if (hrtf >= 0f) {
-            hrtf.coerceIn(0f, 1f)
-        } else {
-            (spatialWetMix / MAX_WET_MIX).coerceIn(0f, 1f)
-        }
-        
-        android.util.Log.d("SoftwareDSP", "Spatial params set: sideGain=$spatialSideGainPercent%, ITD=${spatialItdMs}ms, decorr=$spatialDecorrelation%, wetMix=$spatialWetMix%, HRTF=${(hrtfIntensity * 100).toInt()}%")
+        android.util.Log.d("SoftwareDSP", "Spatial params set: sideGain=$spatialSideGainPercent%, ITD=${spatialItdMs}ms, decorr=$spatialDecorrelation%, wetMix=$spatialWetMix%")
     }
     
     /**
@@ -580,8 +506,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         "sideGain" to spatialSideGainPercent,
         "itdMs" to spatialItdMs,
         "decorrelation" to spatialDecorrelation,
-        "wetMix" to spatialWetMix,
-        "hrtfIntensity" to hrtfIntensity
+        "wetMix" to spatialWetMix
     )
 
     /**
@@ -800,150 +725,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             i += 2
         }
     }
-    
-    /**
-     * Process HRTF binaural audio for 3D spatial perception through headphones.
-     * Implements:
-     * - Head shadow effect: High-frequency attenuation for contralateral ear
-     * - ILD (Interaural Level Difference): Volume differences between ears
-     * - Pinna filtering: Spectral cues for elevation perception
-     * 
-     * Intensity is controlled by the spatial enhancement level (0-5).
-     * This creates a more immersive, externalized sound field.
-     */
-    private fun processHrtfBinaural(samples: FloatArray) {
-        if (hrtfIntensity <= 0f) return
-        
-        // Calculate ILD gains based on intensity (simulate sound from front-left/right)
-        // At max intensity, apply up to HRTF_MAX_ILD_DB difference
-        val ildDb = HRTF_MAX_ILD_DB * hrtfIntensity * 0.3f // Subtle ILD for natural sound
-        val ildGainBoost = kotlin.math.pow(10.0, (ildDb / 20.0)).toFloat()
-        val ildGainCut = kotlin.math.pow(10.0, (-ildDb / 20.0)).toFloat()
-        
-        // Configure ILD high-shelf filters for frequency-dependent level difference
-        hrtfIldShelfFilterL.setGain(ildDb * 0.5f)
-        hrtfIldShelfFilterR.setGain(-ildDb * 0.5f)
-        
-        var i = 0
-        while (i < samples.size - 1) {
-            val left = samples[i]
-            val right = samples[i + 1]
-            
-            // Apply head shadow (low-pass on contralateral side - creates natural occlusion)
-            // Mix between original and filtered based on intensity
-            val shadowedL = hrtfHeadShadowFilterL.processSample(left, 0)
-            val shadowedR = hrtfHeadShadowFilterR.processSample(right, 0)
-            
-            // Blend: at intensity 0, use original; at intensity 1, use 30% shadowed
-            val shadowMix = hrtfIntensity * 0.3f
-            var processedL = left * (1f - shadowMix) + shadowedR * shadowMix // Cross-feed shadow
-            var processedR = right * (1f - shadowMix) + shadowedL * shadowMix
-            
-            // Apply ILD (high-shelf filter for frequency-dependent level difference)
-            processedL = hrtfIldShelfFilterL.processSample(processedL, 0)
-            processedR = hrtfIldShelfFilterR.processSample(processedR, 0)
-            
-            // Apply pinna notch filter (characteristic 8kHz notch for elevation cues)
-            // Blend based on intensity
-            val pinnaL = hrtfPinnaNotchFilterL.processSample(processedL, 0)
-            val pinnaR = hrtfPinnaNotchFilterR.processSample(processedR, 0)
-            val pinnaMix = hrtfIntensity * 0.5f
-            processedL = processedL * (1f - pinnaMix) + pinnaL * pinnaMix
-            processedR = processedR * (1f - pinnaMix) + pinnaR * pinnaMix
-            
-            samples[i] = processedL.coerceIn(-1f, 1f)
-            samples[i + 1] = processedR.coerceIn(-1f, 1f)
-            
-            i += 2
-        }
-    }
-    
-    /**
-     * Process Volume Optimization (Loudness Compensation).
-     * Applies Fletcher-Munson-style compensation for low-volume listening:
-     * - At low signal levels: Boost bass and treble for fuller sound
-     * - At normal/high levels: Bypass to maintain natural, lossless audio
-     * 
-     * This ensures audio sounds rich at low volumes without coloring
-     * the sound at normal listening levels.
-     */
-    private fun processVolumeOptimization(samples: FloatArray) {
-        // Calculate RMS level of the current buffer
-        var sumSquares = 0.0
-        var i = 0
-        while (i < samples.size) {
-            sumSquares += (samples[i] * samples[i]).toDouble()
-            i++
-        }
-        val bufferRms = kotlin.math.sqrt(sumSquares / samples.size).toFloat()
-        
-        // Convert to dB (with floor to avoid log(0))
-        val bufferRmsDb = if (bufferRms > 1e-10f) {
-            20f * kotlin.math.log10(bufferRms)
-        } else {
-            -100f
-        }
-        
-        // Smooth RMS with exponential moving average
-        runningRmsDb = VOLUME_OPT_RMS_ALPHA * runningRmsDb + (1.0 - VOLUME_OPT_RMS_ALPHA) * bufferRmsDb
-        
-        // Calculate compensation factor (0 = no compensation, 1 = full compensation)
-        // Below LOW_THRESHOLD: full compensation
-        // Between LOW and HIGH: linear interpolation
-        // Above HIGH_THRESHOLD: no compensation
-        val compensationFactor = when {
-            runningRmsDb <= VOLUME_OPT_LOW_THRESHOLD_DB -> 1f
-            runningRmsDb >= VOLUME_OPT_HIGH_THRESHOLD_DB -> 0f
-            else -> {
-                val range = VOLUME_OPT_HIGH_THRESHOLD_DB - VOLUME_OPT_LOW_THRESHOLD_DB
-                1f - ((runningRmsDb.toFloat() - VOLUME_OPT_LOW_THRESHOLD_DB) / range)
-            }
-        }
-        
-        // Calculate target gains based on compensation factor
-        val targetBassGain = VOLUME_OPT_BASS_BOOST_MAX_DB * compensationFactor
-        val targetTrebleGain = VOLUME_OPT_TREBLE_BOOST_MAX_DB * compensationFactor
-        
-        // Smooth gain transitions to avoid artifacts
-        currentVolumeOptBassGain += (targetBassGain - currentVolumeOptBassGain) * 0.01f
-        currentVolumeOptTrebleGain += (targetTrebleGain - currentVolumeOptTrebleGain) * 0.01f
-        
-        // Only process if there's meaningful compensation
-        if (currentVolumeOptBassGain > 0.1f || currentVolumeOptTrebleGain > 0.1f) {
-            // Update filter gains
-            volumeOptBassFilter.setGain(currentVolumeOptBassGain)
-            volumeOptTrebleFilter.setGain(currentVolumeOptTrebleGain)
-            
-            // Apply compensation filters
-            volumeOptBassFilter.processBufferFloat(samples, 2)
-            volumeOptTrebleFilter.processBufferFloat(samples, 2)
-        }
-    }
-    
-    /**
-     * Enable or disable Volume Optimization (Loudness Compensation).
-     * When enabled, low-volume audio gets bass and treble boost for fuller sound.
-     * At normal volumes, audio remains natural and unprocessed.
-     */
-    fun setVolumeOptimization(enabled: Boolean) {
-        volumeOptimizationEnabled = enabled
-        if (!enabled) {
-            // Reset compensation state
-            currentVolumeOptBassGain = 0f
-            currentVolumeOptTrebleGain = 0f
-            volumeOptBassFilter.setGain(0f)
-            volumeOptTrebleFilter.setGain(0f)
-            runningRmsDb = -30.0
-        }
-        android.util.Log.d("SoftwareDSP", "Volume Optimization ${if (enabled) "enabled" else "disabled"}")
-    }
-    
-    fun getVolumeOptimization(): Boolean = volumeOptimizationEnabled
-    
-    /**
-     * Get HRTF intensity (0-1).
-     */
-    fun getHrtfIntensity(): Float = hrtfIntensity
 
     fun setEnabled(enabled: Boolean) {
         isEnabled = enabled
@@ -991,25 +772,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         rightSquaredSum = 0.0
         runningCorrelation = 1.0f
         
-        // Reset HRTF binaural filters
-        hrtfIntensity = 0f
-        hrtfHeadShadowFilterL.resetAllChannels()
-        hrtfHeadShadowFilterR.resetAllChannels()
-        hrtfPinnaNotchFilterL.resetAllChannels()
-        hrtfPinnaNotchFilterR.resetAllChannels()
-        hrtfIldShelfFilterL.resetAllChannels()
-        hrtfIldShelfFilterR.resetAllChannels()
-        
-        // Reset Volume Optimization
-        volumeOptimizationEnabled = false
-        runningRmsDb = -30.0
-        currentVolumeOptBassGain = 0f
-        currentVolumeOptTrebleGain = 0f
-        volumeOptBassFilter.resetAllChannels()
-        volumeOptBassFilter.setGain(0f)
-        volumeOptTrebleFilter.resetAllChannels()
-        volumeOptTrebleFilter.setGain(0f)
-        
         eqFilters.forEach { it.resetAllChannels() }
         bassShelfFilter.resetAllChannels()
         trebleShelfFilter.resetAllChannels()
@@ -1036,9 +798,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             "reverbActive" to (reverbWetMix > 0f),
             "spatialEnhancementActive" to (spatialEnhancementLevel > 0),
             "spatialEnhancementLevel" to spatialEnhancementLevel,
-            "hrtfActive" to (hrtfIntensity > 0f),
-            "hrtfIntensity" to hrtfIntensity,
-            "volumeOptimizationActive" to volumeOptimizationEnabled,
             "itdDelaySamples" to itdDelaySamples,
             "runningCorrelation" to runningCorrelation
         )
