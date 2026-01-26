@@ -182,6 +182,7 @@ See [MICROSOFT_STORE_SUBMISSION.md](../docs/MICROSOFT_STORE_SUBMISSION.md) for d
 
 | Version | Changes |
 |---------|---------|
+| 27.0 | Lossless DSP improvements, limiter threshold optimization |
 | 26.0 | Initial Windows Store release |
 
 ## Support
