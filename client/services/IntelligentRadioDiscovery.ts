@@ -3,10 +3,10 @@ import { getCuratedStationsByCountry, CuratedRadioStation, CURATED_RADIO_STATION
 
 const CACHE_KEY_PREFIX = '@na360_radio_cache_';
 const CACHE_METADATA_KEY = '@na360_radio_cache_metadata';
-const REFRESH_INTERVAL_DAYS = 7;
+const REFRESH_INTERVAL_DAYS = 30;
 const MAX_STATIONS_PER_COUNTRY = 1000;
 const API_FETCH_LIMIT = 1500;
-const REQUEST_TIMEOUT = 20000;
+const REQUEST_TIMEOUT = 30000;
 
 const RADIO_BROWSER_SERVERS = [
   'https://de1.api.radio-browser.info',

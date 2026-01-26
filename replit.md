@@ -74,7 +74,7 @@ A two-check system: initial Google Play Billing validation and daily re-validati
 - **Sound Lab**: 10 EQ presets, custom 10-band EQ editor, 6 immersive modes, bass/treble control.
 - **Theming**: 55 themes across 6 categories.
 - **Radio**: Native FM/AM and online streaming radio with Intelligent Radio Discovery.
-- **Intelligent Radio Discovery**: Automatic station scanning via Radio Browser API with 7-day refresh cycle, up to 1000 stations per country, quality filtering (lastcheckok=1, sorted by votes+clickcount), curated station fallback, and manual re-scan button.
+- **Intelligent Radio Discovery**: Automatic station scanning via Radio Browser API with 30-day cache refresh cycle, up to 1000 stations per country, quality filtering (lastcheckok=1, sorted by votes+clickcount), curated station fallback, and manual re-scan button that updates cache immediately.
 - **Playback**: Background playback, notification controls, queue, shuffle/repeat, playback speed, sleep timer, favorites.
 - **Library Management**: Music folder selection, paginated loading, "Hide Song" feature, playlist CRUD.
 
