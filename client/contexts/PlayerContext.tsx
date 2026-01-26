@@ -228,17 +228,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       onPlay: () => {
         if (TrackPlayerService.getPlaybackSource() === 'music') {
           setIsPlaying(true);
+          // Start calculated progress from current position
+          startCalculatedProgressTimer(currentTimeRef.current);
         }
       },
       onPause: () => {
         if (TrackPlayerService.getPlaybackSource() === 'music') {
           setIsPlaying(false);
+          // Stop timer and record position
+          stopCalculatedProgressTimer();
         }
       },
       onStop: () => {
         if (TrackPlayerService.getPlaybackSource() === 'music') {
           setIsPlaying(false);
           setCurrentTime(0);
+          // Stop timer and reset position
+          stopCalculatedProgressTimer();
+          playbackStartPositionRef.current = 0;
         }
       },
       onNext: () => {
@@ -251,7 +258,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       },
       onSeek: (position) => {
         if (TrackPlayerService.getPlaybackSource() === 'music') {
-          setCurrentTime(position);
+          // Update calculated position when user seeks
+          updateCalculatedPosition(position);
         }
       },
       onTrackChange: async (trackIndex) => {
@@ -261,6 +269,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           if (currentQueue[trackIndex]) {
             // Reset position immediately to prevent slider flash
             setCurrentTime(0);
+            // Reset calculated progress for new track
+            updateCalculatedPosition(0);
             setCurrentSong(currentQueue[trackIndex]);
             const track = await TrackPlayerService.getCurrentTrack();
             if (track?.duration) {
@@ -274,19 +284,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       },
       onProgress: (progress) => {
         if (TrackPlayerService.getPlaybackSource() !== 'music') return;
-        // Throttle progress updates to reduce React re-renders and prevent lag
-        const now = Date.now();
-        if (now - lastProgressUpdateRef.current < progressThrottleMs) return;
-        lastProgressUpdateRef.current = now;
-        
-        // Only update position if it's reasonable (not greater than duration)
-        // This prevents slider flash during track transitions
-        if (progress.duration > 0 && progress.position <= progress.duration) {
-          setCurrentTime(progress.position);
-          setDuration(progress.duration);
-        } else if (progress.duration > 0) {
-          // Track just started, use new duration but reset position
-          setCurrentTime(0);
+        // Only update duration from onProgress, not position
+        // Position is calculated locally for smoother updates
+        if (progress.duration > 0) {
           setDuration(progress.duration);
         }
         setIsBuffering(progress.buffered < progress.position);
@@ -296,18 +296,25 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (state === State.Playing) {
           setIsPlaying(true);
           setIsBuffering(false);
+          // Start calculated progress timer
+          startCalculatedProgressTimer(currentTimeRef.current);
         } else if (state === State.Paused) {
           setIsPlaying(false);
           setIsBuffering(false);
+          // Stop timer
+          stopCalculatedProgressTimer();
         } else if (state === State.Buffering || state === State.Loading) {
           setIsBuffering(true);
         } else if (state === State.Stopped) {
           setIsPlaying(false);
           setCurrentTime(0);
+          // Stop timer and reset
+          stopCalculatedProgressTimer();
+          playbackStartPositionRef.current = 0;
         }
       },
     });
-  }, []);
+  }, [startCalculatedProgressTimer, stopCalculatedProgressTimer, updateCalculatedPosition]);
 
   const restoreTrackPlayerQueue = useCallback(async (savedPosition?: number, wasPlaying?: boolean) => {
     const queue = queueRef.current;
@@ -623,9 +630,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
               setIsPlaying(isCurrentlyPlaying);
               
               if (progress) {
-                setCurrentTime(progress.position);
+                // Sync calculated position with actual player position
+                updateCalculatedPosition(progress.position);
                 if (progress.duration > 0) {
                   setDuration(progress.duration);
+                }
+                
+                // Restart timer if playing
+                if (isCurrentlyPlaying) {
+                  startCalculatedProgressTimer(progress.position);
                 }
               }
               
@@ -651,12 +664,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!useNativePlaybackRef.current) return;
 
     if (isPlaying && currentSong) {
+      // Start calculated progress timer for native playback
+      startCalculatedProgressTimer(currentTimeRef.current);
+      
+      // Periodic sync with native engine for duration and state (less frequent)
       progressPollingRef.current = setInterval(() => {
         const status = PlaybackEngineModule.getStatus();
         
-        if (status.currentPositionMs !== undefined) {
-          setCurrentTime(status.currentPositionMs / 1000);
-        }
+        // Only update duration, position is calculated locally
         if (status.durationMs !== undefined && status.durationMs > 0) {
           setDuration(status.durationMs / 1000);
         }
@@ -669,13 +684,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         
         if (!status.isPlaying && isPlaying && status.playbackState !== 'buffering') {
           setIsPlaying(false);
+          stopCalculatedProgressTimer();
         }
-      }, 250);
+      }, 1000); // Reduced to 1 second since we're not tracking position
     } else {
       if (progressPollingRef.current) {
         clearInterval(progressPollingRef.current);
         progressPollingRef.current = null;
       }
+      stopCalculatedProgressTimer();
     }
 
     return () => {
@@ -683,8 +700,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         clearInterval(progressPollingRef.current);
         progressPollingRef.current = null;
       }
+      if (calculatedProgressTimerRef.current) {
+        clearInterval(calculatedProgressTimerRef.current);
+        calculatedProgressTimerRef.current = null;
+      }
     };
-  }, [isPlaying, currentSong]);
+  }, [isPlaying, currentSong, startCalculatedProgressTimer, stopCalculatedProgressTimer]);
 
   const handleTrackEnd = useCallback(() => {
     const song = currentSongRef.current;
@@ -1063,15 +1084,32 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         };
 
         audio.ontimeupdate = () => {
-          setCurrentTime(audio.currentTime);
+          // Only update duration from ontimeupdate, position is calculated locally
           if (audio.duration && !isNaN(audio.duration)) {
             setDuration(audio.duration);
+          }
+        };
+        
+        audio.onplay = () => {
+          startCalculatedProgressTimer(audio.currentTime);
+        };
+        
+        audio.onpause = () => {
+          stopCalculatedProgressTimer();
+        };
+        
+        audio.onseeked = () => {
+          updateCalculatedPosition(audio.currentTime);
+          if (!audio.paused) {
+            startCalculatedProgressTimer(audio.currentTime);
           }
         };
 
         await audio.play();
         setIsPlaying(true);
         setIsLoading(false);
+        // Start calculated progress for web playback
+        startCalculatedProgressTimer(0);
         AudioCoordinator.notifyPlaybackStarted('music');
       } else if (useTrackPlayerRef.current) {
         console.log('[PlayerContext] Using TrackPlayer for playback');
@@ -1139,7 +1177,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           },
           onSeek: (position) => {
             if (TrackPlayerService.getPlaybackSource() === 'music') {
-              setCurrentTime(position);
+              // Update calculated position when user seeks
+              updateCalculatedPosition(position);
             }
           },
           onTrackChange: async (trackIndex) => {
@@ -1147,6 +1186,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             if (trackIndex !== null && trackIndex >= 0) {
               const currentQueue = queueRef.current;
               if (currentQueue[trackIndex]) {
+                // Reset calculated progress for new track
+                updateCalculatedPosition(0);
                 setCurrentSong(currentQueue[trackIndex]);
                 const track = await TrackPlayerService.getCurrentTrack();
                 if (track?.duration) {
@@ -1157,12 +1198,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           },
           onProgress: (progress) => {
             if (TrackPlayerService.getPlaybackSource() !== 'music') return;
-            // Throttle progress updates to reduce React re-renders and prevent lag
-            const now = Date.now();
-            if (now - lastProgressUpdateRef.current < progressThrottleMs) return;
-            lastProgressUpdateRef.current = now;
-            
-            setCurrentTime(progress.position);
+            // Only update duration from onProgress, not position
+            // Position is calculated locally for smoother updates
             if (progress.duration > 0) {
               setDuration(progress.duration);
             }
@@ -1173,14 +1210,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             if (state === State.Playing) {
               setIsPlaying(true);
               setIsBuffering(false);
+              // Start calculated progress timer
+              startCalculatedProgressTimer(currentTimeRef.current);
             } else if (state === State.Paused) {
               setIsPlaying(false);
               setIsBuffering(false);
+              // Stop timer
+              stopCalculatedProgressTimer();
             } else if (state === State.Buffering || state === State.Loading) {
               setIsBuffering(true);
             } else if (state === State.Stopped) {
               setIsPlaying(false);
               setCurrentTime(0);
+              // Stop timer and reset
+              stopCalculatedProgressTimer();
+              playbackStartPositionRef.current = 0;
             }
           },
         });
@@ -1713,6 +1757,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     });
 
     setCurrentTime(targetTime);
+    // Update calculated progress position immediately for responsive UI
+    updateCalculatedPosition(targetTime);
     
     try {
       if (Platform.OS === 'web') {
@@ -1735,7 +1781,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('[PlayerContext] Seek error:', err);
     }
-  }, [duration, currentSong]);
+  }, [duration, currentSong, updateCalculatedPosition]);
 
   const toggleShuffle = useCallback(() => {
     setShuffle((prev) => !prev);
