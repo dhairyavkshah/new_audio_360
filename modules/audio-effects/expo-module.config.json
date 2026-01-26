@@ -9,7 +9,6 @@
       "expo.modules.audioeffects.WaveformAnalyzerModule",
       "expo.modules.audioeffects.ImmersiveModeEngineModule",
       "expo.modules.audioeffects.LicenseVerificationModule",
-      "expo.modules.audioeffects.DailyLicenseValidatorModule",
       "expo.modules.audioeffects.AudioSessionBridgeModule",
       "expo.modules.audioeffects.MetadataExtractorModule",
       "expo.modules.audioeffects.MediaStoreScannerModule"
