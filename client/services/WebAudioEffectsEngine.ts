@@ -10,8 +10,13 @@ import { AudioContext, BiquadFilterNode, GainNode } from 'react-native-audio-api
  * - True stereo processing with independent L/R channel states per BiquadFilterNode
  * 
  * Signal Chain:
- * Input → 10-Band EQ → Dry/Wet Mix → M/S Processing (Spatial) → Limiter → Output
- *                    ↑ Multi-Tap Reverb
+ * Input → 10-Band EQ → Dynamic EQ → PBE → SBR → Dry/Wet Mix → M/S Processing (Spatial) → Master → Output
+ *                                                ↑ Multi-Tap Reverb
+ * 
+ * Premium Effects:
+ * - Dynamic EQ: Fletcher-Munson compensation (bass/treble boost at low volumes)
+ * - PBE: Psychoacoustic Bass Enhancement (harmonic generation for sub-bass)
+ * - SBR: Spectral Band Replication (audio upscaling for high frequencies)
  * 
  * Web Audio API Compliance:
  * - All BiquadFilterNode instances process channels independently (true stereo)
@@ -151,6 +156,7 @@ class WebAudioEffectsEngineClass {
   private currentReverb: number = 0;
   
   // M/S Processing nodes (for spatial enhancement)
+  private msProcessingEnabled: boolean = false;
   private stereoSplitter: ChannelSplitterNode | null = null;
   private stereoMerger: ChannelMergerNode | null = null;
   private stereoMixNode: GainNode | null = null; // Sums dry+wet before stereo splitting
@@ -172,6 +178,39 @@ class WebAudioEffectsEngineClass {
   private sidePsychoGain: globalThis.GainNode | null = null;        // Side boost (max 2.2 = 120%)
   private midAttenuation: globalThis.GainNode | null = null;        // Mid compensation
   spatialEnhancementLevel: number = 0;
+
+  // Premium Effects: Psychoacoustic Bass Enhancement (PBE)
+  private pbeEnabled: boolean = false;
+  private pbeIntensity: number = 0.5;
+  private pbeInputGain: globalThis.GainNode | null = null;        // Input to PBE chain
+  private pbeLowpass: globalThis.BiquadFilterNode | null = null;  // 100Hz lowpass to extract sub-bass
+  private pbeWaveshaper: globalThis.WaveShaperNode | null = null; // Polynomial curve for harmonics
+  private pbeBandpass: globalThis.BiquadFilterNode | null = null; // 100-400Hz bandpass for useful harmonics
+  private pbeHarmonicsGain: globalThis.GainNode | null = null;    // Blend harmonics with original
+  private pbeBypassGain: globalThis.GainNode | null = null;       // Bypass path (dry signal)
+  private pbeOutputGain: globalThis.GainNode | null = null;       // Output mixer
+
+  // Premium Effects: Spectral Band Replication (SBR) - Audio Upscaling
+  private sbrEnabled: boolean = false;
+  private sbrIntensity: number = 0.5;
+  private sbrInputGain: globalThis.GainNode | null = null;        // Input to SBR chain
+  private sbrHighpass: globalThis.BiquadFilterNode | null = null; // 8kHz highpass to isolate upper harmonics
+  private sbrWaveshaper: globalThis.WaveShaperNode | null = null; // Soft tanh curve for harmonic extension
+  private sbrHighshelf: globalThis.BiquadFilterNode | null = null;// High-shelf boost above 16kHz
+  private sbrHarmonicsGain: globalThis.GainNode | null = null;    // Blend extended harmonics (10-30%)
+  private sbrBypassGain: globalThis.GainNode | null = null;       // Bypass path (dry signal)
+  private sbrOutputGain: globalThis.GainNode | null = null;       // Output mixer
+
+  // Premium Effects: Dynamic Volume EQ (Fletcher-Munson Compensation)
+  private dynamicEQEnabled: boolean = false;
+  private dynamicEQStrength: number = 0.5;
+  private dynamicEQAnalyser: globalThis.AnalyserNode | null = null;   // RMS level tracking
+  private dynamicEQBassShelf: globalThis.BiquadFilterNode | null = null;  // 100Hz lowshelf
+  private dynamicEQTrebleShelf: globalThis.BiquadFilterNode | null = null; // 8kHz highshelf
+  private dynamicEQInputGain: globalThis.GainNode | null = null;      // Input routing
+  private dynamicEQOutputGain: globalThis.GainNode | null = null;     // Output routing
+  private dynamicEQAnimationFrame: number | null = null;              // RAF handle for RMS tracking
+  private dynamicEQCurrentRMS: number = 0;                            // Smoothed RMS level
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {
@@ -238,6 +277,9 @@ class WebAudioEffectsEngineClass {
       // Uses native Web Audio API ChannelSplitter/Merger for true stereo processing
       this.initializeStereoWidthProcessor();
 
+      // Initialize premium effects (PBE, SBR, Dynamic EQ)
+      this.initializePremiumEffects();
+
       // Connect EQ chain
       let currentNode: any = this.eqFilters[0];
       for (let i = 1; i < this.eqFilters.length; i++) {
@@ -245,13 +287,36 @@ class WebAudioEffectsEngineClass {
         currentNode = this.eqFilters[i];
       }
       
-      // EQ output splits to dry and wet paths
+      // Signal chain: EQ → Dynamic EQ → PBE → SBR → Dry/Wet (Reverb)
       const eqOutput = this.eqFilters[this.eqFilters.length - 1];
-      eqOutput.connect(this.dryGain);
       
-      // Connect reverb delay lines (parallel structure)
+      // Connect premium effects chain: EQ → DynamicEQ → PBE → SBR → Reverb
+      let premiumChainOutput: globalThis.AudioNode | BiquadFilterNode = eqOutput;
+      
+      // Dynamic EQ comes first (Fletcher-Munson compensation)
+      if (this.dynamicEQInputGain && this.dynamicEQOutputGain) {
+        eqOutput.connect(this.dynamicEQInputGain as unknown as GainNode);
+        premiumChainOutput = this.dynamicEQOutputGain;
+      }
+      
+      // PBE (Psychoacoustic Bass Enhancement) comes second
+      if (this.pbeInputGain && this.pbeOutputGain) {
+        (premiumChainOutput as any).connect(this.pbeInputGain);
+        premiumChainOutput = this.pbeOutputGain;
+      }
+      
+      // SBR (Spectral Band Replication) comes third
+      if (this.sbrInputGain && this.sbrOutputGain) {
+        (premiumChainOutput as any).connect(this.sbrInputGain);
+        premiumChainOutput = this.sbrOutputGain;
+      }
+      
+      // Premium chain output connects to dry/wet paths for reverb
+      (premiumChainOutput as any).connect(this.dryGain);
+      
+      // Connect reverb delay lines (parallel structure) - from premium chain output
       this.reverbDelays.forEach(({ delay, feedback, filter }) => {
-        eqOutput.connect(delay);
+        (premiumChainOutput as any).connect(delay);
         delay.connect(filter);
         filter.connect(feedback);
         feedback.connect(delay); // Feedback loop
@@ -483,6 +548,394 @@ class WebAudioEffectsEngineClass {
     
     this.spatialEnhancementLevel = 0;
     console.log('[WebAudioEffectsEngine] Psychoacoustic: Processor configured (disabled state)');
+  }
+
+  /**
+   * Initialize Premium Effects: PBE, SBR, and Dynamic EQ
+   * All processing uses 32-bit float throughout
+   */
+  private initializePremiumEffects(): void {
+    if (!this.audioContext || Platform.OS !== 'web') {
+      console.log('[WebAudioEffectsEngine] Premium Effects: Not available (non-web platform)');
+      return;
+    }
+
+    try {
+      const nativeCtx = this.audioContext as unknown as NativeAudioContext;
+
+      // ==========================================
+      // Dynamic Volume EQ (Fletcher-Munson Compensation)
+      // Signal: Input → Analyser → BassShelf → TrebleShelf → Output
+      // ==========================================
+      this.dynamicEQInputGain = nativeCtx.createGain();
+      this.dynamicEQInputGain.gain.value = 1.0;
+      
+      this.dynamicEQAnalyser = nativeCtx.createAnalyser();
+      this.dynamicEQAnalyser.fftSize = 2048;
+      this.dynamicEQAnalyser.smoothingTimeConstant = 0.8;
+      
+      this.dynamicEQBassShelf = nativeCtx.createBiquadFilter();
+      this.dynamicEQBassShelf.type = 'lowshelf';
+      this.dynamicEQBassShelf.frequency.value = 100;
+      this.dynamicEQBassShelf.gain.value = 0; // Start flat
+      
+      this.dynamicEQTrebleShelf = nativeCtx.createBiquadFilter();
+      this.dynamicEQTrebleShelf.type = 'highshelf';
+      this.dynamicEQTrebleShelf.frequency.value = 8000;
+      this.dynamicEQTrebleShelf.gain.value = 0; // Start flat
+      
+      this.dynamicEQOutputGain = nativeCtx.createGain();
+      this.dynamicEQOutputGain.gain.value = 1.0;
+      
+      // Connect Dynamic EQ chain
+      this.dynamicEQInputGain.connect(this.dynamicEQAnalyser);
+      this.dynamicEQAnalyser.connect(this.dynamicEQBassShelf);
+      this.dynamicEQBassShelf.connect(this.dynamicEQTrebleShelf);
+      this.dynamicEQTrebleShelf.connect(this.dynamicEQOutputGain);
+
+      // ==========================================
+      // Psychoacoustic Bass Enhancement (PBE)
+      // Signal: Input → [Lowpass → Waveshaper → Bandpass → HarmonicsGain] + [BypassGain] → Output
+      // ==========================================
+      this.pbeInputGain = nativeCtx.createGain();
+      this.pbeInputGain.gain.value = 1.0;
+      
+      // Lowpass filter at 100Hz to extract sub-bass
+      this.pbeLowpass = nativeCtx.createBiquadFilter();
+      this.pbeLowpass.type = 'lowpass';
+      this.pbeLowpass.frequency.value = 100;
+      this.pbeLowpass.Q.value = 0.707;
+      
+      // Waveshaper with polynomial curve: y = x + 0.5*x² + 0.25*x³
+      this.pbeWaveshaper = nativeCtx.createWaveShaper();
+      this.pbeWaveshaper.curve = this.createPBEWaveshaperCurve();
+      this.pbeWaveshaper.oversample = '4x'; // High quality processing
+      
+      // Bandpass filter 100-400Hz to keep useful harmonics
+      this.pbeBandpass = nativeCtx.createBiquadFilter();
+      this.pbeBandpass.type = 'bandpass';
+      this.pbeBandpass.frequency.value = 200; // Center frequency
+      this.pbeBandpass.Q.value = 0.667; // Q for ~100-400Hz range
+      
+      // Harmonics gain (wet signal)
+      this.pbeHarmonicsGain = nativeCtx.createGain();
+      this.pbeHarmonicsGain.gain.value = 0; // Start disabled
+      
+      // Bypass gain (dry signal)
+      this.pbeBypassGain = nativeCtx.createGain();
+      this.pbeBypassGain.gain.value = 1.0;
+      
+      // Output mixer
+      this.pbeOutputGain = nativeCtx.createGain();
+      this.pbeOutputGain.gain.value = 1.0;
+      
+      // Connect PBE chain
+      // Wet path: Input → Lowpass → Waveshaper → Bandpass → HarmonicsGain → Output
+      this.pbeInputGain.connect(this.pbeLowpass);
+      this.pbeLowpass.connect(this.pbeWaveshaper);
+      this.pbeWaveshaper.connect(this.pbeBandpass);
+      this.pbeBandpass.connect(this.pbeHarmonicsGain);
+      this.pbeHarmonicsGain.connect(this.pbeOutputGain);
+      
+      // Dry path: Input → BypassGain → Output
+      this.pbeInputGain.connect(this.pbeBypassGain);
+      this.pbeBypassGain.connect(this.pbeOutputGain);
+
+      // ==========================================
+      // Spectral Band Replication (SBR) - Audio Upscaling
+      // Signal: Input → [Highpass → Waveshaper → Highshelf → HarmonicsGain] + [BypassGain] → Output
+      // ==========================================
+      this.sbrInputGain = nativeCtx.createGain();
+      this.sbrInputGain.gain.value = 1.0;
+      
+      // Highpass filter at 8kHz to isolate upper harmonics
+      this.sbrHighpass = nativeCtx.createBiquadFilter();
+      this.sbrHighpass.type = 'highpass';
+      this.sbrHighpass.frequency.value = 8000;
+      this.sbrHighpass.Q.value = 0.707;
+      
+      // Waveshaper with soft tanh curve for harmonic extension
+      this.sbrWaveshaper = nativeCtx.createWaveShaper();
+      this.sbrWaveshaper.curve = this.createSBRWaveshaperCurve();
+      this.sbrWaveshaper.oversample = '4x'; // High quality processing
+      
+      // High-shelf filter boosting above 16kHz
+      this.sbrHighshelf = nativeCtx.createBiquadFilter();
+      this.sbrHighshelf.type = 'highshelf';
+      this.sbrHighshelf.frequency.value = 16000;
+      this.sbrHighshelf.gain.value = 6; // +6dB boost
+      
+      // Harmonics gain (wet signal) - 10-30% blend
+      this.sbrHarmonicsGain = nativeCtx.createGain();
+      this.sbrHarmonicsGain.gain.value = 0; // Start disabled
+      
+      // Bypass gain (dry signal)
+      this.sbrBypassGain = nativeCtx.createGain();
+      this.sbrBypassGain.gain.value = 1.0;
+      
+      // Output mixer
+      this.sbrOutputGain = nativeCtx.createGain();
+      this.sbrOutputGain.gain.value = 1.0;
+      
+      // Connect SBR chain
+      // Wet path: Input → Highpass → Waveshaper → Highshelf → HarmonicsGain → Output
+      this.sbrInputGain.connect(this.sbrHighpass);
+      this.sbrHighpass.connect(this.sbrWaveshaper);
+      this.sbrWaveshaper.connect(this.sbrHighshelf);
+      this.sbrHighshelf.connect(this.sbrHarmonicsGain);
+      this.sbrHarmonicsGain.connect(this.sbrOutputGain);
+      
+      // Dry path: Input → BypassGain → Output
+      this.sbrInputGain.connect(this.sbrBypassGain);
+      this.sbrBypassGain.connect(this.sbrOutputGain);
+
+      console.log('[WebAudioEffectsEngine] Premium Effects initialized: PBE, SBR, Dynamic EQ');
+    } catch (error) {
+      console.error('[WebAudioEffectsEngine] Premium Effects: Failed to initialize:', error);
+    }
+  }
+
+  /**
+   * Create PBE waveshaper curve: y = x + 0.5*x² + 0.25*x³
+   * Generates even (2nd) and odd (3rd) harmonics for bass enhancement
+   */
+  private createPBEWaveshaperCurve(): Float32Array {
+    const samples = 8192;
+    const curve = new Float32Array(samples);
+    for (let i = 0; i < samples; i++) {
+      const x = (i * 2) / samples - 1; // Map to -1 to 1
+      // Polynomial: y = x + 0.5*x² + 0.25*x³
+      let y = x + 0.5 * x * x + 0.25 * x * x * x;
+      // Soft clip to prevent harsh distortion
+      y = Math.tanh(y);
+      curve[i] = y;
+    }
+    return curve;
+  }
+
+  /**
+   * Create SBR waveshaper curve: soft tanh for harmonic extension
+   * Gentle saturation to create higher harmonics from existing content
+   */
+  private createSBRWaveshaperCurve(): Float32Array {
+    const samples = 8192;
+    const curve = new Float32Array(samples);
+    for (let i = 0; i < samples; i++) {
+      const x = (i * 2) / samples - 1; // Map to -1 to 1
+      // Soft tanh curve with slight drive for harmonic generation
+      const drive = 1.5;
+      curve[i] = Math.tanh(x * drive);
+    }
+    return curve;
+  }
+
+  /**
+   * Start Dynamic EQ RMS tracking loop
+   * Adjusts bass/treble shelves based on output level (Fletcher-Munson curves)
+   */
+  private startDynamicEQTracking(): void {
+    if (!this.dynamicEQAnalyser || !this.dynamicEQBassShelf || !this.dynamicEQTrebleShelf) {
+      return;
+    }
+    
+    const bufferLength = this.dynamicEQAnalyser.fftSize;
+    const dataArray = new Float32Array(bufferLength);
+    
+    const updateDynamicEQ = () => {
+      if (!this.dynamicEQEnabled || !this.dynamicEQAnalyser) {
+        this.dynamicEQAnimationFrame = null;
+        return;
+      }
+      
+      // Get time domain data for RMS calculation
+      this.dynamicEQAnalyser.getFloatTimeDomainData(dataArray);
+      
+      // Calculate RMS
+      let sumSquares = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        sumSquares += dataArray[i] * dataArray[i];
+      }
+      const rms = Math.sqrt(sumSquares / bufferLength);
+      
+      // Smooth RMS with exponential moving average
+      const smoothingFactor = 0.1;
+      this.dynamicEQCurrentRMS = this.dynamicEQCurrentRMS * (1 - smoothingFactor) + rms * smoothingFactor;
+      
+      // Convert RMS to dB (reference: 1.0 = 0dB)
+      const rmsDb = 20 * Math.log10(Math.max(this.dynamicEQCurrentRMS, 0.0001));
+      
+      // Fletcher-Munson compensation:
+      // At low levels (-40dB and below): boost bass and treble
+      // At high levels (-10dB and above): flatten to neutral
+      // Smooth interpolation between
+      const minDb = -40;
+      const maxDb = -10;
+      const normalizedLevel = Math.max(0, Math.min(1, (rmsDb - minDb) / (maxDb - minDb)));
+      
+      // At low levels, we need more bass and treble boost (inverse of Fletcher-Munson)
+      // Maximum boost at lowest levels, no boost at highest levels
+      const compensationFactor = (1 - normalizedLevel) * this.dynamicEQStrength;
+      
+      // Bass boost: up to +8dB at 100Hz at low levels
+      const bassBoostDb = compensationFactor * 8;
+      // Treble boost: up to +6dB at 8kHz at low levels
+      const trebleBoostDb = compensationFactor * 6;
+      
+      // Apply with smooth transitions
+      if (this.dynamicEQBassShelf) {
+        this.dynamicEQBassShelf.gain.value = bassBoostDb;
+      }
+      if (this.dynamicEQTrebleShelf) {
+        this.dynamicEQTrebleShelf.gain.value = trebleBoostDb;
+      }
+      
+      // Continue tracking
+      this.dynamicEQAnimationFrame = requestAnimationFrame(updateDynamicEQ);
+    };
+    
+    // Start the tracking loop
+    this.dynamicEQAnimationFrame = requestAnimationFrame(updateDynamicEQ);
+  }
+
+  /**
+   * Stop Dynamic EQ RMS tracking loop
+   */
+  private stopDynamicEQTracking(): void {
+    if (this.dynamicEQAnimationFrame !== null) {
+      cancelAnimationFrame(this.dynamicEQAnimationFrame);
+      this.dynamicEQAnimationFrame = null;
+    }
+    
+    // Reset to flat response
+    if (this.dynamicEQBassShelf) {
+      this.dynamicEQBassShelf.gain.value = 0;
+    }
+    if (this.dynamicEQTrebleShelf) {
+      this.dynamicEQTrebleShelf.gain.value = 0;
+    }
+    
+    this.dynamicEQCurrentRMS = 0;
+  }
+
+  // ==========================================
+  // Premium Effects Control Methods
+  // ==========================================
+
+  /**
+   * Enable/disable Psychoacoustic Bass Enhancement
+   */
+  setPBEEnabled(enabled: boolean): void {
+    this.pbeEnabled = enabled;
+    this.updatePBEGains();
+    console.log(`[WebAudioEffectsEngine] PBE: ${enabled ? 'Enabled' : 'Disabled'}`);
+  }
+
+  /**
+   * Set PBE intensity (0-1)
+   * Controls how much harmonic content is blended with original
+   */
+  setPBEIntensity(intensity: number): void {
+    this.pbeIntensity = Math.max(0, Math.min(1, intensity));
+    this.updatePBEGains();
+    console.log(`[WebAudioEffectsEngine] PBE Intensity: ${(this.pbeIntensity * 100).toFixed(0)}%`);
+  }
+
+  private updatePBEGains(): void {
+    if (!this.pbeHarmonicsGain || !this.pbeBypassGain) return;
+    
+    if (this.pbeEnabled) {
+      // Wet/dry crossfade based on intensity
+      // At 0 intensity: full dry, no harmonics
+      // At 1 intensity: 50% dry, 50% harmonics (never fully wet)
+      const wetAmount = this.pbeIntensity * 0.5;
+      const dryAmount = 1.0 - (this.pbeIntensity * 0.3); // Slight reduction of dry
+      
+      this.pbeHarmonicsGain.gain.value = wetAmount;
+      this.pbeBypassGain.gain.value = dryAmount;
+    } else {
+      // Disabled: full bypass
+      this.pbeHarmonicsGain.gain.value = 0;
+      this.pbeBypassGain.gain.value = 1.0;
+    }
+  }
+
+  /**
+   * Enable/disable Spectral Band Replication
+   */
+  setSBREnabled(enabled: boolean): void {
+    this.sbrEnabled = enabled;
+    this.updateSBRGains();
+    console.log(`[WebAudioEffectsEngine] SBR: ${enabled ? 'Enabled' : 'Disabled'}`);
+  }
+
+  /**
+   * Set SBR intensity (0-1)
+   * Controls blend amount (maps to 10-30% range)
+   */
+  setSBRIntensity(intensity: number): void {
+    this.sbrIntensity = Math.max(0, Math.min(1, intensity));
+    this.updateSBRGains();
+    console.log(`[WebAudioEffectsEngine] SBR Intensity: ${(this.sbrIntensity * 100).toFixed(0)}%`);
+  }
+
+  private updateSBRGains(): void {
+    if (!this.sbrHarmonicsGain || !this.sbrBypassGain) return;
+    
+    if (this.sbrEnabled) {
+      // Map intensity to 10-30% wet blend range
+      const wetAmount = 0.1 + (this.sbrIntensity * 0.2); // 10-30%
+      this.sbrHarmonicsGain.gain.value = wetAmount;
+      this.sbrBypassGain.gain.value = 1.0; // Keep full dry
+    } else {
+      // Disabled: full bypass
+      this.sbrHarmonicsGain.gain.value = 0;
+      this.sbrBypassGain.gain.value = 1.0;
+    }
+  }
+
+  /**
+   * Enable/disable Dynamic Volume EQ (Fletcher-Munson Compensation)
+   */
+  setDynamicEQEnabled(enabled: boolean): void {
+    this.dynamicEQEnabled = enabled;
+    
+    if (enabled) {
+      this.startDynamicEQTracking();
+    } else {
+      this.stopDynamicEQTracking();
+    }
+    
+    console.log(`[WebAudioEffectsEngine] Dynamic EQ: ${enabled ? 'Enabled' : 'Disabled'}`);
+  }
+
+  /**
+   * Set Dynamic EQ strength (0-1)
+   * Controls how much compensation is applied at low levels
+   */
+  setDynamicEQStrength(strength: number): void {
+    this.dynamicEQStrength = Math.max(0, Math.min(1, strength));
+    console.log(`[WebAudioEffectsEngine] Dynamic EQ Strength: ${(this.dynamicEQStrength * 100).toFixed(0)}%`);
+  }
+
+  /**
+   * Get current status of all premium effects
+   */
+  getPremiumEffectsStatus(): {
+    pbeEnabled: boolean;
+    pbeIntensity: number;
+    sbrEnabled: boolean;
+    sbrIntensity: number;
+    dynamicEQEnabled: boolean;
+    dynamicEQStrength: number;
+  } {
+    return {
+      pbeEnabled: this.pbeEnabled,
+      pbeIntensity: this.pbeIntensity,
+      sbrEnabled: this.sbrEnabled,
+      sbrIntensity: this.sbrIntensity,
+      dynamicEQEnabled: this.dynamicEQEnabled,
+      dynamicEQStrength: this.dynamicEQStrength,
+    };
   }
 
   /**
@@ -870,6 +1323,9 @@ class WebAudioEffectsEngineClass {
   }
 
   async release(): Promise<void> {
+    // Stop Dynamic EQ tracking before closing context
+    this.stopDynamicEQTracking();
+    
     if (this.audioContext) {
       try {
         await this.audioContext.close();
@@ -907,6 +1363,39 @@ class WebAudioEffectsEngineClass {
     this.sidePsychoGain = null;
     this.midAttenuation = null;
     this.spatialEnhancementLevel = 0;
+    this.msProcessingEnabled = false;
+    
+    // Clean up Premium Effects: PBE
+    this.pbeInputGain = null;
+    this.pbeLowpass = null;
+    this.pbeWaveshaper = null;
+    this.pbeBandpass = null;
+    this.pbeHarmonicsGain = null;
+    this.pbeBypassGain = null;
+    this.pbeOutputGain = null;
+    this.pbeEnabled = false;
+    this.pbeIntensity = 0.5;
+    
+    // Clean up Premium Effects: SBR
+    this.sbrInputGain = null;
+    this.sbrHighpass = null;
+    this.sbrWaveshaper = null;
+    this.sbrHighshelf = null;
+    this.sbrHarmonicsGain = null;
+    this.sbrBypassGain = null;
+    this.sbrOutputGain = null;
+    this.sbrEnabled = false;
+    this.sbrIntensity = 0.5;
+    
+    // Clean up Premium Effects: Dynamic EQ
+    this.dynamicEQInputGain = null;
+    this.dynamicEQAnalyser = null;
+    this.dynamicEQBassShelf = null;
+    this.dynamicEQTrebleShelf = null;
+    this.dynamicEQOutputGain = null;
+    this.dynamicEQEnabled = false;
+    this.dynamicEQStrength = 0.5;
+    this.dynamicEQCurrentRMS = 0;
     
     this.isInitialized = false;
     this.currentEQValues = new Array(10).fill(0);
@@ -939,6 +1428,20 @@ class WebAudioEffectsEngineClass {
       spatialEnhancementActive: this.spatialEnhancementLevel > 0,
       psychoacousticGain: this.sidePsychoGain?.gain.value ?? 1.0,
       midAttenuation: this.midAttenuation?.gain.value ?? 1.0,
+      // Premium Effects status
+      premiumEffects: {
+        pbeEnabled: this.pbeEnabled,
+        pbeIntensity: this.pbeIntensity,
+        pbeHarmonicsGain: this.pbeHarmonicsGain?.gain.value ?? 0,
+        sbrEnabled: this.sbrEnabled,
+        sbrIntensity: this.sbrIntensity,
+        sbrHarmonicsGain: this.sbrHarmonicsGain?.gain.value ?? 0,
+        dynamicEQEnabled: this.dynamicEQEnabled,
+        dynamicEQStrength: this.dynamicEQStrength,
+        dynamicEQCurrentRMS: this.dynamicEQCurrentRMS,
+        dynamicEQBassBoost: this.dynamicEQBassShelf?.gain.value ?? 0,
+        dynamicEQTrebleBoost: this.dynamicEQTrebleShelf?.gain.value ?? 0,
+      },
     };
   }
 }

@@ -29,7 +29,8 @@ import {
   ImmersiveMode,
   ImmersiveModeInfo,
   BassBoostModule,
-  SpatialEnhancementModule
+  SpatialEnhancementModule,
+  PremiumEffectsModule
 } from "../../modules/audio-effects";
 import NativeAudioService from "@/services/NativeAudioService";
 import { NativeEffectsManager } from "@/services/NativeEffectsManager";
@@ -147,6 +148,13 @@ function SoundLabScreen() {
   const [bassControl, setBassControl] = useState(0);
   const [trebleControl, setTrebleControl] = useState(0);
   const [spatialEnhancement, setSpatialEnhancement] = useState(0);
+
+  const [pbeEnabled, setPbeEnabled] = useState(false);
+  const [pbeIntensity, setPbeIntensity] = useState(0.5);
+  const [sbrEnabled, setSbrEnabled] = useState(false);
+  const [sbrIntensity, setSbrIntensity] = useState(0.5);
+  const [dynamicEQEnabled, setDynamicEQEnabled] = useState(false);
+  const [dynamicEQStrength, setDynamicEQStrength] = useState(0.5);
 
   const MAX_CUSTOM_PRESETS = 5;
 
@@ -367,6 +375,63 @@ function SoundLabScreen() {
       }
     }
   };
+
+  const handlePBEToggle = useCallback((enabled: boolean) => {
+    setPbeEnabled(enabled);
+    if (Platform.OS === 'android') {
+      PremiumEffectsModule.setPBEEnabled(enabled);
+    } else if (typeof (WebAudioEffectsEngine as any).setPBEEnabled === 'function') {
+      (WebAudioEffectsEngine as any).setPBEEnabled(enabled);
+    }
+    Haptics.selectionAsync();
+  }, []);
+
+  const handlePBEIntensity = useCallback((intensity: number) => {
+    setPbeIntensity(intensity);
+    if (Platform.OS === 'android') {
+      PremiumEffectsModule.setPBEIntensity(intensity);
+    } else if (typeof (WebAudioEffectsEngine as any).setPBEIntensity === 'function') {
+      (WebAudioEffectsEngine as any).setPBEIntensity(intensity);
+    }
+  }, []);
+
+  const handleSBRToggle = useCallback((enabled: boolean) => {
+    setSbrEnabled(enabled);
+    if (Platform.OS === 'android') {
+      PremiumEffectsModule.setSBREnabled(enabled);
+    } else if (typeof (WebAudioEffectsEngine as any).setSBREnabled === 'function') {
+      (WebAudioEffectsEngine as any).setSBREnabled(enabled);
+    }
+    Haptics.selectionAsync();
+  }, []);
+
+  const handleSBRIntensity = useCallback((intensity: number) => {
+    setSbrIntensity(intensity);
+    if (Platform.OS === 'android') {
+      PremiumEffectsModule.setSBRIntensity(intensity);
+    } else if (typeof (WebAudioEffectsEngine as any).setSBRIntensity === 'function') {
+      (WebAudioEffectsEngine as any).setSBRIntensity(intensity);
+    }
+  }, []);
+
+  const handleDynamicEQToggle = useCallback((enabled: boolean) => {
+    setDynamicEQEnabled(enabled);
+    if (Platform.OS === 'android') {
+      PremiumEffectsModule.setDynamicEQEnabled(enabled);
+    } else if (typeof (WebAudioEffectsEngine as any).setDynamicEQEnabled === 'function') {
+      (WebAudioEffectsEngine as any).setDynamicEQEnabled(enabled);
+    }
+    Haptics.selectionAsync();
+  }, []);
+
+  const handleDynamicEQStrength = useCallback((strength: number) => {
+    setDynamicEQStrength(strength);
+    if (Platform.OS === 'android') {
+      PremiumEffectsModule.setDynamicEQStrength(strength);
+    } else if (typeof (WebAudioEffectsEngine as any).setDynamicEQStrength === 'function') {
+      (WebAudioEffectsEngine as any).setDynamicEQStrength(strength);
+    }
+  }, []);
 
   const handleSavePreset = async () => {
     if (customPresets.length >= MAX_CUSTOM_PRESETS) {
@@ -830,6 +895,126 @@ function SoundLabScreen() {
                 </View>
               </Pressable>
             ))}
+          </View>
+        </View>
+
+        <View style={[styles.sectionCard, cardStyle]}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="tune-vertical" size={FluentIconSize.regular} color={tokens.colors.primary} />
+            <FluentText variant="subtitle1" style={styles.sectionTitle}>
+              Premium Audio Effects
+            </FluentText>
+          </View>
+          
+          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
+            Advanced DSP for richer, fuller sound
+          </FluentText>
+
+          <View style={[styles.effectControlsSection, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: FluentRadius.large }]}>
+            <View style={styles.effectSliderRow}>
+              <View style={styles.effectSliderHeader}>
+                <MaterialCommunityIcons name="waveform" size={FluentIconSize.regular} color={tokens.colors.primary} />
+                <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Bass Enhancement</FluentText>
+                <Pressable onPress={() => handlePBEToggle(!pbeEnabled)}>
+                  <MaterialCommunityIcons 
+                    name={pbeEnabled ? "toggle-switch" : "toggle-switch-off-outline"} 
+                    size={28} 
+                    color={pbeEnabled ? tokens.colors.primary : tokens.colors.textSecondary} 
+                  />
+                </Pressable>
+              </View>
+              <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.xs }}>
+                Generates harmonics for richer, fuller bass on small speakers
+              </FluentText>
+              {pbeEnabled && (
+                <View style={styles.effectSliderContainer}>
+                  <FluentText variant="caption1" color="secondary">Low</FluentText>
+                  <CrossPlatformSlider
+                    style={styles.effectSlider}
+                    minimumValue={0}
+                    maximumValue={1}
+                    step={0.1}
+                    value={pbeIntensity}
+                    onValueChange={handlePBEIntensity}
+                    minimumTrackTintColor={colors.colorBrandForeground1}
+                    maximumTrackTintColor={colors.colorNeutralStroke1}
+                    thumbTintColor={colors.colorBrandForeground1}
+                    trackHeight={FluentSliderSize.trackMedium}
+                  />
+                  <FluentText variant="caption1" color="secondary">High</FluentText>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.effectSliderRow}>
+              <View style={styles.effectSliderHeader}>
+                <MaterialCommunityIcons name="arrow-up-bold-hexagon-outline" size={FluentIconSize.regular} color={tokens.colors.primary} />
+                <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Audio Upscaling</FluentText>
+                <Pressable onPress={() => handleSBRToggle(!sbrEnabled)}>
+                  <MaterialCommunityIcons 
+                    name={sbrEnabled ? "toggle-switch" : "toggle-switch-off-outline"} 
+                    size={28} 
+                    color={sbrEnabled ? tokens.colors.primary : tokens.colors.textSecondary} 
+                  />
+                </Pressable>
+              </View>
+              <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.xs }}>
+                Restores high-frequency detail lost in MP3/streaming compression
+              </FluentText>
+              {sbrEnabled && (
+                <View style={styles.effectSliderContainer}>
+                  <FluentText variant="caption1" color="secondary">Low</FluentText>
+                  <CrossPlatformSlider
+                    style={styles.effectSlider}
+                    minimumValue={0}
+                    maximumValue={1}
+                    step={0.1}
+                    value={sbrIntensity}
+                    onValueChange={handleSBRIntensity}
+                    minimumTrackTintColor={colors.colorBrandForeground1}
+                    maximumTrackTintColor={colors.colorNeutralStroke1}
+                    thumbTintColor={colors.colorBrandForeground1}
+                    trackHeight={FluentSliderSize.trackMedium}
+                  />
+                  <FluentText variant="caption1" color="secondary">High</FluentText>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.effectSliderRow}>
+              <View style={styles.effectSliderHeader}>
+                <MaterialCommunityIcons name="volume-high" size={FluentIconSize.regular} color={tokens.colors.primary} />
+                <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Volume Optimization</FluentText>
+                <Pressable onPress={() => handleDynamicEQToggle(!dynamicEQEnabled)}>
+                  <MaterialCommunityIcons 
+                    name={dynamicEQEnabled ? "toggle-switch" : "toggle-switch-off-outline"} 
+                    size={28} 
+                    color={dynamicEQEnabled ? tokens.colors.primary : tokens.colors.textSecondary} 
+                  />
+                </Pressable>
+              </View>
+              <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.xs }}>
+                Auto-adjusts bass/treble at low volumes for consistent fullness
+              </FluentText>
+              {dynamicEQEnabled && (
+                <View style={styles.effectSliderContainer}>
+                  <FluentText variant="caption1" color="secondary">Low</FluentText>
+                  <CrossPlatformSlider
+                    style={styles.effectSlider}
+                    minimumValue={0}
+                    maximumValue={1}
+                    step={0.1}
+                    value={dynamicEQStrength}
+                    onValueChange={handleDynamicEQStrength}
+                    minimumTrackTintColor={colors.colorBrandForeground1}
+                    maximumTrackTintColor={colors.colorNeutralStroke1}
+                    thumbTintColor={colors.colorBrandForeground1}
+                    trackHeight={FluentSliderSize.trackMedium}
+                  />
+                  <FluentText variant="caption1" color="secondary">High</FluentText>
+                </View>
+              )}
+            </View>
           </View>
         </View>
 

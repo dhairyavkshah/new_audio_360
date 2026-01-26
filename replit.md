@@ -52,6 +52,9 @@ The app utilizes pure software-based DSP across all platforms for a consistent a
 - **Intelligent Limiter**: Brickwall limiting for distortion prevention.
 - **Spatial Enhancement**: Psychoacoustic stereo widening with safety caps and 6 adjustable levels.
 - **Immersive Modes**: 6 distinct modes (e.g., Music, 360 Reality, Gaming) each with predefined EQ, boost, reverb, and spatial parameters.
+- **Psychoacoustic Bass Enhancement (PBE)**: Generates harmonics for fuller bass on small speakers using crossover filter, harmonic generator, and bandpass blend.
+- **Spectral Band Replication (SBR)**: Restores high-frequency detail lost in MP3/streaming compression through harmonic synthesis.
+- **Dynamic Volume EQ**: Fletcher-Munson compensation that auto-adjusts bass/treble at low volumes for consistent fullness.
 
 **DSP Architecture Details**:
 - **Internal Processing**: 32-bit float for precision, 64-bit for filter coefficients.

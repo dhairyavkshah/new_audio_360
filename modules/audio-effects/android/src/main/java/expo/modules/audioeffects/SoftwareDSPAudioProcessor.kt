@@ -22,7 +22,7 @@ import java.nio.ByteOrder
  * operates at the source sample rate (typically 44.1kHz or 48kHz).
  * 
  * Signal Chain:
- * Input → 10-Band EQ → Bass Shelf → Treble Shelf → Spatial Enhancement → Reverb → Limiter → Output
+ * Input → 10-Band EQ → Bass Shelf → Treble Shelf → Dynamic Volume EQ → PBE → SBR → Spatial Enhancement → Reverb → Limiter → Output
  */
 class SoftwareDSPAudioProcessor : AudioProcessor {
     companion object {
@@ -40,6 +40,25 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         
         const val BASS_SHELF_FREQ = 150f
         const val TREBLE_SHELF_FREQ = 6000f
+        
+        // Dynamic Volume EQ (Fletcher-Munson Compensation) constants
+        private const val DYNAMIC_EQ_BASS_FREQ = 100f      // Center frequency for bass boost
+        private const val DYNAMIC_EQ_TREBLE_FREQ = 8000f   // Center frequency for treble boost
+        private const val DYNAMIC_EQ_LOW_THRESHOLD = -20f  // dB threshold for max compensation
+        private const val DYNAMIC_EQ_HIGH_THRESHOLD = -6f  // dB threshold for no compensation
+        private const val DYNAMIC_EQ_MAX_BASS_BOOST = 3f   // Max bass boost in dB at low levels
+        private const val DYNAMIC_EQ_MAX_TREBLE_BOOST = 2f // Max treble boost in dB at low levels
+        private const val DYNAMIC_EQ_RMS_ALPHA = 0.995f    // RMS smoothing coefficient
+        
+        // Psychoacoustic Bass Enhancement (PBE) constants
+        private const val PBE_CROSSOVER_FREQ = 100f        // LPF cutoff for sub-bass extraction
+        private const val PBE_HARMONIC_LOW_FREQ = 100f     // Bandpass low cutoff for harmonics
+        private const val PBE_HARMONIC_HIGH_FREQ = 400f    // Bandpass high cutoff for harmonics
+        
+        // Spectral Band Replication (SBR) constants
+        private const val SBR_HIGHPASS_FREQ = 8000f        // HPF to isolate upper harmonics
+        private const val SBR_SHELF_FREQ = 16000f          // High-shelf boost frequency
+        private const val SBR_MAX_BLEND = 0.3f             // Max blend amount (30%)
         
         // Psychoacoustic Stereo Enhancement constants (industry-standard ranges)
         // ITD: Human maximum is ~700µs (0.7ms) for 90° lateral position
@@ -96,6 +115,34 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private val limiter = Limiter(-1f, 20f, 1f, 100f, STANDARD_SAMPLE_RATE)
 
     private val eqGains = FloatArray(10) { 0f }
+    
+    // =========================================
+    // Dynamic Volume EQ (Fletcher-Munson Compensation)
+    // =========================================
+    private var dynamicEQEnabled = false
+    private var dynamicEQStrength = 0.5f  // 0.0-1.0, scales compensation amount
+    private var rmsLevel = 0.0  // Running RMS level in linear scale
+    private val dynamicEQBassFilter = BiquadFilter(FilterType.LOWSHELF, DYNAMIC_EQ_BASS_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val dynamicEQTrebleFilter = BiquadFilter(FilterType.HIGHSHELF, DYNAMIC_EQ_TREBLE_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private var currentDynamicBassBoost = 0f   // Current applied bass boost in dB
+    private var currentDynamicTrebleBoost = 0f // Current applied treble boost in dB
+    
+    // =========================================
+    // Psychoacoustic Bass Enhancement (PBE)
+    // =========================================
+    private var pbeEnabled = false
+    private var pbeIntensity = 0.5f  // 0.0-1.0, controls wet/dry mix of harmonics
+    private val pbeLowpassFilter = BiquadFilter(FilterType.LOWPASS, PBE_CROSSOVER_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val pbeBandpassLowFilter = BiquadFilter(FilterType.HIGHPASS, PBE_HARMONIC_LOW_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val pbeBandpassHighFilter = BiquadFilter(FilterType.LOWPASS, PBE_HARMONIC_HIGH_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    
+    // =========================================
+    // Spectral Band Replication (SBR)
+    // =========================================
+    private var sbrEnabled = false
+    private var sbrIntensity = 0.5f  // 0.0-1.0, controls blend amount (scaled to 10-30%)
+    private val sbrHighpassFilter = BiquadFilter(FilterType.HIGHPASS, SBR_HIGHPASS_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val sbrHighShelfFilter = BiquadFilter(FilterType.HIGHSHELF, SBR_SHELF_FREQ, 3f, SHELF_Q, STANDARD_SAMPLE_RATE)
     
     // Multi-tap delay reverb (4 delay lines for richer sound)
     // Max delay sized for 48 kHz (industry standard sample rate)
@@ -187,6 +234,19 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         allpassFilter1.configure(FilterType.ALLPASS, 3000f, 0f, ALLPASS_Q, currentSampleRate)
         allpassFilter2.configure(FilterType.ALLPASS, 5000f, 0f, ALLPASS_Q, currentSampleRate)
         
+        // Configure Dynamic Volume EQ filters
+        dynamicEQBassFilter.configure(FilterType.LOWSHELF, DYNAMIC_EQ_BASS_FREQ, 0f, SHELF_Q, currentSampleRate)
+        dynamicEQTrebleFilter.configure(FilterType.HIGHSHELF, DYNAMIC_EQ_TREBLE_FREQ, 0f, SHELF_Q, currentSampleRate)
+        
+        // Configure PBE filters
+        pbeLowpassFilter.configure(FilterType.LOWPASS, PBE_CROSSOVER_FREQ, 0f, SHELF_Q, currentSampleRate)
+        pbeBandpassLowFilter.configure(FilterType.HIGHPASS, PBE_HARMONIC_LOW_FREQ, 0f, SHELF_Q, currentSampleRate)
+        pbeBandpassHighFilter.configure(FilterType.LOWPASS, PBE_HARMONIC_HIGH_FREQ, 0f, SHELF_Q, currentSampleRate)
+        
+        // Configure SBR filters
+        sbrHighpassFilter.configure(FilterType.HIGHPASS, SBR_HIGHPASS_FREQ, 0f, SHELF_Q, currentSampleRate)
+        sbrHighShelfFilter.configure(FilterType.HIGHSHELF, SBR_SHELF_FREQ, 3f, SHELF_Q, currentSampleRate)
+        
         // Calculate ITD delay in samples (0.3ms at current sample rate)
         itdDelaySamples = ((ITD_DELAY_MS / 1000f) * currentSampleRate).toInt().coerceIn(1, MAX_ITD_DELAY_SAMPLES - 1)
 
@@ -267,17 +327,32 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             trebleShelfFilter.processBufferFloat(floatSamples, channelCount)
         }
 
-        // 4. Psychoacoustic Stereo Enhancement (true stereo)
+        // 4. Dynamic Volume EQ (Fletcher-Munson Compensation)
+        if (dynamicEQEnabled) {
+            processDynamicEQ(floatSamples, channelCount)
+        }
+
+        // 5. Psychoacoustic Bass Enhancement (PBE)
+        if (pbeEnabled) {
+            processPBE(floatSamples, channelCount)
+        }
+
+        // 6. Spectral Band Replication (SBR)
+        if (sbrEnabled) {
+            processSBR(floatSamples, channelCount)
+        }
+
+        // 7. Psychoacoustic Stereo Enhancement (true stereo)
         if (spatialEnhancementLevel > 0 && channelCount == 2) {
             processPsychoacousticStereo(floatSamples)
         }
 
-        // 5. Multi-Tap Delay Reverb (true stereo)
+        // 8. Multi-Tap Delay Reverb (true stereo)
         if (reverbWetMix > 0f && channelCount == 2) {
             processReverbFloat(floatSamples)
         }
 
-        // 6. Brickwall Limiter (linked stereo - industry standard)
+        // 9. Brickwall Limiter (linked stereo - industry standard)
         limiter.processBufferFloat(floatSamples, channelCount)
 
         // =========================================
@@ -389,6 +464,22 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         leftSquaredSum = 0.0
         rightSquaredSum = 0.0
         runningCorrelation = 1.0f
+        
+        // Reset Dynamic Volume EQ filters
+        dynamicEQBassFilter.resetAllChannels()
+        dynamicEQTrebleFilter.resetAllChannels()
+        rmsLevel = 0.0
+        currentDynamicBassBoost = 0f
+        currentDynamicTrebleBoost = 0f
+        
+        // Reset PBE filters
+        pbeLowpassFilter.resetAllChannels()
+        pbeBandpassLowFilter.resetAllChannels()
+        pbeBandpassHighFilter.resetAllChannels()
+        
+        // Reset SBR filters
+        sbrHighpassFilter.resetAllChannels()
+        sbrHighShelfFilter.resetAllChannels()
 
         if (pendingFormat != AudioFormat.NOT_SET) {
             inputFormat = pendingFormat
@@ -772,10 +863,243 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         rightSquaredSum = 0.0
         runningCorrelation = 1.0f
         
+        // Reset premium DSP effects
+        dynamicEQEnabled = false
+        dynamicEQStrength = 0.5f
+        rmsLevel = 0.0
+        currentDynamicBassBoost = 0f
+        currentDynamicTrebleBoost = 0f
+        dynamicEQBassFilter.resetAllChannels()
+        dynamicEQTrebleFilter.resetAllChannels()
+        
+        pbeEnabled = false
+        pbeIntensity = 0.5f
+        pbeLowpassFilter.resetAllChannels()
+        pbeBandpassLowFilter.resetAllChannels()
+        pbeBandpassHighFilter.resetAllChannels()
+        
+        sbrEnabled = false
+        sbrIntensity = 0.5f
+        sbrHighpassFilter.resetAllChannels()
+        sbrHighShelfFilter.resetAllChannels()
+        
         eqFilters.forEach { it.resetAllChannels() }
         bassShelfFilter.resetAllChannels()
         trebleShelfFilter.resetAllChannels()
         limiter.reset()
+    }
+    
+    // =========================================
+    // Dynamic Volume EQ (Fletcher-Munson Compensation) Controls
+    // =========================================
+    
+    /**
+     * Enable or disable Dynamic Volume EQ (Fletcher-Munson compensation).
+     * Automatically boosts bass and treble at low listening levels.
+     */
+    fun setDynamicEQEnabled(enabled: Boolean) {
+        dynamicEQEnabled = enabled
+        android.util.Log.d("SoftwareDSP", "Dynamic Volume EQ ${if (enabled) "enabled" else "disabled"}")
+    }
+    
+    fun getDynamicEQEnabled(): Boolean = dynamicEQEnabled
+    
+    /**
+     * Set Dynamic Volume EQ strength (0.0-1.0).
+     * Scales the bass/treble compensation amount.
+     */
+    fun setDynamicEQStrength(strength: Float) {
+        dynamicEQStrength = strength.coerceIn(0f, 1f)
+        android.util.Log.d("SoftwareDSP", "Dynamic Volume EQ strength set to ${(dynamicEQStrength * 100).toInt()}%")
+    }
+    
+    fun getDynamicEQStrength(): Float = dynamicEQStrength
+    
+    /**
+     * Process Dynamic Volume EQ (Fletcher-Munson Compensation).
+     * Tracks RMS level and applies bass/treble boost at low volumes.
+     * 
+     * Algorithm:
+     * 1. Track current output level via RMS (smoothed)
+     * 2. At low levels (< -20dB), boost bass by +3dB and treble by +2dB
+     * 3. At high levels (> -6dB), apply no compensation
+     * 4. Smooth transition between levels using linear interpolation
+     */
+    private fun processDynamicEQ(samples: FloatArray, channelCount: Int) {
+        // Calculate RMS level for this buffer (simplified for efficiency)
+        var sumSquares = 0.0
+        for (i in samples.indices) {
+            sumSquares += (samples[i] * samples[i]).toDouble()
+        }
+        val bufferRms = kotlin.math.sqrt(sumSquares / samples.size)
+        
+        // Smooth RMS level using EMA
+        rmsLevel = DYNAMIC_EQ_RMS_ALPHA * rmsLevel + (1.0 - DYNAMIC_EQ_RMS_ALPHA) * bufferRms
+        
+        // Convert to dB (avoid log of zero)
+        val rmsDb = if (rmsLevel > 1e-10) (20.0 * kotlin.math.log10(rmsLevel)).toFloat() else -60f
+        
+        // Calculate compensation factor (0 = no compensation, 1 = full compensation)
+        val compensationFactor: Float = when {
+            rmsDb <= DYNAMIC_EQ_LOW_THRESHOLD -> 1f
+            rmsDb >= DYNAMIC_EQ_HIGH_THRESHOLD -> 0f
+            else -> {
+                // Linear interpolation between thresholds
+                (DYNAMIC_EQ_HIGH_THRESHOLD - rmsDb) / (DYNAMIC_EQ_HIGH_THRESHOLD - DYNAMIC_EQ_LOW_THRESHOLD)
+            }
+        }
+        
+        // Calculate target gains (scaled by strength and compensation factor)
+        val targetBassBoost = DYNAMIC_EQ_MAX_BASS_BOOST * compensationFactor * dynamicEQStrength
+        val targetTrebleBoost = DYNAMIC_EQ_MAX_TREBLE_BOOST * compensationFactor * dynamicEQStrength
+        
+        // Update filter gains only if they've changed significantly (avoid recalculating coefficients too often)
+        if (kotlin.math.abs(targetBassBoost - currentDynamicBassBoost) > 0.1f) {
+            currentDynamicBassBoost = targetBassBoost
+            dynamicEQBassFilter.setGain(currentDynamicBassBoost)
+        }
+        if (kotlin.math.abs(targetTrebleBoost - currentDynamicTrebleBoost) > 0.1f) {
+            currentDynamicTrebleBoost = targetTrebleBoost
+            dynamicEQTrebleFilter.setGain(currentDynamicTrebleBoost)
+        }
+        
+        // Apply filters (only if there's any boost to apply)
+        if (currentDynamicBassBoost > 0.01f) {
+            dynamicEQBassFilter.processBufferFloat(samples, channelCount)
+        }
+        if (currentDynamicTrebleBoost > 0.01f) {
+            dynamicEQTrebleFilter.processBufferFloat(samples, channelCount)
+        }
+    }
+    
+    // =========================================
+    // Psychoacoustic Bass Enhancement (PBE) Controls
+    // =========================================
+    
+    /**
+     * Enable or disable Psychoacoustic Bass Enhancement.
+     * Generates harmonics of sub-bass frequencies for perceived bass on small speakers.
+     */
+    fun setPBEEnabled(enabled: Boolean) {
+        pbeEnabled = enabled
+        android.util.Log.d("SoftwareDSP", "PBE ${if (enabled) "enabled" else "disabled"}")
+    }
+    
+    fun getPBEEnabled(): Boolean = pbeEnabled
+    
+    /**
+     * Set PBE intensity (0.0-1.0).
+     * Controls the wet/dry mix of generated harmonics.
+     */
+    fun setPBEIntensity(intensity: Float) {
+        pbeIntensity = intensity.coerceIn(0f, 1f)
+        android.util.Log.d("SoftwareDSP", "PBE intensity set to ${(pbeIntensity * 100).toInt()}%")
+    }
+    
+    fun getPBEIntensity(): Float = pbeIntensity
+    
+    /**
+     * Process Psychoacoustic Bass Enhancement.
+     * Generates harmonics of sub-bass frequencies so brain perceives bass that small speakers can't reproduce.
+     * 
+     * Algorithm:
+     * 1. Crossover filter: LPF at ~100Hz to extract sub-bass
+     * 2. Harmonic generator: Generate 2nd, 3rd, 4th harmonics using polynomial waveshaping
+     *    y = x + 0.5*x² + 0.25*x³ (creates 2nd, 3rd, 4th harmonics)
+     * 3. Bandpass filter: 100-400Hz to keep only useful harmonics
+     * 4. Blend: Mix harmonics with original signal based on intensity
+     */
+    private fun processPBE(samples: FloatArray, channelCount: Int) {
+        var i = 0
+        while (i < samples.size) {
+            for (ch in 0 until channelCount) {
+                if (i + ch >= samples.size) break
+                
+                val original = samples[i + ch]
+                
+                // Extract sub-bass using lowpass filter (< 100Hz)
+                val subBass = pbeLowpassFilter.processSample(original, ch)
+                
+                // Generate harmonics using polynomial waveshaping
+                // y = x + 0.5*x² + 0.25*x³ creates 2nd, 3rd, 4th harmonics
+                val x = subBass
+                val harmonics = x + 0.5f * x * x + 0.25f * x * x * x
+                
+                // Apply bandpass filter (100-400Hz) to keep only useful harmonics
+                var filteredHarmonics = pbeBandpassLowFilter.processSample(harmonics, ch)
+                filteredHarmonics = pbeBandpassHighFilter.processSample(filteredHarmonics, ch)
+                
+                // Blend harmonics with original signal
+                samples[i + ch] = original + filteredHarmonics * pbeIntensity
+            }
+            i += channelCount
+        }
+    }
+    
+    // =========================================
+    // Spectral Band Replication (SBR) Controls
+    // =========================================
+    
+    /**
+     * Enable or disable Spectral Band Replication.
+     * Extends high frequencies to restore lost detail in compressed audio.
+     */
+    fun setSBREnabled(enabled: Boolean) {
+        sbrEnabled = enabled
+        android.util.Log.d("SoftwareDSP", "SBR ${if (enabled) "enabled" else "disabled"}")
+    }
+    
+    fun getSBREnabled(): Boolean = sbrEnabled
+    
+    /**
+     * Set SBR intensity (0.0-1.0).
+     * Controls the blend amount of extended frequencies (scaled to 10-30%).
+     */
+    fun setSBRIntensity(intensity: Float) {
+        sbrIntensity = intensity.coerceIn(0f, 1f)
+        android.util.Log.d("SoftwareDSP", "SBR intensity set to ${(sbrIntensity * 100).toInt()}%")
+    }
+    
+    fun getSBRIntensity(): Float = sbrIntensity
+    
+    /**
+     * Process Spectral Band Replication.
+     * Extends high frequencies above 16kHz to restore lost detail in compressed audio.
+     * 
+     * Algorithm:
+     * 1. High-pass filter at 8kHz to isolate upper harmonics
+     * 2. Simple spectral folding: Use the high frequency content directly
+     *    (we use waveshaping to create harmonic content that extends the spectrum)
+     * 3. Apply high-shelf EQ boost above 16kHz with gentle roll-off
+     * 4. Low-level blend (10-30%) with original, scaled by intensity
+     */
+    private fun processSBR(samples: FloatArray, channelCount: Int) {
+        // Calculate blend amount (10-30% based on intensity)
+        val blendAmount = 0.1f + (SBR_MAX_BLEND - 0.1f) * sbrIntensity
+        
+        var i = 0
+        while (i < samples.size) {
+            for (ch in 0 until channelCount) {
+                if (i + ch >= samples.size) break
+                
+                val original = samples[i + ch]
+                
+                // Extract high frequency content (8kHz+) using highpass filter
+                val highFreq = sbrHighpassFilter.processSample(original, ch)
+                
+                // Generate extended harmonics using soft waveshaping
+                // tanh-like saturation creates harmonic extension
+                val x = highFreq * 2f // Boost input for more harmonic generation
+                val extended = kotlin.math.tanh(x.toDouble()).toFloat()
+                
+                // Apply high-shelf boost to emphasize the extended frequencies
+                val boosted = sbrHighShelfFilter.processSample(extended, ch)
+                
+                // Blend with original (low-level mix)
+                samples[i + ch] = original + boosted * blendAmount
+            }
+            i += channelCount
+        }
     }
     
     /**
@@ -799,7 +1123,13 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             "spatialEnhancementActive" to (spatialEnhancementLevel > 0),
             "spatialEnhancementLevel" to spatialEnhancementLevel,
             "itdDelaySamples" to itdDelaySamples,
-            "runningCorrelation" to runningCorrelation
+            "runningCorrelation" to runningCorrelation,
+            "dynamicEQActive" to dynamicEQEnabled,
+            "dynamicEQStrength" to dynamicEQStrength,
+            "pbeActive" to pbeEnabled,
+            "pbeIntensity" to pbeIntensity,
+            "sbrActive" to sbrEnabled,
+            "sbrIntensity" to sbrIntensity
         )
     }
 }

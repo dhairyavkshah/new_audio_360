@@ -269,6 +269,36 @@ interface AppContextModuleInterface {
   validateInitialSession(): Promise<SessionCheckResult>;
 }
 
+export interface PremiumEffectsResult {
+  success: boolean;
+  error?: string;
+  enabled?: boolean;
+  intensity?: number;
+  strength?: number;
+}
+
+export interface PremiumEffectsStatus {
+  success: boolean;
+  pbeEnabled?: boolean;
+  pbeIntensity?: number;
+  sbrEnabled?: boolean;
+  sbrIntensity?: number;
+  dynamicEQEnabled?: boolean;
+  dynamicEQStrength?: number;
+  error?: string;
+}
+
+interface PremiumEffectsModuleInterface {
+  isAvailable(): boolean;
+  setPBEEnabled(enabled: boolean): PremiumEffectsResult;
+  setPBEIntensity(intensity: number): PremiumEffectsResult;
+  setSBREnabled(enabled: boolean): PremiumEffectsResult;
+  setSBRIntensity(intensity: number): PremiumEffectsResult;
+  setDynamicEQEnabled(enabled: boolean): PremiumEffectsResult;
+  setDynamicEQStrength(strength: number): PremiumEffectsResult;
+  getPremiumEffectsStatus(): PremiumEffectsStatus;
+}
+
 // Native Module Instances
 let PlaybackEngineModuleNative: PlaybackEngineModuleInterface | null = null;
 let EqualizerModuleNative: EqualizerModuleInterface | null = null;
@@ -278,6 +308,7 @@ let WaveformAnalyzerModuleNative: WaveformAnalyzerModuleInterface | null = null;
 let ImmersiveModeEngineModuleNative: ImmersiveModeEngineModuleInterface | null = null;
 let MediaStoreScannerModuleNative: MediaStoreScannerModuleInterface | null = null;
 let AppContextModuleNative: AppContextModuleInterface | null = null;
+let PremiumEffectsModuleNative: PremiumEffectsModuleInterface | null = null;
 
 if (Platform.OS === 'android') {
   try {
@@ -326,6 +357,12 @@ if (Platform.OS === 'android') {
     AppContextModuleNative = requireNativeModule<AppContextModuleInterface>('AppContextModule');
   } catch (e) {
     console.warn('AppContextModule not available:', e);
+  }
+  
+  try {
+    PremiumEffectsModuleNative = requireNativeModule<PremiumEffectsModuleInterface>('PremiumEffectsModule');
+  } catch (e) {
+    console.warn('PremiumEffectsModule not available:', e);
   }
 }
 
@@ -1534,6 +1571,106 @@ export const AppContextModule = {
     } catch (error) {
       console.error('AppContextModule.validateInitialSession error:', error);
       return { valid: false, reason: 'exception', ts: Date.now() };
+    }
+  }
+};
+
+// Premium Effects Module Export (PBE, SBR, Dynamic EQ)
+export const PremiumEffectsModule = {
+  isAvailable: (): boolean => {
+    return Platform.OS === 'android' && PremiumEffectsModuleNative !== null;
+  },
+
+  setPBEEnabled: (enabled: boolean): PremiumEffectsResult => {
+    if (!PremiumEffectsModuleNative) {
+      return { success: false, error: 'Premium effects not available on this platform' };
+    }
+    try {
+      return PremiumEffectsModuleNative.setPBEEnabled(enabled);
+    } catch (error) {
+      console.error('PremiumEffectsModule.setPBEEnabled error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setPBEIntensity: (intensity: number): PremiumEffectsResult => {
+    if (!PremiumEffectsModuleNative) {
+      return { success: false, error: 'Premium effects not available on this platform' };
+    }
+    try {
+      return PremiumEffectsModuleNative.setPBEIntensity(intensity);
+    } catch (error) {
+      console.error('PremiumEffectsModule.setPBEIntensity error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setSBREnabled: (enabled: boolean): PremiumEffectsResult => {
+    if (!PremiumEffectsModuleNative) {
+      return { success: false, error: 'Premium effects not available on this platform' };
+    }
+    try {
+      return PremiumEffectsModuleNative.setSBREnabled(enabled);
+    } catch (error) {
+      console.error('PremiumEffectsModule.setSBREnabled error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setSBRIntensity: (intensity: number): PremiumEffectsResult => {
+    if (!PremiumEffectsModuleNative) {
+      return { success: false, error: 'Premium effects not available on this platform' };
+    }
+    try {
+      return PremiumEffectsModuleNative.setSBRIntensity(intensity);
+    } catch (error) {
+      console.error('PremiumEffectsModule.setSBRIntensity error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setDynamicEQEnabled: (enabled: boolean): PremiumEffectsResult => {
+    if (!PremiumEffectsModuleNative) {
+      return { success: false, error: 'Premium effects not available on this platform' };
+    }
+    try {
+      return PremiumEffectsModuleNative.setDynamicEQEnabled(enabled);
+    } catch (error) {
+      console.error('PremiumEffectsModule.setDynamicEQEnabled error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setDynamicEQStrength: (strength: number): PremiumEffectsResult => {
+    if (!PremiumEffectsModuleNative) {
+      return { success: false, error: 'Premium effects not available on this platform' };
+    }
+    try {
+      return PremiumEffectsModuleNative.setDynamicEQStrength(strength);
+    } catch (error) {
+      console.error('PremiumEffectsModule.setDynamicEQStrength error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  getPremiumEffectsStatus: (): PremiumEffectsStatus => {
+    if (!PremiumEffectsModuleNative) {
+      return { 
+        success: false, 
+        error: 'Premium effects not available on this platform',
+        pbeEnabled: false,
+        pbeIntensity: 0.5,
+        sbrEnabled: false,
+        sbrIntensity: 0.5,
+        dynamicEQEnabled: false,
+        dynamicEQStrength: 0.5
+      };
+    }
+    try {
+      return PremiumEffectsModuleNative.getPremiumEffectsStatus();
+    } catch (error) {
+      console.error('PremiumEffectsModule.getPremiumEffectsStatus error:', error);
+      return { success: false, error: String(error) };
     }
   }
 };
