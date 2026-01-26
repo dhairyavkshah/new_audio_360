@@ -100,7 +100,7 @@ export default function AboutScreen() {
 
         <View style={styles.footer}>
           <FluentText variant="caption2" color="secondary" align="center">
-            By: Dhairya Shah (The Team 360)
+            By: Dhairya Vipulkumar Shah (The Team 360)
           </FluentText>
           <FluentText
             variant="caption2"

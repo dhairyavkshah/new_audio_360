@@ -58,7 +58,7 @@ export default function PrivacyPolicyScreen() {
 
         <View style={styles.introCard}>
           <FluentText variant="caption1" color="secondary" style={styles.introText}>
-            This Privacy Policy describes how New Audio 360, developed and operated by Dhairya Shah under The Team 360, handles information in connection with your use of the New Audio 360 mobile application. By installing or using the Application, you acknowledge that you have read and understood this Policy.
+            This Privacy Policy describes how New Audio 360, developed and operated by Dhairya Vipulkumar Shah under The Team 360, handles information in connection with your use of the New Audio 360 mobile application. By installing or using the Application, you acknowledge that you have read and understood this Policy.
           </FluentText>
         </View>
 
@@ -170,7 +170,7 @@ export default function PrivacyPolicyScreen() {
             align="center"
             style={{ marginTop: FluentSpacing.xs }}
           >
-            Dhairya Shah (The Team 360)
+            Dhairya Vipulkumar Shah (The Team 360)
           </FluentText>
           <FluentText
             variant="caption2"

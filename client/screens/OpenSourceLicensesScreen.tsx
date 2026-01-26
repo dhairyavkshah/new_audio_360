@@ -81,7 +81,7 @@ export default function OpenSourceLicensesScreen() {
             Proprietary Software Notice
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.copyrightText}>
-            Copyright © 2024-2026 Dhairya Shah, operating as The Team 360. All Rights Reserved Worldwide.
+            Copyright © 2024-2026 Dhairya Vipulkumar Shah, operating as The Team 360. All Rights Reserved Worldwide.
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.copyrightText}>
             This software application, including without limitation, its source code, object code, user interface design, graphical elements, audio processing algorithms, digital signal processing implementations, and all associated documentation and intellectual property rights (collectively, the "Software"), constitutes the sole and exclusive property of the copyright holder.
@@ -96,7 +96,7 @@ export default function OpenSourceLicensesScreen() {
             ENFORCEMENT: Unauthorized reproduction, distribution, modification, public display, public performance, or creation of derivative works based upon this Software, in whole or in part, may subject the infringer to civil liability and criminal prosecution under applicable laws, including but not limited to the Copyright Act, Computer Fraud and Abuse Act, and equivalent international statutes.
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.copyrightText}>
-            TRADEMARK NOTICE: "New Audio 360" and "The Team 360" are trademarks or registered trademarks of Dhairya Shah. All other trademarks, service marks, and trade names referenced herein are the property of their respective owners.
+            TRADEMARK NOTICE: "New Audio 360" and "The Team 360" are trademarks or registered trademarks of Dhairya Vipulkumar Shah. All other trademarks, service marks, and trade names referenced herein are the property of their respective owners.
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={[styles.copyrightText, { marginTop: FluentSpacing.s }]}>
             For licensing inquiries, permissions, or related matters:{"\n"}support@theteam360.com

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Pressable, BackHandler, Platform } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, BackHandler, Platform, Linking } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -221,7 +221,15 @@ export default function SettingsScreen() {
             variant="caption1"
             style={{ color: colors.colorNeutralForeground3, textAlign: "center", marginTop: FluentSpacing.xs }}
           >
-            By: Dhairya Shah (The Team 360)
+            By: Dhairya Vipulkumar Shah (
+            <FluentText
+              variant="caption1"
+              style={{ color: colors.colorBrandForeground1 }}
+              onPress={() => Linking.openURL("https://www.theteam360.com")}
+            >
+              The Team 360
+            </FluentText>
+            )
           </FluentText>
         </View>
       </ScrollView>

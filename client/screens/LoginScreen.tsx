@@ -114,7 +114,7 @@ export default function LoginScreen() {
             By signing in, you agree to our Terms of Service and Privacy Policy
           </FluentText>
           <FluentText variant="caption2" color="secondary" align="center" style={styles.attribution}>
-            By: Dhairya Shah (The Team 360)
+            By: Dhairya Vipulkumar Shah (The Team 360)
           </FluentText>
         </View>
       </View>

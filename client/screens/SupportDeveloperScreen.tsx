@@ -297,7 +297,7 @@ export default function SupportDeveloperScreen() {
             <MaterialCommunityIcons name="account" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} />
           </View>
           <FluentText variant="title3" style={styles.developerName}>
-            Dhairya Shah (The Team 360)
+            Dhairya Vipulkumar Shah (The Team 360)
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.developerBio}>
             Hi! I'm the solo developer behind New Audio 360. Your support helps me continue
