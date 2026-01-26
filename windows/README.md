@@ -38,7 +38,7 @@ electron/
 1. Push code to GitHub
 2. Go to **Actions** > **Build Windows Electron App**
 3. Click **Run workflow**
-4. Enter version number (e.g., `26.0.0`)
+4. Enter version number (e.g., `27.0.0`)
 5. Select build type:
    - **appx** - For Microsoft Store submission
    - **nsis** - For direct download installer (.exe)
@@ -182,6 +182,7 @@ See [MICROSOFT_STORE_SUBMISSION.md](../docs/MICROSOFT_STORE_SUBMISSION.md) for d
 
 | Version | Changes |
 |---------|---------|
+| 27.0 | Premium Audio Effects with Fluent 2 toggles, high-fidelity DSP processing |
 | 26.0 | Initial Windows Store release |
 
 ## Support

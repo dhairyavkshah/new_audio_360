@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText, FluentButton, FluentModal } from "@/components/fluent";
+import { FluentToggle } from "@/components/FluentToggle";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -885,13 +886,10 @@ function SoundLabScreen() {
               <View style={styles.effectSliderHeader}>
                 <MaterialCommunityIcons name="waveform" size={FluentIconSize.regular} color={tokens.colors.primary} />
                 <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Bass Enhancement</FluentText>
-                <Pressable onPress={() => handlePBEToggle(!pbeEnabled)}>
-                  <MaterialCommunityIcons 
-                    name={pbeEnabled ? "toggle-switch" : "toggle-switch-off-outline"} 
-                    size={28} 
-                    color={pbeEnabled ? tokens.colors.primary : tokens.colors.textSecondary} 
-                  />
-                </Pressable>
+                <FluentToggle
+                  value={pbeEnabled}
+                  onValueChange={handlePBEToggle}
+                />
               </View>
               <FluentText variant="caption1" color="secondary">
                 Generates harmonics for richer, fuller bass on small speakers
@@ -902,13 +900,10 @@ function SoundLabScreen() {
               <View style={styles.effectSliderHeader}>
                 <MaterialCommunityIcons name="arrow-up-bold-hexagon-outline" size={FluentIconSize.regular} color={tokens.colors.primary} />
                 <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Audio Upscaling</FluentText>
-                <Pressable onPress={() => handleSBRToggle(!sbrEnabled)}>
-                  <MaterialCommunityIcons 
-                    name={sbrEnabled ? "toggle-switch" : "toggle-switch-off-outline"} 
-                    size={28} 
-                    color={sbrEnabled ? tokens.colors.primary : tokens.colors.textSecondary} 
-                  />
-                </Pressable>
+                <FluentToggle
+                  value={sbrEnabled}
+                  onValueChange={handleSBRToggle}
+                />
               </View>
               <FluentText variant="caption1" color="secondary">
                 Restores high-frequency detail lost in MP3/streaming compression
@@ -919,13 +914,10 @@ function SoundLabScreen() {
               <View style={styles.effectSliderHeader}>
                 <MaterialCommunityIcons name="volume-high" size={FluentIconSize.regular} color={tokens.colors.primary} />
                 <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Volume Optimization</FluentText>
-                <Pressable onPress={() => handleDynamicEQToggle(!dynamicEQEnabled)}>
-                  <MaterialCommunityIcons 
-                    name={dynamicEQEnabled ? "toggle-switch" : "toggle-switch-off-outline"} 
-                    size={28} 
-                    color={dynamicEQEnabled ? tokens.colors.primary : tokens.colors.textSecondary} 
-                  />
-                </Pressable>
+                <FluentToggle
+                  value={dynamicEQEnabled}
+                  onValueChange={handleDynamicEQToggle}
+                />
               </View>
               <FluentText variant="caption1" color="secondary">
                 Auto-adjusts bass/treble at low volumes for consistent fullness

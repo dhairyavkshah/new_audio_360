@@ -27,7 +27,7 @@ export default {
   expo: {
     name: getAppName(),
     slug: 'new-audio-360',
-    version: '26.0',
+    version: '27.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     userInterfaceStyle: 'automatic',
