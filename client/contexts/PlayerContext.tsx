@@ -1007,6 +1007,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           handleTrackEnd();
         };
 
+        audio.onplay = () => {
+          setIsPlaying(true);
+        };
+
+        audio.onpause = () => {
+          setIsPlaying(false);
+        };
+
         audio.ontimeupdate = () => {
           setCurrentTime(audio.currentTime);
           if (audio.duration && !isNaN(audio.duration)) {
@@ -1015,7 +1023,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         };
 
         await audio.play();
-        setIsPlaying(true);
         setIsLoading(false);
         AudioCoordinator.notifyPlaybackStarted('music');
       } else if (useTrackPlayerRef.current) {

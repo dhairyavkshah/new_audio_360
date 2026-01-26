@@ -150,11 +150,8 @@ function SoundLabScreen() {
   const [spatialEnhancement, setSpatialEnhancement] = useState(0);
 
   const [pbeEnabled, setPbeEnabled] = useState(false);
-  const [pbeIntensity, setPbeIntensity] = useState(0.5);
   const [sbrEnabled, setSbrEnabled] = useState(false);
-  const [sbrIntensity, setSbrIntensity] = useState(0.5);
   const [dynamicEQEnabled, setDynamicEQEnabled] = useState(false);
-  const [dynamicEQStrength, setDynamicEQStrength] = useState(0.5);
 
   const MAX_CUSTOM_PRESETS = 5;
 
@@ -386,15 +383,6 @@ function SoundLabScreen() {
     Haptics.selectionAsync();
   }, []);
 
-  const handlePBEIntensity = useCallback((intensity: number) => {
-    setPbeIntensity(intensity);
-    if (Platform.OS === 'android') {
-      PremiumEffectsModule.setPBEIntensity(intensity);
-    } else if (typeof (WebAudioEffectsEngine as any).setPBEIntensity === 'function') {
-      (WebAudioEffectsEngine as any).setPBEIntensity(intensity);
-    }
-  }, []);
-
   const handleSBRToggle = useCallback((enabled: boolean) => {
     setSbrEnabled(enabled);
     if (Platform.OS === 'android') {
@@ -405,15 +393,6 @@ function SoundLabScreen() {
     Haptics.selectionAsync();
   }, []);
 
-  const handleSBRIntensity = useCallback((intensity: number) => {
-    setSbrIntensity(intensity);
-    if (Platform.OS === 'android') {
-      PremiumEffectsModule.setSBRIntensity(intensity);
-    } else if (typeof (WebAudioEffectsEngine as any).setSBRIntensity === 'function') {
-      (WebAudioEffectsEngine as any).setSBRIntensity(intensity);
-    }
-  }, []);
-
   const handleDynamicEQToggle = useCallback((enabled: boolean) => {
     setDynamicEQEnabled(enabled);
     if (Platform.OS === 'android') {
@@ -422,15 +401,6 @@ function SoundLabScreen() {
       (WebAudioEffectsEngine as any).setDynamicEQEnabled(enabled);
     }
     Haptics.selectionAsync();
-  }, []);
-
-  const handleDynamicEQStrength = useCallback((strength: number) => {
-    setDynamicEQStrength(strength);
-    if (Platform.OS === 'android') {
-      PremiumEffectsModule.setDynamicEQStrength(strength);
-    } else if (typeof (WebAudioEffectsEngine as any).setDynamicEQStrength === 'function') {
-      (WebAudioEffectsEngine as any).setDynamicEQStrength(strength);
-    }
   }, []);
 
   const handleSavePreset = async () => {
@@ -923,27 +893,9 @@ function SoundLabScreen() {
                   />
                 </Pressable>
               </View>
-              <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.xs }}>
+              <FluentText variant="caption1" color="secondary">
                 Generates harmonics for richer, fuller bass on small speakers
               </FluentText>
-              {pbeEnabled && (
-                <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">Low</FluentText>
-                  <CrossPlatformSlider
-                    style={styles.effectSlider}
-                    minimumValue={0}
-                    maximumValue={1}
-                    step={0.1}
-                    value={pbeIntensity}
-                    onValueChange={handlePBEIntensity}
-                    minimumTrackTintColor={colors.colorBrandForeground1}
-                    maximumTrackTintColor={colors.colorNeutralStroke1}
-                    thumbTintColor={colors.colorBrandForeground1}
-                    trackHeight={FluentSliderSize.trackMedium}
-                  />
-                  <FluentText variant="caption1" color="secondary">High</FluentText>
-                </View>
-              )}
             </View>
 
             <View style={styles.effectSliderRow}>
@@ -958,27 +910,9 @@ function SoundLabScreen() {
                   />
                 </Pressable>
               </View>
-              <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.xs }}>
+              <FluentText variant="caption1" color="secondary">
                 Restores high-frequency detail lost in MP3/streaming compression
               </FluentText>
-              {sbrEnabled && (
-                <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">Low</FluentText>
-                  <CrossPlatformSlider
-                    style={styles.effectSlider}
-                    minimumValue={0}
-                    maximumValue={1}
-                    step={0.1}
-                    value={sbrIntensity}
-                    onValueChange={handleSBRIntensity}
-                    minimumTrackTintColor={colors.colorBrandForeground1}
-                    maximumTrackTintColor={colors.colorNeutralStroke1}
-                    thumbTintColor={colors.colorBrandForeground1}
-                    trackHeight={FluentSliderSize.trackMedium}
-                  />
-                  <FluentText variant="caption1" color="secondary">High</FluentText>
-                </View>
-              )}
             </View>
 
             <View style={styles.effectSliderRow}>
@@ -993,27 +927,9 @@ function SoundLabScreen() {
                   />
                 </Pressable>
               </View>
-              <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.xs }}>
+              <FluentText variant="caption1" color="secondary">
                 Auto-adjusts bass/treble at low volumes for consistent fullness
               </FluentText>
-              {dynamicEQEnabled && (
-                <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">Low</FluentText>
-                  <CrossPlatformSlider
-                    style={styles.effectSlider}
-                    minimumValue={0}
-                    maximumValue={1}
-                    step={0.1}
-                    value={dynamicEQStrength}
-                    onValueChange={handleDynamicEQStrength}
-                    minimumTrackTintColor={colors.colorBrandForeground1}
-                    maximumTrackTintColor={colors.colorNeutralStroke1}
-                    thumbTintColor={colors.colorBrandForeground1}
-                    trackHeight={FluentSliderSize.trackMedium}
-                  />
-                  <FluentText variant="caption1" color="secondary">High</FluentText>
-                </View>
-              )}
             </View>
           </View>
         </View>
