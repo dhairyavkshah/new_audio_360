@@ -1,0 +1,68 @@
+{
+  "name": "New Audio 360",
+  "short_name": "New Audio 360",
+  "description": "Premium Music Player - Studio-quality audio processing with 10-band EQ, spatial enhancement, and 55 themes",
+  "publisher": {
+    "displayName": "Dhairya Vipulkumar Shah (The Team 360)",
+    "commonName": "CN=The Team 360"
+  },
+  "version": "26.0.0.0",
+  "classicPackage": {
+    "generate": true,
+    "version": "26.0.0.0"
+  },
+  "resourceLanguage": "en-US",
+  "packageIdentityName": "TheTeam360.NewAudio360",
+  "publisherDisplayName": "The Team 360",
+  "targetDeviceFamilies": {
+    "desktop": true,
+    "tablet": true
+  },
+  "capabilities": [
+    "internetClient",
+    "musicLibrary"
+  ],
+  "fileTypeAssociations": [
+    {
+      "name": "MP3 Audio",
+      "extension": ".mp3",
+      "contentType": "audio/mpeg"
+    },
+    {
+      "name": "FLAC Audio",
+      "extension": ".flac",
+      "contentType": "audio/flac"
+    },
+    {
+      "name": "M4A Audio",
+      "extension": ".m4a",
+      "contentType": "audio/mp4"
+    },
+    {
+      "name": "AAC Audio",
+      "extension": ".aac",
+      "contentType": "audio/aac"
+    },
+    {
+      "name": "WAV Audio",
+      "extension": ".wav",
+      "contentType": "audio/wav"
+    },
+    {
+      "name": "OGG Audio",
+      "extension": ".ogg",
+      "contentType": "audio/ogg"
+    }
+  ],
+  "protocolHandlers": [],
+  "backgroundColor": "#1565C0",
+  "themeColor": "#1565C0",
+  "enableNotifications": true,
+  "enableShare": false,
+  "startUrl": "/",
+  "icons": {
+    "baseSize": 512,
+    "iconDir": "./windows/assets/icons",
+    "padding": 0
+  }
+}

@@ -75,6 +75,16 @@ export default {
     web: {
       output: 'single',
       favicon: './assets/images/favicon.png',
+      name: 'New Audio 360',
+      shortName: 'New Audio 360',
+      description: 'Premium Music Player - Studio-quality audio processing with 10-band EQ, spatial enhancement, and 55 themes',
+      lang: 'en',
+      themeColor: '#1565C0',
+      backgroundColor: '#1565C0',
+      startUrl: '/',
+      display: 'standalone',
+      orientation: 'any',
+      preferRelatedApplications: false,
     },
     plugins: [
       'expo-asset',

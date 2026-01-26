@@ -21,7 +21,26 @@ New Audio 360 is a premium mobile music player application designed for audio en
 - **Data Persistence**: Local storage using AsyncStorage/SecureStorage.
 
 ### Platform Modes
-The application supports three platform modes: Android, iOS (iPhone Mode), and Web. iPhone Mode includes specific fallbacks for audio effects and feature availability.
+The application supports four platform modes: Android, iOS (iPhone Mode), Web, and Windows (Microsoft Store). iPhone Mode includes specific fallbacks for audio effects and feature availability.
+
+### Windows Store Application
+The Windows version is packaged as a PWA using PWABuilder, providing:
+- Native Windows integration (file associations, Start menu, taskbar)
+- Windows Music folder scanning via File System Access API
+- Offline support via service worker
+- MSIX packaging for Microsoft Store distribution
+
+**Windows Build Files**:
+- `windows/` - Windows-specific configuration and assets
+- `windows/Package.appxmanifest` - Windows app manifest
+- `windows/pwabuilder-config.json` - PWABuilder configuration
+- `public/manifest.json` - PWA manifest
+- `public/sw.js` - Service worker for offline support
+- `.github/workflows/windows-store-build.yml` - GitHub Actions workflow
+
+**Windows-Specific Services**:
+- `client/services/WindowsFolderScanner.ts` - Scans Windows Music folder
+- `client/hooks/useWindowsFolderScanner.ts` - React hook for folder scanning
 
 ### Audio Effects Architecture (Pure Software DSP)
 The app utilizes pure software-based DSP across all platforms for a consistent audio experience. The signal chain includes: Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter → Spatial Enhancement → Reverb → Limiter → Output.

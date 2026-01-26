@@ -11,7 +11,10 @@
     "check:format": "prettier --check \"**/*.{js,ts,tsx,css,json}\"",
     "format": "prettier --write \"**/*.{js,ts,tsx,css,json}\"",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "web:build": "npx expo export --platform web",
+    "web:serve": "npx serve dist",
+    "windows:icons": "node windows/scripts/generate-icons.js assets/images/icon.png"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.5",
