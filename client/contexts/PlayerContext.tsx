@@ -753,26 +753,45 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleStatusUpdate = useCallback((status: AudioStatus) => {
-    if (status.currentTime !== undefined) {
-      setCurrentTime(status.currentTime);
-    }
+    // Only update duration from status updates, not position
+    // Position is calculated locally for smoother updates
     if (status.duration !== undefined && status.duration > 0) {
       setDuration(status.duration);
     }
     
-    setIsPlaying(status.playing);
+    // Handle play/pause state changes and timer lifecycle
+    if (status.playing && !isPlayingRef.current) {
+      setIsPlaying(true);
+      // Sync with actual position when starting, then calculate locally
+      if (status.currentTime !== undefined) {
+        startCalculatedProgressTimer(status.currentTime);
+      }
+    } else if (!status.playing && isPlayingRef.current) {
+      setIsPlaying(false);
+      stopCalculatedProgressTimer();
+    }
+    
     setIsBuffering(status.isBuffering || false);
     
     if (status.didJustFinish) {
+      stopCalculatedProgressTimer();
       handleTrackEnd();
     }
-  }, [handleTrackEnd]);
+  }, [handleTrackEnd, startCalculatedProgressTimer, stopCalculatedProgressTimer]);
 
   const cleanupPlayer = useCallback(() => {
     if (progressPollingRef.current) {
       clearInterval(progressPollingRef.current);
       progressPollingRef.current = null;
     }
+    
+    // Also clean up calculated progress timer
+    if (calculatedProgressTimerRef.current) {
+      clearInterval(calculatedProgressTimerRef.current);
+      calculatedProgressTimerRef.current = null;
+    }
+    playbackStartTimeRef.current = 0;
+    playbackStartPositionRef.current = 0;
     
     if (useTrackPlayerRef.current) {
       TrackPlayerService.stop().catch(console.error);
