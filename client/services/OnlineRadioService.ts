@@ -62,8 +62,8 @@ const RADIO_BROWSER_SERVERS = [
 
 const NOMINATIM_API = 'https://nominatim.openstreetmap.org';
 
-const MAX_STATIONS_PER_COUNTRY = 250;
-const API_FETCH_LIMIT = 1500; // Fetch more from API to ensure we get 250+ after filtering
+const MAX_STATIONS_PER_COUNTRY = 1000;
+const API_FETCH_LIMIT = 1500; // Fetch more from API to ensure we get quality stations after filtering
 const REQUEST_TIMEOUT = 15000;
 
 // Valid stream URL patterns (must be HTTP/HTTPS with standard audio extensions or streams)

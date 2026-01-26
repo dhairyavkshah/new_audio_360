@@ -1276,7 +1276,7 @@ function RadioScreen() {
                     {item.name}
                   </FluentText>
                   <FluentText variant="caption1" color="secondary">
-                    {Math.min(item.stationcount, 250).toLocaleString()}+ popular stations
+                    {Math.min(item.stationcount, 1000).toLocaleString()} stations available
                   </FluentText>
                 </View>
                 {item.iso_3166_1 === detectedCountryCode && (
