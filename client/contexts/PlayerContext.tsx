@@ -113,7 +113,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const currentTimeRef = useRef<number>(0);
   const playbackRestoredRef = useRef<boolean>(false);
   const lastProgressUpdateRef = useRef<number>(0);
-  const progressThrottleMs = 500; // Throttle progress updates to reduce re-renders
+  const progressThrottleMs = 1000; // Throttle progress updates to 1/sec to reduce re-renders
 
   useEffect(() => {
     currentSongRef.current = currentSong;
