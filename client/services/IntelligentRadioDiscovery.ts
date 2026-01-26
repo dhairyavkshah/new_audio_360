@@ -145,8 +145,8 @@ function filterAndSortStations(stations: CachedRadioStation[], limit: number = M
       return true;
     })
     .sort((a, b) => {
-      const aScore = (a.votes * 2) + a.clickcount;
-      const bScore = (b.votes * 2) + b.clickcount;
+      const aScore = a.votes + a.clickcount;
+      const bScore = b.votes + b.clickcount;
       return bScore - aScore;
     })
     .slice(0, limit);
@@ -257,11 +257,11 @@ async function fetchStationsByClickCount(countryCode: string): Promise<CachedRad
   return stations;
 }
 
-async function mergeAndDeduplicateStations(
+function mergeAndDeduplicateStations(
   voteStations: CachedRadioStation[],
   clickStations: CachedRadioStation[],
   curatedStations: CachedRadioStation[]
-): Promise<CachedRadioStation[]> {
+): CachedRadioStation[] {
   const stationMap = new Map<string, CachedRadioStation>();
   
   for (const station of curatedStations) {
@@ -282,13 +282,22 @@ async function mergeAndDeduplicateStations(
   
   const merged = Array.from(stationMap.values());
   
-  return merged
+  const validatedMerged = merged.filter((station) => {
+    if (station.isCurated) return true;
+    if (station.lastcheckok !== 1) return false;
+    if (isBlacklistedStation(station.name)) return false;
+    const streamUrl = station.url_resolved || station.url;
+    if (!streamUrl || !isValidStreamUrl(streamUrl)) return false;
+    return true;
+  });
+  
+  return validatedMerged
     .sort((a, b) => {
       if (a.isCurated && !b.isCurated) return -1;
       if (!a.isCurated && b.isCurated) return 1;
       
-      const aScore = (a.votes * 2) + a.clickcount;
-      const bScore = (b.votes * 2) + b.clickcount;
+      const aScore = a.votes + a.clickcount;
+      const bScore = b.votes + b.clickcount;
       return bScore - aScore;
     })
     .slice(0, MAX_STATIONS_PER_COUNTRY);
@@ -325,7 +334,7 @@ export const IntelligentRadioDiscovery = {
       
       const filteredClickStations = filterAndSortStations(clickStations, MAX_STATIONS_PER_COUNTRY);
       
-      const merged = await mergeAndDeduplicateStations(
+      const merged = mergeAndDeduplicateStations(
         voteStations,
         filteredClickStations,
         convertedCurated
