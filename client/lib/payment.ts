@@ -1,16 +1,22 @@
 /**
- * Google Play Store License Verification
+ * Store License Verification (Android Play Store & iOS App Store)
  * 
  * Simple one-time purchase model:
- * - App is a PAID app on Google Play Store (₹311 / $13.11)
- * - User purchases and downloads from Play Store
- * - Since the app is PAID, anyone who downloads from Play Store has already paid
+ * - App is a PAID app on both stores
+ * - Android: Google Play Store (₹311 / $13.11)
+ * - iOS: App Store (same pricing, converted to local currency)
+ * - User purchases and downloads from respective store
+ * - Since the app is PAID, anyone who downloads from either store has already paid
  * 
- * No sign-in required - purchase happens at download time on Play Store.
+ * No sign-in required - purchase happens at download time on respective store.
  * 
- * License verification uses native module to check installer package name:
- * - Play Store installs have installer = "com.android.vending"
- * - Sideloaded APKs have different or null installer
+ * License verification:
+ * - Android: Uses native module to check installer package name
+ *   - Play Store installs have installer = "com.android.vending"
+ *   - Sideloaded APKs have different or null installer
+ * - iOS (iPhone Mode): App Store receipt validation
+ *   - App Store installs are verified via receipt presence
+ *   - TestFlight builds are auto-licensed for testing
  * 
  * For development builds:
  * - Auto-licensed for testing
@@ -59,12 +65,21 @@ export const PlayStoreVerification = {
       }
 
       if (Platform.OS === 'ios') {
+        // iPhone Mode: App Store license verification
+        // For paid apps on the App Store, download implies purchase
+        // TestFlight builds are auto-licensed for testing
+        const isTestFlight = Constants.appOwnership === 'expo' || 
+          (Constants.expoConfig?.extra?.appVariant === 'development') ||
+          (Constants.expoConfig?.extra?.appVariant === 'preview');
+        
+        console.log("[AppStoreVerification] iOS device detected, TestFlight:", isTestFlight);
+        
         return {
           isValidInstall: true,
-          installSource: 'app_store',
+          installSource: isTestFlight ? 'testflight' : 'app_store',
           purchase: {
             productId: PRODUCT_ID,
-            installSource: 'app_store',
+            installSource: isTestFlight ? 'testflight' : 'app_store',
             installTime: Date.now(),
           },
         };

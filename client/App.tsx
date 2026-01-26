@@ -28,6 +28,7 @@ import { OnlineRadioProvider } from "@/contexts/OnlineRadioContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/contexts/ToastContext";
+import { PlatformModeProvider } from "@/contexts/PlatformModeContext";
 import SplashScreen from "@/screens/SplashScreen";
 import LoadingScreen from "@/screens/LoadingScreen";
 import PermissionOnboardingFlow from "@/screens/PermissionOnboardingFlow";
@@ -129,29 +130,31 @@ function AppContent() {
 
 export default function App() {
   const content = (
-    <ThemeProvider>
-      <UiSoundProvider>
-        <AuthProvider>
-          <SubscriptionProvider>
-            <AuthGuard>
-              <MediaLibraryProvider>
-                <SoundLabProvider>
-                  <RadioProvider>
-                    <OnlineRadioProvider>
-                      <PlayerProvider>
-                        <ToastProvider>
-                          <AppContent />
-                        </ToastProvider>
-                      </PlayerProvider>
-                    </OnlineRadioProvider>
-                  </RadioProvider>
-                </SoundLabProvider>
-              </MediaLibraryProvider>
-            </AuthGuard>
-          </SubscriptionProvider>
-        </AuthProvider>
-      </UiSoundProvider>
-    </ThemeProvider>
+    <PlatformModeProvider>
+      <ThemeProvider>
+        <UiSoundProvider>
+          <AuthProvider>
+            <SubscriptionProvider>
+              <AuthGuard>
+                <MediaLibraryProvider>
+                  <SoundLabProvider>
+                    <RadioProvider>
+                      <OnlineRadioProvider>
+                        <PlayerProvider>
+                          <ToastProvider>
+                            <AppContent />
+                          </ToastProvider>
+                        </PlayerProvider>
+                      </OnlineRadioProvider>
+                    </RadioProvider>
+                  </SoundLabProvider>
+                </MediaLibraryProvider>
+              </AuthGuard>
+            </SubscriptionProvider>
+          </AuthProvider>
+        </UiSoundProvider>
+      </ThemeProvider>
+    </PlatformModeProvider>
   );
 
   return (
