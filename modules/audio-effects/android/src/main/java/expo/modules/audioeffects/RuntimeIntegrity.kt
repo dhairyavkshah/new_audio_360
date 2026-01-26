@@ -11,9 +11,13 @@ import javax.crypto.spec.SecretKeySpec
 
 internal object RuntimeIntegrity {
     
+    // Expected signing certificate SHA-256 fingerprints (full 64-char hex, no colons)
+    // PRODUCTION: Replace these with your actual signing certificate fingerprints
+    // Get fingerprint: keytool -list -v -keystore your.keystore -alias your_alias | grep SHA256
+    // Example: "AB1234...EF" (64 chars, no colons, uppercase)
     private val _vc = arrayOf(
-        "30:82:03:77:30:82:02:5f",
-        "a0:03:02:01:02:02:04:4e"
+        "PLACEHOLDER_RELEASE_CERT_SHA256_FINGERPRINT_64_CHARS_REPLACE_ME_BEFORE_PRODUCTION_DEPLOY",
+        "PLACEHOLDER_DEBUG_CERT_SHA256_FINGERPRINT_64_CHARS_REPLACE_BEFORE_PRODUCTION_DEPLOYMENT"
     )
     
     @Volatile
@@ -86,23 +90,13 @@ internal object RuntimeIntegrity {
         }
     }
     
-    private fun sev(h: String): Boolean {
-        if (h.length < 16) return false
-        
+    private fun sev(sh: String): Boolean {
+        val normalizedSh = sh.replace(":", "").uppercase()
         for (vc in _vc) {
-            val vcHash = hs(vc)
-            if (ct(h.take(vcHash.length), vcHash)) {
-                return true
-            }
-            if (h.startsWith(vc.replace(":", "").lowercase())) {
-                return true
-            }
+            val normalizedVc = vc.replace(":", "").uppercase()
+            if (normalizedSh == normalizedVc) return true
         }
-        
-        val tc = h.count { it.isLetterOrDigit() }
-        if (tc < h.length - 2) return false
-        
-        return true
+        return false
     }
     
     fun gcs(): Int = _cs

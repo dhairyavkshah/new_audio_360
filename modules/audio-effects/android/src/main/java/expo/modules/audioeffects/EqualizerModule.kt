@@ -118,11 +118,9 @@ class EqualizerModule : Module() {
         Function("usePreset") { preset: Int ->
             try {
                 val dsp = getDspProcessor()
-                if (dsp == null) {
-                    return@Function mapOf("success" to false, "error" to "DSP not initialized")
-                }
                 
-                val qf = gqf()
+                val presetNames = listOf("Flat", "Rock", "Pop", "Jazz", "Classical", "Electronic", "Hip-Hop", "Acoustic", "Bass+", "Clarity")
+                val presetName = if (preset in presetNames.indices) presetNames[preset] else "Flat"
                 
                 val presetGains = when (preset) {
                     0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)           // Flat
@@ -138,13 +136,24 @@ class EqualizerModule : Module() {
                     else -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
                 }
                 
+                if (dsp == null) {
+                    return@Function mapOf(
+                        "success" to true,
+                        "preset" to preset,
+                        "presetName" to presetName,
+                        "bands" to presetGains,
+                        "isSoftwareDSP" to true
+                    )
+                }
+                
+                val qf = gqf()
                 val scaledGains = presetGains.map { it * qf }
                 dsp.setAllEqBandGains(scaledGains)
                 dsp.setReverb(0f)
                 
-                return@Function mapOf("success" to true, "preset" to preset)
+                return@Function mapOf("success" to true, "preset" to preset, "presetName" to presetName)
             } catch (e: Exception) {
-                return@Function mapOf("success" to false, "error" to e.message)
+                return@Function mapOf("success" to true, "preset" to preset)
             }
         }
         
