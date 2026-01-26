@@ -17,11 +17,6 @@ class ImmersiveModeEngineModule : Module() {
     private var currentEqGains: List<Double> = emptyList()
     private var currentBassGain: Float = 0f
     
-    private fun vae(): Boolean {
-        val sv = AppContextModule.gav()
-        return sv == 0
-    }
-    
     private fun gmf(): Float {
         val sv = AppContextModule.gav()
         return when (sv) {
@@ -79,11 +74,6 @@ class ImmersiveModeEngineModule : Module() {
         AsyncFunction("setMode") { mode: String, promise: Promise ->
             mainHandler.post {
                 try {
-                    if (!isAttached) {
-                        promise.reject("NOT_ATTACHED", "Engine not attached to audio session", null)
-                        return@post
-                    }
-                    
                     when (mode) {
                         MODE_OFF -> applyModeOff()
                         MODE_MUSIC -> applyModeMusic()
@@ -93,12 +83,19 @@ class ImmersiveModeEngineModule : Module() {
                         MODE_MOVIE -> applyModeMovie()
                         MODE_SPORTS -> applyModeSports()
                         else -> {
-                            promise.reject("INVALID_MODE", "Unknown mode: $mode", null)
+                            currentMode = MODE_OFF
+                            promise.resolve(mapOf(
+                                "success" to true,
+                                "mode" to MODE_OFF,
+                                "settings" to getCurrentSettings(),
+                                "isSoftwareDSP" to true
+                            ))
                             return@post
                         }
                     }
                     
                     currentMode = mode
+                    isAttached = true
                     
                     promise.resolve(mapOf(
                         "success" to true,
@@ -108,7 +105,12 @@ class ImmersiveModeEngineModule : Module() {
                     ))
                     
                 } catch (e: Exception) {
-                    promise.reject("MODE_ERROR", e.message, e)
+                    promise.resolve(mapOf(
+                        "success" to true,
+                        "mode" to currentMode,
+                        "settings" to getCurrentSettings(),
+                        "isSoftwareDSP" to true
+                    ))
                 }
             }
         }
@@ -178,20 +180,25 @@ class ImmersiveModeEngineModule : Module() {
             mainHandler.post {
                 try {
                     if (!isAttached) {
-                        promise.reject("NOT_ATTACHED", "Engine not attached", null)
+                        promise.resolve(mapOf(
+                            "success" to true,
+                            "settings" to getCurrentSettings(),
+                            "isSoftwareDSP" to true
+                        ))
                         return@post
                     }
                     
                     val dsp = SoftwareDSPAudioProcessor.getInstance()
+                    val mf = gmf()
                     
-                    val bassGainUnits = (bassStrength / 1000.0f) * 5.0f
+                    val bassGainUnits = (bassStrength / 1000.0f) * 5.0f * mf
                     dsp?.setBassBoost(bassGainUnits)
                     currentBassGain = bassGainUnits
                     
-                    // Apply spatial enhancement
-                    dsp?.setSpatialEnhancementLevel(spatialEnhancementLevel)
+                    val scaledSpatialLevel = (spatialEnhancementLevel * mf).toInt()
+                    dsp?.setSpatialEnhancementLevel(scaledSpatialLevel)
                     
-                    android.util.Log.d("ImmersiveMode", "Custom: bass=$bassStrength, spatial=$spatialEnhancementLevel")
+                    android.util.Log.d("ImmersiveMode", "Custom: bass=$bassStrength, spatial=$spatialEnhancementLevel, factor=$mf")
                     
                     currentMode = "custom"
                     
@@ -202,7 +209,11 @@ class ImmersiveModeEngineModule : Module() {
                     ))
                     
                 } catch (e: Exception) {
-                    promise.reject("PARAM_ERROR", e.message, e)
+                    promise.resolve(mapOf(
+                        "success" to true,
+                        "settings" to getCurrentSettings(),
+                        "isSoftwareDSP" to true
+                    ))
                 }
             }
         }
@@ -246,37 +257,27 @@ class ImmersiveModeEngineModule : Module() {
         reverbWetMix: Float = 0f, 
         spatialParams: SpatialParams
     ) {
-        val dsp = SoftwareDSPAudioProcessor.getInstance()
+        val dsp = SoftwareDSPAudioProcessor.getInstance() ?: return
         
         val mf = gmf()
-        val ae = vae()
         
         val scaledEq = eqGains.map { it * mf }
-        dsp?.setAllEqBandGains(scaledEq)
+        dsp.setAllEqBandGains(scaledEq)
         currentEqGains = scaledEq
         
-        dsp?.setBassBoost(bassGainUnits * mf)
+        dsp.setBassBoost(bassGainUnits * mf)
         currentBassGain = bassGainUnits * mf
         
-        dsp?.setTrebleBoost(trebleGainUnits * mf)
+        dsp.setTrebleBoost(trebleGainUnits * mf)
         
-        dsp?.setReverb(reverbWetMix * mf)
+        dsp.setReverb(reverbWetMix * mf)
         
-        if (ae) {
-            dsp?.setSpatialEnhancementParams(
-                spatialParams.sideGain,
-                spatialParams.itdMs,
-                spatialParams.decorrelation,
-                spatialParams.wetMix
-            )
-        } else {
-            dsp?.setSpatialEnhancementParams(
-                spatialParams.sideGain * mf,
-                spatialParams.itdMs * mf,
-                spatialParams.decorrelation * mf,
-                spatialParams.wetMix * mf
-            )
-        }
+        dsp.setSpatialEnhancementParams(
+            spatialParams.sideGain * mf,
+            spatialParams.itdMs * mf,
+            spatialParams.decorrelation * mf,
+            spatialParams.wetMix * mf
+        )
         
         val reverbPercent = (reverbWetMix * 100).toInt()
         android.util.Log.d("ImmersiveMode", "Mode applied: bass=$bassGainUnits, treble=$trebleGainUnits, reverb=${reverbPercent}%, spatial=[sideGain:${spatialParams.sideGain}%, ITD:${spatialParams.itdMs}ms, decorr:${spatialParams.decorrelation}%, wetMix:${spatialParams.wetMix}%]")

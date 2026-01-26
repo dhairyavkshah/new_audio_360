@@ -135,10 +135,20 @@ class AppContextModule : Module() {
                     mcr(false, "cache_integrity")
                 }
                 SecureStateManager.EntitlementState.EXPIRED -> {
-                    pbr(ctx, ssm, true)
+                    if (!ssm.hbrd()) {
+                        ssm.sbrd()
+                        pbr(ctx, ssm, true)
+                    } else {
+                        mcr(false, "expired_already_checked")
+                    }
                 }
                 SecureStateManager.EntitlementState.NOT_VERIFIED -> {
-                    mcr(false, "not_verified")
+                    if (!ssm.hbrd()) {
+                        ssm.sbrd()
+                        pbr(ctx, ssm, true)
+                    } else {
+                        mcr(false, "not_verified_already_checked")
+                    }
                 }
             }
         }
@@ -165,7 +175,12 @@ class AppContextModule : Module() {
             }
             SecureStateManager.EntitlementState.EXPIRED,
             SecureStateManager.EntitlementState.NOT_VERIFIED -> {
-                pbr(ctx, ssm, true)
+                if (!ssm.hbrd()) {
+                    ssm.sbrd()
+                    pbr(ctx, ssm, true)
+                } else {
+                    mcr(false, "already_checked_today")
+                }
             }
         }
     }

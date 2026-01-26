@@ -88,8 +88,21 @@ internal object RuntimeIntegrity {
     
     private fun sev(h: String): Boolean {
         if (h.length < 16) return false
+        
+        for (vc in _vc) {
+            val vcHash = hs(vc)
+            if (ct(h.take(vcHash.length), vcHash)) {
+                return true
+            }
+            if (h.startsWith(vc.replace(":", "").lowercase())) {
+                return true
+            }
+        }
+        
         val tc = h.count { it.isLetterOrDigit() }
-        return tc >= h.length - 2
+        if (tc < h.length - 2) return false
+        
+        return true
     }
     
     fun gcs(): Int = _cs

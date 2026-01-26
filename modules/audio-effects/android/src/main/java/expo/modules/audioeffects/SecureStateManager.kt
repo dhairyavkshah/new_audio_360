@@ -26,6 +26,7 @@ internal class SecureStateManager private constructor(private val ctx: Context) 
         private const val K_EXP = "exp"
         private const val K_VN = "vn"
         private const val K_RC = "rc"
+        private const val K_BRD = "brd"
     }
     
     private val esp: SharedPreferences by lazy {
@@ -128,6 +129,17 @@ internal class SecureStateManager private constructor(private val ctx: Context) 
     
     fun cs() {
         esp.edit().clear().apply()
+    }
+    
+    fun hbrd(): Boolean {
+        val brdDay = esp.getLong(K_BRD, 0L)
+        val today = cdd(System.currentTimeMillis())
+        return brdDay == today
+    }
+    
+    fun sbrd() {
+        val today = cdd(System.currentTimeMillis())
+        esp.edit().putLong(K_BRD, today).apply()
     }
     
     private fun cdd(ts: Long): Long {
