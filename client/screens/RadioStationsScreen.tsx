@@ -310,7 +310,7 @@ export default function RadioStationsScreen() {
 
   useEffect(() => {
     if (radioMode === "online" && detectedCountryCode && !searchQuery) {
-      setFilteredOnlineStations(onlineStations.slice(0, 250));
+      setFilteredOnlineStations(onlineStations.slice(0, 1000));
     }
   }, [onlineStations, radioMode, searchQuery, detectedCountryCode]);
 
@@ -394,7 +394,7 @@ export default function RadioStationsScreen() {
       }
     } else if (query.trim().length === 0 && detectedCountryCode) {
       setSearchResults([]);
-      setFilteredOnlineStations(onlineStations.slice(0, 250));
+      setFilteredOnlineStations(onlineStations.slice(0, 1000));
     }
   }, [onlineStations, detectedCountryCode]);
 
@@ -410,10 +410,9 @@ export default function RadioStationsScreen() {
     setIsRefreshing(true);
     if (detectedCountryCode) {
       await loadStations(detectedCountryCode);
-      setFilteredOnlineStations(onlineStations);
     }
     setIsRefreshing(false);
-  }, [detectedCountryCode, loadStations, onlineStations]);
+  }, [detectedCountryCode, loadStations]);
 
   const handleForceRefresh = useCallback(async () => {
     if (!detectedCountryCode || isRefreshingStations) return;
