@@ -49,18 +49,25 @@ The Windows version is packaged as a PWA using PWABuilder, providing:
 - `client/hooks/useWindowsFolderScanner.ts` - React hook for folder scanning
 
 ### Audio Effects Architecture (Pure Software DSP)
-The app utilizes pure software-based DSP across all platforms for a consistent audio experience. The signal chain includes: Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter → Spatial Enhancement → Reverb → Limiter → Output.
+The app utilizes pure software-based DSP across all platforms for a consistent audio experience. The signal chain includes: Gain → 10-Band EQ → Bass Shelf Filter → Treble Shelf Filter → Spatial Enhancement (with HRTF) → Reverb → Limiter → Output.
 
 **Key DSP Components**:
 - **10-Band Parametric EQ**: With zero-sum normalization and 10 presets.
 - **Bass/Treble Boost Filters**: Shelf filters for frequency emphasis.
 - **Multi-Tap Delay Reverb**: With 4 delay lines.
 - **Intelligent Limiter**: Brickwall limiting for distortion prevention.
-- **Spatial Enhancement**: Psychoacoustic stereo widening with safety caps and 6 adjustable levels.
+- **Spatial Enhancement with HRTF**: Psychoacoustic stereo widening with integrated Head-Related Transfer Function processing, 6 adjustable levels.
 - **Immersive Modes**: 6 distinct modes (e.g., Music, 360 Reality, Gaming) each with predefined EQ, boost, reverb, and spatial parameters.
 - **Psychoacoustic Bass Enhancement (PBE)**: Generates harmonics for fuller bass on small speakers using crossover filter, harmonic generator, and bandpass blend.
 - **Spectral Band Replication (SBR)**: Restores high-frequency detail lost in MP3/streaming compression through harmonic synthesis.
 - **Dynamic Volume EQ**: Fletcher-Munson compensation that auto-adjusts bass/treble at low volumes for consistent fullness.
+
+**HRTF (Head-Related Transfer Function)**:
+HRTF processing is automatically integrated into Spatial Enhancement, scaling with the spatial level. It provides:
+- **Head Shadow**: High-frequency attenuation at 2kHz+ simulating sound diffraction around the head
+- **Pinna Filtering**: Notch filters at 8kHz and 10.5kHz for "outside head" externalization perception
+- **ILD Enhancement**: Frequency-dependent side channel boost at 3kHz+ for enhanced stereo imaging
+- HRTF intensity automatically scales from 0% (spatial off) to 100% (maximum spatial level)
 
 **DSP Architecture Details**:
 - **Internal Processing**: 32-bit float for precision, 64-bit for filter coefficients.

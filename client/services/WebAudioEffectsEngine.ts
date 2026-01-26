@@ -10,13 +10,18 @@ import { AudioContext, BiquadFilterNode, GainNode } from 'react-native-audio-api
  * - True stereo processing with independent L/R channel states per BiquadFilterNode
  * 
  * Signal Chain:
- * Input → 10-Band EQ → Dynamic EQ → PBE → SBR → Dry/Wet Mix → M/S Processing (Spatial) → Master → Output
+ * Input → 10-Band EQ → Dynamic EQ → PBE → SBR → Dry/Wet Mix → M/S Processing (Spatial + HRTF) → Master → Output
  *                                                ↑ Multi-Tap Reverb
  * 
  * Premium Effects:
  * - Dynamic EQ: Fletcher-Munson compensation (bass/treble boost at low volumes)
  * - PBE: Psychoacoustic Bass Enhancement (harmonic generation for sub-bass)
  * - SBR: Spectral Band Replication (audio upscaling for high frequencies)
+ * 
+ * HRTF (Head-Related Transfer Function) Components:
+ * - Head Shadow: High-frequency attenuation simulating sound diffraction around the head
+ * - Pinna Filtering: Notch filters at 8kHz/10.5kHz for externalization ("outside head" perception)
+ * - ILD Enhancement: Frequency-dependent side channel boost for enhanced stereo imaging
  * 
  * Web Audio API Compliance:
  * - All BiquadFilterNode instances process channels independently (true stereo)
@@ -72,6 +77,19 @@ const MAX_SIDE_GAIN_PERCENT = 18;   // max 18%
 const MAX_ITD_MS = 0.6;             // max 0.6ms
 const MAX_DECORRELATION = 18;       // max 18%
 const MAX_WET_MIX = 55;             // max 55%
+
+// HRTF (Head-Related Transfer Function) constants
+// Based on MIT KEMAR dataset and research on human spatial hearing
+const HRTF_HEAD_SHADOW_FREQ = 2000;       // Frequency where head shadow begins
+const HRTF_HEAD_SHADOW_MAX_DB = -6;       // Maximum attenuation at high frequencies
+// Pinna (outer ear) notches: Create elevation cues and "outside head" perception
+const HRTF_PINNA_NOTCH1_FREQ = 8000;      // Primary pinna notch frequency
+const HRTF_PINNA_NOTCH2_FREQ = 10500;     // Secondary pinna notch frequency
+const HRTF_PINNA_NOTCH_Q = 4.0;           // Narrow Q for notch character
+const HRTF_PINNA_NOTCH_DEPTH = -4;        // Notch depth in dB
+// ILD (Interaural Level Difference): Frequency-dependent level difference
+const HRTF_ILD_SHELF_FREQ = 3000;         // ILD emphasis starts here
+const HRTF_ILD_MAX_DB = 3;                // Maximum ILD boost for highs in side channel
 
 // Professional Immersive Mode Configurations
 // Based on Sony 360 Reality Audio, Yamaha YPAO/Cinema DSP, Samsung Q-Symphony, IMAX Enhanced
@@ -212,6 +230,19 @@ class WebAudioEffectsEngineClass {
   private dynamicEQAnimationFrame: number | null = null;              // RAF handle for RMS tracking
   private dynamicEQCurrentRMS: number = 0;                            // Smoothed RMS level
 
+  // HRTF (Head-Related Transfer Function) nodes for binaural externalization
+  private hrtfEnabled: boolean = false;
+  private hrtfIntensity: number = 0;                                   // 0-1 intensity from spatial level
+  private hrtfHeadShadowL: globalThis.BiquadFilterNode | null = null;  // Head shadow left channel
+  private hrtfHeadShadowR: globalThis.BiquadFilterNode | null = null;  // Head shadow right channel
+  private hrtfPinnaNotch1L: globalThis.BiquadFilterNode | null = null; // Primary pinna notch L
+  private hrtfPinnaNotch1R: globalThis.BiquadFilterNode | null = null; // Primary pinna notch R
+  private hrtfPinnaNotch2L: globalThis.BiquadFilterNode | null = null; // Secondary pinna notch L
+  private hrtfPinnaNotch2R: globalThis.BiquadFilterNode | null = null; // Secondary pinna notch R
+  private hrtfIldShelf: globalThis.BiquadFilterNode | null = null;     // ILD high-frequency emphasis for side channel
+  private hrtfOutputSplitter: ChannelSplitterNode | null = null;       // Split merged output for per-channel HRTF
+  private hrtfOutputMerger: ChannelMergerNode | null = null;           // Merge HRTF processed channels
+
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {
       return true;
@@ -323,16 +354,16 @@ class WebAudioEffectsEngineClass {
         filter.connect(this.wetGain!);
       });
       
-      // Mix dry and wet, then through M/S processing for spatial enhancement, then to master output
-      // Signal chain: EQ → Dry/Wet Mix → M/S Processing → Master → Destination
-      if (this.msProcessingEnabled && this.stereoSplitter && this.stereoMerger && this.stereoMixNode) {
+      // Mix dry and wet, then through M/S processing for spatial enhancement, then HRTF, then to master output
+      // Signal chain: EQ → Dry/Wet Mix → M/S Processing → HRTF → Master → Destination
+      if (this.msProcessingEnabled && this.stereoSplitter && this.stereoMerger && this.stereoMixNode && this.hrtfOutputMerger) {
         // Connect dry/wet to mix node first (preserves stereo before splitting)
         this.dryGain.connect(this.stereoMixNode);
         this.wetGain.connect(this.stereoMixNode);
         // Mix node to stereo splitter (cast to any for native Web Audio API cross-type connection)
         (this.stereoMixNode as any).connect(this.stereoSplitter);
-        // Stereo merger output to master (cast to any for native Web Audio API cross-type connection)
-        (this.stereoMerger as any).connect(this.masterGain);
+        // HRTF output merger to master (stereoMerger → HRTF chain → hrtfOutputMerger → master)
+        (this.hrtfOutputMerger as any).connect(this.masterGain);
       } else {
         // Fallback: bypass M/S processing
         this.dryGain.connect(this.masterGain);
@@ -463,6 +494,52 @@ class WebAudioEffectsEngineClass {
       this.midAttenuation = nativeCtx.createGain();
       this.midAttenuation.gain.value = 1.0; // Start at passthrough (disabled state)
       
+      // HRTF ILD high-shelf for side channel (frequency-dependent level difference)
+      this.hrtfIldShelf = nativeCtx.createBiquadFilter();
+      this.hrtfIldShelf.type = 'highshelf';
+      this.hrtfIldShelf.frequency.value = HRTF_ILD_SHELF_FREQ;
+      this.hrtfIldShelf.gain.value = 0; // Start bypassed
+      
+      // HRTF output processing (per-channel filters for externalization)
+      this.hrtfOutputSplitter = nativeCtx.createChannelSplitter(2);
+      this.hrtfOutputMerger = nativeCtx.createChannelMerger(2);
+      
+      // Head shadow filters (high-frequency attenuation)
+      this.hrtfHeadShadowL = nativeCtx.createBiquadFilter();
+      this.hrtfHeadShadowL.type = 'highshelf';
+      this.hrtfHeadShadowL.frequency.value = HRTF_HEAD_SHADOW_FREQ;
+      this.hrtfHeadShadowL.gain.value = 0; // Start bypassed
+      
+      this.hrtfHeadShadowR = nativeCtx.createBiquadFilter();
+      this.hrtfHeadShadowR.type = 'highshelf';
+      this.hrtfHeadShadowR.frequency.value = HRTF_HEAD_SHADOW_FREQ;
+      this.hrtfHeadShadowR.gain.value = 0; // Start bypassed
+      
+      // Pinna notch filters for "outside head" externalization
+      this.hrtfPinnaNotch1L = nativeCtx.createBiquadFilter();
+      this.hrtfPinnaNotch1L.type = 'peaking';
+      this.hrtfPinnaNotch1L.frequency.value = HRTF_PINNA_NOTCH1_FREQ;
+      this.hrtfPinnaNotch1L.Q.value = HRTF_PINNA_NOTCH_Q;
+      this.hrtfPinnaNotch1L.gain.value = 0; // Start bypassed
+      
+      this.hrtfPinnaNotch1R = nativeCtx.createBiquadFilter();
+      this.hrtfPinnaNotch1R.type = 'peaking';
+      this.hrtfPinnaNotch1R.frequency.value = HRTF_PINNA_NOTCH1_FREQ;
+      this.hrtfPinnaNotch1R.Q.value = HRTF_PINNA_NOTCH_Q;
+      this.hrtfPinnaNotch1R.gain.value = 0; // Start bypassed
+      
+      this.hrtfPinnaNotch2L = nativeCtx.createBiquadFilter();
+      this.hrtfPinnaNotch2L.type = 'peaking';
+      this.hrtfPinnaNotch2L.frequency.value = HRTF_PINNA_NOTCH2_FREQ;
+      this.hrtfPinnaNotch2L.Q.value = HRTF_PINNA_NOTCH_Q;
+      this.hrtfPinnaNotch2L.gain.value = 0; // Start bypassed
+      
+      this.hrtfPinnaNotch2R = nativeCtx.createBiquadFilter();
+      this.hrtfPinnaNotch2R.type = 'peaking';
+      this.hrtfPinnaNotch2R.frequency.value = HRTF_PINNA_NOTCH2_FREQ;
+      this.hrtfPinnaNotch2R.Q.value = HRTF_PINNA_NOTCH_Q;
+      this.hrtfPinnaNotch2R.gain.value = 0; // Start bypassed
+      
       // Connect M/S Encoding:
       // Splitter[0] (L) → midGainL → midSum
       // Splitter[1] (R) → midGainR → midSum
@@ -482,12 +559,13 @@ class WebAudioEffectsEngineClass {
       sideSum.connect(this.sideWidth as unknown as globalThis.GainNode);
       
       // Connect psychoacoustic chain AFTER sideWidth:
-      // sideWidth → sideHighpass → sideDelay → allPass1 → allPass2 → sidePsychoGain
+      // sideWidth → sideHighpass → sideDelay → allPass1 → allPass2 → hrtfIldShelf → sidePsychoGain
       (this.sideWidth as unknown as globalThis.GainNode).connect(this.sideHighpass);
       this.sideHighpass.connect(this.sideDelay);
       this.sideDelay.connect(this.allPass1);
       this.allPass1.connect(this.allPass2);
-      this.allPass2.connect(this.sidePsychoGain);
+      this.allPass2.connect(this.hrtfIldShelf);  // HRTF ILD high-frequency emphasis
+      this.hrtfIldShelf.connect(this.sidePsychoGain);
       
       // Connect M/S Decoding:
       // Mid path: midSum → midAttenuation → midToL/midToR → Merger
@@ -503,8 +581,26 @@ class WebAudioEffectsEngineClass {
       (this.sideToL as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 0);
       (this.sideToR as unknown as globalThis.GainNode).connect(this.stereoMerger, 0, 1);
       
+      // Connect HRTF output processing chain:
+      // stereoMerger → hrtfOutputSplitter → [L: HeadShadow → Pinna1 → Pinna2] → hrtfOutputMerger
+      //                                   → [R: HeadShadow → Pinna1 → Pinna2] →
+      this.stereoMerger.connect(this.hrtfOutputSplitter);
+      
+      // Left channel: HeadShadow → Pinna1 → Pinna2 → Merger[0]
+      this.hrtfOutputSplitter.connect(this.hrtfHeadShadowL, 0);
+      this.hrtfHeadShadowL.connect(this.hrtfPinnaNotch1L);
+      this.hrtfPinnaNotch1L.connect(this.hrtfPinnaNotch2L);
+      this.hrtfPinnaNotch2L.connect(this.hrtfOutputMerger, 0, 0);
+      
+      // Right channel: HeadShadow → Pinna1 → Pinna2 → Merger[1]
+      this.hrtfOutputSplitter.connect(this.hrtfHeadShadowR, 1);
+      this.hrtfHeadShadowR.connect(this.hrtfPinnaNotch1R);
+      this.hrtfPinnaNotch1R.connect(this.hrtfPinnaNotch2R);
+      this.hrtfPinnaNotch2R.connect(this.hrtfOutputMerger, 0, 1);
+      
+      this.hrtfEnabled = true;
       this.msProcessingEnabled = true;
-      console.log('[WebAudioEffectsEngine] M/S processing with psychoacoustic chain initialized');
+      console.log('[WebAudioEffectsEngine] M/S processing with HRTF and psychoacoustic chain initialized');
     } catch (error) {
       console.error('[WebAudioEffectsEngine] M/S processing: Failed to initialize:', error);
       this.msProcessingEnabled = false;
@@ -980,6 +1076,8 @@ class WebAudioEffectsEngineClass {
       this.sideDelay.delayTime.value = 0;
       this.sidePsychoGain.gain.value = 1.0;
       this.midAttenuation.gain.value = 1.0;
+      // Disable HRTF when spatial is off
+      this.configureHRTF(0);
       console.log(`[WebAudioEffectsEngine] Spatial: ${levelName} (${multiplier}x)`);
     } else {
       this.sideHighpass.frequency.value = 150;
@@ -1004,6 +1102,9 @@ class WebAudioEffectsEngineClass {
         this.allPass1.Q.value = decorrelationQ;
         this.allPass2.Q.value = decorrelationQ * 0.85;
       }
+      
+      // Configure HRTF based on spatial intensity
+      this.configureHRTF(wetFactor);
       
       console.log(`[WebAudioEffectsEngine] Spatial: ${levelName} (${multiplier}x) - sideGain:${sideGainPercent}%, ITD:${itdMs}ms, decorr:${decorrelation}%, wet:${wetMix}%`);
     }
@@ -1087,8 +1188,50 @@ class WebAudioEffectsEngineClass {
       this.allPass1.Q.value = decorrelationQ;
       this.allPass2.Q.value = decorrelationQ * 0.85;
     }
+    
+    // Configure HRTF filters based on spatial intensity
+    this.configureHRTF(wetFactor);
 
     console.log(`[WebAudioEffectsEngine] Spatial params set: sideGain:${finalSideGain.toFixed(1)}%, ITD:${finalItdMs.toFixed(2)}ms, decorr:${finalDecorrelation.toFixed(1)}%, wet:${finalWetMix.toFixed(1)}%`);
+  }
+  
+  /**
+   * Configure HRTF (Head-Related Transfer Function) filters for binaural externalization.
+   * HRTF intensity scales with spatial wetFactor (0 = bypassed, 1 = full effect).
+   * 
+   * Components:
+   * - Head Shadow: High-frequency attenuation (simulates sound diffraction around head)
+   * - Pinna Notches: Characteristic notches at 8kHz/10.5kHz for "outside head" perception
+   * - ILD Emphasis: Frequency-dependent side channel boost for enhanced imaging
+   * 
+   * @param intensity - HRTF intensity from 0 (bypassed) to 1 (full effect)
+   */
+  private configureHRTF(intensity: number): void {
+    this.hrtfIntensity = intensity;
+    
+    if (!this.hrtfEnabled) {
+      return;
+    }
+    
+    // Head shadow: high-frequency roll-off (full -6dB at max intensity)
+    const headShadowDb = HRTF_HEAD_SHADOW_MAX_DB * intensity;
+    if (this.hrtfHeadShadowL) this.hrtfHeadShadowL.gain.value = headShadowDb;
+    if (this.hrtfHeadShadowR) this.hrtfHeadShadowR.gain.value = headShadowDb;
+    
+    // Pinna notches: create externalization effect
+    const pinnaNotchDb = HRTF_PINNA_NOTCH_DEPTH * intensity;
+    if (this.hrtfPinnaNotch1L) this.hrtfPinnaNotch1L.gain.value = pinnaNotchDb;
+    if (this.hrtfPinnaNotch1R) this.hrtfPinnaNotch1R.gain.value = pinnaNotchDb;
+    if (this.hrtfPinnaNotch2L) this.hrtfPinnaNotch2L.gain.value = pinnaNotchDb * 0.7; // Secondary notch shallower
+    if (this.hrtfPinnaNotch2R) this.hrtfPinnaNotch2R.gain.value = pinnaNotchDb * 0.7;
+    
+    // ILD emphasis: boost high frequencies in side channel
+    const ildBoostDb = HRTF_ILD_MAX_DB * intensity;
+    if (this.hrtfIldShelf) this.hrtfIldShelf.gain.value = ildBoostDb;
+    
+    if (intensity > 0) {
+      console.log(`[WebAudioEffectsEngine] HRTF configured: headShadow:${headShadowDb.toFixed(1)}dB, pinnaNotch:${pinnaNotchDb.toFixed(1)}dB, ILD:${ildBoostDb.toFixed(1)}dB`);
+    }
   }
 
   getInputNode(): BiquadFilterNode | null {

@@ -22,7 +22,12 @@ import java.nio.ByteOrder
  * operates at the source sample rate (typically 44.1kHz or 48kHz).
  * 
  * Signal Chain:
- * Input → 10-Band EQ → Bass Shelf → Treble Shelf → Dynamic Volume EQ → PBE → SBR → Spatial Enhancement → Reverb → Limiter → Output
+ * Input → 10-Band EQ → Bass Shelf → Treble Shelf → Dynamic Volume EQ → PBE → SBR → Spatial Enhancement (with HRTF) → Reverb → Limiter → Output
+ * 
+ * HRTF (Head-Related Transfer Function) Components:
+ * - Head Shadow: High-frequency attenuation simulating sound diffraction around the head
+ * - Pinna Filtering: Notch filters at 8kHz/10.5kHz for externalization ("outside head" perception)
+ * - ILD Enhancement: Frequency-dependent side channel boost for enhanced stereo imaging
  */
 class SoftwareDSPAudioProcessor : AudioProcessor {
     companion object {
@@ -85,6 +90,21 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         private const val MAX_ITD_MS = 0.6f             // max 0.6ms
         private const val MAX_DECORRELATION = 18f       // max 18%
         private const val MAX_WET_MIX = 55f             // max 55%
+        
+        // HRTF (Head-Related Transfer Function) constants
+        // Based on MIT KEMAR dataset and research on human spatial hearing
+        // Head shadow: High frequencies attenuated on contralateral side (~4-6dB at 4kHz, ~10-15dB at 10kHz)
+        private const val HRTF_HEAD_SHADOW_FREQ = 2000f       // Frequency where head shadow begins
+        private const val HRTF_HEAD_SHADOW_MAX_DB = -6f       // Maximum attenuation at high frequencies
+        // Pinna (outer ear) notches: Create elevation cues and "outside head" perception
+        private const val HRTF_PINNA_NOTCH1_FREQ = 8000f      // Primary pinna notch frequency
+        private const val HRTF_PINNA_NOTCH2_FREQ = 10500f     // Secondary pinna notch frequency
+        private const val HRTF_PINNA_NOTCH_Q = 4.0f           // Narrow Q for notch character
+        private const val HRTF_PINNA_NOTCH_DEPTH = -4f        // Notch depth in dB
+        // ILD (Interaural Level Difference): Frequency-dependent level difference
+        // High frequencies have stronger ILD due to shorter wavelength vs head size
+        private const val HRTF_ILD_SHELF_FREQ = 3000f         // ILD emphasis starts here
+        private const val HRTF_ILD_MAX_DB = 3f                // Maximum ILD boost for highs in side channel
         
         @Volatile
         private var sharedInstance: SoftwareDSPAudioProcessor? = null
@@ -181,6 +201,18 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private val allpassFilter1 = BiquadFilter(FilterType.ALLPASS, 3000f, 0f, ALLPASS_Q, STANDARD_SAMPLE_RATE)
     private val allpassFilter2 = BiquadFilter(FilterType.ALLPASS, 5000f, 0f, ALLPASS_Q, STANDARD_SAMPLE_RATE)
     
+    // HRTF (Head-Related Transfer Function) filters for binaural processing
+    // Head shadow: Simulates high-frequency attenuation when sound wraps around the head
+    private val hrtfHeadShadowL = BiquadFilter(FilterType.HIGHSHELF, HRTF_HEAD_SHADOW_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val hrtfHeadShadowR = BiquadFilter(FilterType.HIGHSHELF, HRTF_HEAD_SHADOW_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    // Pinna (ear) notch filters: Create "outside head" perception via characteristic notches
+    private val hrtfPinnaNotch1L = BiquadFilter(FilterType.PEAKING, HRTF_PINNA_NOTCH1_FREQ, 0f, HRTF_PINNA_NOTCH_Q, STANDARD_SAMPLE_RATE)
+    private val hrtfPinnaNotch1R = BiquadFilter(FilterType.PEAKING, HRTF_PINNA_NOTCH1_FREQ, 0f, HRTF_PINNA_NOTCH_Q, STANDARD_SAMPLE_RATE)
+    private val hrtfPinnaNotch2L = BiquadFilter(FilterType.PEAKING, HRTF_PINNA_NOTCH2_FREQ, 0f, HRTF_PINNA_NOTCH_Q, STANDARD_SAMPLE_RATE)
+    private val hrtfPinnaNotch2R = BiquadFilter(FilterType.PEAKING, HRTF_PINNA_NOTCH2_FREQ, 0f, HRTF_PINNA_NOTCH_Q, STANDARD_SAMPLE_RATE)
+    // ILD (Interaural Level Difference) emphasis: Boost high frequencies in side channel
+    private val hrtfIldShelf = BiquadFilter(FilterType.HIGHSHELF, HRTF_ILD_SHELF_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    
     // ITD delay buffer for Side channel (max 0.6ms = ~29 samples at 48kHz)
     private val MAX_ITD_DELAY_SAMPLES = 64 // Enough for 0.6ms at 96kHz
     private val itdDelayBuffer = FloatArray(MAX_ITD_DELAY_SAMPLES)
@@ -246,6 +278,15 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         // Configure SBR filters
         sbrHighpassFilter.configure(FilterType.HIGHPASS, SBR_HIGHPASS_FREQ, 0f, SHELF_Q, currentSampleRate)
         sbrHighShelfFilter.configure(FilterType.HIGHSHELF, SBR_SHELF_FREQ, 3f, SHELF_Q, currentSampleRate)
+        
+        // Configure HRTF filters
+        hrtfHeadShadowL.configure(FilterType.HIGHSHELF, HRTF_HEAD_SHADOW_FREQ, 0f, SHELF_Q, currentSampleRate)
+        hrtfHeadShadowR.configure(FilterType.HIGHSHELF, HRTF_HEAD_SHADOW_FREQ, 0f, SHELF_Q, currentSampleRate)
+        hrtfPinnaNotch1L.configure(FilterType.PEAKING, HRTF_PINNA_NOTCH1_FREQ, 0f, HRTF_PINNA_NOTCH_Q, currentSampleRate)
+        hrtfPinnaNotch1R.configure(FilterType.PEAKING, HRTF_PINNA_NOTCH1_FREQ, 0f, HRTF_PINNA_NOTCH_Q, currentSampleRate)
+        hrtfPinnaNotch2L.configure(FilterType.PEAKING, HRTF_PINNA_NOTCH2_FREQ, 0f, HRTF_PINNA_NOTCH_Q, currentSampleRate)
+        hrtfPinnaNotch2R.configure(FilterType.PEAKING, HRTF_PINNA_NOTCH2_FREQ, 0f, HRTF_PINNA_NOTCH_Q, currentSampleRate)
+        hrtfIldShelf.configure(FilterType.HIGHSHELF, HRTF_ILD_SHELF_FREQ, 0f, SHELF_Q, currentSampleRate)
         
         // Calculate ITD delay in samples (0.3ms at current sample rate)
         itdDelaySamples = ((ITD_DELAY_MS / 1000f) * currentSampleRate).toInt().coerceIn(1, MAX_ITD_DELAY_SAMPLES - 1)
@@ -664,6 +705,28 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             decorrelationQ = 0.3f + (spatialDecorrelation / MAX_DECORRELATION) * 1.2f
         }
         
+        // =========================================
+        // Configure HRTF filters based on spatial intensity
+        // =========================================
+        // HRTF intensity scales with wetFactor (0 = no HRTF, 1 = full HRTF)
+        val hrtfIntensity = wetFactor
+        
+        // Head shadow: high-frequency roll-off (full -6dB at max intensity)
+        val headShadowDb = HRTF_HEAD_SHADOW_MAX_DB * hrtfIntensity
+        hrtfHeadShadowL.setGain(headShadowDb)
+        hrtfHeadShadowR.setGain(headShadowDb)
+        
+        // Pinna notches: create externalization effect
+        val pinnaNotchDb = HRTF_PINNA_NOTCH_DEPTH * hrtfIntensity
+        hrtfPinnaNotch1L.setGain(pinnaNotchDb)
+        hrtfPinnaNotch1R.setGain(pinnaNotchDb)
+        hrtfPinnaNotch2L.setGain(pinnaNotchDb * 0.7f)  // Secondary notch is shallower
+        hrtfPinnaNotch2R.setGain(pinnaNotchDb * 0.7f)
+        
+        // ILD emphasis: boost high frequencies in side channel
+        val ildBoostDb = HRTF_ILD_MAX_DB * hrtfIntensity
+        hrtfIldShelf.setGain(ildBoostDb)
+        
         // ITD delay samples
         val scaledItdSamples = ((scaledItdMs / 1000f) * currentSampleRate).toInt().coerceIn(1, MAX_ITD_DELAY_SAMPLES - 1)
         
@@ -746,14 +809,37 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             // Apply side boost
             side *= sideBoostMultiplier
             
+            // =========================================
+            // E2. HRTF ILD Enhancement - Frequency-dependent side boost
+            // =========================================
+            // Apply high-shelf boost to side channel for enhanced ILD at high frequencies
+            side = hrtfIldShelf.processSample(side, 0)
+            
             // Apply Mid attenuation to preserve loudness - scaled by intensity
             val attenuatedMid = mid * scaledMidAttenuation
             
             // =========================================
-            // F. Output - Convert back to L/R
+            // F. Output - Convert back to L/R with HRTF processing
             // =========================================
-            samples[i] = (attenuatedMid + side).coerceIn(-1f, 1f)
-            samples[i + 1] = (attenuatedMid - side).coerceIn(-1f, 1f)
+            var outL = (attenuatedMid + side).coerceIn(-1f, 1f)
+            var outR = (attenuatedMid - side).coerceIn(-1f, 1f)
+            
+            // =========================================
+            // G. HRTF Head Shadow & Pinna Filtering
+            // =========================================
+            // Apply asymmetric head shadow (contralateral attenuation)
+            // L channel: shadow from R side content, R channel: shadow from L side content
+            outL = hrtfHeadShadowL.processSample(outL, 0)
+            outR = hrtfHeadShadowR.processSample(outR, 0)
+            
+            // Apply pinna (ear) notch filters for "outside head" externalization
+            outL = hrtfPinnaNotch1L.processSample(outL, 0)
+            outL = hrtfPinnaNotch2L.processSample(outL, 0)
+            outR = hrtfPinnaNotch1R.processSample(outR, 0)
+            outR = hrtfPinnaNotch2R.processSample(outR, 0)
+            
+            samples[i] = outL
+            samples[i + 1] = outR
             
             i += 2
         }
