@@ -14,7 +14,11 @@
     "ios": "expo run:ios",
     "web:build": "npx expo export --platform web",
     "web:serve": "npx serve dist",
-    "windows:icons": "node windows/scripts/generate-icons.js assets/images/icon.png"
+    "windows:icons": "node windows/scripts/generate-icons.js assets/images/icon.png",
+    "electron:dev": "npm run web:build && electron electron/main.js",
+    "electron:build": "npm run web:build && electron-builder --config electron/electron-builder.yml",
+    "electron:build:win": "npm run web:build && electron-builder --config electron/electron-builder.yml --win",
+    "electron:build:appx": "npm run web:build && electron-builder --config electron/electron-builder.yml --win appx"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.5",
@@ -28,6 +32,8 @@
     "@tanstack/react-query": "^5.90.7",
     "audio-effects": "file:modules/audio-effects",
     "browser-id3-writer": "^6.3.1",
+    "electron": "^40.0.0",
+    "electron-builder": "^26.4.0",
     "expo": "~53.0.0",
     "expo-application": "^7.0.8",
     "expo-asset": "~11.1.7",

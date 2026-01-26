@@ -1,0 +1,78 @@
+appId: com.theteam360.newaudio360
+productName: New Audio 360
+copyright: Copyright © 2024 The Team 360
+
+directories:
+  output: electron-dist
+  buildResources: electron/build-resources
+
+files:
+  - dist/**/*
+  - electron/**/*
+  - assets/images/icon.png
+  - "!node_modules/**/*"
+  - node_modules/electron/**/*
+
+extraMetadata:
+  main: electron/main.js
+
+win:
+  target:
+    - target: appx
+      arch:
+        - x64
+        - arm64
+    - target: nsis
+      arch:
+        - x64
+  icon: assets/images/icon.png
+  artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+
+appx:
+  identityName: TheTeam360.NewAudio360
+  publisher: CN=The Team 360
+  publisherDisplayName: The Team 360
+  applicationId: NewAudio360
+  displayName: New Audio 360
+  languages:
+    - en-US
+  showNameOnTiles: true
+  backgroundColor: "#1565C0"
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: assets/images/icon.png
+  uninstallerIcon: assets/images/icon.png
+  installerHeaderIcon: assets/images/icon.png
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: New Audio 360
+
+fileAssociations:
+  - ext: mp3
+    name: MP3 Audio
+    description: MP3 Audio File
+    role: Viewer
+  - ext: m4a
+    name: M4A Audio
+    description: M4A Audio File
+    role: Viewer
+  - ext: flac
+    name: FLAC Audio
+    description: FLAC Audio File
+    role: Viewer
+  - ext: wav
+    name: WAV Audio
+    description: WAV Audio File
+    role: Viewer
+  - ext: ogg
+    name: OGG Audio
+    description: OGG Audio File
+    role: Viewer
+  - ext: aac
+    name: AAC Audio
+    description: AAC Audio File
+    role: Viewer
+
+publish: null

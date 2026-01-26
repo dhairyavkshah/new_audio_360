@@ -1,0 +1,105 @@
+name: Build Windows Electron App
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 26.0.0)'
+        required: true
+        default: '26.0.0'
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'appx'
+        type: choice
+        options:
+          - appx
+          - nsis
+          - both
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  build-windows:
+    name: Build Windows Electron App
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web application
+        run: npx expo export --platform web
+        env:
+          NODE_ENV: production
+
+      - name: Copy PWA assets to dist
+        run: |
+          Copy-Item public/manifest.json dist/
+          Copy-Item public/sw.js dist/
+          if (Test-Path public/icons) { Copy-Item -Recurse public/icons dist/ }
+        shell: pwsh
+
+      - name: Update version in package.json
+        run: |
+          $pkg = Get-Content package.json | ConvertFrom-Json
+          $pkg.version = "${{ github.event.inputs.version }}"
+          $pkg | ConvertTo-Json -Depth 100 | Set-Content package.json
+        shell: pwsh
+
+      - name: Build Electron APPX (Microsoft Store)
+        if: github.event.inputs.build_type == 'appx' || github.event.inputs.build_type == 'both'
+        run: npx electron-builder --config electron/electron-builder.yml --win appx
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Electron NSIS Installer
+        if: github.event.inputs.build_type == 'nsis' || github.event.inputs.build_type == 'both'
+        run: npx electron-builder --config electron/electron-builder.yml --win nsis
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload APPX Package
+        if: github.event.inputs.build_type == 'appx' || github.event.inputs.build_type == 'both'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-appx-${{ github.event.inputs.version }}
+          path: |
+            electron-dist/*.appx
+          retention-days: 30
+
+      - name: Upload NSIS Installer
+        if: github.event.inputs.build_type == 'nsis' || github.event.inputs.build_type == 'both'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer-${{ github.event.inputs.version }}
+          path: |
+            electron-dist/*.exe
+          retention-days: 30
+
+      - name: Build Summary
+        run: |
+          echo "## Windows Build Complete!" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ github.event.inputs.version }}" >> $env:GITHUB_STEP_SUMMARY
+          echo "**Build Type:** ${{ github.event.inputs.build_type }}" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          if ("${{ github.event.inputs.build_type }}" -eq "appx" -or "${{ github.event.inputs.build_type }}" -eq "both") {
+            echo "- Download the **windows-appx** artifact for Microsoft Store submission" >> $env:GITHUB_STEP_SUMMARY
+          }
+          if ("${{ github.event.inputs.build_type }}" -eq "nsis" -or "${{ github.event.inputs.build_type }}" -eq "both") {
+            echo "- Download the **windows-installer** artifact for direct distribution" >> $env:GITHUB_STEP_SUMMARY
+          }
+        shell: pwsh
