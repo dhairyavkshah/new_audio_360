@@ -214,7 +214,8 @@ interface ImmersiveModeEngineModuleInterface {
   setCustomParameters(
     bassStrength: number,
     loudnessGain: number,
-    eqPreset: number
+    eqPreset: number,
+    spatialEnhancementLevel: number
   ): Promise<ImmersiveModeResult>;
   release(): Promise<{ success: boolean }>;
 }
@@ -248,6 +249,26 @@ interface MediaStoreScannerModuleInterface {
   getAlbumArt(albumId: string): Promise<{ success: boolean; albumArt: string | null }>;
 }
 
+// App Context Module Types (Session/State Management)
+interface SessionCheckResult {
+  valid: boolean;
+  reason: string;
+  ts: number;
+}
+
+interface SessionState {
+  state: string;
+  needsDaily: boolean;
+  lastValidation: number;
+}
+
+interface AppContextModuleInterface {
+  isAvailable(): boolean;
+  performSessionCheck(): Promise<SessionCheckResult>;
+  getSessionState(): Promise<SessionState>;
+  validateInitialSession(): Promise<SessionCheckResult>;
+}
+
 // Native Module Instances
 let PlaybackEngineModuleNative: PlaybackEngineModuleInterface | null = null;
 let EqualizerModuleNative: EqualizerModuleInterface | null = null;
@@ -256,6 +277,7 @@ let SpatialEnhancementModuleNative: SpatialEnhancementModuleInterface | null = n
 let WaveformAnalyzerModuleNative: WaveformAnalyzerModuleInterface | null = null;
 let ImmersiveModeEngineModuleNative: ImmersiveModeEngineModuleInterface | null = null;
 let MediaStoreScannerModuleNative: MediaStoreScannerModuleInterface | null = null;
+let AppContextModuleNative: AppContextModuleInterface | null = null;
 
 if (Platform.OS === 'android') {
   try {
@@ -298,6 +320,12 @@ if (Platform.OS === 'android') {
     MediaStoreScannerModuleNative = requireNativeModule<MediaStoreScannerModuleInterface>('MediaStoreScannerModule');
   } catch (e) {
     console.warn('MediaStoreScannerModule not available:', e);
+  }
+  
+  try {
+    AppContextModuleNative = requireNativeModule<AppContextModuleInterface>('AppContextModule');
+  } catch (e) {
+    console.warn('AppContextModule not available:', e);
   }
 }
 
@@ -1170,7 +1198,8 @@ export const ImmersiveModeEngineModule = {
   setCustomParameters: async (
     bassStrength: number,
     loudnessGain: number,
-    eqPreset: number = -1
+    eqPreset: number = -1,
+    spatialEnhancementLevel: number = 0
   ): Promise<ImmersiveModeResult> => {
     if (!ImmersiveModeEngineModuleNative) {
       return { success: false, error: 'Immersive mode engine not available' };
@@ -1178,9 +1207,9 @@ export const ImmersiveModeEngineModule = {
     try {
       return await ImmersiveModeEngineModuleNative.setCustomParameters(
         bassStrength,
-        0,
         loudnessGain,
-        eqPreset
+        eqPreset,
+        spatialEnhancementLevel
       );
     } catch (error) {
       console.error('ImmersiveModeEngineModule.setCustomParameters error:', error);
@@ -1458,6 +1487,53 @@ export const MediaStoreScannerModule = {
     } catch (error) {
       console.error('MediaStoreScannerModule.getAlbumArt error:', error);
       return { success: false, albumArt: null };
+    }
+  }
+};
+
+export const AppContextModule = {
+  isAvailable: (): boolean => {
+    if (!AppContextModuleNative) return false;
+    try {
+      return AppContextModuleNative.isAvailable();
+    } catch (error) {
+      return false;
+    }
+  },
+
+  performSessionCheck: async (): Promise<SessionCheckResult> => {
+    if (!AppContextModuleNative) {
+      return { valid: true, reason: 'not_android', ts: Date.now() };
+    }
+    try {
+      return await AppContextModuleNative.performSessionCheck();
+    } catch (error) {
+      console.error('AppContextModule.performSessionCheck error:', error);
+      return { valid: true, reason: 'error_graceful', ts: Date.now() };
+    }
+  },
+
+  getSessionState: async (): Promise<SessionState> => {
+    if (!AppContextModuleNative) {
+      return { state: 'not_android', needsDaily: false, lastValidation: 0 };
+    }
+    try {
+      return await AppContextModuleNative.getSessionState();
+    } catch (error) {
+      console.error('AppContextModule.getSessionState error:', error);
+      return { state: 'error', needsDaily: false, lastValidation: 0 };
+    }
+  },
+
+  validateInitialSession: async (): Promise<SessionCheckResult> => {
+    if (!AppContextModuleNative) {
+      return { valid: true, reason: 'not_android', ts: Date.now() };
+    }
+    try {
+      return await AppContextModuleNative.validateInitialSession();
+    } catch (error) {
+      console.error('AppContextModule.validateInitialSession error:', error);
+      return { valid: false, reason: 'exception', ts: Date.now() };
     }
   }
 };

@@ -24,7 +24,7 @@
 
 import { Platform } from "react-native";
 import Constants from 'expo-constants';
-import { LicenseVerificationModule } from '../../modules/audio-effects';
+import { LicenseVerificationModule, AppContextModule } from '../../modules/audio-effects';
 
 /**
  * Get iOS App Store receipt for license validation
@@ -299,3 +299,92 @@ export async function detectUserRegion(): Promise<RegionDetectionResult> {
     };
   }
 }
+
+export interface SessionValidationResult {
+  isValid: boolean;
+  reason: string;
+  requiresRevalidation: boolean;
+}
+
+export const SessionManager = {
+  async performDailyCheck(): Promise<SessionValidationResult> {
+    if (Platform.OS !== 'android') {
+      return { isValid: true, reason: 'not_android', requiresRevalidation: false };
+    }
+    
+    if (IS_DEVELOPMENT) {
+      return { isValid: true, reason: 'development', requiresRevalidation: false };
+    }
+    
+    try {
+      if (!AppContextModule.isAvailable()) {
+        return { isValid: true, reason: 'module_unavailable', requiresRevalidation: false };
+      }
+      
+      const result = await AppContextModule.performSessionCheck();
+      
+      return {
+        isValid: result.valid,
+        reason: result.reason,
+        requiresRevalidation: !result.valid && result.reason !== 'not_purchased'
+      };
+    } catch (error) {
+      console.error('[SessionManager] Daily check error:', error);
+      return { isValid: true, reason: 'error_graceful', requiresRevalidation: false };
+    }
+  },
+  
+  async validateInitialSession(): Promise<SessionValidationResult> {
+    if (Platform.OS !== 'android') {
+      return { isValid: true, reason: 'not_android', requiresRevalidation: false };
+    }
+    
+    if (IS_DEVELOPMENT) {
+      return { isValid: true, reason: 'development', requiresRevalidation: false };
+    }
+    
+    try {
+      if (!AppContextModule.isAvailable()) {
+        const fallback = await PlayStoreVerification.verifyInstallSource();
+        return {
+          isValid: fallback.isValidInstall,
+          reason: fallback.installSource,
+          requiresRevalidation: false
+        };
+      }
+      
+      const result = await AppContextModule.validateInitialSession();
+      
+      return {
+        isValid: result.valid,
+        reason: result.reason,
+        requiresRevalidation: false
+      };
+    } catch (error) {
+      console.error('[SessionManager] Initial validation error:', error);
+      const fallback = await PlayStoreVerification.verifyInstallSource();
+      return {
+        isValid: fallback.isValidInstall,
+        reason: 'fallback_' + fallback.installSource,
+        requiresRevalidation: false
+      };
+    }
+  },
+  
+  async getSessionState(): Promise<{ state: string; needsDaily: boolean }> {
+    if (Platform.OS !== 'android') {
+      return { state: 'not_android', needsDaily: false };
+    }
+    
+    try {
+      if (!AppContextModule.isAvailable()) {
+        return { state: 'module_unavailable', needsDaily: false };
+      }
+      
+      const state = await AppContextModule.getSessionState();
+      return { state: state.state, needsDaily: state.needsDaily };
+    } catch (error) {
+      return { state: 'error', needsDaily: false };
+    }
+  }
+};

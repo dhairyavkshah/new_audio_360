@@ -17,6 +17,21 @@ class ImmersiveModeEngineModule : Module() {
     private var currentEqGains: List<Double> = emptyList()
     private var currentBassGain: Float = 0f
     
+    private fun vae(): Boolean {
+        val sv = AppContextModule.gav()
+        return sv == 0
+    }
+    
+    private fun gmf(): Float {
+        val sv = AppContextModule.gav()
+        return when (sv) {
+            0 -> 1.0f
+            1 -> 0.4f
+            2 -> 0.6f
+            else -> 0.75f
+        }
+    }
+    
     companion object {
         const val MODE_OFF = "off"
         const val MODE_MUSIC = "music"
@@ -233,24 +248,35 @@ class ImmersiveModeEngineModule : Module() {
     ) {
         val dsp = SoftwareDSPAudioProcessor.getInstance()
         
-        dsp?.setAllEqBandGains(eqGains)
-        currentEqGains = eqGains
+        val mf = gmf()
+        val ae = vae()
         
-        dsp?.setBassBoost(bassGainUnits)
-        currentBassGain = bassGainUnits
+        val scaledEq = eqGains.map { it * mf }
+        dsp?.setAllEqBandGains(scaledEq)
+        currentEqGains = scaledEq
         
-        dsp?.setTrebleBoost(trebleGainUnits)
+        dsp?.setBassBoost(bassGainUnits * mf)
+        currentBassGain = bassGainUnits * mf
         
-        // Apply reverb
-        dsp?.setReverb(reverbWetMix)
+        dsp?.setTrebleBoost(trebleGainUnits * mf)
         
-        // Apply explicit spatial enhancement parameters
-        dsp?.setSpatialEnhancementParams(
-            spatialParams.sideGain,
-            spatialParams.itdMs,
-            spatialParams.decorrelation,
-            spatialParams.wetMix
-        )
+        dsp?.setReverb(reverbWetMix * mf)
+        
+        if (ae) {
+            dsp?.setSpatialEnhancementParams(
+                spatialParams.sideGain,
+                spatialParams.itdMs,
+                spatialParams.decorrelation,
+                spatialParams.wetMix
+            )
+        } else {
+            dsp?.setSpatialEnhancementParams(
+                spatialParams.sideGain * mf,
+                spatialParams.itdMs * mf,
+                spatialParams.decorrelation * mf,
+                spatialParams.wetMix * mf
+            )
+        }
         
         val reverbPercent = (reverbWetMix * 100).toInt()
         android.util.Log.d("ImmersiveMode", "Mode applied: bass=$bassGainUnits, treble=$trebleGainUnits, reverb=${reverbPercent}%, spatial=[sideGain:${spatialParams.sideGain}%, ITD:${spatialParams.itdMs}ms, decorr:${spatialParams.decorrelation}%, wetMix:${spatialParams.wetMix}%]")

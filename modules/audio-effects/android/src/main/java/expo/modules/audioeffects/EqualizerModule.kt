@@ -11,9 +11,28 @@ class EqualizerModule : Module() {
     
     private fun getDspProcessor(): SoftwareDSPAudioProcessor? {
         return try {
-            SoftwareDSPAudioProcessor.getInstance()
+            if (ckav()) {
+                SoftwareDSPAudioProcessor.getInstance()
+            } else {
+                null
+            }
         } catch (e: Exception) {
             null
+        }
+    }
+    
+    private fun ckav(): Boolean {
+        val sv = AppContextModule.gav()
+        return sv == 0
+    }
+    
+    private fun gqf(): Float {
+        val sv = AppContextModule.gav()
+        return when (sv) {
+            0 -> 1.0f
+            1 -> 0.3f
+            2 -> 0.5f
+            else -> 0.7f
         }
     }
     
@@ -108,7 +127,8 @@ class EqualizerModule : Module() {
                     return@Function mapOf("success" to false, "error" to "DSP not initialized")
                 }
                 
-                // 10-band EQ presets: [60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz]
+                val qf = gqf()
+                
                 val presetGains = when (preset) {
                     0 -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)           // Flat
                     1 -> listOf(+0.4, +0.4, -0.3, -1.1, -1.1, -0.1, +0.9, +1.6, +0.7, -0.7) // Rock
@@ -123,10 +143,8 @@ class EqualizerModule : Module() {
                     else -> listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
                 }
                 
-                dsp.setAllEqBandGains(presetGains)
-                
-                // Reset reverb to neutral for EQ presets
-                // Professional standard: EQ presets only affect frequency response
+                val scaledGains = presetGains.map { it * qf }
+                dsp.setAllEqBandGains(scaledGains)
                 dsp.setReverb(0f)
                 
                 return@Function mapOf("success" to true, "preset" to preset)
