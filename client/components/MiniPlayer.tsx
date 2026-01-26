@@ -1,5 +1,8 @@
 import React, { useCallback, useMemo, memo } from "react";
 import { View, StyleSheet, Pressable, Image, Platform, Text } from "react-native";
+
+// Default album art for songs without artwork
+const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
@@ -37,7 +40,7 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   const cardEffectStyle = useMemo(() => getCardEffectStyle(tokens, 2), [tokens]);
   const glowStyle = useMemo(() => getGlowStyle(tokens), [tokens]);
   
-  const artworkSource = useMemo(() => currentSong ? { uri: currentSong.artwork } : undefined, [currentSong?.artwork]);
+  const artworkSource = useMemo(() => currentSong?.artwork ? { uri: currentSong.artwork } : DEFAULT_ALBUM_ART, [currentSong?.artwork]);
   
   const containerBottom = useMemo(() => bottomOffset + FluentSpacing.s + (insets.bottom > 0 ? 0 : FluentSpacing.s), [bottomOffset, insets.bottom]);
   

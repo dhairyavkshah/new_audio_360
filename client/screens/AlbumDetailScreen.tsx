@@ -1,5 +1,8 @@
 import React, { useMemo, useCallback } from "react";
 import { View, StyleSheet, FlatList, Image } from "react-native";
+
+// Default album art for songs without artwork
+const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { useRoute, RouteProp, useNavigation, CommonActions } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
@@ -77,7 +80,7 @@ export default function AlbumDetailScreen() {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <Image source={{ uri: album.artwork }} style={styles.artwork} />
+      <Image source={album.artwork ? { uri: album.artwork } : DEFAULT_ALBUM_ART} style={styles.artwork} />
       <View style={styles.headerInfo}>
         <FluentText variant="title2" style={styles.albumTitle}>
           {album.name}

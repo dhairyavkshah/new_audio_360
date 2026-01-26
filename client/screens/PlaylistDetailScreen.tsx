@@ -1,5 +1,8 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Image, Alert, Platform } from "react-native";
+
+// Default album art for songs without artwork
+const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, useFocusEffect, RouteProp, useNavigation } from "@react-navigation/native";
@@ -263,7 +266,7 @@ export default function PlaylistDetailScreen() {
                     {index + 1}
                   </FluentText>
                 )}
-                <Image source={{ uri: song.artwork }} style={styles.songArtwork} />
+                <Image source={song.artwork ? { uri: song.artwork } : DEFAULT_ALBUM_ART} style={styles.songArtwork} />
                 <View style={styles.songInfo}>
                   <FluentText variant="body1" numberOfLines={1} style={{ fontWeight: "500" }}>
                     {song.title}

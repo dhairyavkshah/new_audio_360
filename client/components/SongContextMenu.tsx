@@ -10,6 +10,9 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
+
+// Default album art for songs without artwork
+const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from "react-native-reanimated";
@@ -142,7 +145,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
   const renderMainMenu = () => (
     <View style={styles.menuContent}>
       <View style={styles.songHeader}>
-        <Image source={{ uri: song.artwork }} style={styles.songArtwork} />
+        <Image source={song.artwork ? { uri: song.artwork } : DEFAULT_ALBUM_ART} style={styles.songArtwork} />
         <View style={styles.songInfo}>
           <FluentText variant="body1Strong" color="primary" numberOfLines={1}>
             {song.title}
@@ -291,7 +294,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
 
         <View style={styles.createForm}>
           <View style={styles.songPreview}>
-            <Image source={{ uri: song.artwork }} style={styles.previewArtwork} />
+            <Image source={song.artwork ? { uri: song.artwork } : DEFAULT_ALBUM_ART} style={styles.previewArtwork} />
             <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
               First song: {song.title}
             </FluentText>

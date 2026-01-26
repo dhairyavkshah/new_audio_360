@@ -1,5 +1,8 @@
 import React, { useCallback, useRef, useMemo, memo } from "react";
 import { View, StyleSheet, Pressable, Image, Platform, GestureResponderEvent, TouchableOpacity } from "react-native";
+
+// Default album art for songs without artwork
+const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
@@ -88,7 +91,7 @@ function SongCardComponent({
   const favorite = isFavorite(song.id);
   const fluentColors = useMemo(() => isDark ? FluentDarkColors : FluentLightColors, [isDark]);
   
-  const artworkSource = useMemo(() => ({ uri: song.artwork }), [song.artwork]);
+  const artworkSource = useMemo(() => song.artwork ? { uri: song.artwork } : DEFAULT_ALBUM_ART, [song.artwork]);
   
   const formatDuration = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);

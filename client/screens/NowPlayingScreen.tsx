@@ -1,5 +1,8 @@
 import React, { useCallback, useRef } from "react";
 import { View, StyleSheet, Image, ImageBackground, Platform, Pressable, ActivityIndicator, ScrollView, useWindowDimensions } from "react-native";
+
+// Default album art for songs without artwork
+const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
@@ -105,7 +108,7 @@ export default function NowPlayingScreen() {
   return (
     <View style={styles.container}>
       <ImageBackground
-        source={{ uri: currentSong.artwork }}
+        source={currentSong.artwork ? { uri: currentSong.artwork } : DEFAULT_ALBUM_ART}
         style={StyleSheet.absoluteFill}
         blurRadius={Platform.OS === "ios" ? BLUR_INTENSITY : BLUR_INTENSITY / 2}
       >
@@ -129,7 +132,7 @@ export default function NowPlayingScreen() {
         <View style={[styles.artworkContainer, { marginTop: isExtraCompact ? 0 : isVeryCompact ? FluentSpacing.xxs : isCompact ? FluentSpacing.s : FluentSpacing.l }]}>
           <View style={styles.artworkWrapper}>
             <Image
-              source={{ uri: currentSong.artwork }}
+              source={currentSong.artwork ? { uri: currentSong.artwork } : DEFAULT_ALBUM_ART}
               style={[styles.artwork, { width: artworkSize, height: artworkSize }]}
             />
             {(isLoading || isBuffering) ? (

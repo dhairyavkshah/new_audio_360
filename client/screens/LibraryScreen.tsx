@@ -1,5 +1,8 @@
 import React, { useState, useCallback, useMemo, memo } from "react";
 import { View, StyleSheet, Pressable, Image, Platform, ActivityIndicator, FlatList, ImageSourcePropType } from "react-native";
+
+// Default album art for songs without artwork
+const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { useNavigation, useFocusEffect, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -61,7 +64,7 @@ interface AlbumCardProps {
 }
 
 const AlbumCard = memo(function AlbumCard({ album, onPress }: AlbumCardProps) {
-  const imageSource = useMemo(() => ({ uri: album.artwork }), [album.artwork]);
+  const imageSource = useMemo(() => album.artwork ? { uri: album.artwork } : DEFAULT_ALBUM_ART, [album.artwork]);
   const handlePress = useCallback(() => onPress(album), [onPress, album]);
   
   return (
@@ -84,7 +87,7 @@ interface ArtistCardProps {
 }
 
 const ArtistCard = memo(function ArtistCard({ artist, onPress }: ArtistCardProps) {
-  const imageSource = useMemo(() => ({ uri: artist.artwork }), [artist.artwork]);
+  const imageSource = useMemo(() => artist.artwork ? { uri: artist.artwork } : DEFAULT_ALBUM_ART, [artist.artwork]);
   const handlePress = useCallback(() => onPress(artist), [onPress, artist]);
   
   return (

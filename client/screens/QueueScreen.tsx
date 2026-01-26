@@ -1,5 +1,8 @@
 import React, { useState, useCallback } from "react";
 import { View, StyleSheet, FlatList, Pressable, Image, Platform } from "react-native";
+
+// Default album art for songs without artwork
+const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -111,7 +114,7 @@ export default function QueueScreen() {
             </FluentText>
           )}
         </View>
-        <Image source={{ uri: item.artwork }} style={styles.artwork} />
+        <Image source={item.artwork ? { uri: item.artwork } : DEFAULT_ALBUM_ART} style={styles.artwork} />
         <View style={styles.songInfo}>
           <FluentText 
             variant="body1" 
@@ -149,7 +152,7 @@ export default function QueueScreen() {
               navigation.navigate("NowPlaying", { songId: currentSong.id });
             }}
           >
-            <Image source={{ uri: currentSong.artwork }} style={styles.currentArtwork} />
+            <Image source={currentSong.artwork ? { uri: currentSong.artwork } : DEFAULT_ALBUM_ART} style={styles.currentArtwork} />
             <View style={styles.currentInfo}>
               <FluentText variant="body1Strong" numberOfLines={1}>
                 {currentSong.title}

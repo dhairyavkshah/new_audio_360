@@ -1,5 +1,8 @@
 import React, { useState, useCallback } from "react";
 import { View, StyleSheet, FlatList, Pressable, Image, Alert } from "react-native";
+
+// Default album art for songs without artwork
+const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -86,7 +89,7 @@ export default function RecordingsScreen() {
   const renderRecording = ({ item }: { item: Recording }) => (
     <GlassCard style={styles.recordingCard}>
       <View style={styles.recordingContent}>
-        <Image source={{ uri: getArtwork(item.songId) }} style={styles.artwork} />
+        <Image source={getArtwork(item.songId) ? { uri: getArtwork(item.songId) } : DEFAULT_ALBUM_ART} style={styles.artwork} />
         <View style={styles.recordingInfo}>
           <FluentText variant="body1Strong" numberOfLines={1}>
             {item.title}
