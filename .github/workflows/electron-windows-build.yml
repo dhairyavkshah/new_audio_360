@@ -10,12 +10,20 @@ on:
       build_type:
         description: 'Build type'
         required: true
-        default: 'appx'
+        default: 'nsis'
         type: choice
         options:
           - appx
           - nsis
           - both
+      license_mode:
+        description: 'License mode for testing'
+        required: true
+        default: 'licensed'
+        type: choice
+        options:
+          - licensed
+          - trial
 
 env:
   NODE_VERSION: '20'
@@ -42,6 +50,7 @@ jobs:
         run: npx expo export --platform web
         env:
           NODE_ENV: production
+          EXPO_PUBLIC_LICENSE_MODE: ${{ github.event.inputs.license_mode }}
 
       - name: Copy PWA assets to dist
         run: |

@@ -4,8 +4,10 @@ import { SecureStorage } from '@/services/SecureStorage';
 import { GooglePlayLicense, PurchaseInfo, PRODUCT_ID } from '@/lib/payment';
 
 const APP_ENV = Constants.expoConfig?.extra?.APP_ENV || process.env.APP_ENV || 'production';
+const LICENSE_MODE = process.env.EXPO_PUBLIC_LICENSE_MODE || 'trial';
 const DEV_MODE_BYPASS_LICENSE = false; // Production: Real license verification enabled
 const TESTING_MODE_BYPASS_LICENSE = APP_ENV === 'testing'; // Testing builds bypass license check
+const ELECTRON_LICENSED_MODE = LICENSE_MODE === 'licensed'; // Electron builds with license passed
 
 export type LicenseStatus = 'checking' | 'unlicensed' | 'licensed';
 
@@ -55,13 +57,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const initializeLicense = async () => {
     try {
-      if (DEV_MODE_BYPASS_LICENSE || TESTING_MODE_BYPASS_LICENSE) {
-        console.log(`[License] ${TESTING_MODE_BYPASS_LICENSE ? 'Testing' : 'Development'} mode - bypassing license check`);
+      if (DEV_MODE_BYPASS_LICENSE || TESTING_MODE_BYPASS_LICENSE || ELECTRON_LICENSED_MODE) {
+        const mode = ELECTRON_LICENSED_MODE ? 'Electron licensed' : (TESTING_MODE_BYPASS_LICENSE ? 'Testing' : 'Development');
+        console.log(`[License] ${mode} mode - license verified`);
         const devState: LicenseState = {
           status: 'licensed',
           purchase: {
             productId: PRODUCT_ID,
-            installSource: TESTING_MODE_BYPASS_LICENSE ? 'testing' : 'development',
+            installSource: ELECTRON_LICENSED_MODE ? 'electron' : (TESTING_MODE_BYPASS_LICENSE ? 'testing' : 'development'),
             installTime: Date.now(),
           },
         };
