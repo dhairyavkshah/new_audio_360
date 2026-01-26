@@ -26,23 +26,21 @@ function LicenseSection({ title, content, colors }: LicenseSectionProps) {
 }
 
 const OPEN_SOURCE_LIBRARIES = [
-  { name: "React Native", license: "MIT License", version: "0.79.2" },
-  { name: "Expo SDK", license: "MIT License", version: "53.0.0" },
-  { name: "React Navigation", license: "MIT License", version: "7.x" },
-  { name: "React Native Reanimated", license: "MIT License", version: "3.x" },
-  { name: "React Native Track Player", license: "Apache License 2.0", version: "4.x" },
-  { name: "React Native IAP", license: "MIT License", version: "12.x" },
-  { name: "Expo AV", license: "MIT License", version: "~15.x" },
-  { name: "Expo Media Library", license: "MIT License", version: "~17.x" },
-  { name: "Expo Haptics", license: "MIT License", version: "~14.x" },
-  { name: "Expo Notifications", license: "MIT License", version: "~0.29.x" },
-  { name: "Expo Location", license: "MIT License", version: "~18.x" },
-  { name: "Expo Local Authentication", license: "MIT License", version: "~15.x" },
-  { name: "Expo Application", license: "MIT License", version: "~6.x" },
-  { name: "Expo Linear Gradient", license: "MIT License", version: "~14.x" },
-  { name: "Async Storage", license: "MIT License", version: "2.x" },
-  { name: "Expo Secure Store", license: "MIT License", version: "~14.x" },
-  { name: "Material Community Icons", license: "SIL Open Font License 1.1", version: "7.x" },
+  { name: "React Native for Android", license: "MIT License", version: "0.79.2", description: "Core Android framework" },
+  { name: "Expo SDK for Android", license: "MIT License", version: "53.0.0", description: "Android development platform" },
+  { name: "React Navigation", license: "MIT License", version: "7.x", description: "Android navigation library" },
+  { name: "React Native Track Player", license: "Apache License 2.0", version: "4.x", description: "ExoPlayer wrapper for audio" },
+  { name: "React Native IAP", license: "MIT License", version: "12.x", description: "Google Play Billing integration" },
+  { name: "AndroidX Media3 ExoPlayer", license: "Apache License 2.0", version: "1.2.1", description: "Native Android audio engine" },
+  { name: "Google Play Billing Library", license: "Apache License 2.0", version: "6.1.0", description: "License verification" },
+  { name: "AndroidX Security Crypto", license: "Apache License 2.0", version: "1.1.0", description: "AES-256-GCM encrypted storage" },
+  { name: "Expo Media Library", license: "MIT License", version: "~17.x", description: "Android MediaStore access" },
+  { name: "Expo Notifications", license: "MIT License", version: "~0.29.x", description: "Android notification controls" },
+  { name: "Expo Location", license: "MIT License", version: "~18.x", description: "Android location services" },
+  { name: "Expo Local Authentication", license: "MIT License", version: "~15.x", description: "Android biometric authentication" },
+  { name: "Expo Secure Store", license: "MIT License", version: "~14.x", description: "Android Keystore wrapper" },
+  { name: "Async Storage", license: "MIT License", version: "2.x", description: "Android SharedPreferences" },
+  { name: "Material Community Icons", license: "SIL Open Font License 1.1", version: "7.x", description: "Icon font library" },
 ];
 
 export default function OpenSourceLicensesScreen() {
@@ -68,7 +66,7 @@ export default function OpenSourceLicensesScreen() {
             Legal Notices & Attributions
           </FluentText>
           <FluentText variant="caption2" color="secondary" align="center">
-            Open Source Software Acknowledgments
+            Android App - Open Source Acknowledgments
           </FluentText>
         </View>
 
@@ -107,7 +105,7 @@ export default function OpenSourceLicensesScreen() {
             Open Source Components
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.sectionDescription}>
-            This application incorporates the following third-party open source software components, each distributed under their respective licenses. We gratefully acknowledge the contributions of the open source community.
+            This Android application incorporates the following open source software components and native Android libraries, each distributed under their respective licenses. We gratefully acknowledge the contributions of the open source community.
           </FluentText>
 
           {OPEN_SOURCE_LIBRARIES.map((lib, index) => (
@@ -115,9 +113,9 @@ export default function OpenSourceLicensesScreen() {
               key={index} 
               style={[styles.libraryItem, { backgroundColor: colors.colorNeutralBackground2 }]}
             >
-              <View style={styles.libraryInfo}>
+              <View style={styles.libraryHeader}>
                 <MaterialCommunityIcons 
-                  name="package-variant" 
+                  name="android" 
                   size={FluentIconSize.small} 
                   color={colors.colorBrandForeground1} 
                 />
@@ -126,11 +124,11 @@ export default function OpenSourceLicensesScreen() {
                     {lib.name}
                   </FluentText>
                   <FluentText variant="caption2" color="tertiary">
-                    Version {lib.version}
+                    {lib.description} • v{lib.version}
                   </FluentText>
                 </View>
               </View>
-              <FluentText variant="caption2" color="secondary">
+              <FluentText variant="caption2" color="secondary" style={styles.libraryLicense}>
                 {lib.license}
               </FluentText>
             </View>
@@ -226,13 +224,12 @@ const styles = StyleSheet.create({
     textAlign: "justify",
   },
   libraryItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: "column",
     padding: FluentSpacing.m,
     borderRadius: FluentControlRadius.card,
+    gap: FluentSpacing.xs,
   },
-  libraryInfo: {
+  libraryHeader: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
@@ -243,6 +240,9 @@ const styles = StyleSheet.create({
   },
   libraryName: {
     fontWeight: "500",
+  },
+  libraryLicense: {
+    marginLeft: FluentSpacing.l + FluentSpacing.s,
   },
   licenseSection: {
     padding: FluentSpacing.l,
