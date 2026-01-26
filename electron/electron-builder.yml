@@ -10,8 +10,7 @@ files:
   - dist/**/*
   - electron/**/*
   - assets/images/icon.png
-  - "!node_modules/**/*"
-  - node_modules/electron/**/*
+  - package.json
 
 extraMetadata:
   main: electron/main.js
@@ -38,6 +37,10 @@ appx:
     - en-US
   showNameOnTiles: true
   backgroundColor: "#1565C0"
+  # For Store submission: Microsoft signs during Partner Center upload
+  # For sideload testing: Set certificateFile and certificatePassword env vars
+  # certificateFile: ${env.WINDOWS_CERTIFICATE_FILE}
+  # certificatePassword: ${env.WINDOWS_CERTIFICATE_PASSWORD}
 
 nsis:
   oneClick: false

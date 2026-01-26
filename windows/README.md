@@ -4,76 +4,72 @@ This directory contains all configuration and assets for building the Windows St
 
 ## Overview
 
-New Audio 360 for Windows is packaged as a Progressive Web App (PWA) using PWABuilder. This approach:
+New Audio 360 for Windows is built using **Electron**, creating a standalone desktop application. This approach:
 
-- Preserves 100% of existing web functionality
-- Requires no code changes to the main application
-- Provides native Windows integration (file associations, Start menu, notifications)
-- Supports Windows 10 (1809+) and Windows 11
+- Works 100% offline without any URL required
+- Full native Windows integration (file associations, Start menu, taskbar)
+- Direct access to local music files via native file system
+- Supports Windows 10 and Windows 11
+- Can be distributed via Microsoft Store (APPX) or direct download (NSIS installer)
 
 ## Directory Structure
 
 ```
 windows/
 ├── README.md                    # This file
-├── Package.appxmanifest         # Windows app manifest
-├── pwabuilder-config.json       # PWABuilder configuration
+├── Package.appxmanifest         # Windows app manifest (legacy PWA)
 ├── assets/                      # Windows-specific assets
 │   └── icons/                   # Windows Store icons
 ├── store/                       # Store submission assets
 │   └── screenshots/             # Store screenshots
 └── scripts/
     └── generate-icons.js        # Icon generation script
+
+electron/
+├── main.js                      # Electron main process
+├── preload.js                   # Preload script for IPC
+└── electron-builder.yml         # Build configuration
 ```
 
 ## Building the Windows Package
 
-### Step 1: Build the Web App (GitHub Actions)
+### Option 1: GitHub Actions (Recommended)
 
-1. Go to **Actions** > **Build Windows Store Package**
-2. Click **Run workflow**
-3. Enter the version number (e.g., `26.0.0`)
-4. Click **Run workflow**
-5. Download the **web-build** artifact when complete
+1. Push code to GitHub
+2. Go to **Actions** > **Build Windows Electron App**
+3. Click **Run workflow**
+4. Enter version number (e.g., `26.0.0`)
+5. Select build type:
+   - **appx** - For Microsoft Store submission
+   - **nsis** - For direct download installer (.exe)
+   - **both** - Build both formats
+6. Download the artifact when complete
 
-### Step 2: Deploy the Web App
+### Option 2: Build Locally
 
-Deploy the web-build folder to any web hosting service:
-- GitHub Pages
-- Netlify
-- Vercel
-- Your own server
-
-### Step 3: Create MSIX Package (PWABuilder Website)
-
-1. Go to https://www.pwabuilder.com
-2. Enter your deployed web app URL
-3. Click **Start** to analyze your PWA
-4. Click **Package for stores**
-5. Select **Windows**
-6. Configure options:
-   - Package ID: `TheTeam360.NewAudio360`
-   - Publisher Display Name: `The Team 360`
-   - Publisher ID: Your Microsoft Partner Center publisher ID
-7. Click **Generate**
-8. Download the MSIX package
-
-### Alternative: Manual Build
-
-1. **Build the web application locally:**
+1. **Install dependencies:**
    ```bash
    npm ci
-   npx expo export --platform web
    ```
 
-2. **Copy PWA assets:**
+2. **Build APPX for Microsoft Store:**
    ```bash
-   cp public/manifest.json dist/
-   cp public/sw.js dist/
-   mkdir -p dist/icons
+   npm run electron:build:appx
    ```
 
-3. **Deploy and use PWABuilder website** (as described above)
+3. **Or build NSIS installer (.exe):**
+   ```bash
+   npm run electron:build:win
+   ```
+
+4. **Find output in `electron-dist/` folder**
+
+### Build Outputs
+
+| Build Type | Output | Use Case |
+|------------|--------|----------|
+| APPX | `.appx` file | Microsoft Store submission |
+| NSIS | `.exe` installer | Direct download from website |
 
 ## Generating Icons
 
