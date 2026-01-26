@@ -51,7 +51,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         private const val CORRELATION_THRESHOLD = 0.3f
         private const val CORRELATION_ALPHA = 0.995f  // EMA smoothing
         private const val ALLPASS_Q = 0.7f
-        private const val MID_ATTENUATION = 0.85f  // Mid channel attenuation for maximum widening
+        // Note: Mid attenuation removed - spatial enhancement only boosts sides without reducing center
         
         // 6-Level Spatial Enhancement Slider System
         // Level 0: Off, Level 1: Subtle, Level 2: Mild, Level 3: Moderate, Level 4: Enhanced, Level 5: Maximum
@@ -534,7 +534,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         // Calculate parameters based on explicit settings or level
         val scaledSideBoost: Float
         val scaledItdMs: Float
-        val scaledMidAttenuation: Float
         val wetFactor: Float
         val decorrelationQ: Float
         
@@ -551,9 +550,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             // ITD already clamped to MAX_ITD_MS in setSpatialEnhancementParams
             scaledItdMs = spatialItdMs
             
-            // Mid attenuation: scale with wetFactor (0% = 1.0, max = 0.85)
-            scaledMidAttenuation = 1.0f - (0.15f * wetFactor)
-            
             // Decorrelation Q: map 0-MAX_DECORRELATION% to 0.3-1.5 (matching Web implementation)
             decorrelationQ = 0.3f + (spatialDecorrelation / MAX_DECORRELATION) * 1.2f
             
@@ -569,7 +565,6 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             val baseSideMultiplier = 1.0f + (spatialSideGainPercent / 100f)
             scaledSideBoost = ((baseSideMultiplier - 1.0f) * wetFactor)
             scaledItdMs = spatialItdMs
-            scaledMidAttenuation = 1.0f - (0.15f * wetFactor)
             decorrelationQ = 0.3f + (spatialDecorrelation / MAX_DECORRELATION) * 1.2f
         }
         
@@ -655,14 +650,11 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             // Apply side boost
             side *= sideBoostMultiplier
             
-            // Apply Mid attenuation to preserve loudness - scaled by intensity
-            val attenuatedMid = mid * scaledMidAttenuation
-            
             // =========================================
-            // F. Output - Convert back to L/R
+            // F. Output - Convert back to L/R (no mid attenuation - preserves original center content)
             // =========================================
-            samples[i] = (attenuatedMid + side).coerceIn(-1f, 1f)
-            samples[i + 1] = (attenuatedMid - side).coerceIn(-1f, 1f)
+            samples[i] = (mid + side).coerceIn(-1f, 1f)
+            samples[i + 1] = (mid - side).coerceIn(-1f, 1f)
             
             i += 2
         }
