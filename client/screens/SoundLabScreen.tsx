@@ -544,6 +544,19 @@ function SoundLabScreen() {
           Flat EQ is always on by default. Tap another preset or Immersive Mode to switch.
         </FluentText>
 
+        {Platform.OS === 'ios' && (
+          <View style={[styles.iosNoticeCard, { backgroundColor: colors.colorNeutralBackground3 }]}>
+            <MaterialCommunityIcons
+              name="apple"
+              size={FluentIconSize.small}
+              color={colors.colorNeutralForeground2}
+            />
+            <FluentText variant="caption1" color="secondary" style={styles.iosNoticeText}>
+              Audio effects are simulated on iPhone. For the best experience with hardware-accelerated audio processing, use an Android device.
+            </FluentText>
+          </View>
+        )}
+
         <View style={[styles.sectionCard, cardStyle]}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="tune-vertical" size={FluentIconSize.regular} color={tokens.colors.primary} />
@@ -1249,6 +1262,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingVertical: FluentSpacing.m,
+  },
+  iosNoticeCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: FluentSpacing.m,
+    borderRadius: FluentRadius.medium,
+    marginBottom: FluentSpacing.l,
+    gap: FluentSpacing.s,
+  },
+  iosNoticeText: {
+    flex: 1,
   },
 });
 

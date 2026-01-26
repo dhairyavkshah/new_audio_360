@@ -26,6 +26,18 @@ import { Platform } from "react-native";
 import Constants from 'expo-constants';
 import { LicenseVerificationModule } from '../../modules/audio-effects';
 
+// Import react-native-iap for iOS receipt validation (only used on iOS)
+let getReceiptIOS: (() => Promise<string | null>) | null = null;
+if (Platform.OS === 'ios') {
+  try {
+    // Dynamic import to avoid issues on non-iOS platforms
+    const RNIap = require('react-native-iap');
+    getReceiptIOS = RNIap.getReceiptIOS;
+  } catch (e) {
+    console.log('[AppStoreVerification] react-native-iap not available for receipt validation');
+  }
+}
+
 const APP_VARIANT = Constants.expoConfig?.extra?.appVariant;
 const IS_PRODUCTION = APP_VARIANT === 'production';
 // Bypass license in development, preview, or testing builds (testing = production APK without license check)
@@ -65,24 +77,87 @@ export const PlayStoreVerification = {
       }
 
       if (Platform.OS === 'ios') {
-        // iPhone Mode: App Store license verification
-        // For paid apps on the App Store, download implies purchase
-        // TestFlight builds are auto-licensed for testing
-        const isTestFlight = Constants.appOwnership === 'expo' || 
-          (Constants.expoConfig?.extra?.appVariant === 'development') ||
-          (Constants.expoConfig?.extra?.appVariant === 'preview');
+        // iPhone Mode: App Store license verification for PAID app
+        // Uses react-native-iap getReceiptIOS() to verify App Store receipt presence
+        // 
+        // Verification approach:
+        // 1. Expo Go / Development builds → auto-license for testing
+        // 2. Production builds → verify App Store receipt exists (fail-closed)
+        //
+        // For paid apps, receipt presence indicates App Store installation.
+        // Sideloaded or enterprise builds won't have a valid App Store receipt.
         
-        console.log("[AppStoreVerification] iOS device detected, TestFlight:", isTestFlight);
+        const isExpoGo = Constants.appOwnership === 'expo';
+        const isDevBuild = APP_VARIANT === 'development' || APP_VARIANT === 'preview';
         
-        return {
-          isValidInstall: true,
-          installSource: isTestFlight ? 'testflight' : 'app_store',
-          purchase: {
-            productId: PRODUCT_ID,
-            installSource: isTestFlight ? 'testflight' : 'app_store',
-            installTime: Date.now(),
-          },
-        };
+        // Detect test/development environment (NOT using __DEV__ to avoid false positives)
+        const isTestEnvironment = isExpoGo || isDevBuild;
+        
+        console.log("[AppStoreVerification] iOS device detected", {
+          isExpoGo,
+          isDevBuild,
+          appVariant: APP_VARIANT,
+          hasReceiptAPI: !!getReceiptIOS,
+        });
+        
+        if (isTestEnvironment) {
+          // Auto-license for Expo Go and development/preview builds only
+          const source = isExpoGo ? 'expo_go' : 'development';
+          console.log(`[AppStoreVerification] Test environment detected: ${source}`);
+          return {
+            isValidInstall: true,
+            installSource: source,
+            purchase: {
+              productId: PRODUCT_ID,
+              installSource: source,
+              installTime: Date.now(),
+            },
+          };
+        }
+        
+        // Production iOS build - verify App Store receipt presence
+        // For paid apps, the receipt proves App Store installation
+        if (getReceiptIOS) {
+          try {
+            const receipt = await getReceiptIOS();
+            
+            if (receipt && receipt.length > 0) {
+              console.log("[AppStoreVerification] App Store receipt found - valid install");
+              return {
+                isValidInstall: true,
+                installSource: 'app_store',
+                purchase: {
+                  productId: PRODUCT_ID,
+                  installSource: 'app_store',
+                  installTime: Date.now(),
+                },
+              };
+            } else {
+              console.log("[AppStoreVerification] No App Store receipt - sideloaded install");
+              return {
+                isValidInstall: false,
+                installSource: 'sideloaded',
+                error: 'App not installed from App Store',
+              };
+            }
+          } catch (receiptError) {
+            // Receipt fetch error - fail closed for security
+            console.log("[AppStoreVerification] Receipt validation failed:", receiptError);
+            return {
+              isValidInstall: false,
+              installSource: 'receipt_error',
+              error: 'Unable to verify App Store installation',
+            };
+          }
+        } else {
+          // react-native-iap not available - fail closed
+          console.log("[AppStoreVerification] Receipt API not available - cannot verify");
+          return {
+            isValidInstall: false,
+            installSource: 'no_receipt_api',
+            error: 'License verification not available',
+          };
+        }
       }
 
       if (IS_DEVELOPMENT) {

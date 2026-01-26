@@ -133,6 +133,7 @@ export default {
           microphonePermission: 'Allow $(PRODUCT_NAME) to access your microphone for voice recording.',
         },
       ],
+      'react-native-iap',
     ],
     experiments: {
       reactCompiler: false,

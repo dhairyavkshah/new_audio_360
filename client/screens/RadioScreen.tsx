@@ -456,15 +456,19 @@ function RadioScreen() {
 
   const renderFmUnavailableNotice = () => {
     if (isFmAvailable || radioMode !== 'online') return null;
+    const isIOS = Platform.OS === 'ios';
+    const message = isIOS 
+      ? 'FM Radio is not available on iPhone. Enjoy streaming radio instead!'
+      : 'FM hardware not available on this device. Using online radio.';
     return (
       <View style={[styles.noticeCard, { backgroundColor: colors.colorNeutralBackground3 }]}>
         <MaterialCommunityIcons
-          name="information-outline"
+          name={isIOS ? "apple" : "information-outline"}
           size={FluentIconSize.small}
           color={colors.colorNeutralForeground2}
         />
         <FluentText variant="caption1" color="secondary" style={styles.noticeText}>
-          FM hardware not available on this device. Using online radio.
+          {message}
         </FluentText>
       </View>
     );

@@ -86,12 +86,14 @@ export default function SettingsScreen() {
               subtitle="Equalizer presets and immersive modes"
               onPress={() => navigation.navigate("SoundLab")}
             />
-            <FluentListItem
-              icon="folder-music"
-              title="Music Folders"
-              subtitle="Select folders to source music from"
-              onPress={() => navigation.navigate("FolderSelection")}
-            />
+            {Platform.OS === 'android' && (
+              <FluentListItem
+                icon="folder-music"
+                title="Music Folders"
+                subtitle="Select folders to source music from"
+                onPress={() => navigation.navigate("FolderSelection")}
+              />
+            )}
           </View>
         </View>
 
@@ -199,13 +201,15 @@ export default function SettingsScreen() {
               subtitle="Version, legal, and more"
               onPress={() => navigation.navigate("About")}
             />
-            <FluentListItem
-              icon="power"
-              iconColor={colors.colorPaletteRedForeground1}
-              title="Close App"
-              subtitle="Securely exit the application"
-              onPress={handleCloseApp}
-            />
+            {Platform.OS === 'android' && (
+              <FluentListItem
+                icon="power"
+                iconColor={colors.colorPaletteRedForeground1}
+                title="Close App"
+                subtitle="Securely exit the application"
+                onPress={handleCloseApp}
+              />
+            )}
           </View>
         </View>
 
