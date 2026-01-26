@@ -26,11 +26,13 @@ import { Platform } from "react-native";
 import Constants from 'expo-constants';
 import { LicenseVerificationModule } from '../../modules/audio-effects';
 
-// Import react-native-iap for iOS receipt validation (only used on iOS)
+// Import react-native-iap for iOS receipt validation (only used on iOS native)
+// Web platform cannot use this module
 let getReceiptIOS: (() => Promise<string | null>) | null = null;
 if (Platform.OS === 'ios') {
+  // Use dynamic require to avoid bundling issues on web
+  // This will only execute on iOS native, not on web
   try {
-    // Dynamic import to avoid issues on non-iOS platforms
     const RNIap = require('react-native-iap');
     getReceiptIOS = RNIap.getReceiptIOS;
   } catch (e) {

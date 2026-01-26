@@ -28,4 +28,20 @@ config.resolver.extraNodeModules = {
   'audio-effects': path.resolve(__dirname, 'modules/audio-effects'),
 };
 
+// Exclude react-native-iap from web bundling (native-only module)
+const originalResolveRequest = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // Return empty module for react-native-iap on web platform
+  if (platform === 'web' && moduleName === 'react-native-iap') {
+    return {
+      type: 'empty',
+    };
+  }
+  // Use default resolver for everything else
+  if (originalResolveRequest) {
+    return originalResolveRequest(context, moduleName, platform);
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
 module.exports = wrapWithAudioAPIMetroConfig(config);
