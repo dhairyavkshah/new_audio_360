@@ -170,8 +170,9 @@ class NeuralAudioProcessorTFLite private constructor() {
             val compatList = CompatibilityList()
             if (compatList.isDelegateSupportedOnThisDevice) {
                 try {
-                    val delegateOptions = compatList.bestOptionsForThisDevice
-                    gpuDelegate = GpuDelegate(delegateOptions)
+                    // Create GPU delegate with default options
+                    // Using GpuDelegate.Options() for TFLite 2.14+ API compatibility
+                    gpuDelegate = GpuDelegate(GpuDelegate.Options())
                     options.addDelegate(gpuDelegate)
                     useGpu = true
                     Log.d(TAG, "GPU delegate enabled")

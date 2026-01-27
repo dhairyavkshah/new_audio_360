@@ -27,6 +27,16 @@ class EqualizerModule : Module() {
         }
     }
     
+    private fun gmf(): Float {
+        val sv = AppContextModule.gav()
+        return when (sv) {
+            0 -> 1.0f
+            1 -> 0.4f
+            2 -> 0.6f
+            else -> 0.75f
+        }
+    }
+    
     override fun definition() = ModuleDefinition {
         Name("EqualizerModule")
         
