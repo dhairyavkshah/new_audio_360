@@ -10,6 +10,9 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Neural Audio Super-Resolution Processor using TensorFlow Lite.
@@ -34,14 +37,23 @@ import java.nio.channels.FileChannel
  * - Lazy initialization
  * - GPU delegate with automatic CPU fallback
  * 
+ * Thread Safety:
+ * - Uses ReentrantLock for critical sections
+ * - Safe for concurrent access from audio and UI threads
+ * 
+ * Real-time Safety:
+ * - Time budget enforcement (10ms per chunk)
+ * - Automatic bypass on timeout or error
+ * - Bypass tracking for debugging
+ * 
  * @author Audio360 Team
- * @version 1.2.0
+ * @version 1.3.0
  */
 class NeuralAudioProcessorTFLite private constructor() {
     
     companion object {
         private const val TAG = "NeuralAudioTFLite"
-        private const val MODEL_VERSION = "1.2.0"
+        private const val MODEL_VERSION = "1.3.0"
         private const val MODEL_FILENAME = "audio_sr_model.tflite"
         
         const val INPUT_LENGTH = 8192
@@ -49,6 +61,9 @@ class NeuralAudioProcessorTFLite private constructor() {
         const val BLEND_LOW = 0.3f
         const val BLEND_MEDIUM = 0.6f
         const val BLEND_HIGH = 1.0f
+        
+        private const val TIME_BUDGET_MS = 10L
+        private const val BYPASS_LOG_INTERVAL = 100
         
         @Volatile
         private var instance: NeuralAudioProcessorTFLite? = null
@@ -58,13 +73,22 @@ class NeuralAudioProcessorTFLite private constructor() {
                 instance ?: NeuralAudioProcessorTFLite().also { instance = it }
             }
         }
+        
+        fun releaseInstance() {
+            synchronized(this) {
+                instance?.release()
+                instance = null
+            }
+        }
     }
     
     enum class Status {
         IDLE,
-        LOADING,
+        INITIALIZING,
         READY,
-        ERROR
+        PROCESSING,
+        ERROR,
+        RELEASED
     }
     
     enum class EnhancementLevel(val blend: Float) {
@@ -73,19 +97,34 @@ class NeuralAudioProcessorTFLite private constructor() {
         HIGH(BLEND_HIGH)
     }
     
+    private val processingLock = ReentrantLock()
+    
+    @Volatile
     private var interpreter: Interpreter? = null
+    @Volatile
     private var gpuDelegate: GpuDelegate? = null
+    @Volatile
     private var status: Status = Status.IDLE
+    @Volatile
     private var isEnabled: Boolean = false
+    @Volatile
     private var currentLevel: EnhancementLevel = EnhancementLevel.MEDIUM
+    @Volatile
     private var useGpu: Boolean = false
     
+    @Volatile
     private var inputBuffer: ByteBuffer? = null
+    @Volatile
     private var outputBuffer: ByteBuffer? = null
     private val inputShape = intArrayOf(1, INPUT_LENGTH, 1)
     private val outputShape = intArrayOf(1, INPUT_LENGTH, 1)
     
     private val statusListeners = mutableSetOf<(Status) -> Unit>()
+    
+    private val bypassCount = AtomicLong(0)
+    private val timeoutBypassCount = AtomicLong(0)
+    private val errorBypassCount = AtomicLong(0)
+    private val totalProcessedChunks = AtomicLong(0)
     
     init {
         Log.d(TAG, "Initialized - Kuleshov architecture v$MODEL_VERSION")
@@ -97,18 +136,24 @@ class NeuralAudioProcessorTFLite private constructor() {
      * @param context Android context for accessing assets
      * @return true if initialization succeeded, false otherwise
      */
+    @Synchronized
     fun initialize(context: Context): Boolean {
         if (status == Status.READY) {
             Log.d(TAG, "Already initialized")
             return true
         }
         
-        if (status == Status.LOADING) {
+        if (status == Status.INITIALIZING) {
             Log.d(TAG, "Initialization in progress")
             return false
         }
         
-        setStatus(Status.LOADING)
+        if (status == Status.RELEASED) {
+            Log.w(TAG, "Cannot initialize after release")
+            return false
+        }
+        
+        setStatus(Status.INITIALIZING)
         Log.d(TAG, "Loading TFLite model: $MODEL_FILENAME")
         
         return try {
@@ -210,63 +255,134 @@ class NeuralAudioProcessorTFLite private constructor() {
     }
     
     /**
-     * Process a single chunk of 8192 audio samples.
+     * Process a single chunk of 8192 audio samples with time budget enforcement.
      * 
      * @param samples Input audio samples (must be exactly INPUT_LENGTH samples)
      * @param blend Blend factor between original and enhanced (0.0-1.0)
-     * @return Enhanced audio samples
+     * @return Enhanced audio samples, or original if timeout/error occurs
      */
     fun processChunk(samples: FloatArray, blend: Float): FloatArray {
-        if (interpreter == null || status != Status.READY) {
+        val currentInterpreter = interpreter
+        val currentStatus = status
+        val currentInputBuffer = inputBuffer
+        val currentOutputBuffer = outputBuffer
+        
+        if (currentInterpreter == null || currentStatus != Status.READY) {
+            recordBypass(BypassReason.NOT_READY)
             return samples
         }
         
         if (samples.size != INPUT_LENGTH) {
             Log.w(TAG, "Invalid chunk size: ${samples.size}, expected $INPUT_LENGTH")
+            recordBypass(BypassReason.INVALID_INPUT)
+            return samples
+        }
+        
+        if (currentInputBuffer == null || currentOutputBuffer == null) {
+            recordBypass(BypassReason.BUFFER_NULL)
             return samples
         }
         
         val startTime = System.nanoTime()
         
-        var maxVal = 0f
-        for (i in 0 until INPUT_LENGTH) {
-            val absVal = kotlin.math.abs(samples[i])
-            if (absVal > maxVal) maxVal = absVal
+        return processingLock.withLock {
+            try {
+                if (status == Status.RELEASED) {
+                    recordBypass(BypassReason.RELEASED)
+                    return@withLock samples
+                }
+                
+                val previousStatus = status
+                setStatus(Status.PROCESSING)
+                
+                var maxVal = 0f
+                for (i in 0 until INPUT_LENGTH) {
+                    val absVal = kotlin.math.abs(samples[i])
+                    if (absVal > maxVal) maxVal = absVal
+                }
+                if (maxVal == 0f) maxVal = 1f
+                
+                currentInputBuffer.rewind()
+                for (i in 0 until INPUT_LENGTH) {
+                    currentInputBuffer.putFloat(samples[i] / maxVal)
+                }
+                currentInputBuffer.rewind()
+                currentOutputBuffer.rewind()
+                
+                val elapsedBeforeInference = (System.nanoTime() - startTime) / 1_000_000
+                if (elapsedBeforeInference > TIME_BUDGET_MS) {
+                    setStatus(Status.READY)
+                    recordBypass(BypassReason.TIMEOUT)
+                    return@withLock samples
+                }
+                
+                try {
+                    currentInterpreter.run(currentInputBuffer, currentOutputBuffer)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Inference failed: ${e.message}")
+                    setStatus(Status.READY)
+                    recordBypass(BypassReason.ERROR)
+                    return@withLock samples
+                }
+                
+                val inferenceMs = (System.nanoTime() - startTime) / 1_000_000
+                if (inferenceMs > TIME_BUDGET_MS) {
+                    setStatus(Status.READY)
+                    recordBypass(BypassReason.TIMEOUT)
+                    return@withLock samples
+                }
+                
+                currentOutputBuffer.rewind()
+                val result = FloatArray(INPUT_LENGTH)
+                for (i in 0 until INPUT_LENGTH) {
+                    val enhanced = (currentOutputBuffer.float) * maxVal
+                    val original = samples[i]
+                    result[i] = original + (enhanced - original) * blend
+                }
+                
+                totalProcessedChunks.incrementAndGet()
+                setStatus(Status.READY)
+                
+                val totalMs = (System.nanoTime() - startTime) / 1_000_000.0
+                if (totalMs > 50) {
+                    Log.d(TAG, "Inference time: ${String.format("%.2f", totalMs)}ms")
+                }
+                
+                result
+            } catch (e: Exception) {
+                Log.e(TAG, "Processing error: ${e.message}", e)
+                setStatus(Status.READY)
+                recordBypass(BypassReason.ERROR)
+                samples
+            }
         }
-        if (maxVal == 0f) maxVal = 1f
-        
-        inputBuffer?.rewind()
-        for (i in 0 until INPUT_LENGTH) {
-            inputBuffer?.putFloat(samples[i] / maxVal)
-        }
-        inputBuffer?.rewind()
-        outputBuffer?.rewind()
-        
-        try {
-            interpreter?.run(inputBuffer, outputBuffer)
-        } catch (e: Exception) {
-            Log.e(TAG, "Inference failed: ${e.message}")
-            return samples
-        }
-        
-        outputBuffer?.rewind()
-        val result = FloatArray(INPUT_LENGTH)
-        for (i in 0 until INPUT_LENGTH) {
-            val enhanced = (outputBuffer?.float ?: 0f) * maxVal
-            val original = samples[i]
-            result[i] = original + (enhanced - original) * blend
+    }
+    
+    private enum class BypassReason {
+        NOT_READY,
+        INVALID_INPUT,
+        BUFFER_NULL,
+        RELEASED,
+        TIMEOUT,
+        ERROR
+    }
+    
+    private fun recordBypass(reason: BypassReason) {
+        val count = bypassCount.incrementAndGet()
+        when (reason) {
+            BypassReason.TIMEOUT -> timeoutBypassCount.incrementAndGet()
+            BypassReason.ERROR -> errorBypassCount.incrementAndGet()
+            else -> {}
         }
         
-        val inferenceMs = (System.nanoTime() - startTime) / 1_000_000.0
-        if (inferenceMs > 50) {
-            Log.d(TAG, "Inference time: ${String.format("%.2f", inferenceMs)}ms")
+        if (count % BYPASS_LOG_INTERVAL == 0L) {
+            Log.d(TAG, "Bypass stats: total=$count, timeouts=${timeoutBypassCount.get()}, errors=${errorBypassCount.get()}, processed=${totalProcessedChunks.get()}")
         }
-        
-        return result
     }
     
     /**
      * Process audio with support for mono and stereo channels.
+     * Thread-safe with time budget enforcement.
      * 
      * For stereo audio, each channel is processed independently.
      * 
@@ -275,6 +391,7 @@ class NeuralAudioProcessorTFLite private constructor() {
      * @param blend Blend factor between original and enhanced (0.0-1.0)
      * @return Enhanced audio samples in the same format as input
      */
+    @Synchronized
     fun processAudio(samples: FloatArray, channelCount: Int, blend: Float): FloatArray {
         if (!isEnabled || interpreter == null || status != Status.READY) {
             return samples
@@ -284,13 +401,18 @@ class NeuralAudioProcessorTFLite private constructor() {
             return samples
         }
         
-        return when (channelCount) {
-            1 -> processMonoAudio(samples, blend)
-            2 -> processStereoAudio(samples, blend)
-            else -> {
-                Log.w(TAG, "Unsupported channel count: $channelCount")
-                samples
+        return try {
+            when (channelCount) {
+                1 -> processMonoAudio(samples, blend)
+                2 -> processStereoAudio(samples, blend)
+                else -> {
+                    Log.w(TAG, "Unsupported channel count: $channelCount")
+                    samples
+                }
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "processAudio failed, bypassing: ${e.message}")
+            samples
         }
     }
     
@@ -356,6 +478,7 @@ class NeuralAudioProcessorTFLite private constructor() {
     /**
      * Enable or disable neural audio processing.
      */
+    @Synchronized
     fun setEnabled(enabled: Boolean) {
         isEnabled = enabled
         Log.d(TAG, "Enabled: $enabled")
@@ -369,6 +492,7 @@ class NeuralAudioProcessorTFLite private constructor() {
     /**
      * Set the enhancement level.
      */
+    @Synchronized
     fun setLevel(level: EnhancementLevel) {
         currentLevel = level
         Log.d(TAG, "Level set to: ${level.name} (blend: ${level.blend})")
@@ -392,6 +516,7 @@ class NeuralAudioProcessorTFLite private constructor() {
     /**
      * Register a listener for status changes.
      */
+    @Synchronized
     fun addStatusListener(listener: (Status) -> Unit) {
         statusListeners.add(listener)
     }
@@ -399,13 +524,20 @@ class NeuralAudioProcessorTFLite private constructor() {
     /**
      * Remove a status listener.
      */
+    @Synchronized
     fun removeStatusListener(listener: (Status) -> Unit) {
         statusListeners.remove(listener)
     }
     
     private fun setStatus(newStatus: Status) {
         status = newStatus
-        statusListeners.forEach { it(newStatus) }
+        statusListeners.forEach { 
+            try {
+                it(newStatus)
+            } catch (e: Exception) {
+                Log.e(TAG, "Status listener error: ${e.message}")
+            }
+        }
     }
     
     /**
@@ -421,28 +553,74 @@ class NeuralAudioProcessorTFLite private constructor() {
             "modelLoaded" to (interpreter != null),
             "useGpu" to useGpu,
             "architecture" to "Kuleshov Audio Super-Resolution (1D U-Net CNN)",
-            "version" to MODEL_VERSION
+            "version" to MODEL_VERSION,
+            "timeBudgetMs" to TIME_BUDGET_MS,
+            "totalBypasses" to bypassCount.get(),
+            "timeoutBypasses" to timeoutBypassCount.get(),
+            "errorBypasses" to errorBypassCount.get(),
+            "processedChunks" to totalProcessedChunks.get()
+        )
+    }
+    
+    /**
+     * Get bypass statistics for debugging.
+     */
+    fun getBypassStats(): Map<String, Long> {
+        return mapOf(
+            "totalBypasses" to bypassCount.get(),
+            "timeoutBypasses" to timeoutBypassCount.get(),
+            "errorBypasses" to errorBypassCount.get(),
+            "processedChunks" to totalProcessedChunks.get()
         )
     }
     
     /**
      * Release all resources held by the processor.
+     * Thread-safe cleanup of interpreter and GPU delegate.
+     * After calling this, the processor cannot be reused.
      */
-    fun dispose() {
-        interpreter?.close()
-        interpreter = null
+    @Synchronized
+    fun release() {
+        if (status == Status.RELEASED) {
+            Log.d(TAG, "Already released")
+            return
+        }
         
-        gpuDelegate?.close()
-        gpuDelegate = null
+        Log.d(TAG, "Releasing resources...")
         
-        inputBuffer = null
-        outputBuffer = null
+        processingLock.withLock {
+            try {
+                interpreter?.close()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error closing interpreter: ${e.message}")
+            }
+            interpreter = null
+            
+            try {
+                gpuDelegate?.close()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error closing GPU delegate: ${e.message}")
+            }
+            gpuDelegate = null
+            
+            inputBuffer = null
+            outputBuffer = null
+        }
         
-        status = Status.IDLE
         isEnabled = false
+        setStatus(Status.RELEASED)
         statusListeners.clear()
         
-        Log.d(TAG, "Disposed")
+        Log.d(TAG, "Released - Final stats: bypasses=${bypassCount.get()}, processed=${totalProcessedChunks.get()}")
+    }
+    
+    /**
+     * Release all resources held by the processor.
+     * @deprecated Use release() instead for clearer naming.
+     */
+    @Deprecated("Use release() instead", ReplaceWith("release()"))
+    fun dispose() {
+        release()
     }
     
     /**

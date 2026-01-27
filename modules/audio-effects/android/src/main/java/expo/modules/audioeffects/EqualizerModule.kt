@@ -310,6 +310,15 @@ class EqualizerModule : Module() {
             try {
                 val dsp = getDspProcessor()
                 dsp?.resetAll()
+                
+                // Release neural audio processor resources
+                try {
+                    NeuralAudioProcessorTFLite.releaseInstance()
+                    android.util.Log.d("EqualizerModule", "Released neural audio processor")
+                } catch (e: Exception) {
+                    android.util.Log.w("EqualizerModule", "Neural processor release warning: ${e.message}")
+                }
+                
                 isAttached = false
                 isEnabled = false
                 audioSessionId = 0

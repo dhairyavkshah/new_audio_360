@@ -42,11 +42,11 @@ The Windows version is packaged as a PWA using PWABuilder, providing:
 - `client/services/WindowsFolderScanner.ts` - Scans Windows Music folder
 - `client/hooks/useWindowsFolderScanner.ts` - React hook for folder scanning
 
-### Audio Effects Architecture (Pure Software DSP) - v28.0
-The app utilizes pure software-based DSP across all platforms for a consistent audio experience. All enhancements are **purely additive** within ±12dB Android headroom—no signal attenuation.
+### Audio Effects Architecture (Pure Software DSP + Neural AI) - v29.0
+The app utilizes pure software-based DSP across all platforms for a consistent audio experience, with optional neural AI upscaling for enhanced audio quality. All enhancements are **purely additive** within ±12dB Android headroom—no signal attenuation.
 
 **Signal Chain Order**:
-HF Restoration → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble Shelf → Spatial (with HRTF) → Reverb → Limiter → Output
+AI Audio Upscaling (Neural) → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble Shelf → Spatial (with HRTF) → Reverb → Limiter → Output
 
 **Key DSP Components**:
 - **10-Band Parametric EQ**: With zero-sum normalization and 10 presets.
@@ -56,16 +56,21 @@ HF Restoration → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble She
 - **Spatial Enhancement**: Psychoacoustic stereo widening with HRTF pinna filters, safety caps, and 6 adjustable levels.
 - **Immersive Modes**: 6 distinct modes (e.g., Music, 360 Reality, Gaming) each with predefined EQ, boost, reverb, and spatial parameters.
 
-**Smart Enhancements (v28.0)**:
+**Smart Enhancements (v29.0)**:
 - **HRTF Binaural Virtualization**: Integrated into Spatial Enhancement slider (levels 2-5). Peaking filters at 2.7kHz (Q=2.0, +0-5dB) and 8kHz (Q=1.5, +0-3dB) for pinna simulation.
 - **Bass Enhancement**: Psychoacoustic harmonic generation via soft-clipping. 75Hz crossover, generates 2nd/3rd/4th harmonics, max +4dB boost. Adds warmth without increasing bass volume.
-- **AI Upscaling (Audio Super-Resolution)**: Neural audio enhancement using Kuleshov-style 1D U-Net CNN architecture for full-bandwidth audio super-resolution. The encoder-decoder model with skip connections and residual learning processes 8192-sample audio chunks at 44.1kHz. Model is built at runtime in TensorFlow.js with deterministic weight initialization (~4.4M parameters). Three intensity levels control blend factor: Low (30%), Medium (60%), High (100%). Falls back to DSP high-shelf boost when neural processing is unavailable.
+- **AI Upscaling (Audio Super-Resolution)**: Neural audio enhancement using Kuleshov-style 1D U-Net CNN architecture for full-bandwidth audio super-resolution.
+  - **Web**: TensorFlow.js with runtime model building (~4.4M parameters)
+  - **Android**: TensorFlow Lite with GPU delegate (CPU fallback), 17.67 MB model file
+  - **Architecture**: Encoder-decoder with skip connections and residual learning, processes 8192-sample chunks at 44.1kHz
+  - **Intensity Levels**: Low (30% blend), Medium (60% blend), High (100% blend)
+  - **Real-time Safety**: 10ms time budget per chunk, automatic bypass on timeout, thread-safe processing with proper resource lifecycle management
 
 **DSP Architecture Details**:
 - **Internal Processing**: 32-bit float for precision, 64-bit for filter coefficients.
 - **Processing**: True stereo processing for most effects, linked stereo for limiter.
-- **Android DSP**: Custom ExoPlayer `AudioProcessor` with biquad filter algorithms.
-- **Web DSP**: `WebAudioEffectsEngine` leveraging Web Audio API.
+- **Android DSP**: Custom ExoPlayer `AudioProcessor` with biquad filter algorithms + TensorFlow Lite neural processing.
+- **Web DSP**: `WebAudioEffectsEngine` leveraging Web Audio API + TensorFlow.js neural processing.
 
 ### Navigation Structure
 A 4-tab system with a persistent MiniPlayer:
