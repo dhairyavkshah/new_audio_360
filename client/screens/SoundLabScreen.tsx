@@ -21,6 +21,9 @@ import {
   getBassControlLevel, saveBassControlLevel,
   getTrebleControlLevel, saveTrebleControlLevel,
   getSpatialEnhancement, saveSpatialEnhancement,
+  getBassEnhancement, saveBassEnhancement,
+  getHfRestorationEnabled, saveHfRestorationEnabled,
+  getHfRestorationLevel, saveHfRestorationLevel,
   CustomEQPreset
 } from "@/lib/storage";
 import { 
@@ -29,7 +32,8 @@ import {
   ImmersiveMode,
   ImmersiveModeInfo,
   BassBoostModule,
-  SpatialEnhancementModule
+  SpatialEnhancementModule,
+  SmartEnhancementsModule
 } from "../../modules/audio-effects";
 import NativeAudioService from "@/services/NativeAudioService";
 import { NativeEffectsManager } from "@/services/NativeEffectsManager";
@@ -147,6 +151,9 @@ function SoundLabScreen() {
   const [bassControl, setBassControl] = useState(0);
   const [trebleControl, setTrebleControl] = useState(0);
   const [spatialEnhancement, setSpatialEnhancement] = useState(0);
+  const [bassEnhancement, setBassEnhancement] = useState(0);
+  const [hfRestorationEnabled, setHfRestorationEnabled] = useState(false);
+  const [hfRestorationLevel, setHfRestorationLevel] = useState(50);
 
   const MAX_CUSTOM_PRESETS = 5;
 
@@ -186,14 +193,17 @@ function SoundLabScreen() {
       const modes = ImmersiveModeEngineModule.getAvailableModes();
       setAvailableModes(modes);
 
-      const [eqPreset, soundMode, bands, presets, bassLvl, trebleLvl, spatialEnabled] = await Promise.all([
+      const [eqPreset, soundMode, bands, presets, bassLvl, trebleLvl, spatialEnabled, bassEnh, hfEnabled, hfLevel] = await Promise.all([
         getEQPreset(),
         getSoundMode(),
         getCustomEQBands(),
         getCustomEQPresets(),
         getBassControlLevel(),
         getTrebleControlLevel(),
-        getSpatialEnhancement()
+        getSpatialEnhancement(),
+        getBassEnhancement(),
+        getHfRestorationEnabled(),
+        getHfRestorationLevel()
       ]);
       
       setCustomBands(bands);
@@ -203,6 +213,9 @@ function SoundLabScreen() {
       setTrebleControl(trebleLvl);
       setTrebleBoost(trebleLvl); // Sync to context for software DSP
       setSpatialEnhancement(spatialEnabled);
+      setBassEnhancement(bassEnh);
+      setHfRestorationEnabled(hfEnabled);
+      setHfRestorationLevel(hfLevel);
       
       if (eqPreset) {
         if (eqPreset === "Custom") {
@@ -527,6 +540,42 @@ function SoundLabScreen() {
     return iconMap[iconName] || 'music';
   };
 
+  const handleBassEnhancementChange = async (value: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setBassEnhancement(value);
+    await saveBassEnhancement(value);
+    SmartEnhancementsModule.setBassEnhancement(value);
+    if (Platform.OS === 'web') {
+      WebAudioEffectsEngine.getInstance().setBassEnhancement(value);
+    } else {
+      NativeEffectsManager.setBassEnhancement(value);
+    }
+  };
+
+  const handleHfRestorationToggle = async (enabled: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setHfRestorationEnabled(enabled);
+    await saveHfRestorationEnabled(enabled);
+    SmartEnhancementsModule.setHfRestoration(enabled);
+    if (Platform.OS === 'web') {
+      WebAudioEffectsEngine.getInstance().setHfRestoration(enabled);
+    } else {
+      NativeEffectsManager.setHfRestoration(enabled);
+    }
+  };
+
+  const handleHfRestorationLevelChange = async (value: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setHfRestorationLevel(value);
+    await saveHfRestorationLevel(value);
+    SmartEnhancementsModule.setHfRestorationLevel(value);
+    if (Platform.OS === 'web') {
+      WebAudioEffectsEngine.getInstance().setHfRestorationLevel(value);
+    } else {
+      NativeEffectsManager.setHfRestorationLevel(value);
+    }
+  };
+
   const isEqualizerActive = soundLabMode === "equalizer";
   const isImmersiveActive = soundLabMode === "immersive";
 
@@ -830,6 +879,107 @@ function SoundLabScreen() {
                 </View>
               </Pressable>
             ))}
+          </View>
+        </View>
+
+        {/* Smart Enhancements Section */}
+        <View style={[styles.sectionCard, cardStyle]}>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="auto-fix" size={FluentIconSize.regular} color={tokens.colors.primary} />
+            <FluentText variant="subtitle1" style={styles.sectionTitle}>
+              Smart Enhancements
+            </FluentText>
+            {!isLicensed ? (
+              <View style={[styles.premiumBadge, { backgroundColor: tokens.colors.warning }]}>
+                <MaterialCommunityIcons name="crown" size={12} color={tokens.colors.onPrimary} />
+                <FluentText variant="caption1" style={{ color: tokens.colors.onPrimary, fontWeight: FluentFontWeight.semibold, marginLeft: 4 }}>License Required</FluentText>
+              </View>
+            ) : (bassEnhancement > 0 || hfRestorationEnabled) ? (
+              <View style={[styles.activeIndicator, { backgroundColor: tokens.colors.primary }]}>
+                <FluentText variant="caption1" color="onBrand" style={{ fontWeight: FluentFontWeight.semibold }}>Active</FluentText>
+              </View>
+            ) : null}
+          </View>
+          
+          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
+            AI-powered audio enhancements for richer, fuller sound
+          </FluentText>
+
+          {/* Bass Enhancement Slider */}
+          <View style={{ marginBottom: FluentSpacing.l }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: FluentSpacing.xs }}>
+              <FluentText variant="body2" style={{ fontWeight: FluentFontWeight.medium }}>
+                Bass Enhancement
+              </FluentText>
+              <FluentText variant="caption1" color="secondary">
+                {bassEnhancement}%
+              </FluentText>
+            </View>
+            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
+              Adds rich harmonics to low frequencies
+            </FluentText>
+            <CrossPlatformSlider
+              value={bassEnhancement}
+              onValueChange={handleBassEnhancementChange}
+              minimumValue={0}
+              maximumValue={100}
+              step={5}
+              disabled={!isLicensed}
+            />
+          </View>
+
+          {/* AI Upscaling Toggle */}
+          <View style={{ marginBottom: hfRestorationEnabled ? FluentSpacing.m : 0 }}>
+            <Pressable 
+              onPress={() => isLicensed && handleHfRestorationToggle(!hfRestorationEnabled)}
+              style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+            >
+              <View style={{ flex: 1 }}>
+                <FluentText variant="body2" style={{ fontWeight: FluentFontWeight.medium }}>
+                  AI Upscaling
+                </FluentText>
+                <FluentText variant="caption1" color="secondary">
+                  Restores high frequencies lost in compression
+                </FluentText>
+              </View>
+              <View style={[
+                styles.toggle,
+                { 
+                  backgroundColor: hfRestorationEnabled ? tokens.colors.primary : tokens.colors.surfaceVariant,
+                  opacity: isLicensed ? 1 : 0.5
+                }
+              ]}>
+                <View style={[
+                  styles.toggleThumb,
+                  { 
+                    backgroundColor: tokens.colors.onPrimary,
+                    transform: [{ translateX: hfRestorationEnabled ? 20 : 2 }]
+                  }
+                ]} />
+              </View>
+            </Pressable>
+
+            {/* AI Upscaling Level Slider (shown when enabled) */}
+            {hfRestorationEnabled && (
+              <View style={{ marginTop: FluentSpacing.m }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: FluentSpacing.xs }}>
+                  <FluentText variant="caption1" color="secondary">
+                    Intensity
+                  </FluentText>
+                  <FluentText variant="caption1" color="secondary">
+                    {hfRestorationLevel}%
+                  </FluentText>
+                </View>
+                <CrossPlatformSlider
+                  value={hfRestorationLevel}
+                  onValueChange={handleHfRestorationLevelChange}
+                  minimumValue={0}
+                  maximumValue={100}
+                  step={10}
+                  disabled={!isLicensed}
+                />
+              </View>
+            )}
           </View>
         </View>
 
@@ -1273,6 +1423,17 @@ const styles = StyleSheet.create({
   },
   iosNoticeText: {
     flex: 1,
+  },
+  toggle: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+  },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
   },
 });
 
