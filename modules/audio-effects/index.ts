@@ -84,6 +84,9 @@ interface EqualizerModuleInterface {
   setEqBands(bands: number[]): { success: boolean; error?: string };
   setBassBoost(gain: number): { success: boolean; gain?: number; error?: string };
   setTrebleBoost(gain: number): { success: boolean; gain?: number; error?: string };
+  setBassEnhancement(level: number): { success: boolean; level?: number; error?: string };
+  setHfRestoration(enabled: boolean): { success: boolean; enabled?: boolean; error?: string };
+  setHfRestorationLevel(level: number): { success: boolean; level?: number; error?: string };
   release(): Promise<{ success: boolean }>;
 }
 
@@ -739,24 +742,50 @@ export const EqualizerModule = {
   },
 
   // Smart Enhancements - Bass Enhancement (Harmonic Generation)
-  // Note: These methods update module-level state that is shared with SmartEnhancementsModule
-  setBassEnhancement: (level: number): { success: boolean; error?: string } => {
+  setBassEnhancement: (level: number): { success: boolean; level?: number; error?: string } => {
+    // Update local state for cross-module access
     bassEnhancementLevel = Math.max(0, Math.min(100, level));
-    console.log('[EqualizerModule] Bass Enhancement set to:', bassEnhancementLevel + '%');
-    return { success: true };
+    // Call native module on Android
+    if (EqualizerModuleNative) {
+      try {
+        return EqualizerModuleNative.setBassEnhancement(level);
+      } catch (error) {
+        console.error('EqualizerModule.setBassEnhancement error:', error);
+        return { success: false, error: String(error) };
+      }
+    }
+    return { success: true, level: bassEnhancementLevel };
   },
 
   // Smart Enhancements - HF Restoration
-  setHfRestoration: (enabled: boolean): { success: boolean; error?: string } => {
+  setHfRestoration: (enabled: boolean): { success: boolean; enabled?: boolean; error?: string } => {
+    // Update local state for cross-module access
     hfRestorationEnabled = enabled;
-    console.log('[EqualizerModule] HF Restoration:', enabled ? 'enabled' : 'disabled');
-    return { success: true };
+    // Call native module on Android
+    if (EqualizerModuleNative) {
+      try {
+        return EqualizerModuleNative.setHfRestoration(enabled);
+      } catch (error) {
+        console.error('EqualizerModule.setHfRestoration error:', error);
+        return { success: false, error: String(error) };
+      }
+    }
+    return { success: true, enabled: hfRestorationEnabled };
   },
 
-  setHfRestorationLevel: (level: number): { success: boolean; error?: string } => {
+  setHfRestorationLevel: (level: number): { success: boolean; level?: number; error?: string } => {
+    // Update local state for cross-module access
     hfRestorationLevel = Math.max(0, Math.min(100, level));
-    console.log('[EqualizerModule] HF Restoration Level set to:', hfRestorationLevel + '%');
-    return { success: true };
+    // Call native module on Android
+    if (EqualizerModuleNative) {
+      try {
+        return EqualizerModuleNative.setHfRestorationLevel(level);
+      } catch (error) {
+        console.error('EqualizerModule.setHfRestorationLevel error:', error);
+        return { success: false, error: String(error) };
+      }
+    }
+    return { success: true, level: hfRestorationLevel };
   },
 
   release: async (): Promise<{ success: boolean }> => {

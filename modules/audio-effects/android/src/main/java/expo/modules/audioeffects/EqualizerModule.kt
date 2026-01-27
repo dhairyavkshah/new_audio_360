@@ -247,6 +247,52 @@ class EqualizerModule : Module() {
             }
         }
         
+        // Smart Enhancements - Bass Enhancement (Harmonic Generation)
+        Function("setBassEnhancement") { level: Double ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to true, "level" to 0.0)
+                }
+                
+                val mf = gmf()
+                dsp.setBassEnhancement((level * mf).toFloat())
+                return@Function mapOf("success" to true, "level" to level)
+            } catch (e: Exception) {
+                return@Function mapOf("success" to true, "level" to 0.0)
+            }
+        }
+        
+        // Smart Enhancements - HF Restoration (AI Upscaling)
+        Function("setHfRestoration") { enabled: Boolean ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to true, "enabled" to false)
+                }
+                
+                dsp.setHfRestoration(enabled)
+                return@Function mapOf("success" to true, "enabled" to enabled)
+            } catch (e: Exception) {
+                return@Function mapOf("success" to true, "enabled" to false)
+            }
+        }
+        
+        Function("setHfRestorationLevel") { level: Double ->
+            try {
+                val dsp = getDspProcessor()
+                if (dsp == null) {
+                    return@Function mapOf("success" to true, "level" to 0.0)
+                }
+                
+                val mf = gmf()
+                dsp.setHfRestorationLevel((level * mf).toFloat())
+                return@Function mapOf("success" to true, "level" to level)
+            } catch (e: Exception) {
+                return@Function mapOf("success" to true, "level" to 0.0)
+            }
+        }
+        
         AsyncFunction("release") { promise: Promise ->
             try {
                 val dsp = getDspProcessor()

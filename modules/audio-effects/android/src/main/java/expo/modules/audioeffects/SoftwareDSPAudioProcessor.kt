@@ -21,8 +21,13 @@ import java.nio.ByteOrder
  * correct frequency response. No resampling is performed - the processor
  * operates at the source sample rate (typically 44.1kHz or 48kHz).
  * 
- * Signal Chain:
- * Input → 10-Band EQ → Bass Shelf → Treble Shelf → Spatial Enhancement → Reverb → Limiter → Output
+ * Signal Chain (v28.0):
+ * Input → HF Restoration → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble Shelf → Spatial Enhancement (with HRTF) → Reverb → Limiter → Output
+ * 
+ * Smart Enhancements (v28.0):
+ * - HRTF Binaural: Pinna filters @ 2.7kHz (Q=2.0, +0-5dB) and 8kHz (Q=1.5, +0-3dB) for spatial levels 2-5
+ * - Bass Enhancement: Harmonic generation via soft-clipping, 75Hz crossover, max +4dB
+ * - HF Restoration: Spectral extension via high-shelf @ 16kHz, max +3dB
  */
 class SoftwareDSPAudioProcessor : AudioProcessor {
     companion object {
