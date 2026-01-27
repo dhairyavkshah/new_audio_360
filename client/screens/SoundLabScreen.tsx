@@ -1016,7 +1016,7 @@ function SoundLabScreen() {
                   AI Upscaling
                 </FluentText>
                 <FluentText variant="caption1" color="secondary">
-                  Restores high frequencies lost in compression
+                  Lightweight AI-based audio-restoration and upscaling
                 </FluentText>
               </View>
               <View style={[
