@@ -67,6 +67,23 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         private const val MAX_DECORRELATION = 18f       // max 18%
         private const val MAX_WET_MIX = 55f             // max 55%
         
+        // HRTF Pinna Simulation (industry-standard ear canal resonance)
+        private const val HRTF_PINNA_FREQ = 2700f
+        private const val HRTF_ELEVATION_FREQ = 8000f
+        private const val HRTF_PINNA_Q = 2.0f
+        private const val HRTF_ELEVATION_Q = 1.5f
+        private val SLIDER_HRTF_GAIN = floatArrayOf(0f, 0f, 2f, 3f, 4f, 5f) // dB per level
+        
+        // Bass Enhancement (psychoacoustic harmonic generation)
+        private const val BASS_ENHANCE_CROSSOVER = 75f
+        private const val BASS_ENHANCE_MAX_BOOST_DB = 4f
+        
+        // HF Restoration (high-frequency spectral extension)
+        private const val HF_ANALYZE_LOW = 10000f
+        private const val HF_ANALYZE_HIGH = 14000f
+        private const val HF_RESTORE_FREQ = 16000f
+        private const val HF_RESTORE_MAX_BOOST_DB = 3f
+        
         @Volatile
         private var sharedInstance: SoftwareDSPAudioProcessor? = null
         
@@ -94,6 +111,21 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private val bassShelfFilter = BiquadFilter(FilterType.LOWSHELF, BASS_SHELF_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
     private val trebleShelfFilter = BiquadFilter(FilterType.HIGHSHELF, TREBLE_SHELF_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
     private val limiter = Limiter(-0.1f, 20f, 1f, 100f, STANDARD_SAMPLE_RATE)
+    
+    // HRTF Pinna Simulation filters (L/R independent)
+    private val hrtfPinnaFilterL = BiquadFilter(FilterType.PEAKING, HRTF_PINNA_FREQ, 0f, HRTF_PINNA_Q, STANDARD_SAMPLE_RATE)
+    private val hrtfPinnaFilterR = BiquadFilter(FilterType.PEAKING, HRTF_PINNA_FREQ, 0f, HRTF_PINNA_Q, STANDARD_SAMPLE_RATE)
+    private val hrtfElevationFilterL = BiquadFilter(FilterType.PEAKING, HRTF_ELEVATION_FREQ, 0f, HRTF_ELEVATION_Q, STANDARD_SAMPLE_RATE)
+    private val hrtfElevationFilterR = BiquadFilter(FilterType.PEAKING, HRTF_ELEVATION_FREQ, 0f, HRTF_ELEVATION_Q, STANDARD_SAMPLE_RATE)
+    
+    // Bass Enhancement filters (harmonic generation)
+    private val bassEnhanceLowpass = BiquadFilter(FilterType.LOWPASS, BASS_ENHANCE_CROSSOVER, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val bassEnhanceHighpass = BiquadFilter(FilterType.HIGHPASS, BASS_ENHANCE_CROSSOVER, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val bassHarmonicsFilter = BiquadFilter(FilterType.PEAKING, 150f, 0f, 1.0f, STANDARD_SAMPLE_RATE)
+    
+    // HF Restoration filters (spectral extension)
+    private val hfAnalyzeFilter = BiquadFilter(FilterType.HIGHPASS, HF_ANALYZE_LOW, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
+    private val hfRestoreFilter = BiquadFilter(FilterType.HIGHSHELF, HF_RESTORE_FREQ, 0f, SHELF_Q, STANDARD_SAMPLE_RATE)
 
     private val eqGains = FloatArray(10) { 0f }
     
@@ -110,6 +142,18 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     private var bassGain = 0f
     private var trebleGain = 0f
     private var isEnabled = true
+    
+    // HRTF state variables
+    private var hrtfPinnaGain = 0f
+    private var hrtfElevationGain = 0f
+    
+    // Bass Enhancement state
+    private var bassEnhancementLevel = 0f // 0-100%
+    
+    // HF Restoration state
+    private var hfRestorationEnabled = false
+    private var hfRestorationLevel = 0f // 0-100%
+    private var hfEnergySmooth = 0f // Smoothed HF energy for auto-detection
     
     // Psychoacoustic Stereo Enhancement
     private var spatialEnhancementLevel: Int = 0  // 0-5 intensity level (legacy)
@@ -187,6 +231,21 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         allpassFilter1.configure(FilterType.ALLPASS, 3000f, 0f, ALLPASS_Q, currentSampleRate)
         allpassFilter2.configure(FilterType.ALLPASS, 5000f, 0f, ALLPASS_Q, currentSampleRate)
         
+        // Configure HRTF filters at current sample rate
+        hrtfPinnaFilterL.configure(FilterType.PEAKING, HRTF_PINNA_FREQ, hrtfPinnaGain, HRTF_PINNA_Q, currentSampleRate)
+        hrtfPinnaFilterR.configure(FilterType.PEAKING, HRTF_PINNA_FREQ, hrtfPinnaGain, HRTF_PINNA_Q, currentSampleRate)
+        hrtfElevationFilterL.configure(FilterType.PEAKING, HRTF_ELEVATION_FREQ, hrtfElevationGain, HRTF_ELEVATION_Q, currentSampleRate)
+        hrtfElevationFilterR.configure(FilterType.PEAKING, HRTF_ELEVATION_FREQ, hrtfElevationGain, HRTF_ELEVATION_Q, currentSampleRate)
+        
+        // Configure Bass Enhancement filters at current sample rate
+        bassEnhanceLowpass.configure(FilterType.LOWPASS, BASS_ENHANCE_CROSSOVER, 0f, SHELF_Q, currentSampleRate)
+        bassEnhanceHighpass.configure(FilterType.HIGHPASS, BASS_ENHANCE_CROSSOVER, 0f, SHELF_Q, currentSampleRate)
+        bassHarmonicsFilter.configure(FilterType.PEAKING, 150f, 0f, 1.0f, currentSampleRate)
+        
+        // Configure HF Restoration filters at current sample rate
+        hfAnalyzeFilter.configure(FilterType.HIGHPASS, HF_ANALYZE_LOW, 0f, SHELF_Q, currentSampleRate)
+        hfRestoreFilter.configure(FilterType.HIGHSHELF, HF_RESTORE_FREQ, 0f, SHELF_Q, currentSampleRate)
+        
         // Calculate ITD delay in samples (0.3ms at current sample rate)
         itdDelaySamples = ((ITD_DELAY_MS / 1000f) * currentSampleRate).toInt().coerceIn(1, MAX_ITD_DELAY_SAMPLES - 1)
 
@@ -250,34 +309,44 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         // 32-BIT FLOAT SIGNAL CHAIN
         // =========================================
         
-        // 1. 10-Band Parametric EQ (true stereo)
+        // 1. HF Restoration (at start, before EQ - spectral extension)
+        if (hfRestorationEnabled && hfRestorationLevel > 0f && channelCount == 2) {
+            processHfRestoration(floatSamples, channelCount)
+        }
+        
+        // 2. 10-Band Parametric EQ (true stereo)
         for (filter in eqFilters) {
             if (!filter.isPassthrough()) {
                 filter.processBufferFloat(floatSamples, channelCount)
             }
         }
 
-        // 2. Bass Shelf Filter (true stereo)
+        // 3. Bass Shelf Filter (true stereo)
         if (bassGain != 0f) {
             bassShelfFilter.processBufferFloat(floatSamples, channelCount)
         }
+        
+        // 4. Bass Enhancement (after bass shelf - harmonic generation)
+        if (bassEnhancementLevel > 0f && channelCount == 2) {
+            processBassEnhancement(floatSamples, channelCount)
+        }
 
-        // 3. Treble Shelf Filter (true stereo)
+        // 5. Treble Shelf Filter (true stereo)
         if (trebleGain != 0f) {
             trebleShelfFilter.processBufferFloat(floatSamples, channelCount)
         }
 
-        // 4. Psychoacoustic Stereo Enhancement (true stereo)
+        // 6. Psychoacoustic Stereo Enhancement (true stereo with HRTF)
         if (spatialEnhancementLevel > 0 && channelCount == 2) {
             processPsychoacousticStereo(floatSamples)
         }
 
-        // 5. Multi-Tap Delay Reverb (true stereo)
+        // 7. Multi-Tap Delay Reverb (true stereo)
         if (reverbWetMix > 0f && channelCount == 2) {
             processReverbFloat(floatSamples)
         }
 
-        // 6. Brickwall Limiter (linked stereo - industry standard)
+        // 8. Brickwall Limiter (linked stereo - industry standard)
         limiter.processBufferFloat(floatSamples, channelCount)
 
         // =========================================
@@ -389,6 +458,22 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         leftSquaredSum = 0.0
         rightSquaredSum = 0.0
         runningCorrelation = 1.0f
+        
+        // Reset HRTF filters
+        hrtfPinnaFilterL.resetAllChannels()
+        hrtfPinnaFilterR.resetAllChannels()
+        hrtfElevationFilterL.resetAllChannels()
+        hrtfElevationFilterR.resetAllChannels()
+        
+        // Reset Bass Enhancement filters
+        bassEnhanceLowpass.resetAllChannels()
+        bassEnhanceHighpass.resetAllChannels()
+        bassHarmonicsFilter.resetAllChannels()
+        
+        // Reset HF Restoration filters
+        hfAnalyzeFilter.resetAllChannels()
+        hfRestoreFilter.resetAllChannels()
+        hfEnergySmooth = 0f
 
         if (pendingFormat != AudioFormat.NOT_SET) {
             inputFormat = pendingFormat
@@ -452,8 +537,17 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         spatialDecorrelation = SLIDER_DECORRELATION[spatialEnhancementLevel]
         spatialWetMix = SLIDER_WET_MIX[spatialEnhancementLevel]
         
+        // Configure HRTF filters based on level (activates at level 2+)
+        hrtfPinnaGain = SLIDER_HRTF_GAIN[spatialEnhancementLevel]
+        hrtfElevationGain = hrtfPinnaGain * 0.5f // 50% of pinna gain
+        
+        hrtfPinnaFilterL.setGain(hrtfPinnaGain)
+        hrtfPinnaFilterR.setGain(hrtfPinnaGain)
+        hrtfElevationFilterL.setGain(hrtfElevationGain)
+        hrtfElevationFilterR.setGain(hrtfElevationGain)
+        
         val levelNames = arrayOf("Off", "Subtle", "Mild", "Moderate", "Enhanced", "Maximum")
-        android.util.Log.d("SoftwareDSP", "Spatial enhancement level: ${levelNames[spatialEnhancementLevel]} (${SLIDER_MULTIPLIERS[spatialEnhancementLevel]}x multiplier)")
+        android.util.Log.d("SoftwareDSP", "Spatial enhancement level: ${levelNames[spatialEnhancementLevel]} (${SLIDER_MULTIPLIERS[spatialEnhancementLevel]}x multiplier, HRTF: ${hrtfPinnaGain}dB)")
     }
     
     /**
@@ -653,8 +747,21 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             // =========================================
             // F. Output - Convert back to L/R (no mid attenuation - preserves original center content)
             // =========================================
-            samples[i] = (mid + side).coerceIn(-1f, 1f)
-            samples[i + 1] = (mid - side).coerceIn(-1f, 1f)
+            var outL = (mid + side).coerceIn(-1f, 1f)
+            var outR = (mid - side).coerceIn(-1f, 1f)
+            
+            // =========================================
+            // G. HRTF Pinna Simulation (levels 2-5 only)
+            // =========================================
+            if (spatialEnhancementLevel >= 2 || (explicitSpatialParams && hrtfPinnaGain > 0f)) {
+                outL = hrtfPinnaFilterL.processSample(outL, 0)
+                outL = hrtfElevationFilterL.processSample(outL, 0)
+                outR = hrtfPinnaFilterR.processSample(outR, 0)
+                outR = hrtfElevationFilterR.processSample(outR, 0)
+            }
+            
+            samples[i] = outL
+            samples[i + 1] = outR
             
             i += 2
         }
@@ -670,6 +777,36 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     }
 
     fun getReverb(): Float = reverbWetMix
+    
+    /**
+     * Set bass enhancement level (0-100%)
+     * Uses psychoacoustic harmonic generation via soft clipping
+     */
+    fun setBassEnhancement(level: Float) {
+        bassEnhancementLevel = level.coerceIn(0f, 100f)
+        android.util.Log.d("SoftwareDSP", "Bass Enhancement set to ${bassEnhancementLevel.toInt()}%")
+    }
+    
+    fun getBassEnhancement(): Float = bassEnhancementLevel
+    
+    /**
+     * Enable or disable HF Restoration (spectral extension)
+     */
+    fun setHfRestoration(enabled: Boolean) {
+        hfRestorationEnabled = enabled
+        android.util.Log.d("SoftwareDSP", "HF Restoration ${if (enabled) "enabled" else "disabled"}")
+    }
+    
+    fun getHfRestoration(): Boolean = hfRestorationEnabled
+    
+    /**
+     * Set HF Restoration level (0-100%)
+     */
+    fun setHfRestorationLevel(level: Float) {
+        hfRestorationLevel = level.coerceIn(0f, 100f)
+    }
+    
+    fun getHfRestorationLevel(): Float = hfRestorationLevel
 
     /**
      * Process multi-tap delay reverb (32-bit float version).
@@ -713,6 +850,69 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             // Mix dry and wet (soft clip at ±1.0 for float headroom)
             samples[i] = (dryL * dryGain + wetL * wetGain).coerceIn(-1f, 1f)
             samples[i + 1] = (dryR * dryGain + wetR * wetGain).coerceIn(-1f, 1f)
+            
+            i += 2
+        }
+    }
+    
+    /**
+     * Process bass enhancement via psychoacoustic harmonic generation.
+     * Uses soft clipping (tanh) to generate harmonics from sub-bass content.
+     * ADDITIVE ONLY - original signal is never attenuated.
+     */
+    private fun processBassEnhancement(samples: FloatArray, channelCount: Int) {
+        if (bassEnhancementLevel <= 0f || channelCount != 2) return
+        
+        val mixLevel = bassEnhancementLevel / 100f
+        val boostFactor = (BASS_ENHANCE_MAX_BOOST_DB / 20f) * mixLevel // Convert dB to linear scale factor
+        
+        var i = 0
+        while (i < samples.size - 1) {
+            val left = samples[i]
+            val right = samples[i + 1]
+            
+            // Extract low frequencies below crossover (75Hz)
+            val bassL = bassEnhanceLowpass.processSample(left, 0)
+            val bassR = bassEnhanceLowpass.processSample(right, 1)
+            
+            // Generate harmonics via soft clipping (creates 2nd, 3rd, 4th harmonics)
+            val harmonicL = kotlin.math.tanh(bassL * 2f) * 0.5f
+            val harmonicR = kotlin.math.tanh(bassR * 2f) * 0.5f
+            
+            // Mix harmonics back (additive only - original signal untouched)
+            samples[i] = left + harmonicL * boostFactor
+            samples[i + 1] = right + harmonicR * boostFactor
+            
+            i += 2
+        }
+    }
+    
+    /**
+     * Process HF restoration via spectral extension.
+     * Applies a high-shelf boost at 16kHz for compressed audio.
+     * ADDITIVE ONLY - boosts HF content without attenuating other frequencies.
+     */
+    private fun processHfRestoration(samples: FloatArray, channelCount: Int) {
+        if (!hfRestorationEnabled || channelCount != 2) return
+        
+        val boostDb = (hfRestorationLevel / 100f) * HF_RESTORE_MAX_BOOST_DB
+        if (boostDb <= 0f) return
+        
+        // Apply high-shelf boost at 16kHz
+        hfRestoreFilter.setGain(boostDb)
+        
+        var i = 0
+        while (i < samples.size - 1) {
+            // Additive HF boost
+            val originalL = samples[i]
+            val originalR = samples[i + 1]
+            
+            val boostedL = hfRestoreFilter.processSample(originalL, 0)
+            val boostedR = hfRestoreFilter.processSample(originalR, 1)
+            
+            // Add only the HF boost portion (difference)
+            samples[i] = originalL + (boostedL - originalL)
+            samples[i + 1] = originalR + (boostedR - originalR)
             
             i += 2
         }
@@ -764,6 +964,31 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         rightSquaredSum = 0.0
         runningCorrelation = 1.0f
         
+        // Reset HRTF filters and state
+        hrtfPinnaGain = 0f
+        hrtfElevationGain = 0f
+        hrtfPinnaFilterL.setGain(0f)
+        hrtfPinnaFilterR.setGain(0f)
+        hrtfElevationFilterL.setGain(0f)
+        hrtfElevationFilterR.setGain(0f)
+        hrtfPinnaFilterL.resetAllChannels()
+        hrtfPinnaFilterR.resetAllChannels()
+        hrtfElevationFilterL.resetAllChannels()
+        hrtfElevationFilterR.resetAllChannels()
+        
+        // Reset Bass Enhancement filters and state
+        bassEnhancementLevel = 0f
+        bassEnhanceLowpass.resetAllChannels()
+        bassEnhanceHighpass.resetAllChannels()
+        bassHarmonicsFilter.resetAllChannels()
+        
+        // Reset HF Restoration filters and state
+        hfRestorationEnabled = false
+        hfRestorationLevel = 0f
+        hfEnergySmooth = 0f
+        hfAnalyzeFilter.resetAllChannels()
+        hfRestoreFilter.resetAllChannels()
+        
         eqFilters.forEach { it.resetAllChannels() }
         bassShelfFilter.resetAllChannels()
         trebleShelfFilter.resetAllChannels()
@@ -791,7 +1016,14 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             "spatialEnhancementActive" to (spatialEnhancementLevel > 0),
             "spatialEnhancementLevel" to spatialEnhancementLevel,
             "itdDelaySamples" to itdDelaySamples,
-            "runningCorrelation" to runningCorrelation
+            "runningCorrelation" to runningCorrelation,
+            "hrtfActive" to (hrtfPinnaGain > 0f),
+            "hrtfPinnaGain" to hrtfPinnaGain,
+            "hrtfElevationGain" to hrtfElevationGain,
+            "bassEnhancementActive" to (bassEnhancementLevel > 0f),
+            "bassEnhancementLevel" to bassEnhancementLevel,
+            "hfRestorationActive" to hfRestorationEnabled,
+            "hfRestorationLevel" to hfRestorationLevel
         )
     }
 }

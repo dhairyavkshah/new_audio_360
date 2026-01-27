@@ -25,6 +25,9 @@ const STORAGE_KEYS = {
   BASS_CONTROL_LEVEL: '@new_audio_360_bass_control_level',
   TREBLE_CONTROL_LEVEL: '@new_audio_360_treble_control_level',
   SPATIAL_ENHANCEMENT: '@new_audio_360_spatial_enhancement',
+  BASS_ENHANCEMENT: '@new_audio_360_bass_enhancement',
+  HF_RESTORATION_ENABLED: '@new_audio_360_hf_restoration_enabled',
+  HF_RESTORATION_LEVEL: '@new_audio_360_hf_restoration_level',
 };
 
 export interface CustomEQPreset {
@@ -564,5 +567,61 @@ export async function getSpatialEnhancement(): Promise<number> {
   } catch (error) {
     console.error('Error getting spatial enhancement:', error);
     return 0;
+  }
+}
+
+// Smart Enhancements - Bass Enhancement (0-100%)
+export async function saveBassEnhancement(level: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.BASS_ENHANCEMENT, JSON.stringify(level));
+  } catch (error) {
+    console.error('Error saving bass enhancement:', error);
+  }
+}
+
+export async function getBassEnhancement(): Promise<number> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.BASS_ENHANCEMENT);
+    return data ? JSON.parse(data) : 0;
+  } catch (error) {
+    console.error('Error getting bass enhancement:', error);
+    return 0;
+  }
+}
+
+// Smart Enhancements - HF Restoration (AI Upscaling)
+export async function saveHfRestorationEnabled(enabled: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.HF_RESTORATION_ENABLED, JSON.stringify(enabled));
+  } catch (error) {
+    console.error('Error saving HF restoration enabled:', error);
+  }
+}
+
+export async function getHfRestorationEnabled(): Promise<boolean> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.HF_RESTORATION_ENABLED);
+    return data ? JSON.parse(data) : false;
+  } catch (error) {
+    console.error('Error getting HF restoration enabled:', error);
+    return false;
+  }
+}
+
+export async function saveHfRestorationLevel(level: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.HF_RESTORATION_LEVEL, JSON.stringify(level));
+  } catch (error) {
+    console.error('Error saving HF restoration level:', error);
+  }
+}
+
+export async function getHfRestorationLevel(): Promise<number> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.HF_RESTORATION_LEVEL);
+    return data ? JSON.parse(data) : 50; // Default 50%
+  } catch (error) {
+    console.error('Error getting HF restoration level:', error);
+    return 50;
   }
 }
