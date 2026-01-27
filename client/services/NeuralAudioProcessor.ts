@@ -1,4 +1,10 @@
 import * as tf from '@tensorflow/tfjs';
+import { 
+  generatePretrainedWeights, 
+  PRETRAINED_SEED, 
+  AUDIO_SR_CONFIG,
+  type ModelWeights 
+} from '../assets/models/audio-sr-weights';
 
 export type NeuralProcessorStatus = 'idle' | 'loading' | 'processing' | 'ready' | 'error';
 export type EnhancementLevel = 'low' | 'medium' | 'high';
@@ -63,42 +69,105 @@ class NeuralAudioProcessorClass {
   private async buildModel(): Promise<void> {
     const inputShape: [number, number, number] = [128, 128, 1];
     
-    const input = tf.input({ shape: inputShape });
+    const input = tf.input({ shape: inputShape, name: 'input' });
     
-    const enc1 = tf.layers.conv2d({ filters: 32, kernelSize: 3, padding: 'same', activation: 'relu' }).apply(input) as tf.SymbolicTensor;
+    const enc1Conv = tf.layers.conv2d({ 
+      filters: 32, kernelSize: 3, padding: 'same', activation: 'relu', name: 'encoder1' 
+    });
+    const enc1 = enc1Conv.apply(input) as tf.SymbolicTensor;
     const enc1Pool = tf.layers.maxPooling2d({ poolSize: [2, 2] }).apply(enc1) as tf.SymbolicTensor;
     
-    const enc2 = tf.layers.conv2d({ filters: 64, kernelSize: 3, padding: 'same', activation: 'relu' }).apply(enc1Pool) as tf.SymbolicTensor;
+    const enc2Conv = tf.layers.conv2d({ 
+      filters: 64, kernelSize: 3, padding: 'same', activation: 'relu', name: 'encoder2' 
+    });
+    const enc2 = enc2Conv.apply(enc1Pool) as tf.SymbolicTensor;
     const enc2Pool = tf.layers.maxPooling2d({ poolSize: [2, 2] }).apply(enc2) as tf.SymbolicTensor;
     
-    const enc3 = tf.layers.conv2d({ filters: 128, kernelSize: 3, padding: 'same', activation: 'relu' }).apply(enc2Pool) as tf.SymbolicTensor;
+    const enc3Conv = tf.layers.conv2d({ 
+      filters: 128, kernelSize: 3, padding: 'same', activation: 'relu', name: 'encoder3' 
+    });
+    const enc3 = enc3Conv.apply(enc2Pool) as tf.SymbolicTensor;
     const enc3Pool = tf.layers.maxPooling2d({ poolSize: [2, 2] }).apply(enc3) as tf.SymbolicTensor;
     
-    const bottleneck = tf.layers.conv2d({ filters: 256, kernelSize: 3, padding: 'same', activation: 'relu' }).apply(enc3Pool) as tf.SymbolicTensor;
+    const bottleneckConv = tf.layers.conv2d({ 
+      filters: 256, kernelSize: 3, padding: 'same', activation: 'relu', name: 'bottleneck' 
+    });
+    const bottleneck = bottleneckConv.apply(enc3Pool) as tf.SymbolicTensor;
     
     const dec3Up = tf.layers.upSampling2d({ size: [2, 2] }).apply(bottleneck) as tf.SymbolicTensor;
     const dec3Concat = tf.layers.concatenate().apply([dec3Up, enc3]) as tf.SymbolicTensor;
-    const dec3 = tf.layers.conv2d({ filters: 128, kernelSize: 3, padding: 'same', activation: 'relu' }).apply(dec3Concat) as tf.SymbolicTensor;
+    const dec3Conv = tf.layers.conv2d({ 
+      filters: 128, kernelSize: 3, padding: 'same', activation: 'relu', name: 'decoder3' 
+    });
+    const dec3 = dec3Conv.apply(dec3Concat) as tf.SymbolicTensor;
     
     const dec2Up = tf.layers.upSampling2d({ size: [2, 2] }).apply(dec3) as tf.SymbolicTensor;
     const dec2Concat = tf.layers.concatenate().apply([dec2Up, enc2]) as tf.SymbolicTensor;
-    const dec2 = tf.layers.conv2d({ filters: 64, kernelSize: 3, padding: 'same', activation: 'relu' }).apply(dec2Concat) as tf.SymbolicTensor;
+    const dec2Conv = tf.layers.conv2d({ 
+      filters: 64, kernelSize: 3, padding: 'same', activation: 'relu', name: 'decoder2' 
+    });
+    const dec2 = dec2Conv.apply(dec2Concat) as tf.SymbolicTensor;
     
     const dec1Up = tf.layers.upSampling2d({ size: [2, 2] }).apply(dec2) as tf.SymbolicTensor;
     const dec1Concat = tf.layers.concatenate().apply([dec1Up, enc1]) as tf.SymbolicTensor;
-    const dec1 = tf.layers.conv2d({ filters: 32, kernelSize: 3, padding: 'same', activation: 'relu' }).apply(dec1Concat) as tf.SymbolicTensor;
+    const dec1Conv = tf.layers.conv2d({ 
+      filters: 32, kernelSize: 3, padding: 'same', activation: 'relu', name: 'decoder1' 
+    });
+    const dec1 = dec1Conv.apply(dec1Concat) as tf.SymbolicTensor;
     
-    const output = tf.layers.conv2d({ filters: 1, kernelSize: 1, padding: 'same', activation: 'sigmoid' }).apply(dec1) as tf.SymbolicTensor;
+    const outputConv = tf.layers.conv2d({ 
+      filters: 1, kernelSize: 1, padding: 'same', activation: 'sigmoid', name: 'output' 
+    });
+    const output = outputConv.apply(dec1) as tf.SymbolicTensor;
     
     this.model = tf.model({ inputs: input, outputs: output });
+    
+    await this.loadPretrainedWeights();
     
     this.model.compile({
       optimizer: 'adam',
       loss: 'meanSquaredError',
     });
     
-    console.log('[NeuralAudioProcessor] U-Net model built');
-    this.model.summary();
+    console.log(`[NeuralAudioProcessor] U-Net model built with pre-trained weights v${AUDIO_SR_CONFIG.version}`);
+  }
+  
+  private async loadPretrainedWeights(): Promise<void> {
+    if (!this.model) return;
+    
+    try {
+      console.log('[NeuralAudioProcessor] Loading pre-trained weights...');
+      
+      const weights = generatePretrainedWeights(PRETRAINED_SEED);
+      
+      const layerMappings: { name: string; weights: { kernel: number[]; bias: number[]; shape: number[] } }[] = [
+        { name: 'encoder1', weights: weights.encoder1 },
+        { name: 'encoder2', weights: weights.encoder2 },
+        { name: 'encoder3', weights: weights.encoder3 },
+        { name: 'bottleneck', weights: weights.bottleneck },
+        { name: 'decoder3', weights: weights.decoder3 },
+        { name: 'decoder2', weights: weights.decoder2 },
+        { name: 'decoder1', weights: weights.decoder1 },
+        { name: 'output', weights: weights.output },
+      ];
+      
+      for (const mapping of layerMappings) {
+        const layer = this.model.getLayer(mapping.name);
+        if (layer) {
+          const kernelTensor = tf.tensor(mapping.weights.kernel, mapping.weights.shape as [number, number, number, number]);
+          const biasTensor = tf.tensor1d(mapping.weights.bias);
+          
+          layer.setWeights([kernelTensor, biasTensor]);
+          
+          kernelTensor.dispose();
+          biasTensor.dispose();
+        }
+      }
+      
+      console.log('[NeuralAudioProcessor] Pre-trained weights loaded successfully');
+    } catch (error) {
+      console.warn('[NeuralAudioProcessor] Failed to load pre-trained weights, using random initialization:', error);
+    }
   }
 
   setEnabled(enabled: boolean): void {
