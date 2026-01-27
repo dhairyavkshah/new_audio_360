@@ -412,6 +412,42 @@ class NativeEffectsManagerClass {
     console.log('[NativeEffectsManager] Set treble boost:', gain);
   }
 
+  /**
+   * Set bass enhancement level (harmonic generation)
+   * @param level Level 0-100%
+   */
+  setBassEnhancement(level: number): void {
+    if (Platform.OS !== 'android' || !this.isAvailable()) {
+      return;
+    }
+    EqualizerModule.setBassEnhancement(level);
+    console.log('[NativeEffectsManager] Set bass enhancement:', level + '%');
+  }
+
+  /**
+   * Set HF restoration enabled state (AI upscaling)
+   * @param enabled Whether HF restoration is enabled
+   */
+  setHfRestoration(enabled: boolean): void {
+    if (Platform.OS !== 'android' || !this.isAvailable()) {
+      return;
+    }
+    EqualizerModule.setHfRestoration(enabled);
+    console.log('[NativeEffectsManager] Set HF restoration:', enabled ? 'enabled' : 'disabled');
+  }
+
+  /**
+   * Set HF restoration level
+   * @param level Level 0-100%
+   */
+  setHfRestorationLevel(level: number): void {
+    if (Platform.OS !== 'android' || !this.isAvailable()) {
+      return;
+    }
+    EqualizerModule.setHfRestorationLevel(level);
+    console.log('[NativeEffectsManager] Set HF restoration level:', level + '%');
+  }
+
   async release(): Promise<void> {
     await this.releaseInternal();
     this.musicSessionId = 0;

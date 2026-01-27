@@ -738,6 +738,27 @@ export const EqualizerModule = {
     }
   },
 
+  // Smart Enhancements - Bass Enhancement (Harmonic Generation)
+  // Note: These methods update module-level state that is shared with SmartEnhancementsModule
+  setBassEnhancement: (level: number): { success: boolean; error?: string } => {
+    bassEnhancementLevel = Math.max(0, Math.min(100, level));
+    console.log('[EqualizerModule] Bass Enhancement set to:', bassEnhancementLevel + '%');
+    return { success: true };
+  },
+
+  // Smart Enhancements - HF Restoration
+  setHfRestoration: (enabled: boolean): { success: boolean; error?: string } => {
+    hfRestorationEnabled = enabled;
+    console.log('[EqualizerModule] HF Restoration:', enabled ? 'enabled' : 'disabled');
+    return { success: true };
+  },
+
+  setHfRestorationLevel: (level: number): { success: boolean; error?: string } => {
+    hfRestorationLevel = Math.max(0, Math.min(100, level));
+    console.log('[EqualizerModule] HF Restoration Level set to:', hfRestorationLevel + '%');
+    return { success: true };
+  },
+
   release: async (): Promise<{ success: boolean }> => {
     if (!EqualizerModuleNative) {
       return { success: true };
