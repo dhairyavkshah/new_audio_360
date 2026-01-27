@@ -151,9 +151,18 @@ function SoundLabScreen() {
   const [bassControl, setBassControl] = useState(0);
   const [trebleControl, setTrebleControl] = useState(0);
   const [spatialEnhancement, setSpatialEnhancement] = useState(0);
-  const [bassEnhancement, setBassEnhancement] = useState(0);
+  const [bassEnhancementEnabled, setBassEnhancementEnabled] = useState(false);
+  const [bassEnhancementLevel, setBassEnhancementLevel] = useState<'low' | 'medium' | 'high'>('medium');
   const [hfRestorationEnabled, setHfRestorationEnabled] = useState(false);
-  const [hfRestorationLevel, setHfRestorationLevel] = useState(50);
+  const [hfRestorationLevel, setHfRestorationLevel] = useState<'low' | 'medium' | 'high'>('medium');
+  
+  const ENHANCEMENT_LEVEL_VALUES = { low: 33, medium: 66, high: 100 };
+  const getEnhancementLevelFromValue = (value: number): 'low' | 'medium' | 'high' => {
+    if (value <= 0) return 'medium';
+    if (value <= 40) return 'low';
+    if (value <= 75) return 'medium';
+    return 'high';
+  };
 
   const MAX_CUSTOM_PRESETS = 5;
 
@@ -213,9 +222,10 @@ function SoundLabScreen() {
       setTrebleControl(trebleLvl);
       setTrebleBoost(trebleLvl); // Sync to context for software DSP
       setSpatialEnhancement(spatialEnabled);
-      setBassEnhancement(bassEnh);
+      setBassEnhancementEnabled(bassEnh > 0);
+      setBassEnhancementLevel(getEnhancementLevelFromValue(bassEnh));
       setHfRestorationEnabled(hfEnabled);
-      setHfRestorationLevel(hfLevel);
+      setHfRestorationLevel(getEnhancementLevelFromValue(hfLevel));
       
       if (eqPreset) {
         if (eqPreset === "Custom") {
@@ -540,15 +550,31 @@ function SoundLabScreen() {
     return iconMap[iconName] || 'music';
   };
 
-  const handleBassEnhancementChange = async (value: number) => {
+  const handleBassEnhancementToggle = async (enabled: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setBassEnhancement(value);
+    setBassEnhancementEnabled(enabled);
+    const value = enabled ? ENHANCEMENT_LEVEL_VALUES[bassEnhancementLevel] : 0;
     await saveBassEnhancement(value);
     SmartEnhancementsModule.setBassEnhancement(value);
     if (Platform.OS === 'web') {
-      WebAudioEffectsEngine.getInstance().setBassEnhancement(value);
+      WebAudioEffectsEngine.setBassEnhancement(value);
     } else {
       NativeEffectsManager.setBassEnhancement(value);
+    }
+  };
+
+  const handleBassEnhancementLevelChange = async (level: 'low' | 'medium' | 'high') => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setBassEnhancementLevel(level);
+    if (bassEnhancementEnabled) {
+      const value = ENHANCEMENT_LEVEL_VALUES[level];
+      await saveBassEnhancement(value);
+      SmartEnhancementsModule.setBassEnhancement(value);
+      if (Platform.OS === 'web') {
+        WebAudioEffectsEngine.setBassEnhancement(value);
+      } else {
+        NativeEffectsManager.setBassEnhancement(value);
+      }
     }
   };
 
@@ -558,21 +584,34 @@ function SoundLabScreen() {
     await saveHfRestorationEnabled(enabled);
     SmartEnhancementsModule.setHfRestoration(enabled);
     if (Platform.OS === 'web') {
-      WebAudioEffectsEngine.getInstance().setHfRestoration(enabled);
+      WebAudioEffectsEngine.setHfRestoration(enabled);
     } else {
       NativeEffectsManager.setHfRestoration(enabled);
     }
+    if (enabled) {
+      const value = ENHANCEMENT_LEVEL_VALUES[hfRestorationLevel];
+      await saveHfRestorationLevel(value);
+      SmartEnhancementsModule.setHfRestorationLevel(value);
+      if (Platform.OS === 'web') {
+        WebAudioEffectsEngine.setHfRestorationLevel(value);
+      } else {
+        NativeEffectsManager.setHfRestorationLevel(value);
+      }
+    }
   };
 
-  const handleHfRestorationLevelChange = async (value: number) => {
+  const handleHfRestorationLevelChange = async (level: 'low' | 'medium' | 'high') => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setHfRestorationLevel(value);
-    await saveHfRestorationLevel(value);
-    SmartEnhancementsModule.setHfRestorationLevel(value);
-    if (Platform.OS === 'web') {
-      WebAudioEffectsEngine.getInstance().setHfRestorationLevel(value);
-    } else {
-      NativeEffectsManager.setHfRestorationLevel(value);
+    setHfRestorationLevel(level);
+    if (hfRestorationEnabled) {
+      const value = ENHANCEMENT_LEVEL_VALUES[level];
+      await saveHfRestorationLevel(value);
+      SmartEnhancementsModule.setHfRestorationLevel(value);
+      if (Platform.OS === 'web') {
+        WebAudioEffectsEngine.setHfRestorationLevel(value);
+      } else {
+        NativeEffectsManager.setHfRestorationLevel(value);
+      }
     }
   };
 
@@ -894,7 +933,7 @@ function SoundLabScreen() {
                 <MaterialCommunityIcons name="crown" size={12} color={tokens.colors.onPrimary} />
                 <FluentText variant="caption1" style={{ color: tokens.colors.onPrimary, fontWeight: FluentFontWeight.semibold, marginLeft: 4 }}>License Required</FluentText>
               </View>
-            ) : (bassEnhancement > 0 || hfRestorationEnabled) ? (
+            ) : (bassEnhancementEnabled || hfRestorationEnabled) ? (
               <View style={[styles.activeIndicator, { backgroundColor: tokens.colors.primary }]}>
                 <FluentText variant="caption1" color="onBrand" style={{ fontWeight: FluentFontWeight.semibold }}>Active</FluentText>
               </View>
@@ -905,31 +944,69 @@ function SoundLabScreen() {
             AI-powered audio enhancements for richer, fuller sound
           </FluentText>
 
-          {/* Bass Enhancement Slider */}
+          {/* Bass Enhancement with Toggle + 3-Step Selector */}
           <View style={{ marginBottom: FluentSpacing.l }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: FluentSpacing.xs }}>
-              <FluentText variant="body2" style={{ fontWeight: FluentFontWeight.medium }}>
-                Bass Enhancement
-              </FluentText>
-              <FluentText variant="caption1" color="secondary">
-                {bassEnhancement}%
-              </FluentText>
-            </View>
-            <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
-              Adds rich harmonics to low frequencies
-            </FluentText>
-            <CrossPlatformSlider
-              value={bassEnhancement}
-              onValueChange={handleBassEnhancementChange}
-              minimumValue={0}
-              maximumValue={100}
-              step={5}
-              disabled={!isLicensed}
-            />
+            <Pressable 
+              onPress={() => isLicensed && handleBassEnhancementToggle(!bassEnhancementEnabled)}
+              style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: FluentSpacing.xs }}
+            >
+              <View style={{ flex: 1 }}>
+                <FluentText variant="body2" style={{ fontWeight: FluentFontWeight.medium }}>
+                  Bass Enhancement
+                </FluentText>
+                <FluentText variant="caption1" color="secondary">
+                  Adds rich harmonics to low frequencies
+                </FluentText>
+              </View>
+              <View style={[
+                styles.toggle,
+                { 
+                  backgroundColor: bassEnhancementEnabled ? tokens.colors.primary : tokens.colors.surfaceVariant,
+                  opacity: isLicensed ? 1 : 0.5
+                }
+              ]}>
+                <View style={[
+                  styles.toggleThumb,
+                  { 
+                    backgroundColor: tokens.colors.onPrimary,
+                    transform: [{ translateX: bassEnhancementEnabled ? 20 : 2 }]
+                  }
+                ]} />
+              </View>
+            </Pressable>
+            
+            {bassEnhancementEnabled && (
+              <View style={[styles.threeStepSelector, { marginTop: FluentSpacing.s }]}>
+                {(['low', 'medium', 'high'] as const).map((level) => (
+                  <Pressable
+                    key={level}
+                    onPress={() => isLicensed && handleBassEnhancementLevelChange(level)}
+                    style={[
+                      styles.threeStepOption,
+                      {
+                        backgroundColor: bassEnhancementLevel === level ? tokens.colors.primary : tokens.colors.surfaceVariant,
+                        borderRadius: FluentRadius.medium,
+                        opacity: isLicensed ? 1 : 0.5
+                      }
+                    ]}
+                  >
+                    <FluentText 
+                      variant="caption1" 
+                      style={{ 
+                        fontWeight: bassEnhancementLevel === level ? FluentFontWeight.semibold : FluentFontWeight.regular,
+                        color: bassEnhancementLevel === level ? tokens.colors.onPrimary : tokens.colors.text
+                      }}
+                    >
+                      {level.charAt(0).toUpperCase() + level.slice(1)}
+                    </FluentText>
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </View>
 
-          {/* AI Upscaling Toggle */}
-          <View style={{ marginBottom: hfRestorationEnabled ? FluentSpacing.m : 0 }}>
+          {/* AI Upscaling with Toggle + 3-Step Selector */}
+          <View>
             <Pressable 
               onPress={() => isLicensed && handleHfRestorationToggle(!hfRestorationEnabled)}
               style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
@@ -959,25 +1036,32 @@ function SoundLabScreen() {
               </View>
             </Pressable>
 
-            {/* AI Upscaling Level Slider (shown when enabled) */}
             {hfRestorationEnabled && (
-              <View style={{ marginTop: FluentSpacing.m }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: FluentSpacing.xs }}>
-                  <FluentText variant="caption1" color="secondary">
-                    Intensity
-                  </FluentText>
-                  <FluentText variant="caption1" color="secondary">
-                    {hfRestorationLevel}%
-                  </FluentText>
-                </View>
-                <CrossPlatformSlider
-                  value={hfRestorationLevel}
-                  onValueChange={handleHfRestorationLevelChange}
-                  minimumValue={0}
-                  maximumValue={100}
-                  step={10}
-                  disabled={!isLicensed}
-                />
+              <View style={[styles.threeStepSelector, { marginTop: FluentSpacing.s }]}>
+                {(['low', 'medium', 'high'] as const).map((level) => (
+                  <Pressable
+                    key={level}
+                    onPress={() => isLicensed && handleHfRestorationLevelChange(level)}
+                    style={[
+                      styles.threeStepOption,
+                      {
+                        backgroundColor: hfRestorationLevel === level ? tokens.colors.primary : tokens.colors.surfaceVariant,
+                        borderRadius: FluentRadius.medium,
+                        opacity: isLicensed ? 1 : 0.5
+                      }
+                    ]}
+                  >
+                    <FluentText 
+                      variant="caption1" 
+                      style={{ 
+                        fontWeight: hfRestorationLevel === level ? FluentFontWeight.semibold : FluentFontWeight.regular,
+                        color: hfRestorationLevel === level ? tokens.colors.onPrimary : tokens.colors.text
+                      }}
+                    >
+                      {level.charAt(0).toUpperCase() + level.slice(1)}
+                    </FluentText>
+                  </Pressable>
+                ))}
               </View>
             )}
           </View>
@@ -1434,6 +1518,16 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
+  },
+  threeStepSelector: {
+    flexDirection: 'row',
+    gap: FluentSpacing.s,
+  },
+  threeStepOption: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: FluentSpacing.s,
+    paddingHorizontal: FluentSpacing.m,
   },
 });
 
