@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import { AudioContext, BiquadFilterNode, GainNode } from 'react-native-audio-api';
 
 /**
- * WebAudioEffectsEngine - Pure software DSP for Web platform
+ * WebAudioEffectsEngine - Pure software DSP for Web/Windows platform
  * 
  * Audio Processing Standards:
  * - Internal processing: 32-bit float (Web Audio API specification)
@@ -10,8 +10,19 @@ import { AudioContext, BiquadFilterNode, GainNode } from 'react-native-audio-api
  * - True stereo processing with independent L/R channel states per BiquadFilterNode
  * 
  * Signal Chain:
- * Input → 10-Band EQ → Dry/Wet Mix → M/S Processing (Spatial) → Limiter → Output
- *                    ↑ Multi-Tap Reverb
+ * Input → HF Restoration (highshelf @ 16kHz)
+ *       → 10-Band EQ (includes Bass Shelf @ 60Hz, Treble Shelf @ 16kHz)
+ *       → Bass Enhancement (parallel: lowpass @ 75Hz → WaveShaper → additive mix)
+ *       → Dry/Wet Mix ← Multi-Tap Reverb
+ *       → M/S Processing (Spatial Enhancement)
+ *       → HRTF Filters (Pinna @ 2700Hz, Elevation @ 8000Hz)
+ *       → Master Gain
+ *       → Output (Limiter handled in PlayerContext)
+ * 
+ * Features:
+ * - HRTF Integration: Peaking filters for spatial cues (activates at level >= 2)
+ * - Bass Enhancement: Harmonic generation via waveshaping (0-100%, max +4dB)
+ * - HF Restoration: High-shelf boost for spectral extension (0-100%, max +3dB)
  * 
  * Web Audio API Compliance:
  * - All BiquadFilterNode instances process channels independently (true stereo)
@@ -67,6 +78,15 @@ const MAX_SIDE_GAIN_PERCENT = 18;   // max 18%
 const MAX_ITD_MS = 0.6;             // max 0.6ms
 const MAX_DECORRELATION = 18;       // max 18%
 const MAX_WET_MIX = 55;             // max 55%
+
+// HRTF Gain per spatial level (dB) - matches Android implementation
+const SLIDER_HRTF_GAIN = [0, 0, 2, 3, 4, 5]; // dB per level 0-5
+
+// Bass Enhancement max boost (+4dB = 1.58x linear)
+const MAX_BASS_ENHANCEMENT_GAIN = 1.58;
+
+// HF Restoration max boost (3dB)
+const MAX_HF_RESTORATION_DB = 3;
 
 // Professional Immersive Mode Configurations
 // Based on Sony 360 Reality Audio, Yamaha YPAO/Cinema DSP, Samsung Q-Symphony, IMAX Enhanced
@@ -172,6 +192,22 @@ class WebAudioEffectsEngineClass {
   private sidePsychoGain: globalThis.GainNode | null = null;        // Side boost (max 2.2 = 120%)
   private midAttenuation: globalThis.GainNode | null = null;        // Mid compensation
   spatialEnhancementLevel: number = 0;
+  private msProcessingEnabled: boolean = false;
+
+  // HRTF Enhancement nodes (for spatial level >= 2)
+  private hrtfPinnaFilter: globalThis.BiquadFilterNode | null = null;     // Pinna notch @ 2700Hz
+  private hrtfElevationFilter: globalThis.BiquadFilterNode | null = null; // Elevation cue @ 8000Hz
+
+  // Bass Enhancement nodes (harmonic generation)
+  private bassLowpassFilter: globalThis.BiquadFilterNode | null = null;   // Extract bass @ 75Hz
+  private harmonicShaper: globalThis.WaveShaperNode | null = null;        // Soft clipping for harmonics
+  private bassEnhancementGain: globalThis.GainNode | null = null;         // Mix control (0-1.58x)
+  private bassEnhancementLevel: number = 0;                               // 0-100%
+
+  // HF Restoration nodes (spectral extension)
+  private hfRestoreFilter: globalThis.BiquadFilterNode | null = null;     // Highshelf @ 16kHz
+  private hfRestorationEnabled: boolean = false;
+  private hfRestorationLevel: number = 0;                                 // 0-100%
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {
@@ -233,23 +269,49 @@ class WebAudioEffectsEngineClass {
         
         return { delay, feedback, filter };
       });
+
+      // Create HF Restoration filter (highshelf @ 16kHz, 0-3dB boost)
+      // Placed at input for spectral extension
+      this.initializeHfRestoration();
+
+      // Create Bass Enhancement nodes (harmonic generation)
+      // Parallel path: lowpass → waveshaper → gain → mix back
+      this.initializeBassEnhancement();
+
+      // Create HRTF filters for spatial enhancement
+      this.initializeHrtfFilters();
       
       // Create M/S processing nodes for spatial enhancement
       // Uses native Web Audio API ChannelSplitter/Merger for true stereo processing
       this.initializeStereoWidthProcessor();
 
-      // Connect EQ chain
+      // Connect signal chain according to spec:
+      // Input → HF Restoration → EQ Filters → Bass Enhancement (parallel) → Spatial (HRTF) → Reverb → Master → Output
+      
+      // 1. HF Restoration → first EQ filter (if available)
+      if (this.hfRestoreFilter) {
+        (this.hfRestoreFilter as any).connect(this.eqFilters[0]);
+      }
+      
+      // 2. Connect EQ chain (10-band)
       let currentNode: any = this.eqFilters[0];
       for (let i = 1; i < this.eqFilters.length; i++) {
         currentNode.connect(this.eqFilters[i]);
         currentNode = this.eqFilters[i];
       }
       
-      // EQ output splits to dry and wet paths
+      // 3. EQ output splits to dry path and reverb (wet path)
       const eqOutput = this.eqFilters[this.eqFilters.length - 1];
       eqOutput.connect(this.dryGain);
       
-      // Connect reverb delay lines (parallel structure)
+      // 4. Bass Enhancement (parallel additive path from EQ output)
+      // Bass harmonics are generated and added back to dry signal
+      if (this.bassLowpassFilter && this.bassEnhancementGain) {
+        eqOutput.connect(this.bassLowpassFilter as any);
+        (this.bassEnhancementGain as any).connect(this.dryGain);
+      }
+      
+      // 5. Connect reverb delay lines (parallel structure)
       this.reverbDelays.forEach(({ delay, feedback, filter }) => {
         eqOutput.connect(delay);
         delay.connect(filter);
@@ -258,21 +320,39 @@ class WebAudioEffectsEngineClass {
         filter.connect(this.wetGain!);
       });
       
-      // Mix dry and wet, then through M/S processing for spatial enhancement, then to master output
-      // Signal chain: EQ → Dry/Wet Mix → M/S Processing → Master → Destination
+      // 6. Mix dry and wet, then through M/S processing + HRTF for spatial enhancement
+      // Signal chain: EQ → Dry/Wet Mix → M/S Processing → HRTF → Master → Destination
       if (this.msProcessingEnabled && this.stereoSplitter && this.stereoMerger && this.stereoMixNode) {
         // Connect dry/wet to mix node first (preserves stereo before splitting)
         this.dryGain.connect(this.stereoMixNode);
         this.wetGain.connect(this.stereoMixNode);
         // Mix node to stereo splitter (cast to any for native Web Audio API cross-type connection)
         (this.stereoMixNode as any).connect(this.stereoSplitter);
-        // Stereo merger output to master (cast to any for native Web Audio API cross-type connection)
-        (this.stereoMerger as any).connect(this.masterGain);
+        
+        // 7. Connect HRTF filters after M/S processing, before master
+        if (this.hrtfPinnaFilter && this.hrtfElevationFilter) {
+          // M/S merger → HRTF Pinna → HRTF Elevation → Master
+          (this.stereoMerger as any).connect(this.hrtfPinnaFilter);
+          this.hrtfPinnaFilter.connect(this.hrtfElevationFilter);
+          this.hrtfElevationFilter.connect(this.masterGain as any);
+        } else {
+          // Fallback: M/S merger → Master directly
+          (this.stereoMerger as any).connect(this.masterGain);
+        }
       } else {
-        // Fallback: bypass M/S processing
-        this.dryGain.connect(this.masterGain);
-        this.wetGain.connect(this.masterGain);
+        // Fallback: bypass M/S processing, connect through HRTF if available
+        if (this.hrtfPinnaFilter && this.hrtfElevationFilter) {
+          this.dryGain.connect(this.hrtfPinnaFilter as any);
+          this.wetGain.connect(this.hrtfPinnaFilter as any);
+          this.hrtfPinnaFilter.connect(this.hrtfElevationFilter);
+          this.hrtfElevationFilter.connect(this.masterGain as any);
+        } else {
+          this.dryGain.connect(this.masterGain);
+          this.wetGain.connect(this.masterGain);
+        }
       }
+      
+      // 8. Master → Destination (limiter is handled in PlayerContext)
       this.masterGain.connect(this.audioContext.destination);
 
       // Initialize psychoacoustic processor (configures nodes in disabled state)
@@ -486,6 +566,132 @@ class WebAudioEffectsEngineClass {
   }
 
   /**
+   * Initialize HF Restoration filter (highshelf @ 16kHz)
+   * Adds high-frequency content for spectral extension (0-3dB boost)
+   */
+  private initializeHfRestoration(): void {
+    if (!this.audioContext || Platform.OS !== 'web') {
+      console.log('[WebAudioEffectsEngine] HF Restoration: Not available (non-web platform)');
+      return;
+    }
+
+    try {
+      const nativeCtx = this.audioContext as unknown as NativeAudioContext;
+      
+      this.hfRestoreFilter = nativeCtx.createBiquadFilter();
+      this.hfRestoreFilter.type = 'highshelf';
+      this.hfRestoreFilter.frequency.value = 16000;
+      this.hfRestoreFilter.gain.value = 0; // Start disabled
+      
+      this.hfRestorationEnabled = false;
+      this.hfRestorationLevel = 0;
+      
+      console.log('[WebAudioEffectsEngine] HF Restoration: Initialized (disabled)');
+    } catch (error) {
+      console.error('[WebAudioEffectsEngine] HF Restoration: Failed to initialize:', error);
+    }
+  }
+
+  /**
+   * Initialize Bass Enhancement nodes for harmonic generation
+   * Parallel path: lowpass → waveshaper → gain → additive mix
+   */
+  private initializeBassEnhancement(): void {
+    if (!this.audioContext || Platform.OS !== 'web') {
+      console.log('[WebAudioEffectsEngine] Bass Enhancement: Not available (non-web platform)');
+      return;
+    }
+
+    try {
+      const nativeCtx = this.audioContext as unknown as NativeAudioContext;
+      
+      // Lowpass filter to extract bass @ 75Hz
+      this.bassLowpassFilter = nativeCtx.createBiquadFilter();
+      this.bassLowpassFilter.type = 'lowpass';
+      this.bassLowpassFilter.frequency.value = 75;
+      this.bassLowpassFilter.Q.value = 0.707;
+      
+      // Waveshaper for harmonic generation (soft clipping)
+      this.harmonicShaper = nativeCtx.createWaveShaper();
+      const curve = new Float32Array(256);
+      for (let i = 0; i < 256; i++) {
+        const x = (i / 128) - 1; // -1 to 1
+        curve[i] = Math.tanh(x * 2) * 0.5; // Soft clipping for 2nd/3rd/4th harmonics
+      }
+      this.harmonicShaper.curve = curve;
+      this.harmonicShaper.oversample = '2x';
+      
+      // Output gain for mix control (0 to 1.58x = +4dB max)
+      this.bassEnhancementGain = nativeCtx.createGain();
+      this.bassEnhancementGain.gain.value = 0; // Start disabled
+      
+      // Connect bass enhancement chain
+      this.bassLowpassFilter.connect(this.harmonicShaper);
+      this.harmonicShaper.connect(this.bassEnhancementGain);
+      
+      this.bassEnhancementLevel = 0;
+      
+      console.log('[WebAudioEffectsEngine] Bass Enhancement: Initialized (disabled)');
+    } catch (error) {
+      console.error('[WebAudioEffectsEngine] Bass Enhancement: Failed to initialize:', error);
+    }
+  }
+
+  /**
+   * Initialize HRTF filters for spatial enhancement
+   * Pinna filter @ 2700Hz and Elevation filter @ 8000Hz
+   * Activates when spatial level >= 2
+   */
+  private initializeHrtfFilters(): void {
+    if (!this.audioContext || Platform.OS !== 'web') {
+      console.log('[WebAudioEffectsEngine] HRTF: Not available (non-web platform)');
+      return;
+    }
+
+    try {
+      const nativeCtx = this.audioContext as unknown as NativeAudioContext;
+      
+      // Pinna notch filter @ 2700Hz
+      this.hrtfPinnaFilter = nativeCtx.createBiquadFilter();
+      this.hrtfPinnaFilter.type = 'peaking';
+      this.hrtfPinnaFilter.frequency.value = 2700;
+      this.hrtfPinnaFilter.Q.value = 2.0;
+      this.hrtfPinnaFilter.gain.value = 0; // Start disabled
+      
+      // Elevation cue filter @ 8000Hz (gain = 50% of pinna)
+      this.hrtfElevationFilter = nativeCtx.createBiquadFilter();
+      this.hrtfElevationFilter.type = 'peaking';
+      this.hrtfElevationFilter.frequency.value = 8000;
+      this.hrtfElevationFilter.Q.value = 1.5;
+      this.hrtfElevationFilter.gain.value = 0; // Start disabled
+      
+      console.log('[WebAudioEffectsEngine] HRTF: Initialized (disabled)');
+    } catch (error) {
+      console.error('[WebAudioEffectsEngine] HRTF: Failed to initialize:', error);
+    }
+  }
+
+  /**
+   * Update HRTF filter gains based on spatial enhancement level
+   * HRTF activates at level >= 2
+   */
+  private updateHrtfGains(level: number): void {
+    if (!this.hrtfPinnaFilter || !this.hrtfElevationFilter) {
+      return;
+    }
+
+    const clampedLevel = Math.max(0, Math.min(5, level));
+    const hrtfGainDb = SLIDER_HRTF_GAIN[clampedLevel];
+    
+    this.hrtfPinnaFilter.gain.value = hrtfGainDb;
+    this.hrtfElevationFilter.gain.value = hrtfGainDb * 0.5; // 50% of pinna
+    
+    if (hrtfGainDb > 0) {
+      console.log(`[WebAudioEffectsEngine] HRTF: Pinna=${hrtfGainDb}dB, Elevation=${hrtfGainDb * 0.5}dB`);
+    }
+  }
+
+  /**
    * Set Spatial Enhancement Level using the 6-Level Slider System
    * 
    * Level 0: Off - No processing (0.0x multiplier)
@@ -521,6 +727,9 @@ class WebAudioEffectsEngineClass {
     const wetMix = SLIDER_WET_MIX[clampedLevel];
     const multiplier = SLIDER_MULTIPLIERS[clampedLevel];
     const levelName = SLIDER_LEVEL_NAMES[clampedLevel];
+
+    // Update HRTF gains based on level
+    this.updateHrtfGains(clampedLevel);
 
     if (clampedLevel === 0) {
       this.sideHighpass.frequency.value = 1;
@@ -610,6 +819,9 @@ class WebAudioEffectsEngineClass {
     // Set pseudo-level for compatibility (based on finalWetMix)
     this.spatialEnhancementLevel = finalWetMix <= 0 ? 0 : Math.ceil(finalWetMix / 11);
 
+    // Update HRTF gains based on pseudo-level
+    this.updateHrtfGains(this.spatialEnhancementLevel);
+
     // Highpass at 150Hz - protects bass from widening
     this.sideHighpass.frequency.value = 150;
     this.sideHighpass.Q.value = 0.707;
@@ -636,6 +848,93 @@ class WebAudioEffectsEngineClass {
     }
 
     console.log(`[WebAudioEffectsEngine] Spatial params set: sideGain:${finalSideGain.toFixed(1)}%, ITD:${finalItdMs.toFixed(2)}ms, decorr:${finalDecorrelation.toFixed(1)}%, wet:${finalWetMix.toFixed(1)}%`);
+  }
+
+  /**
+   * Set Bass Enhancement level (0-100%)
+   * Generates harmonics from bass frequencies for perceived bass boost
+   * @param level - Enhancement level 0-100%
+   */
+  setBassEnhancement(level: number): void {
+    const clampedLevel = Math.max(0, Math.min(100, level));
+    this.bassEnhancementLevel = clampedLevel;
+    
+    if (!this.bassEnhancementGain) {
+      console.log('[WebAudioEffectsEngine] Bass Enhancement: Not initialized');
+      return;
+    }
+    
+    if (clampedLevel === 0) {
+      this.bassEnhancementGain.gain.value = 0;
+      console.log('[WebAudioEffectsEngine] Bass Enhancement: Disabled');
+    } else {
+      // Scale from 0-100% to 0-1.58x (max +4dB)
+      const gainValue = (clampedLevel / 100) * MAX_BASS_ENHANCEMENT_GAIN;
+      this.bassEnhancementGain.gain.value = gainValue;
+      console.log(`[WebAudioEffectsEngine] Bass Enhancement: ${clampedLevel}% (gain=${gainValue.toFixed(2)}x)`);
+    }
+  }
+
+  /**
+   * Get current Bass Enhancement level
+   * @returns Current level 0-100%
+   */
+  getBassEnhancement(): number {
+    return this.bassEnhancementLevel;
+  }
+
+  /**
+   * Enable or disable HF Restoration
+   * @param enabled - Whether HF restoration is enabled
+   */
+  setHfRestoration(enabled: boolean): void {
+    this.hfRestorationEnabled = enabled;
+    this.updateHfRestorationGain();
+    console.log(`[WebAudioEffectsEngine] HF Restoration: ${enabled ? 'Enabled' : 'Disabled'}`);
+  }
+
+  /**
+   * Get HF Restoration enabled state
+   * @returns Whether HF restoration is enabled
+   */
+  getHfRestoration(): boolean {
+    return this.hfRestorationEnabled;
+  }
+
+  /**
+   * Set HF Restoration level (0-100%)
+   * @param level - Restoration level 0-100%
+   */
+  setHfRestorationLevel(level: number): void {
+    const clampedLevel = Math.max(0, Math.min(100, level));
+    this.hfRestorationLevel = clampedLevel;
+    this.updateHfRestorationGain();
+    console.log(`[WebAudioEffectsEngine] HF Restoration Level: ${clampedLevel}%`);
+  }
+
+  /**
+   * Get current HF Restoration level
+   * @returns Current level 0-100%
+   */
+  getHfRestorationLevel(): number {
+    return this.hfRestorationLevel;
+  }
+
+  /**
+   * Update HF restoration filter gain based on enabled state and level
+   */
+  private updateHfRestorationGain(): void {
+    if (!this.hfRestoreFilter) {
+      return;
+    }
+    
+    if (!this.hfRestorationEnabled || this.hfRestorationLevel === 0) {
+      this.hfRestoreFilter.gain.value = 0;
+    } else {
+      // Scale from 0-100% to 0-3dB
+      const boostDb = (this.hfRestorationLevel / 100) * MAX_HF_RESTORATION_DB;
+      this.hfRestoreFilter.gain.value = boostDb;
+    }
   }
 
   getInputNode(): BiquadFilterNode | null {
@@ -907,6 +1206,22 @@ class WebAudioEffectsEngineClass {
     this.sidePsychoGain = null;
     this.midAttenuation = null;
     this.spatialEnhancementLevel = 0;
+    this.msProcessingEnabled = false;
+    
+    // Clean up HRTF nodes
+    this.hrtfPinnaFilter = null;
+    this.hrtfElevationFilter = null;
+    
+    // Clean up Bass Enhancement nodes
+    this.bassLowpassFilter = null;
+    this.harmonicShaper = null;
+    this.bassEnhancementGain = null;
+    this.bassEnhancementLevel = 0;
+    
+    // Clean up HF Restoration nodes
+    this.hfRestoreFilter = null;
+    this.hfRestorationEnabled = false;
+    this.hfRestorationLevel = 0;
     
     this.isInitialized = false;
     this.currentEQValues = new Array(10).fill(0);
@@ -939,6 +1254,19 @@ class WebAudioEffectsEngineClass {
       spatialEnhancementActive: this.spatialEnhancementLevel > 0,
       psychoacousticGain: this.sidePsychoGain?.gain.value ?? 1.0,
       midAttenuation: this.midAttenuation?.gain.value ?? 1.0,
+      // HRTF
+      hrtfActive: this.spatialEnhancementLevel >= 2,
+      hrtfPinnaGain: this.hrtfPinnaFilter?.gain.value ?? 0,
+      hrtfElevationGain: this.hrtfElevationFilter?.gain.value ?? 0,
+      // Bass Enhancement
+      bassEnhancementActive: this.bassEnhancementLevel > 0,
+      bassEnhancementLevel: this.bassEnhancementLevel,
+      bassEnhancementGain: this.bassEnhancementGain?.gain.value ?? 0,
+      // HF Restoration
+      hfRestorationActive: this.hfRestorationEnabled && this.hfRestorationLevel > 0,
+      hfRestorationEnabled: this.hfRestorationEnabled,
+      hfRestorationLevel: this.hfRestorationLevel,
+      hfRestorationGain: this.hfRestoreFilter?.gain.value ?? 0,
     };
   }
 }

@@ -989,6 +989,70 @@ export const TrebleModule = {
   }
 };
 
+// Smart Enhancements Module Export (Bass Enhancement + HF Restoration)
+// Software-based psychoacoustic enhancements for all platforms
+let bassEnhancementLevel = 0; // 0-100%
+let hfRestorationEnabled = false;
+let hfRestorationLevel = 50; // 0-100%, default 50%
+
+export const SmartEnhancementsModule = {
+  isAvailable: (): boolean => {
+    // Smart Enhancements are software-based, available on Android and Web
+    return Platform.OS === 'android' || Platform.OS === 'web';
+  },
+
+  // Bass Enhancement (Harmonic Generation)
+  setBassEnhancement: (level: number): { success: boolean; level?: number; error?: string } => {
+    bassEnhancementLevel = Math.max(0, Math.min(100, level));
+    console.log('[SmartEnhancementsModule] Bass Enhancement set to:', bassEnhancementLevel + '%');
+    return { success: true, level: bassEnhancementLevel };
+  },
+
+  getBassEnhancement: (): number => {
+    return bassEnhancementLevel;
+  },
+
+  // HF Restoration (AI Upscaling / Spectral Extension)
+  setHfRestoration: (enabled: boolean): { success: boolean; enabled?: boolean; error?: string } => {
+    hfRestorationEnabled = enabled;
+    console.log('[SmartEnhancementsModule] HF Restoration:', enabled ? 'enabled' : 'disabled');
+    return { success: true, enabled: hfRestorationEnabled };
+  },
+
+  getHfRestoration: (): boolean => {
+    return hfRestorationEnabled;
+  },
+
+  setHfRestorationLevel: (level: number): { success: boolean; level?: number; error?: string } => {
+    hfRestorationLevel = Math.max(0, Math.min(100, level));
+    console.log('[SmartEnhancementsModule] HF Restoration Level set to:', hfRestorationLevel + '%');
+    return { success: true, level: hfRestorationLevel };
+  },
+
+  getHfRestorationLevel: (): number => {
+    return hfRestorationLevel;
+  },
+
+  getProperties: (): { 
+    bassEnhancementLevel: number; 
+    hfRestorationEnabled: boolean; 
+    hfRestorationLevel: number;
+  } => {
+    return {
+      bassEnhancementLevel,
+      hfRestorationEnabled,
+      hfRestorationLevel
+    };
+  },
+
+  release: async (): Promise<{ success: boolean }> => {
+    bassEnhancementLevel = 0;
+    hfRestorationEnabled = false;
+    hfRestorationLevel = 50;
+    return { success: true };
+  }
+};
+
 // WaveformAnalyzer Module Export
 export const WaveformAnalyzerModule = {
   isAvailable: (): boolean => {
