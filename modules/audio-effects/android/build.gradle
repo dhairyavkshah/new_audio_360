@@ -62,6 +62,10 @@ repositories {
   google()
 }
 
+android.aaptOptions {
+  noCompress "tflite"
+}
+
 dependencies {
   implementation project(':expo-modules-core')
   
@@ -74,6 +78,10 @@ dependencies {
   
   // Security for encrypted storage
   implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+  
+  // TensorFlow Lite for neural audio processing
+  implementation 'org.tensorflow:tensorflow-lite:2.14.0'
+  implementation 'org.tensorflow:tensorflow-lite-gpu:2.14.0'
 }
 
 def safeExtGet(prop, fallback) {
