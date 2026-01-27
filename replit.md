@@ -59,7 +59,7 @@ HF Restoration → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble She
 **Smart Enhancements (v28.0)**:
 - **HRTF Binaural Virtualization**: Integrated into Spatial Enhancement slider (levels 2-5). Peaking filters at 2.7kHz (Q=2.0, +0-5dB) and 8kHz (Q=1.5, +0-3dB) for pinna simulation.
 - **Bass Enhancement**: Psychoacoustic harmonic generation via soft-clipping. 75Hz crossover, generates 2nd/3rd/4th harmonics, max +4dB boost. Adds warmth without increasing bass volume.
-- **HF Restoration (AI Upscaling)**: Spectral extension that restores high frequencies lost in compression. Analyzes 10-14kHz, restores 14-20kHz with high-shelf boost, max +3dB.
+- **HF Restoration (AI Upscaling)**: Hybrid neural/DSP spectral extension that restores high frequencies lost in compression. Uses Kuleshov-style U-Net neural network for intelligent upscaling with DSP fallback. Analyzes 10-14kHz, restores 14-20kHz with high-shelf boost, max +3dB. Three intensity levels: Low (33%), Medium (66%), High (100%).
 
 **DSP Architecture Details**:
 - **Internal Processing**: 32-bit float for precision, 64-bit for filter coefficients.
@@ -116,6 +116,8 @@ A two-check system: initial Google Play Billing validation and daily re-validati
 
 ### Audio Processing
 - `react-native-audio-api`
+- `@tensorflow/tfjs` - Neural audio processing (Web/PWA)
+- `@tensorflow/tfjs-node` - Neural audio processing (Node.js)
 
 ### UI & Navigation
 - `@react-navigation`
