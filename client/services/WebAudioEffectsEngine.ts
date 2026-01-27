@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { AudioContext, BiquadFilterNode, GainNode } from 'react-native-audio-api';
+import { NeuralAudioProcessor, EnhancementLevel } from './NeuralAudioProcessor';
 
 /**
  * WebAudioEffectsEngine - Pure software DSP for Web/Windows platform
@@ -208,6 +209,8 @@ class WebAudioEffectsEngineClass {
   private hfRestoreFilter: globalThis.BiquadFilterNode | null = null;     // Highshelf @ 16kHz
   private hfRestorationEnabled: boolean = false;
   private hfRestorationLevel: number = 0;                                 // 0-100%
+  private useNeuralProcessing: boolean = true;                            // Use neural AI upscaling
+  private neuralProcessorInitialized: boolean = false;
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {
@@ -884,13 +887,38 @@ class WebAudioEffectsEngineClass {
   }
 
   /**
-   * Enable or disable HF Restoration
+   * Enable or disable HF Restoration (AI Upscaling)
+   * Uses neural network processing when available, falls back to DSP
    * @param enabled - Whether HF restoration is enabled
    */
   setHfRestoration(enabled: boolean): void {
     this.hfRestorationEnabled = enabled;
     this.updateHfRestorationGain();
-    console.log(`[WebAudioEffectsEngine] HF Restoration: ${enabled ? 'Enabled' : 'Disabled'}`);
+    
+    if (this.useNeuralProcessing && enabled) {
+      this.initializeNeuralProcessor();
+    }
+    
+    NeuralAudioProcessor.setEnabled(enabled && this.useNeuralProcessing);
+    console.log(`[WebAudioEffectsEngine] HF Restoration: ${enabled ? 'Enabled' : 'Disabled'} (Neural: ${this.useNeuralProcessing})`);
+  }
+  
+  /**
+   * Initialize neural audio processor for AI upscaling
+   */
+  private async initializeNeuralProcessor(): Promise<void> {
+    if (this.neuralProcessorInitialized) {
+      return;
+    }
+    
+    try {
+      const success = await NeuralAudioProcessor.initialize();
+      this.neuralProcessorInitialized = success;
+      console.log(`[WebAudioEffectsEngine] Neural processor initialized: ${success}`);
+    } catch (error) {
+      console.error('[WebAudioEffectsEngine] Neural processor init failed:', error);
+      this.useNeuralProcessing = false;
+    }
   }
 
   /**
@@ -902,14 +930,29 @@ class WebAudioEffectsEngineClass {
   }
 
   /**
-   * Set HF Restoration level (0-100%)
-   * @param level - Restoration level 0-100%
+   * Set HF Restoration level (0-100% or 'low'/'medium'/'high')
+   * @param level - Restoration level 0-100% or enhancement level string
    */
-  setHfRestorationLevel(level: number): void {
-    const clampedLevel = Math.max(0, Math.min(100, level));
-    this.hfRestorationLevel = clampedLevel;
+  setHfRestorationLevel(level: number | EnhancementLevel): void {
+    let numericLevel: number;
+    let enhancementLevel: EnhancementLevel;
+    
+    if (typeof level === 'string') {
+      enhancementLevel = level;
+      numericLevel = level === 'low' ? 33 : level === 'medium' ? 66 : 100;
+    } else {
+      numericLevel = Math.max(0, Math.min(100, level));
+      enhancementLevel = numericLevel <= 40 ? 'low' : numericLevel <= 75 ? 'medium' : 'high';
+    }
+    
+    this.hfRestorationLevel = numericLevel;
     this.updateHfRestorationGain();
-    console.log(`[WebAudioEffectsEngine] HF Restoration Level: ${clampedLevel}%`);
+    
+    if (this.useNeuralProcessing) {
+      NeuralAudioProcessor.setLevel(enhancementLevel);
+    }
+    
+    console.log(`[WebAudioEffectsEngine] HF Restoration Level: ${numericLevel}% (${enhancementLevel})`);
   }
 
   /**
@@ -1223,6 +1266,12 @@ class WebAudioEffectsEngineClass {
     this.hfRestorationEnabled = false;
     this.hfRestorationLevel = 0;
     
+    // Clean up Neural Processor
+    if (this.neuralProcessorInitialized) {
+      NeuralAudioProcessor.dispose();
+      this.neuralProcessorInitialized = false;
+    }
+    
     this.isInitialized = false;
     this.currentEQValues = new Array(10).fill(0);
     this.currentMode = 'off';
@@ -1267,7 +1316,25 @@ class WebAudioEffectsEngineClass {
       hfRestorationEnabled: this.hfRestorationEnabled,
       hfRestorationLevel: this.hfRestorationLevel,
       hfRestorationGain: this.hfRestoreFilter?.gain.value ?? 0,
+      // Neural Audio Processing
+      neuralProcessingEnabled: this.useNeuralProcessing,
+      neuralProcessorInitialized: this.neuralProcessorInitialized,
+      neuralProcessorStatus: NeuralAudioProcessor.getStatus(),
     };
+  }
+  
+  /**
+   * Get neural processor status
+   */
+  getNeuralProcessorStatus(): string {
+    return NeuralAudioProcessor.getStatus();
+  }
+  
+  /**
+   * Check if neural processing is available
+   */
+  isNeuralProcessingAvailable(): boolean {
+    return this.neuralProcessorInitialized && NeuralAudioProcessor.isReady();
   }
 }
 
