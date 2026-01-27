@@ -80,9 +80,9 @@ dependencies {
   implementation 'androidx.security:security-crypto:1.1.0-alpha06'
   
   // TensorFlow Lite for neural audio processing
-  implementation 'org.tensorflow:tensorflow-lite:2.14.0'
-  implementation 'org.tensorflow:tensorflow-lite-gpu:2.14.0'
-  implementation 'org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.4'
+  // Using 2.13.0 for stable GpuDelegate API
+  implementation 'org.tensorflow:tensorflow-lite:2.13.0'
+  implementation 'org.tensorflow:tensorflow-lite-gpu:2.13.0'
 }
 
 def safeExtGet(prop, fallback) {
