@@ -59,7 +59,7 @@ HF Restoration → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble She
 **Smart Enhancements (v28.0)**:
 - **HRTF Binaural Virtualization**: Integrated into Spatial Enhancement slider (levels 2-5). Peaking filters at 2.7kHz (Q=2.0, +0-5dB) and 8kHz (Q=1.5, +0-3dB) for pinna simulation.
 - **Bass Enhancement**: Psychoacoustic harmonic generation via soft-clipping. 75Hz crossover, generates 2nd/3rd/4th harmonics, max +4dB boost. Adds warmth without increasing bass volume.
-- **HF Restoration (AI Upscaling)**: Hybrid neural/DSP spectral extension that restores high frequencies lost in compression. Uses Kuleshov-style U-Net neural network for intelligent upscaling with DSP fallback. Analyzes 10-14kHz, restores 14-20kHz with high-shelf boost, max +3dB. Three intensity levels: Low (33%), Medium (66%), High (100%).
+- **AI Upscaling (Audio Super-Resolution)**: Neural audio enhancement using Kuleshov-style 1D U-Net CNN architecture for full-bandwidth audio super-resolution. The encoder-decoder model with skip connections and residual learning processes 8192-sample audio chunks at 44.1kHz. Model is built at runtime in TensorFlow.js with deterministic weight initialization (~4.4M parameters). Three intensity levels control blend factor: Low (30%), Medium (60%), High (100%). Falls back to DSP high-shelf boost when neural processing is unavailable.
 
 **DSP Architecture Details**:
 - **Internal Processing**: 32-bit float for precision, 64-bit for filter coefficients.
