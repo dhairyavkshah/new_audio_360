@@ -263,7 +263,7 @@ class EqualizerModule : Module() {
             }
         }
         
-        // Smart Enhancements - HF Restoration (AI Upscaling)
+        // Smart Enhancements - AI Upscaling (Neural Audio Super-Resolution)
         Function("setHfRestoration") { enabled: Boolean ->
             try {
                 val dsp = getDspProcessor()
@@ -271,9 +271,22 @@ class EqualizerModule : Module() {
                     return@Function mapOf("success" to true, "enabled" to false)
                 }
                 
+                // Initialize neural processor if enabling for the first time
+                if (enabled) {
+                    val context = appContext.reactContext
+                    if (context != null) {
+                        val neuralProcessor = NeuralAudioProcessorTFLite.getInstance()
+                        if (!neuralProcessor.isReady()) {
+                            android.util.Log.d("EqualizerModule", "Initializing neural audio processor...")
+                            neuralProcessor.initialize(context)
+                        }
+                    }
+                }
+                
                 dsp.setHfRestoration(enabled)
                 return@Function mapOf("success" to true, "enabled" to enabled)
             } catch (e: Exception) {
+                android.util.Log.e("EqualizerModule", "setHfRestoration error: ${e.message}")
                 return@Function mapOf("success" to true, "enabled" to false)
             }
         }

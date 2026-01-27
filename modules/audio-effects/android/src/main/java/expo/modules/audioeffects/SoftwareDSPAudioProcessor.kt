@@ -21,13 +21,14 @@ import java.nio.ByteOrder
  * correct frequency response. No resampling is performed - the processor
  * operates at the source sample rate (typically 44.1kHz or 48kHz).
  * 
- * Signal Chain (v28.0):
- * Input → HF Restoration → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble Shelf → Spatial Enhancement (with HRTF) → Reverb → Limiter → Output
+ * Signal Chain (v29.0):
+ * Input → AI Audio Upscaling (Neural) → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble Shelf → Spatial Enhancement (with HRTF) → Reverb → Limiter → Output
  * 
- * Smart Enhancements (v28.0):
+ * Smart Enhancements (v29.0):
  * - HRTF Binaural: Pinna filters @ 2.7kHz (Q=2.0, +0-5dB) and 8kHz (Q=1.5, +0-3dB) for spatial levels 2-5
  * - Bass Enhancement: Harmonic generation via soft-clipping, 75Hz crossover, max +4dB
- * - HF Restoration: Spectral extension via high-shelf @ 16kHz, max +3dB
+ * - HF Restoration / AI Upscaling: Neural audio super-resolution via TensorFlow Lite (Kuleshov 1D U-Net)
+ *   Replaces DSP-based spectral extension with AI-powered audio enhancement
  */
 class SoftwareDSPAudioProcessor : AudioProcessor {
     companion object {
@@ -314,9 +315,19 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         // 32-BIT FLOAT SIGNAL CHAIN
         // =========================================
         
-        // 1. HF Restoration (at start, before EQ - spectral extension)
+        // 1. AI Audio Upscaling (Neural HF Restoration via TensorFlow Lite)
+        // Uses Kuleshov-style 1D U-Net for audio super-resolution
         if (hfRestorationEnabled && hfRestorationLevel > 0f && channelCount == 2) {
-            processHfRestoration(floatSamples, channelCount)
+            val blend = when {
+                hfRestorationLevel <= 33f -> NeuralAudioProcessorTFLite.BLEND_LOW      // 0.3
+                hfRestorationLevel <= 66f -> NeuralAudioProcessorTFLite.BLEND_MEDIUM   // 0.6
+                else -> NeuralAudioProcessorTFLite.BLEND_HIGH                           // 1.0
+            }
+            val neuralProcessor = NeuralAudioProcessorTFLite.getInstance()
+            if (neuralProcessor.isReady()) {
+                val enhanced = neuralProcessor.processAudio(floatSamples, channelCount, blend)
+                enhanced.copyInto(floatSamples)
+            }
         }
         
         // 2. 10-Band Parametric EQ (true stereo)
@@ -795,20 +806,29 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     fun getBassEnhancement(): Float = bassEnhancementLevel
     
     /**
-     * Enable or disable HF Restoration (spectral extension)
+     * Enable or disable HF Restoration / AI Audio Upscaling (neural super-resolution)
      */
     fun setHfRestoration(enabled: Boolean) {
         hfRestorationEnabled = enabled
-        android.util.Log.d("SoftwareDSP", "HF Restoration ${if (enabled) "enabled" else "disabled"}")
+        NeuralAudioProcessorTFLite.getInstance().setEnabled(enabled)
+        android.util.Log.d("SoftwareDSP", "AI Audio Upscaling ${if (enabled) "enabled" else "disabled"}")
     }
     
     fun getHfRestoration(): Boolean = hfRestorationEnabled
     
     /**
-     * Set HF Restoration level (0-100%)
+     * Set HF Restoration / AI Audio Upscaling level (0-100%)
+     * Maps to neural processor enhancement levels: low=0.3, medium=0.6, high=1.0
      */
     fun setHfRestorationLevel(level: Float) {
         hfRestorationLevel = level.coerceIn(0f, 100f)
+        val neuralLevel = when {
+            hfRestorationLevel <= 33f -> NeuralAudioProcessorTFLite.EnhancementLevel.LOW
+            hfRestorationLevel <= 66f -> NeuralAudioProcessorTFLite.EnhancementLevel.MEDIUM
+            else -> NeuralAudioProcessorTFLite.EnhancementLevel.HIGH
+        }
+        NeuralAudioProcessorTFLite.getInstance().setLevel(neuralLevel)
+        android.util.Log.d("SoftwareDSP", "AI Upscaling level set to ${neuralLevel.name} (${hfRestorationLevel.toInt()}%)")
     }
     
     fun getHfRestorationLevel(): Float = hfRestorationLevel
@@ -892,36 +912,10 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         }
     }
     
-    /**
-     * Process HF restoration via spectral extension.
-     * Applies a high-shelf boost at 16kHz for compressed audio.
-     * ADDITIVE ONLY - boosts HF content without attenuating other frequencies.
-     */
-    private fun processHfRestoration(samples: FloatArray, channelCount: Int) {
-        if (!hfRestorationEnabled || channelCount != 2) return
-        
-        val boostDb = (hfRestorationLevel / 100f) * HF_RESTORE_MAX_BOOST_DB
-        if (boostDb <= 0f) return
-        
-        // Apply high-shelf boost at 16kHz
-        hfRestoreFilter.setGain(boostDb)
-        
-        var i = 0
-        while (i < samples.size - 1) {
-            // Additive HF boost
-            val originalL = samples[i]
-            val originalR = samples[i + 1]
-            
-            val boostedL = hfRestoreFilter.processSample(originalL, 0)
-            val boostedR = hfRestoreFilter.processSample(originalR, 1)
-            
-            // Add only the HF boost portion (difference)
-            samples[i] = originalL + (boostedL - originalL)
-            samples[i + 1] = originalR + (boostedR - originalR)
-            
-            i += 2
-        }
-    }
+    // NOTE: DSP-based HF restoration has been replaced with AI upscaling via NeuralAudioProcessorTFLite.
+    // The neural processor uses a Kuleshov-style 1D U-Net CNN for audio super-resolution,
+    // providing superior high-frequency restoration compared to simple spectral extension.
+    // See the signal chain in queueInput() for the AI processing implementation.
 
     fun setEnabled(enabled: Boolean) {
         isEnabled = enabled
@@ -1028,7 +1022,10 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             "bassEnhancementActive" to (bassEnhancementLevel > 0f),
             "bassEnhancementLevel" to bassEnhancementLevel,
             "hfRestorationActive" to hfRestorationEnabled,
-            "hfRestorationLevel" to hfRestorationLevel
+            "hfRestorationLevel" to hfRestorationLevel,
+            "aiUpscalingType" to "NeuralAudioProcessorTFLite (Kuleshov 1D U-Net)",
+            "neuralProcessorReady" to NeuralAudioProcessorTFLite.getInstance().isReady(),
+            "neuralProcessorStatus" to NeuralAudioProcessorTFLite.getInstance().getStatus().name
         )
     }
 }
