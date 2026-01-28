@@ -1,12 +1,15 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { Pool } from 'pg';
+import path from 'path';
 
 const app = express();
 const PORT = 3001; // Streaming API runs on port 3001 (not 5000 which is for frontend)
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/static', express.static(path.join(__dirname, '..', 'public')));
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,

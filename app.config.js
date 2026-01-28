@@ -85,6 +85,7 @@ export default {
       display: 'standalone',
       orientation: 'any',
       preferRelatedApplications: false,
+      bundler: 'metro',
     },
     plugins: [
       'expo-asset',

@@ -56,7 +56,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "EXPO_TUNNEL_SUBDOMAIN=newaudio360dev npx expo start --tunnel --web --port 5000 --clear"
+args = "EXPO_NO_ORIGIN_CHECK=1 EXPO_TUNNEL_SUBDOMAIN=newaudio360dev npx expo start --tunnel --web --port 5000 --clear"
 waitForPort = 5000
 
 [[workflows.workflow]]
