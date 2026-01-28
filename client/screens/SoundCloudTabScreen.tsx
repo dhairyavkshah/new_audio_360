@@ -1,17 +1,18 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, TextInput, Image, Linking } from "react-native";
+import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, TextInput, Image } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as WebBrowser from 'expo-web-browser';
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useToast } from "@/contexts/ToastContext";
 import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
-import SoundCloudService, { SoundCloudTrack } from "@/services/SoundCloudService";
+import { getShadowStyle } from "@/constants/fluent2/shadows";
+import SoundCloudService, { SoundCloudTrack, SoundCloudPlaylist } from "@/services/SoundCloudService";
+import OAuthWebViewModal from "@/components/OAuthWebViewModal";
 
-const SC_AUTH_STATE_KEY = '@soundcloud_auth_state';
+type SubTabType = 'search' | 'likes' | 'playlists';
+const SC_ACCENT = '#FF5500';
 
 export default function SoundCloudTabScreen() {
   const navigation = useNavigation();
@@ -25,13 +26,33 @@ export default function SoundCloudTabScreen() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [tracks, setTracks] = useState<SoundCloudTrack[]>([]);
+  const [likedTracks, setLikedTracks] = useState<SoundCloudTrack[]>([]);
+  const [playlists, setPlaylists] = useState<SoundCloudPlaylist[]>([]);
   const [searching, setSearching] = useState(false);
+  const [loadingLikes, setLoadingLikes] = useState(false);
+  const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
   const [userProfile, setUserProfile] = useState<{ username: string; avatar_url: string | null } | null>(null);
+  const [activeSubTab, setActiveSubTab] = useState<SubTabType>('search');
+
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [authUrl, setAuthUrl] = useState('');
+  const [authRedirectUri, setAuthRedirectUri] = useState('');
+  const [expectedState, setExpectedState] = useState('');
 
   useEffect(() => {
     checkAuthStatus();
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (activeSubTab === 'likes' && likedTracks.length === 0 && !loadingLikes) {
+        loadLikedTracks();
+      } else if (activeSubTab === 'playlists' && playlists.length === 0 && !loadingPlaylists) {
+        loadPlaylists();
+      }
+    }
+  }, [isAuthenticated, activeSubTab]);
 
   const checkAuthStatus = async () => {
     try {
@@ -51,42 +72,53 @@ export default function SoundCloudTabScreen() {
   const handleLogin = async () => {
     setIsLoggingIn(true);
     try {
-      const { url: authUrl, redirectUri, state: expectedState } = await SoundCloudService.getAuthorizationUrl();
-      showInfo("Opening SoundCloud login...");
-      
-      const result = await WebBrowser.openAuthSessionAsync(
-        authUrl,
-        redirectUri
-      );
+      const { url, redirectUri, state } = await SoundCloudService.getAuthorizationUrl();
+      setAuthUrl(url);
+      setAuthRedirectUri(redirectUri);
+      setExpectedState(state);
+      setShowLoginModal(true);
+    } catch (error) {
+      console.error('[SoundCloudTabScreen] Login prep error:', error);
+      showError("Failed to prepare login");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
 
-      if (result.type === 'success' && result.url) {
-        const url = new URL(result.url);
-        const code = url.searchParams.get('code');
-        const returnedState = url.searchParams.get('state');
-        
-        if (!returnedState || !(await SoundCloudService.validateState(returnedState))) {
-          showError("Security check failed - please try again");
-          return;
-        }
-        
-        if (code) {
-          await SoundCloudService.exchangeCodeForToken(code);
-          setIsAuthenticated(true);
-          const profile = await SoundCloudService.getUserProfile();
-          setUserProfile(profile);
-          showSuccess("Connected to SoundCloud!");
-        } else {
-          showError("Login failed - no authorization code received");
-        }
-      } else if (result.type === 'cancel') {
-        showInfo("Login cancelled");
+  const handleOAuthSuccess = async (returnedUrl: string) => {
+    setShowLoginModal(false);
+    setIsLoggingIn(true);
+    
+    try {
+      const url = new URL(returnedUrl);
+      const code = url.searchParams.get('code');
+      const returnedState = url.searchParams.get('state');
+      
+      if (!returnedState || !(await SoundCloudService.validateState(returnedState))) {
+        showError("Security check failed - please try again");
+        return;
+      }
+      
+      if (code) {
+        await SoundCloudService.exchangeCodeForToken(code);
+        setIsAuthenticated(true);
+        const profile = await SoundCloudService.getUserProfile();
+        setUserProfile(profile);
+        showSuccess("Connected to SoundCloud!");
+      } else {
+        showError("Login failed - no authorization code received");
       }
     } catch (error) {
-      console.error('[SoundCloudTabScreen] Login error:', error);
+      console.error('[SoundCloudTabScreen] OAuth callback error:', error);
       showError("Failed to connect to SoundCloud");
     } finally {
       setIsLoggingIn(false);
     }
+  };
+
+  const handleOAuthCancel = () => {
+    setShowLoginModal(false);
+    showInfo("Login cancelled");
   };
 
   const handleLogout = async () => {
@@ -95,9 +127,38 @@ export default function SoundCloudTabScreen() {
       setIsAuthenticated(false);
       setUserProfile(null);
       setTracks([]);
+      setLikedTracks([]);
+      setPlaylists([]);
+      setActiveSubTab('search');
       showInfo("Disconnected from SoundCloud");
     } catch (error) {
       console.error('[SoundCloudTabScreen] Logout error:', error);
+    }
+  };
+
+  const loadLikedTracks = async () => {
+    setLoadingLikes(true);
+    try {
+      const result = await SoundCloudService.getLikedTracks(50);
+      setLikedTracks(result);
+    } catch (error) {
+      console.error('[SoundCloudTabScreen] Load likes error:', error);
+      showError("Failed to load liked tracks");
+    } finally {
+      setLoadingLikes(false);
+    }
+  };
+
+  const loadPlaylists = async () => {
+    setLoadingPlaylists(true);
+    try {
+      const result = await SoundCloudService.getUserPlaylists(50);
+      setPlaylists(result);
+    } catch (error) {
+      console.error('[SoundCloudTabScreen] Load playlists error:', error);
+      showError("Failed to load playlists");
+    } finally {
+      setLoadingPlaylists(false);
     }
   };
 
@@ -159,12 +220,51 @@ export default function SoundCloudTabScreen() {
     }
   };
 
+  const handlePlaylistTap = (playlist: SoundCloudPlaylist) => {
+    showInfo(`Playlist: ${playlist.title} (${playlist.trackCount} tracks)`);
+  };
+
+  const renderSubTabs = () => (
+    <View style={[styles.subTabContainer, { backgroundColor: colors.colorNeutralBackground2 }]}>
+      {(['search', 'likes', 'playlists'] as SubTabType[]).map((tab) => (
+        <Pressable
+          key={tab}
+          style={[
+            styles.subTab,
+            activeSubTab === tab && { backgroundColor: theme.primary },
+          ]}
+          onPress={() => setActiveSubTab(tab)}
+        >
+          <MaterialCommunityIcons
+            name={tab === 'search' ? 'magnify' : tab === 'likes' ? 'heart' : 'playlist-music'}
+            size={16}
+            color={activeSubTab === tab ? '#FFFFFF' : colors.colorNeutralForeground2}
+          />
+          <FluentText
+            variant="caption1"
+            style={{
+              color: activeSubTab === tab ? '#FFFFFF' : colors.colorNeutralForeground2,
+              fontWeight: activeSubTab === tab ? '600' : '400',
+              marginLeft: 4,
+            }}
+          >
+            {tab === 'search' ? 'Search' : tab === 'likes' ? 'Likes' : 'Playlists'}
+          </FluentText>
+        </Pressable>
+      ))}
+    </View>
+  );
+
   const renderTrack = ({ item }: { item: SoundCloudTrack }) => {
     const isAdding = addingIds.has(item.id);
 
     return (
       <Pressable 
-        style={[styles.trackCard, { backgroundColor: colors.colorNeutralBackground2 }]}
+        style={[
+          styles.trackCard, 
+          { backgroundColor: colors.colorNeutralBackground2 },
+          getShadowStyle('shadow2', isDark),
+        ]}
         onPress={() => playTrack(item)}
       >
         {item.artwork_url ? (
@@ -173,7 +273,7 @@ export default function SoundCloudTabScreen() {
             style={styles.artworkImage}
           />
         ) : (
-          <View style={[styles.playIcon, { backgroundColor: '#FF5500' }]}>
+          <View style={[styles.playIcon, { backgroundColor: theme.primary }]}>
             <MaterialCommunityIcons name="soundcloud" size={20} color="#FFFFFF" />
           </View>
         )}
@@ -186,9 +286,9 @@ export default function SoundCloudTabScreen() {
             {item.artist}
           </FluentText>
           <View style={styles.trackMeta}>
-            <View style={[styles.badge, { backgroundColor: '#FF5500' + '20' }]}>
-              <MaterialCommunityIcons name="soundcloud" size={10} color="#FF5500" />
-              <FluentText variant="caption2" style={{ color: '#FF5500', marginLeft: 2 }}>
+            <View style={[styles.badge, { backgroundColor: theme.primary + '20' }]}>
+              <MaterialCommunityIcons name="soundcloud" size={10} color={theme.primary} />
+              <FluentText variant="caption2" style={{ color: theme.primary, marginLeft: 2 }}>
                 Full
               </FluentText>
             </View>
@@ -199,7 +299,7 @@ export default function SoundCloudTabScreen() {
         </View>
 
         <Pressable
-          style={[styles.addButton, { backgroundColor: '#FF5500' + '15' }]}
+          style={[styles.addButton, { backgroundColor: theme.primary + '15' }]}
           onPress={(e) => {
             e.stopPropagation();
             addToLibrary(item);
@@ -207,19 +307,198 @@ export default function SoundCloudTabScreen() {
           disabled={isAdding}
         >
           {isAdding ? (
-            <ActivityIndicator size="small" color="#FF5500" />
+            <ActivityIndicator size="small" color={theme.primary} />
           ) : (
-            <MaterialCommunityIcons name="heart-plus-outline" size={22} color="#FF5500" />
+            <MaterialCommunityIcons name="heart-plus-outline" size={22} color={theme.primary} />
           )}
         </Pressable>
       </Pressable>
     );
   };
 
+  const renderPlaylist = ({ item }: { item: SoundCloudPlaylist }) => (
+    <Pressable 
+      style={[
+        styles.playlistCard, 
+        { backgroundColor: colors.colorNeutralBackground2 },
+        getShadowStyle('shadow2', isDark),
+      ]}
+      onPress={() => handlePlaylistTap(item)}
+    >
+      {item.artwork_url ? (
+        <Image 
+          source={{ uri: item.artwork_url }} 
+          style={styles.playlistArtwork}
+        />
+      ) : (
+        <View style={[styles.playlistArtwork, { backgroundColor: theme.primary }]}>
+          <MaterialCommunityIcons name="playlist-music" size={28} color="#FFFFFF" />
+        </View>
+      )}
+      
+      <View style={styles.playlistInfo}>
+        <FluentText variant="body1" numberOfLines={1} style={{ fontWeight: '600' }}>
+          {item.title}
+        </FluentText>
+        <FluentText variant="body2" color="secondary" numberOfLines={1}>
+          {item.user}
+        </FluentText>
+        <View style={styles.playlistMeta}>
+          <FluentText variant="caption1" color="tertiary">
+            {item.trackCount} tracks • {SoundCloudService.formatDurationFromSeconds(item.duration)}
+          </FluentText>
+          {item.likesCount > 0 && (
+            <View style={styles.likesRow}>
+              <MaterialCommunityIcons name="heart" size={12} color={colors.colorNeutralForeground3} />
+              <FluentText variant="caption1" color="tertiary" style={{ marginLeft: 2 }}>
+                {SoundCloudService.formatPlaybackCount(item.likesCount)}
+              </FluentText>
+            </View>
+          )}
+        </View>
+      </View>
+
+      <MaterialCommunityIcons 
+        name="chevron-right" 
+        size={24} 
+        color={colors.colorNeutralForeground3} 
+      />
+    </Pressable>
+  );
+
+  const renderSearchContent = () => (
+    <>
+      <View style={styles.searchRow}>
+        <View style={[styles.searchInput, { backgroundColor: colors.colorNeutralBackground2 }]}>
+          <MaterialCommunityIcons name="magnify" size={20} color={colors.colorNeutralForeground3} />
+          <TextInput
+            style={[styles.input, { color: theme.text }]}
+            placeholder="Search SoundCloud..."
+            placeholderTextColor={colors.colorNeutralForeground3}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
+        </View>
+        <Pressable
+          style={[styles.searchButton, { backgroundColor: theme.primary }]}
+          onPress={handleSearch}
+        >
+          <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
+        </Pressable>
+      </View>
+
+      {searching ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <FluentText variant="body2" color="secondary" style={styles.statusText}>
+            Searching SoundCloud...
+          </FluentText>
+        </View>
+      ) : tracks.length === 0 ? (
+        <View style={styles.centerContainer}>
+          <MaterialCommunityIcons name="soundcloud" size={64} color={theme.primary} style={{ opacity: 0.5 }} />
+          <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
+            {searchQuery ? "No results found" : "Search for music"}
+          </FluentText>
+          <FluentText variant="caption1" color="tertiary" style={styles.hintText}>
+            Full tracks with premium audio processing
+          </FluentText>
+        </View>
+      ) : (
+        <FlatList
+          data={tracks}
+          renderItem={renderTrack}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+        />
+      )}
+    </>
+  );
+
+  const renderLikesContent = () => {
+    if (loadingLikes) {
+      return (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <FluentText variant="body2" color="secondary" style={styles.statusText}>
+            Loading your liked tracks...
+          </FluentText>
+        </View>
+      );
+    }
+
+    if (likedTracks.length === 0) {
+      return (
+        <View style={styles.centerContainer}>
+          <MaterialCommunityIcons name="heart-outline" size={64} color={theme.primary} style={{ opacity: 0.5 }} />
+          <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
+            No liked tracks yet
+          </FluentText>
+          <FluentText variant="caption1" color="tertiary" style={styles.hintText}>
+            Like tracks on SoundCloud to see them here
+          </FluentText>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={likedTracks}
+        renderItem={renderTrack}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
+    );
+  };
+
+  const renderPlaylistsContent = () => {
+    if (loadingPlaylists) {
+      return (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <FluentText variant="body2" color="secondary" style={styles.statusText}>
+            Loading your playlists...
+          </FluentText>
+        </View>
+      );
+    }
+
+    if (playlists.length === 0) {
+      return (
+        <View style={styles.centerContainer}>
+          <MaterialCommunityIcons name="playlist-music-outline" size={64} color={theme.primary} style={{ opacity: 0.5 }} />
+          <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
+            No playlists yet
+          </FluentText>
+          <FluentText variant="caption1" color="tertiary" style={styles.hintText}>
+            Create playlists on SoundCloud to see them here
+          </FluentText>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={playlists}
+        renderItem={renderPlaylist}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
+    );
+  };
+
   if (isLoading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#FF5500" />
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -227,8 +506,12 @@ export default function SoundCloudTabScreen() {
   if (!isAuthenticated) {
     return (
       <View style={styles.loginContainer}>
-        <View style={[styles.loginCard, { backgroundColor: colors.colorNeutralBackground2 }]}>
-          <View style={[styles.iconContainer, { backgroundColor: '#FF5500' }]}>
+        <View style={[
+          styles.loginCard, 
+          { backgroundColor: colors.colorNeutralBackground2 },
+          getShadowStyle('shadow8', isDark),
+        ]}>
+          <View style={[styles.iconContainer, { backgroundColor: theme.primary }]}>
             <MaterialCommunityIcons name="soundcloud" size={48} color="#FFFFFF" />
           </View>
           
@@ -242,21 +525,21 @@ export default function SoundCloudTabScreen() {
 
           <View style={styles.featureList}>
             <View style={styles.featureItem}>
-              <MaterialCommunityIcons name="music-note" size={20} color="#FF5500" />
+              <MaterialCommunityIcons name="music-note" size={20} color={theme.primary} />
               <FluentText variant="body2" color="secondary">Full track playback</FluentText>
             </View>
             <View style={styles.featureItem}>
-              <MaterialCommunityIcons name="equalizer" size={20} color="#FF5500" />
+              <MaterialCommunityIcons name="equalizer" size={20} color={theme.primary} />
               <FluentText variant="body2" color="secondary">DSP audio processing</FluentText>
             </View>
             <View style={styles.featureItem}>
-              <MaterialCommunityIcons name="brain" size={20} color="#FF5500" />
+              <MaterialCommunityIcons name="brain" size={20} color={theme.primary} />
               <FluentText variant="body2" color="secondary">Neural audio enhancement</FluentText>
             </View>
           </View>
           
           <Pressable
-            style={[styles.loginButton, { backgroundColor: '#FF5500' }]}
+            style={[styles.loginButton, { backgroundColor: theme.primary }]}
             onPress={handleLogin}
             disabled={isLoggingIn}
           >
@@ -276,6 +559,16 @@ export default function SoundCloudTabScreen() {
             Your SoundCloud credentials are handled securely by SoundCloud. We never see your password.
           </FluentText>
         </View>
+
+        <OAuthWebViewModal
+          visible={showLoginModal}
+          authUrl={authUrl}
+          redirectUri={authRedirectUri}
+          onSuccess={handleOAuthSuccess}
+          onCancel={handleOAuthCancel}
+          title="Sign in to SoundCloud"
+          accentColor={theme.primary}
+        />
       </View>
     );
   }
@@ -283,11 +576,15 @@ export default function SoundCloudTabScreen() {
   return (
     <View style={styles.container}>
       {userProfile && (
-        <View style={[styles.profileBar, { backgroundColor: colors.colorNeutralBackground2 }]}>
+        <View style={[
+          styles.profileBar, 
+          { backgroundColor: colors.colorNeutralBackground2 },
+          getShadowStyle('shadow2', isDark),
+        ]}>
           {userProfile.avatar_url ? (
             <Image source={{ uri: userProfile.avatar_url }} style={styles.avatar} />
           ) : (
-            <View style={[styles.avatar, { backgroundColor: '#FF5500' }]}>
+            <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
               <MaterialCommunityIcons name="account" size={16} color="#FFFFFF" />
             </View>
           )}
@@ -300,54 +597,11 @@ export default function SoundCloudTabScreen() {
         </View>
       )}
 
-      <View style={styles.searchRow}>
-        <View style={[styles.searchInput, { backgroundColor: colors.colorNeutralBackground2 }]}>
-          <MaterialCommunityIcons name="magnify" size={20} color={colors.colorNeutralForeground3} />
-          <TextInput
-            style={[styles.input, { color: theme.text }]}
-            placeholder="Search SoundCloud..."
-            placeholderTextColor={colors.colorNeutralForeground3}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-          />
-        </View>
-        <Pressable
-          style={[styles.searchButton, { backgroundColor: '#FF5500' }]}
-          onPress={handleSearch}
-        >
-          <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
-        </Pressable>
-      </View>
+      {renderSubTabs()}
 
-      {searching ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#FF5500" />
-          <FluentText variant="body2" color="secondary" style={styles.statusText}>
-            Searching SoundCloud...
-          </FluentText>
-        </View>
-      ) : tracks.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <MaterialCommunityIcons name="soundcloud" size={64} color="#FF5500" style={{ opacity: 0.5 }} />
-          <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
-            {searchQuery ? "No results found" : "Search for music"}
-          </FluentText>
-          <FluentText variant="caption1" color="tertiary" style={styles.hintText}>
-            Full tracks with premium audio processing
-          </FluentText>
-        </View>
-      ) : (
-        <FlatList
-          data={tracks}
-          renderItem={renderTrack}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
-      )}
+      {activeSubTab === 'search' && renderSearchContent()}
+      {activeSubTab === 'likes' && renderLikesContent()}
+      {activeSubTab === 'playlists' && renderPlaylistsContent()}
     </View>
   );
 }
@@ -436,6 +690,24 @@ const styles = StyleSheet.create({
   logoutButton: {
     padding: FluentSpacing.xs,
   },
+  subTabContainer: {
+    flexDirection: 'row',
+    marginHorizontal: FluentSpacing.m,
+    marginTop: FluentSpacing.s,
+    marginBottom: FluentSpacing.xs,
+    borderRadius: FluentRadius.large,
+    padding: 4,
+    gap: 4,
+  },
+  subTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: FluentSpacing.s,
+    paddingHorizontal: FluentSpacing.m,
+    borderRadius: FluentRadius.medium,
+  },
   searchRow: {
     flexDirection: 'row',
     paddingHorizontal: FluentSpacing.m,
@@ -493,7 +765,7 @@ const styles = StyleSheet.create({
   artworkImage: {
     width: 44,
     height: 44,
-    borderRadius: 8,
+    borderRadius: FluentRadius.small,
     backgroundColor: '#333',
   },
   trackInfo: {
@@ -511,13 +783,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: FluentRadius.small,
   },
   addButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playlistCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: FluentSpacing.m,
+    borderRadius: FluentRadius.medium,
+    gap: FluentSpacing.m,
+  },
+  playlistArtwork: {
+    width: 56,
+    height: 56,
+    borderRadius: FluentRadius.small,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#333',
+  },
+  playlistInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  playlistMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: FluentSpacing.m,
+    marginTop: 4,
+  },
+  likesRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
 });

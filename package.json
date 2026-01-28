@@ -81,6 +81,7 @@
     "react-native-screens": "~4.10.0",
     "react-native-track-player": "^4.1.1",
     "react-native-web": "~0.20.0",
+    "react-native-webview": "^13.16.0",
     "zod": "^3.24.2",
     "zod-validation-error": "^3.4.0"
   },

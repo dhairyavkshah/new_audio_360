@@ -76,6 +76,16 @@ export interface SoundCloudTrack {
   source: 'soundcloud';
 }
 
+export interface SoundCloudPlaylist {
+  id: string;
+  title: string;
+  trackCount: number;
+  duration: number;
+  artwork_url: string | null;
+  user: string;
+  likesCount: number;
+}
+
 export interface StoredSoundCloudTrack {
   id: string;
   title: string;
@@ -702,6 +712,145 @@ class SoundCloudServiceClass {
       isOnlineStream: true,
       source: 'soundcloud',
     };
+  }
+
+  // ============================================================
+  // User Library Methods (Likes & Playlists)
+  // ============================================================
+
+  async getLikedTracks(limit: number = 50): Promise<SoundCloudTrack[]> {
+    try {
+      const token = await this.ensureValidUserToken();
+      
+      const response = await fetch(`${ME_URL}/likes/tracks?limit=${limit}`, {
+        headers: {
+          'Authorization': `OAuth ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch liked tracks: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const items = data.collection || data;
+      
+      const tracks: SoundCloudTrack[] = await Promise.all(
+        items
+          .filter((item: any) => {
+            const track = item.track || item;
+            return track && track.streamable === true;
+          })
+          .map(async (item: any) => {
+            const track = item.track || item;
+            try {
+              const resolvedUrl = await this.resolveStreamUrlWithToken(track.id, token);
+              return {
+                id: `sc_${track.id}`,
+                title: track.title,
+                artist: track.user?.username || 'Unknown Artist',
+                album: track.genre || '',
+                duration: Math.floor(track.duration / 1000),
+                stream_url: resolvedUrl,
+                artwork_url: track.artwork_url,
+                playbackCount: track.playback_count || 0,
+                isOnlineStream: true as const,
+                source: 'soundcloud' as const,
+              };
+            } catch {
+              return null;
+            }
+          })
+      );
+
+      return tracks.filter((t): t is SoundCloudTrack => t !== null);
+    } catch (error) {
+      console.error('[SoundCloudService] Get liked tracks error:', error);
+      throw error;
+    }
+  }
+
+  async getUserPlaylists(limit: number = 50): Promise<SoundCloudPlaylist[]> {
+    try {
+      const token = await this.ensureValidUserToken();
+      
+      const response = await fetch(`${ME_URL}/playlists?limit=${limit}`, {
+        headers: {
+          'Authorization': `OAuth ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch playlists: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const items = data.collection || data;
+      
+      const playlists: SoundCloudPlaylist[] = items.map((playlist: any) => ({
+        id: `sc_playlist_${playlist.id}`,
+        title: playlist.title,
+        trackCount: playlist.track_count || 0,
+        duration: Math.floor((playlist.duration || 0) / 1000),
+        artwork_url: playlist.artwork_url,
+        user: playlist.user?.username || 'Unknown',
+        likesCount: playlist.likes_count || 0,
+      }));
+
+      return playlists;
+    } catch (error) {
+      console.error('[SoundCloudService] Get user playlists error:', error);
+      throw error;
+    }
+  }
+
+  async getPlaylistTracks(playlistId: string): Promise<SoundCloudTrack[]> {
+    try {
+      const token = await this.ensureValidUserToken();
+      const numericId = playlistId.replace('sc_playlist_', '');
+      
+      const response = await fetch(`${API_BASE_URL}/playlists/${numericId}`, {
+        headers: {
+          'Authorization': `OAuth ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch playlist tracks: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const trackList = data.tracks || [];
+      
+      const tracks: SoundCloudTrack[] = await Promise.all(
+        trackList
+          .filter((track: any) => track.streamable === true)
+          .map(async (track: any) => {
+            try {
+              const resolvedUrl = await this.resolveStreamUrlWithToken(track.id, token);
+              return {
+                id: `sc_${track.id}`,
+                title: track.title,
+                artist: track.user?.username || 'Unknown Artist',
+                album: track.genre || '',
+                duration: Math.floor(track.duration / 1000),
+                stream_url: resolvedUrl,
+                artwork_url: track.artwork_url,
+                playbackCount: track.playback_count || 0,
+                isOnlineStream: true as const,
+                source: 'soundcloud' as const,
+              };
+            } catch {
+              return null;
+            }
+          })
+      );
+
+      return tracks.filter((t): t is SoundCloudTrack => t !== null);
+    } catch (error) {
+      console.error('[SoundCloudService] Get playlist tracks error:', error);
+      throw error;
+    }
   }
 
   // ============================================================
