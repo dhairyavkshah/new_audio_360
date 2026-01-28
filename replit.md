@@ -110,6 +110,32 @@ A two-check system: initial Google Play Billing validation and daily re-validati
 - **Intelligent Radio Discovery**: Automatic station scanning via Radio Browser API with 30-day cache refresh cycle, up to 1000 stations per country, quality filtering (lastcheckok=1, sorted by votes+clickcount), curated station fallback, and manual re-scan button that updates cache immediately.
 - **Playback**: Background playback, notification controls, queue, shuffle/repeat, playback speed, sleep timer, favorites.
 - **Library Management**: Music folder selection, paginated loading, "Hide Song" feature, playlist CRUD.
+- **Internet Music Streaming**: Search and play public domain/Creative Commons music. Dual search shows "From Device" and "From Internet" sections. Stream songs play directly without affecting queue. Favorited stream songs stored securely using SecureStorage with device-bound encryption.
+
+### Internet Music Integration
+The app provides access to public domain and Creative Commons music through a secure integration:
+
+**Search & Playback**:
+- Dual search: Local device songs + Internet streaming results
+- Quality filtering: 128-320 kbps MP3/OGG files only
+- Stream songs play directly without being added to queue
+- Queue navigation (Next/Previous) only affects library songs
+
+**UI Display**:
+- "From Device" section with folder icon for local songs
+- "From Internet" section with globe icon for streaming results
+- Now Playing shows "Streaming • Public Domain" or "Streaming • Creative Commons" badges
+- No source/origin disclosure in any user-facing UI
+
+**Security**:
+- Stream library stored entirely in SecureStorage (XOR encryption + HMAC verification)
+- Device-bound encryption keys
+- No URL exposure in logs or persistent storage outside SecureStorage
+
+**Files**:
+- `client/services/ArchiveSearchService.ts` - Internet search service
+- `client/lib/data.ts` - StreamSong type and isStreamSong helper
+- `client/lib/storage.ts` - Secure stream library storage
 
 ## External Dependencies
 
