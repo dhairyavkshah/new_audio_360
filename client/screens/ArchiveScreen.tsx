@@ -55,12 +55,10 @@ export default function ArchiveScreen() {
       id: track.id,
       title: track.title,
       artist: track.artist,
-      album: track.album || 'Internet Archive',
+      album: track.album || 'Online Music',
       duration: (track.duration || 0) * 1000,
       audioUrl: track.stream_url,
       artwork: undefined,
-      isOnlineStream: true,
-      source: 'archive.org' as const,
     };
     
     playSong(playableSong);
@@ -145,7 +143,7 @@ export default function ArchiveScreen() {
     <View style={[styles.container, { backgroundColor: colors.colorNeutralBackground1 }]}>
       <View style={styles.searchSection}>
         <FluentText variant="caption1" color="secondary" style={styles.subtitle}>
-          Search free, legal music from Internet Archive
+          Search free, legal music online
         </FluentText>
 
         <View style={styles.searchRow}>
@@ -207,7 +205,7 @@ export default function ArchiveScreen() {
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={theme.primary} />
           <FluentText variant="body2" color="secondary" style={styles.statusText}>
-            Searching Internet Archive...
+            Searching...
           </FluentText>
         </View>
       ) : tracks.length === 0 ? (

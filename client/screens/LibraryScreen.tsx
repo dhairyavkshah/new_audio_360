@@ -251,13 +251,23 @@ function LibraryScreen() {
       return result;
     };
 
-    const likedSongs = allSongs.filter(song => favorites.includes(song.id));
+    const likedDeviceSongs = allSongs.filter(song => favorites.includes(song.id));
+    const likedArchiveSongs: PlayableSong[] = archiveFavorites.map(stored => ({
+      id: stored.id,
+      title: stored.title,
+      artist: stored.artist,
+      album: stored.album || 'Online Music',
+      duration: (stored.duration || 0) * 1000,
+      audioUrl: ArchiveOrgService.getStreamUrl(stored),
+      artwork: undefined,
+    }));
+    const likedSongs = [...likedDeviceSongs, ...likedArchiveSongs];
     const recentSongs = recentlyPlayed
       .map(id => allSongs.find(s => s.id === id))
-      .filter((s): s is PlayableSong => s !== undefined);
+      .filter((s): s is DeviceSong => s !== undefined);
     const topSongs = mostPlayed
       .map(id => allSongs.find(s => s.id === id))
-      .filter((s): s is PlayableSong => s !== undefined);
+      .filter((s): s is DeviceSong => s !== undefined);
 
     return {
       liked: filterSongs(likedSongs),
@@ -274,10 +284,10 @@ function LibraryScreen() {
       artists: filterArtists(derivedArtists),
       playlists: filterPlaylists(playlists),
     };
-  }, [searchQuery, sortBy, playlists, favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists]);
+  }, [searchQuery, sortBy, playlists, favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists, archiveFavorites]);
 
   const categoryCounts = useMemo(() => ({
-    liked: favorites.length,
+    liked: favorites.length + archiveFavorites.length,
     recent: recentlyPlayed.length,
     top: mostPlayed.length,
     songs: allSongs.length,
@@ -528,12 +538,10 @@ function LibraryScreen() {
       id: playableTrack.id,
       title: playableTrack.title,
       artist: playableTrack.artist,
-      album: playableTrack.album || 'Internet Archive',
+      album: playableTrack.album || 'Online Music',
       duration: playableTrack.duration || 0,
       artwork: '',
       audioUrl: playableTrack.stream_url,
-      isOnlineStream: true,
-      source: 'archive.org' as const,
     };
     playSong(playableSong);
     navigation.dispatch(

@@ -938,8 +938,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           webAudioSource = `${window.location.origin}${audioSource}`;
         }
 
+        const isExternalStream = webAudioSource.startsWith('http') && !webAudioSource.includes(window.location.host);
+
         const audio = new Audio();
-        audio.crossOrigin = 'anonymous';
+        if (!isExternalStream) {
+          audio.crossOrigin = 'anonymous';
+        }
         audio.src = webAudioSource;
         audioElementRef.current = audio;
 
@@ -954,53 +958,51 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           audio.load();
         });
 
-        mediaSourceRef.current = ctx.createMediaElementSource(audio);
-
-        gainNodeRef.current = ctx.createGain();
-        gainNodeRef.current.gain.value = 1;
-
-        const eqChain = createEQChain(ctx);
-
-        stereoWidenerRef.current = ctx.createStereoPanner();
-        delayNodeRef.current = ctx.createDelay(0.5);
-        delayGainRef.current = ctx.createGain();
-        delayGainRef.current.gain.value = soundLabMode === 'immersive' ? immersiveEffect.reverb * 0.3 : 0;
-        if (soundLabMode === 'immersive') {
-          delayNodeRef.current.delayTime.value = immersiveEffect.delay / 1000;
-          stereoWidenerRef.current.pan.value = 0;
-        }
-
-        // Create limiter (DynamicsCompressorNode configured as brickwall limiter)
-        // This prevents clipping when bass/treble boost pushes signal too hot
-        limiterRef.current = ctx.createDynamicsCompressor();
-        limiterRef.current.threshold.value = -1;    // Start limiting at -1 dB (just before clipping)
-        limiterRef.current.knee.value = 0;          // Hard knee for brickwall limiting
-        limiterRef.current.ratio.value = 20;        // 20:1 ratio = hard limiting
-        limiterRef.current.attack.value = 0.001;    // 1ms attack to catch transients
-        limiterRef.current.release.value = 0.1;     // 100ms release for smooth recovery
-
-        mediaSourceRef.current.connect(gainNodeRef.current);
-        
-        if (eqChain.length > 0) {
-          gainNodeRef.current.connect(eqChain[0]);
-          // EQ chain -> Bass Boost -> Treble Boost -> Stereo Widener
-          // (createEQChain already connects EQ -> Bass -> Treble)
-          if (trebleBoostFilterRef.current) {
-            trebleBoostFilterRef.current.connect(stereoWidenerRef.current);
-          } else {
-            eqChain[eqChain.length - 1].connect(stereoWidenerRef.current);
-          }
+        if (isExternalStream) {
+          console.log('[PlayerContext] External stream - using direct playback (no DSP processing)');
         } else {
-          gainNodeRef.current.connect(stereoWidenerRef.current);
-        }
+          mediaSourceRef.current = ctx.createMediaElementSource(audio);
 
-        // Stereo Widener -> Limiter -> Destination (prevents clipping)
-        stereoWidenerRef.current.connect(limiterRef.current);
-        limiterRef.current.connect(ctx.destination);
-        // Delay/reverb path also goes through limiter
-        stereoWidenerRef.current.connect(delayNodeRef.current);
-        delayNodeRef.current.connect(delayGainRef.current);
-        delayGainRef.current.connect(limiterRef.current);
+          gainNodeRef.current = ctx.createGain();
+          gainNodeRef.current.gain.value = 1;
+
+          const eqChain = createEQChain(ctx);
+
+          stereoWidenerRef.current = ctx.createStereoPanner();
+          delayNodeRef.current = ctx.createDelay(0.5);
+          delayGainRef.current = ctx.createGain();
+          delayGainRef.current.gain.value = soundLabMode === 'immersive' ? immersiveEffect.reverb * 0.3 : 0;
+          if (soundLabMode === 'immersive') {
+            delayNodeRef.current.delayTime.value = immersiveEffect.delay / 1000;
+            stereoWidenerRef.current.pan.value = 0;
+          }
+
+          limiterRef.current = ctx.createDynamicsCompressor();
+          limiterRef.current.threshold.value = -1;
+          limiterRef.current.knee.value = 0;
+          limiterRef.current.ratio.value = 20;
+          limiterRef.current.attack.value = 0.001;
+          limiterRef.current.release.value = 0.1;
+
+          mediaSourceRef.current.connect(gainNodeRef.current);
+          
+          if (eqChain.length > 0) {
+            gainNodeRef.current.connect(eqChain[0]);
+            if (trebleBoostFilterRef.current) {
+              trebleBoostFilterRef.current.connect(stereoWidenerRef.current);
+            } else {
+              eqChain[eqChain.length - 1].connect(stereoWidenerRef.current);
+            }
+          } else {
+            gainNodeRef.current.connect(stereoWidenerRef.current);
+          }
+
+          stereoWidenerRef.current.connect(limiterRef.current);
+          limiterRef.current.connect(ctx.destination);
+          stereoWidenerRef.current.connect(delayNodeRef.current);
+          delayNodeRef.current.connect(delayGainRef.current);
+          delayGainRef.current.connect(limiterRef.current);
+        }
 
         audio.onended = () => {
           setIsPlaying(false);
