@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Platform } from "react-native";
+import { StyleSheet, View, Platform, Text } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Font from "expo-font";
 
 // Optional KeyboardProvider - falls back to Fragment if native module not available
 let KeyboardProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
@@ -131,12 +132,17 @@ function AppContent() {
 }
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     ...MaterialCommunityIcons.font,
   });
 
-  if (!fontsLoaded && Platform.OS === 'web') {
-    return null;
+  // Wait for fonts to load on web to prevent empty icon squares
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }}>
+        <View />
+      </View>
+    );
   }
 
   const content = (
