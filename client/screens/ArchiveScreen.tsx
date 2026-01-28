@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { View, StyleSheet, TextInput, FlatList, Pressable, ActivityIndicator, Platform, Modal, ScrollView } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, Platform, Modal, ScrollView } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { FluentText } from "@/components/fluent";
+import { FluentText, FluentScreenLayout } from "@/components/fluent";
+import { FluentTopBar } from "@/components/FluentTopBar";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -22,7 +22,6 @@ const QUALITY_OPTIONS: { label: string; value: AudioQuality }[] = [
 ];
 
 export default function ArchiveScreen() {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { theme, isDark } = useThemeContext();
   const { playSong } = usePlayerContext();
@@ -176,8 +175,28 @@ export default function ArchiveScreen() {
     );
   };
 
+  const searchButton = (
+    <Pressable
+      style={[styles.searchButton, { backgroundColor: theme.primary }]}
+      onPress={handleSearch}
+    >
+      <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
+    </Pressable>
+  );
+
+  const header = (
+    <FluentTopBar
+      title="Discover"
+      showSearch
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
+      searchPlaceholder="Search songs or artists..."
+      rightAction={searchButton}
+    />
+  );
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.colorNeutralBackground1 }]}>
+    <>
       <Modal
         visible={showConsentModal}
         transparent
@@ -247,38 +266,12 @@ export default function ArchiveScreen() {
         </View>
       </Modal>
 
-      <View style={styles.searchSection}>
-        <FluentText variant="caption1" color="secondary" style={styles.subtitle}>
-          Discover free music from public domain and Creative Commons sources
-        </FluentText>
-
-        <View style={styles.searchRow}>
-          <View style={[styles.searchContainer, { backgroundColor: colors.colorNeutralBackground2 }]}>
-            <MaterialCommunityIcons name="magnify" size={20} color={theme.textSecondary} />
-            <TextInput
-              style={[styles.searchInput, { color: theme.text }]}
-              placeholder="Search songs or artists..."
-              placeholderTextColor={theme.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={handleSearch}
-              returnKeyType="search"
-              autoFocus={!showConsentModal}
-            />
-            {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery("")}>
-                <MaterialCommunityIcons name="close-circle" size={18} color={theme.textSecondary} />
-              </Pressable>
-            )}
-          </View>
-          <Pressable
-            style={[styles.searchButton, { backgroundColor: theme.primary }]}
-            onPress={handleSearch}
-          >
-            <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
-          </Pressable>
-        </View>
-
+      <FluentScreenLayout
+        header={header}
+        backgroundColor="neutral1"
+        hasBottomNavigation={true}
+        avoidKeyboard={true}
+      >
         <View style={styles.qualityRow}>
           {QUALITY_OPTIONS.map((option) => (
             <Pressable
@@ -305,50 +298,47 @@ export default function ArchiveScreen() {
             </Pressable>
           ))}
         </View>
-      </View>
 
-      {loading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-          <FluentText variant="body2" color="secondary" style={styles.statusText}>
-            Searching...
+        {loading ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <FluentText variant="body2" color="secondary" style={styles.statusText}>
+              Searching...
+            </FluentText>
+          </View>
+        ) : tracks.length === 0 ? (
+          <View style={styles.centerContainer}>
+            <MaterialCommunityIcons name="compass-outline" size={64} color={theme.textTertiary} />
+            <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
+              {searchQuery ? "No results found" : "Discover free music"}
+            </FluentText>
+            <FluentText variant="caption1" color="tertiary" style={styles.hintText}>
+              Search for artist names, song titles, or genres from public domain sources
+            </FluentText>
+          </View>
+        ) : (
+          <FlatList
+            data={tracks}
+            renderItem={renderTrack}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+          />
+        )}
+
+        <View style={[styles.footer, { borderTopColor: colors.colorNeutralStroke2 }]}>
+          <MaterialCommunityIcons name="creative-commons" size={14} color={theme.textTertiary} />
+          <FluentText variant="caption2" color="tertiary">
+            All content is Creative Commons or Public Domain
           </FluentText>
         </View>
-      ) : tracks.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <MaterialCommunityIcons name="compass-outline" size={64} color={theme.textTertiary} />
-          <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
-            {searchQuery ? "No results found" : "Discover free music"}
-          </FluentText>
-          <FluentText variant="caption1" color="tertiary" style={styles.hintText}>
-            Search for artist names, song titles, or genres from public domain sources
-          </FluentText>
-        </View>
-      ) : (
-        <FlatList
-          data={tracks}
-          renderItem={renderTrack}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 100 }]}
-          showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
-      )}
-
-      <View style={[styles.footer, { borderTopColor: colors.colorNeutralStroke2, paddingBottom: insets.bottom + FluentSpacing.s }]}>
-        <MaterialCommunityIcons name="creative-commons" size={14} color={theme.textTertiary} />
-        <FluentText variant="caption2" color="tertiary">
-          All content is Creative Commons or Public Domain
-        </FluentText>
-      </View>
-    </View>
+      </FluentScreenLayout>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -409,35 +399,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   acceptButton: {},
-  searchSection: {
-    padding: FluentSpacing.m,
-    gap: FluentSpacing.s,
-  },
-  subtitle: {
-    marginBottom: FluentSpacing.xs,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: FluentSpacing.s,
-  },
-  searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.s,
-    borderRadius: FluentRadius.medium,
-    gap: FluentSpacing.s,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    paddingVertical: Platform.OS === 'ios' ? FluentSpacing.xs : 0,
-  },
   searchButton: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     borderRadius: FluentRadius.medium,
     justifyContent: 'center',
     alignItems: 'center',
@@ -445,7 +409,8 @@ const styles = StyleSheet.create({
   qualityRow: {
     flexDirection: 'row',
     gap: FluentSpacing.xs,
-    marginTop: FluentSpacing.xs,
+    paddingHorizontal: FluentSpacing.m,
+    paddingVertical: FluentSpacing.s,
   },
   qualityChip: {
     paddingHorizontal: FluentSpacing.m,

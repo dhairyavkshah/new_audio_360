@@ -301,7 +301,7 @@ function LibraryScreen() {
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (category === "streaming") {
-      navigation.navigate("Archive");
+      navigation.dispatch(CommonActions.navigate({ name: 'DiscoverTab' }));
       return;
     }
     setActiveCategory(category);
