@@ -114,17 +114,28 @@ A two-check system: initial Google Play Billing validation and daily re-validati
 - **Open Music Discovery**: Free music streaming from publicly available Creative Commons and Public Domain sources with search, favorites, and first-time consent modal. Accessed via dedicated Discover tab.
 
 ### Open Music Discovery Architecture
-The app supports legal, free music streaming from publicly available Creative Commons and Public Domain sources:
-- **Source**: Public music archives with Creative Commons / Public Domain content
+The app supports free music streaming from multiple sources:
+- **Sources**: 
+  - Internet Archive (Public Domain / Creative Commons content)
+  - SoundCloud (streamable tracks via OAuth 2.1 API)
 - **Access**: Dedicated Discover tab with first-time consent modal explaining terms
-- **Search**: Discover screen with quality filters (128k, 192k, 256k, 320k)
-- **Results**: Max 10 results per search to keep UI focused
-- **Client Service**: `client/services/ArchiveOrgService.ts` - Searches public APIs and returns MP3 URLs
+- **Search**: Discover screen with quality filters (128k, 192k, 256k, 320k for Archive.org)
+- **Results**: Up to 20 results per search (10 from each source, combined)
+- **Client Services**: 
+  - `client/services/ArchiveOrgService.ts` - Searches Internet Archive for MP3s
+  - `client/services/SoundCloudService.ts` - OAuth 2.1 token management, searches SoundCloud API
 - **Favorites**: Online songs can be added to favorites with encrypted URL storage
 - **URL Encryption**: Simple XOR cipher with app-specific key to obfuscate stored URLs
-- **No Backend Required**: App queries APIs directly, fully client-side
+- **Token Management**: SoundCloud uses OAuth 2.1 client credentials flow with 1-hour token caching
+- **Fresh Stream URLs**: SoundCloud favorites regenerate stream URLs at playback time to avoid token expiry issues
 - **Streaming Indicator**: "Web" badge on Now Playing screen indicates internet streaming songs
-- **Consent Flow**: First-time users must accept terms acknowledging Creative Commons/Public Domain content usage
+- **Consent Flow**: First-time users must accept terms acknowledging content usage
+
+**Required Secrets (SoundCloud)**:
+- `SOUNDCLOUD_CLIENT_ID` - OAuth client ID
+- `SOUNDCLOUD_CLIENT_SECRET` - OAuth client secret
+
+**Security Note**: For production web builds, consider implementing a backend proxy for SoundCloud token exchange to avoid exposing client_secret in browser code. Native mobile builds are acceptable.
 
 ## External Dependencies
 
