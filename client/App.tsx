@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Platform, Text } from "react-native";
+import { StyleSheet, View, Platform, Text, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import * as Font from "expo-font";
 import { useFonts } from "expo-font";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as Font from "expo-font";
 
 // Optional KeyboardProvider - falls back to Fragment if native module not available
 let KeyboardProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
@@ -132,15 +132,35 @@ function AppContent() {
 }
 
 export default function App() {
-  const [fontsLoaded, fontError] = useFonts({
-    ...MaterialCommunityIcons.font,
-  });
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [fontError, setFontError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    async function loadFonts() {
+      try {
+        // Load MaterialCommunityIcons font explicitly
+        await Font.loadAsync({
+          'MaterialCommunityIcons': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.ttf'),
+          'material-community': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.ttf'),
+        });
+        console.log('[App] Fonts loaded successfully');
+        setFontsLoaded(true);
+      } catch (error: any) {
+        console.error('[App] Font loading error:', error);
+        setFontError(error);
+        // Continue anyway - icons may still work on some platforms
+        setFontsLoaded(true);
+      }
+    }
+    loadFonts();
+  }, []);
 
   // Wait for fonts to load on web to prevent empty icon squares
-  if (!fontsLoaded && !fontError) {
+  if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }}>
-        <View />
+      <View style={{ flex: 1, backgroundColor: '#1565C0', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#fff" />
+        <Text style={{ color: '#fff', marginTop: 16, fontSize: 16 }}>Loading...</Text>
       </View>
     );
   }
