@@ -73,10 +73,11 @@ AI Audio Upscaling (Neural) → 10-Band EQ → Bass Shelf → Bass Enhancement �
 - **Web DSP**: `WebAudioEffectsEngine` leveraging Web Audio API + TensorFlow.js neural processing.
 
 ### Navigation Structure
-A 4-tab system with a persistent MiniPlayer:
+A 5-tab system with a persistent MiniPlayer:
 - **ListenTab**: Main player, Now Playing, Sound Lab, Queue.
 - **LibraryTab**: Music organization, Quick Access Category Grid.
 - **RadioTab**: FM/AM native radio, Online streaming radio with Intelligent Radio Discovery.
+- **DiscoverTab**: Open Music Discovery - search and play free Creative Commons/Public Domain music.
 - **SettingsTab**: General, Sound Lab, Appearance, License, About.
 
 ### Native Modules (Android-specific)
@@ -110,18 +111,20 @@ A two-check system: initial Google Play Billing validation and daily re-validati
 - **Intelligent Radio Discovery**: Automatic station scanning via Radio Browser API with 30-day cache refresh cycle, up to 1000 stations per country, quality filtering (lastcheckok=1, sorted by votes+clickcount), curated station fallback, and manual re-scan button that updates cache immediately.
 - **Playback**: Background playback, notification controls, queue, shuffle/repeat, playback speed, sleep timer, favorites.
 - **Library Management**: Music folder selection, paginated loading, "Hide Song" feature, playlist CRUD.
-- **Online Streaming**: Free music streaming from Internet Archive (archive.org) with inline search and favorites.
+- **Open Music Discovery**: Free music streaming from publicly available Creative Commons and Public Domain sources with search, favorites, and first-time consent modal. Accessed via dedicated Discover tab.
 
-### Online Music Streaming Architecture
-The app supports legal, free music streaming via Internet Archive (archive.org):
-- **Source**: Internet Archive's audio collection (Creative Commons / Public Domain content)
-- **Search**: Inline modal in Library screen with quality filters (128k, 192k, 256k, 320k)
+### Open Music Discovery Architecture
+The app supports legal, free music streaming from publicly available Creative Commons and Public Domain sources:
+- **Source**: Public music archives with Creative Commons / Public Domain content
+- **Access**: Dedicated Discover tab with first-time consent modal explaining terms
+- **Search**: Discover screen with quality filters (128k, 192k, 256k, 320k)
 - **Results**: Max 10 results per search to keep UI focused
-- **Client Service**: `client/services/ArchiveOrgService.ts` - Searches archive.org API and returns MP3 URLs
-- **Favorites**: Archive.org songs can be added to favorites with encrypted URL storage
+- **Client Service**: `client/services/ArchiveOrgService.ts` - Searches public APIs and returns MP3 URLs
+- **Favorites**: Online songs can be added to favorites with encrypted URL storage
 - **URL Encryption**: Simple XOR cipher with app-specific key to obfuscate stored URLs
-- **No Backend Required**: App queries archive.org API directly, fully client-side
+- **No Backend Required**: App queries APIs directly, fully client-side
 - **Streaming Indicator**: "Web" badge on Now Playing screen indicates internet streaming songs
+- **Consent Flow**: First-time users must accept terms acknowledging Creative Commons/Public Domain content usage
 
 ## External Dependencies
 
