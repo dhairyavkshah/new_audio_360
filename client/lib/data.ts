@@ -13,7 +13,7 @@ export interface StreamSong extends Song {
   streamUrl: string;
   streamUrlEncrypted?: string;
   bitrate: number;
-  licenseType: 'public_domain' | 'creative_commons';
+  licenseType: 'public_domain' | 'creative_commons' | 'streaming';
   identifier: string;
 }
 

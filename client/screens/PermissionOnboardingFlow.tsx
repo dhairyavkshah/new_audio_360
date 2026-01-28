@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Platform, Linking, Pressable, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -63,6 +63,17 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
     notifications: 'pending',
   });
   const [isRequesting, setIsRequesting] = useState(false);
+
+  // Auto-skip onboarding on web since permissions are not required
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      // Skip onboarding on web after a brief delay for smooth transition
+      const timer = setTimeout(() => {
+        onComplete();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [onComplete]);
 
   const currentPermission = PERMISSION_STEPS[currentStep];
   const isLastStep = currentStep === PERMISSION_STEPS.length - 1;

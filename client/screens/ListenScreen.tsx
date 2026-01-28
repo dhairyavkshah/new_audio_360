@@ -15,7 +15,7 @@ import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, Fluen
 import { Song, StreamSong, isStreamSong } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import { PlayableSong } from "@/contexts/PlayerContext";
-import { searchArchive, StreamSongResult } from "@/services/ArchiveSearchService";
+import { searchInternetMusic, StreamSongResult } from "@/services/InternetMusicService";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 
@@ -96,7 +96,7 @@ function ListenScreen() {
 
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const results = await searchArchive(trimmedQuery);
+        const results = await searchInternetMusic(trimmedQuery);
         const streamSongs: StreamSong[] = results.map((result: StreamSongResult) => ({
           id: result.id,
           title: result.title,
