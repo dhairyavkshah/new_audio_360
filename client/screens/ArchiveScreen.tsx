@@ -66,9 +66,10 @@ export default function ArchiveScreen() {
     playSong(playableSong);
     navigation.dispatch(
       CommonActions.navigate({
-        name: 'Listen',
+        name: 'ListenTab',
         params: {
           screen: 'NowPlaying',
+          params: { songId: playableSong.id },
         },
       })
     );
