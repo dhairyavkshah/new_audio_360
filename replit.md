@@ -111,29 +111,50 @@ A two-check system: initial Google Play Billing validation and daily re-validati
 - **Intelligent Radio Discovery**: Automatic station scanning via Radio Browser API with 30-day cache refresh cycle, up to 1000 stations per country, quality filtering (lastcheckok=1, sorted by votes+clickcount), curated station fallback, and manual re-scan button that updates cache immediately.
 - **Playback**: Background playback, notification controls, queue, shuffle/repeat, playback speed, sleep timer, favorites.
 - **Library Management**: Music folder selection, paginated loading, "Hide Song" feature, playlist CRUD.
-- **Open Music Discovery**: Free music streaming from publicly available Creative Commons and Public Domain sources with search, favorites, and first-time consent modal. Accessed via dedicated Discover tab.
+- **Open Music Discovery**: Tabbed Discover screen with separate access to Internet Archive (public domain) and SoundCloud (user login for full tracks).
 
-### Open Music Discovery Architecture
-The app supports free music streaming from multiple sources:
-- **Sources**: 
-  - Internet Archive (Public Domain / Creative Commons content)
-  - SoundCloud (streamable tracks via OAuth 2.1 API)
-- **Access**: Dedicated Discover tab with first-time consent modal explaining terms
-- **Search**: Discover screen with quality filters (128k, 192k, 256k, 320k for Archive.org)
-- **Results**: Up to 20 results per search (10 from each source, combined)
-- **Client Services**: 
-  - `client/services/ArchiveOrgService.ts` - Searches Internet Archive for MP3s
-  - `client/services/SoundCloudService.ts` - OAuth 2.1 token management, searches SoundCloud API
-- **Favorites**: Online songs can be added to favorites with encrypted URL storage
-- **URL Encryption**: Simple XOR cipher with app-specific key to obfuscate stored URLs
-- **Token Management**: SoundCloud uses OAuth 2.1 client credentials flow with 1-hour token caching
-- **Fresh Stream URLs**: SoundCloud favorites regenerate stream URLs at playback time to avoid token expiry issues
-- **Streaming Indicator**: "Web" badge on Now Playing screen indicates internet streaming songs
-- **Consent Flow**: First-time users must accept terms acknowledging content usage
+### Open Music Discovery Architecture (v29.0)
+The Discover tab features a tabbed interface for streaming music from multiple sources:
+
+**Tabbed Structure**:
+- **Archive Tab**: Internet Archive public domain/CC content (no login required)
+  - Quality filters: 128k, 192k, 256k, 320k
+  - First-time consent modal for legal acknowledgment
+  - Up to 15 results per search
+- **SoundCloud Tab**: Full track streaming with user authentication
+  - OAuth 2.1 Authorization Code flow with PKCE for secure login
+  - Users sign in with their own SoundCloud account
+  - Full track playback (not just 30-second previews)
+  - DSP/neural audio processing applied to all streamed content
+  - Up to 15 results per search
+
+**Screen Files**:
+- `client/screens/DiscoverScreen.tsx` - Tabbed container with Archive/SoundCloud tabs
+- `client/screens/ArchiveTabScreen.tsx` - Internet Archive search and playback
+- `client/screens/SoundCloudTabScreen.tsx` - SoundCloud login UI and authenticated search
+
+**Client Services**: 
+- `client/services/ArchiveOrgService.ts` - Searches Internet Archive for MP3s
+- `client/services/SoundCloudService.ts` - OAuth 2.1 user auth + client credentials fallback
+
+**SoundCloud Authentication**:
+- **User Auth**: OAuth 2.1 Authorization Code + PKCE for full track access
+- **Token Management**: 6-hour expiry with automatic refresh token renewal
+- **Storage**: Tokens stored securely in AsyncStorage
+- **Redirect URIs**: `newaudio360://auth/soundcloud` (native), origin-based for web
+
+**Favorites**: Online songs can be added to favorites with encrypted URL storage
+**URL Encryption**: Simple XOR cipher with app-specific key to obfuscate stored URLs
+**Fresh Stream URLs**: Favorites regenerate stream URLs at playback time using current auth token
+**Streaming Indicator**: "Web" badge on Now Playing screen indicates internet streaming songs
 
 **Required Secrets (SoundCloud)**:
 - `SOUNDCLOUD_CLIENT_ID` - OAuth client ID
 - `SOUNDCLOUD_CLIENT_SECRET` - OAuth client secret
+
+**Important Limitations**:
+- Not all SoundCloud tracks allow off-platform streaming (some have `access: blocked`)
+- SoundCloud is migrating to AAC HLS format (`hls_aac_160_url`) by Dec 31, 2025
 
 **Security Note**: For production web builds, consider implementing a backend proxy for SoundCloud token exchange to avoid exposing client_secret in browser code. Native mobile builds are acceptable.
 

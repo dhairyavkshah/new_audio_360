@@ -1,7 +1,7 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
-import ArchiveScreen from "@/screens/ArchiveScreen";
+import DiscoverScreen from "@/screens/DiscoverScreen";
 
 export type DiscoverStackParamList = {
   Discover: undefined;
@@ -16,7 +16,7 @@ export default function DiscoverStackNavigator() {
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen
         name="Discover"
-        component={ArchiveScreen}
+        component={DiscoverScreen}
         options={{
           headerShown: false,
         }}
