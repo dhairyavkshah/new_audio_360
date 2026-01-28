@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, FlatList, TextInput, Pressable, ActivityIndicator, Platform } from "react-native";
+import { View, StyleSheet, FlatList, TextInput, Pressable, ActivityIndicator, Platform, Image } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import { FluentText, FluentScreenLayout } from "@/components/fluent";
@@ -126,9 +126,16 @@ export default function StreamingScreen() {
         onPress={() => playSong(item)}
       >
         <View style={styles.songInfo}>
-          <View style={[styles.artworkPlaceholder, { backgroundColor: theme.primary }]}>
-            <MaterialCommunityIcons name="music" size={24} color="#fff" />
-          </View>
+          {item.artwork_url ? (
+            <Image 
+              source={{ uri: item.artwork_url }} 
+              style={styles.artwork}
+            />
+          ) : (
+            <View style={[styles.artworkPlaceholder, { backgroundColor: theme.primary }]}>
+              <MaterialCommunityIcons name="music" size={24} color="#fff" />
+            </View>
+          )}
           <View style={styles.songDetails}>
             <FluentText variant="body1" numberOfLines={1} style={styles.songTitle}>
               {item.title}
@@ -317,6 +324,11 @@ const styles = StyleSheet.create({
     borderRadius: FluentRadius.small,
     justifyContent: "center",
     alignItems: "center",
+  },
+  artwork: {
+    width: 48,
+    height: 48,
+    borderRadius: FluentRadius.small,
   },
   songDetails: {
     flex: 1,
