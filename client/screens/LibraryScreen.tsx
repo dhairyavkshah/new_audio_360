@@ -39,7 +39,7 @@ import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 
 type NavigationProp = NativeStackNavigationProp<LibraryStackParamList>;
 
-type CategoryType = "liked" | "recent" | "top" | "songs" | "albums" | "artists" | "playlists";
+type CategoryType = "liked" | "recent" | "top" | "songs" | "albums" | "artists" | "playlists" | "streaming";
 
 interface CategoryConfig {
   key: CategoryType;
@@ -56,6 +56,7 @@ const categories: CategoryConfig[] = [
   { key: "albums", label: "Albums", icon: "album", color: "#4CAF50" },
   { key: "artists", label: "Artists", icon: "account-group", color: "#00BCD4" },
   { key: "playlists", label: "Playlists", icon: "playlist-music", color: "#673AB7" },
+  { key: "streaming", label: "Online", icon: "cloud-download", color: "#00BFA5" },
 ];
 
 interface AlbumCardProps {
@@ -280,11 +281,15 @@ function LibraryScreen() {
   const handleCategoryChange = useCallback((category: CategoryType) => {
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (category === "streaming") {
+      navigation.navigate("Streaming");
+      return;
+    }
     setActiveCategory(category);
     setSearchQuery("");
     setShowSortOptions(false);
     setShowCategoryDropdown(false);
-  }, [playTapSound]);
+  }, [playTapSound, navigation]);
 
   const handleManagePlaylists = useCallback(() => {
     playTapSound();
