@@ -1,5 +1,5 @@
 entrypoint = "README.md"
-modules = ["nodejs-22", "postgresql-16", "python-3.11"]
+modules = ["nodejs-22", "python-3.11", "postgresql-16"]
 
 [nix]
 channel = "stable-24_05"
@@ -13,14 +13,6 @@ publicDir = "dist"
 
 [[ports]]
 localPort = 3001
-externalPort = 3003
-
-[[ports]]
-localPort = 5000
-externalPort = 80
-
-[[ports]]
-localPort = 5001
 externalPort = 3001
 
 [[ports]]
@@ -46,6 +38,10 @@ author = "agent"
 task = "workflow.run"
 args = "Start App"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Streaming API"
+
 [[workflows.workflow]]
 name = "Start App"
 author = "agent"
@@ -59,6 +55,18 @@ task = "shell.exec"
 args = "EXPO_TUNNEL_SUBDOMAIN=newaudio360dev npx expo start --tunnel --web --port 5000 --clear"
 waitForPort = 5000
 
+[[workflows.workflow]]
+name = "Streaming API"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd server && node_modules/.bin/tsx index.ts"
+waitForPort = 3001
+
 [userenv]
 
 [userenv.shared]
@@ -66,3 +74,6 @@ EXPO_PUBLIC_UPI_ID = "dhairyavkshah@icici"
 EXPO_PUBLIC_UPI_PHONE = "+919722523691"
 EXPO_PUBLIC_PAYPAL_USERNAME = "dhairyavkshah"
 EXPO_PUBLIC_PAYEE_NAME = "Dhairyavk Shah"
+
+[userenv.development]
+EXPO_PUBLIC_STREAMING_API_URL = "https://1bca4ebb-13e0-4a6f-af33-9563fa8f4220-00-2zv4q076ahksc.kirk.replit.dev"
