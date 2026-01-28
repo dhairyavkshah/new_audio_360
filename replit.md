@@ -139,9 +139,20 @@ The Discover tab features a tabbed interface for streaming music from multiple s
 
 **SoundCloud Authentication**:
 - **User Auth**: OAuth 2.1 Authorization Code + PKCE for full track access
+- **In-App Login**: Uses WebView on native and iframe on web (no external browser popups)
 - **Token Management**: 6-hour expiry with automatic refresh token renewal
 - **Storage**: Tokens stored securely in AsyncStorage
 - **Redirect URIs**: `newaudio360://auth/soundcloud` (native), origin-based for web
+- **Web OAuth**: Embedded iframe with popup fallback for X-Frame-Options restrictions
+
+**User Library Access**:
+- **Liked Tracks**: `/me/likes/tracks` endpoint for user's favorited songs
+- **Playlists**: `/me/playlists` endpoint with `/playlists/{id}` for track details
+- **Sub-Tabs**: Search / Likes / Playlists tabs within SoundCloud section
+
+**UI Components**:
+- `OAuthWebViewModal.tsx` - In-app OAuth authentication (WebView on native, iframe on web)
+- `SoundCloudPlaylistScreen.tsx` - Playlist detail screen with track list and Play All
 
 **Favorites**: Online songs can be added to favorites with encrypted URL storage
 **URL Encryption**: Simple XOR cipher with app-specific key to obfuscate stored URLs
