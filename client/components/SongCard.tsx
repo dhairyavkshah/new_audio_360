@@ -68,6 +68,7 @@ interface SongCardProps {
   showDuration?: boolean;
   showFavoriteButton?: boolean;
   showAddToPlaylist?: boolean;
+  showStreamIndicator?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -80,7 +81,8 @@ function SongCardComponent({
   isPlaying = false, 
   showDuration = true, 
   showFavoriteButton = true, 
-  showAddToPlaylist = false 
+  showAddToPlaylist = false,
+  showStreamIndicator = false
 }: SongCardProps) {
   const { isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
@@ -228,13 +230,24 @@ function SongCardComponent({
         ) : null}
       </View>
       <View style={styles.info}>
-        <FluentText 
-          variant="body1Strong"
-          color="primary"
-          numberOfLines={1}
-        >
-          {song.title}
-        </FluentText>
+        <View style={styles.titleRow}>
+          <FluentText 
+            variant="body1Strong"
+            color="primary"
+            numberOfLines={1}
+            style={{ flex: 1 }}
+          >
+            {song.title}
+          </FluentText>
+          {showStreamIndicator ? (
+            <MaterialCommunityIcons 
+              name="web" 
+              size={FluentIconSize.tiny} 
+              color={fluentColors.colorBrandForeground1} 
+              style={{ marginLeft: FluentSpacing.xs }}
+            />
+          ) : null}
+        </View>
         <FluentText
           variant="caption1"
           color="secondary"
@@ -312,6 +325,10 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: FluentSpacing.m,
     gap: FluentSpacing.xxs,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   duration: {
     marginRight: FluentSpacing.s,

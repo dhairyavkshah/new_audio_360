@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback, memo } from "react";
-import { View, StyleSheet, FlatList, Platform } from "react-native";
+import React, { useState, useMemo, useCallback, memo, useEffect, useRef } from "react";
+import { View, StyleSheet, FlatList, Platform, ActivityIndicator, SectionList } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -12,9 +12,10 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { usePlayer } from "@/hooks/usePlayer";
 import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
-import { Song } from "@/lib/data";
+import { Song, StreamSong, isStreamSong } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import { PlayableSong } from "@/contexts/PlayerContext";
+import { searchArchive, StreamSongResult } from "@/services/ArchiveSearchService";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 
@@ -33,6 +34,11 @@ function ListenScreen() {
   const [contextMenuSong, setContextMenuSong] = useState<PlayableSong | null>(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  const [streamResults, setStreamResults] = useState<StreamSong[]>([]);
+  const [isSearchingStream, setIsSearchingStream] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const allSongs: PlayableSong[] = useMemo(() => {
     return deviceSongs;
@@ -71,10 +77,66 @@ function ListenScreen() {
     return result;
   }, [allSongs, searchQuery, sortBy]);
 
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    const trimmedQuery = searchQuery.trim();
+    
+    if (trimmedQuery.length < 3) {
+      setStreamResults([]);
+      setStreamError(null);
+      setIsSearchingStream(false);
+      return;
+    }
+
+    setIsSearchingStream(true);
+    setStreamError(null);
+
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        const results = await searchArchive(trimmedQuery);
+        const streamSongs: StreamSong[] = results.map((result: StreamSongResult) => ({
+          id: result.id,
+          title: result.title,
+          artist: result.artist,
+          album: result.album,
+          duration: result.duration,
+          artwork: result.artwork,
+          source: 'stream' as const,
+          streamUrl: result.streamUrl,
+          bitrate: result.bitrate,
+          licenseType: result.licenseType,
+          identifier: result.identifier,
+        }));
+        setStreamResults(streamSongs);
+        setStreamError(null);
+      } catch (error) {
+        console.error('[ListenScreen] Stream search error:', error);
+        setStreamError('Unable to search online. Please try again.');
+        setStreamResults([]);
+      } finally {
+        setIsSearchingStream(false);
+      }
+    }, 500);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchQuery]);
+
   const handleSongPress = useCallback((song: PlayableSong) => {
-    setQueue(filteredAndSortedSongs);
-    playSong(song);
-    navigation.navigate("NowPlaying", { songId: song.id });
+    if (isStreamSong(song)) {
+      playSong(song);
+      navigation.navigate("NowPlaying", { songId: song.id });
+    } else {
+      setQueue(filteredAndSortedSongs);
+      playSong(song);
+      navigation.navigate("NowPlaying", { songId: song.id });
+    }
   }, [filteredAndSortedSongs, setQueue, playSong, navigation]);
 
   const handleSortChange = useCallback((option: SortOption) => {
@@ -97,20 +159,86 @@ function ListenScreen() {
     setTimeout(() => setSuccessMessage(null), 3000);
   }, []);
 
-  const renderSong = useCallback(({ item }: { item: Song }) => (
+  const showSections = searchQuery.trim().length >= 3;
+
+  const sections = useMemo(() => {
+    if (!showSections) return [];
+    
+    const sectionsData: Array<{ title: string; data: PlayableSong[]; isStream?: boolean }> = [];
+    
+    if (filteredAndSortedSongs.length > 0) {
+      sectionsData.push({
+        title: 'From Device',
+        data: filteredAndSortedSongs,
+        isStream: false,
+      });
+    }
+    
+    if (streamResults.length > 0 || isSearchingStream) {
+      sectionsData.push({
+        title: 'From Internet',
+        data: streamResults,
+        isStream: true,
+      });
+    }
+    
+    return sectionsData;
+  }, [showSections, filteredAndSortedSongs, streamResults, isSearchingStream]);
+
+  const renderSong = useCallback(({ item }: { item: PlayableSong }) => (
     <SongCard
       song={item}
       onPress={() => handleSongPress(item)}
       onContextMenu={handleSongContextMenu}
       isPlaying={currentSong?.id === item.id && isPlaying}
+      showStreamIndicator={isStreamSong(item)}
     />
   ), [handleSongPress, handleSongContextMenu, currentSong?.id, isPlaying]);
+
+  const renderSectionHeader = useCallback(({ section }: { section: { title: string; isStream?: boolean } }) => (
+    <View style={[styles.sectionHeader, { backgroundColor: colors.colorNeutralBackground1 }]}>
+      <MaterialCommunityIcons 
+        name={section.isStream ? "web" : "folder-music"} 
+        size={FluentIconSize.small} 
+        color={colors.colorNeutralForeground2} 
+      />
+      <FluentText variant="caption1Strong" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
+        {section.title}
+      </FluentText>
+      {section.isStream && isSearchingStream && (
+        <ActivityIndicator size="small" color={colors.colorBrandForeground1} style={{ marginLeft: FluentSpacing.s }} />
+      )}
+    </View>
+  ), [colors, isSearchingStream]);
+
+  const renderSectionFooter = useCallback(({ section }: { section: { title: string; data: PlayableSong[]; isStream?: boolean } }) => {
+    if (section.isStream && streamError) {
+      return (
+        <View style={styles.errorContainer}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={FluentIconSize.small} color={colors.colorPaletteRedForeground1} />
+          <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.xs }}>
+            {streamError}
+          </FluentText>
+        </View>
+      );
+    }
+    if (section.isStream && section.data.length === 0 && !isSearchingStream && searchQuery.trim().length >= 3) {
+      return (
+        <View style={styles.emptySection}>
+          <FluentText variant="caption1" color="tertiary">
+            No public domain audio found
+          </FluentText>
+        </View>
+      );
+    }
+    return null;
+  }, [colors, streamError, isSearchingStream, searchQuery]);
 
   const renderEmptyList = useCallback(() => (
     <View style={styles.emptyContainer}>
       <MaterialCommunityIcons name="music-note-off" size={FluentIconSize.xxlarge} color={colors.colorNeutralForeground2} />
       <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.l, textAlign: "center" }}>
-        No songs found matching "{searchQuery}"
+        {searchQuery.trim() ? `No songs found matching "${searchQuery}"` : "Your music library is empty"}
       </FluentText>
     </View>
   ), [colors.colorNeutralForeground2, searchQuery]);
@@ -145,24 +273,42 @@ function ListenScreen() {
       contentPadding="l"
       avoidKeyboard
     >
-      <FlatList
-        data={filteredAndSortedSongs}
-        renderItem={renderSong}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + FluentSpacing.xl },
-        ]}
-        ListEmptyComponent={renderEmptyList}
-        showsVerticalScrollIndicator={false}
-        initialNumToRender={15}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        removeClippedSubviews={Platform.OS === 'android'}
-        updateCellsBatchingPeriod={50}
-        getItemLayout={getItemLayout}
-        keyboardShouldPersistTaps="handled"
-      />
+      {showSections ? (
+        <SectionList
+          sections={sections}
+          renderItem={renderSong}
+          renderSectionHeader={renderSectionHeader}
+          renderSectionFooter={renderSectionFooter}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + FluentSpacing.xl },
+          ]}
+          ListEmptyComponent={renderEmptyList}
+          showsVerticalScrollIndicator={false}
+          stickySectionHeadersEnabled={false}
+          keyboardShouldPersistTaps="handled"
+        />
+      ) : (
+        <FlatList
+          data={filteredAndSortedSongs}
+          renderItem={renderSong}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: tabBarHeight + (currentSong ? 80 : 0) + FluentSpacing.xl },
+          ]}
+          ListEmptyComponent={renderEmptyList}
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={15}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          removeClippedSubviews={Platform.OS === 'android'}
+          updateCellsBatchingPeriod={50}
+          getItemLayout={getItemLayout}
+          keyboardShouldPersistTaps="handled"
+        />
+      )}
 
       <SongContextMenu
         visible={showContextMenu}
@@ -202,6 +348,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.l,
     paddingVertical: FluentSpacing.l,
     borderRadius: FluentRadius.large,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.xs,
+    marginBottom: FluentSpacing.xs,
+  },
+  emptySection: {
+    alignItems: "center",
+    paddingVertical: FluentSpacing.l,
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: FluentSpacing.m,
   },
 });
 

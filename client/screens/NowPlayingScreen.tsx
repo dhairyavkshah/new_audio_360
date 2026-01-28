@@ -18,7 +18,7 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { usePlayerContext } from "@/contexts/PlayerContext";
+import { usePlayerContext, isStreamSong } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
 import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
@@ -165,6 +165,21 @@ export default function NowPlayingScreen() {
           >
             {currentSong.artist}
           </FluentText>
+          {isStreamSong(currentSong) && (
+            <View style={[styles.streamingTag, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)' }]}>
+              <MaterialCommunityIcons 
+                name="cloud-check" 
+                size={FluentIconSize.tiny} 
+                color={isDark ? 'rgba(255,255,255,0.8)' : colors.colorNeutralForeground2} 
+              />
+              <FluentText 
+                variant="caption2" 
+                style={[{ marginLeft: FluentSpacing.xxs, color: isDark ? 'rgba(255,255,255,0.8)' : colors.colorNeutralForeground2 }]}
+              >
+                Streaming • {currentSong.licenseType === 'creative_commons' ? 'Creative Commons' : 'Public Domain'}
+              </FluentText>
+            </View>
+          )}
           <View style={[styles.actionButtons, (isExtraCompact || isVeryCompact) && { marginTop: FluentSpacing.xs, gap: FluentSpacing.l }]}>
             <Pressable
               style={styles.actionButton}
@@ -301,6 +316,14 @@ const styles = StyleSheet.create({
     marginTop: FluentSpacing.xs,
     textAlign: "center",
     fontWeight: "500",
+  },
+  streamingTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: FluentSpacing.m,
+    paddingVertical: FluentSpacing.xxs,
+    borderRadius: FluentRadius.small,
+    marginTop: FluentSpacing.s,
   },
   actionButtons: {
     flexDirection: "row",

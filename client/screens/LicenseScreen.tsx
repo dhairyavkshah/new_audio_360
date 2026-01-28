@@ -5,6 +5,7 @@ import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { usePlatformMode } from "@/contexts/PlatformModeContext";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
@@ -33,6 +34,7 @@ export default function LicenseScreen() {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const { licenseStatus, isLoading, checkLicenseStatus } = useSubscription();
+  const { isAndroid } = usePlatformMode();
 
   const handleVerifyInstallation = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -161,7 +163,7 @@ export default function LicenseScreen() {
               New Audio 360 is a paid app available on Google Play Store. Purchase and install the app from Google Play to unlock all features.
             </FluentText>
 
-            {licenseStatus !== "licensed" && (
+            {licenseStatus !== "licensed" && isAndroid && (
               <>
                 <View style={[
                   styles.infoCard,
@@ -216,6 +218,18 @@ export default function LicenseScreen() {
                   </FluentText>
                 </Pressable>
               </>
+            )}
+            
+            {licenseStatus !== "licensed" && !isAndroid && (
+              <View style={[styles.allUnlockedCard, { backgroundColor: colors.colorBrandBackground + "15" }]}>
+                <MaterialCommunityIcons name="information-outline" size={32} color={colors.colorBrandForeground1} />
+                <FluentText variant="body1" style={{ color: colors.colorBrandForeground1, marginTop: FluentSpacing.s, textAlign: "center" }}>
+                  Web preview mode - all features available
+                </FluentText>
+                <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs, textAlign: "center" }}>
+                  Purchase on Android for full license
+                </FluentText>
+              </View>
             )}
 
             {licenseStatus === "licensed" && (

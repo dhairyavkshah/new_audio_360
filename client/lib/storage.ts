@@ -28,6 +28,7 @@ const STORAGE_KEYS = {
   BASS_ENHANCEMENT: '@new_audio_360_bass_enhancement',
   HF_RESTORATION_ENABLED: '@new_audio_360_hf_restoration_enabled',
   HF_RESTORATION_LEVEL: '@new_audio_360_hf_restoration_level',
+  STREAM_LIBRARY: '@new_audio_360_stream_library',
 };
 
 export interface CustomEQPreset {
@@ -624,4 +625,105 @@ export async function getHfRestorationLevel(): Promise<number> {
     console.error('Error getting HF restoration level:', error);
     return 50;
   }
+}
+
+export interface StoredStreamSong {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  artwork?: string;
+  streamUrlEncrypted: string;
+  bitrate: number;
+  licenseType: 'public_domain' | 'creative_commons';
+  identifier: string;
+  addedAt: number;
+}
+
+function encodeStreamUrl(url: string): string {
+  try {
+    return btoa(encodeURIComponent(url));
+  } catch {
+    return btoa(url);
+  }
+}
+
+function decodeStreamUrl(encoded: string): string {
+  try {
+    return decodeURIComponent(atob(encoded));
+  } catch {
+    try {
+      return atob(encoded);
+    } catch {
+      return encoded;
+    }
+  }
+}
+
+export async function getStreamLibrary(): Promise<StoredStreamSong[]> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.STREAM_LIBRARY);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error getting stream library:', error);
+    return [];
+  }
+}
+
+export async function saveStreamLibrary(songs: StoredStreamSong[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.STREAM_LIBRARY, JSON.stringify(songs));
+  } catch (error) {
+    console.error('Error saving stream library:', error);
+  }
+}
+
+export async function addToStreamLibrary(song: {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  artwork?: string;
+  streamUrl: string;
+  bitrate: number;
+  licenseType: 'public_domain' | 'creative_commons';
+  identifier: string;
+}): Promise<void> {
+  const library = await getStreamLibrary();
+  const exists = library.some(s => s.identifier === song.identifier);
+  if (exists) return;
+
+  const storedSong: StoredStreamSong = {
+    id: song.id,
+    title: song.title,
+    artist: song.artist,
+    album: song.album,
+    duration: song.duration,
+    artwork: song.artwork,
+    streamUrlEncrypted: encodeStreamUrl(song.streamUrl),
+    bitrate: song.bitrate,
+    licenseType: song.licenseType,
+    identifier: song.identifier,
+    addedAt: Date.now(),
+  };
+
+  library.unshift(storedSong);
+  await saveStreamLibrary(library);
+}
+
+export async function removeFromStreamLibrary(identifier: string): Promise<void> {
+  const library = await getStreamLibrary();
+  const filtered = library.filter(s => s.identifier !== identifier);
+  await saveStreamLibrary(filtered);
+}
+
+export async function isInStreamLibrary(identifier: string): Promise<boolean> {
+  const library = await getStreamLibrary();
+  return library.some(s => s.identifier === identifier);
+}
+
+export function getDecodedStreamUrl(storedSong: StoredStreamSong): string {
+  return decodeStreamUrl(storedSong.streamUrlEncrypted);
 }
