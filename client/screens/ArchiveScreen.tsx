@@ -114,6 +114,11 @@ export default function ArchiveScreen() {
   }, [searchQuery, selectedQuality, showError]);
 
   const playTrack = useCallback((track: UnifiedTrack) => {
+    // For SoundCloud tracks from search results, the stream_url already contains
+    // a fresh token since it was just fetched. For stored/cached SoundCloud tracks
+    // (from favorites), use SoundCloudService.storedToPlayable() which retrieves
+    // a fresh tokenized URL via getStreamUrl() to ensure playback doesn't fail due
+    // to token expiry.
     const duration = track.source === 'soundcloud' 
       ? (track as SoundCloudTrack).duration * 1000 
       : ((track as ArchiveOrgTrack).duration || 0) * 1000;

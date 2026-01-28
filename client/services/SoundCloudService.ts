@@ -1,3 +1,14 @@
+/**
+ * SoundCloud Integration Service
+ * 
+ * SECURITY NOTE: For production web builds, this implementation exposes the
+ * client_secret in the browser client code. In a production environment, you should
+ * use a backend proxy for OAuth token exchange to avoid exposing sensitive
+ * credentials in client-side code. Implement a backend endpoint that performs the
+ * token exchange server-to-server, and have the client call that endpoint instead
+ * of calling SoundCloud's OAuth endpoint directly.
+ */
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Buffer } from 'buffer';
 import Constants from 'expo-constants';
@@ -276,14 +287,15 @@ class SoundCloudServiceClass {
     return this.simpleDecrypt(storedTrack.encryptedUrl);
   }
 
-  storedToPlayable(stored: StoredSoundCloudTrack): SoundCloudTrack {
+  async storedToPlayable(stored: StoredSoundCloudTrack): Promise<SoundCloudTrack> {
+    const freshStreamUrl = await this.getStreamUrl(stored.id);
     return {
       id: stored.id,
       title: stored.title,
       artist: stored.artist,
       album: stored.album,
       duration: stored.duration,
-      stream_url: this.getStoredStreamUrl(stored),
+      stream_url: freshStreamUrl,
       artwork_url: stored.artwork_url,
       playbackCount: stored.playbackCount,
       isOnlineStream: true,
