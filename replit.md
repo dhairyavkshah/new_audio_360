@@ -110,24 +110,18 @@ A two-check system: initial Google Play Billing validation and daily re-validati
 - **Intelligent Radio Discovery**: Automatic station scanning via Radio Browser API with 30-day cache refresh cycle, up to 1000 stations per country, quality filtering (lastcheckok=1, sorted by votes+clickcount), curated station fallback, and manual re-scan button that updates cache immediately.
 - **Playback**: Background playback, notification controls, queue, shuffle/repeat, playback speed, sleep timer, favorites.
 - **Library Management**: Music folder selection, paginated loading, "Hide Song" feature, playlist CRUD.
-- **Online Streaming**: Live music streaming from Cloudflare R2 bucket with direct S3 API querying (no database caching).
+- **Online Streaming**: Free music streaming from Internet Archive (archive.org) with inline search and favorites.
 
 ### Online Music Streaming Architecture
-The app supports online music streaming via Cloudflare R2 storage with static JSON catalog:
-- **Storage**: Cloudflare R2 bucket `newaudio360-songs` with public access
-- **Public URL**: `https://pub-9b6df67c7b3748c4a8f34a585a1d4ddf.r2.dev/`
-- **Catalog**: Static `songs.json` file hosted on R2 (no backend needed)
-- **Client Service**: `client/services/StreamingService.ts` - Fetches songs.json and caches locally
-- **Metadata Parsing**: Song title and artist extracted from MP3 filenames (format: `Title - Artist.mp3`)
-- **No Backend Required**: App fetches static JSON directly from R2, fully self-contained
-
-**Updating Song Catalog**:
-1. Run `npx tsx scripts/generate-songs-json.ts` to regenerate songs.json from R2 bucket
-2. Upload the generated `songs.json` to your R2 bucket
-3. App will refresh cache automatically (24-hour cache, or manual refresh)
-
-**R2 Credentials** (for catalog generation only):
-- `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` - Used by generation script
+The app supports legal, free music streaming via Internet Archive (archive.org):
+- **Source**: Internet Archive's audio collection (Creative Commons / Public Domain content)
+- **Search**: Inline modal in Library screen with quality filters (128k, 192k, 256k, 320k)
+- **Results**: Max 10 results per search to keep UI focused
+- **Client Service**: `client/services/ArchiveOrgService.ts` - Searches archive.org API and returns MP3 URLs
+- **Favorites**: Archive.org songs can be added to favorites with encrypted URL storage
+- **URL Encryption**: Simple XOR cipher with app-specific key to obfuscate stored URLs
+- **No Backend Required**: App queries archive.org API directly, fully client-side
+- **Streaming Indicator**: "Web" badge on Now Playing screen indicates internet streaming songs
 
 ## External Dependencies
 

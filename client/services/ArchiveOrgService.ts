@@ -1,11 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Crypto from 'expo-crypto';
+import { Buffer } from 'buffer';
 
 const SEARCH_API_URL = 'https://archive.org/advancedsearch.php';
 const METADATA_API_URL = 'https://archive.org/metadata';
 const DOWNLOAD_BASE_URL = 'https://archive.org/download';
 const FAVORITES_KEY = '@archive_org_favorites';
 const ENCRYPTION_KEY = 'NA360_ARCHIVE_2025';
+
+const toBase64 = (str: string): string => {
+  return Buffer.from(str, 'binary').toString('base64');
+};
+
+const fromBase64 = (str: string): string => {
+  return Buffer.from(str, 'base64').toString('binary');
+};
 
 export type AudioQuality = '128' | '192' | '256' | '320' | 'all';
 
@@ -69,12 +77,12 @@ class ArchiveOrgServiceClass {
       const charCode = text.charCodeAt(i) ^ key.charCodeAt(i % key.length);
       result += String.fromCharCode(charCode);
     }
-    return btoa(result);
+    return toBase64(result);
   }
 
   private simpleDecrypt(encoded: string): string {
     try {
-      const decoded = atob(encoded);
+      const decoded = fromBase64(encoded);
       const key = ENCRYPTION_KEY;
       let result = '';
       for (let i = 0; i < decoded.length; i++) {
