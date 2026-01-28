@@ -158,23 +158,13 @@ export default function NowPlayingScreen() {
           <FluentText variant={isExtraCompact ? "body1" : isVeryCompact ? "subtitle1" : "title1"} style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
             {currentSong.title}
           </FluentText>
-          <View style={styles.artistRow}>
-            <FluentText 
-              variant={isExtraCompact ? "caption1" : isVeryCompact ? "body2" : "subtitle1"} 
-              style={[styles.artistName, textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.85)' : colors.colorNeutralForeground2 }]} 
-              numberOfLines={1}
-            >
-              {currentSong.artist}
-            </FluentText>
-            {(currentSong as any).source === 'archive.org' && (
-              <View style={[styles.streamingBadge, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)' }]}>
-                <MaterialCommunityIcons name="web" size={12} color={isDark ? 'rgba(255,255,255,0.7)' : colors.colorNeutralForeground3} />
-                <FluentText variant="caption2" style={{ color: isDark ? 'rgba(255,255,255,0.7)' : colors.colorNeutralForeground3, marginLeft: 3 }}>
-                  Web
-                </FluentText>
-              </View>
-            )}
-          </View>
+          <FluentText 
+            variant={isExtraCompact ? "caption1" : isVeryCompact ? "body2" : "subtitle1"} 
+            style={[styles.artistName, textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.85)' : colors.colorNeutralForeground2 }]} 
+            numberOfLines={1}
+          >
+            {currentSong.artist}
+          </FluentText>
           <View style={[styles.actionButtons, (isExtraCompact || isVeryCompact) && { marginTop: FluentSpacing.xs, gap: FluentSpacing.l }]}>
             <Pressable
               style={styles.actionButton}
@@ -307,14 +297,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
-  artistRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: FluentSpacing.s,
-    marginTop: FluentSpacing.xs,
-  },
   artistName: {
+    marginTop: FluentSpacing.xs,
     textAlign: "center",
     fontWeight: "500",
   },
@@ -333,12 +317,5 @@ const styles = StyleSheet.create({
   progressContainer: {},
   controlsContainer: {
     width: "100%",
-  },
-  streamingBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
   },
 });

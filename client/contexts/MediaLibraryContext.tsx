@@ -222,14 +222,31 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         return;
       }
       
-      // On web dev mode, skip album art extraction and just use test songs directly
-      console.log('[MediaLibrary] Web: Using test songs without album art extraction');
-      const filtered = testSongs.filter(s => !hiddenIds.includes(s.id));
+      setIsLoading(true);
+      setProgress({ loaded: 0, total: testSongs.length });
+      
+      const songsWithArt: DeviceSong[] = await Promise.all(
+        testSongs.map(async (song, index) => {
+          try {
+            const result = await extractAlbumArt(song.uri);
+            setProgress({ loaded: index + 1, total: testSongs.length });
+            return {
+              ...song,
+              artwork: result.dataUrl || song.artwork,
+            };
+          } catch {
+            setProgress({ loaded: index + 1, total: testSongs.length });
+            return song;
+          }
+        })
+      );
+      
+      const filtered = songsWithArt.filter(s => !hiddenIds.includes(s.id));
       setSongs(filtered);
-      setAllSongsIncludingHidden(testSongs);
+      setAllSongsIncludingHidden(songsWithArt);
       setUsingMockData(false);
       setIsLoading(false);
-      setProgress({ loaded: filtered.length, total: testSongs.length });
+      setProgress({ loaded: filtered.length, total: songsWithArt.length });
       return;
     }
 

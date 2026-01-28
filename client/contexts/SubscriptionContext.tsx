@@ -1,14 +1,11 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { SecureStorage } from '@/services/SecureStorage';
 import { GooglePlayLicense, PurchaseInfo, PRODUCT_ID } from '@/lib/payment';
 
 const APP_ENV = Constants.expoConfig?.extra?.APP_ENV || process.env.APP_ENV || 'production';
 const LICENSE_MODE = process.env.EXPO_PUBLIC_LICENSE_MODE || 'trial';
-const IS_DEV = __DEV__ === true;
-const IS_WEB_DEV = Platform.OS === 'web' && IS_DEV;
-const DEV_MODE_BYPASS_LICENSE = IS_WEB_DEV; // Bypass license check for web dev mode
+const DEV_MODE_BYPASS_LICENSE = false; // Production: Real license verification enabled
 const TESTING_MODE_BYPASS_LICENSE = APP_ENV === 'testing'; // Testing builds bypass license check
 const ELECTRON_LICENSED_MODE = LICENSE_MODE === 'licensed'; // Electron builds with license passed
 

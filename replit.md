@@ -110,18 +110,6 @@ A two-check system: initial Google Play Billing validation and daily re-validati
 - **Intelligent Radio Discovery**: Automatic station scanning via Radio Browser API with 30-day cache refresh cycle, up to 1000 stations per country, quality filtering (lastcheckok=1, sorted by votes+clickcount), curated station fallback, and manual re-scan button that updates cache immediately.
 - **Playback**: Background playback, notification controls, queue, shuffle/repeat, playback speed, sleep timer, favorites.
 - **Library Management**: Music folder selection, paginated loading, "Hide Song" feature, playlist CRUD.
-- **Online Streaming**: Free music streaming from Internet Archive (archive.org) with inline search and favorites.
-
-### Online Music Streaming Architecture
-The app supports legal, free music streaming via Internet Archive (archive.org):
-- **Source**: Internet Archive's audio collection (Creative Commons / Public Domain content)
-- **Search**: Inline modal in Library screen with quality filters (128k, 192k, 256k, 320k)
-- **Results**: Max 10 results per search to keep UI focused
-- **Client Service**: `client/services/ArchiveOrgService.ts` - Searches archive.org API and returns MP3 URLs
-- **Favorites**: Archive.org songs can be added to favorites with encrypted URL storage
-- **URL Encryption**: Simple XOR cipher with app-specific key to obfuscate stored URLs
-- **No Backend Required**: App queries archive.org API directly, fully client-side
-- **Streaming Indicator**: "Web" badge on Now Playing screen indicates internet streaming songs
 
 ## External Dependencies
 
