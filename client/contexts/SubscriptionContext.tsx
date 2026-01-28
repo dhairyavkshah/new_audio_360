@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { SecureStorage } from '@/services/SecureStorage';
 import { GooglePlayLicense, PurchaseInfo, PRODUCT_ID } from '@/lib/payment';
@@ -8,6 +9,7 @@ const LICENSE_MODE = process.env.EXPO_PUBLIC_LICENSE_MODE || 'trial';
 const DEV_MODE_BYPASS_LICENSE = false; // Production: Real license verification enabled
 const TESTING_MODE_BYPASS_LICENSE = APP_ENV === 'testing'; // Testing builds bypass license check
 const ELECTRON_LICENSED_MODE = LICENSE_MODE === 'licensed'; // Electron builds with license passed
+const WEB_BYPASS_LICENSE = Platform.OS === 'web'; // Web platform bypasses license for preview
 
 export type LicenseStatus = 'checking' | 'unlicensed' | 'licensed';
 
@@ -57,14 +59,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const initializeLicense = async () => {
     try {
-      if (DEV_MODE_BYPASS_LICENSE || TESTING_MODE_BYPASS_LICENSE || ELECTRON_LICENSED_MODE) {
-        const mode = ELECTRON_LICENSED_MODE ? 'Electron licensed' : (TESTING_MODE_BYPASS_LICENSE ? 'Testing' : 'Development');
+      if (DEV_MODE_BYPASS_LICENSE || TESTING_MODE_BYPASS_LICENSE || ELECTRON_LICENSED_MODE || WEB_BYPASS_LICENSE) {
+        const mode = WEB_BYPASS_LICENSE ? 'Web preview' : (ELECTRON_LICENSED_MODE ? 'Electron licensed' : (TESTING_MODE_BYPASS_LICENSE ? 'Testing' : 'Development'));
         console.log(`[License] ${mode} mode - license verified`);
         const devState: LicenseState = {
           status: 'licensed',
           purchase: {
             productId: PRODUCT_ID,
-            installSource: ELECTRON_LICENSED_MODE ? 'electron' : (TESTING_MODE_BYPASS_LICENSE ? 'testing' : 'development'),
+            installSource: WEB_BYPASS_LICENSE ? 'web_preview' : (ELECTRON_LICENSED_MODE ? 'electron' : (TESTING_MODE_BYPASS_LICENSE ? 'testing' : 'development')),
             installTime: Date.now(),
           },
         };
