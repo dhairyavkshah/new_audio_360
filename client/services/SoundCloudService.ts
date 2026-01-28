@@ -179,17 +179,12 @@ class SoundCloudServiceClass {
   }
 
   private async generateCodeChallenge(verifier: string): Promise<string> {
-    try {
-      const digest = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        verifier,
-        { encoding: Crypto.CryptoEncoding.BASE64 }
-      );
-      return digest.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    } catch (error) {
-      console.log('[SoundCloudService] PKCE fallback to plain method');
-      return verifier;
-    }
+    const digest = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      verifier,
+      { encoding: Crypto.CryptoEncoding.BASE64 }
+    );
+    return digest.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
   // ============================================================
@@ -274,7 +269,11 @@ class SoundCloudServiceClass {
 
   async validateState(returnedState: string): Promise<boolean> {
     const savedState = await AsyncStorage.getItem(PKCE_STATE_KEY);
-    return savedState === returnedState;
+    if (savedState === returnedState) {
+      await AsyncStorage.removeItem(PKCE_STATE_KEY);
+      return true;
+    }
+    return false;
   }
 
   async exchangeCodeForToken(code: string): Promise<void> {

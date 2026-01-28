@@ -64,7 +64,7 @@ export default function SoundCloudTabScreen() {
         const code = url.searchParams.get('code');
         const returnedState = url.searchParams.get('state');
         
-        if (returnedState && !(await SoundCloudService.validateState(returnedState))) {
+        if (!returnedState || !(await SoundCloudService.validateState(returnedState))) {
           showError("Security check failed - please try again");
           return;
         }
