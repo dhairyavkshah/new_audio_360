@@ -1,14 +1,17 @@
-import React, { useState, useCallback } from "react";
-import { View, StyleSheet, TextInput, FlatList, Pressable, ActivityIndicator, Platform } from "react-native";
+import React, { useState, useCallback, useEffect } from "react";
+import { View, StyleSheet, TextInput, FlatList, Pressable, ActivityIndicator, Platform, Modal, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useToast } from "@/contexts/ToastContext";
 import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import ArchiveOrgService, { ArchiveOrgTrack, AudioQuality } from "@/services/ArchiveOrgService";
+
+const CONSENT_STORAGE_KEY = '@discover_consent_accepted';
 
 const QUALITY_OPTIONS: { label: string; value: AudioQuality }[] = [
   { label: 'All', value: 'all' },
@@ -31,6 +34,40 @@ export default function ArchiveScreen() {
   const [loading, setLoading] = useState(false);
   const [selectedQuality, setSelectedQuality] = useState<AudioQuality>('all');
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
+  const [showConsentModal, setShowConsentModal] = useState(true);
+
+  useEffect(() => {
+    const checkConsent = async () => {
+      try {
+        const consentAccepted = await AsyncStorage.getItem(CONSENT_STORAGE_KEY);
+        if (consentAccepted === 'true') {
+          setShowConsentModal(false);
+        }
+      } catch (error) {
+        console.error('[ArchiveScreen] Error checking consent:', error);
+      }
+    };
+    checkConsent();
+  }, []);
+
+  const handleAcceptConsent = async () => {
+    try {
+      await AsyncStorage.setItem(CONSENT_STORAGE_KEY, 'true');
+      setShowConsentModal(false);
+    } catch (error) {
+      console.error('[ArchiveScreen] Error saving consent:', error);
+      setShowConsentModal(false);
+    }
+  };
+
+  const handleDeclineConsent = () => {
+    setShowConsentModal(false);
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: 'ListenTab',
+      })
+    );
+  };
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return;
@@ -141,9 +178,78 @@ export default function ArchiveScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.colorNeutralBackground1 }]}>
+      <Modal
+        visible={showConsentModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleDeclineConsent}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.colorNeutralBackground1 }]}>
+            <View style={styles.modalHeader}>
+              <MaterialCommunityIcons name="compass" size={48} color={theme.primary} />
+              <FluentText variant="title2" style={styles.modalTitle}>
+                Open Music Discovery
+              </FluentText>
+            </View>
+            
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <FluentText variant="body2" color="secondary" style={styles.modalText}>
+                This feature allows you to discover and play music from publicly available Creative Commons and Public Domain sources. By proceeding, you acknowledge that:
+              </FluentText>
+              
+              <View style={styles.bulletPoint}>
+                <FluentText variant="body2" color="secondary">•</FluentText>
+                <FluentText variant="body2" color="secondary" style={styles.bulletText}>
+                  All content is freely and legally available for personal listening
+                </FluentText>
+              </View>
+              
+              <View style={styles.bulletPoint}>
+                <FluentText variant="body2" color="secondary">•</FluentText>
+                <FluentText variant="body2" color="secondary" style={styles.bulletText}>
+                  We respect the rights of content creators and only access authorized sources
+                </FluentText>
+              </View>
+              
+              <View style={styles.bulletPoint}>
+                <FluentText variant="body2" color="secondary">•</FluentText>
+                <FluentText variant="body2" color="secondary" style={styles.bulletText}>
+                  No unauthorized or copyrighted content is accessed through this service
+                </FluentText>
+              </View>
+              
+              <FluentText variant="body2" color="tertiary" style={styles.modalDisclaimer}>
+                We do not encourage or support any form of unauthorized music streaming. This service is provided for educational and personal enjoyment purposes.
+              </FluentText>
+            </ScrollView>
+            
+            <View style={styles.modalActions}>
+              <Pressable
+                style={[styles.modalButton, styles.declineButton, { borderColor: colors.colorNeutralStroke1 }]}
+                onPress={handleDeclineConsent}
+              >
+                <FluentText variant="body2" color="secondary">
+                  No Thanks
+                </FluentText>
+              </Pressable>
+              
+              <Pressable
+                style={[styles.modalButton, styles.acceptButton, { backgroundColor: theme.primary }]}
+                onPress={handleAcceptConsent}
+              >
+                <FluentText variant="body2" style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                  I Understand
+                </FluentText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.searchSection}>
         <FluentText variant="caption1" color="secondary" style={styles.subtitle}>
-          Search free, legal music online
+          Discover free music from public domain and Creative Commons sources
         </FluentText>
 
         <View style={styles.searchRow}>
@@ -157,7 +263,7 @@ export default function ArchiveScreen() {
               onChangeText={setSearchQuery}
               onSubmitEditing={handleSearch}
               returnKeyType="search"
-              autoFocus
+              autoFocus={!showConsentModal}
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery("")}>
@@ -210,12 +316,12 @@ export default function ArchiveScreen() {
         </View>
       ) : tracks.length === 0 ? (
         <View style={styles.centerContainer}>
-          <MaterialCommunityIcons name="archive-music-outline" size={64} color={theme.textTertiary} />
+          <MaterialCommunityIcons name="compass-outline" size={64} color={theme.textTertiary} />
           <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
-            {searchQuery ? "No results found" : "Search for music"}
+            {searchQuery ? "No results found" : "Discover free music"}
           </FluentText>
           <FluentText variant="caption1" color="tertiary" style={styles.hintText}>
-            Try searching for artist names, song titles, or genres
+            Search for artist names, song titles, or genres from public domain sources
           </FluentText>
         </View>
       ) : (
@@ -243,6 +349,66 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: FluentSpacing.l,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: FluentRadius.large,
+    padding: FluentSpacing.l,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: FluentSpacing.m,
+  },
+  modalTitle: {
+    marginTop: FluentSpacing.m,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  modalBody: {
+    marginBottom: FluentSpacing.l,
+  },
+  modalText: {
+    marginBottom: FluentSpacing.m,
+    lineHeight: 22,
+  },
+  bulletPoint: {
+    flexDirection: 'row',
+    marginBottom: FluentSpacing.s,
+    paddingLeft: FluentSpacing.s,
+  },
+  bulletText: {
+    flex: 1,
+    marginLeft: FluentSpacing.s,
+    lineHeight: 22,
+  },
+  modalDisclaimer: {
+    marginTop: FluentSpacing.m,
+    fontStyle: 'italic',
+    lineHeight: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: FluentSpacing.m,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: FluentSpacing.m,
+    borderRadius: FluentRadius.medium,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  declineButton: {
+    borderWidth: 1,
+  },
+  acceptButton: {},
   searchSection: {
     padding: FluentSpacing.m,
     gap: FluentSpacing.s,

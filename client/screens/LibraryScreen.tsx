@@ -57,7 +57,7 @@ const categories: CategoryConfig[] = [
   { key: "albums", label: "Albums", icon: "album", color: "#4CAF50" },
   { key: "artists", label: "Artists", icon: "account-group", color: "#00BCD4" },
   { key: "playlists", label: "Playlists", icon: "playlist-music", color: "#673AB7" },
-  { key: "streaming", label: "Archive", icon: "web", color: "#00BFA5" },
+  { key: "streaming", label: "Online", icon: "web", color: "#00BFA5" },
 ];
 
 interface AlbumCardProps {
@@ -560,11 +560,11 @@ function LibraryScreen() {
       <View style={[styles.listContent, { flex: 1 }]}>
         <Pressable
           style={[styles.archiveSearchButton, { backgroundColor: colors.colorBrandBackground }]}
-          onPress={() => navigation.navigate("Archive")}
+          onPress={() => navigation.dispatch(CommonActions.navigate({ name: 'DiscoverTab' }))}
         >
           <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color="#FFFFFF" />
           <FluentText variant="body2" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s }}>
-            Search Internet Archive
+            Search Online Music
           </FluentText>
         </Pressable>
 
@@ -572,7 +572,7 @@ function LibraryScreen() {
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="web" size={64} color={colors.colorNeutralForeground3} />
             <FluentText variant="body1" color="tertiary" style={styles.emptyText}>
-              No saved songs from Internet Archive
+              No saved online music
             </FluentText>
             <FluentText variant="caption1" color="tertiary" style={styles.emptyText}>
               Search for free, legal music above

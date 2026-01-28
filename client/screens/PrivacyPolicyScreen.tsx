@@ -104,8 +104,15 @@ export default function PrivacyPolicyScreen() {
           />
 
           <PolicySection
+            icon="music-box-multiple-outline"
+            title="6. Open Music Discovery"
+            content="The Application includes an Open Music Discovery feature that allows you to search and play music from publicly available Creative Commons and Public Domain sources. When using this feature: (a) searches are performed against public music archives that host freely distributable content; (b) no personal data or listening habits are transmitted; (c) all streamed content is sourced from legitimate, publicly accessible repositories; (d) content creators' rights are respected as only authorized Creative Commons and Public Domain materials are accessible. This feature does not access, distribute, or enable access to any copyrighted or unauthorized content."
+            colors={colors}
+          />
+
+          <PolicySection
             icon="shield-check"
-            title="6. Data Security"
+            title="7. Data Security"
             content="We implement industry-standard security measures to protect locally stored data. Sensitive information such as license status is encrypted using Android Keystore with AES-256-GCM encryption and HMAC integrity verification. Device-bound encryption keys ensure data cannot be transferred between devices. While we take reasonable precautions, no method of electronic storage is 100% secure, and we cannot guarantee absolute security of data stored on your device."
             colors={colors}
 
@@ -113,7 +120,7 @@ export default function PrivacyPolicyScreen() {
 
           <PolicySection
             icon="account-child-circle"
-            title="7. Children's Privacy"
+            title="8. Children's Privacy"
             content="The Application is not directed at children under the age of 13, and we do not knowingly collect any information from children. The Application contains no advertising, in-app tracking, or social features. If you believe a child has provided us with personal information, please contact us immediately."
             colors={colors}
 
@@ -121,7 +128,7 @@ export default function PrivacyPolicyScreen() {
 
           <PolicySection
             icon="account-group"
-            title="8. Third-Party Services"
+            title="9. Third-Party Services"
             content="The Application utilizes open-source libraries and third-party services (such as the Radio Browser API for online radio). These services operate under their own privacy policies. We encourage you to review their respective policies. We are not responsible for the privacy practices of third-party services."
             colors={colors}
 
@@ -129,7 +136,7 @@ export default function PrivacyPolicyScreen() {
 
           <PolicySection
             icon="update"
-            title="9. Changes to This Policy"
+            title="10. Changes to This Policy"
             content="We reserve the right to modify this Privacy Policy at any time. Any changes will be reflected in updated versions of the Application with a revised 'Effective Date.' Continued use of the Application following any changes constitutes acceptance of the modified Policy. The fundamental principle that your data remains on your device will not change."
             colors={colors}
 
@@ -137,7 +144,7 @@ export default function PrivacyPolicyScreen() {
 
           <PolicySection
             icon="scale-balance"
-            title="10. Your Rights"
+            title="11. Your Rights"
             content="As we do not collect personal data, traditional data subject rights (access, rectification, erasure, portability) are not applicable. However, you maintain complete control over all data stored locally on your device. You may delete all Application data by uninstalling the Application or clearing its data through your device settings."
             colors={colors}
 
@@ -145,7 +152,7 @@ export default function PrivacyPolicyScreen() {
 
           <PolicySection
             icon="gavel"
-            title="11. Governing Law"
+            title="12. Governing Law"
             content="This Privacy Policy shall be governed by and construed in accordance with the laws of India, without regard to its conflict of law provisions. Any disputes arising under this Policy shall be subject to the exclusive jurisdiction of the courts located in India."
             colors={colors}
 

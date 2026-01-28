@@ -7,7 +7,6 @@ import PlaylistManagementScreen from "@/screens/PlaylistManagementScreen";
 import PlaylistDetailScreen from "@/screens/PlaylistDetailScreen";
 import AlbumDetailScreen from "@/screens/AlbumDetailScreen";
 import ArtistDetailScreen from "@/screens/ArtistDetailScreen";
-import ArchiveScreen from "@/screens/ArchiveScreen";
 
 export interface Album {
   id: string;
@@ -33,7 +32,6 @@ export type LibraryStackParamList = {
   PlaylistDetail: { playlistId: string; playlistName: string };
   AlbumDetail: { album: Album };
   ArtistDetail: { artist: Artist };
-  Archive: undefined;
 };
 
 const Stack = createNativeStackNavigator<LibraryStackParamList>();
@@ -88,14 +86,6 @@ export default function LibraryStackNavigator() {
           headerTitle: route.params.artist.name,
           headerBackTitle: "Library",
         })}
-      />
-      <Stack.Screen
-        name="Archive"
-        component={ArchiveScreen}
-        options={{
-          headerTitle: "Internet Archive",
-          headerBackTitle: "Library",
-        }}
       />
     </Stack.Navigator>
   );

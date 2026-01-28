@@ -75,6 +75,8 @@ export interface IconPack {
   tabRadioFocused: string;
   tabStudio: string;
   tabStudioFocused: string;
+  tabDiscover: string;
+  tabDiscoverFocused: string;
 }
 
 export interface ShapeTokens {
@@ -192,6 +194,8 @@ const fluentIcons: IconPack = {
   tabRadioFocused: 'radio-tower',
   tabStudio: 'microphone-variant',
   tabStudioFocused: 'microphone',
+  tabDiscover: 'compass-outline',
+  tabDiscoverFocused: 'compass',
 };
 
 const winampIcons: IconPack = {

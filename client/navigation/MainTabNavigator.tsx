@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ListenStackNavigator from "@/navigation/ListenStackNavigator";
 import LibraryStackNavigator from "@/navigation/LibraryStackNavigator";
 import RadioStackNavigator from "@/navigation/RadioStackNavigator";
+import DiscoverStackNavigator from "@/navigation/DiscoverStackNavigator";
 import SettingsStackNavigator from "@/navigation/SettingsStackNavigator";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { useThemeContext, useSkin, useThemeTokens } from "@/contexts/ThemeContext";
@@ -26,6 +27,7 @@ export type MainTabParamList = {
   ListenTab: undefined;
   LibraryTab: undefined;
   RadioTab: undefined;
+  DiscoverTab: undefined;
   SettingsTab: undefined;
 };
 
@@ -36,7 +38,7 @@ const TabIcon = memo(function TabIcon({
   color,
   focused,
 }: {
-  iconKey: 'listen' | 'library' | 'radio' | 'settings';
+  iconKey: 'listen' | 'library' | 'radio' | 'discover' | 'settings';
   color: string;
   focused: boolean;
   isDark?: boolean;
@@ -48,6 +50,7 @@ const TabIcon = memo(function TabIcon({
     listen: focused ? skin.icons.tabListenFocused : skin.icons.tabListen,
     library: focused ? skin.icons.tabLibraryFocused : skin.icons.tabLibrary,
     radio: focused ? skin.icons.tabRadioFocused : skin.icons.tabRadio,
+    discover: focused ? skin.icons.tabDiscoverFocused : skin.icons.tabDiscover,
     settings: focused ? skin.icons.tabSettingsFocused : skin.icons.tabSettings,
   };
   
@@ -202,6 +205,21 @@ function MainTabNavigator() {
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               iconKey="radio"
+              color={color}
+              focused={focused}
+              isDark={isDark}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="DiscoverTab"
+        component={DiscoverStackNavigator}
+        options={{
+          title: "Discover",
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              iconKey="discover"
               color={color}
               focused={focused}
               isDark={isDark}
