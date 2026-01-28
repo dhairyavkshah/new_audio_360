@@ -18,7 +18,7 @@ export default function DiscoverStackNavigator() {
         name="Discover"
         component={ArchiveScreen}
         options={{
-          headerTitle: "Discover",
+          headerShown: false,
         }}
       />
     </Stack.Navigator>
