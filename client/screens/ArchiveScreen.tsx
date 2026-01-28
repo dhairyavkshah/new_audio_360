@@ -57,7 +57,7 @@ export default function ArchiveScreen() {
       artist: track.artist,
       album: track.album || 'Internet Archive',
       duration: (track.duration || 0) * 1000,
-      uri: track.stream_url,
+      audioUrl: track.stream_url,
       artwork: undefined,
       isOnlineStream: true,
       source: 'archive.org' as const,

@@ -531,7 +531,9 @@ function LibraryScreen() {
       album: playableTrack.album || 'Internet Archive',
       duration: playableTrack.duration || 0,
       artwork: '',
-      uri: playableTrack.stream_url,
+      audioUrl: playableTrack.stream_url,
+      isOnlineStream: true,
+      source: 'archive.org' as const,
     };
     playSong(playableSong);
     navigation.dispatch(

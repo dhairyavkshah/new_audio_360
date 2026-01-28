@@ -3,6 +3,8 @@ import { StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useFonts } from "expo-font";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 // Optional KeyboardProvider - falls back to Fragment if native module not available
 let KeyboardProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
@@ -129,6 +131,20 @@ function AppContent() {
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    ...MaterialCommunityIcons.font,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <SafeAreaProvider>
+        <View style={{ flex: 1, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ width: 80, height: 80, backgroundColor: '#E8E8E8', borderRadius: 16 }} />
+        </View>
+      </SafeAreaProvider>
+    );
+  }
+
   const content = (
     <PlatformModeProvider>
       <ThemeProvider>
