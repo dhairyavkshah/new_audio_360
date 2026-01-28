@@ -144,9 +144,16 @@ export async function searchArchive(query: string): Promise<StreamSongResult[]> 
   try {
     const searchUrl = `${SEARCH_API}?q=${encodeURIComponent(query)}&mediatype=audio&output=json&rows=15&fl[]=identifier,title,creator,collection`;
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
     const response = await fetch(searchUrl, {
       headers: { 'Accept': 'application/json' },
+      signal: controller.signal,
+      mode: 'cors',
     });
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Search failed: ${response.status}`);
