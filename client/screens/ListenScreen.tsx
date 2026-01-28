@@ -114,7 +114,11 @@ function ListenScreen() {
         setStreamError(null);
       } catch (error) {
         console.error('[ListenScreen] Stream search error:', error);
-        setStreamError('Unable to search online. Please try again.');
+        if (Platform.OS === 'web') {
+          setStreamError('Online search unavailable in web preview. Use the mobile app for full access.');
+        } else {
+          setStreamError('Unable to search online. Please try again.');
+        }
         setStreamResults([]);
       } finally {
         setIsSearchingStream(false);

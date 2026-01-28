@@ -133,21 +133,16 @@ function AppContent() {
 
 export default function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
-  const [fontError, setFontError] = useState<Error | null>(null);
 
   useEffect(() => {
     async function loadFonts() {
       try {
-        // Load MaterialCommunityIcons font explicitly
-        await Font.loadAsync({
-          'MaterialCommunityIcons': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.ttf'),
-          'material-community': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.ttf'),
-        });
+        // Use the stable API for loading MaterialCommunityIcons font
+        await Font.loadAsync(MaterialCommunityIcons.font);
         console.log('[App] Fonts loaded successfully');
         setFontsLoaded(true);
       } catch (error: any) {
         console.error('[App] Font loading error:', error);
-        setFontError(error);
         // Continue anyway - icons may still work on some platforms
         setFontsLoaded(true);
       }

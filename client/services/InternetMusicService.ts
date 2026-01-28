@@ -175,73 +175,7 @@ async function searchAudiomack(query: string): Promise<StreamSongResult[]> {
   }
 }
 
-const FALLBACK_RESULTS: StreamSongResult[] = [
-  {
-    id: 'fallback-1',
-    title: 'Symphony No. 5 in C Minor',
-    artist: 'Ludwig van Beethoven',
-    album: 'Classical Masterpieces',
-    duration: 432,
-    artwork: 'https://archive.org/services/img/cd_beethoven-symphony-no-5',
-    streamUrl: 'https://archive.org/download/cd_beethoven-symphony-no-5/disc1/01.%20I.%20Allegro%20con%20brio.mp3',
-    bitrate: 192,
-    licenseType: 'public_domain',
-    identifier: 'cd_beethoven-symphony-no-5',
-    source: 'archive',
-  },
-  {
-    id: 'fallback-2',
-    title: 'Moonlight Sonata',
-    artist: 'Ludwig van Beethoven',
-    album: 'Piano Sonatas',
-    duration: 375,
-    artwork: 'https://archive.org/services/img/lp_beethoven-moonlight-sonata',
-    streamUrl: 'https://archive.org/download/lp_beethoven-moonlight-sonata/disc1/01.01.%20Sonata%20No.%2014%20In%20C-Sharp%20Minor%2C%20Op.%2027%2C%20No.%202%20-%20Adagio%20Sostenuto.mp3',
-    bitrate: 192,
-    licenseType: 'public_domain',
-    identifier: 'lp_beethoven-moonlight-sonata',
-    source: 'archive',
-  },
-  {
-    id: 'fallback-3',
-    title: 'Canon in D',
-    artist: 'Johann Pachelbel',
-    album: 'Baroque Classics',
-    duration: 300,
-    artwork: 'https://archive.org/services/img/cd_pachelbel-canon-in-d',
-    streamUrl: 'https://archive.org/download/PachelbelCanonInD/pachelbel_canon_in_d.mp3',
-    bitrate: 192,
-    licenseType: 'public_domain',
-    identifier: 'PachelbelCanonInD',
-    source: 'archive',
-  },
-  {
-    id: 'fallback-4',
-    title: 'The Four Seasons - Spring',
-    artist: 'Antonio Vivaldi',
-    album: 'The Four Seasons',
-    duration: 210,
-    artwork: 'https://archive.org/services/img/cd_vivaldi-four-seasons',
-    streamUrl: 'https://archive.org/download/VivaldiTheFourSeasons/01-vivaldi-spring.mp3',
-    bitrate: 192,
-    licenseType: 'public_domain',
-    identifier: 'VivaldiTheFourSeasons',
-    source: 'archive',
-  },
-  {
-    id: 'fallback-5',
-    title: 'Fur Elise',
-    artist: 'Ludwig van Beethoven',
-    album: 'Piano Works',
-    duration: 180,
-    artwork: 'https://archive.org/services/img/FurElise_201805',
-    streamUrl: 'https://archive.org/download/FurElise_201805/Fur%20Elise.mp3',
-    bitrate: 192,
-    licenseType: 'public_domain',
-    identifier: 'FurElise_201805',
-    source: 'archive',
-  },
-];
+// No fallback results - only show real matches from APIs
 
 export async function searchInternetMusic(query: string): Promise<StreamSongResult[]> {
   if (!query || query.trim().length < 2) return [];
@@ -270,36 +204,60 @@ export async function searchInternetMusic(query: string): Promise<StreamSongResu
       results.push(...audiomackResults.value);
     }
     
+    // Filter to only show exact/close matches based on query
+    // Use AND logic: ALL query words must match somewhere in title, artist, or album
+    const queryLower = query.toLowerCase().trim();
+    const queryWords = queryLower.split(/\s+/).filter(w => w.length > 1);
+    
+    results = results.filter(result => {
+      const titleLower = result.title.toLowerCase();
+      const artistLower = result.artist.toLowerCase();
+      const albumLower = result.album.toLowerCase();
+      const combined = `${titleLower} ${artistLower} ${albumLower}`;
+      
+      // ALL query words must be present somewhere in title, artist, or album (AND logic)
+      return queryWords.every(word => combined.includes(word));
+    });
+    
+    // Sort by relevance - exact matches first
     results.sort((a, b) => {
-      const aMatch = a.title.toLowerCase().includes(query.toLowerCase()) || 
-                     a.artist.toLowerCase().includes(query.toLowerCase());
-      const bMatch = b.title.toLowerCase().includes(query.toLowerCase()) || 
-                     b.artist.toLowerCase().includes(query.toLowerCase());
-      if (aMatch && !bMatch) return -1;
-      if (!aMatch && bMatch) return 1;
+      const aTitle = a.title.toLowerCase();
+      const aArtist = a.artist.toLowerCase();
+      const bTitle = b.title.toLowerCase();
+      const bArtist = b.artist.toLowerCase();
+      
+      // Exact title match gets highest priority
+      const aExactTitle = aTitle === queryLower;
+      const bExactTitle = bTitle === queryLower;
+      if (aExactTitle && !bExactTitle) return -1;
+      if (!aExactTitle && bExactTitle) return 1;
+      
+      // Title starts with query
+      const aStartsTitle = aTitle.startsWith(queryLower);
+      const bStartsTitle = bTitle.startsWith(queryLower);
+      if (aStartsTitle && !bStartsTitle) return -1;
+      if (!aStartsTitle && bStartsTitle) return 1;
+      
+      // Exact artist match
+      const aExactArtist = aArtist === queryLower;
+      const bExactArtist = bArtist === queryLower;
+      if (aExactArtist && !bExactArtist) return -1;
+      if (!aExactArtist && bExactArtist) return 1;
+      
+      // Artist contains query
+      const aArtistMatch = aArtist.includes(queryLower);
+      const bArtistMatch = bArtist.includes(queryLower);
+      if (aArtistMatch && !bArtistMatch) return -1;
+      if (!aArtistMatch && bArtistMatch) return 1;
+      
       return 0;
     });
     
-    if (results.length === 0 && isWeb) {
-      console.log('[InternetMusic] No results from APIs, using fallback data for web preview');
-      const queryLower = query.toLowerCase();
-      results = FALLBACK_RESULTS.filter(r => 
-        r.title.toLowerCase().includes(queryLower) ||
-        r.artist.toLowerCase().includes(queryLower) ||
-        queryLower.includes('beethoven') ||
-        queryLower.includes('classical') ||
-        queryLower.includes('piano') ||
-        queryLower.includes('symphony')
-      );
-      if (results.length === 0) {
-        results = FALLBACK_RESULTS.slice(0, 3);
-      }
+    if (results.length === 0) {
+      console.log('[InternetMusic] No matching results found for query:', query);
     }
   } catch (error: any) {
     console.error('[InternetMusic] Search error:', error?.message);
-    if (isWeb) {
-      results = FALLBACK_RESULTS.slice(0, 3);
-    }
   }
   
   if (results.length > 0) {
