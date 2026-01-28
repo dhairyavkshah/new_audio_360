@@ -23,6 +23,7 @@
     "electron:build:appx": "npm run web:build && electron-builder --config electron/electron-builder.yml --win appx"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.975.0",
     "@expo/metro-runtime": "~5.0.5",
     "@expo/vector-icons": "^14.0.4",
     "@react-native-async-storage/async-storage": "2.1.2",
