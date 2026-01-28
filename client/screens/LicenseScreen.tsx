@@ -184,23 +184,25 @@ export default function LicenseScreen() {
                   </View>
                 </View>
 
-                <Pressable
-                  onPress={handleVerifyInstallation}
-                  disabled={isLoading}
-                  style={[
-                    styles.verifyButton,
-                    { 
-                      backgroundColor: colors.colorBrandBackground,
-                      opacity: isLoading ? 0.6 : 1,
-                      marginTop: FluentSpacing.l,
-                    },
-                  ]}
-                >
-                  <MaterialCommunityIcons name="refresh" size={20} color="#FFFFFF" />
-                  <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.s }}>
-                    {isLoading ? "Verifying..." : "Verify Installation"}
-                  </FluentText>
-                </Pressable>
+                {isAndroid && (
+                  <Pressable
+                    onPress={handleVerifyInstallation}
+                    disabled={isLoading}
+                    style={[
+                      styles.verifyButton,
+                      { 
+                        backgroundColor: colors.colorBrandBackground,
+                        opacity: isLoading ? 0.6 : 1,
+                        marginTop: FluentSpacing.l,
+                      },
+                    ]}
+                  >
+                    <MaterialCommunityIcons name="refresh" size={20} color="#FFFFFF" />
+                    <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.s }}>
+                      {isLoading ? "Verifying..." : "Verify Installation"}
+                    </FluentText>
+                  </Pressable>
+                )}
 
                 <Pressable
                   onPress={handleOpenPlayStore}
