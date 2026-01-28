@@ -137,8 +137,9 @@ export default function App() {
     ...MaterialCommunityIcons.font,
   });
   
-  // Fallback for web - if fonts don't load within 2s, continue anyway
-  const [forceReady, setForceReady] = useState(false);
+  // Fallback for web - if fonts don't load within 500ms, continue anyway
+  // Web loads fonts via CSS, so we can proceed faster
+  const [forceReady, setForceReady] = useState(Platform.OS === 'web');
   
   useEffect(() => {
     if (fontsLoaded) {
@@ -147,18 +148,21 @@ export default function App() {
   }, [fontsLoaded]);
   
   useEffect(() => {
-    if (Platform.OS === 'web' && !fontsLoaded) {
+    // On web, fonts load via CSS - we just need a short delay
+    if (Platform.OS === 'web') {
       const timeout = setTimeout(() => {
-        console.log('[App] Font loading timeout - continuing anyway');
+        if (!fontsLoaded) {
+          console.log('[App] Web platform - fonts assumed loaded via CSS');
+        }
         setForceReady(true);
-      }, 2000);
+      }, 100);
       return () => clearTimeout(timeout);
     }
   }, [fontsLoaded]);
   
   const isReady = fontsLoaded || forceReady;
 
-  // Wait for fonts to load on web to prevent empty icon squares
+  // Wait for fonts to load - short wait on web since fonts load via CSS
   if (!isReady) {
     return (
       <View style={{ flex: 1, backgroundColor: '#1565C0', justifyContent: 'center', alignItems: 'center' }}>

@@ -23,6 +23,26 @@ const ARCHIVE_COVER_BASE = 'https://archive.org/services/img';
 
 const AUDIOMACK_API_BASE = 'https://api.audiomack.com/v1';
 
+const CORS_PROXIES = [
+  'https://corsproxy.io/?',
+  'https://api.allorigins.win/raw?url=',
+];
+
+let currentProxyIndex = 0;
+
+function getProxiedUrl(url: string): string {
+  if (isWeb) {
+    const proxy = CORS_PROXIES[currentProxyIndex];
+    return `${proxy}${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
+function rotateProxy(): void {
+  currentProxyIndex = (currentProxyIndex + 1) % CORS_PROXIES.length;
+  console.log('[InternetMusic] Switching to proxy:', CORS_PROXIES[currentProxyIndex]);
+}
+
 const searchCache = new Map<string, { results: StreamSongResult[]; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000;
 
@@ -50,13 +70,14 @@ function parseBitrate(bitrateStr: string | undefined): number {
 }
 
 async function searchArchiveOrg(query: string): Promise<StreamSongResult[]> {
-  // Include mediatype:audio in the query string itself, not as a separate parameter
   const fullQuery = `${query} AND mediatype:audio`;
-  const searchUrl = `${ARCHIVE_SEARCH_API}?q=${encodeURIComponent(fullQuery)}&output=json&rows=15&fl[]=identifier,title,creator,collection`;
+  const directUrl = `${ARCHIVE_SEARCH_API}?q=${encodeURIComponent(fullQuery)}&output=json&rows=15&fl[]=identifier,title,creator,collection`;
   
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
+    const searchUrl = getProxiedUrl(directUrl);
     
     const response = await fetch(searchUrl, {
       headers: { 'Accept': 'application/json' },
@@ -78,7 +99,10 @@ async function searchArchiveOrg(query: string): Promise<StreamSongResult[]> {
     
     for (const doc of docs.slice(0, 5)) {
       try {
-        const metadataResponse = await fetch(`${ARCHIVE_METADATA_API}/${doc.identifier}`, {
+        const metadataDirectUrl = `${ARCHIVE_METADATA_API}/${doc.identifier}`;
+        const metadataUrl = getProxiedUrl(metadataDirectUrl);
+        
+        const metadataResponse = await fetch(metadataUrl, {
           headers: { 'Accept': 'application/json' },
         });
         
@@ -127,11 +151,15 @@ async function searchArchiveOrg(query: string): Promise<StreamSongResult[]> {
 }
 
 async function searchAudiomack(query: string): Promise<StreamSongResult[]> {
+  if (isWeb) {
+    return [];
+  }
+  
   try {
     const searchUrl = `${AUDIOMACK_API_BASE}/music/search?q=${encodeURIComponent(query)}&type=songs&limit=10`;
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     
     const response = await fetch(searchUrl, {
       headers: { 
