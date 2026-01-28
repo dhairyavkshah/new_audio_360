@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from "react";
+import React, { useRef, useCallback, useEffect } from "react";
 import { View, StyleSheet, Modal, Pressable, ActivityIndicator, Platform } from "react-native";
 import { WebView } from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -52,6 +52,54 @@ export default function OAuthWebViewModal({
     return true;
   }, [redirectUri, onSuccess]);
 
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const popupRef = useRef<Window | null>(null);
+  const pollIntervalRef = useRef<NodeJS.Timer | null>(null);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !visible) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'oauth_callback' && event.data?.url) {
+        onSuccess(event.data.url);
+        if (popupRef.current) {
+          popupRef.current.close();
+          popupRef.current = null;
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, [visible, onSuccess]);
+
+  const handleWebAuth = useCallback(() => {
+    const popup = window.open(authUrl, 'soundcloud_auth', 'width=500,height=700,left=200,top=100');
+    popupRef.current = popup;
+    
+    pollIntervalRef.current = setInterval(() => {
+      try {
+        if (popup?.closed) {
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+          return;
+        }
+        
+        const currentUrl = popup?.location?.href;
+        if (currentUrl && (currentUrl.includes('code=') || currentUrl.startsWith(redirectUri))) {
+          onSuccess(currentUrl);
+          popup?.close();
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        }
+      } catch (e) {
+      }
+    }, 500);
+  }, [authUrl, redirectUri, onSuccess]);
+
   if (Platform.OS === 'web') {
     return (
       <Modal
@@ -79,20 +127,46 @@ export default function OAuthWebViewModal({
               <View style={styles.closeButton} />
             </View>
             
-            <View style={styles.webFallbackContent}>
-              <MaterialCommunityIcons name="open-in-new" size={48} color={accentColor} />
-              <FluentText variant="body1" color="secondary" style={styles.webFallbackText}>
-                For security, SoundCloud login opens in a new window on web browsers.
-              </FluentText>
-              <Pressable
-                style={[styles.webFallbackButton, { backgroundColor: accentColor }]}
-                onPress={() => {
-                  window.open(authUrl, '_blank', 'width=500,height=700');
-                  onCancel();
+            <View style={styles.iframeContainer}>
+              {isLoading && (
+                <View style={styles.iframeLoading}>
+                  <ActivityIndicator size="large" color={accentColor} />
+                  <FluentText variant="body2" color="secondary" style={{ marginTop: FluentSpacing.m }}>
+                    Loading SoundCloud...
+                  </FluentText>
+                </View>
+              )}
+              <iframe
+                ref={iframeRef as any}
+                src={authUrl}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  display: isLoading ? 'none' : 'block',
                 }}
-              >
-                <FluentText variant="body1" style={{ color: '#FFFFFF', fontWeight: '600' }}>
-                  Open SoundCloud Login
+                onLoad={() => {
+                  setIsLoading(false);
+                  try {
+                    const iframe = iframeRef.current;
+                    const iframeSrc = iframe?.contentWindow?.location?.href;
+                    if (iframeSrc && (iframeSrc.includes('code=') || iframeSrc.startsWith(redirectUri))) {
+                      onSuccess(iframeSrc);
+                    }
+                  } catch (e) {
+                  }
+                }}
+                sandbox="allow-forms allow-scripts allow-same-origin allow-popups"
+              />
+            </View>
+            
+            <View style={styles.webFallbackFooter}>
+              <FluentText variant="caption1" color="secondary" style={{ textAlign: 'center' }}>
+                If login doesn't appear above, 
+              </FluentText>
+              <Pressable onPress={handleWebAuth}>
+                <FluentText variant="caption1" style={{ color: accentColor, textDecorationLine: 'underline' }}>
+                  click here to open in popup
                 </FluentText>
               </Pressable>
             </View>
@@ -212,21 +286,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'white',
   },
-  webFallbackContent: {
+  iframeContainer: {
     flex: 1,
+    position: 'relative',
+  },
+  iframeLoading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: FluentSpacing.xl,
+    backgroundColor: 'white',
+    zIndex: 1,
   },
-  webFallbackText: {
-    textAlign: 'center',
-    marginTop: FluentSpacing.l,
-    marginBottom: FluentSpacing.xl,
-    lineHeight: 24,
-  },
-  webFallbackButton: {
+  webFallbackFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingVertical: FluentSpacing.m,
-    paddingHorizontal: FluentSpacing.xl,
-    borderRadius: FluentRadius.medium,
+    gap: 4,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
   },
 });
