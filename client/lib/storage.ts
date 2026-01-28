@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Recording, PlayerState } from './data';
+import { SecureStorage } from '@/services/SecureStorage';
 
 export type { Recording };
 
@@ -641,42 +642,77 @@ export interface StoredStreamSong {
   addedAt: number;
 }
 
-function encodeStreamUrl(url: string): string {
-  try {
-    return btoa(encodeURIComponent(url));
-  } catch {
-    return btoa(url);
-  }
-}
+const STREAM_LIBRARY_SECURE_KEY = '@na360_stream_library_secure';
 
-function decodeStreamUrl(encoded: string): string {
-  try {
-    return decodeURIComponent(atob(encoded));
-  } catch {
-    try {
-      return atob(encoded);
-    } catch {
-      return encoded;
-    }
-  }
+interface SecureStreamLibrary {
+  songs: Array<{
+    id: string;
+    title: string;
+    artist: string;
+    album: string;
+    duration: number;
+    artwork?: string;
+    streamUrl: string;
+    bitrate: number;
+    licenseType: 'public_domain' | 'creative_commons';
+    identifier: string;
+    addedAt: number;
+  }>;
 }
 
 export async function getStreamLibrary(): Promise<StoredStreamSong[]> {
   try {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.STREAM_LIBRARY);
-    return data ? JSON.parse(data) : [];
+    const secureData = await SecureStorage.getSecureItem(STREAM_LIBRARY_SECURE_KEY);
+    if (secureData) {
+      const parsed: SecureStreamLibrary = JSON.parse(secureData);
+      return parsed.songs.map(song => ({
+        id: song.id,
+        title: song.title,
+        artist: song.artist,
+        album: song.album,
+        duration: song.duration,
+        artwork: song.artwork,
+        streamUrlEncrypted: song.streamUrl,
+        bitrate: song.bitrate,
+        licenseType: song.licenseType,
+        identifier: song.identifier,
+        addedAt: song.addedAt,
+      }));
+    }
+    return [];
   } catch (error) {
     console.error('Error getting stream library:', error);
     return [];
   }
 }
 
-export async function saveStreamLibrary(songs: StoredStreamSong[]): Promise<void> {
+async function saveStreamLibrarySecure(songs: StoredStreamSong[], urls: Map<string, string>): Promise<void> {
   try {
-    await AsyncStorage.setItem(STORAGE_KEYS.STREAM_LIBRARY, JSON.stringify(songs));
+    const secureLibrary: SecureStreamLibrary = {
+      songs: songs.map(song => ({
+        id: song.id,
+        title: song.title,
+        artist: song.artist,
+        album: song.album,
+        duration: song.duration,
+        artwork: song.artwork,
+        streamUrl: urls.get(song.identifier) || song.streamUrlEncrypted,
+        bitrate: song.bitrate,
+        licenseType: song.licenseType,
+        identifier: song.identifier,
+        addedAt: song.addedAt,
+      })),
+    };
+    await SecureStorage.setSecureItem(STREAM_LIBRARY_SECURE_KEY, JSON.stringify(secureLibrary));
   } catch (error) {
     console.error('Error saving stream library:', error);
   }
+}
+
+export async function saveStreamLibrary(songs: StoredStreamSong[]): Promise<void> {
+  const urls = new Map<string, string>();
+  songs.forEach(s => urls.set(s.identifier, s.streamUrlEncrypted));
+  await saveStreamLibrarySecure(songs, urls);
 }
 
 export async function addToStreamLibrary(song: {
@@ -702,15 +738,19 @@ export async function addToStreamLibrary(song: {
     album: song.album,
     duration: song.duration,
     artwork: song.artwork,
-    streamUrlEncrypted: encodeStreamUrl(song.streamUrl),
+    streamUrlEncrypted: song.streamUrl,
     bitrate: song.bitrate,
     licenseType: song.licenseType,
     identifier: song.identifier,
     addedAt: Date.now(),
   };
 
+  const urls = new Map<string, string>();
+  library.forEach(s => urls.set(s.identifier, s.streamUrlEncrypted));
+  urls.set(song.identifier, song.streamUrl);
+  
   library.unshift(storedSong);
-  await saveStreamLibrary(library);
+  await saveStreamLibrarySecure(library, urls);
 }
 
 export async function removeFromStreamLibrary(identifier: string): Promise<void> {
@@ -725,5 +765,5 @@ export async function isInStreamLibrary(identifier: string): Promise<boolean> {
 }
 
 export function getDecodedStreamUrl(storedSong: StoredStreamSong): string {
-  return decodeStreamUrl(storedSong.streamUrlEncrypted);
+  return storedSong.streamUrlEncrypted;
 }
