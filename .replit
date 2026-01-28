@@ -42,10 +42,6 @@ author = "agent"
 task = "workflow.run"
 args = "Start App"
 
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Streaming API"
-
 [[workflows.workflow]]
 name = "Start App"
 author = "agent"
@@ -58,18 +54,6 @@ outputType = "webview"
 task = "shell.exec"
 args = "EXPO_NO_ORIGIN_CHECK=1 EXPO_TUNNEL_SUBDOMAIN=newaudio360dev npx expo start --tunnel --web --port 5000 --clear"
 waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Streaming API"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd server && node_modules/.bin/tsx index.ts"
-waitForPort = 3001
 
 [userenv]
 
@@ -84,4 +68,3 @@ R2_ACCOUNT_ID = "fd3e601de66d97dec1f0d216858d1f4c"
 R2_ENDPOINT = "https://fd3e601de66d97dec1f0d216858d1f4c.r2.cloudflarestorage.com"
 
 [userenv.development]
-EXPO_PUBLIC_STREAMING_API_URL = "https://1bca4ebb-13e0-4a6f-af33-9563fa8f4220-00-2zv4q076ahksc.kirk.replit.dev:3001"

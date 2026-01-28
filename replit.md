@@ -113,17 +113,21 @@ A two-check system: initial Google Play Billing validation and daily re-validati
 - **Online Streaming**: Live music streaming from Cloudflare R2 bucket with direct S3 API querying (no database caching).
 
 ### Online Music Streaming Architecture
-The app supports online music streaming via Cloudflare R2 storage with direct bucket querying:
-- **Storage**: Cloudflare R2 bucket `newaudio360-songs` with S3-compatible API
+The app supports online music streaming via Cloudflare R2 storage with static JSON catalog:
+- **Storage**: Cloudflare R2 bucket `newaudio360-songs` with public access
 - **Public URL**: `https://pub-9b6df67c7b3748c4a8f34a585a1d4ddf.r2.dev/`
-- **API Server**: Express.js server on port 3001 (`server/index.ts`)
-- **R2 Service**: `server/r2Service.ts` - AWS S3 SDK for listing/searching songs
+- **Catalog**: Static `songs.json` file hosted on R2 (no backend needed)
+- **Client Service**: `client/services/StreamingService.ts` - Fetches songs.json and caches locally
 - **Metadata Parsing**: Song title and artist extracted from MP3 filenames (format: `Title - Artist.mp3`)
-- **No Database**: Songs are queried live from R2 bucket, eliminating sync issues
+- **No Backend Required**: App fetches static JSON directly from R2, fully self-contained
 
-**Environment Variables**:
-- `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` - R2 credentials
-- `EXPO_PUBLIC_STREAMING_API_URL` - Streaming API endpoint (port 3001)
+**Updating Song Catalog**:
+1. Run `npx tsx scripts/generate-songs-json.ts` to regenerate songs.json from R2 bucket
+2. Upload the generated `songs.json` to your R2 bucket
+3. App will refresh cache automatically (24-hour cache, or manual refresh)
+
+**R2 Credentials** (for catalog generation only):
+- `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` - Used by generation script
 
 ## External Dependencies
 
