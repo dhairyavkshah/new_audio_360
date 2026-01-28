@@ -153,6 +153,8 @@ export default {
         projectId: '973e49b1-f295-4d20-a9e9-2ad49d4ff7d3',
       },
       appVariant: getAppVariant(),
+      SOUNDCLOUD_CLIENT_ID: process.env.SOUNDCLOUD_CLIENT_ID,
+      SOUNDCLOUD_CLIENT_SECRET: process.env.SOUNDCLOUD_CLIENT_SECRET,
     },
   },
 };

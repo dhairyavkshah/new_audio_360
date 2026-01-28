@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, Platform, Modal, ScrollView } from "react-native";
+import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, Platform, Modal, ScrollView, Image } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -10,8 +10,13 @@ import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useToast } from "@/contexts/ToastContext";
 import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import ArchiveOrgService, { ArchiveOrgTrack, AudioQuality } from "@/services/ArchiveOrgService";
+import SoundCloudService, { SoundCloudTrack } from "@/services/SoundCloudService";
 
 const CONSENT_STORAGE_KEY = '@discover_consent_accepted';
+
+type UnifiedTrack = (ArchiveOrgTrack | SoundCloudTrack) & {
+  source: 'archive.org' | 'soundcloud';
+};
 
 const QUALITY_OPTIONS: { label: string; value: AudioQuality }[] = [
   { label: 'All', value: 'all' },
@@ -29,7 +34,7 @@ export default function ArchiveScreen() {
   const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [tracks, setTracks] = useState<ArchiveOrgTrack[]>([]);
+  const [tracks, setTracks] = useState<UnifiedTrack[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedQuality, setSelectedQuality] = useState<AudioQuality>('all');
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
@@ -73,10 +78,32 @@ export default function ArchiveScreen() {
     
     setLoading(true);
     try {
-      const result = await ArchiveOrgService.searchMusic(searchQuery, selectedQuality, 10);
-      setTracks(result.tracks);
-      if (result.tracks.length === 0) {
+      const [archiveResult, soundcloudResult] = await Promise.allSettled([
+        ArchiveOrgService.searchMusic(searchQuery, selectedQuality, 10),
+        SoundCloudService.searchTracks(searchQuery, 10),
+      ]);
+
+      const archiveTracks: UnifiedTrack[] = archiveResult.status === 'fulfilled' 
+        ? archiveResult.value.tracks as UnifiedTrack[]
+        : [];
+      
+      const soundcloudTracks: UnifiedTrack[] = soundcloudResult.status === 'fulfilled'
+        ? soundcloudResult.value.tracks as UnifiedTrack[]
+        : [];
+
+      const combined = [...soundcloudTracks, ...archiveTracks];
+      
+      setTracks(combined);
+      
+      if (combined.length === 0) {
         showError("No results found. Try different keywords.");
+      }
+
+      if (archiveResult.status === 'rejected') {
+        console.log('[ArchiveScreen] Archive search error:', archiveResult.reason);
+      }
+      if (soundcloudResult.status === 'rejected') {
+        console.log('[ArchiveScreen] SoundCloud search error:', soundcloudResult.reason);
       }
     } catch (error) {
       console.error('[ArchiveScreen] Search error:', error);
@@ -86,15 +113,23 @@ export default function ArchiveScreen() {
     }
   }, [searchQuery, selectedQuality, showError]);
 
-  const playTrack = useCallback((track: ArchiveOrgTrack) => {
+  const playTrack = useCallback((track: UnifiedTrack) => {
+    const duration = track.source === 'soundcloud' 
+      ? (track as SoundCloudTrack).duration * 1000 
+      : ((track as ArchiveOrgTrack).duration || 0) * 1000;
+
+    const artwork = track.source === 'soundcloud' 
+      ? (track as SoundCloudTrack).artwork_url || undefined
+      : undefined;
+
     const playableSong = {
       id: track.id,
       title: track.title,
       artist: track.artist,
       album: track.album || 'Online Music',
-      duration: (track.duration || 0) * 1000,
+      duration: duration,
       audioUrl: track.stream_url,
-      artwork: undefined,
+      artwork: artwork,
     };
     
     playSong(playableSong);
@@ -109,10 +144,14 @@ export default function ArchiveScreen() {
     );
   }, [playSong, navigation]);
 
-  const addToLibrary = async (track: ArchiveOrgTrack) => {
+  const addToLibrary = async (track: UnifiedTrack) => {
     setAddingIds(prev => new Set(prev).add(track.id));
     try {
-      await ArchiveOrgService.addToFavorites(track);
+      if (track.source === 'soundcloud') {
+        await SoundCloudService.addToFavorites(track as SoundCloudTrack);
+      } else {
+        await ArchiveOrgService.addToFavorites(track as ArchiveOrgTrack);
+      }
       showSuccess(`Added "${track.title}" to favorites`);
     } catch (error) {
       showError("Failed to add song");
@@ -125,17 +164,42 @@ export default function ArchiveScreen() {
     }
   };
 
-  const renderTrack = ({ item }: { item: ArchiveOrgTrack }) => {
+  const formatDuration = (track: UnifiedTrack): string => {
+    if (track.source === 'soundcloud') {
+      return SoundCloudService.formatDurationFromSeconds((track as SoundCloudTrack).duration);
+    }
+    return ArchiveOrgService.formatDuration((track as ArchiveOrgTrack).duration || 0);
+  };
+
+  const formatMeta = (track: UnifiedTrack): string => {
+    if (track.source === 'soundcloud') {
+      const sc = track as SoundCloudTrack;
+      return `${SoundCloudService.formatPlaybackCount(sc.playbackCount)} plays • ${formatDuration(track)}`;
+    }
+    const archive = track as ArchiveOrgTrack;
+    return `${ArchiveOrgService.formatBitrate(archive.bitrate)} • ${formatDuration(track)}`;
+  };
+
+  const renderTrack = ({ item }: { item: UnifiedTrack }) => {
     const isAdding = addingIds.has(item.id);
+    const isSoundCloud = item.source === 'soundcloud';
+    const artwork = isSoundCloud ? (item as SoundCloudTrack).artwork_url : null;
 
     return (
       <Pressable 
         style={[styles.trackCard, { backgroundColor: colors.colorNeutralBackground2 }]}
         onPress={() => playTrack(item)}
       >
-        <View style={[styles.playIcon, { backgroundColor: theme.primary }]}>
-          <MaterialCommunityIcons name="play" size={20} color="#FFFFFF" />
-        </View>
+        {artwork ? (
+          <Image 
+            source={{ uri: artwork }} 
+            style={styles.artworkImage}
+          />
+        ) : (
+          <View style={[styles.playIcon, { backgroundColor: theme.primary }]}>
+            <MaterialCommunityIcons name="play" size={20} color="#FFFFFF" />
+          </View>
+        )}
         
         <View style={styles.trackInfo}>
           <FluentText variant="body1" numberOfLines={1} style={{ fontWeight: '600' }}>
@@ -152,7 +216,7 @@ export default function ArchiveScreen() {
               </FluentText>
             </View>
             <FluentText variant="caption1" color="tertiary">
-              {ArchiveOrgService.formatBitrate(item.bitrate)} • {ArchiveOrgService.formatDuration(item.duration || 0)}
+              {formatMeta(item)}
             </FluentText>
           </View>
         </View>
@@ -313,7 +377,7 @@ export default function ArchiveScreen() {
               {searchQuery ? "No results found" : "Discover free music"}
             </FluentText>
             <FluentText variant="caption1" color="tertiary" style={styles.hintText}>
-              Search for artist names, song titles, or genres from public domain sources
+              Search for artist names, song titles, or genres
             </FluentText>
           </View>
         ) : (
@@ -328,9 +392,9 @@ export default function ArchiveScreen() {
         )}
 
         <View style={[styles.footer, { borderTopColor: colors.colorNeutralStroke2 }]}>
-          <MaterialCommunityIcons name="creative-commons" size={14} color={theme.textTertiary} />
+          <MaterialCommunityIcons name="music-note" size={14} color={theme.textTertiary} />
           <FluentText variant="caption2" color="tertiary">
-            All content is Creative Commons or Public Domain
+            Free music from public sources
           </FluentText>
         </View>
       </FluentScreenLayout>
@@ -450,6 +514,12 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  artworkImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: '#333',
   },
   trackInfo: {
     flex: 1,
