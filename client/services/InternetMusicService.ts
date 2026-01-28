@@ -50,7 +50,9 @@ function parseBitrate(bitrateStr: string | undefined): number {
 }
 
 async function searchArchiveOrg(query: string): Promise<StreamSongResult[]> {
-  const searchUrl = `${ARCHIVE_SEARCH_API}?q=${encodeURIComponent(query)}&mediatype=audio&output=json&rows=10&fl[]=identifier,title,creator,collection`;
+  // Include mediatype:audio in the query string itself, not as a separate parameter
+  const fullQuery = `${query} AND mediatype:audio`;
+  const searchUrl = `${ARCHIVE_SEARCH_API}?q=${encodeURIComponent(fullQuery)}&output=json&rows=15&fl[]=identifier,title,creator,collection`;
   
   try {
     const controller = new AbortController();
@@ -204,8 +206,7 @@ export async function searchInternetMusic(query: string): Promise<StreamSongResu
       results.push(...audiomackResults.value);
     }
     
-    // Filter to only show exact/close matches based on query
-    // Use AND logic: ALL query words must match somewhere in title, artist, or album
+    // Liberal search - use OR logic: ANY query word can match in title, artist, or album
     const queryLower = query.toLowerCase().trim();
     const queryWords = queryLower.split(/\s+/).filter(w => w.length > 1);
     
@@ -215,8 +216,8 @@ export async function searchInternetMusic(query: string): Promise<StreamSongResu
       const albumLower = result.album.toLowerCase();
       const combined = `${titleLower} ${artistLower} ${albumLower}`;
       
-      // ALL query words must be present somewhere in title, artist, or album (AND logic)
-      return queryWords.every(word => combined.includes(word));
+      // ANY query word can be present somewhere in title, artist, or album (OR logic - liberal search)
+      return queryWords.some(word => combined.includes(word));
     });
     
     // Sort by relevance - exact matches first

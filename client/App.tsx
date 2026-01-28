@@ -132,26 +132,34 @@ function AppContent() {
 }
 
 export default function App() {
-  const [fontsLoaded, setFontsLoaded] = useState(false);
-
+  // Use useFonts hook with spread operator for proper web font loading
+  const [fontsLoaded] = useFonts({
+    ...MaterialCommunityIcons.font,
+  });
+  
+  // Fallback for web - if fonts don't load within 2s, continue anyway
+  const [forceReady, setForceReady] = useState(false);
+  
   useEffect(() => {
-    async function loadFonts() {
-      try {
-        // Use the stable API for loading MaterialCommunityIcons font
-        await Font.loadAsync(MaterialCommunityIcons.font);
-        console.log('[App] Fonts loaded successfully');
-        setFontsLoaded(true);
-      } catch (error: any) {
-        console.error('[App] Font loading error:', error);
-        // Continue anyway - icons may still work on some platforms
-        setFontsLoaded(true);
-      }
+    if (fontsLoaded) {
+      console.log('[App] Fonts loaded successfully');
     }
-    loadFonts();
-  }, []);
+  }, [fontsLoaded]);
+  
+  useEffect(() => {
+    if (Platform.OS === 'web' && !fontsLoaded) {
+      const timeout = setTimeout(() => {
+        console.log('[App] Font loading timeout - continuing anyway');
+        setForceReady(true);
+      }, 2000);
+      return () => clearTimeout(timeout);
+    }
+  }, [fontsLoaded]);
+  
+  const isReady = fontsLoaded || forceReady;
 
   // Wait for fonts to load on web to prevent empty icon squares
-  if (!fontsLoaded) {
+  if (!isReady) {
     return (
       <View style={{ flex: 1, backgroundColor: '#1565C0', justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#fff" />
