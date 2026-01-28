@@ -11,21 +11,10 @@ app.use(express.json());
 
 app.use('/static', express.static(path.join(__dirname, '..', 'public')));
 
-let cachedBucketName: string | null = null;
+const BUCKET_NAME = 'newaudio360-songs';
 
 async function getBucketName(): Promise<string> {
-  if (cachedBucketName) return cachedBucketName;
-  
-  const buckets = await listBuckets();
-  console.log('[R2] Available buckets:', buckets);
-  
-  if (buckets.length === 0) {
-    throw new Error('No R2 buckets found');
-  }
-  
-  cachedBucketName = buckets[0];
-  console.log('[R2] Using bucket:', cachedBucketName);
-  return cachedBucketName;
+  return BUCKET_NAME;
 }
 
 function formatSongResponse(song: R2Song, index: number) {

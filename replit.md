@@ -110,6 +110,20 @@ A two-check system: initial Google Play Billing validation and daily re-validati
 - **Intelligent Radio Discovery**: Automatic station scanning via Radio Browser API with 30-day cache refresh cycle, up to 1000 stations per country, quality filtering (lastcheckok=1, sorted by votes+clickcount), curated station fallback, and manual re-scan button that updates cache immediately.
 - **Playback**: Background playback, notification controls, queue, shuffle/repeat, playback speed, sleep timer, favorites.
 - **Library Management**: Music folder selection, paginated loading, "Hide Song" feature, playlist CRUD.
+- **Online Streaming**: Live music streaming from Cloudflare R2 bucket with direct S3 API querying (no database caching).
+
+### Online Music Streaming Architecture
+The app supports online music streaming via Cloudflare R2 storage with direct bucket querying:
+- **Storage**: Cloudflare R2 bucket `newaudio360-songs` with S3-compatible API
+- **Public URL**: `https://pub-9b6df67c7b3748c4a8f34a585a1d4ddf.r2.dev/`
+- **API Server**: Express.js server on port 3001 (`server/index.ts`)
+- **R2 Service**: `server/r2Service.ts` - AWS S3 SDK for listing/searching songs
+- **Metadata Parsing**: Song title and artist extracted from MP3 filenames (format: `Title - Artist.mp3`)
+- **No Database**: Songs are queried live from R2 bucket, eliminating sync issues
+
+**Environment Variables**:
+- `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` - R2 credentials
+- `EXPO_PUBLIC_STREAMING_API_URL` - Streaming API endpoint (port 3001)
 
 ## External Dependencies
 

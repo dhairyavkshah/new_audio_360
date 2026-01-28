@@ -84,4 +84,4 @@ R2_ACCOUNT_ID = "fd3e601de66d97dec1f0d216858d1f4c"
 R2_ENDPOINT = "https://fd3e601de66d97dec1f0d216858d1f4c.r2.cloudflarestorage.com"
 
 [userenv.development]
-EXPO_PUBLIC_STREAMING_API_URL = "https://1bca4ebb-13e0-4a6f-af33-9563fa8f4220-00-2zv4q076ahksc.kirk.replit.dev"
+EXPO_PUBLIC_STREAMING_API_URL = "https://1bca4ebb-13e0-4a6f-af33-9563fa8f4220-00-2zv4q076ahksc.kirk.replit.dev:3001"
