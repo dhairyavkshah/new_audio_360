@@ -221,7 +221,12 @@ export default function SoundCloudTabScreen() {
   };
 
   const handlePlaylistTap = (playlist: SoundCloudPlaylist) => {
-    showInfo(`Playlist: ${playlist.title} (${playlist.trackCount} tracks)`);
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: 'SoundCloudPlaylist',
+        params: { playlist },
+      })
+    );
   };
 
   const renderSubTabs = () => (
