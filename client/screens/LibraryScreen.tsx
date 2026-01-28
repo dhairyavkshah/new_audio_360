@@ -20,7 +20,6 @@ import { useToast } from "@/contexts/ToastContext";
 import { FluentSpacing, FluentRadius, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { Album } from "@/navigation/LibraryStackNavigator";
-import { ArchiveSearchModal } from "@/components/ArchiveSearchModal";
 import ArchiveOrgService, { StoredArchiveTrack, ArchiveOrgTrack } from "@/services/ArchiveOrgService";
 
 interface DerivedAlbum extends Album {
@@ -127,7 +126,6 @@ function LibraryScreen() {
   const [contextMenuSong, setContextMenuSong] = useState<PlayableSong | null>(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const { showSuccess } = useToast();
-  const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [archiveFavorites, setArchiveFavorites] = useState<StoredArchiveTrack[]>([]);
 
   const loadPlaylists = useCallback(async () => {
@@ -293,14 +291,14 @@ function LibraryScreen() {
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (category === "streaming") {
-      setShowArchiveModal(true);
+      navigation.navigate("Archive");
       return;
     }
     setActiveCategory(category);
     setSearchQuery("");
     setShowSortOptions(false);
     setShowCategoryDropdown(false);
-  }, [playTapSound]);
+  }, [playTapSound, navigation]);
 
   const handleManagePlaylists = useCallback(() => {
     playTapSound();
@@ -552,7 +550,7 @@ function LibraryScreen() {
       <View style={[styles.listContent, { flex: 1 }]}>
         <Pressable
           style={[styles.archiveSearchButton, { backgroundColor: colors.colorBrandBackground }]}
-          onPress={() => setShowArchiveModal(true)}
+          onPress={() => navigation.navigate("Archive")}
         >
           <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color="#FFFFFF" />
           <FluentText variant="body2" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s }}>
@@ -690,11 +688,6 @@ function LibraryScreen() {
         showHideOption={activeCategory === "songs"}
       />
 
-      <ArchiveSearchModal
-        visible={showArchiveModal}
-        onClose={() => setShowArchiveModal(false)}
-        onTrackAdded={loadArchiveFavorites}
-      />
     </FluentScreenLayout>
   );
 }
