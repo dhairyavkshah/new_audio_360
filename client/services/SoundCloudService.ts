@@ -169,7 +169,6 @@ class SoundCloudServiceClass {
 
     try {
       const token = await this.getAccessToken();
-      const { clientId } = getClientCredentials();
 
       const params = new URLSearchParams({
         q: query,
@@ -191,18 +190,30 @@ class SoundCloudServiceClass {
       
       const streamableTracks = data.filter(track => track.streamable === true);
       
-      const tracks: SoundCloudTrack[] = streamableTracks.map(track => ({
-        id: `sc_${track.id}`,
-        title: track.title,
-        artist: track.user.username,
-        album: track.genre || '',
-        duration: Math.floor(track.duration / 1000),
-        stream_url: this.buildStreamUrl(track.id, clientId, token),
-        artwork_url: track.artwork_url,
-        playbackCount: track.playback_count || 0,
-        isOnlineStream: true as const,
-        source: 'soundcloud' as const,
-      }));
+      const tracksWithUrls = await Promise.all(
+        streamableTracks.map(async (track) => {
+          try {
+            const resolvedUrl = await this.resolveStreamUrl(track.id);
+            return {
+              id: `sc_${track.id}`,
+              title: track.title,
+              artist: track.user.username,
+              album: track.genre || '',
+              duration: Math.floor(track.duration / 1000),
+              stream_url: resolvedUrl,
+              artwork_url: track.artwork_url,
+              playbackCount: track.playback_count || 0,
+              isOnlineStream: true as const,
+              source: 'soundcloud' as const,
+            };
+          } catch (err) {
+            console.log('[SoundCloudService] Failed to resolve URL for track', track.id);
+            return null;
+          }
+        })
+      );
+
+      const tracks: SoundCloudTrack[] = tracksWithUrls.filter((t): t is SoundCloudTrack => t !== null);
 
       return {
         tracks,
@@ -214,16 +225,54 @@ class SoundCloudServiceClass {
     }
   }
 
-  private buildStreamUrl(trackId: number, clientId: string, token: string): string {
-    return `${API_BASE_URL}/tracks/${trackId}/stream?client_id=${clientId}&oauth_token=${token}`;
+  private buildStreamApiUrl(trackId: number, token: string): string {
+    return `${API_BASE_URL}/tracks/${trackId}/stream`;
+  }
+
+  async resolveStreamUrl(trackId: number): Promise<string> {
+    const token = await this.getAccessToken();
+    const streamApiUrl = this.buildStreamApiUrl(trackId, token);
+    
+    try {
+      const response = await fetch(streamApiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `OAuth ${token}`,
+        },
+        redirect: 'follow',
+      });
+
+      if (response.ok && response.url) {
+        console.log('[SoundCloudService] Resolved stream URL for track', trackId);
+        return response.url;
+      }
+
+      if (!response.ok) {
+        const headResponse = await fetch(streamApiUrl, {
+          method: 'HEAD',
+          headers: {
+            'Authorization': `OAuth ${token}`,
+          },
+          redirect: 'manual',
+        });
+        
+        const locationHeader = headResponse.headers.get('location');
+        if (locationHeader) {
+          console.log('[SoundCloudService] Resolved stream URL via redirect header');
+          return locationHeader;
+        }
+      }
+
+      throw new Error(`Failed to resolve stream URL: ${response.status}`);
+    } catch (error) {
+      console.error('[SoundCloudService] Error resolving stream URL:', error);
+      throw error;
+    }
   }
 
   async getStreamUrl(trackId: string): Promise<string> {
-    const numericId = trackId.replace('sc_', '');
-    const token = await this.getAccessToken();
-    const { clientId } = getClientCredentials();
-    
-    return this.buildStreamUrl(parseInt(numericId, 10), clientId, token);
+    const numericId = parseInt(trackId.replace('sc_', ''), 10);
+    return this.resolveStreamUrl(numericId);
   }
 
   async getFavorites(): Promise<StoredSoundCloudTrack[]> {
