@@ -8,19 +8,6 @@ export interface Song {
   audioUrl?: string;
 }
 
-export interface StreamSong extends Song {
-  source: 'stream';
-  streamUrl: string;
-  streamUrlEncrypted?: string;
-  bitrate: number;
-  licenseType: 'public_domain' | 'creative_commons' | 'streaming';
-  identifier: string;
-}
-
-export function isStreamSong(song: any): song is StreamSong {
-  return song && song.source === 'stream' && 'streamUrl' in song;
-}
-
 export interface Recording {
   id: string;
   title: string;

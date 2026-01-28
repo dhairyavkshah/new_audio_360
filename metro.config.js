@@ -10,7 +10,7 @@ try {
 
 const config = getDefaultConfig(__dirname);
 
-config.resolver.assetExts.push('ogg', 'ttf', 'otf', 'woff', 'woff2');
+config.resolver.assetExts.push('ogg');
 
 config.watchFolders = [
   ...(config.watchFolders || []),

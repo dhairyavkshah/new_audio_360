@@ -20,6 +20,8 @@ import { useToast } from "@/contexts/ToastContext";
 import { FluentSpacing, FluentRadius, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { Album } from "@/navigation/LibraryStackNavigator";
+import { ArchiveSearchModal } from "@/components/ArchiveSearchModal";
+import ArchiveOrgService, { StoredArchiveTrack, ArchiveOrgTrack } from "@/services/ArchiveOrgService";
 
 interface DerivedAlbum extends Album {
   songs: DeviceSong[];
@@ -39,7 +41,7 @@ import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 
 type NavigationProp = NativeStackNavigationProp<LibraryStackParamList>;
 
-type CategoryType = "liked" | "recent" | "top" | "songs" | "albums" | "artists" | "playlists";
+type CategoryType = "liked" | "recent" | "top" | "songs" | "albums" | "artists" | "playlists" | "streaming";
 
 interface CategoryConfig {
   key: CategoryType;
@@ -56,6 +58,7 @@ const categories: CategoryConfig[] = [
   { key: "albums", label: "Albums", icon: "album", color: "#4CAF50" },
   { key: "artists", label: "Artists", icon: "account-group", color: "#00BCD4" },
   { key: "playlists", label: "Playlists", icon: "playlist-music", color: "#673AB7" },
+  { key: "streaming", label: "Archive", icon: "web", color: "#00BFA5" },
 ];
 
 interface AlbumCardProps {
@@ -124,16 +127,24 @@ function LibraryScreen() {
   const [contextMenuSong, setContextMenuSong] = useState<PlayableSong | null>(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const { showSuccess } = useToast();
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [archiveFavorites, setArchiveFavorites] = useState<StoredArchiveTrack[]>([]);
 
   const loadPlaylists = useCallback(async () => {
     const data = await getPlaylists();
     setPlaylists(data);
   }, []);
 
+  const loadArchiveFavorites = useCallback(async () => {
+    const favorites = await ArchiveOrgService.getFavorites();
+    setArchiveFavorites(favorites);
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       loadPlaylists();
-    }, [loadPlaylists])
+      loadArchiveFavorites();
+    }, [loadPlaylists, loadArchiveFavorites])
   );
 
   const allSongs = useMemo(() => {
@@ -275,11 +286,16 @@ function LibraryScreen() {
     albums: derivedAlbums.length,
     artists: derivedArtists.length,
     playlists: playlists.length,
-  }), [favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists, playlists]);
+    streaming: archiveFavorites.length,
+  }), [favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists, playlists, archiveFavorites]);
 
   const handleCategoryChange = useCallback((category: CategoryType) => {
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (category === "streaming") {
+      setShowArchiveModal(true);
+      return;
+    }
     setActiveCategory(category);
     setSearchQuery("");
     setShowSortOptions(false);
@@ -502,6 +518,96 @@ function LibraryScreen() {
     );
   };
 
+  const handleRemoveArchiveFavorite = useCallback(async (trackId: string) => {
+    await ArchiveOrgService.removeFromFavorites(trackId);
+    loadArchiveFavorites();
+    showSuccess("Removed from favorites");
+  }, [loadArchiveFavorites, showSuccess]);
+
+  const handlePlayArchiveTrack = useCallback((track: StoredArchiveTrack) => {
+    const playableTrack = ArchiveOrgService.storedToPlayable(track);
+    const playableSong: PlayableSong = {
+      id: playableTrack.id,
+      title: playableTrack.title,
+      artist: playableTrack.artist,
+      album: playableTrack.album || 'Internet Archive',
+      duration: playableTrack.duration || 0,
+      artwork: '',
+      uri: playableTrack.stream_url,
+    };
+    playSong(playableSong);
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: "ListenTab",
+        params: {
+          screen: "NowPlaying",
+          params: { songId: playableSong.id },
+        },
+      })
+    );
+  }, [playSong, navigation]);
+
+  const renderArchiveList = () => {
+    return (
+      <View style={[styles.listContent, { flex: 1 }]}>
+        <Pressable
+          style={[styles.archiveSearchButton, { backgroundColor: colors.colorBrandBackground }]}
+          onPress={() => setShowArchiveModal(true)}
+        >
+          <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color="#FFFFFF" />
+          <FluentText variant="body2" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s }}>
+            Search Internet Archive
+          </FluentText>
+        </Pressable>
+
+        {archiveFavorites.length === 0 ? (
+          <View style={styles.emptyState}>
+            <MaterialCommunityIcons name="web" size={64} color={colors.colorNeutralForeground3} />
+            <FluentText variant="body1" color="tertiary" style={styles.emptyText}>
+              No saved songs from Internet Archive
+            </FluentText>
+            <FluentText variant="caption1" color="tertiary" style={styles.emptyText}>
+              Search for free, legal music above
+            </FluentText>
+          </View>
+        ) : (
+          <FlatList
+            data={archiveFavorites}
+            renderItem={({ item }) => (
+              <View style={[styles.archiveTrackItem, { backgroundColor: colors.colorNeutralBackground2 }]}>
+                <Pressable
+                  style={[styles.archivePlayButton, { backgroundColor: colors.colorBrandBackground }]}
+                  onPress={() => handlePlayArchiveTrack(item)}
+                >
+                  <MaterialCommunityIcons name="play" size={20} color="#FFFFFF" />
+                </Pressable>
+                <View style={styles.archiveTrackInfo}>
+                  <FluentText variant="body2" numberOfLines={1}>{item.title}</FluentText>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <MaterialCommunityIcons name="web" size={12} color={colors.colorNeutralForeground3} />
+                    <FluentText variant="caption1" color="tertiary" numberOfLines={1}>
+                      {item.artist} • {ArchiveOrgService.formatBitrate(item.bitrate)}
+                    </FluentText>
+                  </View>
+                </View>
+                <Pressable
+                  style={styles.archiveRemoveButton}
+                  onPress={() => handleRemoveArchiveFavorite(item.id)}
+                >
+                  <MaterialCommunityIcons name="close" size={20} color={colors.colorNeutralForeground3} />
+                </Pressable>
+              </View>
+            )}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingBottom: tabBarHeight + 80 + FluentSpacing.m }}
+            ItemSeparatorComponent={() => <View style={{ height: FluentSpacing.s }} />}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </View>
+    );
+  };
+
   const renderContent = () => {
     if (activeCategory === "songs" && isLoadingSongs) {
       return (
@@ -530,6 +636,8 @@ function LibraryScreen() {
         return renderArtistsList();
       case "playlists":
         return renderPlaylistsList();
+      case "streaming":
+        return renderArchiveList();
       default:
         return null;
     }
@@ -580,6 +688,12 @@ function LibraryScreen() {
         onSuccess={handleContextMenuSuccess}
         onHideSong={hideSong}
         showHideOption={activeCategory === "songs"}
+      />
+
+      <ArchiveSearchModal
+        visible={showArchiveModal}
+        onClose={() => setShowArchiveModal(false)}
+        onTrackAdded={loadArchiveFavorites}
       />
     </FluentScreenLayout>
   );
@@ -668,6 +782,36 @@ const styles = StyleSheet.create({
     borderRadius: FluentControlRadius.fab,
     alignItems: "center",
     justifyContent: "center",
+  },
+  archiveSearchButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: FluentSpacing.l,
+    paddingVertical: FluentSpacing.m,
+    borderRadius: FluentRadius.medium,
+    marginBottom: FluentSpacing.m,
+  },
+  archiveTrackItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: FluentSpacing.m,
+    borderRadius: FluentRadius.medium,
+    gap: FluentSpacing.m,
+  },
+  archivePlayButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  archiveTrackInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  archiveRemoveButton: {
+    padding: FluentSpacing.xs,
   },
 });
 

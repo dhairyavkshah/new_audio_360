@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Platform, Text, ActivityIndicator } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import * as Font from "expo-font";
-import { useFonts } from "expo-font";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 // Optional KeyboardProvider - falls back to Fragment if native module not available
 let KeyboardProvider: React.ComponentType<{ children: React.ReactNode }> | null = null;
@@ -132,46 +129,6 @@ function AppContent() {
 }
 
 export default function App() {
-  // Use useFonts hook with spread operator for proper web font loading
-  const [fontsLoaded] = useFonts({
-    ...MaterialCommunityIcons.font,
-  });
-  
-  // Fallback for web - if fonts don't load within 500ms, continue anyway
-  // Web loads fonts via CSS, so we can proceed faster
-  const [forceReady, setForceReady] = useState(Platform.OS === 'web');
-  
-  useEffect(() => {
-    if (fontsLoaded) {
-      console.log('[App] Fonts loaded successfully');
-    }
-  }, [fontsLoaded]);
-  
-  useEffect(() => {
-    // On web, fonts load via CSS - we just need a short delay
-    if (Platform.OS === 'web') {
-      const timeout = setTimeout(() => {
-        if (!fontsLoaded) {
-          console.log('[App] Web platform - fonts assumed loaded via CSS');
-        }
-        setForceReady(true);
-      }, 100);
-      return () => clearTimeout(timeout);
-    }
-  }, [fontsLoaded]);
-  
-  const isReady = fontsLoaded || forceReady;
-
-  // Wait for fonts to load - short wait on web since fonts load via CSS
-  if (!isReady) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#1565C0', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#fff" />
-        <Text style={{ color: '#fff', marginTop: 16, fontSize: 16 }}>Loading...</Text>
-      </View>
-    );
-  }
-
   const content = (
     <PlatformModeProvider>
       <ThemeProvider>

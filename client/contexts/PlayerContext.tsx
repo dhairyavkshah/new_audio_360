@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import { Platform, AppState, AppStateStatus } from 'react-native';
 import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from 'expo-audio';
-import { Song, mockSongs, StreamSong, isStreamSong } from '@/lib/data';
+import { Song, mockSongs } from '@/lib/data';
 import { DeviceSong, useMediaLibraryContext } from '@/contexts/MediaLibraryContext';
-import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount, addToStreamLibrary, removeFromStreamLibrary, isInStreamLibrary } from '@/lib/storage';
+import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
 import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
 import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule, AudioSessionBridgeModule } from 'audio-effects';
 import { NativeEffectsManager } from '@/services/NativeEffectsManager';
@@ -21,13 +21,11 @@ const EQ_FREQUENCIES: Record<keyof EQBands, number> = {
   brilliance: 16000,
 };
 
-export type PlayableSong = Song | DeviceSong | StreamSong;
+export type PlayableSong = Song | DeviceSong;
 
 function isDeviceSong(song: PlayableSong): song is DeviceSong {
   return 'uri' in song && 'isFromDevice' in song;
 }
-
-export { isStreamSong };
 
 interface PlayerContextType {
   currentSong: PlayableSong | null;
@@ -151,9 +149,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const convertSongToTrackMetadata = useCallback((song: PlayableSong): TrackMetadata | null => {
     let url: string | undefined;
     
-    if (isStreamSong(song)) {
-      url = song.streamUrl;
-    } else if (isDeviceSong(song) && song.uri) {
+    if (isDeviceSong(song) && song.uri) {
       url = song.uri;
     } else if ('audioUrl' in song && song.audioUrl) {
       url = song.audioUrl;
@@ -905,9 +901,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
       let audioSource: string | null = null;
 
-      if (isStreamSong(song)) {
-        audioSource = song.streamUrl;
-      } else if (isDeviceSong(song) && song.uri) {
+      if (isDeviceSong(song) && song.uri) {
         audioSource = song.uri;
       } else if ('audioUrl' in song && song.audioUrl) {
         audioSource = song.audioUrl;

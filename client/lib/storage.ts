@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Recording, PlayerState } from './data';
-import { SecureStorage } from '@/services/SecureStorage';
 
 export type { Recording };
 
@@ -29,7 +28,6 @@ const STORAGE_KEYS = {
   BASS_ENHANCEMENT: '@new_audio_360_bass_enhancement',
   HF_RESTORATION_ENABLED: '@new_audio_360_hf_restoration_enabled',
   HF_RESTORATION_LEVEL: '@new_audio_360_hf_restoration_level',
-  STREAM_LIBRARY: '@new_audio_360_stream_library',
 };
 
 export interface CustomEQPreset {
@@ -626,144 +624,4 @@ export async function getHfRestorationLevel(): Promise<number> {
     console.error('Error getting HF restoration level:', error);
     return 50;
   }
-}
-
-export interface StoredStreamSong {
-  id: string;
-  title: string;
-  artist: string;
-  album: string;
-  duration: number;
-  artwork?: string;
-  streamUrlEncrypted: string;
-  bitrate: number;
-  licenseType: 'public_domain' | 'creative_commons';
-  identifier: string;
-  addedAt: number;
-}
-
-const STREAM_LIBRARY_SECURE_KEY = '@na360_stream_library_secure';
-
-interface SecureStreamLibrary {
-  songs: Array<{
-    id: string;
-    title: string;
-    artist: string;
-    album: string;
-    duration: number;
-    artwork?: string;
-    streamUrl: string;
-    bitrate: number;
-    licenseType: 'public_domain' | 'creative_commons';
-    identifier: string;
-    addedAt: number;
-  }>;
-}
-
-export async function getStreamLibrary(): Promise<StoredStreamSong[]> {
-  try {
-    const secureData = await SecureStorage.getSecureItem(STREAM_LIBRARY_SECURE_KEY);
-    if (secureData) {
-      const parsed: SecureStreamLibrary = JSON.parse(secureData);
-      return parsed.songs.map(song => ({
-        id: song.id,
-        title: song.title,
-        artist: song.artist,
-        album: song.album,
-        duration: song.duration,
-        artwork: song.artwork,
-        streamUrlEncrypted: song.streamUrl,
-        bitrate: song.bitrate,
-        licenseType: song.licenseType,
-        identifier: song.identifier,
-        addedAt: song.addedAt,
-      }));
-    }
-    return [];
-  } catch (error) {
-    console.error('Error getting stream library:', error);
-    return [];
-  }
-}
-
-async function saveStreamLibrarySecure(songs: StoredStreamSong[], urls: Map<string, string>): Promise<void> {
-  try {
-    const secureLibrary: SecureStreamLibrary = {
-      songs: songs.map(song => ({
-        id: song.id,
-        title: song.title,
-        artist: song.artist,
-        album: song.album,
-        duration: song.duration,
-        artwork: song.artwork,
-        streamUrl: urls.get(song.identifier) || song.streamUrlEncrypted,
-        bitrate: song.bitrate,
-        licenseType: song.licenseType,
-        identifier: song.identifier,
-        addedAt: song.addedAt,
-      })),
-    };
-    await SecureStorage.setSecureItem(STREAM_LIBRARY_SECURE_KEY, JSON.stringify(secureLibrary));
-  } catch (error) {
-    console.error('Error saving stream library:', error);
-  }
-}
-
-export async function saveStreamLibrary(songs: StoredStreamSong[]): Promise<void> {
-  const urls = new Map<string, string>();
-  songs.forEach(s => urls.set(s.identifier, s.streamUrlEncrypted));
-  await saveStreamLibrarySecure(songs, urls);
-}
-
-export async function addToStreamLibrary(song: {
-  id: string;
-  title: string;
-  artist: string;
-  album: string;
-  duration: number;
-  artwork?: string;
-  streamUrl: string;
-  bitrate: number;
-  licenseType: 'public_domain' | 'creative_commons';
-  identifier: string;
-}): Promise<void> {
-  const library = await getStreamLibrary();
-  const exists = library.some(s => s.identifier === song.identifier);
-  if (exists) return;
-
-  const storedSong: StoredStreamSong = {
-    id: song.id,
-    title: song.title,
-    artist: song.artist,
-    album: song.album,
-    duration: song.duration,
-    artwork: song.artwork,
-    streamUrlEncrypted: song.streamUrl,
-    bitrate: song.bitrate,
-    licenseType: song.licenseType,
-    identifier: song.identifier,
-    addedAt: Date.now(),
-  };
-
-  const urls = new Map<string, string>();
-  library.forEach(s => urls.set(s.identifier, s.streamUrlEncrypted));
-  urls.set(song.identifier, song.streamUrl);
-  
-  library.unshift(storedSong);
-  await saveStreamLibrarySecure(library, urls);
-}
-
-export async function removeFromStreamLibrary(identifier: string): Promise<void> {
-  const library = await getStreamLibrary();
-  const filtered = library.filter(s => s.identifier !== identifier);
-  await saveStreamLibrary(filtered);
-}
-
-export async function isInStreamLibrary(identifier: string): Promise<boolean> {
-  const library = await getStreamLibrary();
-  return library.some(s => s.identifier === identifier);
-}
-
-export function getDecodedStreamUrl(storedSong: StoredStreamSong): string {
-  return storedSong.streamUrlEncrypted;
 }

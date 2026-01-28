@@ -85,6 +85,7 @@ export default {
       display: 'standalone',
       orientation: 'any',
       preferRelatedApplications: false,
+      bundler: 'metro',
     },
     plugins: [
       'expo-asset',
@@ -152,9 +153,6 @@ export default {
         projectId: '973e49b1-f295-4d20-a9e9-2ad49d4ff7d3',
       },
       appVariant: getAppVariant(),
-      router: {
-        origin: process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : false,
-      },
     },
   },
 };

@@ -34,17 +34,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   }, [iconLoaded]);
 
   useEffect(() => {
-    // On web, skip animations and go directly to finish after a short delay
-    if (Platform.OS === 'web') {
-      setIconLoaded(true);
-      iconLoadedRef.current = true;
-      fadeAnim.setValue(1);
-      const webFinishTimer = setTimeout(() => {
-        onFinish();
-      }, 1500);
-      return () => clearTimeout(webFinishTimer);
-    }
-    
     Image.prefetch(appIcon);
     
     // Fallback: Force iconLoaded after 500ms if onLoad doesn't fire (web compatibility)

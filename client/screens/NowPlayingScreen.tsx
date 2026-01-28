@@ -18,7 +18,7 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { usePlayerContext, isStreamSong } from "@/contexts/PlayerContext";
+import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
 import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
@@ -158,28 +158,23 @@ export default function NowPlayingScreen() {
           <FluentText variant={isExtraCompact ? "body1" : isVeryCompact ? "subtitle1" : "title1"} style={[styles.songTitle, textShadowStyle]} numberOfLines={1}>
             {currentSong.title}
           </FluentText>
-          <FluentText 
-            variant={isExtraCompact ? "caption1" : isVeryCompact ? "body2" : "subtitle1"} 
-            style={[styles.artistName, textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.85)' : colors.colorNeutralForeground2 }]} 
-            numberOfLines={1}
-          >
-            {currentSong.artist}
-          </FluentText>
-          {isStreamSong(currentSong) && (
-            <View style={[styles.streamingTag, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)' }]}>
-              <MaterialCommunityIcons 
-                name="cloud-check" 
-                size={FluentIconSize.tiny} 
-                color={isDark ? 'rgba(255,255,255,0.8)' : colors.colorNeutralForeground2} 
-              />
-              <FluentText 
-                variant="caption2" 
-                style={[{ marginLeft: FluentSpacing.xxs, color: isDark ? 'rgba(255,255,255,0.8)' : colors.colorNeutralForeground2 }]}
-              >
-                Streaming • {currentSong.licenseType === 'creative_commons' ? 'Creative Commons' : 'Public Domain'}
-              </FluentText>
-            </View>
-          )}
+          <View style={styles.artistRow}>
+            <FluentText 
+              variant={isExtraCompact ? "caption1" : isVeryCompact ? "body2" : "subtitle1"} 
+              style={[styles.artistName, textShadowStyle, { color: isDark ? 'rgba(255,255,255,0.85)' : colors.colorNeutralForeground2 }]} 
+              numberOfLines={1}
+            >
+              {currentSong.artist}
+            </FluentText>
+            {(currentSong as any).source === 'archive.org' && (
+              <View style={[styles.streamingBadge, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)' }]}>
+                <MaterialCommunityIcons name="web" size={12} color={isDark ? 'rgba(255,255,255,0.7)' : colors.colorNeutralForeground3} />
+                <FluentText variant="caption2" style={{ color: isDark ? 'rgba(255,255,255,0.7)' : colors.colorNeutralForeground3, marginLeft: 3 }}>
+                  Web
+                </FluentText>
+              </View>
+            )}
+          </View>
           <View style={[styles.actionButtons, (isExtraCompact || isVeryCompact) && { marginTop: FluentSpacing.xs, gap: FluentSpacing.l }]}>
             <Pressable
               style={styles.actionButton}
@@ -312,18 +307,16 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
-  artistName: {
-    marginTop: FluentSpacing.xs,
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  streamingTag: {
+  artistRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.xxs,
-    borderRadius: FluentRadius.small,
-    marginTop: FluentSpacing.s,
+    justifyContent: "center",
+    gap: FluentSpacing.s,
+    marginTop: FluentSpacing.xs,
+  },
+  artistName: {
+    textAlign: "center",
+    fontWeight: "500",
   },
   actionButtons: {
     flexDirection: "row",
@@ -340,5 +333,12 @@ const styles = StyleSheet.create({
   progressContainer: {},
   controlsContainer: {
     width: "100%",
+  },
+  streamingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
   },
 });

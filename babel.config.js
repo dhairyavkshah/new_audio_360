@@ -10,7 +10,6 @@ module.exports = function (api) {
           alias: {
             "@": "./client",
             "@shared": "./shared",
-            "react-native-vector-icons": "@expo/vector-icons",
           },
           extensions: [".web.ts", ".web.tsx", ".ios.js", ".android.js", ".js", ".ts", ".tsx", ".json"],
         },

@@ -1,5 +1,5 @@
 entrypoint = "README.md"
-modules = ["nodejs-22", "postgresql-16", "python-3.11"]
+modules = ["nodejs-22", "python-3.11", "postgresql-16"]
 
 [nix]
 channel = "stable-24_05"
@@ -42,10 +42,6 @@ author = "agent"
 task = "workflow.run"
 args = "Start App"
 
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Proxy Server"
-
 [[workflows.workflow]]
 name = "Start App"
 author = "agent"
@@ -56,20 +52,8 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "EXPO_TUNNEL_SUBDOMAIN=newaudio360dev npx expo start --tunnel --web --port 5000 --clear"
+args = "EXPO_NO_ORIGIN_CHECK=1 EXPO_TUNNEL_SUBDOMAIN=newaudio360dev npx expo start --tunnel --web --port 5000 --clear"
 waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Proxy Server"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "node server/proxy.js"
-waitForPort = 3001
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [userenv]
 
@@ -78,3 +62,9 @@ EXPO_PUBLIC_UPI_ID = "dhairyavkshah@icici"
 EXPO_PUBLIC_UPI_PHONE = "+919722523691"
 EXPO_PUBLIC_PAYPAL_USERNAME = "dhairyavkshah"
 EXPO_PUBLIC_PAYEE_NAME = "Dhairyavk Shah"
+R2_ACCESS_KEY_ID = "9bd70bc86a4fb7f1b099334233563860"
+R2_SECRET_ACCESS_KEY = "4835a36e035ac51ef98cf738329e90c0d4338b6aefecb0e02795e62333769b23"
+R2_ACCOUNT_ID = "fd3e601de66d97dec1f0d216858d1f4c"
+R2_ENDPOINT = "https://fd3e601de66d97dec1f0d216858d1f4c.r2.cloudflarestorage.com"
+
+[userenv.development]
