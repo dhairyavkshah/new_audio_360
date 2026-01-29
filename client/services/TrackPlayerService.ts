@@ -39,6 +39,7 @@ export type Track = {
   artwork?: string;
   duration?: number;
   isLiveStream?: boolean;
+  headers?: Record<string, string>;
 };
 
 export type Progress = {
@@ -60,6 +61,7 @@ export interface TrackMetadata {
   artwork?: string;
   duration?: number;
   isLiveStream?: boolean;
+  headers?: Record<string, string>;
 }
 
 export type PlaybackSource = 'music' | 'radio' | null;
@@ -154,6 +156,7 @@ class TrackPlayerServiceClass {
       artwork: track.artwork,
       duration: track.duration,
       isLiveStream: track.isLiveStream ?? false,
+      ...(track.headers && { headers: track.headers }),
     };
 
     await TrackPlayer.add(trackData);
@@ -173,6 +176,7 @@ class TrackPlayerServiceClass {
       artwork: track.artwork,
       duration: track.duration,
       isLiveStream: track.isLiveStream ?? false,
+      ...(track.headers && { headers: track.headers }),
     }));
 
     await TrackPlayer.add(trackDataList);

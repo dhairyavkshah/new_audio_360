@@ -11,6 +11,7 @@ import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/serv
 import { AudioCoordinator } from '@/services/AudioCoordinator';
 import { setMusicPlaying } from '@/lib/playbackState';
 import { soundCloudWidgetPlayer } from '@/services/SoundCloudWidgetPlayer';
+import SoundCloudService from '@/services/SoundCloudService';
 
 const EQ_FREQUENCIES: Record<keyof EQBands, number> = {
   sub: 32,
@@ -149,7 +150,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }).catch(console.error);
   }, []);
 
-  const convertSongToTrackMetadata = useCallback((song: PlayableSong): TrackMetadata | null => {
+  const convertSongToTrackMetadata = useCallback((song: PlayableSong, soundCloudToken?: string | null): TrackMetadata | null => {
     let url: string | undefined;
     
     if (isDeviceSong(song) && song.uri) {
@@ -160,7 +161,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     
     if (!url) return null;
     
-    return {
+    const isSoundCloudTrack = ('source' in song && song.source === 'soundcloud') || song.id.startsWith('sc_');
+    
+    const trackMetadata: TrackMetadata = {
       id: song.id,
       url: url,
       title: song.title,
@@ -169,6 +172,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       artwork: song.artwork,
       duration: song.duration,
     };
+    
+    if (isSoundCloudTrack && soundCloudToken) {
+      trackMetadata.headers = {
+        'Authorization': `OAuth ${soundCloudToken}`,
+      };
+      console.log('[PlayerContext] Added OAuth header for SoundCloud track:', song.id);
+    }
+    
+    return trackMetadata;
   }, []);
 
   const setupTrackPlayerCallbacks = useCallback(() => {
@@ -252,6 +264,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         } else if (state === State.Stopped) {
           setIsPlaying(false);
           setCurrentTime(0);
+        } else if (state === State.Error || state === 'error') {
+          setIsPlaying(false);
+          setIsBuffering(false);
+          console.log('[PlayerContext] TrackPlayer error state - stopping waveform animation');
         }
       },
     });
@@ -263,8 +279,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     
     if (queue.length === 0) return;
     
+    const hasSoundCloudTracks = queue.some(song => 
+      ('source' in song && song.source === 'soundcloud') || song.id.startsWith('sc_')
+    );
+    
+    let soundCloudToken: string | null = null;
+    if (hasSoundCloudTracks) {
+      soundCloudToken = await SoundCloudService.getAccessToken();
+      
+      // If restoring SoundCloud tracks but token expired, skip restore to avoid silent 401
+      if (!soundCloudToken) {
+        console.log('[PlayerContext] Cannot restore SoundCloud tracks - session expired');
+        return;
+      }
+    }
+    
     const trackMetadataList = queue
-      .map(song => convertSongToTrackMetadata(song))
+      .map(song => convertSongToTrackMetadata(song, soundCloudToken))
       .filter((t): t is TrackMetadata => t !== null);
     
     if (trackMetadataList.length === 0) return;
@@ -1193,6 +1224,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             } else if (state === State.Stopped) {
               setIsPlaying(false);
               setCurrentTime(0);
+            } else if (state === State.Error || state === 'error') {
+              setIsPlaying(false);
+              setIsBuffering(false);
+              console.log('[PlayerContext] TrackPlayer error state - stopping waveform animation');
             }
           },
         });
@@ -1207,15 +1242,34 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           setQueueState([song]);
         }
         
+        // Check if any tracks are SoundCloud tracks and get OAuth token
+        const isSoundCloudTrack = ('source' in song && song.source === 'soundcloud') || song.id.startsWith('sc_');
+        const hasSoundCloudTracks = isSoundCloudTrack || currentQueue.some(s => 
+          ('source' in s && s.source === 'soundcloud') || s.id.startsWith('sc_')
+        );
+        
+        let soundCloudToken: string | null = null;
+        if (hasSoundCloudTracks) {
+          soundCloudToken = await SoundCloudService.getAccessToken();
+          console.log('[PlayerContext] Got SoundCloud token for streaming:', soundCloudToken ? 'yes' : 'no');
+          
+          // If playing a SoundCloud track but no token, show auth error
+          if (isSoundCloudTrack && !soundCloudToken) {
+            setError('SoundCloud session expired. Please sign in again.');
+            setIsLoading(false);
+            return;
+          }
+        }
+        
         const trackMetadataList: TrackMetadata[] = currentQueue
-          .map(s => convertSongToTrackMetadata(s))
+          .map(s => convertSongToTrackMetadata(s, soundCloudToken))
           .filter((t): t is TrackMetadata => t !== null);
         
         console.log('[PlayerContext] Valid tracks for TrackPlayer:', trackMetadataList.length);
         
         if (trackMetadataList.length === 0) {
           // Last resort: try to create metadata from current song directly
-          const singleTrack = convertSongToTrackMetadata(song);
+          const singleTrack = convertSongToTrackMetadata(song, soundCloudToken);
           if (singleTrack) {
             console.log('[PlayerContext] Using single track fallback');
             trackMetadataList.push(singleTrack);

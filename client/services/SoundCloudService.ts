@@ -439,6 +439,29 @@ class SoundCloudServiceClass {
     console.log('[SoundCloudService] User logged out');
   }
 
+  async getAccessToken(): Promise<string | null> {
+    try {
+      await this.loadUserToken();
+      if (!this.userTokenData) return null;
+      
+      if (Date.now() >= this.userTokenData.expires_at - 60000) {
+        if (this.userTokenData.refresh_token) {
+          try {
+            await this.refreshUserToken();
+          } catch {
+            return null;
+          }
+        } else {
+          return null;
+        }
+      }
+      
+      return this.userTokenData.access_token;
+    } catch {
+      return null;
+    }
+  }
+
   // ============================================================
   // Client Credentials (for public search fallback)
   // ============================================================
