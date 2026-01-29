@@ -16,20 +16,6 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   // TOP PRIORITY: ARTIST RADIOS (Most Popular First)
   // ============================================
 
-  // Arijit Singh
-  {
-    id: "arijitsingh",
-    name: "arijitsingh",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodaruitsingh/icecast.audio",
-    website: "",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://radiosindia.com/images/arijitsingh.jpg",
-  },
-
   // Kishore Kumar
   {
     id: "kishorekumarradio",
@@ -96,202 +82,6 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
     favicon: "",
   },
 
-  // Shreya Ghoshal
-  {
-    id: "bollywood-shreya-ghoshal",
-    name: "Bollywood Shreya Ghoshal",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodshreyaghosal/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/shreya-ghoshal-radio.jpg",
-  },
-
-  // Sonu Nigam
-  {
-    id: "bollywood-sonu-nigam",
-    name: "Bollywood Sonu Nigam",
-    streamUrl: "https://streaming.exclusive.radio/uber/bollywoodsonunigam/icecast.audio",
-    website: "",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "",
-  },
-
-  // Alka Yagnik
-  {
-    id: "bollywood-alka-yagnik",
-    name: "Bollywood Alka Yagnik",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodalkayagnik/icecast.audio",
-    website: "",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "",
-  },
-
-  // Udit Narayan
-  {
-    id: "bollywood-udit-narayan",
-    name: "Bollywood Udit Narayan",
-    streamUrl: "https://drive.uber.radio/uber/bollywooduditnarayan/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/udit-narayan-radio.jpg",
-  },
-
-  // Asha Bhosle
-  {
-    id: "bollywood-asha-bhosle",
-    name: "Bollywood Asha Bhosle",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodashabhosle/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/asha-bhosle-radio.jpg",
-  },
-
-  // Pritam
-  {
-    id: "bollywood-pritam",
-    name: "Bollywood Pritam",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodpritam/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/pritam-radio.jpg",
-  },
-
-  // Vishal Shekhar
-  {
-    id: "bollywood-vishal-shekhar",
-    name: "Bollywood Vishal Shekhar",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodvishalshekhar/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/vishal-shekhar-radio.jpg",
-  },
-
-  // Amit Trivedi
-  {
-    id: "bollywood-amit-trivedi",
-    name: "Bollywood Amit Trivedi",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodamittrivedi/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/amit-trivedi-radio.jpg",
-  },
-
-  // Neha Kakkar
-  {
-    id: "bollywood-neha-kakkar",
-    name: "Bollywood Neha Kakkar",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodneharkakkar/icecast.audio",
-    website: "",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "",
-  },
-
-  // Armaan Malik
-  {
-    id: "bollywood-armaan-malik",
-    name: "Bollywood Armaan Malik",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodarmaanmalik/icecast.audio",
-    website: "",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "",
-  },
-
-  // Atif Aslam
-  {
-    id: "bollywood-atif-aslam",
-    name: "Bollywood Atif Aslam",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodatifaslam/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/atif-aslam-radio.jpg",
-  },
-
-  // Badshah
-  {
-    id: "bollywood-badshah",
-    name: "Bollywood Badshah",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodbadshah/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/badshah-radio.jpg",
-  },
-
-  // Honey Singh
-  {
-    id: "bollywood-honey-singh",
-    name: "Bollywood Yo Yo Honey Singh",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodhoneysingh/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/yo-yo-honey-singh-radio.jpg",
-  },
-
-  // Shah Rukh Khan
-  {
-    id: "bollywood-shah-rukh-khan",
-    name: "Bollywood Shah Rukh Khan Hits",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodsrkhits/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/srk-radio.jpg",
-  },
-
   // Punjabi / Harrdy Sandhu
   {
     id: "radio-hungama-punjabi-hits",
@@ -304,44 +94,6 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
     genre: "Punjabi Hits",
     bitrate: 128,
     favicon: "https://indiaradio.in/wp-content/uploads/2024/01/punjabi-radio.jpg",
-  },
-
-  // Other Popular Artists
-  {
-    id: "bollywood-sunidhi-chauhan",
-    name: "Bollywood Sunidhi Chauhan",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodsunidhichauhan/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/sunidhi-chauhan-radio.jpg",
-  },
-  {
-    id: "bollywood-jubin-nautiyal",
-    name: "Bollywood Jubin Nautiyal",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodjubinnautiyal/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/Jubin-Nautiyal-radio.jpg",
-  },
-  {
-    id: "bollywood-darshan-raval",
-    name: "Bollywood Darshan Raval",
-    streamUrl: "https://drive.uber.radio/uber/bollywooddarshanraval/icecast.audio",
-    website: "https://bollywood.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Artist Radio",
-    bitrate: 128,
-    favicon: "https://indiaradio.in/wp-content/uploads/2024/01/darshan-raval-radio.jpg",
   },
 
   // South Indian Artists
@@ -446,30 +198,6 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
     genre: "Commercial FM Stations",
     bitrate: 128,
     favicon: "https://onlineradiohub.com/wp-content/uploads/2023/05/radio-mirchi-hindi-fm.jpg",
-  },
-  {
-    id: "mirchi-top-20",
-    name: "Mirchi Top 20",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodnow/icecast.audio",
-    website: "http://mirchi.in/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "bollywood,hindi,mirchi,pop",
-    bitrate: 128,
-    favicon: "http://mirchi.in/favicon-196x196.png",
-  },
-  {
-    id: "mirchi-love",
-    name: "Mirchi Love",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodlove/icecast.audio",
-    website: "http://mirchi.in/",
-    country: "India",
-    countryCode: "IN",
-    language: "Hindi",
-    genre: "india,love,mirchi,pop,romantic",
-    bitrate: 128,
-    favicon: "http://mirchi.in/favicon-196x196.png",
   },
   {
     id: "filmy-mirchi",
@@ -591,18 +319,6 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
   // ============================================
   // THIRD TIER: BOLLYWOOD GENRE STATIONS
   // ============================================
-  {
-    id: "bollywoodmix",
-    name: "bollywoodmix",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodmix/icecast.audio",
-    website: "",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "Bollywood & Hindi Hits",
-    bitrate: 128,
-    favicon: "https://radiosindia.com/images/bollywoodradios.jpg",
-  },
   {
     id: "bombay-beats-radio",
     name: "Bombay Beats Radio",
@@ -772,18 +488,6 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
     favicon: "https://radiosindia.com/images/radiobaingan.jpg",
   },
   {
-    id: "tinder-radio",
-    name: "Tinder Radio",
-    streamUrl: "https://drive.uber.radio/er/bollywood/icecast.audio",
-    website: "https://streaming.exclusive.radio/",
-    country: "India",
-    countryCode: "IN",
-    language: "hindi",
-    genre: "bollywood,hindi,love songs,romantic",
-    bitrate: 128,
-    favicon: "",
-  },
-  {
     id: "np-24-radio",
     name: "NP 24 Radio",
     streamUrl: "https://stream.zeno.fm/8wk1s0pt008uv",
@@ -842,18 +546,6 @@ export const CURATED_RADIO_STATIONS: CuratedRadioStation[] = [
     genre: "Bollywood & Hindi Hits",
     bitrate: 128,
     favicon: "https://onlineradiohub.com/wp-content/uploads/2023/08/madhur-sangeet-radio.jpg",
-  },
-  {
-    id: "rad",
-    name: "rad",
-    streamUrl: "https://drive.uber.radio/uber/bollywoodlove/icecast.audio",
-    website: "http://mirchi.in/",
-    country: "India",
-    countryCode: "IN",
-    language: "Hindi",
-    genre: "Bollywood & Hindi Hits",
-    bitrate: 128,
-    favicon: "",
   },
   {
     id: "radio-905-fm",
