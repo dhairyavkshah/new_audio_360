@@ -236,6 +236,10 @@ export default function SoundCloudTabScreen() {
           code = codeMatch ? codeMatch[1] : null;
           state = stateMatch ? stateMatch[1] : null;
         }
+      } else if (input.includes('&state=')) {
+        const parts = input.split('&state=');
+        code = parts[0];
+        state = parts[1] || null;
       } else if (input.includes('|')) {
         const parts = input.split('|');
         code = parts[0];
