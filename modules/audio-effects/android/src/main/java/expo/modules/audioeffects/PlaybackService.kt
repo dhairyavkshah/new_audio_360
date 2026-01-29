@@ -21,9 +21,13 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
+import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.MediaStyleNotificationHelper
@@ -136,7 +140,18 @@ class PlaybackService : MediaSessionService() {
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
         
+        // Create custom DataSource.Factory that handles OAuth for SoundCloud
+        val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setUserAgent("NewAudio360/1.0")
+            .setConnectTimeoutMs(30000)
+            .setReadTimeoutMs(30000)
+            .setAllowCrossProtocolRedirects(true)
+        
+        val dataSourceFactory = OAuthDataSourceFactory(this, httpDataSourceFactory)
+        val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory)
+        
         player = ExoPlayer.Builder(this, renderersFactory)
+            .setMediaSourceFactory(mediaSourceFactory)
             .setAudioAttributes(audioAttributes, true)
             .setHandleAudioBecomingNoisy(true)
             .build().apply {
@@ -525,11 +540,13 @@ class PlaybackService : MediaSessionService() {
     
     fun getStatus(): Map<String, Any> {
         val p = player
+        val duration = p?.duration ?: 0L
+        val safeDuration = if (duration == C.TIME_UNSET) 0L else duration
         return mapOf(
             "isInitialized" to (p != null),
             "isPlaying" to (p?.isPlaying == true),
             "currentPositionMs" to (p?.currentPosition ?: 0L),
-            "durationMs" to (p?.duration ?: 0L),
+            "durationMs" to safeDuration,
             "bufferedPositionMs" to (p?.bufferedPosition ?: 0L),
             "currentIndex" to (p?.currentMediaItemIndex ?: 0),
             "queueLength" to (p?.mediaItemCount ?: 0),
@@ -548,5 +565,105 @@ class PlaybackService : MediaSessionService() {
             "shuffleEnabled" to (p?.shuffleModeEnabled == true),
             "audioSessionId" to (p?.audioSessionId ?: 0)
         )
+    }
+}
+
+/**
+ * Custom DataSource.Factory that handles OAuth tokens for SoundCloud URLs.
+ * Wraps DefaultDataSource.Factory and intercepts DataSpec to inject Authorization headers.
+ */
+class OAuthDataSourceFactory(
+    private val context: Context,
+    private val httpDataSourceFactory: DefaultHttpDataSource.Factory
+) : DataSource.Factory {
+    
+    companion object {
+        private const val TAG = "OAuthDataSourceFactory"
+    }
+    
+    // Use DefaultDataSource.Factory for proper handling of all URI schemes
+    private val defaultDataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
+    
+    override fun createDataSource(): DataSource {
+        return OAuthDataSource(defaultDataSourceFactory.createDataSource())
+    }
+    
+    /**
+     * Wrapper DataSource that intercepts open() to inject OAuth headers for SoundCloud URLs.
+     */
+    private class OAuthDataSource(
+        private val wrappedDataSource: DataSource
+    ) : DataSource {
+        
+        override fun open(dataSpec: androidx.media3.datasource.DataSpec): Long {
+            val uri = dataSpec.uri
+            val uriString = uri.toString()
+            
+            // Check if this is a SoundCloud API URL that needs OAuth
+            if (isSoundCloudApiUrl(uriString)) {
+                val oauthToken = extractOAuthToken(uri)
+                if (oauthToken != null) {
+                    Log.d(TAG, "Adding OAuth header for SoundCloud URL: ${uri.host}")
+                    
+                    // Build new DataSpec with OAuth header and clean URL
+                    val cleanUri = removeOAuthTokenFromQuery(uri)
+                    val newHeaders = dataSpec.httpRequestHeaders.toMutableMap().apply {
+                        put("Authorization", "OAuth $oauthToken")
+                    }
+                    
+                    val newDataSpec = dataSpec.buildUpon()
+                        .setUri(cleanUri)
+                        .setHttpRequestHeaders(newHeaders)
+                        .build()
+                    
+                    return wrappedDataSource.open(newDataSpec)
+                }
+            }
+            
+            // For all other URLs, use the wrapped DataSource directly
+            return wrappedDataSource.open(dataSpec)
+        }
+        
+        override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+            return wrappedDataSource.read(buffer, offset, length)
+        }
+        
+        override fun addTransferListener(transferListener: androidx.media3.datasource.TransferListener) {
+            wrappedDataSource.addTransferListener(transferListener)
+        }
+        
+        override fun getUri(): Uri? {
+            return wrappedDataSource.uri
+        }
+        
+        override fun getResponseHeaders(): Map<String, List<String>> {
+            return wrappedDataSource.responseHeaders
+        }
+        
+        override fun close() {
+            wrappedDataSource.close()
+        }
+        
+        private fun isSoundCloudApiUrl(url: String): Boolean {
+            return url.contains("api.soundcloud.com") || 
+                   url.contains("api-v2.soundcloud.com") ||
+                   url.contains("soundcloud.com/tracks")
+        }
+        
+        private fun extractOAuthToken(uri: Uri): String? {
+            return uri.getQueryParameter("oauth_token")
+        }
+        
+        private fun removeOAuthTokenFromQuery(uri: Uri): Uri {
+            val builder = uri.buildUpon().clearQuery()
+            uri.queryParameterNames.forEach { param ->
+                if (param != "oauth_token") {
+                    uri.getQueryParameter(param)?.let { value ->
+                        builder.appendQueryParameter(param, value)
+                    }
+                }
+            }
+            return builder.build()
+        }
     }
 }
