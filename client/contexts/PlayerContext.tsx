@@ -1208,9 +1208,43 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        // Reset current time to 0 for new track
+        setCurrentTime(0);
+        
+        // Wait for actual playback to start before setting isPlaying
+        // This prevents the waveform from starting before audio
+        const waitForPlayback = () => {
+          return new Promise<void>((resolve) => {
+            let attempts = 0;
+            const maxAttempts = 20; // 2 seconds max wait
+            const checkPlaying = setInterval(() => {
+              attempts++;
+              const status = PlaybackEngineModule.getStatus();
+              
+              // Set duration as soon as we have it
+              if (status.durationMs > 0) {
+                setDuration(status.durationMs / 1000);
+              }
+              
+              // Check if actually playing or if we've waited long enough
+              if (status.isPlaying || status.currentPositionMs > 0 || attempts >= maxAttempts) {
+                clearInterval(checkPlaying);
+                resolve();
+              }
+            }, 100);
+          });
+        };
+        
+        await waitForPlayback();
+        
         const status = PlaybackEngineModule.getStatus();
         if (status.durationMs > 0) {
           setDuration(status.durationMs / 1000);
+        }
+        
+        // Sync currentTime with actual position
+        if (status.currentPositionMs > 0) {
+          setCurrentTime(status.currentPositionMs / 1000);
         }
 
         setIsPlaying(true);
@@ -1812,6 +1846,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       platform: Platform.OS,
       hasCurrentSong: !!currentSong,
       queueLength: queue.length,
+      useNativePlayback: useNativePlaybackRef.current,
       useTrackPlayer: useTrackPlayerRef.current,
     });
 
@@ -1820,36 +1855,43 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (useTrackPlayerRef.current) {
-      console.log('[PlayerContext] handleNext with TrackPlayer, initialized:', trackPlayerInitializedRef.current);
-      
-      if (!trackPlayerInitializedRef.current) {
-        console.log('[PlayerContext] TrackPlayer not initialized for next');
-        return;
-      }
-      
-      const currentQueue = queueRef.current;
-      const currentIndex = currentQueue.findIndex((s) => s.id === currentSong.id);
-      const currentShuffle = shuffleRef.current;
-      const currentRepeat = repeatRef.current;
-      
-      console.log('[PlayerContext] handleNext - currentIndex:', currentIndex, 'queueLength:', currentQueue.length);
-      
-      let nextIndex: number;
-      if (currentShuffle) {
-        nextIndex = Math.floor(Math.random() * currentQueue.length);
-      } else {
-        nextIndex = (currentIndex + 1) % currentQueue.length;
-      }
+    const currentQueue = queueRef.current;
+    const currentIndex = currentQueue.findIndex((s) => s.id === currentSong.id);
+    const currentShuffle = shuffleRef.current;
+    const currentRepeat = repeatRef.current;
+    
+    let nextIndex: number;
+    if (currentShuffle) {
+      nextIndex = Math.floor(Math.random() * currentQueue.length);
+    } else {
+      nextIndex = (currentIndex + 1) % currentQueue.length;
+    }
 
-      if (nextIndex === 0 && currentRepeat === 'off' && !currentShuffle) {
-        console.log('[PlayerContext] End of queue, stopping');
-        setIsPlaying(false);
-        setCurrentTime(0);
-        return;
-      }
+    console.log('[PlayerContext] handleNext: currentIndex=', currentIndex, 'nextIndex=', nextIndex);
 
-      console.log('[PlayerContext] Skipping to track:', nextIndex);
+    if (nextIndex === 0 && currentRepeat === 'off' && !currentShuffle) {
+      console.log('[PlayerContext] handleNext: Reached end of queue, stopping');
+      setIsPlaying(false);
+      setCurrentTime(0);
+      return;
+    }
+
+    const nextSong = currentQueue[nextIndex];
+    if (!nextSong) {
+      console.log('[PlayerContext] handleNext: No next song found');
+      return;
+    }
+
+    // On Android, use PlaybackEngineModule (has DSP processing)
+    if (Platform.OS === 'android' && useNativePlaybackRef.current) {
+      console.log('[PlayerContext] handleNext with PlaybackEngineModule:', nextSong.title);
+      loadAndPlaySong(nextSong);
+      return;
+    }
+
+    // On iOS/other, use TrackPlayer
+    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
+      console.log('[PlayerContext] handleNext with TrackPlayer, skipping to:', nextIndex);
       TrackPlayerService.skipToTrack(nextIndex).then(() => {
         console.log('[PlayerContext] Playing after skip');
         TrackPlayerService.play();
@@ -1859,29 +1901,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const currentIndex = queue.findIndex((s) => s.id === currentSong.id);
-    let nextIndex: number;
-
-    if (shuffle) {
-      nextIndex = Math.floor(Math.random() * queue.length);
-    } else {
-      nextIndex = (currentIndex + 1) % queue.length;
-    }
-
-    console.log('[PlayerContext] handleNext: currentIndex=', currentIndex, 'nextIndex=', nextIndex);
-
-    if (nextIndex === 0 && repeat === 'off' && !shuffle) {
-      console.log('[PlayerContext] handleNext: Reached end of queue, stopping');
-      setIsPlaying(false);
-      setCurrentTime(0);
-      return;
-    }
-
-    const nextSong = queue[nextIndex];
-    if (nextSong) {
-      console.log('[PlayerContext] handleNext: Loading next song:', nextSong.title);
-      loadAndPlaySong(nextSong);
-    }
+    // Fallback - load and play song directly
+    console.log('[PlayerContext] handleNext: Loading next song:', nextSong.title);
+    loadAndPlaySong(nextSong);
   }, [currentSong, queue, shuffle, repeat, loadAndPlaySong]);
 
   const handlePrevious = useCallback(() => {
@@ -1890,6 +1912,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       hasCurrentSong: !!currentSong,
       currentTime,
       queueLength: queue.length,
+      useNativePlayback: useNativePlaybackRef.current,
       useTrackPlayer: useTrackPlayerRef.current,
     });
 
@@ -1898,16 +1921,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // If more than 3 seconds in, seek to start instead of previous track
     if (currentTime > 3) {
       console.log('[PlayerContext] handlePrevious: Seeking to start (currentTime > 3)');
       if (Platform.OS === 'web' && audioElementRef.current) {
         audioElementRef.current.currentTime = 0;
         setCurrentTime(0);
-      } else if (useTrackPlayerRef.current) {
-        TrackPlayerService.seekTo(0);
-        setCurrentTime(0);
-      } else if (useNativePlaybackRef.current) {
+      } else if (Platform.OS === 'android' && useNativePlaybackRef.current) {
         PlaybackEngineModule.seekTo(0);
+        setCurrentTime(0);
+      } else if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
+        TrackPlayerService.seekTo(0);
         setCurrentTime(0);
       } else if (playerRef.current) {
         playerRef.current.seekTo(0);
@@ -1916,20 +1940,28 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (useTrackPlayerRef.current) {
-      console.log('[PlayerContext] handlePrevious with TrackPlayer, initialized:', trackPlayerInitializedRef.current);
-      
-      if (!trackPlayerInitializedRef.current) {
-        console.log('[PlayerContext] TrackPlayer not initialized for previous');
-        return;
-      }
-      
-      const currentQueue = queueRef.current;
-      const currentIndex = currentQueue.findIndex((s) => s.id === currentSong.id);
-      const prevIndex = currentIndex === 0 ? currentQueue.length - 1 : currentIndex - 1;
-      
-      console.log('[PlayerContext] handlePrevious - currentIndex:', currentIndex, 'prevIndex:', prevIndex);
-      
+    const currentQueue = queueRef.current;
+    const currentIndex = currentQueue.findIndex((s) => s.id === currentSong.id);
+    const prevIndex = currentIndex === 0 ? currentQueue.length - 1 : currentIndex - 1;
+    const prevSong = currentQueue[prevIndex];
+
+    console.log('[PlayerContext] handlePrevious: currentIndex=', currentIndex, 'prevIndex=', prevIndex);
+
+    if (!prevSong) {
+      console.log('[PlayerContext] handlePrevious: No previous song found');
+      return;
+    }
+
+    // On Android, use PlaybackEngineModule (has DSP processing)
+    if (Platform.OS === 'android' && useNativePlaybackRef.current) {
+      console.log('[PlayerContext] handlePrevious with PlaybackEngineModule:', prevSong.title);
+      loadAndPlaySong(prevSong);
+      return;
+    }
+
+    // On iOS/other, use TrackPlayer
+    if (useTrackPlayerRef.current && trackPlayerInitializedRef.current) {
+      console.log('[PlayerContext] handlePrevious with TrackPlayer, skipping to:', prevIndex);
       TrackPlayerService.skipToTrack(prevIndex).then(() => {
         console.log('[PlayerContext] Playing after skip to previous');
         TrackPlayerService.play();
@@ -1939,14 +1971,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const currentIndex = queue.findIndex((s) => s.id === currentSong.id);
-    const prevIndex = currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
-    const prevSong = queue[prevIndex];
-    console.log('[PlayerContext] handlePrevious: currentIndex=', currentIndex, 'prevIndex=', prevIndex);
-    if (prevSong) {
-      console.log('[PlayerContext] handlePrevious: Loading previous song:', prevSong.title);
-      loadAndPlaySong(prevSong);
-    }
+    // Fallback - load and play song directly
+    console.log('[PlayerContext] handlePrevious: Loading previous song:', prevSong.title);
+    loadAndPlaySong(prevSong);
   }, [currentSong, queue, currentTime, loadAndPlaySong]);
 
   const seek = useCallback((time: number) => {
