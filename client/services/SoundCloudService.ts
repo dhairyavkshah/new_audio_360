@@ -588,7 +588,7 @@ class SoundCloudServiceClass {
   // ============================================================
 
   private buildStreamApiUrl(trackId: number): string {
-    return `${API_BASE_URL}/tracks/${trackId}/stream`;
+    return `${API_BASE_URL}/tracks/${trackId}/streams`;
   }
 
   private async resolveStreamUrlWithToken(trackId: number, token: string): Promise<string> {
@@ -599,32 +599,32 @@ class SoundCloudServiceClass {
         method: 'GET',
         headers: {
           'Authorization': `OAuth ${token}`,
+          'Accept': 'application/json; charset=utf-8',
         },
-        redirect: 'follow',
       });
 
-      if (response.ok && response.url) {
-        console.log('[SoundCloudService] Resolved stream URL for track', trackId);
-        return response.url;
-      }
-
       if (!response.ok) {
-        const headResponse = await fetch(streamApiUrl, {
-          method: 'HEAD',
-          headers: {
-            'Authorization': `OAuth ${token}`,
-          },
-          redirect: 'manual',
-        });
-        
-        const locationHeader = headResponse.headers.get('location');
-        if (locationHeader) {
-          console.log('[SoundCloudService] Resolved stream URL via redirect header');
-          return locationHeader;
-        }
+        throw new Error(`Failed to get streams: ${response.status}`);
       }
 
-      throw new Error(`Failed to resolve stream URL: ${response.status}`);
+      const data = await response.json();
+      
+      const streamUrl = data.http_mp3_128_url || 
+                       data.hls_mp3_128_url ||
+                       data.hls_aac_160_url ||
+                       data.hls_aac_96_url;
+      
+      if (streamUrl) {
+        console.log('[SoundCloudService] Resolved full stream URL for track', trackId);
+        return streamUrl;
+      }
+      
+      if (data.preview_mp3_128_url) {
+        console.log('[SoundCloudService] Only preview available for track', trackId);
+        return data.preview_mp3_128_url;
+      }
+
+      throw new Error('No stream URL available');
     } catch (error) {
       console.error('[SoundCloudService] Error resolving stream URL:', error);
       throw error;
