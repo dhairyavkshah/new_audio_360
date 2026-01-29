@@ -28,9 +28,16 @@ const ENCRYPTION_KEY = 'NA360_SOUNDCLOUD_2025';
 
 const getRedirectUri = (): string => {
   if (Platform.OS === 'web') {
-    return typeof window !== 'undefined' 
-      ? `${window.location.origin}/auth/soundcloud` 
-      : 'http://localhost:5000/auth/soundcloud';
+    if (typeof window !== 'undefined') {
+      // On Replit, the proxy removes the port, so we need to strip it
+      const url = new URL(window.location.origin);
+      // Remove port for https URLs (Replit proxy handles this)
+      if (url.protocol === 'https:') {
+        return `${url.protocol}//${url.hostname}/auth/soundcloud`;
+      }
+      return `${window.location.origin}/auth/soundcloud`;
+    }
+    return 'http://localhost:5000/auth/soundcloud';
   }
   return 'newaudio360://auth/soundcloud';
 };
