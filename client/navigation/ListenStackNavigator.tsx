@@ -48,7 +48,7 @@ function NowPlayingBackButton() {
         height: FluentTouchTarget.minimum,
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: -8,
+        marginLeft: 8,
       }}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
