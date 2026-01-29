@@ -16,6 +16,7 @@ import { Platform } from 'react-native';
 import * as Crypto from 'expo-crypto';
 
 const API_BASE_URL = 'https://api.soundcloud.com';
+const API_V2_BASE_URL = 'https://api-v2.soundcloud.com';
 const OAUTH_AUTHORIZE_URL = 'https://secure.soundcloud.com/authorize';
 const OAUTH_TOKEN_URL = 'https://secure.soundcloud.com/oauth/token';
 const TRACKS_URL = `${API_BASE_URL}/tracks`;
@@ -592,10 +593,10 @@ class SoundCloudServiceClass {
   }
 
   private async resolveStreamUrlWithToken(trackId: number, token: string): Promise<string> {
-    const streamApiUrl = this.buildStreamApiUrl(trackId);
+    const { clientId } = getClientCredentials();
     
     try {
-      const response = await fetch(streamApiUrl, {
+      const trackResponse = await fetch(`${API_V2_BASE_URL}/tracks/${trackId}?client_id=${clientId}`, {
         method: 'GET',
         headers: {
           'Authorization': `OAuth ${token}`,
@@ -603,28 +604,48 @@ class SoundCloudServiceClass {
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to get streams: ${response.status}`);
+      if (!trackResponse.ok) {
+        throw new Error(`Failed to get track: ${trackResponse.status}`);
       }
 
-      const data = await response.json();
+      const trackData = await trackResponse.json();
       
-      const streamUrl = data.http_mp3_128_url || 
-                       data.hls_mp3_128_url ||
-                       data.hls_aac_160_url ||
-                       data.hls_aac_96_url;
-      
-      if (streamUrl) {
-        console.log('[SoundCloudService] Resolved full stream URL for track', trackId);
-        return streamUrl;
+      if (trackData.media && trackData.media.transcodings && trackData.media.transcodings.length > 0) {
+        const transcodings = trackData.media.transcodings;
+        console.log('[SoundCloudService] Track', trackId, 'has', transcodings.length, 'transcodings');
+        
+        const progressiveMp3 = transcodings.find(
+          (t: any) => t.format?.protocol === 'progressive' && t.format?.mime_type === 'audio/mpeg'
+        );
+        
+        const hlsAac = transcodings.find(
+          (t: any) => t.format?.protocol === 'hls' && t.format?.mime_type?.includes('audio/mp4')
+        );
+        
+        const selectedTranscoding = progressiveMp3 || hlsAac || transcodings[0];
+        
+        if (selectedTranscoding && selectedTranscoding.url) {
+          const transcodingUrl = `${selectedTranscoding.url}?client_id=${clientId}`;
+          console.log('[SoundCloudService] Fetching transcoding URL for track', trackId);
+          
+          const streamResponse = await fetch(transcodingUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `OAuth ${token}`,
+            },
+          });
+          
+          if (streamResponse.ok) {
+            const streamData = await streamResponse.json();
+            if (streamData.url) {
+              console.log('[SoundCloudService] Resolved full stream URL for track', trackId);
+              return streamData.url;
+            }
+          }
+        }
       }
       
-      if (data.preview_mp3_128_url) {
-        console.log('[SoundCloudService] Only preview available for track', trackId);
-        return data.preview_mp3_128_url;
-      }
-
-      throw new Error('No stream URL available');
+      throw new Error('No full stream URL available - track may be preview-only');
     } catch (error) {
       console.error('[SoundCloudService] Error resolving stream URL:', error);
       throw error;
