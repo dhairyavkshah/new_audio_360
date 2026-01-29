@@ -1,9 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Buffer } from 'buffer';
+import { Platform } from 'react-native';
 
 const SEARCH_API_URL = 'https://archive.org/advancedsearch.php';
 const METADATA_API_URL = 'https://archive.org/metadata';
-const DOWNLOAD_BASE_URL = 'https://archive.org/download';
+// Use cors.archive.org on web for CORS support (enables DSP processing)
+const DOWNLOAD_BASE_URL = Platform.OS === 'web' 
+  ? 'https://cors.archive.org/download'
+  : 'https://archive.org/download';
 const FAVORITES_KEY = '@archive_org_favorites';
 const ENCRYPTION_KEY = 'NA360_ARCHIVE_2025';
 
@@ -124,7 +128,8 @@ class ArchiveOrgServiceClass {
       const data = await response.json();
       const items: ArchiveOrgItem[] = data.response?.docs || [];
       
-      const tracksPromises = items.slice(0, 5).map(item => 
+      // Process more items to get 25+ tracks (each item may have multiple tracks)
+      const tracksPromises = items.slice(0, 10).map(item => 
         this.getItemTracks(item, quality)
       );
       
@@ -172,7 +177,8 @@ class ArchiveOrgServiceClass {
         return Math.abs(fileBitrate - targetBitrate) <= 16;
       });
 
-      return audioFiles.slice(0, 3).map((file, index) => {
+      // Take up to 5 tracks per item to get 25+ total (10 items * 5 tracks max)
+      return audioFiles.slice(0, 5).map((file, index) => {
         const bitrate = parseInt(file.bitrate || '128', 10);
         const duration = parseFloat(file.length || '0');
         const fileSize = parseInt(file.size || '0', 10);

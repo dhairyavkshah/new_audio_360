@@ -17,7 +17,38 @@ const LEVEL_CONFIGS: Record<EnhancementLevel, { blend: number }> = {
 };
 
 const INPUT_LENGTH = 8192;
-const MODEL_VERSION = '1.2.0';
+const MODEL_VERSION = '1.2.1';
+
+// Custom 1D upsampling using upSampling2d (tf.layers.upSampling1d not available in tfjs)
+// Reshape to 4D, upsample, reshape back to 3D
+// NOTE: This implementation uses fixed lengths based on INPUT_LENGTH=8192:
+//   bottleneck: 8192/8 = 1024 -> 2048
+//   dec1: 2048 -> 4096  
+//   dec2: 4096 -> 8192
+function applyUpSampling1d(
+  tensor: tf.SymbolicTensor, 
+  targetLength: number,
+  filters: number,
+  name: string
+): tf.SymbolicTensor {
+  // [batch, length, channels] -> [batch, length, 1, channels]
+  const reshaped4d = tf.layers.reshape({
+    targetShape: [targetLength, 1, filters],
+    name: `${name}_to4d`,
+  }).apply(tensor) as tf.SymbolicTensor;
+  
+  // Upsample by 2 in the length dimension
+  const upsampled = tf.layers.upSampling2d({
+    size: [2, 1],
+    name: `${name}_up`,
+  }).apply(reshaped4d) as tf.SymbolicTensor;
+  
+  // [batch, length*2, 1, channels] -> [batch, length*2, channels]
+  return tf.layers.reshape({
+    targetShape: [targetLength * 2, filters],
+    name: `${name}_to3d`,
+  }).apply(upsampled) as tf.SymbolicTensor;
+}
 
 class NeuralAudioProcessorClass {
   private model: tf.LayersModel | null = null;
@@ -93,7 +124,8 @@ class NeuralAudioProcessorClass {
       kernelInitializer: tf.initializers.glorotUniform({ seed: 45 }),
     }).apply(pool3) as tf.SymbolicTensor;
     
-    const up1 = tf.layers.upSampling1d({ size: 2, name: 'up1' }).apply(bottleneck) as tf.SymbolicTensor;
+    // bottleneck shape: [batch, 1024, 512] -> upsample to [batch, 2048, 512]
+    const up1 = applyUpSampling1d(bottleneck, 1024, 512, 'up1');
     const concat1 = tf.layers.concatenate({ name: 'concat1' }).apply([up1, enc3]) as tf.SymbolicTensor;
     const dec1 = tf.layers.conv1d({
       filters: 256,
@@ -104,7 +136,8 @@ class NeuralAudioProcessorClass {
       kernelInitializer: tf.initializers.glorotUniform({ seed: 46 }),
     }).apply(concat1) as tf.SymbolicTensor;
     
-    const up2 = tf.layers.upSampling1d({ size: 2, name: 'up2' }).apply(dec1) as tf.SymbolicTensor;
+    // dec1 shape: [batch, 2048, 256] -> upsample to [batch, 4096, 256]
+    const up2 = applyUpSampling1d(dec1, 2048, 256, 'up2');
     const concat2 = tf.layers.concatenate({ name: 'concat2' }).apply([up2, enc2]) as tf.SymbolicTensor;
     const dec2 = tf.layers.conv1d({
       filters: 128,
@@ -115,7 +148,8 @@ class NeuralAudioProcessorClass {
       kernelInitializer: tf.initializers.glorotUniform({ seed: 47 }),
     }).apply(concat2) as tf.SymbolicTensor;
     
-    const up3 = tf.layers.upSampling1d({ size: 2, name: 'up3' }).apply(dec2) as tf.SymbolicTensor;
+    // dec2 shape: [batch, 4096, 128] -> upsample to [batch, 8192, 128]
+    const up3 = applyUpSampling1d(dec2, 4096, 128, 'up3');
     const concat3 = tf.layers.concatenate({ name: 'concat3' }).apply([up3, enc1]) as tf.SymbolicTensor;
     const dec3 = tf.layers.conv1d({
       filters: 64,

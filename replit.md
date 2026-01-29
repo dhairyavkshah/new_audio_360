@@ -118,14 +118,15 @@ The Discover tab features a tabbed interface for streaming music from multiple s
 
 **Tabbed Structure**:
 - **Archive Tab**: Internet Archive public domain/CC content (no login required)
-  - Quality filters: 128k, 192k, 256k, 320k
+  - Shows all qualities by default (no filter tabs)
   - First-time consent modal for legal acknowledgment
-  - Up to 15 results per search
+  - Up to 25 results per search
+  - DSP/AI upscaling fully supported on web (uses cors.archive.org for CORS)
 - **SoundCloud Tab**: Full track streaming with user authentication
   - OAuth 2.1 Authorization Code flow with PKCE for secure login
   - Users sign in with their own SoundCloud account
   - Full track playback (not just 30-second previews)
-  - DSP/neural audio processing applied to all streamed content
+  - DSP/neural audio processing on Android only (web uses Widget API)
   - Up to 15 results per search
 
 **Screen Files**:

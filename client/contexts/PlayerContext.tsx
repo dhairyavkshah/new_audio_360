@@ -997,10 +997,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           webAudioSource = `${window.location.origin}${audioSource}`;
         }
 
-        const isExternalStream = webAudioSource.startsWith('http') && !webAudioSource.includes(window.location.host);
+        // Check if external stream - cors.archive.org streams have CORS support so can use DSP
+        const isArchiveStream = webAudioSource.includes('cors.archive.org');
+        const isExternalStream = webAudioSource.startsWith('http') && !webAudioSource.includes(window.location.host) && !isArchiveStream;
 
         const audio = new Audio();
-        if (!isExternalStream) {
+        // Enable crossOrigin for local files and CORS-enabled external streams (archive.org)
+        if (!isExternalStream || isArchiveStream) {
           audio.crossOrigin = 'anonymous';
         }
         audio.src = webAudioSource;
@@ -1018,8 +1021,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         });
 
         if (isExternalStream) {
-          console.log('[PlayerContext] External stream - using direct playback (no DSP processing)');
+          console.log('[PlayerContext] External stream without CORS - using direct playback (no DSP processing)');
         } else {
+          if (isArchiveStream) {
+            console.log('[PlayerContext] Internet Archive stream with CORS - enabling DSP processing');
+          }
           mediaSourceRef.current = ctx.createMediaElementSource(audio);
 
           gainNodeRef.current = ctx.createGain();
