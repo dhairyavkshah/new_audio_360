@@ -151,14 +151,20 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
           ? EQ_PRESETS_10BAND[presetName] 
           : EQ_PRESETS_10BAND.Flat;
         PlaybackEngineModule.setEqBands(tenBandPreset);
+        // Turn off any active immersive mode when switching to EQ
+        ImmersiveModeEngineModule.setMode('off');
       }
     } else if (currentMode === 'immersive' && currentImmersiveMode !== 'off') {
       WebAudioEffectsEngine.applyImmersiveMode(currentImmersiveMode);
-      // Immersive modes on Android are handled by ImmersiveModeEngineModule
+      // Apply immersive mode on Android native DSP
+      if (Platform.OS === 'android') {
+        ImmersiveModeEngineModule.setMode(currentImmersiveMode);
+      }
     } else {
       WebAudioEffectsEngine.resetEQ();
-      // Reset EQ on Android native DSP
+      // Reset EQ and immersive mode on Android native DSP
       if (Platform.OS === 'android') {
+        ImmersiveModeEngineModule.setMode('off');
         PlaybackEngineModule.setEqBands(EQ_PRESETS_10BAND.Flat);
       }
     }
@@ -170,6 +176,10 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
         if (webAudioInitialized) {
           WebAudioEffectsEngine.applyImmersiveMode(newMode);
         }
+        // Apply immersive mode to Android native SoftwareDSP
+        if (Platform.OS === 'android') {
+          await ImmersiveModeEngineModule.setMode(newMode);
+        }
         setImmersiveModeName(newMode);
         setMode('immersive');
       } else {
@@ -177,8 +187,9 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
         if (webAudioInitialized) {
           WebAudioEffectsEngine.applySevenBandEQ(EQ_PRESETS.Flat);
         }
-        // Also apply Flat EQ to Android native DSP
+        // Also apply Flat EQ and turn off immersive mode on Android native DSP
         if (Platform.OS === 'android') {
+          await ImmersiveModeEngineModule.setMode('off');
           PlaybackEngineModule.setEqBands(EQ_PRESETS_10BAND.Flat);
         }
         setImmersiveModeName('off');
