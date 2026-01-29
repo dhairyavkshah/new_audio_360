@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, TextInput, Image, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
+import * as WebBrowser from 'expo-web-browser';
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
@@ -166,10 +167,35 @@ export default function SoundCloudTabScreen() {
         pollIntervalRef.current = checkInterval;
         return;
       } else {
-        setAuthUrl(url);
-        setAuthRedirectUri(redirectUri);
-        setExpectedState(state);
-        setShowLoginModal(true);
+        console.log('[SoundCloudTabScreen] Opening SoundCloud auth via expo-web-browser');
+        console.log('[SoundCloudTabScreen] Auth URL:', url);
+        console.log('[SoundCloudTabScreen] Redirect URI:', redirectUri);
+        
+        try {
+          const result = await WebBrowser.openAuthSessionAsync(url, redirectUri, {
+            showInRecents: true,
+            preferEphemeralSession: false,
+          });
+          
+          console.log('[SoundCloudTabScreen] WebBrowser result:', result.type);
+          
+          if (result.type === 'success' && result.url) {
+            console.log('[SoundCloudTabScreen] OAuth callback URL received:', result.url);
+            await handleOAuthSuccess(result.url);
+          } else if (result.type === 'cancel' || result.type === 'dismiss') {
+            showInfo("Login cancelled");
+          } else {
+            console.log('[SoundCloudTabScreen] Unexpected result:', result);
+            showError("Login failed - please try again");
+          }
+        } catch (browserError) {
+          console.error('[SoundCloudTabScreen] WebBrowser error:', browserError);
+          setAuthUrl(url);
+          setAuthRedirectUri(redirectUri);
+          setExpectedState(state);
+          setShowLoginModal(true);
+        }
+        
         setIsLoggingIn(false);
       }
     } catch (error) {

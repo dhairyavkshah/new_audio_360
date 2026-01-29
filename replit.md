@@ -148,11 +148,12 @@ The Discover tab features a tabbed interface for streaming music from multiple s
 
 **SoundCloud Authentication**:
 - **User Auth**: OAuth 2.1 Authorization Code + PKCE for full track access
-- **In-App Login**: Uses WebView on native and iframe on web (no external browser popups)
+- **Android/iOS Login**: Uses `expo-web-browser.openAuthSessionAsync()` for proper deep link handling
+- **Web Login**: Uses popup window with localStorage callback mechanism
 - **Token Management**: 6-hour expiry with automatic refresh token renewal
 - **Storage**: Tokens stored securely in AsyncStorage
-- **Redirect URIs**: `newaudio360://auth/soundcloud` (native), origin-based for web
-- **Web OAuth**: Embedded iframe with popup fallback for X-Frame-Options restrictions
+- **Redirect URIs**: `newaudio360://auth/soundcloud` (native), `/soundcloud-callback.html` (web)
+- **Fallback**: WebView modal as backup if expo-web-browser fails
 
 **User Library Access**:
 - **Liked Tracks**: `/me/likes/tracks` endpoint for user's favorited songs
