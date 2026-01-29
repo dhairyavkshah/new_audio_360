@@ -39,6 +39,8 @@ export default function SoundCloudTabScreen() {
   const [authUrl, setAuthUrl] = useState('');
   const [authRedirectUri, setAuthRedirectUri] = useState('');
   const [expectedState, setExpectedState] = useState('');
+  const [showCodeEntry, setShowCodeEntry] = useState(false);
+  const [manualCode, setManualCode] = useState('');
   
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -198,6 +200,32 @@ export default function SoundCloudTabScreen() {
   const handleOAuthCancel = () => {
     setShowLoginModal(false);
     showInfo("Login cancelled");
+  };
+
+  const handleManualCodeSubmit = async () => {
+    if (!manualCode.trim()) {
+      showError("Please enter the authorization code");
+      return;
+    }
+    
+    setIsLoggingIn(true);
+    try {
+      const [code, state] = manualCode.trim().split('|');
+      if (!code) {
+        showError("Invalid code format");
+        return;
+      }
+      
+      const fakeUrl = `https://callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || '')}`;
+      await handleOAuthSuccess(fakeUrl);
+      setShowCodeEntry(false);
+      setManualCode('');
+    } catch (error) {
+      console.error('[SoundCloudTabScreen] Manual code error:', error);
+      showError("Failed to authenticate with this code");
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -622,26 +650,74 @@ export default function SoundCloudTabScreen() {
             </View>
           </View>
           
-          <Pressable
-            style={[styles.loginButton, { backgroundColor: theme.primary }]}
-            onPress={handleLogin}
-            disabled={isLoggingIn}
-          >
-            {isLoggingIn ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <MaterialCommunityIcons name="soundcloud" size={24} color="#FFFFFF" />
-                <FluentText variant="body1" style={{ color: '#FFFFFF', fontWeight: '600', marginLeft: 8 }}>
-                  Sign in with SoundCloud
+          {!showCodeEntry ? (
+            <>
+              <Pressable
+                style={[styles.loginButton, { backgroundColor: theme.primary }]}
+                onPress={handleLogin}
+                disabled={isLoggingIn}
+              >
+                {isLoggingIn ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <MaterialCommunityIcons name="soundcloud" size={24} color="#FFFFFF" />
+                    <FluentText variant="body1" style={{ color: '#FFFFFF', fontWeight: '600', marginLeft: 8 }}>
+                      Sign in with SoundCloud
+                    </FluentText>
+                  </>
+                )}
+              </Pressable>
+              
+              <Pressable onPress={() => setShowCodeEntry(true)}>
+                <FluentText variant="caption1" color="secondary" style={{ textDecorationLine: 'underline', marginTop: FluentSpacing.s }}>
+                  Enter code manually
                 </FluentText>
-              </>
-            )}
-          </Pressable>
-          
-          <FluentText variant="caption1" color="tertiary" style={styles.disclaimer}>
-            Your SoundCloud credentials are handled securely by SoundCloud. We never see your password.
-          </FluentText>
+              </Pressable>
+              
+              <FluentText variant="caption1" color="tertiary" style={[styles.disclaimer, { marginTop: FluentSpacing.m }]}>
+                Your SoundCloud credentials are handled securely by SoundCloud. We never see your password.
+              </FluentText>
+            </>
+          ) : (
+            <>
+              <FluentText variant="body2" color="secondary" style={{ marginBottom: FluentSpacing.m, textAlign: 'center' }}>
+                Paste the code from the authorization window below:
+              </FluentText>
+              
+              <View style={[styles.searchInput, { backgroundColor: colors.colorNeutralBackground3, width: '100%', marginBottom: FluentSpacing.m }]}>
+                <TextInput
+                  style={[styles.input, { color: colors.colorNeutralForeground1 }]}
+                  placeholder="Paste code here..."
+                  placeholderTextColor={colors.colorNeutralForeground3}
+                  value={manualCode}
+                  onChangeText={setManualCode}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+              
+              <Pressable
+                style={[styles.loginButton, { backgroundColor: theme.primary }]}
+                onPress={handleManualCodeSubmit}
+                disabled={isLoggingIn || !manualCode.trim()}
+              >
+                {isLoggingIn ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <FluentText variant="body1" style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                    Submit Code
+                  </FluentText>
+                )}
+              </Pressable>
+              
+              <Pressable onPress={() => { setShowCodeEntry(false); setManualCode(''); }}>
+                <FluentText variant="caption1" color="secondary" style={{ textDecorationLine: 'underline', marginTop: FluentSpacing.m }}>
+                  Back to sign in
+                </FluentText>
+              </Pressable>
+            </>
+          )}
         </View>
 
         <OAuthWebViewModal
