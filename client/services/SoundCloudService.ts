@@ -268,6 +268,7 @@ class SoundCloudServiceClass {
       state: state,
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
+      display: 'popup',
     });
 
     return {
