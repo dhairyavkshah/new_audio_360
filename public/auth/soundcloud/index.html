@@ -73,6 +73,20 @@
     .hidden {
       display: none;
     }
+    .close-btn {
+      margin-top: 20px;
+      padding: 12px 24px;
+      background: #FF5500;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .close-btn:hover {
+      background: #e64d00;
+    }
   </style>
 </head>
 <body>
@@ -88,27 +102,32 @@
     </div>
     <h1 id="title">Completing sign-in...</h1>
     <p id="message">Please wait while we connect your SoundCloud account.</p>
+    <button id="closeBtn" class="close-btn hidden" onclick="window.close()">Close Window</button>
   </div>
 
   <script>
     (function() {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-      const state = params.get('state');
-      const error = params.get('error');
-      const errorDesc = params.get('error_description');
+      var params = new URLSearchParams(window.location.search);
+      var code = params.get('code');
+      var state = params.get('state');
+      var error = params.get('error');
+      var errorDesc = params.get('error_description');
 
-      const loadingIcon = document.getElementById('loading');
-      const successIcon = document.getElementById('success');
-      const errorIcon = document.getElementById('error');
-      const title = document.getElementById('title');
-      const message = document.getElementById('message');
+      var loadingIcon = document.getElementById('loading');
+      var successIcon = document.getElementById('success');
+      var errorIcon = document.getElementById('error');
+      var title = document.getElementById('title');
+      var message = document.getElementById('message');
+      var closeBtn = document.getElementById('closeBtn');
+
+      console.log('[OAuth Callback] Received params:', { code: code ? 'present' : 'missing', state: state, error: error });
 
       function showSuccess() {
         loadingIcon.classList.add('hidden');
         successIcon.classList.remove('hidden');
         title.textContent = 'Connected!';
         message.textContent = 'Your SoundCloud account is now connected. This window will close automatically.';
+        closeBtn.classList.remove('hidden');
       }
 
       function showError(msg) {
@@ -116,39 +135,56 @@
         errorIcon.classList.remove('hidden');
         title.textContent = 'Connection Failed';
         message.textContent = msg || 'Unable to connect your SoundCloud account. Please try again.';
+        closeBtn.classList.remove('hidden');
       }
 
       if (error) {
+        console.log('[OAuth Callback] Error received:', error, errorDesc);
         showError(errorDesc || error);
         return;
       }
 
       if (!code) {
+        console.log('[OAuth Callback] No code received');
         showError('No authorization code received.');
         return;
       }
 
-      const fullUrl = window.location.href;
+      var fullUrl = window.location.href;
+      console.log('[OAuth Callback] Full URL:', fullUrl);
+      console.log('[OAuth Callback] Has opener:', !!window.opener);
 
-      if (window.opener) {
-        try {
-          window.opener.postMessage({
-            type: 'oauth_callback',
-            url: fullUrl,
-            code: code,
-            state: state
-          }, '*');
+      function tryPostMessage() {
+        var messageData = {
+          type: 'oauth_callback',
+          url: fullUrl,
+          code: code,
+          state: state
+        };
+        
+        console.log('[OAuth Callback] Sending postMessage:', messageData);
+        
+        if (window.opener && !window.opener.closed) {
+          try {
+            window.opener.postMessage(messageData, '*');
+            console.log('[OAuth Callback] postMessage sent successfully');
+            showSuccess();
+            setTimeout(function() {
+              window.close();
+            }, 2000);
+          } catch (e) {
+            console.error('[OAuth Callback] postMessage failed:', e);
+            showSuccess();
+            message.textContent = 'Connected! Please close this window and return to New Audio 360.';
+          }
+        } else {
+          console.log('[OAuth Callback] No opener window available');
           showSuccess();
-          setTimeout(function() {
-            window.close();
-          }, 1500);
-        } catch (e) {
-          showError('Unable to communicate with the main window.');
+          message.textContent = 'Connected! Please close this window and return to New Audio 360.';
         }
-      } else {
-        showSuccess();
-        message.textContent = 'Authorization successful! You can close this window and return to New Audio 360.';
       }
+
+      tryPostMessage();
     })();
   </script>
 </body>

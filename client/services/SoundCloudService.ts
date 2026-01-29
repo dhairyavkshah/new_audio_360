@@ -283,6 +283,7 @@ class SoundCloudServiceClass {
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
       display: 'popup',
+      prompt: 'login',
     });
 
     return {

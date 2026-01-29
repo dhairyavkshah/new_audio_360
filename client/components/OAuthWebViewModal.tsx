@@ -60,8 +60,14 @@ export default function OAuthWebViewModal({
     if (Platform.OS !== 'web' || !visible) return;
 
     const handleMessage = (event: MessageEvent) => {
+      console.log('[OAuthWebViewModal] Received message:', event.data);
       if (event.data?.type === 'oauth_callback' && event.data?.url) {
+        console.log('[OAuthWebViewModal] OAuth callback received, processing...');
         setIsAuthenticating(false);
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
         onSuccess(event.data.url);
         if (popupRef.current) {
           popupRef.current.close();
@@ -71,7 +77,9 @@ export default function OAuthWebViewModal({
     };
 
     window.addEventListener('message', handleMessage);
+    console.log('[OAuthWebViewModal] Message listener added');
     return () => {
+      console.log('[OAuthWebViewModal] Message listener removed');
       window.removeEventListener('message', handleMessage);
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
