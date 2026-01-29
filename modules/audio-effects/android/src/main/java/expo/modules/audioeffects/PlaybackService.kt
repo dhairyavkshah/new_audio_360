@@ -612,6 +612,19 @@ class PlaybackService : MediaSessionService() {
         player?.shuffleModeEnabled = enabled
     }
     
+    fun setEqBands(bands: List<Double>) {
+        dspProcessor?.setAllEqBandGains(bands)
+        android.util.Log.d("PlaybackService", "EQ bands set: ${bands.take(10).joinToString()}")
+    }
+    
+    fun setBassBoost(gainUnits: Double) {
+        dspProcessor?.setBassBoost(gainUnits.toFloat())
+    }
+    
+    fun setTrebleBoost(gainUnits: Double) {
+        dspProcessor?.setTrebleBoost(gainUnits.toFloat())
+    }
+    
     fun getStatus(): Map<String, Any> {
         val p = player
         val duration = p?.duration ?: 0L

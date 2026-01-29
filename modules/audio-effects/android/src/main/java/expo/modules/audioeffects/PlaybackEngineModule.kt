@@ -486,6 +486,30 @@ class PlaybackEngineModule : Module() {
             }
         }
         
+        Function("setEqBands") { bands: List<Double> ->
+            return@Function runOnMainThreadBlocking {
+                val service = PlaybackService.getInstance()
+                service?.setEqBands(bands)
+                mapOf("success" to true)
+            }
+        }
+        
+        Function("setBassBoost") { gainUnits: Double ->
+            return@Function runOnMainThreadBlocking {
+                val service = PlaybackService.getInstance()
+                service?.setBassBoost(gainUnits)
+                mapOf("success" to true)
+            }
+        }
+        
+        Function("setTrebleBoost") { gainUnits: Double ->
+            return@Function runOnMainThreadBlocking {
+                val service = PlaybackService.getInstance()
+                service?.setTrebleBoost(gainUnits)
+                mapOf("success" to true)
+            }
+        }
+        
         // getStatus uses cached values for thread-safe non-blocking access
         // This is called frequently (every 250ms for progress) so must be fast
         Function("getStatus") {

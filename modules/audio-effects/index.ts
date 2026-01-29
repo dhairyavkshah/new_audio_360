@@ -54,6 +54,9 @@ interface PlaybackEngineModuleInterface {
   setPlaybackSpeed(speed: number): { success: boolean; speed: number };
   setRepeatMode(mode: string): { success: boolean; mode: string };
   setShuffleMode(enabled: boolean): { success: boolean; shuffle: boolean };
+  setEqBands(bands: number[]): { success: boolean };
+  setBassBoost(gainUnits: number): { success: boolean };
+  setTrebleBoost(gainUnits: number): { success: boolean };
   getStatus(): PlaybackStatus;
   getAudioSessionId(): number;
   getCurrentPosition(): number;
@@ -548,6 +551,42 @@ export const PlaybackEngineModule = {
     } catch (error) {
       console.error('PlaybackEngineModule.setShuffleMode error:', error);
       return { success: false, shuffle: false };
+    }
+  },
+
+  setEqBands: (bands: number[]): { success: boolean } => {
+    if (!PlaybackEngineModuleNative) {
+      return { success: false };
+    }
+    try {
+      return PlaybackEngineModuleNative.setEqBands(bands);
+    } catch (error) {
+      console.error('PlaybackEngineModule.setEqBands error:', error);
+      return { success: false };
+    }
+  },
+
+  setBassBoost: (gainUnits: number): { success: boolean } => {
+    if (!PlaybackEngineModuleNative) {
+      return { success: false };
+    }
+    try {
+      return PlaybackEngineModuleNative.setBassBoost(gainUnits);
+    } catch (error) {
+      console.error('PlaybackEngineModule.setBassBoost error:', error);
+      return { success: false };
+    }
+  },
+
+  setTrebleBoost: (gainUnits: number): { success: boolean } => {
+    if (!PlaybackEngineModuleNative) {
+      return { success: false };
+    }
+    try {
+      return PlaybackEngineModuleNative.setTrebleBoost(gainUnits);
+    } catch (error) {
+      console.error('PlaybackEngineModule.setTrebleBoost error:', error);
+      return { success: false };
     }
   },
 
