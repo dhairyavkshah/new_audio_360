@@ -73,10 +73,11 @@ AI Audio Upscaling (Neural) → 10-Band EQ → Bass Shelf → Bass Enhancement �
 - **Web DSP**: `WebAudioEffectsEngine` leveraging Web Audio API + TensorFlow.js neural processing.
 
 **Unified DSP for Streaming (v29.0)**:
-- **Android**: All playback (local files AND streaming) routes through `PlaybackEngineModule` which has `SoftwareDSPAudioProcessor` integrated
-- **Streaming DSP**: SoundCloud, Internet Archive, and other HTTP streams are processed through the same DSP chain as local files
-- **Architecture**: `PlayerContext.tsx` detects platform and uses `PlaybackEngineModule.loadTrack()` for all Android audio playback
+- **Android**: All playback (local files, streaming, AND radio) routes through `PlaybackEngineModule` which has `SoftwareDSPAudioProcessor` integrated
+- **Streaming DSP**: SoundCloud, Internet Archive, online radio, and other HTTP streams are processed through the same DSP chain as local files
+- **Architecture**: `PlayerContext.tsx` and `OnlineRadioContext.tsx` detect platform and use `PlaybackEngineModule.loadTrack()` for all Android audio playback
 - **SoundCloud OAuth**: Stream URLs include `oauth_token` query parameter for ExoPlayer to handle authentication
+- **Online Radio DSP**: Radio streams also route through PlaybackEngineModule for full DSP effects on Android
 - **Web Streaming**: Uses Web Audio API with DSP for CORS-enabled streams (cors.archive.org), Widget API for SoundCloud (no DSP)
 
 ### Navigation Structure

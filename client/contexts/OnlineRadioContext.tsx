@@ -18,6 +18,8 @@ import {
 import { IntelligentRadioDiscovery, CachedRadioStation } from '@/services/IntelligentRadioDiscovery';
 import { TrackPlayerService, TrackMetadata, State, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
+import { Platform } from 'react-native';
+import { PlaybackEngineModule } from '../../modules/audio-effects';
 
 const STORAGE_KEY_COUNTRY = '@new_audio_360_online_radio_country';
 const STORAGE_KEY_STATIONS_CACHE = '@new_audio_360_online_radio_stations';
@@ -92,6 +94,9 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   const isSwitchingStationsRef = useRef<boolean>(false); // Flag to distinguish switch vs true stop
   const isStoppingRef = useRef<boolean>(false); // Track if a stop is in progress to prevent duplicate notifications
   const [isRefreshingStations, setIsRefreshingStations] = useState(false);
+  const useNativePlaybackRef = useRef(Platform.OS === 'android' && PlaybackEngineModule.isAvailable());
+  const nativeAudioSessionIdRef = useRef<number>(0);
+  const radioProgressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     loadCachedData();
@@ -591,7 +596,67 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
         throw new Error('No stream URL available for this station');
       }
 
-      if (TrackPlayerService.isAvailable()) {
+      // On Android, use PlaybackEngineModule with DSP processing for radio streaming
+      if (Platform.OS === 'android' && useNativePlaybackRef.current) {
+        try {
+          console.log('[OnlineRadioContext] Using PlaybackEngineModule with DSP for radio');
+          
+          // Clean up any existing progress interval
+          if (radioProgressIntervalRef.current) {
+            clearInterval(radioProgressIntervalRef.current);
+            radioProgressIntervalRef.current = null;
+          }
+          
+          // Initialize PlaybackEngineModule if not already initialized
+          const initResult = await PlaybackEngineModule.initialize();
+          if (!initResult.success && !initResult.alreadyInitialized) {
+            console.error('[OnlineRadioContext] Failed to initialize PlaybackEngineModule:', initResult.error);
+            throw new Error('Failed to initialize audio player');
+          }
+          if (initResult.audioSessionId) {
+            nativeAudioSessionIdRef.current = initResult.audioSessionId;
+          }
+          
+          // Check staleness
+          if (isRequestStale()) {
+            console.log('[OnlineRadioContext] Play request stale, aborting PlaybackEngineModule setup');
+            isSwitchingStationsRef.current = false;
+            return;
+          }
+          
+          // Load and play the stream
+          const loadResult = await PlaybackEngineModule.loadTrack(streamUrl);
+          if (!loadResult.success) {
+            throw new Error(loadResult.error || 'Failed to load radio stream');
+          }
+          
+          const playResult = await PlaybackEngineModule.play();
+          if (!playResult.success) {
+            throw new Error(playResult.error || 'Failed to play radio stream');
+          }
+          
+          // Final staleness check before updating state
+          if (isRequestStale()) {
+            console.log('[OnlineRadioContext] Play request stale after play, cleaning up');
+            await PlaybackEngineModule.stop();
+            isSwitchingStationsRef.current = false;
+            return;
+          }
+          
+          // Clear switching flag - playback started successfully
+          isSwitchingStationsRef.current = false;
+          setCurrentStation(station);
+          setIsPlaying(true);
+          setIsBuffering(false);
+          AudioCoordinator.notifyPlaybackStarted('radio');
+
+          OnlineRadioService.reportStationClick(station.stationuuid).catch(() => {});
+          return;
+        } catch (nativeErr) {
+          console.warn('[OnlineRadioContext] PlaybackEngineModule failed, falling back to expo-av:', nativeErr);
+          isSwitchingStationsRef.current = false;
+        }
+      } else if (TrackPlayerService.isAvailable()) {
         try {
           await TrackPlayerService.stop();
           
@@ -717,8 +782,23 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     // Set stopping flag to prevent duplicate notifications from callbacks
     isStoppingRef.current = true;
     
+    // Clean up progress interval
+    if (radioProgressIntervalRef.current) {
+      clearInterval(radioProgressIntervalRef.current);
+      radioProgressIntervalRef.current = null;
+    }
+    
     try {
-      if (TrackPlayerService.isAvailable()) {
+      // On Android, use PlaybackEngineModule
+      if (Platform.OS === 'android' && useNativePlaybackRef.current && nativeAudioSessionIdRef.current > 0) {
+        try {
+          await PlaybackEngineModule.stop();
+        } catch (nativeErr) {
+          if (!String(nativeErr).includes('not initialized')) {
+            console.warn('[OnlineRadioContext] PlaybackEngineModule.stop() failed:', nativeErr);
+          }
+        }
+      } else if (TrackPlayerService.isAvailable()) {
         try {
           await TrackPlayerService.stop();
         } catch (nativeErr) {
@@ -752,7 +832,14 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     const clampedVolume = Math.max(0, Math.min(1, newVolume));
     setVolumeState(clampedVolume);
 
-    if (TrackPlayerService.isAvailable()) {
+    // On Android, use PlaybackEngineModule
+    if (Platform.OS === 'android' && useNativePlaybackRef.current && nativeAudioSessionIdRef.current > 0) {
+      try {
+        PlaybackEngineModule.setVolume(clampedVolume);
+      } catch (err) {
+        console.warn('[OnlineRadioContext] PlaybackEngineModule.setVolume error:', err);
+      }
+    } else if (TrackPlayerService.isAvailable()) {
       try {
         await TrackPlayerService.setVolume(clampedVolume);
       } catch (err) {
