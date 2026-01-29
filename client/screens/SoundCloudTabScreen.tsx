@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, TextInput, Image } from "react-native";
+import React, { useState, useCallback, useEffect, useRef } from "react";
+import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, TextInput, Image, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import { FluentText } from "@/components/fluent";
@@ -39,9 +39,16 @@ export default function SoundCloudTabScreen() {
   const [authUrl, setAuthUrl] = useState('');
   const [authRedirectUri, setAuthRedirectUri] = useState('');
   const [expectedState, setExpectedState] = useState('');
+  
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     checkAuthStatus();
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -73,14 +80,76 @@ export default function SoundCloudTabScreen() {
     setIsLoggingIn(true);
     try {
       const { url, redirectUri, state } = await SoundCloudService.getAuthorizationUrl();
-      setAuthUrl(url);
-      setAuthRedirectUri(redirectUri);
-      setExpectedState(state);
-      setShowLoginModal(true);
+      
+      if (Platform.OS === 'web') {
+        try {
+          localStorage.removeItem('soundcloud_oauth_result');
+        } catch {}
+        
+        const width = 500;
+        const height = 700;
+        const left = (window.screen.width - width) / 2;
+        const top = (window.screen.height - height) / 2;
+        
+        const popup = window.open(
+          url, 
+          'soundcloud_auth', 
+          `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
+        );
+        
+        pollIntervalRef.current = setInterval(async () => {
+          try {
+            const result = localStorage.getItem('soundcloud_oauth_result');
+            if (result) {
+              const data = JSON.parse(result);
+              if (data.type === 'soundcloud_oauth_callback' && data.url) {
+                console.log('[SoundCloudTabScreen] OAuth callback received via localStorage');
+                localStorage.removeItem('soundcloud_oauth_result');
+                if (pollIntervalRef.current) {
+                  clearInterval(pollIntervalRef.current);
+                  pollIntervalRef.current = null;
+                }
+                if (popup && !popup.closed) popup.close();
+                await handleOAuthSuccess(data.url);
+                return;
+              }
+            }
+          } catch {}
+          
+          try {
+            if (popup?.closed) {
+              const result = localStorage.getItem('soundcloud_oauth_result');
+              if (result) {
+                const data = JSON.parse(result);
+                if (data.type === 'soundcloud_oauth_callback' && data.url) {
+                  console.log('[SoundCloudTabScreen] OAuth callback found after popup closed');
+                  localStorage.removeItem('soundcloud_oauth_result');
+                  if (pollIntervalRef.current) {
+                    clearInterval(pollIntervalRef.current);
+                    pollIntervalRef.current = null;
+                  }
+                  await handleOAuthSuccess(data.url);
+                  return;
+                }
+              }
+              setIsLoggingIn(false);
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+              }
+            }
+          } catch {}
+        }, 500);
+      } else {
+        setAuthUrl(url);
+        setAuthRedirectUri(redirectUri);
+        setExpectedState(state);
+        setShowLoginModal(true);
+        setIsLoggingIn(false);
+      }
     } catch (error) {
       console.error('[SoundCloudTabScreen] Login prep error:', error);
       showError("Failed to prepare login");
-    } finally {
       setIsLoggingIn(false);
     }
   };
