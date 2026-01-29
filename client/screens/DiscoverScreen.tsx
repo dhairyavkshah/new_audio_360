@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentTypography } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentTypography, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import ArchiveTabScreen from "./ArchiveTabScreen";
 import SoundCloudTabScreen from "./SoundCloudTabScreen";
 
@@ -47,20 +47,20 @@ export default function DiscoverScreen() {
                 key={tab.key}
                 style={[
                   styles.tab,
-                  isActive && { backgroundColor: theme.primary },
+                  isActive && { backgroundColor: colors.colorBrandBackground },
                 ]}
                 onPress={() => setActiveTab(tab.key)}
               >
                 <MaterialCommunityIcons
                   name={tab.icon}
-                  size={18}
-                  color={isActive ? '#FFFFFF' : colors.colorNeutralForeground2}
+                  size={FluentIconSize.small}
+                  color={isActive ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2}
                 />
                 <FluentText
                   variant="body2"
                   style={[
                     styles.tabLabel,
-                    { color: isActive ? '#FFFFFF' : colors.colorNeutralForeground2 },
+                    { color: isActive ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2 },
                     isActive && { fontWeight: '600' },
                   ]}
                 >
@@ -101,9 +101,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: FluentTouchTarget.minimum,
     paddingVertical: FluentSpacing.s,
     paddingHorizontal: FluentSpacing.m,
-    borderRadius: FluentRadius.small,
+    borderRadius: FluentControlRadius.button,
     gap: FluentSpacing.xs,
   },
   tabLabel: {

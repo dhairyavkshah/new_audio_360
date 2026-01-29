@@ -6,11 +6,12 @@ const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useNavigationState } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeContext, useSkin, useThemeTokens } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
+import { useNavigationContext } from "@/contexts/NavigationContext";
 import { getCardEffectStyle, getGlowStyle } from "@/lib/themeUtils";
 import {
   FluentSpacing,
@@ -35,7 +36,17 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   const tokens = useThemeTokens();
   const { playTapSound } = useUiSound();
   const { currentSong, isPlaying, togglePlayPause, progress } = usePlayerContext();
+  const { setNowPlayingSource } = useNavigationContext();
   const insets = useSafeAreaInsets();
+  
+  const currentTabName = useNavigationState((state) => {
+    const mainRoute = state?.routes?.find((r: any) => r.name === 'Main');
+    if (mainRoute?.state?.routes) {
+      const tabIndex = mainRoute.state.index ?? 0;
+      return mainRoute.state.routes[tabIndex]?.name;
+    }
+    return 'ListenTab';
+  });
   
   const cardEffectStyle = useMemo(() => getCardEffectStyle(tokens, 2), [tokens]);
   const glowStyle = useMemo(() => getGlowStyle(tokens), [tokens]);
@@ -52,6 +63,7 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     if (currentSong) {
+      setNowPlayingSource({ tab: currentTabName || 'ListenTab' });
       navigation.navigate("Main", {
         screen: "ListenTab",
         params: {
@@ -60,7 +72,7 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
         },
       });
     }
-  }, [playTapSound, navigation, currentSong]);
+  }, [playTapSound, navigation, currentSong, setNowPlayingSource, currentTabName]);
 
   const handlePlayPause = useCallback((event: any) => {
     event.stopPropagation();

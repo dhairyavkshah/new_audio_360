@@ -5,8 +5,9 @@ import { useNavigation, CommonActions } from "@react-navigation/native";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
+import { useNavigationContext } from "@/contexts/NavigationContext";
 import { useToast } from "@/contexts/ToastContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import { getShadowStyle } from "@/constants/fluent2/shadows";
 import SoundCloudService, { SoundCloudTrack, SoundCloudPlaylist } from "@/services/SoundCloudService";
 import OAuthWebViewModal from "@/components/OAuthWebViewModal";
@@ -18,6 +19,7 @@ export default function SoundCloudTabScreen() {
   const navigation = useNavigation();
   const { theme, isDark } = useThemeContext();
   const { playSong } = usePlayerContext();
+  const { setNowPlayingSource } = useNavigationContext();
   const { showSuccess, showError, showInfo } = useToast();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
 
@@ -347,6 +349,7 @@ export default function SoundCloudTabScreen() {
       source: 'soundcloud' as const,
     };
     
+    setNowPlayingSource({ tab: 'DiscoverTab' });
     playSong(playableSong);
     navigation.dispatch(
       CommonActions.navigate({
@@ -357,7 +360,7 @@ export default function SoundCloudTabScreen() {
         },
       })
     );
-  }, [playSong, navigation]);
+  }, [playSong, navigation, setNowPlayingSource]);
 
   const addToLibrary = async (track: SoundCloudTrack) => {
     setAddingIds(prev => new Set(prev).add(track.id));
@@ -391,19 +394,19 @@ export default function SoundCloudTabScreen() {
           key={tab}
           style={[
             styles.subTab,
-            activeSubTab === tab && { backgroundColor: theme.primary },
+            activeSubTab === tab && { backgroundColor: colors.colorBrandBackground },
           ]}
           onPress={() => setActiveSubTab(tab)}
         >
           <MaterialCommunityIcons
             name={tab === 'search' ? 'magnify' : tab === 'likes' ? 'heart' : 'playlist-music'}
-            size={16}
-            color={activeSubTab === tab ? '#FFFFFF' : colors.colorNeutralForeground2}
+            size={FluentIconSize.small}
+            color={activeSubTab === tab ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2}
           />
           <FluentText
             variant="caption1"
             style={{
-              color: activeSubTab === tab ? '#FFFFFF' : colors.colorNeutralForeground2,
+              color: activeSubTab === tab ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2,
               fontWeight: activeSubTab === tab ? '600' : '400',
               marginLeft: 4,
             }}
@@ -433,8 +436,8 @@ export default function SoundCloudTabScreen() {
             style={styles.artworkImage}
           />
         ) : (
-          <View style={[styles.playIcon, { backgroundColor: theme.primary }]}>
-            <MaterialCommunityIcons name="soundcloud" size={20} color="#FFFFFF" />
+          <View style={[styles.playIcon, { backgroundColor: colors.colorBrandBackground }]}>
+            <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
           </View>
         )}
         
@@ -446,9 +449,9 @@ export default function SoundCloudTabScreen() {
             {item.artist}
           </FluentText>
           <View style={styles.trackMeta}>
-            <View style={[styles.badge, { backgroundColor: theme.primary + '20' }]}>
-              <MaterialCommunityIcons name="soundcloud" size={10} color={theme.primary} />
-              <FluentText variant="caption2" style={{ color: theme.primary, marginLeft: 2 }}>
+            <View style={[styles.badge, { backgroundColor: colors.colorSubtleBackgroundHover }]}>
+              <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.tiny} color={colors.colorBrandForeground1} />
+              <FluentText variant="caption2" style={{ color: colors.colorBrandForeground1, marginLeft: 2 }}>
                 Full
               </FluentText>
             </View>
@@ -459,7 +462,7 @@ export default function SoundCloudTabScreen() {
         </View>
 
         <Pressable
-          style={[styles.addButton, { backgroundColor: theme.primary + '15' }]}
+          style={[styles.addButton, { backgroundColor: colors.colorSubtleBackgroundHover }]}
           onPress={(e) => {
             e.stopPropagation();
             addToLibrary(item);
@@ -467,9 +470,9 @@ export default function SoundCloudTabScreen() {
           disabled={isAdding}
         >
           {isAdding ? (
-            <ActivityIndicator size="small" color={theme.primary} />
+            <ActivityIndicator size="small" color={colors.colorBrandForeground1} />
           ) : (
-            <MaterialCommunityIcons name="heart-plus-outline" size={22} color={theme.primary} />
+            <MaterialCommunityIcons name="heart-plus-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
           )}
         </Pressable>
       </Pressable>
@@ -491,8 +494,8 @@ export default function SoundCloudTabScreen() {
           style={styles.playlistArtwork}
         />
       ) : (
-        <View style={[styles.playlistArtwork, { backgroundColor: theme.primary }]}>
-          <MaterialCommunityIcons name="playlist-music" size={28} color="#FFFFFF" />
+        <View style={[styles.playlistArtwork, { backgroundColor: colors.colorBrandBackground }]}>
+          <MaterialCommunityIcons name="playlist-music" size={FluentIconSize.large} color={colors.colorNeutralForegroundOnBrand} />
         </View>
       )}
       
@@ -509,7 +512,7 @@ export default function SoundCloudTabScreen() {
           </FluentText>
           {item.likesCount > 0 && (
             <View style={styles.likesRow}>
-              <MaterialCommunityIcons name="heart" size={12} color={colors.colorNeutralForeground3} />
+              <MaterialCommunityIcons name="heart" size={FluentIconSize.tiny} color={colors.colorNeutralForeground3} />
               <FluentText variant="caption1" color="tertiary" style={{ marginLeft: 2 }}>
                 {SoundCloudService.formatPlaybackCount(item.likesCount)}
               </FluentText>
@@ -520,7 +523,7 @@ export default function SoundCloudTabScreen() {
 
       <MaterialCommunityIcons 
         name="chevron-right" 
-        size={24} 
+        size={FluentIconSize.medium} 
         color={colors.colorNeutralForeground3} 
       />
     </Pressable>
@@ -530,7 +533,7 @@ export default function SoundCloudTabScreen() {
     <>
       <View style={styles.searchRow}>
         <View style={[styles.searchInput, { backgroundColor: colors.colorNeutralBackground2 }]}>
-          <MaterialCommunityIcons name="magnify" size={20} color={colors.colorNeutralForeground3} />
+          <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color={colors.colorNeutralForeground3} />
           <TextInput
             style={[styles.input, { color: theme.text }]}
             placeholder="Search SoundCloud..."
@@ -542,10 +545,10 @@ export default function SoundCloudTabScreen() {
           />
         </View>
         <Pressable
-          style={[styles.searchButton, { backgroundColor: theme.primary }]}
+          style={[styles.searchButton, { backgroundColor: colors.colorBrandBackground }]}
           onPress={handleSearch}
         >
-          <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
+          <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
         </Pressable>
       </View>
 
@@ -558,7 +561,7 @@ export default function SoundCloudTabScreen() {
         </View>
       ) : tracks.length === 0 ? (
         <View style={styles.centerContainer}>
-          <MaterialCommunityIcons name="soundcloud" size={64} color={theme.primary} style={{ opacity: 0.5 }} />
+          <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} style={{ opacity: 0.5 }} />
           <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
             {searchQuery ? "No results found" : "Search for music"}
           </FluentText>
@@ -594,7 +597,7 @@ export default function SoundCloudTabScreen() {
     if (likedTracks.length === 0) {
       return (
         <View style={styles.centerContainer}>
-          <MaterialCommunityIcons name="heart-outline" size={64} color={theme.primary} style={{ opacity: 0.5 }} />
+          <MaterialCommunityIcons name="heart-outline" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} style={{ opacity: 0.5 }} />
           <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
             No liked tracks yet
           </FluentText>
@@ -632,7 +635,7 @@ export default function SoundCloudTabScreen() {
     if (playlists.length === 0) {
       return (
         <View style={styles.centerContainer}>
-          <MaterialCommunityIcons name="playlist-music-outline" size={64} color={theme.primary} style={{ opacity: 0.5 }} />
+          <MaterialCommunityIcons name="playlist-music-outline" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} style={{ opacity: 0.5 }} />
           <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
             No playlists yet
           </FluentText>
@@ -671,8 +674,8 @@ export default function SoundCloudTabScreen() {
           { backgroundColor: colors.colorNeutralBackground2 },
           getShadowStyle('shadow8', isDark),
         ]}>
-          <View style={[styles.iconContainer, { backgroundColor: theme.primary }]}>
-            <MaterialCommunityIcons name="soundcloud" size={48} color="#FFFFFF" />
+          <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground }]}>
+            <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.xxlarge} color={colors.colorNeutralForegroundOnBrand} />
           </View>
           
           <FluentText variant="title2" style={styles.loginTitle}>
@@ -685,15 +688,15 @@ export default function SoundCloudTabScreen() {
 
           <View style={styles.featureList}>
             <View style={styles.featureItem}>
-              <MaterialCommunityIcons name="music-note" size={20} color={theme.primary} />
+              <MaterialCommunityIcons name="music-note" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
               <FluentText variant="body2" color="secondary">Full track playback</FluentText>
             </View>
             <View style={styles.featureItem}>
-              <MaterialCommunityIcons name="equalizer" size={20} color={theme.primary} />
+              <MaterialCommunityIcons name="equalizer" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
               <FluentText variant="body2" color="secondary">DSP audio processing</FluentText>
             </View>
             <View style={styles.featureItem}>
-              <MaterialCommunityIcons name="brain" size={20} color={theme.primary} />
+              <MaterialCommunityIcons name="brain" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
               <FluentText variant="body2" color="secondary">Neural audio enhancement</FluentText>
             </View>
           </View>
@@ -701,16 +704,16 @@ export default function SoundCloudTabScreen() {
           {!showCodeEntry ? (
             <>
               <Pressable
-                style={[styles.loginButton, { backgroundColor: theme.primary }]}
+                style={[styles.loginButton, { backgroundColor: colors.colorBrandBackground }]}
                 onPress={handleLogin}
                 disabled={isLoggingIn}
               >
                 {isLoggingIn ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.colorNeutralForegroundOnBrand} />
                 ) : (
                   <>
-                    <MaterialCommunityIcons name="soundcloud" size={24} color="#FFFFFF" />
-                    <FluentText variant="body1" style={{ color: '#FFFFFF', fontWeight: '600', marginLeft: 8 }}>
+                    <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.medium} color={colors.colorNeutralForegroundOnBrand} />
+                    <FluentText variant="body1" style={{ color: colors.colorNeutralForegroundOnBrand, fontWeight: '600', marginLeft: 8 }}>
                       Sign in with SoundCloud
                     </FluentText>
                   </>
@@ -750,14 +753,14 @@ export default function SoundCloudTabScreen() {
               </View>
               
               <Pressable
-                style={[styles.loginButton, { backgroundColor: theme.primary }]}
+                style={[styles.loginButton, { backgroundColor: colors.colorBrandBackground }]}
                 onPress={handleManualCodeSubmit}
                 disabled={isLoggingIn || !manualCode.trim()}
               >
                 {isLoggingIn ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.colorNeutralForegroundOnBrand} />
                 ) : (
-                  <FluentText variant="body1" style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                  <FluentText variant="body1" style={{ color: colors.colorNeutralForegroundOnBrand, fontWeight: '600' }}>
                     Submit Code
                   </FluentText>
                 )}
@@ -796,15 +799,15 @@ export default function SoundCloudTabScreen() {
           {userProfile.avatar_url ? (
             <Image source={{ uri: userProfile.avatar_url }} style={styles.avatar} />
           ) : (
-            <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-              <MaterialCommunityIcons name="account" size={16} color="#FFFFFF" />
+            <View style={[styles.avatar, { backgroundColor: colors.colorBrandBackground }]}>
+              <MaterialCommunityIcons name="account" size={FluentIconSize.small} color={colors.colorNeutralForegroundOnBrand} />
             </View>
           )}
           <FluentText variant="body2" style={{ flex: 1 }}>
             {userProfile.username}
           </FluentText>
           <Pressable onPress={handleLogout} style={styles.logoutButton}>
-            <MaterialCommunityIcons name="logout" size={18} color={colors.colorNeutralForeground2} />
+            <MaterialCommunityIcons name="logout" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
           </Pressable>
         </View>
       )}
@@ -837,7 +840,7 @@ const styles = StyleSheet.create({
   loginCard: {
     width: '100%',
     maxWidth: 360,
-    borderRadius: FluentRadius.large,
+    borderRadius: FluentControlRadius.dialog,
     padding: FluentSpacing.xl,
     alignItems: 'center',
   },
@@ -874,8 +877,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
+    minHeight: FluentTouchTarget.minimum,
     paddingVertical: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
+    borderRadius: FluentControlRadius.button,
     marginBottom: FluentSpacing.m,
   },
   disclaimer: {
@@ -889,7 +893,7 @@ const styles = StyleSheet.create({
     paddingVertical: FluentSpacing.s,
     marginHorizontal: FluentSpacing.m,
     marginTop: FluentSpacing.s,
-    borderRadius: FluentRadius.medium,
+    borderRadius: FluentControlRadius.card,
     gap: FluentSpacing.s,
   },
   avatar: {
@@ -916,9 +920,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: FluentTouchTarget.minimum,
     paddingVertical: FluentSpacing.s,
     paddingHorizontal: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
+    borderRadius: FluentControlRadius.button,
   },
   searchRow: {
     flexDirection: 'row',
@@ -931,8 +936,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
-    height: 44,
+    borderRadius: FluentControlRadius.input,
+    height: FluentTouchTarget.minimum,
     gap: FluentSpacing.s,
   },
   input: {
@@ -940,9 +945,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   searchButton: {
-    width: 44,
-    height: 44,
-    borderRadius: FluentRadius.medium,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentControlRadius.button,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -964,21 +969,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
+    borderRadius: FluentControlRadius.card,
     gap: FluentSpacing.m,
   },
   playIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentTouchTarget.minimum / 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
   artworkImage: {
-    width: 44,
-    height: 44,
-    borderRadius: FluentRadius.small,
-    backgroundColor: '#333',
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentControlRadius.chip,
   },
   trackInfo: {
     flex: 1,
@@ -998,9 +1002,9 @@ const styles = StyleSheet.create({
     borderRadius: FluentRadius.small,
   },
   addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentTouchTarget.minimum / 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1008,16 +1012,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
+    borderRadius: FluentControlRadius.card,
     gap: FluentSpacing.m,
   },
   playlistArtwork: {
     width: 56,
     height: 56,
-    borderRadius: FluentRadius.small,
+    borderRadius: FluentControlRadius.card,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#333',
   },
   playlistInfo: {
     flex: 1,

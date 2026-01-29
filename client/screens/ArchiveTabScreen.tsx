@@ -6,8 +6,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
+import { useNavigationContext } from "@/contexts/NavigationContext";
 import { useToast } from "@/contexts/ToastContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import ArchiveOrgService, { ArchiveOrgTrack, AudioQuality } from "@/services/ArchiveOrgService";
 
 const CONSENT_STORAGE_KEY = '@discover_consent_accepted';
@@ -24,6 +25,7 @@ export default function ArchiveTabScreen() {
   const navigation = useNavigation();
   const { theme, isDark } = useThemeContext();
   const { playSong } = usePlayerContext();
+  const { setNowPlayingSource } = useNavigationContext();
   const { showSuccess, showError } = useToast();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
 
@@ -111,6 +113,7 @@ export default function ArchiveTabScreen() {
       artwork: undefined,
     };
     
+    setNowPlayingSource({ tab: 'DiscoverTab' });
     playSong(playableSong);
     navigation.dispatch(
       CommonActions.navigate({
@@ -121,7 +124,7 @@ export default function ArchiveTabScreen() {
         },
       })
     );
-  }, [playSong, navigation]);
+  }, [playSong, navigation, setNowPlayingSource]);
 
   const toggleFavorite = async (track: ArchiveOrgTrack) => {
     const isFavorited = favoritedIds.has(track.id);
@@ -160,8 +163,8 @@ export default function ArchiveTabScreen() {
         style={[styles.trackCard, { backgroundColor: colors.colorNeutralBackground2 }]}
         onPress={() => playTrack(item)}
       >
-        <View style={[styles.playIcon, { backgroundColor: theme.primary }]}>
-          <MaterialCommunityIcons name="play" size={20} color="#FFFFFF" />
+        <View style={[styles.playIcon, { backgroundColor: colors.colorBrandBackground }]}>
+          <MaterialCommunityIcons name="play" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
         </View>
         
         <View style={styles.trackInfo}>
@@ -172,9 +175,9 @@ export default function ArchiveTabScreen() {
             {item.artist}
           </FluentText>
           <View style={styles.trackMeta}>
-            <View style={[styles.badge, { backgroundColor: '#4CAF50' + '20' }]}>
-              <MaterialCommunityIcons name="creative-commons" size={10} color="#4CAF50" />
-              <FluentText variant="caption2" style={{ color: '#4CAF50', marginLeft: 2 }}>
+            <View style={[styles.badge, { backgroundColor: colors.colorPaletteGreenBackground1 }]}>
+              <MaterialCommunityIcons name="creative-commons" size={FluentIconSize.tiny} color={colors.colorPaletteGreenForeground1} />
+              <FluentText variant="caption2" style={{ color: colors.colorPaletteGreenForeground1, marginLeft: 2 }}>
                 Free
               </FluentText>
             </View>
@@ -185,7 +188,7 @@ export default function ArchiveTabScreen() {
         </View>
 
         <Pressable
-          style={[styles.addButton, { backgroundColor: isFavorited ? '#FF4081' + '20' : theme.primary + '15' }]}
+          style={[styles.addButton, { backgroundColor: isFavorited ? colors.colorPaletteRedBackground1 : colors.colorSubtleBackgroundHover }]}
           onPress={(e) => {
             e.stopPropagation();
             toggleFavorite(item);
@@ -193,12 +196,12 @@ export default function ArchiveTabScreen() {
           disabled={isAdding}
         >
           {isAdding ? (
-            <ActivityIndicator size="small" color={isFavorited ? '#FF4081' : theme.primary} />
+            <ActivityIndicator size="small" color={isFavorited ? colors.colorPaletteRedForeground1 : colors.colorBrandForeground1} />
           ) : (
             <MaterialCommunityIcons 
               name={isFavorited ? "heart" : "heart-plus-outline"} 
-              size={22} 
-              color={isFavorited ? '#FF4081' : theme.primary} 
+              size={FluentIconSize.regular} 
+              color={isFavorited ? colors.colorPaletteRedForeground1 : colors.colorBrandForeground1} 
             />
           )}
         </Pressable>
@@ -217,7 +220,7 @@ export default function ArchiveTabScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.colorNeutralBackground1 }]}>
             <View style={styles.modalHeader}>
-              <MaterialCommunityIcons name="archive" size={48} color={theme.primary} />
+              <MaterialCommunityIcons name="archive" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} />
               <FluentText variant="title2" style={styles.modalTitle}>
                 Internet Archive
               </FluentText>
@@ -258,10 +261,10 @@ export default function ArchiveTabScreen() {
               </Pressable>
               
               <Pressable
-                style={[styles.modalButton, styles.acceptButton, { backgroundColor: theme.primary }]}
+                style={[styles.modalButton, styles.acceptButton, { backgroundColor: colors.colorBrandBackground }]}
                 onPress={handleAcceptConsent}
               >
-                <FluentText variant="body2" style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                <FluentText variant="body2" style={{ color: colors.colorNeutralForegroundOnBrand, fontWeight: '600' }}>
                   I Understand
                 </FluentText>
               </Pressable>
@@ -273,7 +276,7 @@ export default function ArchiveTabScreen() {
       <View style={styles.container}>
         <View style={styles.searchRow}>
           <View style={[styles.searchInput, { backgroundColor: colors.colorNeutralBackground2 }]}>
-            <MaterialCommunityIcons name="magnify" size={20} color={colors.colorNeutralForeground3} />
+            <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color={colors.colorNeutralForeground3} />
             <TextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="Search free music..."
@@ -285,10 +288,10 @@ export default function ArchiveTabScreen() {
             />
           </View>
           <Pressable
-            style={[styles.searchButton, { backgroundColor: theme.primary }]}
+            style={[styles.searchButton, { backgroundColor: colors.colorBrandBackground }]}
             onPress={handleSearch}
           >
-            <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
+            <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
           </Pressable>
         </View>
 
@@ -300,7 +303,7 @@ export default function ArchiveTabScreen() {
                 styles.qualityChip,
                 { 
                   backgroundColor: selectedQuality === option.value 
-                    ? theme.primary 
+                    ? colors.colorBrandBackground 
                     : colors.colorNeutralBackground2 
                 },
               ]}
@@ -309,7 +312,7 @@ export default function ArchiveTabScreen() {
               <FluentText
                 variant="caption1"
                 style={{ 
-                  color: selectedQuality === option.value ? '#FFFFFF' : theme.text,
+                  color: selectedQuality === option.value ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground1,
                   fontWeight: selectedQuality === option.value ? '600' : '400',
                 }}
               >
@@ -321,14 +324,14 @@ export default function ArchiveTabScreen() {
 
         {loading ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={theme.primary} />
+            <ActivityIndicator size="large" color={colors.colorBrandForeground1} />
             <FluentText variant="body2" color="secondary" style={styles.statusText}>
               Searching Internet Archive...
             </FluentText>
           </View>
         ) : tracks.length === 0 ? (
           <View style={styles.centerContainer}>
-            <MaterialCommunityIcons name="archive-outline" size={64} color={theme.textTertiary} />
+            <MaterialCommunityIcons name="archive-outline" size={FluentIconSize.xxlarge} color={colors.colorNeutralForeground3} />
             <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
               {searchQuery ? "No results found" : "Search public domain music"}
             </FluentText>
@@ -366,8 +369,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
-    height: 44,
+    borderRadius: FluentControlRadius.input,
+    height: FluentTouchTarget.minimum,
     gap: FluentSpacing.s,
   },
   input: {
@@ -375,9 +378,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   searchButton: {
-    width: 44,
-    height: 44,
-    borderRadius: FluentRadius.medium,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentControlRadius.button,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -416,13 +419,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
+    borderRadius: FluentControlRadius.card,
     gap: FluentSpacing.m,
   },
   playIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentTouchTarget.minimum / 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -444,9 +447,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentTouchTarget.minimum / 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -460,7 +463,7 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     maxWidth: 400,
-    borderRadius: FluentRadius.large,
+    borderRadius: FluentControlRadius.dialog,
     padding: FluentSpacing.l,
     maxHeight: '80%',
   },
@@ -501,8 +504,9 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
+    minHeight: FluentTouchTarget.minimum,
     paddingVertical: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
+    borderRadius: FluentControlRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },
