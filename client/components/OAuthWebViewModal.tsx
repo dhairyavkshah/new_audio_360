@@ -56,19 +56,21 @@ export default function OAuthWebViewModal({
   const popupRef = useRef<Window | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+
   useEffect(() => {
     if (Platform.OS !== 'web' || !visible) return;
 
     const handleMessage = (event: MessageEvent) => {
-      console.log('[OAuthWebViewModal] Received message:', event.data);
       if (event.data?.type === 'oauth_callback' && event.data?.url) {
-        console.log('[OAuthWebViewModal] OAuth callback received, processing...');
+        console.log('[OAuthWebViewModal] OAuth callback received via postMessage');
         setIsAuthenticating(false);
         if (pollIntervalRef.current) {
           clearInterval(pollIntervalRef.current);
           pollIntervalRef.current = null;
         }
-        onSuccess(event.data.url);
+        onSuccessRef.current(event.data.url);
         if (popupRef.current) {
           popupRef.current.close();
           popupRef.current = null;
@@ -77,16 +79,10 @@ export default function OAuthWebViewModal({
     };
 
     window.addEventListener('message', handleMessage);
-    console.log('[OAuthWebViewModal] Message listener added');
     return () => {
-      console.log('[OAuthWebViewModal] Message listener removed');
       window.removeEventListener('message', handleMessage);
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
     };
-  }, [visible, onSuccess]);
+  }, [visible]);
 
   useEffect(() => {
     if (!visible) {
@@ -105,6 +101,10 @@ export default function OAuthWebViewModal({
   const handleWebAuth = useCallback(() => {
     setIsAuthenticating(true);
     
+    try {
+      localStorage.removeItem('soundcloud_oauth_result');
+    } catch {}
+    
     const width = 500;
     const height = 700;
     const left = (window.screen.width - width) / 2;
@@ -119,7 +119,38 @@ export default function OAuthWebViewModal({
     
     pollIntervalRef.current = setInterval(() => {
       try {
+        const result = localStorage.getItem('soundcloud_oauth_result');
+        if (result) {
+          const data = JSON.parse(result);
+          if (data.type === 'soundcloud_oauth_callback' && data.url) {
+            console.log('[OAuthWebViewModal] OAuth callback received via localStorage');
+            localStorage.removeItem('soundcloud_oauth_result');
+            setIsAuthenticating(false);
+            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+            onSuccessRef.current(data.url);
+            if (popup && !popup.closed) popup.close();
+            popupRef.current = null;
+            return;
+          }
+        }
+      } catch {}
+      
+      try {
         if (popup?.closed) {
+          const result = localStorage.getItem('soundcloud_oauth_result');
+          if (result) {
+            const data = JSON.parse(result);
+            if (data.type === 'soundcloud_oauth_callback' && data.url) {
+              console.log('[OAuthWebViewModal] OAuth callback found after popup closed');
+              localStorage.removeItem('soundcloud_oauth_result');
+              setIsAuthenticating(false);
+              if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+              onSuccessRef.current(data.url);
+              return;
+            }
+          }
           setIsAuthenticating(false);
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
           pollIntervalRef.current = null;
@@ -129,15 +160,14 @@ export default function OAuthWebViewModal({
         const currentUrl = popup?.location?.href;
         if (currentUrl && (currentUrl.includes('code=') || currentUrl.startsWith(redirectUri))) {
           setIsAuthenticating(false);
-          onSuccess(currentUrl);
+          onSuccessRef.current(currentUrl);
           popup?.close();
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
           pollIntervalRef.current = null;
         }
-      } catch {
-      }
-    }, 300);
-  }, [authUrl, redirectUri, onSuccess]);
+      } catch {}
+    }, 500);
+  }, [authUrl, redirectUri]);
 
   if (Platform.OS === 'web') {
     return (
