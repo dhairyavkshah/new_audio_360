@@ -32,6 +32,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup EAS Secrets
+        run: |
+          eas secret:create --scope project --name SOUNDCLOUD_CLIENT_ID --value "${{ secrets.SOUNDCLOUD_CLIENT_ID }}" --force
+          eas secret:create --scope project --name SOUNDCLOUD_CLIENT_SECRET --value "${{ secrets.SOUNDCLOUD_CLIENT_SECRET }}" --force
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
       - name: Build Signed Production APK
         run: eas build --platform android --profile production-apk --non-interactive --clear-cache
         env:

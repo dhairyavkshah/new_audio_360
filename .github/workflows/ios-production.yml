@@ -38,6 +38,11 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Setup EAS Secrets
+        run: |
+          eas secret:create --scope project --name SOUNDCLOUD_CLIENT_ID --value "${{ secrets.SOUNDCLOUD_CLIENT_ID }}" --force
+          eas secret:create --scope project --name SOUNDCLOUD_CLIENT_SECRET --value "${{ secrets.SOUNDCLOUD_CLIENT_SECRET }}" --force
+
       - name: Build iOS Production (App Store)
         run: eas build --platform ios --profile production --non-interactive
         env:
