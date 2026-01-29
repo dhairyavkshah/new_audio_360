@@ -1,24 +1,50 @@
-import React, { useCallback } from "react";
-import { Platform, Pressable } from "react-native";
+import React, { useCallback, useState } from "react";
+import { Platform, Pressable, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { HeaderTitle } from "@/components/HeaderTitle";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentLightColors, FluentDarkColors, FluentIconSize, FluentTouchTarget } from "@/constants/fluent2";
+import { 
+  FluentLightColors, 
+  FluentDarkColors, 
+  FluentIconSize, 
+  FluentTouchTarget,
+  FluentControlRadius,
+  FluentDuration,
+  FluentEasingValues,
+  FluentSpacing,
+} from "@/constants/fluent2";
 import ListenScreen from "@/screens/ListenScreen";
 import NowPlayingScreen from "@/screens/NowPlayingScreen";
 import SoundLabScreen from "@/screens/SoundLabScreen";
 import QueueScreen from "@/screens/QueueScreen";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function NowPlayingBackButton() {
   const navigation = useNavigation<any>();
   const { nowPlayingSource, setNowPlayingSource } = useNavigationContext();
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
+  
+  const scale = useSharedValue(1);
+  const [isPressed, setIsPressed] = useState(false);
+  const [hoverActive, setHoverActive] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const handleBack = useCallback(() => {
     if (Platform.OS !== "web") {
@@ -40,26 +66,77 @@ function NowPlayingBackButton() {
     }
   }, [navigation, nowPlayingSource, setNowPlayingSource]);
 
+  const handlePressIn = () => {
+    setIsPressed(true);
+    scale.value = withTiming(0.95, { 
+      duration: FluentDuration.fast,
+      easing: Easing.bezier(FluentEasingValues.easeMax.x1, FluentEasingValues.easeMax.y1, FluentEasingValues.easeMax.x2, FluentEasingValues.easeMax.y2),
+    });
+  };
+
+  const handlePressOut = () => {
+    setIsPressed(false);
+    scale.value = withTiming(1, { 
+      duration: FluentDuration.normal,
+      easing: Easing.bezier(FluentEasingValues.easeMax.x1, FluentEasingValues.easeMax.y1, FluentEasingValues.easeMax.x2, FluentEasingValues.easeMax.y2),
+    });
+  };
+
+  const getBackgroundColor = () => {
+    if (isPressed) return colors.colorNeutralBackground1Pressed;
+    if (hoverActive) return colors.colorNeutralBackground1Hover;
+    return colors.colorNeutralBackground1;
+  };
+
+  const focusStyle = isFocused ? Platform.select({
+    web: {
+      outline: `2px solid ${colors.colorBrandForeground1}`,
+      outlineOffset: 2,
+    },
+    default: {
+      borderWidth: 2,
+      borderColor: colors.colorBrandForeground1,
+    },
+  }) : {};
+
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={handleBack}
-      style={{
-        width: FluentTouchTarget.minimum,
-        height: FluentTouchTarget.minimum,
-        alignItems: "center",
-        justifyContent: "center",
-        marginLeft: 4,
-      }}
-      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onHoverIn={() => setHoverActive(true)}
+      onHoverOut={() => setHoverActive(false)}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      style={[
+        backButtonStyles.iconButton,
+        { backgroundColor: getBackgroundColor() },
+        focusStyle,
+        animatedStyle,
+      ]}
+      hitSlop={{ top: FluentSpacing.xs, bottom: FluentSpacing.xs, left: FluentSpacing.xs, right: FluentSpacing.xs }}
+      accessibilityRole="button"
+      accessibilityLabel="Go back"
     >
       <MaterialCommunityIcons
-        name="chevron-left"
+        name="arrow-left"
         size={FluentIconSize.medium}
         color={colors.colorNeutralForeground1}
       />
-    </Pressable>
+    </AnimatedPressable>
   );
 }
+
+const backButtonStyles = StyleSheet.create({
+  iconButton: {
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentControlRadius.button,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+});
 
 export type ListenStackParamList = {
   Listen: undefined;

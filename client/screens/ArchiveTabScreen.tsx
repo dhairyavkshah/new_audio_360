@@ -16,7 +16,7 @@ const CONSENT_STORAGE_KEY = '@discover_consent_accepted';
 export default function ArchiveTabScreen() {
   const navigation = useNavigation();
   const { theme, isDark } = useThemeContext();
-  const { playSong } = usePlayerContext();
+  const { playSong, setQueue } = usePlayerContext();
   const { setNowPlayingSource } = useNavigationContext();
   const { showSuccess, showError } = useToast();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
@@ -105,6 +105,7 @@ export default function ArchiveTabScreen() {
     };
     
     setNowPlayingSource({ tab: 'DiscoverTab' });
+    setQueue([playableSong]);
     playSong(playableSong);
     navigation.dispatch(
       CommonActions.navigate({
@@ -115,7 +116,7 @@ export default function ArchiveTabScreen() {
         },
       })
     );
-  }, [playSong, navigation, setNowPlayingSource]);
+  }, [playSong, setQueue, navigation, setNowPlayingSource]);
 
   const toggleFavorite = async (track: ArchiveOrgTrack) => {
     const isFavorited = favoritedIds.has(track.id);

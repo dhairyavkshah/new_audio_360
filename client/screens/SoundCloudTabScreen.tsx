@@ -18,7 +18,7 @@ const SC_ACCENT = '#FF5500';
 export default function SoundCloudTabScreen() {
   const navigation = useNavigation();
   const { theme, isDark } = useThemeContext();
-  const { playSong } = usePlayerContext();
+  const { playSong, setQueue } = usePlayerContext();
   const { setNowPlayingSource } = useNavigationContext();
   const { showSuccess, showError, showInfo } = useToast();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
@@ -350,6 +350,7 @@ export default function SoundCloudTabScreen() {
     };
     
     setNowPlayingSource({ tab: 'DiscoverTab' });
+    setQueue([playableSong]);
     playSong(playableSong);
     navigation.dispatch(
       CommonActions.navigate({
@@ -360,7 +361,7 @@ export default function SoundCloudTabScreen() {
         },
       })
     );
-  }, [playSong, navigation, setNowPlayingSource]);
+  }, [playSong, setQueue, navigation, setNowPlayingSource]);
 
   const addToLibrary = async (track: SoundCloudTrack) => {
     setAddingIds(prev => new Set(prev).add(track.id));
