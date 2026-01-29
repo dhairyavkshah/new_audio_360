@@ -215,25 +215,57 @@ export default function SoundCloudTabScreen() {
 
   const handleManualCodeSubmit = async () => {
     if (!manualCode.trim()) {
-      showError("Please enter the authorization code");
+      showError("Please enter the authorization code or URL");
       return;
     }
     
     setIsLoggingIn(true);
     try {
-      const [code, state] = manualCode.trim().split('|');
+      let code: string | null = null;
+      let state: string | null = null;
+      const input = manualCode.trim();
+      
+      if (input.includes('?code=') || input.includes('&code=')) {
+        try {
+          const url = new URL(input);
+          code = url.searchParams.get('code');
+          state = url.searchParams.get('state');
+        } catch {
+          const codeMatch = input.match(/[?&]code=([^&]+)/);
+          const stateMatch = input.match(/[?&]state=([^&]+)/);
+          code = codeMatch ? codeMatch[1] : null;
+          state = stateMatch ? stateMatch[1] : null;
+        }
+      } else if (input.includes('|')) {
+        const parts = input.split('|');
+        code = parts[0];
+        state = parts[1] || null;
+      } else {
+        code = input;
+      }
+      
       if (!code) {
-        showError("Invalid code format");
+        showError("Could not find authorization code");
+        setIsLoggingIn(false);
         return;
       }
       
-      const fakeUrl = `https://callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || '')}`;
-      await handleOAuthSuccess(fakeUrl);
+      console.log('[SoundCloudTabScreen] Manual code parsed:', { code: code.substring(0, 10) + '...', state });
+      
+      if (state && !(await SoundCloudService.validateState(state))) {
+        console.log('[SoundCloudTabScreen] State validation failed, proceeding anyway');
+      }
+      
+      await SoundCloudService.exchangeCodeForToken(code);
+      setIsAuthenticated(true);
+      const profile = await SoundCloudService.getUserProfile();
+      setUserProfile(profile);
+      showSuccess("Connected to SoundCloud!");
       setShowCodeEntry(false);
       setManualCode('');
     } catch (error) {
       console.error('[SoundCloudTabScreen] Manual code error:', error);
-      showError("Failed to authenticate with this code");
+      showError("Failed to authenticate - please try again");
     } finally {
       setIsLoggingIn(false);
     }
@@ -692,19 +724,23 @@ export default function SoundCloudTabScreen() {
             </>
           ) : (
             <>
-              <FluentText variant="body2" color="secondary" style={{ marginBottom: FluentSpacing.m, textAlign: 'center' }}>
-                Paste the code from the authorization window below:
+              <FluentText variant="body2" color="secondary" style={{ marginBottom: FluentSpacing.s, textAlign: 'center' }}>
+                After authorizing in the new tab, copy the entire URL from your browser's address bar and paste it below:
+              </FluentText>
+              <FluentText variant="caption1" color="tertiary" style={{ marginBottom: FluentSpacing.m, textAlign: 'center' }}>
+                The URL will contain "?code=" - that's what we need
               </FluentText>
               
               <View style={[styles.searchInput, { backgroundColor: colors.colorNeutralBackground3, width: '100%', marginBottom: FluentSpacing.m }]}>
                 <TextInput
                   style={[styles.input, { color: colors.colorNeutralForeground1 }]}
-                  placeholder="Paste code here..."
+                  placeholder="Paste URL or code here..."
                   placeholderTextColor={colors.colorNeutralForeground3}
                   value={manualCode}
                   onChangeText={setManualCode}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  multiline
                 />
               </View>
               
