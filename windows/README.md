@@ -187,6 +187,6 @@ See [MICROSOFT_STORE_SUBMISSION.md](../docs/MICROSOFT_STORE_SUBMISSION.md) for d
 
 ## Support
 
-- Developer: Dhairya Vipulkumar Shah
+- Developer: Dhairya Shah
 - Publisher: The Team 360
 - Support: support@theteam360.com

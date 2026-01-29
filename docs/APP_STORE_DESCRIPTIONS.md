@@ -11,7 +11,7 @@
 | Field | Value |
 |-------|-------|
 | App Name | New Audio 360 |
-| Developer | Dhairya Vipulkumar Shah (The Team 360) |
+| Developer | Dhairya Shah, The Team 360 |
 | Category | Music & Audio |
 | Content Rating | Everyone |
 

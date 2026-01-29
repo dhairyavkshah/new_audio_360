@@ -16,8 +16,8 @@ import { Platform } from 'react-native';
 import * as Crypto from 'expo-crypto';
 
 const API_BASE_URL = 'https://api.soundcloud.com';
-const OAUTH_AUTHORIZE_URL = 'https://soundcloud.com/connect';
-const OAUTH_TOKEN_URL = `${API_BASE_URL}/oauth2/token`;
+const OAUTH_AUTHORIZE_URL = 'https://secure.soundcloud.com/authorize';
+const OAUTH_TOKEN_URL = 'https://secure.soundcloud.com/oauth/token';
 const TRACKS_URL = `${API_BASE_URL}/tracks`;
 const ME_URL = `${API_BASE_URL}/me`;
 const FAVORITES_KEY = '@soundcloud_favorites';

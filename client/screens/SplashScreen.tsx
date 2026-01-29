@@ -95,7 +95,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       </Animated.View>
       <View style={[styles.footer, { bottom: insets.bottom + FluentSpacing.xxxl }]}>
         <FluentText variant="caption1" color="tertiary" align="center">
-          By: Dhairya Vipulkumar Shah (The Team 360)
+          By: Dhairya Shah, The Team 360
         </FluentText>
         <FluentText variant="caption1" color="tertiary" align="center" style={{ marginTop: FluentSpacing.xs }}>
           v27.0

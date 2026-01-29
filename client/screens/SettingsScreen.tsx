@@ -221,7 +221,7 @@ export default function SettingsScreen() {
             variant="caption1"
             style={{ color: colors.colorNeutralForeground3, textAlign: "center", marginTop: FluentSpacing.xs }}
           >
-            By: Dhairya Vipulkumar Shah (
+            By: Dhairya Shah,{" "}
             <FluentText
               variant="caption1"
               style={{ color: colors.colorBrandForeground1 }}
@@ -229,7 +229,6 @@ export default function SettingsScreen() {
             >
               The Team 360
             </FluentText>
-            )
           </FluentText>
         </View>
       </ScrollView>

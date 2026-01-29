@@ -14,7 +14,7 @@ This document provides step-by-step instructions for submitting New Audio 360 to
    - Pay one-time registration fee ($19 for individuals, $99 for companies)
 
 2. **Publisher Identity**
-   - Publisher Display Name: `Dhairya Vipulkumar Shah (The Team 360)`
+   - Publisher Display Name: `Dhairya Shah, The Team 360`
    - Publisher CN: `CN=The Team 360`
 
 3. **Built Package**
@@ -251,7 +251,7 @@ audiophile, dsp, sound lab, radio, fm radio, streaming radio
 
 ## Support Contacts
 
-- **Developer**: Dhairya Vipulkumar Shah
+- **Developer**: Dhairya Shah
 - **Publisher**: The Team 360
 - **Technical Support**: support@theteam360.com
 - **Business Inquiries**: dhairyashah@theteam360.com
