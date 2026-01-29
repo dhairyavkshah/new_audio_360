@@ -618,70 +618,69 @@ class SoundCloudServiceClass {
       const data = await response.json();
       console.log('[SoundCloudService] Streams for track', trackId, ':', Object.keys(data).join(', '));
       
-      if (data.http_mp3_128_url) {
-        let streamUrl = data.http_mp3_128_url;
-        console.log('[SoundCloudService] Got http_mp3_128_url for track', trackId);
+      const tryResolveApiUrl = async (apiUrl: string): Promise<string | null> => {
+        const urlWithAuth = apiUrl.includes('?') 
+          ? `${apiUrl}&oauth_token=${token}`
+          : `${apiUrl}?oauth_token=${token}`;
         
-        if (streamUrl.includes('sndcdn.com') || streamUrl.includes('cf-media')) {
+        try {
+          const redirectResponse = await fetch(urlWithAuth, {
+            method: 'GET',
+            redirect: 'follow',
+            mode: 'cors',
+            headers: {
+              'Authorization': `OAuth ${token}`,
+            },
+          });
+          
+          if (redirectResponse.ok && redirectResponse.url) {
+            const finalUrl = redirectResponse.url;
+            if (finalUrl.includes('sndcdn.com') || finalUrl.includes('cf-media') || finalUrl.includes('cloudfront') || finalUrl.includes('media-streaming')) {
+              console.log('[SoundCloudService] Resolved to CDN URL for track', trackId);
+              return finalUrl;
+            }
+          }
+          
+          const contentType = redirectResponse.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const responseData = await redirectResponse.json();
+            if (responseData && responseData.url) {
+              console.log('[SoundCloudService] Got URL from JSON response');
+              return responseData.url;
+            }
+          }
+        } catch (err: any) {
+          console.log('[SoundCloudService] API URL resolution failed:', err?.message);
+        }
+        return null;
+      };
+
+      const urlsToTry = [
+        data.http_mp3_128_url,
+        data.hls_mp3_128_url,
+        data.hls_aac_160_url,
+        data.hls_aac_96_url,
+      ].filter(Boolean);
+
+      for (const streamUrl of urlsToTry) {
+        console.log('[SoundCloudService] Trying URL type for track', trackId);
+        
+        if (streamUrl.includes('sndcdn.com') || streamUrl.includes('cf-media') || streamUrl.includes('media-streaming')) {
           console.log('[SoundCloudService] Direct CDN URL found');
           return streamUrl;
         }
         
         if (streamUrl.includes('api.soundcloud.com')) {
-          const urlWithAuth = streamUrl.includes('?') 
-            ? `${streamUrl}&oauth_token=${token}`
-            : `${streamUrl}?oauth_token=${token}`;
-          console.log('[SoundCloudService] API URL - resolving redirect...');
-          
-          try {
-            const redirectResponse = await fetch(urlWithAuth, {
-              method: 'GET',
-              redirect: 'follow',
-            });
-            
-            if (redirectResponse.ok && redirectResponse.url) {
-              const finalUrl = redirectResponse.url;
-              if (finalUrl.includes('sndcdn.com') || finalUrl.includes('cf-media') || finalUrl.includes('cloudfront')) {
-                console.log('[SoundCloudService] Resolved to CDN URL for track', trackId);
-                return finalUrl;
-              }
-            }
-            
-            const responseData = await redirectResponse.json().catch(() => null);
-            if (responseData && responseData.url) {
-              console.log('[SoundCloudService] Got URL from JSON response for track', trackId);
-              return responseData.url;
-            }
-          } catch (redirectError) {
-            console.log('[SoundCloudService] Redirect failed, trying HEAD request');
-            
-            try {
-              const headResponse = await fetch(urlWithAuth, {
-                method: 'HEAD',
-                redirect: 'manual',
-              });
-              
-              const location = headResponse.headers.get('location');
-              if (location) {
-                console.log('[SoundCloudService] Got location header for track', trackId);
-                return location;
-              }
-            } catch (headError) {
-              console.log('[SoundCloudService] HEAD request also failed');
-            }
+          const resolved = await tryResolveApiUrl(streamUrl);
+          if (resolved) {
+            return resolved;
           }
-          
-          console.log('[SoundCloudService] Could not resolve redirect, returning API URL');
-          return urlWithAuth;
         }
-        
-        return streamUrl;
       }
       
-      if (data.hls_aac_160_url || data.hls_aac_96_url) {
-        const hlsUrl = data.hls_aac_160_url || data.hls_aac_96_url;
-        console.log('[SoundCloudService] HLS URL found for track', trackId);
-        return hlsUrl;
+      if (data.preview_mp3_128_url) {
+        console.log('[SoundCloudService] Using preview URL for track', trackId, '(full stream blocked by CORS)');
+        return data.preview_mp3_128_url;
       }
       
       console.log('[SoundCloudService] Available keys:', JSON.stringify(data));
