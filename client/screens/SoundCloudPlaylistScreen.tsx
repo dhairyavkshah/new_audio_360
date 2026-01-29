@@ -56,6 +56,7 @@ export default function SoundCloudPlaylistScreen() {
       duration: track.duration * 1000,
       audioUrl: track.stream_url,
       artwork: track.artwork_url || undefined,
+      source: 'soundcloud' as const,
     };
     
     playSong(playableSong);
@@ -81,6 +82,7 @@ export default function SoundCloudPlaylistScreen() {
       duration: track.duration * 1000,
       audioUrl: track.stream_url,
       artwork: track.artwork_url || undefined,
+      source: 'soundcloud' as const,
     }));
 
     setQueue(playableSongs);

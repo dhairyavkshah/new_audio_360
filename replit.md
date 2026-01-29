@@ -136,6 +136,14 @@ The Discover tab features a tabbed interface for streaming music from multiple s
 **Client Services**: 
 - `client/services/ArchiveOrgService.ts` - Searches Internet Archive for MP3s
 - `client/services/SoundCloudService.ts` - OAuth 2.1 user auth + client credentials fallback
+- `client/services/SoundCloudWidgetPlayer.ts` - Web Widget API player for CORS-free playback
+
+**Web Playback (Widget API)**:
+- Uses official SoundCloud Widget API via hidden iframe to bypass CORS restrictions
+- Widget runs in SoundCloud's domain, eliminating cross-origin stream URL issues
+- PlayerContext detects SoundCloud tracks (`source: 'soundcloud'` or `id.startsWith('sc_')`)
+- Supports play/pause/seek/progress tracking through widget postMessage API
+- Web platform skips stream URL resolution - uses `widget:{trackId}` placeholder
 
 **SoundCloud Authentication**:
 - **User Auth**: OAuth 2.1 Authorization Code + PKCE for full track access

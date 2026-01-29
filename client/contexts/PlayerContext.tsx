@@ -10,6 +10,7 @@ import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
 import { setMusicPlaying } from '@/lib/playbackState';
+import { soundCloudWidgetPlayer } from '@/services/SoundCloudWidgetPlayer';
 
 const EQ_FREQUENCIES: Record<keyof EQBands, number> = {
   sub: 32,
@@ -107,6 +108,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const lastKnownPositionRef = useRef<number>(0);
   const wasPlayingBeforeBackgroundRef = useRef<boolean>(false);
   const handleNextInternalRef = useRef<() => void>(() => {});
+  const usingSoundCloudWidgetRef = useRef<boolean>(false);
+  const soundCloudTrackIdRef = useRef<number | null>(null);
   const handlePreviousInternalRef = useRef<() => void>(() => {});
   const lastSaveTimeRef = useRef<number>(0);
   const progressSaveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -717,6 +720,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playerRef.current = null;
     }
     if (Platform.OS === 'web') {
+      if (usingSoundCloudWidgetRef.current) {
+        soundCloudWidgetPlayer.pause();
+        soundCloudWidgetPlayer.clearCallbacks();
+      }
       if (audioElementRef.current) {
         audioElementRef.current.pause();
         audioElementRef.current.src = '';
@@ -923,6 +930,58 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         cleanupPlayer();
+        
+        const isSoundCloudTrack = ('source' in song && song.source === 'soundcloud') || song.id.startsWith('sc_');
+        
+        if (isSoundCloudTrack) {
+          console.log('[PlayerContext] Using SoundCloud Widget for track:', song.id);
+          usingSoundCloudWidgetRef.current = true;
+          const trackId = parseInt(song.id.replace('sc_', ''), 10);
+          soundCloudTrackIdRef.current = trackId;
+          
+          soundCloudWidgetPlayer.onPlay(() => {
+            setIsPlaying(true);
+            setIsLoading(false);
+          });
+          
+          soundCloudWidgetPlayer.onPause(() => {
+            setIsPlaying(false);
+          });
+          
+          soundCloudWidgetPlayer.onFinish(() => {
+            setIsPlaying(false);
+            handleTrackEnd();
+          });
+          
+          soundCloudWidgetPlayer.onProgress((data) => {
+            setCurrentTime(data.position / 1000);
+            if (data.duration > 0) {
+              setDuration(data.duration / 1000);
+            }
+          });
+          
+          soundCloudWidgetPlayer.onError((err) => {
+            console.error('[PlayerContext] SoundCloud Widget error:', err);
+            setError('Failed to play SoundCloud track');
+            setIsLoading(false);
+          });
+          
+          try {
+            await soundCloudWidgetPlayer.initialize();
+            await soundCloudWidgetPlayer.loadTrackById(trackId, true);
+            setIsPlaying(true);
+            setIsLoading(false);
+            AudioCoordinator.notifyPlaybackStarted('music');
+          } catch (err) {
+            console.error('[PlayerContext] Failed to load SoundCloud track:', err);
+            setError('Failed to load SoundCloud track');
+            setIsLoading(false);
+          }
+          return;
+        }
+        
+        usingSoundCloudWidgetRef.current = false;
+        soundCloudTrackIdRef.current = null;
         
         if (!audioContextRef.current) {
           audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -1377,6 +1436,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     });
 
     if (Platform.OS === 'web') {
+      if (usingSoundCloudWidgetRef.current) {
+        console.log('[PlayerContext] Using SoundCloud Widget for toggle');
+        try {
+          if (isPlaying) {
+            soundCloudWidgetPlayer.pause();
+            setIsPlaying(false);
+          } else {
+            await AudioCoordinator.requestPlayback('music');
+            soundCloudWidgetPlayer.play();
+            setIsPlaying(true);
+            AudioCoordinator.notifyPlaybackStarted('music');
+          }
+        } catch (err) {
+          console.error('[PlayerContext] SoundCloud Widget toggle error:', err);
+        }
+        return;
+      }
+      
       if (!audioElementRef.current) {
         console.log('[PlayerContext] No audio element on web, attempting to load current song');
         if (currentSong) {
@@ -1663,7 +1740,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     
     try {
       if (Platform.OS === 'web') {
-        if (audioElementRef.current) {
+        if (usingSoundCloudWidgetRef.current) {
+          console.log('[PlayerContext] SoundCloud Widget: Seeking to', targetTime * 1000, 'ms');
+          soundCloudWidgetPlayer.seekTo(targetTime * 1000);
+        } else if (audioElementRef.current) {
           console.log('[PlayerContext] Web: Setting currentTime to', targetTime);
           audioElementRef.current.currentTime = targetTime;
         } else {

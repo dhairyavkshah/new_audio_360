@@ -556,7 +556,15 @@ class SoundCloudServiceClass {
     const tracksWithUrls = await Promise.all(
       streamableTracks.map(async (track) => {
         try {
-          const resolvedUrl = await this.resolveStreamUrlWithToken(track.id, token);
+          let resolvedUrl: string;
+          
+          if (Platform.OS === 'web') {
+            resolvedUrl = `widget:${track.id}`;
+            console.log('[SoundCloudService] Web platform - using widget player for track', track.id);
+          } else {
+            resolvedUrl = await this.resolveStreamUrlWithToken(track.id, token);
+          }
+          
           return {
             id: `sc_${track.id}`,
             title: track.title,
@@ -825,7 +833,14 @@ class SoundCloudServiceClass {
           .map(async (item: any) => {
             const track = item.track || item;
             try {
-              const resolvedUrl = await this.resolveStreamUrlWithToken(track.id, token);
+              let resolvedUrl: string;
+              
+              if (Platform.OS === 'web') {
+                resolvedUrl = `widget:${track.id}`;
+              } else {
+                resolvedUrl = await this.resolveStreamUrlWithToken(track.id, token);
+              }
+              
               return {
                 id: `sc_${track.id}`,
                 title: track.title,
@@ -908,7 +923,14 @@ class SoundCloudServiceClass {
           .filter((track: any) => track.streamable === true)
           .map(async (track: any) => {
             try {
-              const resolvedUrl = await this.resolveStreamUrlWithToken(track.id, token);
+              let resolvedUrl: string;
+              
+              if (Platform.OS === 'web') {
+                resolvedUrl = `widget:${track.id}`;
+              } else {
+                resolvedUrl = await this.resolveStreamUrlWithToken(track.id, token);
+              }
+              
               return {
                 id: `sc_${track.id}`,
                 title: track.title,
