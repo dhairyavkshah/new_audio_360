@@ -27,10 +27,11 @@ export default function OAuthWebViewModal({
   accentColor = "#FF5500",
 }: OAuthWebViewModalProps) {
   const insets = useSafeAreaInsets();
-  const { theme, isDark } = useThemeContext();
+  const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const webViewRef = useRef<WebView>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isAuthenticating, setIsAuthenticating] = React.useState(false);
 
   const handleNavigationStateChange = useCallback((navState: { url: string }) => {
     const { url } = navState;
@@ -52,15 +53,15 @@ export default function OAuthWebViewModal({
     return true;
   }, [redirectUri, onSuccess]);
 
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const popupRef = useRef<Window | null>(null);
-  const pollIntervalRef = useRef<NodeJS.Timer | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (Platform.OS !== 'web' || !visible) return;
 
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'oauth_callback' && event.data?.url) {
+        setIsAuthenticating(false);
         onSuccess(event.data.url);
         if (popupRef.current) {
           popupRef.current.close();
@@ -74,30 +75,60 @@ export default function OAuthWebViewModal({
       window.removeEventListener('message', handleMessage);
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
       }
     };
   }, [visible, onSuccess]);
 
+  useEffect(() => {
+    if (!visible) {
+      setIsAuthenticating(false);
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      if (popupRef.current) {
+        popupRef.current.close();
+        popupRef.current = null;
+      }
+    }
+  }, [visible]);
+
   const handleWebAuth = useCallback(() => {
-    const popup = window.open(authUrl, 'soundcloud_auth', 'width=500,height=700,left=200,top=100');
+    setIsAuthenticating(true);
+    
+    const width = 500;
+    const height = 700;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    
+    const popup = window.open(
+      authUrl, 
+      'soundcloud_auth', 
+      `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
+    );
     popupRef.current = popup;
     
     pollIntervalRef.current = setInterval(() => {
       try {
         if (popup?.closed) {
+          setIsAuthenticating(false);
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
           return;
         }
         
         const currentUrl = popup?.location?.href;
         if (currentUrl && (currentUrl.includes('code=') || currentUrl.startsWith(redirectUri))) {
+          setIsAuthenticating(false);
           onSuccess(currentUrl);
           popup?.close();
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
         }
-      } catch (e) {
+      } catch {
       }
-    }, 500);
+    }, 300);
   }, [authUrl, redirectUri, onSuccess]);
 
   if (Platform.OS === 'web') {
@@ -111,7 +142,6 @@ export default function OAuthWebViewModal({
         <View style={styles.overlay}>
           <View style={[styles.webModalContainer, { 
             backgroundColor: colors.colorNeutralBackground1,
-            paddingTop: insets.top,
           }]}>
             <View style={[styles.header, { borderBottomColor: colors.colorNeutralStroke1 }]}>
               <Pressable onPress={onCancel} style={styles.closeButton}>
@@ -127,48 +157,59 @@ export default function OAuthWebViewModal({
               <View style={styles.closeButton} />
             </View>
             
-            <View style={styles.iframeContainer}>
-              {isLoading && (
-                <View style={styles.iframeLoading}>
+            <View style={styles.webAuthContent}>
+              <View style={[styles.iconContainer, { backgroundColor: accentColor + '15' }]}>
+                <MaterialCommunityIcons 
+                  name="soundcloud" 
+                  size={64} 
+                  color={accentColor} 
+                />
+              </View>
+              
+              <FluentText variant="title3" style={{ textAlign: 'center', marginTop: FluentSpacing.xl }}>
+                Connect with SoundCloud
+              </FluentText>
+              
+              <FluentText 
+                variant="body1" 
+                color="secondary" 
+                style={{ textAlign: 'center', marginTop: FluentSpacing.s, paddingHorizontal: FluentSpacing.l }}
+              >
+                Sign in with your SoundCloud account to access your likes, playlists, and stream full tracks.
+              </FluentText>
+              
+              {isAuthenticating ? (
+                <View style={styles.authenticatingContainer}>
                   <ActivityIndicator size="large" color={accentColor} />
                   <FluentText variant="body2" color="secondary" style={{ marginTop: FluentSpacing.m }}>
-                    Loading SoundCloud...
+                    Waiting for sign-in...
+                  </FluentText>
+                  <FluentText variant="caption1" color="tertiary" style={{ marginTop: FluentSpacing.xs }}>
+                    Complete sign-in in the popup window
                   </FluentText>
                 </View>
+              ) : (
+                <Pressable 
+                  onPress={handleWebAuth}
+                  style={({ pressed }) => [
+                    styles.signInButton,
+                    { backgroundColor: accentColor, opacity: pressed ? 0.9 : 1 }
+                  ]}
+                >
+                  <MaterialCommunityIcons name="login" size={20} color="white" />
+                  <FluentText variant="body1" style={{ color: 'white', fontWeight: '600', marginLeft: FluentSpacing.s }}>
+                    Sign in with SoundCloud
+                  </FluentText>
+                </Pressable>
               )}
-              <iframe
-                ref={iframeRef as any}
-                src={authUrl}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  display: isLoading ? 'none' : 'block',
-                }}
-                onLoad={() => {
-                  setIsLoading(false);
-                  try {
-                    const iframe = iframeRef.current;
-                    const iframeSrc = iframe?.contentWindow?.location?.href;
-                    if (iframeSrc && (iframeSrc.includes('code=') || iframeSrc.startsWith(redirectUri))) {
-                      onSuccess(iframeSrc);
-                    }
-                  } catch (e) {
-                  }
-                }}
-                sandbox="allow-forms allow-scripts allow-same-origin allow-popups"
-              />
-            </View>
-            
-            <View style={styles.webFallbackFooter}>
-              <FluentText variant="caption1" color="secondary" style={{ textAlign: 'center' }}>
-                If login doesn't appear above, 
+              
+              <FluentText 
+                variant="caption1" 
+                color="tertiary" 
+                style={{ textAlign: 'center', marginTop: FluentSpacing.xl, paddingHorizontal: FluentSpacing.l }}
+              >
+                A secure sign-in window will open. Your credentials are handled directly by SoundCloud.
               </FluentText>
-              <Pressable onPress={handleWebAuth}>
-                <FluentText variant="caption1" style={{ color: accentColor, textDecorationLine: 'underline' }}>
-                  click here to open in popup
-                </FluentText>
-              </Pressable>
             </View>
           </View>
         </View>
@@ -247,9 +288,8 @@ const styles = StyleSheet.create({
   },
   webModalContainer: {
     width: '90%',
-    maxWidth: 480,
-    height: '80%',
-    borderRadius: FluentRadius.large,
+    maxWidth: 400,
+    borderRadius: FluentRadius.xLarge,
     overflow: 'hidden',
   },
   header: {
@@ -286,28 +326,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'white',
   },
-  iframeContainer: {
-    flex: 1,
-    position: 'relative',
+  webAuthContent: {
+    padding: FluentSpacing.xl,
+    alignItems: 'center',
   },
-  iframeLoading: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+  iconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white',
-    zIndex: 1,
   },
-  webFallbackFooter: {
+  authenticatingContainer: {
+    marginTop: FluentSpacing.xxl,
+    alignItems: 'center',
+  },
+  signInButton: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: FluentSpacing.m,
-    gap: 4,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
+    paddingHorizontal: FluentSpacing.xl,
+    borderRadius: FluentRadius.large,
+    marginTop: FluentSpacing.xxl,
+    minWidth: 240,
   },
 });
