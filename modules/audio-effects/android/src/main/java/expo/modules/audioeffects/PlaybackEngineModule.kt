@@ -12,6 +12,9 @@ import com.google.common.util.concurrent.MoreExecutors
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.Promise
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 class PlaybackEngineModule : Module() {
     private var isInitialized = false
@@ -20,6 +23,39 @@ class PlaybackEngineModule : Module() {
     private var mediaController: MediaController? = null
     
     private val mainHandler = Handler(Looper.getMainLooper())
+    
+    /**
+     * Runs a block on the main thread synchronously and returns the result.
+     * Uses CountDownLatch to block the calling thread until the main thread completes.
+     */
+    private fun <T> runOnMainThreadBlocking(block: () -> T): T {
+        // If already on main thread, run directly
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            return block()
+        }
+        
+        val latch = CountDownLatch(1)
+        val result = AtomicReference<T>()
+        val error = AtomicReference<Exception?>()
+        
+        mainHandler.post {
+            try {
+                result.set(block())
+            } catch (e: Exception) {
+                error.set(e)
+            } finally {
+                latch.countDown()
+            }
+        }
+        
+        // Wait with timeout to avoid deadlocks
+        if (!latch.await(5, TimeUnit.SECONDS)) {
+            throw Exception("Timeout waiting for main thread")
+        }
+        
+        error.get()?.let { throw it }
+        return result.get()
+    }
     
     private fun ensureService(): PlaybackService? {
         val service = PlaybackService.getInstance()
@@ -417,67 +453,83 @@ class PlaybackEngineModule : Module() {
         }
         
         Function("setVolume") { volume: Double ->
-            val service = PlaybackService.getInstance()
             val clampedVolume = volume.coerceIn(0.0, 1.0).toFloat()
-            service?.setVolume(clampedVolume)
-            return@Function mapOf("success" to true, "volume" to clampedVolume)
+            return@Function runOnMainThreadBlocking {
+                val service = PlaybackService.getInstance()
+                service?.setVolume(clampedVolume)
+                mapOf("success" to true, "volume" to clampedVolume)
+            }
         }
         
         Function("setPlaybackSpeed") { speed: Double ->
-            val service = PlaybackService.getInstance()
             val clampedSpeed = speed.coerceIn(0.25, 3.0).toFloat()
-            service?.setPlaybackSpeed(clampedSpeed)
-            return@Function mapOf("success" to true, "speed" to clampedSpeed)
+            return@Function runOnMainThreadBlocking {
+                val service = PlaybackService.getInstance()
+                service?.setPlaybackSpeed(clampedSpeed)
+                mapOf("success" to true, "speed" to clampedSpeed)
+            }
         }
         
         Function("setRepeatMode") { mode: String ->
-            val service = PlaybackService.getInstance()
-            service?.setRepeatMode(mode)
-            return@Function mapOf("success" to true, "mode" to mode)
+            return@Function runOnMainThreadBlocking {
+                val service = PlaybackService.getInstance()
+                service?.setRepeatMode(mode)
+                mapOf("success" to true, "mode" to mode)
+            }
         }
         
         Function("setShuffleMode") { enabled: Boolean ->
-            val service = PlaybackService.getInstance()
-            service?.setShuffleMode(enabled)
-            return@Function mapOf("success" to true, "shuffle" to enabled)
+            return@Function runOnMainThreadBlocking {
+                val service = PlaybackService.getInstance()
+                service?.setShuffleMode(enabled)
+                mapOf("success" to true, "shuffle" to enabled)
+            }
         }
         
         Function("getStatus") {
-            val service = PlaybackService.getInstance()
-            if (service != null) {
-                return@Function service.getStatus()
+            return@Function runOnMainThreadBlocking {
+                val service = PlaybackService.getInstance()
+                if (service != null) {
+                    service.getStatus()
+                } else {
+                    mapOf(
+                        "isInitialized" to isInitialized,
+                        "isPlaying" to false,
+                        "currentPositionMs" to 0L,
+                        "durationMs" to 0L,
+                        "bufferedPositionMs" to 0L,
+                        "currentIndex" to 0,
+                        "queueLength" to 0,
+                        "playbackState" to "unknown",
+                        "repeatMode" to "off",
+                        "shuffleEnabled" to false,
+                        "audioSessionId" to 0
+                    )
+                }
             }
-            
-            return@Function mapOf(
-                "isInitialized" to isInitialized,
-                "isPlaying" to false,
-                "currentPositionMs" to 0L,
-                "durationMs" to 0L,
-                "bufferedPositionMs" to 0L,
-                "currentIndex" to 0,
-                "queueLength" to 0,
-                "playbackState" to "unknown",
-                "repeatMode" to "off",
-                "shuffleEnabled" to false,
-                "audioSessionId" to 0
-            )
         }
         
         Function("getAudioSessionId") {
-            val service = PlaybackService.getInstance()
-            return@Function service?.getAudioSessionId() ?: 0
+            return@Function runOnMainThreadBlocking {
+                val service = PlaybackService.getInstance()
+                service?.getAudioSessionId() ?: 0
+            }
         }
         
         Function("getCurrentPosition") {
-            val service = PlaybackService.getInstance()
-            val status = service?.getStatus()
-            return@Function (status?.get("currentPositionMs") as? Long) ?: 0L
+            return@Function runOnMainThreadBlocking {
+                val service = PlaybackService.getInstance()
+                val status = service?.getStatus()
+                (status?.get("currentPositionMs") as? Long) ?: 0L
+            }
         }
         
         Function("getDuration") {
-            val service = PlaybackService.getInstance()
-            val status = service?.getStatus()
-            return@Function (status?.get("durationMs") as? Long) ?: 0L
+            return@Function runOnMainThreadBlocking {
+                val service = PlaybackService.getInstance()
+                val status = service?.getStatus()
+                (status?.get("durationMs") as? Long) ?: 0L
+            }
         }
         
         AsyncFunction("release") { promise: Promise ->
