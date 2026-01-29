@@ -99,6 +99,21 @@ export default function SoundCloudTabScreen() {
           `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
         );
         
+        const messageHandler = async (event: MessageEvent) => {
+          if (event.data?.type === 'oauth_callback' && event.data?.code) {
+            console.log('[SoundCloudTabScreen] OAuth callback received via postMessage');
+            window.removeEventListener('message', messageHandler);
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+            if (popup && !popup.closed) popup.close();
+            const fakeUrl = `https://callback?code=${encodeURIComponent(event.data.code)}&state=${encodeURIComponent(event.data.state || '')}`;
+            await handleOAuthSuccess(fakeUrl);
+          }
+        };
+        window.addEventListener('message', messageHandler);
+        
         console.log('[SoundCloudTabScreen] Starting localStorage polling...');
         let pollCount = 0;
         
@@ -115,6 +130,7 @@ export default function SoundCloudTabScreen() {
               if (data.type === 'soundcloud_oauth_callback' && data.url) {
                 console.log('[SoundCloudTabScreen] OAuth callback received via localStorage');
                 localStorage.removeItem('soundcloud_oauth_result');
+                window.removeEventListener('message', messageHandler);
                 if (pollIntervalRef.current) {
                   clearInterval(pollIntervalRef.current);
                   pollIntervalRef.current = null;
@@ -130,6 +146,7 @@ export default function SoundCloudTabScreen() {
           
           try {
             if (popup?.closed) {
+              window.removeEventListener('message', messageHandler);
               const result = localStorage.getItem('soundcloud_oauth_result');
               if (result) {
                 const data = JSON.parse(result);
@@ -145,6 +162,7 @@ export default function SoundCloudTabScreen() {
                 }
               }
               setIsLoggingIn(false);
+              setShowCodeEntry(true);
               if (pollIntervalRef.current) {
                 clearInterval(pollIntervalRef.current);
                 pollIntervalRef.current = null;
