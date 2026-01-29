@@ -32,12 +32,13 @@ const getRedirectUri = (): string => {
       // On Replit, the proxy removes the port, so we need to strip it
       const url = new URL(window.location.origin);
       // Remove port for https URLs (Replit proxy handles this)
+      // Use explicit index.html to bypass Expo's SPA routing
       if (url.protocol === 'https:') {
-        return `${url.protocol}//${url.hostname}/auth/soundcloud`;
+        return `${url.protocol}//${url.hostname}/auth/soundcloud/index.html`;
       }
-      return `${window.location.origin}/auth/soundcloud`;
+      return `${window.location.origin}/auth/soundcloud/index.html`;
     }
-    return 'http://localhost:5000/auth/soundcloud';
+    return 'http://localhost:5000/auth/soundcloud/index.html';
   }
   return 'newaudio360://auth/soundcloud';
 };
