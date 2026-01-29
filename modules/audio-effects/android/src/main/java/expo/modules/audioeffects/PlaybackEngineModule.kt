@@ -416,68 +416,116 @@ class PlaybackEngineModule : Module() {
             }
         }
         
-        Function("setVolume") { volume: Double ->
-            val service = PlaybackService.getInstance()
-            val clampedVolume = volume.coerceIn(0.0, 1.0).toFloat()
-            service?.setVolume(clampedVolume)
-            return@Function mapOf("success" to true, "volume" to clampedVolume)
-        }
-        
-        Function("setPlaybackSpeed") { speed: Double ->
-            val service = PlaybackService.getInstance()
-            val clampedSpeed = speed.coerceIn(0.25, 3.0).toFloat()
-            service?.setPlaybackSpeed(clampedSpeed)
-            return@Function mapOf("success" to true, "speed" to clampedSpeed)
-        }
-        
-        Function("setRepeatMode") { mode: String ->
-            val service = PlaybackService.getInstance()
-            service?.setRepeatMode(mode)
-            return@Function mapOf("success" to true, "mode" to mode)
-        }
-        
-        Function("setShuffleMode") { enabled: Boolean ->
-            val service = PlaybackService.getInstance()
-            service?.setShuffleMode(enabled)
-            return@Function mapOf("success" to true, "shuffle" to enabled)
-        }
-        
-        Function("getStatus") {
-            val service = PlaybackService.getInstance()
-            if (service != null) {
-                return@Function service.getStatus()
+        AsyncFunction("setVolume") { volume: Double, promise: Promise ->
+            mainHandler.post {
+                try {
+                    val service = PlaybackService.getInstance()
+                    val clampedVolume = volume.coerceIn(0.0, 1.0).toFloat()
+                    service?.setVolume(clampedVolume)
+                    promise.resolve(mapOf("success" to true, "volume" to clampedVolume))
+                } catch (e: Exception) {
+                    promise.reject("VOLUME_ERROR", e.message, e)
+                }
             }
-            
-            return@Function mapOf(
-                "isInitialized" to isInitialized,
-                "isPlaying" to false,
-                "currentPositionMs" to 0L,
-                "durationMs" to 0L,
-                "bufferedPositionMs" to 0L,
-                "currentIndex" to 0,
-                "queueLength" to 0,
-                "playbackState" to "unknown",
-                "repeatMode" to "off",
-                "shuffleEnabled" to false,
-                "audioSessionId" to 0
-            )
         }
         
-        Function("getAudioSessionId") {
-            val service = PlaybackService.getInstance()
-            return@Function service?.getAudioSessionId() ?: 0
+        AsyncFunction("setPlaybackSpeed") { speed: Double, promise: Promise ->
+            mainHandler.post {
+                try {
+                    val service = PlaybackService.getInstance()
+                    val clampedSpeed = speed.coerceIn(0.25, 3.0).toFloat()
+                    service?.setPlaybackSpeed(clampedSpeed)
+                    promise.resolve(mapOf("success" to true, "speed" to clampedSpeed))
+                } catch (e: Exception) {
+                    promise.reject("SPEED_ERROR", e.message, e)
+                }
+            }
         }
         
-        Function("getCurrentPosition") {
-            val service = PlaybackService.getInstance()
-            val status = service?.getStatus()
-            return@Function (status?.get("currentPositionMs") as? Long) ?: 0L
+        AsyncFunction("setRepeatMode") { mode: String, promise: Promise ->
+            mainHandler.post {
+                try {
+                    val service = PlaybackService.getInstance()
+                    service?.setRepeatMode(mode)
+                    promise.resolve(mapOf("success" to true, "mode" to mode))
+                } catch (e: Exception) {
+                    promise.reject("REPEAT_ERROR", e.message, e)
+                }
+            }
         }
         
-        Function("getDuration") {
-            val service = PlaybackService.getInstance()
-            val status = service?.getStatus()
-            return@Function (status?.get("durationMs") as? Long) ?: 0L
+        AsyncFunction("setShuffleMode") { enabled: Boolean, promise: Promise ->
+            mainHandler.post {
+                try {
+                    val service = PlaybackService.getInstance()
+                    service?.setShuffleMode(enabled)
+                    promise.resolve(mapOf("success" to true, "shuffle" to enabled))
+                } catch (e: Exception) {
+                    promise.reject("SHUFFLE_ERROR", e.message, e)
+                }
+            }
+        }
+        
+        AsyncFunction("getStatus") { promise: Promise ->
+            mainHandler.post {
+                try {
+                    val service = PlaybackService.getInstance()
+                    if (service != null) {
+                        promise.resolve(service.getStatus())
+                    } else {
+                        promise.resolve(mapOf(
+                            "isInitialized" to isInitialized,
+                            "isPlaying" to false,
+                            "currentPositionMs" to 0L,
+                            "durationMs" to 0L,
+                            "bufferedPositionMs" to 0L,
+                            "currentIndex" to 0,
+                            "queueLength" to 0,
+                            "playbackState" to "unknown",
+                            "repeatMode" to "off",
+                            "shuffleEnabled" to false,
+                            "audioSessionId" to 0
+                        ))
+                    }
+                } catch (e: Exception) {
+                    promise.reject("STATUS_ERROR", e.message, e)
+                }
+            }
+        }
+        
+        AsyncFunction("getAudioSessionId") { promise: Promise ->
+            mainHandler.post {
+                try {
+                    val service = PlaybackService.getInstance()
+                    promise.resolve(service?.getAudioSessionId() ?: 0)
+                } catch (e: Exception) {
+                    promise.reject("SESSION_ERROR", e.message, e)
+                }
+            }
+        }
+        
+        AsyncFunction("getCurrentPosition") { promise: Promise ->
+            mainHandler.post {
+                try {
+                    val service = PlaybackService.getInstance()
+                    val status = service?.getStatus()
+                    promise.resolve((status?.get("currentPositionMs") as? Long) ?: 0L)
+                } catch (e: Exception) {
+                    promise.reject("POSITION_ERROR", e.message, e)
+                }
+            }
+        }
+        
+        AsyncFunction("getDuration") { promise: Promise ->
+            mainHandler.post {
+                try {
+                    val service = PlaybackService.getInstance()
+                    val status = service?.getStatus()
+                    promise.resolve((status?.get("durationMs") as? Long) ?: 0L)
+                } catch (e: Exception) {
+                    promise.reject("DURATION_ERROR", e.message, e)
+                }
+            }
         }
         
         AsyncFunction("release") { promise: Promise ->

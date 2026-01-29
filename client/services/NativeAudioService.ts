@@ -188,35 +188,35 @@ class NativeAudioServiceClass {
     }
   }
 
-  setVolume(volume: number): { success: boolean; volume: number } {
+  async setVolume(volume: number): Promise<{ success: boolean; volume: number }> {
     if (!this.isNativeAvailable()) {
       return { success: false, volume };
     }
-    return PlaybackEngineModule.setVolume(volume);
+    return await PlaybackEngineModule.setVolume(volume);
   }
 
-  setPlaybackSpeed(speed: number): { success: boolean; speed: number } {
+  async setPlaybackSpeed(speed: number): Promise<{ success: boolean; speed: number }> {
     if (!this.isNativeAvailable()) {
       return { success: false, speed };
     }
-    return PlaybackEngineModule.setPlaybackSpeed(speed);
+    return await PlaybackEngineModule.setPlaybackSpeed(speed);
   }
 
-  setRepeatMode(mode: 'off' | 'one' | 'all'): { success: boolean; mode: string } {
+  async setRepeatMode(mode: 'off' | 'one' | 'all'): Promise<{ success: boolean; mode: string }> {
     if (!this.isNativeAvailable()) {
       return { success: false, mode };
     }
-    return PlaybackEngineModule.setRepeatMode(mode);
+    return await PlaybackEngineModule.setRepeatMode(mode);
   }
 
-  setShuffleMode(enabled: boolean): { success: boolean; shuffle: boolean } {
+  async setShuffleMode(enabled: boolean): Promise<{ success: boolean; shuffle: boolean }> {
     if (!this.isNativeAvailable()) {
       return { success: false, shuffle: enabled };
     }
-    return PlaybackEngineModule.setShuffleMode(enabled);
+    return await PlaybackEngineModule.setShuffleMode(enabled);
   }
 
-  getStatus(): PlaybackStatus {
+  async getStatus(): Promise<PlaybackStatus> {
     if (!this.isNativeAvailable()) {
       return {
         isInitialized: false,
@@ -232,28 +232,28 @@ class NativeAudioServiceClass {
         audioSessionId: 0,
       };
     }
-    return PlaybackEngineModule.getStatus();
+    return await PlaybackEngineModule.getStatus();
   }
 
-  getAudioSessionId(): number {
+  async getAudioSessionId(): Promise<number> {
     if (!this.isNativeAvailable()) {
       return 0;
     }
-    return this.audioSessionId || PlaybackEngineModule.getAudioSessionId();
+    return this.audioSessionId || await PlaybackEngineModule.getAudioSessionId();
   }
 
-  getCurrentPosition(): number {
+  async getCurrentPosition(): Promise<number> {
     if (!this.isNativeAvailable()) {
       return 0;
     }
-    return PlaybackEngineModule.getCurrentPosition();
+    return await PlaybackEngineModule.getCurrentPosition();
   }
 
-  getDuration(): number {
+  async getDuration(): Promise<number> {
     if (!this.isNativeAvailable()) {
       return 0;
     }
-    return PlaybackEngineModule.getDuration();
+    return await PlaybackEngineModule.getDuration();
   }
 
   async setImmersiveMode(mode: ImmersiveMode): Promise<{ success: boolean; error?: string; settings?: ImmersiveModeSettings }> {
@@ -283,7 +283,7 @@ class NativeAudioServiceClass {
 
       // Use session ID 0 (global audio output) if no specific session available
       // This allows effects to work with react-native-track-player which doesn't expose its session ID
-      const sessionId = this.getAudioSessionId() || 0;
+      const sessionId = await this.getAudioSessionId() || 0;
 
       const currentMode = ImmersiveModeEngineModule.getCurrentMode();
       if (!currentMode.isAttached) {
@@ -459,8 +459,8 @@ class NativeAudioServiceClass {
     return WaveformAnalyzerModule.getFftSnapshot();
   }
 
-  getState(): AudioServiceState {
-    const status = this.getStatus();
+  async getState(): Promise<AudioServiceState> {
+    const status = await this.getStatus();
     const immersiveModeState = this.getCurrentImmersiveMode();
 
     return {

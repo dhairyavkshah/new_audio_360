@@ -631,24 +631,28 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!useNativePlaybackRef.current) return;
 
     if (isPlaying && currentSong) {
-      progressPollingRef.current = setInterval(() => {
-        const status = PlaybackEngineModule.getStatus();
-        
-        if (status.currentPositionMs !== undefined) {
-          setCurrentTime(status.currentPositionMs / 1000);
-        }
-        if (status.durationMs !== undefined && status.durationMs > 0) {
-          setDuration(status.durationMs / 1000);
-        }
-        
-        setIsBuffering(status.playbackState === 'buffering');
-        
-        if (status.playbackState === 'ended') {
-          handleTrackEnd();
-        }
-        
-        if (!status.isPlaying && isPlaying && status.playbackState !== 'buffering') {
-          setIsPlaying(false);
+      progressPollingRef.current = setInterval(async () => {
+        try {
+          const status = await PlaybackEngineModule.getStatus();
+          
+          if (status.currentPositionMs !== undefined) {
+            setCurrentTime(status.currentPositionMs / 1000);
+          }
+          if (status.durationMs !== undefined && status.durationMs > 0) {
+            setDuration(status.durationMs / 1000);
+          }
+          
+          setIsBuffering(status.playbackState === 'buffering');
+          
+          if (status.playbackState === 'ended') {
+            handleTrackEnd();
+          }
+          
+          if (!status.isPlaying && isPlaying && status.playbackState !== 'buffering') {
+            setIsPlaying(false);
+          }
+        } catch (error) {
+          // Status polling error - ignore and retry
         }
       }, 250);
     } else {
@@ -1208,7 +1212,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const status = PlaybackEngineModule.getStatus();
+        const status = await PlaybackEngineModule.getStatus();
         if (status.durationMs > 0) {
           setDuration(status.durationMs / 1000);
         }
@@ -1219,13 +1223,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         
         // Start progress polling for DSP playback
         if (!nativeProgressIntervalRef.current) {
-          nativeProgressIntervalRef.current = setInterval(() => {
-            const currentStatus = PlaybackEngineModule.getStatus();
-            if (currentStatus.isPlaying) {
-              setCurrentTime(currentStatus.currentPositionMs / 1000);
-              if (currentStatus.durationMs > 0) {
-                setDuration(currentStatus.durationMs / 1000);
+          nativeProgressIntervalRef.current = setInterval(async () => {
+            try {
+              const currentStatus = await PlaybackEngineModule.getStatus();
+              if (currentStatus.isPlaying) {
+                setCurrentTime(currentStatus.currentPositionMs / 1000);
+                if (currentStatus.durationMs > 0) {
+                  setDuration(currentStatus.durationMs / 1000);
+                }
               }
+            } catch (error) {
+              // Polling error - ignore
             }
           }, 250);
         }
@@ -1454,7 +1462,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const status = PlaybackEngineModule.getStatus();
+        const status = await PlaybackEngineModule.getStatus();
         if (status.durationMs > 0) {
           setDuration(status.durationMs / 1000);
         }
@@ -1676,7 +1684,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (Platform.OS === 'android' && useNativePlaybackRef.current) {
       console.log('[PlayerContext] PlaybackEngineModule togglePlayPause, isPlaying:', isPlaying);
       try {
-        const status = PlaybackEngineModule.getStatus();
+        const status = await PlaybackEngineModule.getStatus();
         if (status.isPlaying) {
           console.log('[PlayerContext] Pausing PlaybackEngineModule...');
           await PlaybackEngineModule.pause();
