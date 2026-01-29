@@ -1,8 +1,9 @@
-import React, { useState, memo, useCallback, useMemo } from "react";
+import React, { useState, memo, useCallback, useMemo, useEffect, useRef } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View, TouchableOpacity } from "react-native";
 import * as Haptics from "expo-haptics";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ListenStackNavigator from "@/navigation/ListenStackNavigator";
 import LibraryStackNavigator from "@/navigation/LibraryStackNavigator";
@@ -92,6 +93,17 @@ function MainTabNavigator() {
   const [isMiniPlayerDismissed, setIsMiniPlayerDismissed] = useState(false);
   const insets = useSafeAreaInsets();
   
+  const initialRoute = useMemo(() => {
+    if (Platform.OS === 'web' && typeof sessionStorage !== 'undefined') {
+      const hasOAuthResult = sessionStorage.getItem('soundcloud_oauth_result');
+      const hasOAuthError = sessionStorage.getItem('soundcloud_oauth_error');
+      if (hasOAuthResult || hasOAuthError) {
+        return 'DiscoverTab';
+      }
+    }
+    return 'ListenTab';
+  }, []);
+  
   const safeBottom = useMemo(() => Platform.OS === 'android' ? Math.max(insets.bottom, MIN_BOTTOM_PADDING) : insets.bottom, [insets.bottom]);
   const tabBarHeight = useMemo(() => TAB_BAR_HEIGHT + safeBottom, [safeBottom]);
   const showMiniPlayer = useMemo(() => currentSong && !isNowPlayingVisible, [currentSong, isNowPlayingVisible]);
@@ -104,7 +116,7 @@ function MainTabNavigator() {
   return (
     <View style={{ flex: 1 }}>
     <Tab.Navigator
-      initialRouteName="ListenTab"
+      initialRouteName={initialRoute as keyof MainTabParamList}
       screenOptions={{
         tabBarActiveTintColor: tokens.colors.primary,
         tabBarInactiveTintColor: tokens.colors.textSecondary,

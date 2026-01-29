@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, Pressable, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
@@ -16,6 +16,16 @@ export default function DiscoverScreen() {
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   
   const [activeTab, setActiveTab] = useState<TabType>('archive');
+  
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const hasOAuthResult = sessionStorage.getItem('soundcloud_oauth_result');
+      const hasOAuthError = sessionStorage.getItem('soundcloud_oauth_error');
+      if (hasOAuthResult || hasOAuthError) {
+        setActiveTab('soundcloud');
+      }
+    }
+  }, []);
 
   const tabs: { key: TabType; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
     { key: 'archive', label: 'Archive', icon: 'archive' },

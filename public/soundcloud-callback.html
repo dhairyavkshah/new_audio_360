@@ -24,94 +24,27 @@
       max-width: 400px;
       width: 90%;
     }
-    .icon {
-      width: 80px; height: 80px;
-      margin: 0 auto 24px;
-      background: #4CAF50;
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top-color: #FF5500;
       border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
     }
-    .icon svg { width: 48px; height: 48px; fill: white; }
-    .error-icon { background: #f44336; }
-    h1 { font-size: 24px; font-weight: 600; margin-bottom: 12px; }
-    p { font-size: 16px; color: rgba(255,255,255,0.7); line-height: 1.5; }
-    .code-box {
-      margin-top: 20px;
-      padding: 16px;
-      background: rgba(0,0,0,0.3);
-      border-radius: 8px;
-      font-family: monospace;
-      font-size: 14px;
-      word-break: break-all;
-      text-align: left;
-      user-select: all;
-    }
-    .copy-btn {
-      margin-top: 16px;
-      padding: 12px 24px;
-      background: #FF5500;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .copy-btn:hover { background: #e64d00; }
-    .instruction { margin-top: 16px; font-size: 14px; }
-    .close-btn {
-      margin-top: 12px;
-      padding: 10px 20px;
-      background: rgba(255,255,255,0.2);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    .close-btn:hover { background: rgba(255,255,255,0.3); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h1 { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+    p { font-size: 14px; color: rgba(255,255,255,0.7); }
   </style>
 </head>
 <body>
   <div class="container">
-    <div id="success" class="icon">
-      <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-    </div>
-    <div id="error" class="icon error-icon" style="display:none;">
-      <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-    </div>
-    <h1 id="title">Authorization Successful!</h1>
-    <p id="message">Copy the code below and paste it in the app.</p>
-    <div id="codeBox" class="code-box"></div>
-    <button id="copyBtn" class="copy-btn" onclick="copyCode()">Copy Code</button>
-    <p class="instruction">After copying, close this window and paste the code in the app.</p>
-    <button class="close-btn" onclick="window.close()">Close Window</button>
+    <div class="spinner"></div>
+    <h1>Completing Authorization...</h1>
+    <p>Redirecting you back to the app.</p>
   </div>
   <script>
-    var authCode = '';
-    
-    function copyCode() {
-      navigator.clipboard.writeText(authCode).then(function() {
-        document.getElementById('copyBtn').textContent = 'Copied!';
-        setTimeout(function() {
-          document.getElementById('copyBtn').textContent = 'Copy Code';
-        }, 2000);
-      }).catch(function() {
-        var textArea = document.createElement('textarea');
-        textArea.value = authCode;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        document.getElementById('copyBtn').textContent = 'Copied!';
-        setTimeout(function() {
-          document.getElementById('copyBtn').textContent = 'Copy Code';
-        }, 2000);
-      });
-    }
-    
     (function() {
       var params = new URLSearchParams(window.location.search);
       var code = params.get('code');
@@ -119,63 +52,20 @@
       var error = params.get('error');
       var errorDesc = params.get('error_description');
 
-      var successIcon = document.getElementById('success');
-      var errorIcon = document.getElementById('error');
-      var title = document.getElementById('title');
-      var message = document.getElementById('message');
-      var codeBox = document.getElementById('codeBox');
-      var copyBtn = document.getElementById('copyBtn');
-
       if (error) {
-        successIcon.style.display = 'none';
-        errorIcon.style.display = 'flex';
-        title.textContent = 'Authorization Failed';
-        message.textContent = errorDesc || error;
-        codeBox.style.display = 'none';
-        copyBtn.style.display = 'none';
-        return;
-      }
-
-      if (!code) {
-        successIcon.style.display = 'none';
-        errorIcon.style.display = 'flex';
-        title.textContent = 'Authorization Failed';
-        message.textContent = 'No authorization code received.';
-        codeBox.style.display = 'none';
-        copyBtn.style.display = 'none';
-        return;
-      }
-
-      authCode = code + '|' + (state || '');
-      codeBox.textContent = authCode;
-      
-      try {
-        localStorage.setItem('soundcloud_oauth_result', JSON.stringify({
-          type: 'soundcloud_oauth_callback',
-          url: window.location.href,
+        sessionStorage.setItem('soundcloud_oauth_error', JSON.stringify({
+          error: error,
+          description: errorDesc
+        }));
+      } else if (code) {
+        sessionStorage.setItem('soundcloud_oauth_result', JSON.stringify({
           code: code,
           state: state,
           timestamp: Date.now()
         }));
-        console.log('[SoundCloud Callback] Stored OAuth result in localStorage');
-      } catch (e) {
-        console.error('[SoundCloud Callback] Failed to store in localStorage:', e);
       }
       
-      if (window.opener && !window.opener.closed) {
-        try {
-          window.opener.postMessage({
-            type: 'oauth_callback',
-            url: window.location.href,
-            code: code,
-            state: state
-          }, '*');
-          console.log('[SoundCloud Callback] Posted message to opener');
-          setTimeout(function() { window.close(); }, 500);
-        } catch (e) {
-          console.error('[SoundCloud Callback] Failed to post message:', e);
-        }
-      }
+      window.location.replace('/');
     })();
   </script>
 </body>

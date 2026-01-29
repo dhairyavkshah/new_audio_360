@@ -46,12 +46,58 @@ export default function SoundCloudTabScreen() {
 
   useEffect(() => {
     checkAuthStatus();
+    
+    if (Platform.OS === 'web') {
+      checkOAuthCallback();
+    }
+    
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
     };
   }, []);
+  
+  const checkOAuthCallback = async () => {
+    try {
+      const resultStr = sessionStorage.getItem('soundcloud_oauth_result');
+      const errorStr = sessionStorage.getItem('soundcloud_oauth_error');
+      
+      if (errorStr) {
+        sessionStorage.removeItem('soundcloud_oauth_error');
+        const error = JSON.parse(errorStr);
+        console.log('[SoundCloudTabScreen] OAuth error from callback:', error);
+        showError(error.description || error.error || 'Authorization failed');
+        return;
+      }
+      
+      if (resultStr) {
+        sessionStorage.removeItem('soundcloud_oauth_result');
+        const result = JSON.parse(resultStr);
+        console.log('[SoundCloudTabScreen] OAuth result from callback:', result);
+        
+        if (result.code) {
+          setIsLoggingIn(true);
+          
+          if (result.state && !(await SoundCloudService.validateState(result.state))) {
+            showError("Security check failed - please try again");
+            setIsLoggingIn(false);
+            return;
+          }
+          
+          await SoundCloudService.exchangeCodeForToken(result.code);
+          setIsAuthenticated(true);
+          const profile = await SoundCloudService.getUserProfile();
+          setUserProfile(profile);
+          showSuccess("Connected to SoundCloud!");
+          setIsLoggingIn(false);
+        }
+      }
+    } catch (error) {
+      console.error('[SoundCloudTabScreen] OAuth callback check error:', error);
+      setIsLoggingIn(false);
+    }
+  };
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -84,92 +130,9 @@ export default function SoundCloudTabScreen() {
       const { url, redirectUri, state } = await SoundCloudService.getAuthorizationUrl();
       
       if (Platform.OS === 'web') {
-        try {
-          localStorage.removeItem('soundcloud_oauth_result');
-        } catch {}
-        
-        const width = 500;
-        const height = 700;
-        const left = (window.screen.width - width) / 2;
-        const top = (window.screen.height - height) / 2;
-        
-        const popup = window.open(
-          url, 
-          'soundcloud_auth', 
-          `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
-        );
-        
-        const messageHandler = async (event: MessageEvent) => {
-          if (event.data?.type === 'oauth_callback' && event.data?.code) {
-            console.log('[SoundCloudTabScreen] OAuth callback received via postMessage');
-            window.removeEventListener('message', messageHandler);
-            if (pollIntervalRef.current) {
-              clearInterval(pollIntervalRef.current);
-              pollIntervalRef.current = null;
-            }
-            if (popup && !popup.closed) popup.close();
-            const fakeUrl = `https://callback?code=${encodeURIComponent(event.data.code)}&state=${encodeURIComponent(event.data.state || '')}`;
-            await handleOAuthSuccess(fakeUrl);
-          }
-        };
-        window.addEventListener('message', messageHandler);
-        
-        console.log('[SoundCloudTabScreen] Starting localStorage polling...');
-        let pollCount = 0;
-        
-        pollIntervalRef.current = setInterval(async () => {
-          pollCount++;
-          try {
-            const result = localStorage.getItem('soundcloud_oauth_result');
-            if (pollCount % 10 === 0) {
-              console.log('[SoundCloudTabScreen] Poll #' + pollCount + ', result:', result ? 'found' : 'not found');
-            }
-            if (result) {
-              console.log('[SoundCloudTabScreen] Found localStorage result:', result);
-              const data = JSON.parse(result);
-              if (data.type === 'soundcloud_oauth_callback' && data.url) {
-                console.log('[SoundCloudTabScreen] OAuth callback received via localStorage');
-                localStorage.removeItem('soundcloud_oauth_result');
-                window.removeEventListener('message', messageHandler);
-                if (pollIntervalRef.current) {
-                  clearInterval(pollIntervalRef.current);
-                  pollIntervalRef.current = null;
-                }
-                if (popup && !popup.closed) popup.close();
-                await handleOAuthSuccess(data.url);
-                return;
-              }
-            }
-          } catch (e) {
-            console.log('[SoundCloudTabScreen] localStorage poll error:', e);
-          }
-          
-          try {
-            if (popup?.closed) {
-              window.removeEventListener('message', messageHandler);
-              const result = localStorage.getItem('soundcloud_oauth_result');
-              if (result) {
-                const data = JSON.parse(result);
-                if (data.type === 'soundcloud_oauth_callback' && data.url) {
-                  console.log('[SoundCloudTabScreen] OAuth callback found after popup closed');
-                  localStorage.removeItem('soundcloud_oauth_result');
-                  if (pollIntervalRef.current) {
-                    clearInterval(pollIntervalRef.current);
-                    pollIntervalRef.current = null;
-                  }
-                  await handleOAuthSuccess(data.url);
-                  return;
-                }
-              }
-              setIsLoggingIn(false);
-              setShowCodeEntry(true);
-              if (pollIntervalRef.current) {
-                clearInterval(pollIntervalRef.current);
-                pollIntervalRef.current = null;
-              }
-            }
-          } catch {}
-        }, 500);
+        console.log('[SoundCloudTabScreen] Using full page redirect for OAuth');
+        window.location.href = url;
+        return;
       } else {
         setAuthUrl(url);
         setAuthRedirectUri(redirectUri);
