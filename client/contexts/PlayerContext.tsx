@@ -739,7 +739,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     
     if (Platform.OS === 'android' && useNativePlaybackRef.current) {
-      PlaybackEngineModule.stop().catch(console.error);
+      // Only try to stop if the player has been initialized (audioSessionId > 0)
+      if (nativeAudioSessionIdRef.current > 0) {
+        PlaybackEngineModule.stop().catch((err) => {
+          // Ignore "not initialized" errors during cleanup
+          if (!String(err).includes('not initialized')) {
+            console.error('PlaybackEngineModule.stop error:', err);
+          }
+        });
+      }
     } else if (useTrackPlayerRef.current) {
       TrackPlayerService.stop().catch(console.error);
     }
@@ -1129,7 +1137,26 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const isStreamingTrack = isSoundCloudTrack || audioSource.startsWith('http');
         
         console.log('[PlayerContext] Using PlaybackEngineModule with DSP for playback', { isStreamingTrack });
-        cleanupPlayer();
+        
+        // Initialize PlaybackEngineModule if not already initialized
+        try {
+          const initResult = await PlaybackEngineModule.initialize();
+          if (!initResult.success && !initResult.alreadyInitialized) {
+            console.error('[PlayerContext] Failed to initialize PlaybackEngineModule:', initResult.error);
+            setError('Failed to initialize audio player');
+            setIsLoading(false);
+            return;
+          }
+          if (initResult.audioSessionId) {
+            nativeAudioSessionIdRef.current = initResult.audioSessionId;
+          }
+          console.log('[PlayerContext] PlaybackEngineModule initialized, session:', initResult.audioSessionId || nativeAudioSessionIdRef.current);
+        } catch (initError) {
+          console.error('[PlayerContext] PlaybackEngineModule init error:', initError);
+          setError('Failed to initialize audio player');
+          setIsLoading(false);
+          return;
+        }
         
         // For SoundCloud streaming, we need to resolve the final stream URL with token
         let finalAudioSource = audioSource;
