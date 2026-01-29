@@ -594,9 +594,12 @@ class SoundCloudServiceClass {
 
   private async resolveStreamUrlWithToken(trackId: number, token: string): Promise<string> {
     const { clientId } = getClientCredentials();
+    const streamApiUrl = this.buildStreamApiUrl(trackId);
     
     try {
-      const trackResponse = await fetch(`${API_V2_BASE_URL}/tracks/${trackId}?client_id=${clientId}`, {
+      console.log('[SoundCloudService] Fetching streams for track', trackId, 'URL:', streamApiUrl);
+      
+      const response = await fetch(streamApiUrl, {
         method: 'GET',
         headers: {
           'Authorization': `OAuth ${token}`,
@@ -604,50 +607,91 @@ class SoundCloudServiceClass {
         },
       });
 
-      if (!trackResponse.ok) {
-        throw new Error(`Failed to get track: ${trackResponse.status}`);
+      console.log('[SoundCloudService] Response status:', response.status, 'ok:', response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'No error text');
+        console.error('[SoundCloudService] Streams API failed:', response.status, errorText);
+        throw new Error(`Failed to get streams: ${response.status}`);
       }
 
-      const trackData = await trackResponse.json();
+      const data = await response.json();
+      console.log('[SoundCloudService] Streams for track', trackId, ':', Object.keys(data).join(', '));
       
-      if (trackData.media && trackData.media.transcodings && trackData.media.transcodings.length > 0) {
-        const transcodings = trackData.media.transcodings;
-        console.log('[SoundCloudService] Track', trackId, 'has', transcodings.length, 'transcodings');
+      if (data.http_mp3_128_url) {
+        let streamUrl = data.http_mp3_128_url;
+        console.log('[SoundCloudService] Got http_mp3_128_url for track', trackId);
         
-        const progressiveMp3 = transcodings.find(
-          (t: any) => t.format?.protocol === 'progressive' && t.format?.mime_type === 'audio/mpeg'
-        );
+        if (streamUrl.includes('sndcdn.com') || streamUrl.includes('cf-media')) {
+          console.log('[SoundCloudService] Direct CDN URL found');
+          return streamUrl;
+        }
         
-        const hlsAac = transcodings.find(
-          (t: any) => t.format?.protocol === 'hls' && t.format?.mime_type?.includes('audio/mp4')
-        );
-        
-        const selectedTranscoding = progressiveMp3 || hlsAac || transcodings[0];
-        
-        if (selectedTranscoding && selectedTranscoding.url) {
-          const transcodingUrl = `${selectedTranscoding.url}?client_id=${clientId}`;
-          console.log('[SoundCloudService] Fetching transcoding URL for track', trackId);
+        if (streamUrl.includes('api.soundcloud.com')) {
+          const urlWithAuth = streamUrl.includes('?') 
+            ? `${streamUrl}&oauth_token=${token}`
+            : `${streamUrl}?oauth_token=${token}`;
+          console.log('[SoundCloudService] API URL - resolving redirect...');
           
-          const streamResponse = await fetch(transcodingUrl, {
-            method: 'GET',
-            headers: {
-              'Authorization': `OAuth ${token}`,
-            },
-          });
-          
-          if (streamResponse.ok) {
-            const streamData = await streamResponse.json();
-            if (streamData.url) {
-              console.log('[SoundCloudService] Resolved full stream URL for track', trackId);
-              return streamData.url;
+          try {
+            const redirectResponse = await fetch(urlWithAuth, {
+              method: 'GET',
+              redirect: 'follow',
+            });
+            
+            if (redirectResponse.ok && redirectResponse.url) {
+              const finalUrl = redirectResponse.url;
+              if (finalUrl.includes('sndcdn.com') || finalUrl.includes('cf-media') || finalUrl.includes('cloudfront')) {
+                console.log('[SoundCloudService] Resolved to CDN URL for track', trackId);
+                return finalUrl;
+              }
+            }
+            
+            const responseData = await redirectResponse.json().catch(() => null);
+            if (responseData && responseData.url) {
+              console.log('[SoundCloudService] Got URL from JSON response for track', trackId);
+              return responseData.url;
+            }
+          } catch (redirectError) {
+            console.log('[SoundCloudService] Redirect failed, trying HEAD request');
+            
+            try {
+              const headResponse = await fetch(urlWithAuth, {
+                method: 'HEAD',
+                redirect: 'manual',
+              });
+              
+              const location = headResponse.headers.get('location');
+              if (location) {
+                console.log('[SoundCloudService] Got location header for track', trackId);
+                return location;
+              }
+            } catch (headError) {
+              console.log('[SoundCloudService] HEAD request also failed');
             }
           }
+          
+          console.log('[SoundCloudService] Could not resolve redirect, returning API URL');
+          return urlWithAuth;
         }
+        
+        return streamUrl;
       }
       
-      throw new Error('No full stream URL available - track may be preview-only');
-    } catch (error) {
-      console.error('[SoundCloudService] Error resolving stream URL:', error);
+      if (data.hls_aac_160_url || data.hls_aac_96_url) {
+        const hlsUrl = data.hls_aac_160_url || data.hls_aac_96_url;
+        console.log('[SoundCloudService] HLS URL found for track', trackId);
+        return hlsUrl;
+      }
+      
+      console.log('[SoundCloudService] Available keys:', JSON.stringify(data));
+      throw new Error('No streamable URL found');
+    } catch (error: any) {
+      if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+        console.error('[SoundCloudService] CORS or network error for track', trackId);
+      } else {
+        console.error('[SoundCloudService] Error resolving stream URL for track', trackId, ':', error?.message || String(error));
+      }
       throw error;
     }
   }
