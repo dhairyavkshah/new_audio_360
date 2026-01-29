@@ -650,7 +650,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (!status.isPlaying && isPlaying && status.playbackState !== 'buffering') {
           setIsPlaying(false);
         }
-      }, 250);
+      }, 1000);
     } else {
       if (progressPollingRef.current) {
         clearInterval(progressPollingRef.current);
@@ -1261,7 +1261,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 setDuration(currentStatus.durationMs / 1000);
               }
             }
-          }, 250);
+          }, 1000);
         }
       } else if (useTrackPlayerRef.current) {
         // Fallback to TrackPlayer if PlaybackEngineModule is not available

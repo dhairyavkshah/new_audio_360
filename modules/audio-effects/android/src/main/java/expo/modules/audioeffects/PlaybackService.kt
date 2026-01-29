@@ -386,7 +386,7 @@ class PlaybackService : MediaSessionService() {
                         ))
                     }
                 }
-                progressHandler?.postDelayed(this, 250)
+                progressHandler?.postDelayed(this, 1000)
             }
         }
         progressHandler?.post(progressRunnable!!)
