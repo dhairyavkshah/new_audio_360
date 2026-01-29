@@ -222,8 +222,8 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         return;
       }
       
-      // On web dev mode, skip album art extraction and just use test songs directly
-      console.log('[MediaLibrary] Web: Using test songs without album art extraction');
+      // On web dev mode, use test songs for development
+      console.log('[MediaLibrary] Web: Using test songs for development');
       const filtered = testSongs.filter(s => !hiddenIds.includes(s.id));
       setSongs(filtered);
       setAllSongsIncludingHidden(testSongs);
