@@ -58,6 +58,15 @@
       cursor: pointer;
       font-weight: 600;
     }
+    #debug { 
+      margin-top: 20px; 
+      padding: 10px; 
+      background: rgba(0,0,0,0.3); 
+      border-radius: 8px; 
+      font-size: 12px; 
+      text-align: left;
+      word-break: break-all;
+    }
   </style>
 </head>
 <body>
@@ -72,6 +81,7 @@
     <h1 id="title">Completing sign-in...</h1>
     <p id="message">Please wait while we connect your SoundCloud account.</p>
     <button id="closeBtn" class="close-btn hidden" onclick="window.close()">Close Window</button>
+    <div id="debug" class="hidden"></div>
   </div>
   <script>
     (function() {
@@ -87,6 +97,16 @@
       var title = document.getElementById('title');
       var message = document.getElementById('message');
       var closeBtn = document.getElementById('closeBtn');
+      var debug = document.getElementById('debug');
+
+      function log(msg) {
+        console.log('[OAuth Callback] ' + msg);
+        debug.innerHTML += msg + '<br>';
+      }
+
+      function showDebug() {
+        debug.classList.remove('hidden');
+      }
 
       function showSuccess() {
         loadingIcon.classList.add('hidden');
@@ -102,33 +122,45 @@
         title.textContent = 'Connection Failed';
         message.textContent = msg || 'Unable to connect. Please try again.';
         closeBtn.classList.remove('hidden');
+        showDebug();
       }
 
+      log('Page loaded');
+      log('URL: ' + window.location.href);
+      log('Code: ' + (code ? 'present (' + code.substring(0, 10) + '...)' : 'missing'));
+      log('State: ' + (state || 'missing'));
+      log('Has opener: ' + !!window.opener);
+
       if (error) {
+        log('Error: ' + error);
         showError(errorDesc || error);
         return;
       }
 
       if (!code) {
+        log('No code received');
         showError('No authorization code received.');
         return;
       }
 
-      var callbackData = JSON.stringify({
+      var callbackData = {
         type: 'soundcloud_oauth_callback',
         url: window.location.href,
         code: code,
         state: state,
         timestamp: Date.now()
-      });
+      };
 
+      var saved = false;
       try {
-        localStorage.setItem('soundcloud_oauth_result', callbackData);
-        console.log('[OAuth Callback] Saved to localStorage:', callbackData);
+        localStorage.setItem('soundcloud_oauth_result', JSON.stringify(callbackData));
+        log('Saved to localStorage');
+        saved = true;
       } catch (e) {
-        console.error('[OAuth Callback] localStorage error:', e);
+        log('localStorage error: ' + e.message);
       }
 
+      var messageSent = false;
       if (window.opener && !window.opener.closed) {
         try {
           window.opener.postMessage({
@@ -137,11 +169,24 @@
             code: code,
             state: state
           }, '*');
-        } catch (e) {}
+          log('postMessage sent');
+          messageSent = true;
+        } catch (e) {
+          log('postMessage error: ' + e.message);
+        }
+      } else {
+        log('No opener window');
       }
 
-      showSuccess();
-      setTimeout(function() { window.close(); }, 1500);
+      if (saved || messageSent) {
+        showSuccess();
+        setTimeout(function() { 
+          log('Attempting to close window...');
+          window.close(); 
+        }, 2000);
+      } else {
+        showError('Could not communicate with the app. Please close this window and try again.');
+      }
     })();
   </script>
 </body>

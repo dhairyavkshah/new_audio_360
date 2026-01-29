@@ -97,10 +97,18 @@ export default function SoundCloudTabScreen() {
           `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
         );
         
+        console.log('[SoundCloudTabScreen] Starting localStorage polling...');
+        let pollCount = 0;
+        
         pollIntervalRef.current = setInterval(async () => {
+          pollCount++;
           try {
             const result = localStorage.getItem('soundcloud_oauth_result');
+            if (pollCount % 10 === 0) {
+              console.log('[SoundCloudTabScreen] Poll #' + pollCount + ', result:', result ? 'found' : 'not found');
+            }
             if (result) {
+              console.log('[SoundCloudTabScreen] Found localStorage result:', result);
               const data = JSON.parse(result);
               if (data.type === 'soundcloud_oauth_callback' && data.url) {
                 console.log('[SoundCloudTabScreen] OAuth callback received via localStorage');
@@ -114,7 +122,9 @@ export default function SoundCloudTabScreen() {
                 return;
               }
             }
-          } catch {}
+          } catch (e) {
+            console.log('[SoundCloudTabScreen] localStorage poll error:', e);
+          }
           
           try {
             if (popup?.closed) {
