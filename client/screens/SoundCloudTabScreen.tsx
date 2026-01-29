@@ -60,10 +60,13 @@ export default function SoundCloudTabScreen() {
   
   const checkOAuthCallback = async () => {
     try {
-      const resultStr = sessionStorage.getItem('soundcloud_oauth_result');
-      const errorStr = sessionStorage.getItem('soundcloud_oauth_error');
+      const resultStr = localStorage.getItem('soundcloud_oauth_result') || 
+                       sessionStorage.getItem('soundcloud_oauth_result');
+      const errorStr = localStorage.getItem('soundcloud_oauth_error') ||
+                      sessionStorage.getItem('soundcloud_oauth_error');
       
       if (errorStr) {
+        localStorage.removeItem('soundcloud_oauth_error');
         sessionStorage.removeItem('soundcloud_oauth_error');
         const error = JSON.parse(errorStr);
         console.log('[SoundCloudTabScreen] OAuth error from callback:', error);
@@ -72,6 +75,7 @@ export default function SoundCloudTabScreen() {
       }
       
       if (resultStr) {
+        localStorage.removeItem('soundcloud_oauth_result');
         sessionStorage.removeItem('soundcloud_oauth_result');
         const result = JSON.parse(resultStr);
         console.log('[SoundCloudTabScreen] OAuth result from callback:', result);
@@ -130,8 +134,34 @@ export default function SoundCloudTabScreen() {
       const { url, redirectUri, state } = await SoundCloudService.getAuthorizationUrl();
       
       if (Platform.OS === 'web') {
-        console.log('[SoundCloudTabScreen] Using full page redirect for OAuth');
-        window.location.href = url;
+        console.log('[SoundCloudTabScreen] Opening SoundCloud auth in new tab');
+        const authWindow = window.open(url, '_blank');
+        
+        if (!authWindow) {
+          showError("Please allow popups for this site");
+          setIsLoggingIn(false);
+          return;
+        }
+        
+        setShowCodeEntry(true);
+        
+        const checkInterval = setInterval(() => {
+          try {
+            const result = localStorage.getItem('soundcloud_oauth_result') || 
+                          sessionStorage.getItem('soundcloud_oauth_result');
+            const error = localStorage.getItem('soundcloud_oauth_error') ||
+                         sessionStorage.getItem('soundcloud_oauth_error');
+            
+            if (result || error) {
+              clearInterval(checkInterval);
+              localStorage.removeItem('soundcloud_oauth_result');
+              localStorage.removeItem('soundcloud_oauth_error');
+              checkOAuthCallback();
+            }
+          } catch (e) {}
+        }, 1000);
+        
+        pollIntervalRef.current = checkInterval;
         return;
       } else {
         setAuthUrl(url);
