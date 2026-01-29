@@ -106,6 +106,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const trackPlayerInitializedRef = useRef(false);
   const nativeAudioSessionIdRef = useRef<number>(0);
   const progressPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const nativeProgressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastKnownPositionRef = useRef<number>(0);
   const wasPlayingBeforeBackgroundRef = useRef<boolean>(false);
   const handleNextInternalRef = useRef<() => void>(() => {});
@@ -732,10 +733,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       progressPollingRef.current = null;
     }
     
-    if (useTrackPlayerRef.current) {
-      TrackPlayerService.stop().catch(console.error);
-    } else if (useNativePlaybackRef.current) {
+    if (nativeProgressIntervalRef.current) {
+      clearInterval(nativeProgressIntervalRef.current);
+      nativeProgressIntervalRef.current = null;
+    }
+    
+    if (Platform.OS === 'android' && useNativePlaybackRef.current) {
       PlaybackEngineModule.stop().catch(console.error);
+    } else if (useTrackPlayerRef.current) {
+      TrackPlayerService.stop().catch(console.error);
     }
     
     if (statusListenerRef.current) {
@@ -1116,8 +1122,75 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setIsPlaying(true);
         setIsLoading(false);
         AudioCoordinator.notifyPlaybackStarted('music');
+      } else if (Platform.OS === 'android' && useNativePlaybackRef.current) {
+        // On Android, use PlaybackEngineModule which has DSP processing integrated
+        // This applies to both local files and streaming (SoundCloud, Archive.org)
+        const isSoundCloudTrack = ('source' in song && song.source === 'soundcloud') || song.id.startsWith('sc_');
+        const isStreamingTrack = isSoundCloudTrack || audioSource.startsWith('http');
+        
+        console.log('[PlayerContext] Using PlaybackEngineModule with DSP for playback', { isStreamingTrack });
+        cleanupPlayer();
+        
+        // For SoundCloud streaming, we need to resolve the final stream URL with token
+        let finalAudioSource = audioSource;
+        if (isSoundCloudTrack && audioSource.includes('api.soundcloud.com')) {
+          const soundCloudToken = await SoundCloudService.getAccessToken();
+          if (!soundCloudToken) {
+            setError('SoundCloud session expired. Please sign in again.');
+            setIsLoading(false);
+            return;
+          }
+          // Append OAuth token for ExoPlayer to handle redirects
+          finalAudioSource = audioSource.includes('?') 
+            ? `${audioSource}&oauth_token=${soundCloudToken}`
+            : `${audioSource}?oauth_token=${soundCloudToken}`;
+          console.log('[PlayerContext] SoundCloud stream URL prepared for DSP playback');
+        }
+        
+        const loadResult = await PlaybackEngineModule.loadTrack(finalAudioSource);
+        
+        if (!loadResult.success) {
+          setError(loadResult.error || 'Failed to load audio with native DSP player');
+          setIsLoading(false);
+          return;
+        }
+
+        if (loadResult.audioSessionId) {
+          nativeAudioSessionIdRef.current = loadResult.audioSessionId;
+        }
+
+        const playResult = await PlaybackEngineModule.play();
+        
+        if (!playResult.success) {
+          setError(playResult.error || 'Failed to play audio');
+          setIsLoading(false);
+          return;
+        }
+
+        const status = PlaybackEngineModule.getStatus();
+        if (status.durationMs > 0) {
+          setDuration(status.durationMs / 1000);
+        }
+
+        setIsPlaying(true);
+        setIsLoading(false);
+        AudioCoordinator.notifyPlaybackStarted('music');
+        
+        // Start progress polling for DSP playback
+        if (!nativeProgressIntervalRef.current) {
+          nativeProgressIntervalRef.current = setInterval(() => {
+            const currentStatus = PlaybackEngineModule.getStatus();
+            if (currentStatus.isPlaying) {
+              setCurrentTime(currentStatus.currentPositionMs / 1000);
+              if (currentStatus.durationMs > 0) {
+                setDuration(currentStatus.durationMs / 1000);
+              }
+            }
+          }, 250);
+        }
       } else if (useTrackPlayerRef.current) {
-        console.log('[PlayerContext] Using TrackPlayer for playback');
+        // Fallback to TrackPlayer if PlaybackEngineModule is not available
+        console.log('[PlayerContext] Using TrackPlayer for playback (no DSP for streaming)');
         
         if (!trackPlayerInitializedRef.current) {
           console.log('[PlayerContext] Initializing TrackPlayer...');
@@ -1544,6 +1617,43 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // On Android, use PlaybackEngineModule which has DSP processing
+    if (Platform.OS === 'android' && useNativePlaybackRef.current) {
+      console.log('[PlayerContext] PlaybackEngineModule togglePlayPause, isPlaying:', isPlaying);
+      try {
+        const status = PlaybackEngineModule.getStatus();
+        if (status.isPlaying) {
+          console.log('[PlayerContext] Pausing PlaybackEngineModule...');
+          await PlaybackEngineModule.pause();
+          setIsPlaying(false);
+        } else {
+          if (!currentSong) {
+            console.log('[PlayerContext] No current song to play');
+            return;
+          }
+          await AudioCoordinator.requestPlayback('music');
+          
+          // Check if a track is loaded
+          if (status.durationMs === 0) {
+            console.log('[PlayerContext] No track loaded, reloading current song');
+            loadAndPlaySong(currentSong);
+            return;
+          }
+          
+          console.log('[PlayerContext] Playing PlaybackEngineModule...');
+          await PlaybackEngineModule.play();
+          setIsPlaying(true);
+          AudioCoordinator.notifyPlaybackStarted('music');
+        }
+      } catch (error) {
+        console.warn('[PlayerContext] PlaybackEngineModule toggle failed:', error);
+        if (currentSong) {
+          loadAndPlaySong(currentSong);
+        }
+      }
+      return;
+    }
+
     if (useTrackPlayerRef.current) {
       console.log('[PlayerContext] TrackPlayer togglePlayPause, isPlaying:', isPlaying, 'initialized:', trackPlayerInitializedRef.current);
       
@@ -1809,13 +1919,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         } else {
           console.log('[PlayerContext] Web: No audio element for seeking');
         }
+      } else if (Platform.OS === 'android' && useNativePlaybackRef.current) {
+        // On Android, use PlaybackEngineModule which has DSP processing
+        console.log('[PlayerContext] PlaybackEngineModule: Seeking to', targetTime * 1000, 'ms');
+        PlaybackEngineModule.seekTo(targetTime * 1000);
       } else if (useTrackPlayerRef.current) {
         console.log('[PlayerContext] TrackPlayer: Seeking to', targetTime);
         TrackPlayerService.seekTo(targetTime).catch((err) => {
           console.error('[PlayerContext] TrackPlayer seek error:', err);
         });
-      } else if (useNativePlaybackRef.current) {
-        PlaybackEngineModule.seekTo(targetTime * 1000);
       } else if (playerRef.current) {
         playerRef.current.seekTo(targetTime);
       }
