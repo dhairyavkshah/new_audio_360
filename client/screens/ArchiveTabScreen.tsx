@@ -8,18 +8,10 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { useToast } from "@/contexts/ToastContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
-import ArchiveOrgService, { ArchiveOrgTrack, AudioQuality } from "@/services/ArchiveOrgService";
+import { FluentSpacing, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import ArchiveOrgService, { ArchiveOrgTrack } from "@/services/ArchiveOrgService";
 
 const CONSENT_STORAGE_KEY = '@discover_consent_accepted';
-
-const QUALITY_OPTIONS: { label: string; value: AudioQuality }[] = [
-  { label: 'All', value: 'all' },
-  { label: '128k', value: '128' },
-  { label: '192k', value: '192' },
-  { label: '256k', value: '256' },
-  { label: '320k', value: '320' },
-];
 
 export default function ArchiveTabScreen() {
   const navigation = useNavigation();
@@ -32,7 +24,6 @@ export default function ArchiveTabScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [tracks, setTracks] = useState<ArchiveOrgTrack[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedQuality, setSelectedQuality] = useState<AudioQuality>('all');
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
   const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
   const [showConsentModal, setShowConsentModal] = useState(true);
@@ -88,7 +79,7 @@ export default function ArchiveTabScreen() {
     
     setLoading(true);
     try {
-      const result = await ArchiveOrgService.searchMusic(searchQuery, selectedQuality, 15);
+      const result = await ArchiveOrgService.searchMusic(searchQuery, 'all', 25);
       setTracks(result.tracks);
       
       if (result.tracks.length === 0) {
@@ -100,7 +91,7 @@ export default function ArchiveTabScreen() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedQuality, showError]);
+  }, [searchQuery, showError]);
 
   const playTrack = useCallback((track: ArchiveOrgTrack) => {
     const playableSong = {
@@ -295,33 +286,6 @@ export default function ArchiveTabScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.qualityRow}>
-          {QUALITY_OPTIONS.map((option) => (
-            <Pressable
-              key={option.value}
-              style={[
-                styles.qualityChip,
-                { 
-                  backgroundColor: selectedQuality === option.value 
-                    ? colors.colorBrandBackground 
-                    : colors.colorNeutralBackground2 
-                },
-              ]}
-              onPress={() => setSelectedQuality(option.value)}
-            >
-              <FluentText
-                variant="caption1"
-                style={{ 
-                  color: selectedQuality === option.value ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground1,
-                  fontWeight: selectedQuality === option.value ? '600' : '400',
-                }}
-              >
-                {option.label}
-              </FluentText>
-            </Pressable>
-          ))}
-        </View>
-
         {loading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={colors.colorBrandForeground1} />
@@ -383,17 +347,6 @@ const styles = StyleSheet.create({
     borderRadius: FluentControlRadius.button,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  qualityRow: {
-    flexDirection: 'row',
-    gap: FluentSpacing.xs,
-    paddingHorizontal: FluentSpacing.m,
-    paddingBottom: FluentSpacing.s,
-  },
-  qualityChip: {
-    paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.xs,
-    borderRadius: FluentRadius.circular,
   },
   centerContainer: {
     flex: 1,
