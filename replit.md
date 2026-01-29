@@ -172,6 +172,14 @@ The Discover tab features a tabbed interface for streaming music from multiple s
 - `SOUNDCLOUD_CLIENT_ID` - OAuth client ID
 - `SOUNDCLOUD_CLIENT_SECRET` - OAuth client secret
 
+**EAS Build Setup (Required for Android/iOS)**:
+For native builds to access SoundCloud credentials, you must add EAS secrets:
+```bash
+eas secret:create --scope project --name SOUNDCLOUD_CLIENT_ID --value <your_client_id>
+eas secret:create --scope project --name SOUNDCLOUD_CLIENT_SECRET --value <your_client_secret>
+```
+These are referenced in `eas.json` via `@SOUNDCLOUD_CLIENT_ID` and `@SOUNDCLOUD_CLIENT_SECRET`.
+
 **Important Limitations**:
 - Not all SoundCloud tracks allow off-platform streaming (some have `access: blocked`)
 - SoundCloud is migrating to AAC HLS format (`hls_aac_160_url`) by Dec 31, 2025

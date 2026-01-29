@@ -8,7 +8,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "APP_ENV": "development"
+        "APP_ENV": "development",
+        "SOUNDCLOUD_CLIENT_ID": "@SOUNDCLOUD_CLIENT_ID",
+        "SOUNDCLOUD_CLIENT_SECRET": "@SOUNDCLOUD_CLIENT_SECRET"
       },
       "android": {
         "buildType": "apk",
@@ -22,7 +24,9 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "APP_ENV": "preview"
+        "APP_ENV": "preview",
+        "SOUNDCLOUD_CLIENT_ID": "@SOUNDCLOUD_CLIENT_ID",
+        "SOUNDCLOUD_CLIENT_SECRET": "@SOUNDCLOUD_CLIENT_SECRET"
       },
       "android": {
         "buildType": "apk",
@@ -34,7 +38,9 @@
     },
     "production": {
       "env": {
-        "APP_ENV": "production"
+        "APP_ENV": "production",
+        "SOUNDCLOUD_CLIENT_ID": "@SOUNDCLOUD_CLIENT_ID",
+        "SOUNDCLOUD_CLIENT_SECRET": "@SOUNDCLOUD_CLIENT_SECRET"
       },
       "android": {
         "buildType": "app-bundle",
@@ -48,7 +54,9 @@
     "production-apk": {
       "distribution": "internal",
       "env": {
-        "APP_ENV": "production"
+        "APP_ENV": "production",
+        "SOUNDCLOUD_CLIENT_ID": "@SOUNDCLOUD_CLIENT_ID",
+        "SOUNDCLOUD_CLIENT_SECRET": "@SOUNDCLOUD_CLIENT_SECRET"
       },
       "android": {
         "buildType": "apk",
@@ -58,7 +66,9 @@
     "testing": {
       "distribution": "internal",
       "env": {
-        "APP_ENV": "testing"
+        "APP_ENV": "testing",
+        "SOUNDCLOUD_CLIENT_ID": "@SOUNDCLOUD_CLIENT_ID",
+        "SOUNDCLOUD_CLIENT_SECRET": "@SOUNDCLOUD_CLIENT_SECRET"
       },
       "android": {
         "buildType": "apk",
