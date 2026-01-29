@@ -260,6 +260,10 @@ function LibraryScreen() {
     };
 
     const likedDeviceSongs = allSongs.filter(song => favorites.includes(song.id));
+    
+    const archiveIds = new Set(archiveFavorites.map(f => f.id));
+    const soundcloudIds = new Set(soundcloudFavorites.map(f => f.id));
+    
     const likedArchiveSongs: PlayableSong[] = archiveFavorites.map(stored => ({
       id: stored.id,
       title: stored.title,
@@ -268,7 +272,6 @@ function LibraryScreen() {
       duration: (stored.duration || 0) * 1000,
       audioUrl: ArchiveOrgService.getStreamUrl(stored),
       artwork: undefined,
-      source: 'archive' as const,
     }));
     const likedSoundCloudSongs: PlayableSong[] = soundcloudFavorites.map(stored => ({
       id: stored.id,
@@ -278,8 +281,8 @@ function LibraryScreen() {
       duration: stored.duration * 1000,
       audioUrl: `widget:${stored.id.replace('sc_', '')}`,
       artwork: stored.artwork_url || undefined,
-      source: 'soundcloud' as const,
     }));
+    
     const likedSongs = [...likedDeviceSongs, ...likedArchiveSongs, ...likedSoundCloudSongs];
     const recentSongs = recentlyPlayed
       .map(id => allSongs.find(s => s.id === id))
@@ -305,16 +308,19 @@ function LibraryScreen() {
     };
   }, [searchQuery, sortBy, playlists, favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists, archiveFavorites, soundcloudFavorites]);
 
-  const categoryCounts = useMemo(() => ({
-    liked: favorites.length + archiveFavorites.length + soundcloudFavorites.length,
-    recent: recentlyPlayed.length,
-    top: mostPlayed.length,
-    songs: allSongs.length,
-    albums: derivedAlbums.length,
-    artists: derivedArtists.length,
-    playlists: playlists.length,
-    streaming: archiveFavorites.length + soundcloudFavorites.length,
-  }), [favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists, playlists, archiveFavorites, soundcloudFavorites]);
+  const categoryCounts = useMemo(() => {
+    const deviceFavoritesCount = allSongs.filter(song => favorites.includes(song.id)).length;
+    return {
+      liked: deviceFavoritesCount + archiveFavorites.length + soundcloudFavorites.length,
+      recent: recentlyPlayed.length,
+      top: mostPlayed.length,
+      songs: allSongs.length,
+      albums: derivedAlbums.length,
+      artists: derivedArtists.length,
+      playlists: playlists.length,
+      streaming: archiveFavorites.length + soundcloudFavorites.length,
+    };
+  }, [favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists, playlists, archiveFavorites, soundcloudFavorites]);
 
   const handleCategoryChange = useCallback((category: CategoryType) => {
     playTapSound();

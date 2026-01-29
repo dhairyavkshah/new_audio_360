@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useRef, useState, useEffect } from "react";
 import { View, StyleSheet, Image, ImageBackground, Platform, Pressable, ActivityIndicator, ScrollView, useWindowDimensions } from "react-native";
 
 // Default album art for songs without artwork
@@ -18,11 +18,13 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { AudioWaveform } from "@/components/AudioWaveform";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { usePlayerContext } from "@/contexts/PlayerContext";
+import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
 import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
+import SoundCloudService, { SoundCloudTrack } from "@/services/SoundCloudService";
+import ArchiveOrgService, { ArchiveOrgTrack } from "@/services/ArchiveOrgService";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 
@@ -61,6 +63,109 @@ export default function NowPlayingScreen() {
 
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const visitCountRef = useRef(0);
+  const [isOnlineFavorite, setIsOnlineFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+
+  const isSoundCloudSong = (song: PlayableSong | null): boolean => {
+    if (!song) return false;
+    return ('source' in song && (song as any).source === 'soundcloud') || song.id.startsWith('sc_');
+  };
+
+  const isArchiveSong = (song: PlayableSong | null): boolean => {
+    if (!song) return false;
+    return ('source' in song && (song as any).source === 'archive.org') || song.id.startsWith('archive_');
+  };
+
+  const isOnlineSong = (song: PlayableSong | null): boolean => {
+    return isSoundCloudSong(song) || isArchiveSong(song);
+  };
+
+  useEffect(() => {
+    const checkOnlineFavorite = async () => {
+      if (!currentSong) return;
+      
+      if (isSoundCloudSong(currentSong)) {
+        const isFav = await SoundCloudService.isFavorite(currentSong.id);
+        setIsOnlineFavorite(isFav);
+      } else if (isArchiveSong(currentSong)) {
+        const isFav = await ArchiveOrgService.isFavorite(currentSong.id);
+        setIsOnlineFavorite(isFav);
+      }
+    };
+    
+    checkOnlineFavorite();
+  }, [currentSong?.id]);
+
+  const handleFavoriteToggle = async () => {
+    if (!currentSong) return;
+    
+    playTapSound();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    if (isSoundCloudSong(currentSong)) {
+      setFavoriteLoading(true);
+      try {
+        if (isOnlineFavorite) {
+          await SoundCloudService.removeFromFavorites(currentSong.id);
+        } else {
+          const scTrack: SoundCloudTrack = {
+            id: currentSong.id,
+            title: currentSong.title,
+            artist: currentSong.artist,
+            album: currentSong.album || 'SoundCloud',
+            duration: currentSong.duration / 1000,
+            stream_url: (currentSong as any).audioUrl || '',
+            artwork_url: (currentSong as any).artwork || null,
+            playbackCount: 0,
+            isOnlineStream: true,
+            source: 'soundcloud',
+          };
+          await SoundCloudService.addToFavorites(scTrack);
+        }
+        setIsOnlineFavorite(!isOnlineFavorite);
+      } catch (e) {
+        console.error('[NowPlaying] Failed to toggle SoundCloud favorite:', e);
+      }
+      setFavoriteLoading(false);
+    } else if (isArchiveSong(currentSong)) {
+      setFavoriteLoading(true);
+      try {
+        if (isOnlineFavorite) {
+          await ArchiveOrgService.removeFromFavorites(currentSong.id);
+        } else {
+          const archiveTrack: ArchiveOrgTrack = {
+            id: currentSong.id,
+            itemId: currentSong.id.replace('archive_', '').split('/')[0] || '',
+            title: currentSong.title,
+            artist: currentSong.artist,
+            album: currentSong.album,
+            duration: currentSong.duration / 1000,
+            stream_url: (currentSong as any).audioUrl || '',
+            bitrate: 128,
+            format: 'MP3',
+            fileSize: 0,
+            isOnlineStream: true,
+            source: 'archive.org',
+          };
+          await ArchiveOrgService.addToFavorites(archiveTrack);
+        }
+        setIsOnlineFavorite(!isOnlineFavorite);
+      } catch (e) {
+        console.error('[NowPlaying] Failed to toggle Archive favorite:', e);
+      }
+      setFavoriteLoading(false);
+    } else {
+      toggleFavorite(currentSong.id);
+    }
+  };
+
+  const checkIsFavorite = (): boolean => {
+    if (!currentSong) return false;
+    if (isOnlineSong(currentSong)) {
+      return isOnlineFavorite;
+    }
+    return isFavorite(currentSong.id);
+  };
   
   const isCompact = screenWidth <= 375 || screenHeight <= 700;
   const isVeryCompact = screenHeight <= 667;
@@ -178,17 +283,18 @@ export default function NowPlayingScreen() {
           <View style={[styles.actionButtons, (isExtraCompact || isVeryCompact) && { marginTop: FluentSpacing.xs, gap: FluentSpacing.l }]}>
             <Pressable
               style={styles.actionButton}
-              onPress={() => {
-                playTapSound();
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                toggleFavorite(currentSong.id);
-              }}
+              onPress={handleFavoriteToggle}
+              disabled={favoriteLoading}
             >
-              <MaterialCommunityIcons
-                name={isFavorite(currentSong.id) ? "heart" : "heart-outline"}
-                size={24}
-                color={isFavorite(currentSong.id) ? colors.colorPaletteRedForeground1 : (isDark ? "rgba(255,255,255,0.85)" : colors.colorNeutralForeground2)}
-              />
+              {favoriteLoading ? (
+                <ActivityIndicator size="small" color={colors.colorBrandForeground1} />
+              ) : (
+                <MaterialCommunityIcons
+                  name={checkIsFavorite() ? "heart" : "heart-outline"}
+                  size={24}
+                  color={checkIsFavorite() ? colors.colorPaletteRedForeground1 : (isDark ? "rgba(255,255,255,0.85)" : colors.colorNeutralForeground2)}
+                />
+              )}
             </Pressable>
             <Pressable
               style={styles.actionButton}
