@@ -48,12 +48,12 @@ function NowPlayingBackButton() {
         height: FluentTouchTarget.minimum,
         alignItems: "center",
         justifyContent: "center",
-        marginLeft: 8,
+        marginLeft: 4,
       }}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       <MaterialCommunityIcons
-        name="arrow-left"
+        name="chevron-left"
         size={FluentIconSize.medium}
         color={colors.colorNeutralForeground1}
       />

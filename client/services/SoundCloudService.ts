@@ -58,20 +58,13 @@ const toBase64Url = (buffer: Uint8Array): string => {
 };
 
 const getClientCredentials = () => {
-  if (Platform.OS === 'web') {
-    const clientId = Constants.expoConfig?.extra?.SOUNDCLOUD_CLIENT_ID || 
-                     process.env.EXPO_PUBLIC_SOUNDCLOUD_CLIENT_ID ||
-                     process.env.SOUNDCLOUD_CLIENT_ID || '';
-    const clientSecret = Constants.expoConfig?.extra?.SOUNDCLOUD_CLIENT_SECRET || 
-                         process.env.EXPO_PUBLIC_SOUNDCLOUD_CLIENT_SECRET ||
-                         process.env.SOUNDCLOUD_CLIENT_SECRET || '';
-    return { clientId, clientSecret };
-  }
-  
-  return {
-    clientId: process.env.SOUNDCLOUD_CLIENT_ID || '',
-    clientSecret: process.env.SOUNDCLOUD_CLIENT_SECRET || '',
-  };
+  const clientId = Constants.expoConfig?.extra?.SOUNDCLOUD_CLIENT_ID || 
+                   (Platform.OS === 'web' ? process.env.EXPO_PUBLIC_SOUNDCLOUD_CLIENT_ID : '') ||
+                   '';
+  const clientSecret = Constants.expoConfig?.extra?.SOUNDCLOUD_CLIENT_SECRET || 
+                       (Platform.OS === 'web' ? process.env.EXPO_PUBLIC_SOUNDCLOUD_CLIENT_SECRET : '') ||
+                       '';
+  return { clientId, clientSecret };
 };
 
 export interface SoundCloudTrack {

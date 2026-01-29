@@ -10,6 +10,7 @@ import { SongCard } from "@/components/SongCard";
 import { SongContextMenu } from "@/components/SongContextMenu";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
+import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
 import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
@@ -24,6 +25,7 @@ function ListenScreen() {
   const { isDark } = useThemeContext();
   const { currentSong, isPlaying, playSong, setQueue } = usePlayer();
   const { songs: deviceSongs } = useMediaLibraryContext();
+  const { setNowPlayingSource } = useNavigationContext();
 
   const colors = isDark ? FluentDarkColors : FluentLightColors;
 
@@ -74,8 +76,9 @@ function ListenScreen() {
   const handleSongPress = useCallback((song: PlayableSong) => {
     setQueue(filteredAndSortedSongs);
     playSong(song);
+    setNowPlayingSource({ tab: 'ListenTab' });
     navigation.navigate("NowPlaying", { songId: song.id });
-  }, [filteredAndSortedSongs, setQueue, playSong, navigation]);
+  }, [filteredAndSortedSongs, setQueue, playSong, navigation, setNowPlayingSource]);
 
   const handleSortChange = useCallback((option: SortOption) => {
     setSortBy(option);

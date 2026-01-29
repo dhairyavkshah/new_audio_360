@@ -17,6 +17,7 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { useMediaLibraryContext, DeviceSong } from "@/contexts/MediaLibraryContext";
 import { useToast } from "@/contexts/ToastContext";
+import { useNavigationContext } from "@/contexts/NavigationContext";
 import { FluentSpacing, FluentRadius, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { Album } from "@/navigation/LibraryStackNavigator";
@@ -118,6 +119,7 @@ function LibraryScreen() {
   const { favorites, recentlyPlayed, mostPlayed, playSong, setQueue } = usePlayerContext();
   const { songs: deviceSongs, isLoading: isLoadingSongs, progress, usingMockData, hideSong } = useMediaLibraryContext();
   const { currentSong, isPlaying } = usePlayer();
+  const { setNowPlayingSource } = useNavigationContext();
   const [activeCategory, setActiveCategory] = useState<CategoryType>("songs");
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -346,6 +348,7 @@ function LibraryScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setQueue(songList);
     playSong(song);
+    setNowPlayingSource({ tab: 'LibraryTab' });
     navigation.dispatch(
       CommonActions.navigate({
         name: "ListenTab",
@@ -355,7 +358,7 @@ function LibraryScreen() {
         },
       })
     );
-  }, [playTapSound, setQueue, playSong, navigation]);
+  }, [playTapSound, setQueue, playSong, navigation, setNowPlayingSource]);
 
   const handlePlaylistPress = useCallback((playlist: Playlist) => {
     playTapSound();
