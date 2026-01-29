@@ -92,8 +92,8 @@ android {
         applicationId 'com.theteam360.newaudio360'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 27
-        versionName "27.0"
+        versionCode 28
+        versionName "28.0"
     }
     signingConfigs {
         debug {
