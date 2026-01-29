@@ -687,14 +687,26 @@ class SoundCloudServiceClass {
       ].filter(Boolean);
 
       for (const streamUrl of urlsToTry) {
-        console.log('[SoundCloudService] Trying URL type for track', trackId);
+        console.log('[SoundCloudService] Trying URL type for track', trackId, 'URL prefix:', streamUrl.substring(0, 50));
         
+        // Direct CDN URLs - use as-is
         if (streamUrl.includes('sndcdn.com') || streamUrl.includes('cf-media') || streamUrl.includes('media-streaming')) {
           console.log('[SoundCloudService] Direct CDN URL found');
           return streamUrl;
         }
         
-        if (streamUrl.includes('api.soundcloud.com')) {
+        // On native platforms (Android/iOS), pass the API URL directly with oauth_token
+        // ExoPlayer/AVPlayer can follow redirects and the token will be in the URL
+        if (Platform.OS !== 'web') {
+          const urlWithToken = streamUrl.includes('?') 
+            ? `${streamUrl}&oauth_token=${token}`
+            : `${streamUrl}?oauth_token=${token}`;
+          console.log('[SoundCloudService] Native platform - returning URL with token for ExoPlayer to resolve');
+          return urlWithToken;
+        }
+        
+        // On web, try to resolve API URLs (both api.soundcloud.com and api-v2.soundcloud.com)
+        if (streamUrl.includes('api.soundcloud.com') || streamUrl.includes('api-v2.soundcloud.com')) {
           const resolved = await tryResolveApiUrl(streamUrl);
           if (resolved) {
             return resolved;
@@ -703,7 +715,7 @@ class SoundCloudServiceClass {
       }
       
       if (data.preview_mp3_128_url) {
-        console.log('[SoundCloudService] Using preview URL for track', trackId, '(full stream blocked by CORS)');
+        console.log('[SoundCloudService] Using preview URL for track', trackId, '(full stream not available)');
         return data.preview_mp3_128_url;
       }
       
