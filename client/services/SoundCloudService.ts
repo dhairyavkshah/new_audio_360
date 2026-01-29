@@ -51,8 +51,10 @@ const toBase64Url = (buffer: Uint8Array): string => {
 const getClientCredentials = () => {
   if (Platform.OS === 'web') {
     const clientId = Constants.expoConfig?.extra?.SOUNDCLOUD_CLIENT_ID || 
+                     process.env.EXPO_PUBLIC_SOUNDCLOUD_CLIENT_ID ||
                      process.env.SOUNDCLOUD_CLIENT_ID || '';
     const clientSecret = Constants.expoConfig?.extra?.SOUNDCLOUD_CLIENT_SECRET || 
+                         process.env.EXPO_PUBLIC_SOUNDCLOUD_CLIENT_SECRET ||
                          process.env.SOUNDCLOUD_CLIENT_SECRET || '';
     return { clientId, clientSecret };
   }
@@ -252,6 +254,11 @@ class SoundCloudServiceClass {
   async getAuthorizationUrl(): Promise<{ url: string; redirectUri: string; state: string }> {
     const { clientId } = getClientCredentials();
     const redirectUri = getRedirectUri();
+    
+    console.log('[SoundCloudService] Auth URL params:', {
+      clientId: clientId ? `${clientId.substring(0, 8)}...` : 'MISSING',
+      redirectUri,
+    });
     
     this.pkceVerifier = this.generateRandomString(64);
     const codeChallenge = await this.generateCodeChallenge(this.pkceVerifier);

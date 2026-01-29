@@ -32,6 +32,7 @@ export default function ArchiveTabScreen() {
   const [loading, setLoading] = useState(false);
   const [selectedQuality, setSelectedQuality] = useState<AudioQuality>('all');
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
+  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
   const [showConsentModal, setShowConsentModal] = useState(true);
 
   useEffect(() => {
@@ -47,6 +48,19 @@ export default function ArchiveTabScreen() {
     };
     checkConsent();
   }, []);
+
+  const loadFavorites = useCallback(async () => {
+    try {
+      const favorites = await ArchiveOrgService.getFavorites();
+      setFavoritedIds(new Set(favorites.map(f => f.id)));
+    } catch (error) {
+      console.error('[ArchiveTabScreen] Error loading favorites:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
 
   const handleAcceptConsent = async () => {
     try {
@@ -109,13 +123,25 @@ export default function ArchiveTabScreen() {
     );
   }, [playSong, navigation]);
 
-  const addToLibrary = async (track: ArchiveOrgTrack) => {
+  const toggleFavorite = async (track: ArchiveOrgTrack) => {
+    const isFavorited = favoritedIds.has(track.id);
     setAddingIds(prev => new Set(prev).add(track.id));
     try {
-      await ArchiveOrgService.addToFavorites(track);
-      showSuccess(`Added "${track.title}" to favorites`);
+      if (isFavorited) {
+        await ArchiveOrgService.removeFromFavorites(track.id);
+        setFavoritedIds(prev => {
+          const next = new Set(prev);
+          next.delete(track.id);
+          return next;
+        });
+        showSuccess(`Removed "${track.title}" from favorites`);
+      } else {
+        await ArchiveOrgService.addToFavorites(track);
+        setFavoritedIds(prev => new Set(prev).add(track.id));
+        showSuccess(`Added "${track.title}" to favorites`);
+      }
     } catch (error) {
-      showError("Failed to add song");
+      showError(isFavorited ? "Failed to remove song" : "Failed to add song");
     } finally {
       setAddingIds(prev => {
         const next = new Set(prev);
@@ -127,6 +153,7 @@ export default function ArchiveTabScreen() {
 
   const renderTrack = ({ item }: { item: ArchiveOrgTrack }) => {
     const isAdding = addingIds.has(item.id);
+    const isFavorited = favoritedIds.has(item.id);
 
     return (
       <Pressable 
@@ -158,17 +185,21 @@ export default function ArchiveTabScreen() {
         </View>
 
         <Pressable
-          style={[styles.addButton, { backgroundColor: theme.primary + '15' }]}
+          style={[styles.addButton, { backgroundColor: isFavorited ? '#FF4081' + '20' : theme.primary + '15' }]}
           onPress={(e) => {
             e.stopPropagation();
-            addToLibrary(item);
+            toggleFavorite(item);
           }}
           disabled={isAdding}
         >
           {isAdding ? (
-            <ActivityIndicator size="small" color={theme.primary} />
+            <ActivityIndicator size="small" color={isFavorited ? '#FF4081' : theme.primary} />
           ) : (
-            <MaterialCommunityIcons name="heart-plus-outline" size={22} color={theme.primary} />
+            <MaterialCommunityIcons 
+              name={isFavorited ? "heart" : "heart-plus-outline"} 
+              size={22} 
+              color={isFavorited ? '#FF4081' : theme.primary} 
+            />
           )}
         </Pressable>
       </Pressable>
