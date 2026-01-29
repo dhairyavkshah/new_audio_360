@@ -486,50 +486,49 @@ class PlaybackEngineModule : Module() {
             }
         }
         
+        // getStatus uses cached values for thread-safe non-blocking access
+        // This is called frequently (every 250ms for progress) so must be fast
         Function("getStatus") {
-            return@Function runOnMainThreadBlocking {
-                val service = PlaybackService.getInstance()
-                if (service != null) {
-                    service.getStatus()
-                } else {
-                    mapOf(
-                        "isInitialized" to isInitialized,
-                        "isPlaying" to false,
-                        "currentPositionMs" to 0L,
-                        "durationMs" to 0L,
-                        "bufferedPositionMs" to 0L,
-                        "currentIndex" to 0,
-                        "queueLength" to 0,
-                        "playbackState" to "unknown",
-                        "repeatMode" to "off",
-                        "shuffleEnabled" to false,
-                        "audioSessionId" to 0
-                    )
-                }
+            val service = PlaybackService.getInstance()
+            if (service != null) {
+                // Use cached status - no blocking needed
+                service.getCachedStatus()
+            } else {
+                mapOf(
+                    "isInitialized" to isInitialized,
+                    "isPlaying" to false,
+                    "currentPositionMs" to 0L,
+                    "durationMs" to 0L,
+                    "bufferedPositionMs" to 0L,
+                    "currentIndex" to 0,
+                    "queueLength" to 0,
+                    "playbackState" to "unknown",
+                    "repeatMode" to "off",
+                    "shuffleEnabled" to false,
+                    "audioSessionId" to 0
+                )
             }
         }
         
+        // getAudioSessionId uses cached value from getCachedStatus
         Function("getAudioSessionId") {
-            return@Function runOnMainThreadBlocking {
-                val service = PlaybackService.getInstance()
-                service?.getAudioSessionId() ?: 0
-            }
+            val service = PlaybackService.getInstance()
+            val status = service?.getCachedStatus()
+            (status?.get("audioSessionId") as? Int) ?: 0
         }
         
+        // getCurrentPosition uses cached value for non-blocking access
         Function("getCurrentPosition") {
-            return@Function runOnMainThreadBlocking {
-                val service = PlaybackService.getInstance()
-                val status = service?.getStatus()
-                (status?.get("currentPositionMs") as? Long) ?: 0L
-            }
+            val service = PlaybackService.getInstance()
+            val status = service?.getCachedStatus()
+            (status?.get("currentPositionMs") as? Long) ?: 0L
         }
         
+        // getDuration uses cached value for non-blocking access
         Function("getDuration") {
-            return@Function runOnMainThreadBlocking {
-                val service = PlaybackService.getInstance()
-                val status = service?.getStatus()
-                (status?.get("durationMs") as? Long) ?: 0L
-            }
+            val service = PlaybackService.getInstance()
+            val status = service?.getCachedStatus()
+            (status?.get("durationMs") as? Long) ?: 0L
         }
         
         AsyncFunction("release") { promise: Promise ->

@@ -85,6 +85,19 @@ class PlaybackService : MediaSessionService() {
     
     private var currentArtwork: Bitmap? = null
     
+    // Cached status fields for thread-safe reading without blocking
+    // These are updated by player listeners on the main thread
+    @Volatile private var cachedIsPlaying: Boolean = false
+    @Volatile private var cachedPositionMs: Long = 0L
+    @Volatile private var cachedDurationMs: Long = 0L
+    @Volatile private var cachedBufferedPositionMs: Long = 0L
+    @Volatile private var cachedCurrentIndex: Int = 0
+    @Volatile private var cachedQueueLength: Int = 0
+    @Volatile private var cachedPlaybackState: String = "idle"
+    @Volatile private var cachedRepeatMode: String = "off"
+    @Volatile private var cachedShuffleEnabled: Boolean = false
+    @Volatile private var cachedAudioSessionId: Int = 0
+    
     override fun onCreate() {
         super.onCreate()
         instance = this
@@ -164,6 +177,8 @@ class PlaybackService : MediaSessionService() {
                             Player.STATE_ENDED -> "ended"
                             else -> "unknown"
                         }
+                        cachedPlaybackState = stateStr
+                        updateCachedStatus()
                         notifyStateChange(mapOf("state" to stateStr, "type" to "playbackState"))
                         
                         if (state == Player.STATE_ENDED) {
@@ -172,6 +187,8 @@ class PlaybackService : MediaSessionService() {
                     }
                     
                     override fun onIsPlayingChanged(isPlaying: Boolean) {
+                        cachedIsPlaying = isPlaying
+                        updateCachedStatus()
                         notifyStateChange(mapOf("isPlaying" to isPlaying, "type" to "isPlaying"))
                         
                         if (isPlaying) {
@@ -183,6 +200,8 @@ class PlaybackService : MediaSessionService() {
                     
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         val index = player?.currentMediaItemIndex ?: 0
+                        cachedCurrentIndex = index
+                        updateCachedStatus()
                         notifyStateChange(mapOf(
                             "index" to index,
                             "type" to "trackChanged",
@@ -196,6 +215,18 @@ class PlaybackService : MediaSessionService() {
                         ))
                     }
                     
+                    override fun onRepeatModeChanged(repeatMode: Int) {
+                        cachedRepeatMode = when (repeatMode) {
+                            Player.REPEAT_MODE_ONE -> "one"
+                            Player.REPEAT_MODE_ALL -> "all"
+                            else -> "off"
+                        }
+                    }
+                    
+                    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                        cachedShuffleEnabled = shuffleModeEnabled
+                    }
+                    
                     override fun onPlayerError(error: PlaybackException) {
                         notifyStateChange(mapOf(
                             "type" to "error",
@@ -204,6 +235,9 @@ class PlaybackService : MediaSessionService() {
                         ))
                     }
                 })
+                
+                // Initialize cached audio session ID
+                cachedAudioSessionId = audioSessionId
             }
         
         mediaSession = MediaSession.Builder(this, player!!)
@@ -221,6 +255,40 @@ class PlaybackService : MediaSessionService() {
             .build()
         
         Log.d(TAG, "Player initialized with audio session: ${player?.audioSessionId}")
+    }
+    
+    /**
+     * Updates all cached status values from the player.
+     * Called from player listeners on the main thread.
+     */
+    private fun updateCachedStatus() {
+        val p = player ?: return
+        cachedPositionMs = p.currentPosition
+        val duration = p.duration
+        cachedDurationMs = if (duration == C.TIME_UNSET) 0L else duration
+        cachedBufferedPositionMs = p.bufferedPosition
+        cachedCurrentIndex = p.currentMediaItemIndex
+        cachedQueueLength = p.mediaItemCount
+    }
+    
+    /**
+     * Returns cached status values without blocking.
+     * Safe to call from any thread since all fields are volatile.
+     */
+    fun getCachedStatus(): Map<String, Any> {
+        return mapOf(
+            "isInitialized" to (player != null),
+            "isPlaying" to cachedIsPlaying,
+            "currentPositionMs" to cachedPositionMs,
+            "durationMs" to cachedDurationMs,
+            "bufferedPositionMs" to cachedBufferedPositionMs,
+            "currentIndex" to cachedCurrentIndex,
+            "queueLength" to cachedQueueLength,
+            "playbackState" to cachedPlaybackState,
+            "repeatMode" to cachedRepeatMode,
+            "shuffleEnabled" to cachedShuffleEnabled,
+            "audioSessionId" to cachedAudioSessionId
+        )
     }
     
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
@@ -305,6 +373,12 @@ class PlaybackService : MediaSessionService() {
             override fun run() {
                 player?.let { p ->
                     if (p.isPlaying) {
+                        // Update cached values for thread-safe access
+                        cachedPositionMs = p.currentPosition
+                        val duration = p.duration
+                        cachedDurationMs = if (duration == C.TIME_UNSET) 0L else duration
+                        cachedBufferedPositionMs = p.bufferedPosition
+                        
                         progressCallback?.invoke(mapOf(
                             "positionMs" to p.currentPosition,
                             "durationMs" to p.duration,
