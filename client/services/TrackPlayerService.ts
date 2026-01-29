@@ -27,6 +27,9 @@ try {
 
 export { State, RepeatMode };
 
+type StateType = typeof State;
+type RepeatModeType = typeof RepeatMode;
+
 export type Track = {
   id: string;
   url: string;
@@ -72,7 +75,7 @@ class TrackPlayerServiceClass {
   private onSeekCallback?: (position: number) => void;
   private onTrackChangeCallback?: (trackIndex: number | null) => void;
   private onProgressCallback?: (progress: Progress) => void;
-  private onStateChangeCallback?: (state: State) => void;
+  private onStateChangeCallback?: (state: any) => void;
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {
@@ -247,7 +250,7 @@ class TrackPlayerServiceClass {
   async setRepeatMode(mode: 'off' | 'one' | 'all'): Promise<void> {
     if (!this.isInitialized) return;
     
-    const repeatModeMap: Record<string, RepeatMode> = {
+    const repeatModeMap: Record<string, typeof RepeatMode[keyof typeof RepeatMode]> = {
       off: RepeatMode.Off,
       one: RepeatMode.Track,
       all: RepeatMode.Queue,
@@ -261,7 +264,7 @@ class TrackPlayerServiceClass {
     return await TrackPlayer.getProgress();
   }
 
-  async getState(): Promise<State | null> {
+  async getState(): Promise<typeof State[keyof typeof State] | null> {
     if (!this.isInitialized) return null;
     const playbackState = await TrackPlayer.getPlaybackState();
     return playbackState.state;
@@ -330,7 +333,7 @@ class TrackPlayerServiceClass {
     onSeek?: (position: number) => void;
     onTrackChange?: (trackIndex: number | null) => void;
     onProgress?: (progress: Progress) => void;
-    onStateChange?: (state: State) => void;
+    onStateChange?: (state: any) => void;
   }): void {
     this.onPlayCallback = callbacks.onPlay;
     this.onPauseCallback = callbacks.onPause;
@@ -375,7 +378,7 @@ class TrackPlayerServiceClass {
     this.onProgressCallback?.(progress);
   }
 
-  handleStateChange(state: State): void {
+  handleStateChange(state: any): void {
     this.onStateChangeCallback?.(state);
   }
 
@@ -442,21 +445,21 @@ export async function PlaybackService() {
     TrackPlayerService.handleRemotePrevious();
   });
 
-  TrackPlayer.addEventListener(Event.RemoteSeek, async ({ position }) => {
+  TrackPlayer.addEventListener(Event.RemoteSeek, async ({ position }: { position: number }) => {
     console.log('[PlaybackService] RemoteSeek event received:', position);
     await TrackPlayer.seekTo(position);
     TrackPlayerService.handleRemoteSeek(position);
   });
 
-  TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, ({ index }) => {
+  TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, ({ index }: { index: number | undefined }) => {
     TrackPlayerService.handleTrackChange(index ?? null);
   });
 
-  TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, (progress) => {
+  TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, (progress: Progress) => {
     TrackPlayerService.handleProgress(progress);
   });
 
-  TrackPlayer.addEventListener(Event.PlaybackState, ({ state }) => {
+  TrackPlayer.addEventListener(Event.PlaybackState, ({ state }: { state: any }) => {
     TrackPlayerService.handleStateChange(state);
   });
 }

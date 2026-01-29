@@ -271,6 +271,96 @@ export const GooglePlayLicense = {
 export interface RegionDetectionResult {
   isIndian: boolean;
   country: string;
+  currency: Currency;
+}
+
+export type GeoDetectionResult = RegionDetectionResult;
+
+export type Currency = "INR" | "USD" | "EUR" | "GBP" | "CAD" | "AUD";
+
+export interface CurrencyOption {
+  value: Currency;
+  label: string;
+  symbol: string;
+}
+
+export interface DonationTier {
+  amount: number;
+  label: string;
+  icon: string;
+}
+
+export const CURRENCIES: CurrencyOption[] = [
+  { value: "INR", label: "Indian Rupee (₹)", symbol: "₹" },
+  { value: "USD", label: "US Dollar ($)", symbol: "$" },
+  { value: "EUR", label: "Euro (€)", symbol: "€" },
+  { value: "GBP", label: "British Pound (£)", symbol: "£" },
+  { value: "CAD", label: "Canadian Dollar (C$)", symbol: "C$" },
+  { value: "AUD", label: "Australian Dollar (A$)", symbol: "A$" },
+];
+
+const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  INR: "₹",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  CAD: "C$",
+  AUD: "A$",
+};
+
+function createTiers(amounts: number[], symbol: string): DonationTier[] {
+  const icons = ["coffee", "heart", "star", "diamond-stone"];
+  return amounts.map((amount, i) => ({
+    amount,
+    label: `${symbol}${amount}`,
+    icon: icons[i] || "gift",
+  }));
+}
+
+export const DONATION_TIERS: Record<Currency, DonationTier[]> = {
+  INR: createTiers([99, 199, 499, 999], "₹"),
+  USD: createTiers([2, 5, 10, 20], "$"),
+  EUR: createTiers([2, 5, 10, 20], "€"),
+  GBP: createTiers([2, 4, 8, 15], "£"),
+  CAD: createTiers([3, 7, 15, 25], "C$"),
+  AUD: createTiers([3, 7, 15, 25], "A$"),
+};
+
+export const PaymentHandler = {
+  async getDonorStatus(): Promise<boolean> {
+    return false;
+  },
+  
+  async setDonorStatus(status: boolean): Promise<void> {
+    // Placeholder - donation status not tracked
+  },
+  
+  openUPIPayment(amount: number, currency: string): void {
+    // Placeholder - UPI payment not implemented
+    console.log('[PaymentHandler] UPI payment:', amount, currency);
+  },
+  
+  openPayPalPayment(amount: number, currency: string): void {
+    // Placeholder - PayPal payment not implemented
+    console.log('[PaymentHandler] PayPal payment:', amount, currency);
+  },
+  
+  getCurrencySymbol(currency: Currency): string {
+    return CURRENCY_SYMBOLS[currency] || '$';
+  },
+};
+
+function getCurrencyForCountry(countryCode: string): Currency {
+  const currencyMap: Record<string, Currency> = {
+    IN: "INR",
+    US: "USD",
+    GB: "GBP",
+    CA: "CAD",
+    AU: "AUD",
+  };
+  const eurCountries = ["DE", "FR", "IT", "ES", "NL", "BE", "AT", "PT", "IE", "FI", "GR"];
+  if (eurCountries.includes(countryCode)) return "EUR";
+  return currencyMap[countryCode] || "USD";
 }
 
 export async function detectUserRegion(): Promise<RegionDetectionResult> {
@@ -291,11 +381,13 @@ export async function detectUserRegion(): Promise<RegionDetectionResult> {
     return {
       country: countryCode,
       isIndian,
+      currency: getCurrencyForCountry(countryCode),
     };
   } catch (error) {
     return {
       country: "US",
       isIndian: false,
+      currency: "USD",
     };
   }
 }

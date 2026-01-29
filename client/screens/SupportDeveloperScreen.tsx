@@ -34,7 +34,7 @@ import {
   CURRENCIES,
   DONATION_TIERS,
   detectUserRegion,
-  GeoDetectionResult,
+  RegionDetectionResult,
 } from "@/lib/payment";
 
 
@@ -52,7 +52,7 @@ export default function SupportDeveloperScreen() {
   const [showThankYouModal, setShowThankYouModal] = useState(false);
   const [pendingPaymentMethod, setPendingPaymentMethod] = useState<"upi" | "paypal" | null>(null);
   const [isDonor, setIsDonor] = useState(false);
-  const [geoInfo, setGeoInfo] = useState<GeoDetectionResult | null>(null);
+  const [geoInfo, setGeoInfo] = useState<RegionDetectionResult | null>(null);
   const [isLoadingGeo, setIsLoadingGeo] = useState(true);
 
   const confettiScale = useSharedValue(0);
