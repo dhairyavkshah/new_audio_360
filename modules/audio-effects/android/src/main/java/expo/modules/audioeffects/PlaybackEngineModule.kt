@@ -249,7 +249,6 @@ class PlaybackEngineModule : Module() {
                     }
                 }
             }.start()
-            }
         }
         
         AsyncFunction("updateMetadata") { title: String?, artist: String?, artwork: String?, promise: Promise ->
