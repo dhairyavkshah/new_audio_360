@@ -29,11 +29,20 @@ export interface PlaybackResult {
   reason?: string;
 }
 
+export interface TrackMetadataInput {
+  title?: string;
+  artist?: string;
+  artwork?: string;
+}
+
 interface PlaybackEngineModuleInterface {
   isAvailable(): boolean;
   initialize(): Promise<PlaybackResult>;
   setQueue(uris: string[], startIndex: number): Promise<PlaybackResult>;
+  setQueueWithMetadata(uris: string[], startIndex: number, metadata: TrackMetadataInput[]): Promise<PlaybackResult>;
   loadTrack(uri: string): Promise<PlaybackResult>;
+  loadTrackWithMetadata(uri: string, title: string | null, artist: string | null, artwork: string | null): Promise<PlaybackResult>;
+  updateMetadata(title: string | null, artist: string | null, artwork: string | null): Promise<PlaybackResult>;
   play(): Promise<PlaybackResult>;
   pause(): Promise<PlaybackResult>;
   stop(): Promise<PlaybackResult>;
@@ -370,6 +379,42 @@ export const PlaybackEngineModule = {
       return await PlaybackEngineModuleNative.loadTrack(uri);
     } catch (error) {
       console.error('PlaybackEngineModule.loadTrack error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  loadTrackWithMetadata: async (uri: string, title: string | null, artist: string | null, artwork: string | null): Promise<PlaybackResult> => {
+    if (!PlaybackEngineModuleNative) {
+      return { success: false, error: 'Playback engine not available' };
+    }
+    try {
+      return await PlaybackEngineModuleNative.loadTrackWithMetadata(uri, title, artist, artwork);
+    } catch (error) {
+      console.error('PlaybackEngineModule.loadTrackWithMetadata error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  setQueueWithMetadata: async (uris: string[], startIndex: number, metadata: { title?: string; artist?: string; artwork?: string }[]): Promise<PlaybackResult> => {
+    if (!PlaybackEngineModuleNative) {
+      return { success: false, error: 'Playback engine not available' };
+    }
+    try {
+      return await PlaybackEngineModuleNative.setQueueWithMetadata(uris, startIndex, metadata);
+    } catch (error) {
+      console.error('PlaybackEngineModule.setQueueWithMetadata error:', error);
+      return { success: false, error: String(error) };
+    }
+  },
+
+  updateMetadata: async (title: string | null, artist: string | null, artwork: string | null): Promise<PlaybackResult> => {
+    if (!PlaybackEngineModuleNative) {
+      return { success: false, error: 'Playback engine not available' };
+    }
+    try {
+      return await PlaybackEngineModuleNative.updateMetadata(title, artist, artwork);
+    } catch (error) {
+      console.error('PlaybackEngineModule.updateMetadata error:', error);
       return { success: false, error: String(error) };
     }
   },

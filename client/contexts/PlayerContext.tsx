@@ -1174,7 +1174,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           console.log('[PlayerContext] SoundCloud stream URL prepared for DSP playback');
         }
         
-        const loadResult = await PlaybackEngineModule.loadTrack(finalAudioSource);
+        // Load track with metadata for notification/lockscreen display
+        const trackTitle = song.title || 'Unknown Track';
+        const trackArtist = song.artist || 'Unknown Artist';
+        const trackArtwork: string | null = 
+          ('artwork' in song && typeof song.artwork === 'string' && song.artwork) ? song.artwork :
+          ('albumArt' in song && typeof song.albumArt === 'string' && song.albumArt) ? song.albumArt :
+          ('cover' in song && typeof song.cover === 'string' && song.cover) ? song.cover :
+          null;
+        
+        const loadResult = await PlaybackEngineModule.loadTrackWithMetadata(
+          finalAudioSource,
+          trackTitle,
+          trackArtist,
+          trackArtwork
+        );
         
         if (!loadResult.success) {
           setError(loadResult.error || 'Failed to load audio with native DSP player');
@@ -1406,7 +1420,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       } else if (useNativePlaybackRef.current) {
         cleanupPlayer();
         
-        const loadResult = await PlaybackEngineModule.loadTrack(audioSource);
+        // Load track with metadata for notification/lockscreen display
+        const trackTitle = song.title || 'Unknown Track';
+        const trackArtist = song.artist || 'Unknown Artist';
+        const trackArtwork: string | null = 
+          ('artwork' in song && typeof song.artwork === 'string' && song.artwork) ? song.artwork :
+          ('albumArt' in song && typeof song.albumArt === 'string' && song.albumArt) ? song.albumArt :
+          ('cover' in song && typeof song.cover === 'string' && song.cover) ? song.cover :
+          null;
+        
+        const loadResult = await PlaybackEngineModule.loadTrackWithMetadata(
+          audioSource,
+          trackTitle,
+          trackArtist,
+          trackArtwork
+        );
         
         if (!loadResult.success) {
           setError(loadResult.error || 'Failed to load audio with native player');

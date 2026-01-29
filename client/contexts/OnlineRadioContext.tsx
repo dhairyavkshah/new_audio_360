@@ -624,8 +624,13 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
             return;
           }
           
-          // Load and play the stream
-          const loadResult = await PlaybackEngineModule.loadTrack(streamUrl);
+          // Load and play the stream with metadata for notification/lockscreen
+          const loadResult = await PlaybackEngineModule.loadTrackWithMetadata(
+            streamUrl,
+            station.name,
+            station.country || 'Online Radio',
+            station.favicon || null
+          );
           if (!loadResult.success) {
             throw new Error(loadResult.error || 'Failed to load radio stream');
           }
