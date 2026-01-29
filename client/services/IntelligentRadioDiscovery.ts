@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCuratedStationsByCountry, CuratedRadioStation, CURATED_RADIO_STATIONS } from './CuratedRadioStations';
 
-const CACHE_KEY_PREFIX = '@na360_radio_cache_';
-const CACHE_METADATA_KEY = '@na360_radio_cache_metadata';
+const CACHE_KEY_PREFIX = '@na360_radio_cache_v2_';
+const CACHE_METADATA_KEY = '@na360_radio_cache_metadata_v2';
 const REFRESH_INTERVAL_DAYS = 30;
 const MAX_STATIONS_PER_COUNTRY = 1000;
 const API_FETCH_LIMIT = 1500;
@@ -48,6 +48,8 @@ const INVALID_URL_PATTERNS = [
   /;stream$/i,
   /;$/i,
   /\?sid=/i,
+  /uber\.radio/i,
+  /exclusive\.radio/i,
 ];
 
 const BLACKLISTED_STATION_PATTERNS = [
