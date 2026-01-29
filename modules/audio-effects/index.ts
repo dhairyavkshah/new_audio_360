@@ -50,14 +50,14 @@ interface PlaybackEngineModuleInterface {
   skipToIndex(index: number): Promise<PlaybackResult>;
   skipToNext(): Promise<PlaybackResult>;
   skipToPrevious(): Promise<PlaybackResult>;
-  setVolume(volume: number): Promise<{ success: boolean; volume: number }>;
-  setPlaybackSpeed(speed: number): Promise<{ success: boolean; speed: number }>;
-  setRepeatMode(mode: string): Promise<{ success: boolean; mode: string }>;
-  setShuffleMode(enabled: boolean): Promise<{ success: boolean; shuffle: boolean }>;
-  getStatus(): Promise<PlaybackStatus>;
-  getAudioSessionId(): Promise<number>;
-  getCurrentPosition(): Promise<number>;
-  getDuration(): Promise<number>;
+  setVolume(volume: number): { success: boolean; volume: number };
+  setPlaybackSpeed(speed: number): { success: boolean; speed: number };
+  setRepeatMode(mode: string): { success: boolean; mode: string };
+  setShuffleMode(enabled: boolean): { success: boolean; shuffle: boolean };
+  getStatus(): PlaybackStatus;
+  getAudioSessionId(): number;
+  getCurrentPosition(): number;
+  getDuration(): number;
   release(): Promise<PlaybackResult>;
 }
 
@@ -503,55 +503,55 @@ export const PlaybackEngineModule = {
     }
   },
 
-  setVolume: async (volume: number): Promise<{ success: boolean; volume: number }> => {
+  setVolume: (volume: number): { success: boolean; volume: number } => {
     if (!PlaybackEngineModuleNative) {
       return { success: false, volume: 1 };
     }
     try {
-      return await PlaybackEngineModuleNative.setVolume(volume);
+      return PlaybackEngineModuleNative.setVolume(volume);
     } catch (error) {
       console.error('PlaybackEngineModule.setVolume error:', error);
       return { success: false, volume: 1 };
     }
   },
 
-  setPlaybackSpeed: async (speed: number): Promise<{ success: boolean; speed: number }> => {
+  setPlaybackSpeed: (speed: number): { success: boolean; speed: number } => {
     if (!PlaybackEngineModuleNative) {
       return { success: false, speed: 1 };
     }
     try {
-      return await PlaybackEngineModuleNative.setPlaybackSpeed(speed);
+      return PlaybackEngineModuleNative.setPlaybackSpeed(speed);
     } catch (error) {
       console.error('PlaybackEngineModule.setPlaybackSpeed error:', error);
       return { success: false, speed: 1 };
     }
   },
 
-  setRepeatMode: async (mode: 'off' | 'one' | 'all'): Promise<{ success: boolean; mode: string }> => {
+  setRepeatMode: (mode: 'off' | 'one' | 'all'): { success: boolean; mode: string } => {
     if (!PlaybackEngineModuleNative) {
       return { success: false, mode: 'off' };
     }
     try {
-      return await PlaybackEngineModuleNative.setRepeatMode(mode);
+      return PlaybackEngineModuleNative.setRepeatMode(mode);
     } catch (error) {
       console.error('PlaybackEngineModule.setRepeatMode error:', error);
       return { success: false, mode: 'off' };
     }
   },
 
-  setShuffleMode: async (enabled: boolean): Promise<{ success: boolean; shuffle: boolean }> => {
+  setShuffleMode: (enabled: boolean): { success: boolean; shuffle: boolean } => {
     if (!PlaybackEngineModuleNative) {
       return { success: false, shuffle: false };
     }
     try {
-      return await PlaybackEngineModuleNative.setShuffleMode(enabled);
+      return PlaybackEngineModuleNative.setShuffleMode(enabled);
     } catch (error) {
       console.error('PlaybackEngineModule.setShuffleMode error:', error);
       return { success: false, shuffle: false };
     }
   },
 
-  getStatus: async (): Promise<PlaybackStatus> => {
+  getStatus: (): PlaybackStatus => {
     if (!PlaybackEngineModuleNative) {
       return {
         isInitialized: false,
@@ -568,7 +568,7 @@ export const PlaybackEngineModule = {
       };
     }
     try {
-      return await PlaybackEngineModuleNative.getStatus();
+      return PlaybackEngineModuleNative.getStatus();
     } catch (error) {
       console.error('PlaybackEngineModule.getStatus error:', error);
       return {
@@ -587,36 +587,36 @@ export const PlaybackEngineModule = {
     }
   },
 
-  getAudioSessionId: async (): Promise<number> => {
+  getAudioSessionId: (): number => {
     if (!PlaybackEngineModuleNative) {
       return 0;
     }
     try {
-      return await PlaybackEngineModuleNative.getAudioSessionId();
+      return PlaybackEngineModuleNative.getAudioSessionId();
     } catch (error) {
       console.error('PlaybackEngineModule.getAudioSessionId error:', error);
       return 0;
     }
   },
 
-  getCurrentPosition: async (): Promise<number> => {
+  getCurrentPosition: (): number => {
     if (!PlaybackEngineModuleNative) {
       return 0;
     }
     try {
-      return await PlaybackEngineModuleNative.getCurrentPosition();
+      return PlaybackEngineModuleNative.getCurrentPosition();
     } catch (error) {
       console.error('PlaybackEngineModule.getCurrentPosition error:', error);
       return 0;
     }
   },
 
-  getDuration: async (): Promise<number> => {
+  getDuration: (): number => {
     if (!PlaybackEngineModuleNative) {
       return 0;
     }
     try {
-      return await PlaybackEngineModuleNative.getDuration();
+      return PlaybackEngineModuleNative.getDuration();
     } catch (error) {
       console.error('PlaybackEngineModule.getDuration error:', error);
       return 0;

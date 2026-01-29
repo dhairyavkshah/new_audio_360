@@ -840,7 +840,7 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
     // On Android, use PlaybackEngineModule
     if (Platform.OS === 'android' && useNativePlaybackRef.current && nativeAudioSessionIdRef.current > 0) {
       try {
-        await PlaybackEngineModule.setVolume(clampedVolume);
+        PlaybackEngineModule.setVolume(clampedVolume);
       } catch (err) {
         console.warn('[OnlineRadioContext] PlaybackEngineModule.setVolume error:', err);
       }
