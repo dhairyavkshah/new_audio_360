@@ -40,8 +40,8 @@ jobs:
 
       - name: Setup EAS Secrets
         run: |
-          eas env:create --name SOUNDCLOUD_CLIENT_ID --value "${{ secrets.SOUNDCLOUD_CLIENT_ID }}" --visibility secret --scope project --force --non-interactive
-          eas env:create --name SOUNDCLOUD_CLIENT_SECRET --value "${{ secrets.SOUNDCLOUD_CLIENT_SECRET }}" --visibility secret --scope project --force --non-interactive
+          eas env:create --name SOUNDCLOUD_CLIENT_ID --value "${{ secrets.SOUNDCLOUD_CLIENT_ID }}" --visibility secret --scope project --environment production --environment preview --environment development --force --non-interactive
+          eas env:create --name SOUNDCLOUD_CLIENT_SECRET --value "${{ secrets.SOUNDCLOUD_CLIENT_SECRET }}" --visibility secret --scope project --environment production --environment preview --environment development --force --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
