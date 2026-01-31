@@ -6,6 +6,16 @@
 
 ---
 
+## What's New in v30.0
+
+**Header Optimization Release** - Maximized content display by merging header rows:
+- SoundCloud: Compact profile bar with icon-only buttons for Search/Likes/Playlists
+- SoundCloud Search: Single-row search with type selector dropdown
+- Library: Play All/Shuffle buttons now beside Songs dropdown
+- More screen space for your music!
+
+---
+
 ## Google Play Store Release Note (Under 500 Characters)
 
 ```
@@ -23,6 +33,64 @@ Studio-grade audio experience:
 
 One-time purchase. No ads. No subscriptions. Lifetime access.
 ```
+
+---
+
+## Version 30.0 (January 31, 2026)
+
+**Header Optimization Release**
+
+- SoundCloud Header: Merged profile bar + sub tabs into single compact row with icon-only buttons
+- SoundCloud Search: Merged search field + type selector into single row with compact dropdown
+- Library Header: Moved Play All/Shuffle buttons beside Songs dropdown in category row
+- Maximized content display area by eliminating separate header rows
+
+---
+
+## Version 29.0 (January 2026)
+
+**Card Spacing and Visual Polish**
+
+- Fixed SoundCloud card spacing to match Library screen (8px gaps)
+- Added header bottom borders for visual separation
+- Consistent card styling across all Discover screens
+
+---
+
+## Version 28.1.1 (January 2026)
+
+**Design System Refinement Phase 2**
+
+- 23 design tasks completed
+- New design tokens: FluentSpacing.xxxxxxxl, FluentRadius.xxLarge, FluentBlurIntensity
+- Typography cleanup: Replaced inline fontWeight with Strong variants
+- Component extractions: SoundLabScreen 42% reduction, SoundCloudTabScreen 38%
+- Empty state icons increased to 64px
+
+---
+
+## Version 28.1 (January 2026)
+
+**Design Consistency & SoundCloud Features**
+
+- Unified card styling across Radio, Discover, and Settings screens
+- SoundCloud search by type (Tracks/Playlists/Albums)
+- SoundCloud likes sync to user's account
+- Play All/Shuffle for SoundCloud Likes
+
+---
+
+## Version 28.0 (January 2026)
+
+**Open Music Discovery**
+
+- SoundCloud OAuth 2.1 integration with PKCE
+- Full SoundCloud track streaming with DSP effects
+- Internet Archive public domain/CC music streaming
+- Tabbed Discover screen with Archive and SoundCloud tabs
+- HRTF Binaural Virtualization in Spatial Enhancement
+- Bass Enhancement with harmonic generation
+- Neural AI Audio Upscaling (Kuleshov-style 1D U-Net CNN)
 
 ---
 
@@ -167,4 +235,4 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 
 ---
 
-*Last Updated: January 25, 2026*
+*Last Updated: January 31, 2026*

@@ -20,7 +20,7 @@
 ## Short Description (80 characters max)
 
 ```
-Premium music player with studio-grade DSP, 55 themes & intelligent radio.
+Premium music player with studio-grade DSP, 55 themes, radio & music discovery.
 ```
 
 ---
@@ -69,6 +69,16 @@ Access 40,000+ radio stations worldwide with our smart discovery system:
 
 Plus native FM/AM radio support on compatible devices.
 
+OPEN MUSIC DISCOVERY
+
+Explore millions of tracks from SoundCloud and Internet Archive:
+
+- SoundCloud Integration - Login to access your likes, playlists, and search tracks
+- Internet Archive - Stream public domain and Creative Commons music
+- Full DSP Support - Apply all Sound Lab effects to streaming audio
+- Neural AI Upscaling - Enhance streaming audio quality in real-time
+- Offline Favorites - Save streaming tracks for quick access
+
 POWERFUL LIBRARY MANAGEMENT
 
 - Fast Library Scanning - Quick indexing of your music collection
@@ -114,19 +124,17 @@ Download now and elevate your music experience!
 ## What's New (500 characters max)
 
 ```
-v26.1 - Intelligent Radio Discovery
+v30.0 - Header Optimization & UI Polish
 
-NEW: Access 40,000+ radio stations worldwide
-- Smart scanning via Radio Browser API
-- Up to 1000 stations per country
-- Quality-filtered, popularity-sorted
-- 30-day cache with manual refresh
-- Location-based station discovery
+NEW: Compact headers maximize content display
+- SoundCloud: Single-row profile + icon-only navigation
+- SoundCloud: Inline search type dropdown
+- Library: Play All/Shuffle beside category dropdown
 
-IMPROVED:
-- Enhanced API reliability (30s timeout)
-- Better visual feedback during scans
-- Optimized station list performance
+DISCOVER: Stream from SoundCloud & Internet Archive
+- Full DSP effects on streaming audio
+- Neural AI upscaling support
+- SoundCloud OAuth with likes sync
 
 One-time purchase, lifetime access.
 ```
@@ -136,7 +144,7 @@ One-time purchase, lifetime access.
 ## Keywords/Tags
 
 ```
-music player, audio player, equalizer, bass boost, treble, EQ, radio, online radio, fm radio, themes, audiophile, hifi, sound quality, playlist, music library, audio effects, offline music, premium player, internet radio, dsp
+music player, audio player, equalizer, bass boost, treble, EQ, radio, online radio, soundcloud, internet archive, streaming, themes, audiophile, hifi, sound quality, playlist, music library, audio effects, offline music, premium player, internet radio, dsp, music discovery
 ```
 
 ---
@@ -162,6 +170,7 @@ music player, audio player, equalizer, bass boost, treble, EQ, radio, online rad
 6. Music Library - Album grid view
 7. Intelligent Radio - Station discovery
 8. Playlist View - User playlists
+9. Discover Tab - SoundCloud & Archive browsing
 
 ---
 
@@ -171,9 +180,10 @@ music player, audio player, equalizer, bass boost, treble, EQ, radio, online rad
 |-----------|-----------|--------|
 | Audio files | No | No |
 | Location | Optional (radio discovery) | No |
+| Third-party account info | Optional (SoundCloud login) | No |
 | App activity | No | No |
 | Device info | No | No |
 
 ---
 
-*Last Updated: January 26, 2026*
+*Last Updated: January 31, 2026*

@@ -6,6 +6,12 @@
   - Merged search field + type selector into single row with compact dropdown for Tracks/Playlists/Albums
   - Maximized content display area by eliminating separate header rows
 - **Library Header Optimization**: Moved Play All/Shuffle buttons beside Songs dropdown in FluentTopBar category row
+- **Playlist/Album Card Spacing**: Added marginBottom to SoundCloudPlaylistCard for consistent 8px gaps
+- **Documentation Overhaul**:
+  - LicenseScreen: Added Open Source Components section with 12 library licenses
+  - Privacy Policy: Updated for SoundCloud OAuth and Internet Archive (v1.0.3)
+  - Release Notes: Added v28.0 through v30.0 sections
+  - App Store Descriptions: Added Discover features and v30.0 What's New
 - **Version Update**: Updated to v30.0 across all screens and Android gradle
 
 ## Previous Changes (v29.0 - January 2026)

@@ -27,6 +27,26 @@ const FEATURES: FeatureItem[] = [
   { icon: "volume-high", text: "All Effects & Reverbs", licensed: true },
 ];
 
+type OpenSourceLibrary = {
+  name: string;
+  license: string;
+};
+
+const OPEN_SOURCE_LIBRARIES: OpenSourceLibrary[] = [
+  { name: "React Native", license: "MIT" },
+  { name: "React", license: "MIT" },
+  { name: "Expo SDK", license: "MIT" },
+  { name: "React Navigation", license: "MIT" },
+  { name: "TensorFlow.js", license: "Apache 2.0" },
+  { name: "React Native Track Player", license: "Apache 2.0" },
+  { name: "React Native Audio API", license: "MIT" },
+  { name: "React Native Reanimated", license: "MIT" },
+  { name: "Async Storage", license: "MIT" },
+  { name: "Zod", license: "MIT" },
+  { name: "AWS SDK", license: "Apache 2.0" },
+  { name: "React Query", license: "MIT" },
+];
+
 export default function LicenseScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const { isDark } = useThemeContext();
@@ -260,6 +280,61 @@ export default function LicenseScreen() {
             </View>
           </View>
         </View>
+
+        <View style={styles.openSourceSection}>
+          <FluentSectionHeader icon="code-braces" title="Open Source Components" />
+          
+          <View style={{
+            backgroundColor: colors.colorNeutralBackground2,
+            borderRadius: FluentControlRadius.dialog,
+            padding: FluentSpacing.l,
+            marginBottom: FluentSpacing.m,
+          }}>
+            <FluentText variant="body2" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
+              This app is built with the following open source libraries:
+            </FluentText>
+
+            <View style={styles.libraryList}>
+              {OPEN_SOURCE_LIBRARIES.map((library) => (
+                <View key={library.name} style={styles.libraryRow}>
+                  <FluentText variant="body1" style={{ flex: 1 }}>
+                    {library.name}
+                  </FluentText>
+                  <View style={[
+                    styles.licenseBadge,
+                    { 
+                      backgroundColor: library.license === "MIT" 
+                        ? colors.colorPaletteGreenForeground1 + "20" 
+                        : colors.colorBrandForeground1 + "20" 
+                    }
+                  ]}>
+                    <FluentText 
+                      variant="caption1Strong" 
+                      style={{ 
+                        color: library.license === "MIT" 
+                          ? colors.colorPaletteGreenForeground1 
+                          : colors.colorBrandForeground1 
+                      }}
+                    >
+                      {library.license}
+                    </FluentText>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            <View style={[styles.licenseNote, { borderTopColor: colors.colorNeutralStroke1 }]}>
+              <MaterialCommunityIcons 
+                name="information-outline" 
+                size={FluentIconSize.small} 
+                color={colors.colorNeutralForeground2} 
+              />
+              <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s, flex: 1 }}>
+                Full license texts available at respective repository URLs
+              </FluentText>
+            </View>
+          </View>
+        </View>
       </ScrollView>
     </FluentScreenLayout>
   );
@@ -358,5 +433,28 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  openSourceSection: {
+    marginBottom: FluentSpacing.xl,
+  },
+  libraryList: {
+    gap: FluentSpacing.s,
+  },
+  libraryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: FluentSpacing.xs,
+  },
+  licenseBadge: {
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xxs,
+    borderRadius: FluentControlRadius.chip,
+  },
+  licenseNote: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: FluentSpacing.l,
+    paddingTop: FluentSpacing.m,
+    borderTopWidth: 1,
   },
 });

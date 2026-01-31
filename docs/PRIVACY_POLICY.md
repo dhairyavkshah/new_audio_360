@@ -3,8 +3,8 @@
 **New Audio 360**
 
 **Effective Date:** January 19, 2026  
-**Last Updated:** January 26, 2026  
-**Version:** 1.0.2
+**Last Updated:** January 31, 2026  
+**Version:** 1.0.3
 
 ---
 
@@ -33,6 +33,9 @@ All of the following data is stored exclusively on your device and never transmi
 | Playlists | Store your custom playlists |
 | Favorites | Track your favorite songs |
 | Playback History | Show recently played and most played |
+| SoundCloud OAuth Tokens | Authenticate with SoundCloud (stored locally, encrypted) |
+| SoundCloud User Profile Data | Display your SoundCloud profile (cached locally) |
+| Online Streaming Favorites | Save favorite online tracks (encrypted URL storage) |
 
 ### 2.2 Information We Do NOT Collect
 
@@ -67,6 +70,29 @@ When using Online Radio features:
 - Your IP address may be visible to the radio service
 - No personal data is transmitted
 
+### 3.3 SoundCloud Integration
+
+When using SoundCloud features:
+
+- **Authentication**: The App uses SoundCloud OAuth 2.1 with PKCE (Proof Key for Code Exchange) for secure authentication
+- **Data Access**: Upon login, the App accesses your SoundCloud user profile, likes, and playlists via the SoundCloud API
+- **Streaming**: Audio tracks are streamed directly from SoundCloud's servers
+- **Token Storage**: OAuth tokens are stored locally on your device using encrypted storage (Android Keystore with AES-256-GCM). No SoundCloud credentials are stored on our servers
+- **Data Handling**: Your SoundCloud profile data is cached locally for display purposes only
+
+SoundCloud's data handling is governed by [SoundCloud's Privacy Policy](https://soundcloud.com/pages/privacy).
+
+### 3.4 Internet Archive Integration
+
+When using Internet Archive features:
+
+- **Content**: The App streams public domain and Creative Commons licensed audio from the Internet Archive
+- **Authentication**: No authentication or account is required
+- **Network Access**: Your IP address may be visible to Internet Archive servers when streaming content
+- **No Personal Data**: No personal information is transmitted to the Internet Archive
+
+Internet Archive's data handling is governed by [Internet Archive's Privacy Policy](https://archive.org/about/terms.php).
+
 ---
 
 ## 4. Device Permissions
@@ -77,7 +103,7 @@ When using Online Radio features:
 | FOREGROUND_SERVICE_MEDIA_PLAYBACK | Background audio playback | Yes |
 | ACCESS_COARSE_LOCATION | Discover local radio stations | Optional |
 | POST_NOTIFICATIONS | Display playback controls | Optional |
-| INTERNET | Online radio, license check | Yes |
+| INTERNET | Online radio, SoundCloud API, Internet Archive streaming, license check | Yes |
 
 All permissions are requested with clear explanations. You may deny optional permissions.
 
@@ -169,7 +195,7 @@ By downloading, installing, or using New Audio 360, you consent to:
 
 - Local storage of App data on your device
 - The App's request for necessary device permissions
-- Network communication for online radio and license verification
+- Network communication for online radio, SoundCloud, Internet Archive, and license verification
 
 If you do not agree, please do not install or use the Application.
 
@@ -181,4 +207,4 @@ Developed by Dhairya Vipulkumar Shah | The Team 360
 
 ---
 
-*Last Updated: January 26, 2026*
+*Last Updated: January 31, 2026*
