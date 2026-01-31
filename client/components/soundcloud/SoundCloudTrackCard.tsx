@@ -49,17 +49,6 @@ export function SoundCloudTrackCard({ track, onPress, onAddToLibrary, isAdding }
         <FluentText variant="caption1" color="secondary" numberOfLines={1}>
           {track.artist}
         </FluentText>
-        <View style={styles.trackMeta}>
-          <View style={[styles.badge, { backgroundColor: colors.colorSubtleBackgroundHover }]}>
-            <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.tiny} color={colors.colorBrandForeground1} />
-            <FluentText variant="caption2" style={{ color: colors.colorBrandForeground1, marginLeft: 2 }}>
-              Full
-            </FluentText>
-          </View>
-          <FluentText variant="caption1" color="tertiary">
-            {SoundCloudService.formatPlaybackCount(track.playbackCount)} plays
-          </FluentText>
-        </View>
       </View>
 
       <FluentText variant="caption1" color="tertiary" style={styles.durationText}>
@@ -119,19 +108,6 @@ const styles = StyleSheet.create({
   trackInfo: {
     flex: 1,
     gap: FluentSpacing.xxs,
-  },
-  trackMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: FluentSpacing.s,
-    marginTop: FluentSpacing.xs,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: FluentSpacing.s,
-    paddingVertical: FluentSpacing.xxs,
-    borderRadius: FluentRadius.large,
   },
   addButton: {
     width: FluentTouchTarget.minimum,

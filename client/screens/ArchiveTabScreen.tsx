@@ -305,7 +305,7 @@ export default function ArchiveTabScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            
           />
         )}
       </View>
@@ -359,9 +359,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: FluentSpacing.m,
-  },
-  separator: {
-    height: FluentSpacing.s,
   },
   trackCard: {
     flexDirection: 'row',
