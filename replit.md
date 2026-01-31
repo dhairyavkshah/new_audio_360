@@ -1,6 +1,14 @@
 # New Audio 360
 
 ## Recent Changes (v30.0 - January 2026)
+- **Comprehensive Design Consistency Audit**: Deep inside-out/outside-in analysis and fixes across all screens
+  - **Card Styling Unified**: SoundCloudPlaylistCard now has proper 1px border with colorNeutralStroke2
+  - **OnlineStationCard Background**: Changed from colorNeutralBackground3 to colorNeutralBackground2 for consistency
+  - **FluentSectionHeader Typography**: Replaced inline fontWeight '600' with subtitle1Strong variant
+  - **Icon Size Tokens**: SongCard source tag and QueueScreen playing badge now use FluentIconSize.tiny instead of hardcoded values
+  - **Empty State Baseline**: PlaylistDetailScreen empty state icon updated to 64px standard
+  - **Settings Spacing Optimization**: Reduced section marginBottom from 24px to 16px, section header marginBottom from 12px to 8px
+  - **Theme Card Borders**: AppearanceScreen theme cards now have visible 1px Fluent 2 borders (2px when selected)
 - **Radio Screen Header Consolidation**: Merged FM/AM|Online toggle + Country selector into single compact row; FM unavailable notice now shows as toast only when user taps FM/AM tab
 - **Library Screen Spacing Fix**: Songs dropdown now fills available space with flex:1 and uses same 8px gap as Search/Filter row
 - **NowPlaying Back Button Styling**: Added container wrapper with platform-specific padding (iOS: 8px, Android/Web: 12px) for proper header spacing alignment
