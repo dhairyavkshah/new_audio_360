@@ -59,6 +59,8 @@ const actionButtonStyles = StyleSheet.create({
   },
 });
 
+type SourceType = 'local' | 'soundcloud' | 'archive' | undefined;
+
 interface SongCardProps {
   song: PlayableSong;
   onPress: () => void;
@@ -68,6 +70,7 @@ interface SongCardProps {
   showDuration?: boolean;
   showFavoriteButton?: boolean;
   showAddToPlaylist?: boolean;
+  sourceType?: SourceType;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -80,7 +83,8 @@ function SongCardComponent({
   isPlaying = false, 
   showDuration = true, 
   showFavoriteButton = true, 
-  showAddToPlaylist = false 
+  showAddToPlaylist = false,
+  sourceType,
 }: SongCardProps) {
   const { isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
@@ -236,13 +240,32 @@ function SongCardComponent({
         >
           {song.title}
         </FluentText>
-        <FluentText
-          variant="caption1"
-          color="secondary"
-          numberOfLines={1}
-        >
-          {song.artist}
-        </FluentText>
+        <View style={styles.artistRow}>
+          <FluentText
+            variant="caption1"
+            color="secondary"
+            numberOfLines={1}
+            style={styles.artistText}
+          >
+            {song.artist}
+          </FluentText>
+          {sourceType && (
+            <View style={[
+              styles.sourceTag, 
+              { 
+                backgroundColor: sourceType === 'soundcloud' ? '#FF5500' + '20' 
+                  : sourceType === 'archive' ? '#00BFA5' + '20' 
+                  : colors.colorSubtleBackground 
+              }
+            ]}>
+              <MaterialCommunityIcons 
+                name={sourceType === 'soundcloud' ? 'soundcloud' : sourceType === 'archive' ? 'web' : 'music-note'} 
+                size={10} 
+                color={sourceType === 'soundcloud' ? '#FF5500' : sourceType === 'archive' ? '#00BFA5' : colors.colorNeutralForeground3} 
+              />
+            </View>
+          )}
+        </View>
       </View>
       {showDuration ? (
         <FluentText 
@@ -313,6 +336,21 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: FluentSpacing.m,
     gap: FluentSpacing.xxs,
+  },
+  artistRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: FluentSpacing.xs,
+  },
+  artistText: {
+    flex: 1,
+  },
+  sourceTag: {
+    paddingHorizontal: FluentSpacing.xs,
+    paddingVertical: 2,
+    borderRadius: FluentControlRadius.chip,
+    justifyContent: "center",
+    alignItems: "center",
   },
   duration: {
     marginRight: FluentSpacing.s,

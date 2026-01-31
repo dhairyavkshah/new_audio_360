@@ -42,7 +42,7 @@ import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 
 type NavigationProp = NativeStackNavigationProp<LibraryStackParamList>;
 
-type CategoryType = "liked" | "recent" | "top" | "songs" | "albums" | "artists" | "playlists" | "streaming";
+type CategoryType = "liked" | "recent" | "top" | "songs" | "albums" | "artists" | "playlists";
 
 interface CategoryConfig {
   key: CategoryType;
@@ -59,7 +59,6 @@ const categories: CategoryConfig[] = [
   { key: "albums", label: "Albums", icon: "album", color: "#4CAF50" },
   { key: "artists", label: "Artists", icon: "account-group", color: "#00BCD4" },
   { key: "playlists", label: "Playlists", icon: "playlist-music", color: "#673AB7" },
-  { key: "streaming", label: "Online", icon: "web", color: "#00BFA5" },
 ];
 
 interface AlbumCardProps {
@@ -320,22 +319,17 @@ function LibraryScreen() {
       albums: derivedAlbums.length,
       artists: derivedArtists.length,
       playlists: playlists.length,
-      streaming: archiveFavorites.length + soundcloudFavorites.length,
     };
   }, [favorites, recentlyPlayed, mostPlayed, allSongs, derivedAlbums, derivedArtists, playlists, archiveFavorites, soundcloudFavorites]);
 
   const handleCategoryChange = useCallback((category: CategoryType) => {
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (category === "streaming") {
-      navigation.dispatch(CommonActions.navigate({ name: 'DiscoverTab' }));
-      return;
-    }
     setActiveCategory(category);
     setSearchQuery("");
     setShowSortOptions(false);
     setShowCategoryDropdown(false);
-  }, [playTapSound, navigation]);
+  }, [playTapSound]);
 
   const handleManagePlaylists = useCallback(() => {
     playTapSound();
@@ -491,13 +485,20 @@ function LibraryScreen() {
     return null;
   };
 
-  const renderSongItem = ({ item: song, songs }: { item: PlayableSong; songs: PlayableSong[] }) => {
+  const getSourceType = useCallback((songId: string): 'local' | 'soundcloud' | 'archive' | undefined => {
+    if (songId.startsWith('sc_')) return 'soundcloud';
+    if (songId.startsWith('ia_')) return 'archive';
+    return 'local';
+  }, []);
+
+  const renderSongItem = ({ item: song, songs, showSource = false }: { item: PlayableSong; songs: PlayableSong[]; showSource?: boolean }) => {
     return (
       <SongCard
         song={song}
         onPress={() => handleSongPress(song, songs)}
         onContextMenu={handleSongContextMenu}
         isPlaying={currentSong?.id === song.id && isPlaying}
+        sourceType={showSource ? getSourceType(song.id) : undefined}
       />
     );
   };
@@ -515,7 +516,7 @@ function LibraryScreen() {
     </View>
   );
 
-  const renderSongsList = (songs: PlayableSong[], emptyIcon: keyof typeof MaterialCommunityIcons.glyphMap, emptyMessage: string) => {
+  const renderSongsList = (songs: PlayableSong[], emptyIcon: keyof typeof MaterialCommunityIcons.glyphMap, emptyMessage: string, showSource = false) => {
     if (songs.length === 0) {
       return renderEmptyState(emptyIcon, emptyMessage);
     }
@@ -523,7 +524,7 @@ function LibraryScreen() {
       <FlatList
         key="songs-list"
         data={songs}
-        renderItem={({ item }) => renderSongItem({ item, songs })}
+        renderItem={({ item }) => renderSongItem({ item, songs, showSource })}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={() => renderPlayAllHeader(songs)}
         contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + FluentSpacing.m }]}
@@ -746,7 +747,7 @@ function LibraryScreen() {
 
     switch (activeCategory) {
       case "liked":
-        return renderSongsList(filteredData.liked, "heart-outline", "No liked songs yet. Tap the heart icon on any song to add it here.");
+        return renderSongsList(filteredData.liked, "heart-outline", "No liked songs yet. Tap the heart icon on any song to add it here.", true);
       case "recent":
         return renderSongsList(filteredData.recent, "history", "No recently played songs. Start listening to see your history here.");
       case "top":
@@ -759,8 +760,6 @@ function LibraryScreen() {
         return renderArtistsList();
       case "playlists":
         return renderPlaylistsList();
-      case "streaming":
-        return renderArchiveList();
       default:
         return null;
     }

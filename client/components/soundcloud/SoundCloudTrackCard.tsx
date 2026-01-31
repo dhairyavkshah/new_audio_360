@@ -12,9 +12,10 @@ interface SoundCloudTrackCardProps {
   onPress: (track: SoundCloudTrack) => void;
   onAddToLibrary: (track: SoundCloudTrack) => void;
   isAdding: boolean;
+  isFavorited?: boolean;
 }
 
-export function SoundCloudTrackCard({ track, onPress, onAddToLibrary, isAdding }: SoundCloudTrackCardProps) {
+export function SoundCloudTrackCard({ track, onPress, onAddToLibrary, isAdding, isFavorited = false }: SoundCloudTrackCardProps) {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
 
@@ -61,10 +62,12 @@ export function SoundCloudTrackCard({ track, onPress, onAddToLibrary, isAdding }
           e.stopPropagation();
           onAddToLibrary(track);
         }}
-        disabled={isAdding}
+        disabled={isAdding || isFavorited}
       >
         {isAdding ? (
           <ActivityIndicator size="small" color={colors.colorBrandForeground1} />
+        ) : isFavorited ? (
+          <MaterialCommunityIcons name="heart" size={FluentIconSize.regular} color="#FF4D67" />
         ) : (
           <MaterialCommunityIcons name="heart-plus-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
         )}
