@@ -2,12 +2,11 @@ import React from "react";
 import { View, StyleSheet, ScrollView, Pressable, Linking } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { FluentScreenLayout, FluentText } from "@/components/fluent";
+import { FluentScreenLayout, FluentText, FluentSectionHeader } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
-import { Layout } from "@/constants/theme";
+import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentIconSize } from "@/constants/fluent2";
 
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.theteam360.newaudio360';
 
@@ -63,7 +62,7 @@ export default function LicenseScreen() {
         <View style={styles.featureLeft}>
           <MaterialCommunityIcons 
             name={feature.icon} 
-            size={20} 
+            size={FluentIconSize.regular} 
             color={colors.colorNeutralForeground2} 
           />
           <FluentText variant="body1" style={styles.featureText}>
@@ -73,9 +72,9 @@ export default function LicenseScreen() {
         <View style={styles.featureChecks}>
           <View style={[styles.checkBox, { width: 60 }]}>
             {feature.licensed ? (
-              <MaterialCommunityIcons name="check" size={18} color={colors.colorPaletteGreenForeground1} />
+              <MaterialCommunityIcons name="check" size={FluentIconSize.small} color={colors.colorPaletteGreenForeground1} />
             ) : (
-              <MaterialCommunityIcons name="close" size={18} color={colors.colorPaletteRedForeground1} />
+              <MaterialCommunityIcons name="close" size={FluentIconSize.small} color={colors.colorPaletteRedForeground1} />
             )}
           </View>
         </View>
@@ -115,9 +114,7 @@ export default function LicenseScreen() {
         </View>
 
         <View style={styles.comparisonSection}>
-          <FluentText variant="subtitle1" style={styles.sectionTitle}>
-            Features Included
-          </FluentText>
+          <FluentSectionHeader icon="star-outline" title="Features Included" />
           
           <View style={{
             backgroundColor: colors.colorNeutralBackground2,
@@ -147,9 +144,7 @@ export default function LicenseScreen() {
         </View>
 
         <View style={styles.pricingSection}>
-          <FluentText variant="subtitle1" style={styles.sectionTitle}>
-            How to Get Licensed
-          </FluentText>
+          <FluentSectionHeader icon="license" title="How to Get Licensed" />
           
           <View style={{
             backgroundColor: colors.colorNeutralBackground2,
@@ -240,25 +235,25 @@ export default function LicenseScreen() {
         }}>
           <View style={styles.infoSection}>
             <View style={styles.infoRow}>
-              <MaterialCommunityIcons name="shield-check" size={16} color={colors.colorPaletteGreenForeground1} />
+              <MaterialCommunityIcons name="shield-check" size={FluentIconSize.small} color={colors.colorPaletteGreenForeground1} />
               <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
                 Secure purchase via Google Play
               </FluentText>
             </View>
             <View style={styles.infoRow}>
-              <MaterialCommunityIcons name="google-play" size={16} color={colors.colorBrandForeground1} />
+              <MaterialCommunityIcons name="google-play" size={FluentIconSize.small} color={colors.colorBrandForeground1} />
               <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
                 One-time purchase - no recurring charges
               </FluentText>
             </View>
             <View style={styles.infoRow}>
-              <MaterialCommunityIcons name="infinity" size={16} color={colors.colorBrandForeground2} />
+              <MaterialCommunityIcons name="infinity" size={FluentIconSize.small} color={colors.colorBrandForeground2} />
               <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
                 Lifetime access - never expires
               </FluentText>
             </View>
             <View style={styles.infoRow}>
-              <MaterialCommunityIcons name="cellphone" size={16} color={colors.colorNeutralForeground2} />
+              <MaterialCommunityIcons name="cellphone" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
               <FluentText variant="caption1" color="secondary" style={{ marginLeft: FluentSpacing.s }}>
                 100% offline - works without internet
               </FluentText>
@@ -272,7 +267,7 @@ export default function LicenseScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: Layout.horizontalPadding,
+    paddingHorizontal: FluentSpacing.l,
   },
   currentPlanSection: {
     alignItems: "center",
@@ -295,9 +290,6 @@ const styles = StyleSheet.create({
   },
   comparisonSection: {
     marginBottom: FluentSpacing.xl,
-  },
-  sectionTitle: {
-    marginBottom: FluentSpacing.m,
   },
   comparisonHeader: {
     flexDirection: "row",

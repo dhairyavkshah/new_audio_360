@@ -14,6 +14,7 @@ import SoundCloudService, { SoundCloudTrack, SoundCloudPlaylist } from "@/servic
 import OAuthWebViewModal from "@/components/OAuthWebViewModal";
 
 type SubTabType = 'search' | 'likes' | 'playlists';
+type SearchType = 'tracks' | 'playlists' | 'albums';
 const SC_ACCENT = '#FF5500';
 
 export default function SoundCloudTabScreen() {
@@ -37,6 +38,8 @@ export default function SoundCloudTabScreen() {
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
   const [userProfile, setUserProfile] = useState<{ username: string; avatar_url: string | null } | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<SubTabType>('search');
+  const [searchType, setSearchType] = useState<SearchType>('tracks');
+  const [searchPlaylists, setSearchPlaylists] = useState<SoundCloudPlaylist[]>([]);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [authUrl, setAuthUrl] = useState('');
@@ -349,11 +352,27 @@ export default function SoundCloudTabScreen() {
     
     setSearching(true);
     try {
-      const result = await SoundCloudService.searchTracksAuthenticated(searchQuery, 15);
-      setTracks(result.tracks);
-      
-      if (result.tracks.length === 0) {
-        showError("No results found. Try different keywords.");
+      if (searchType === 'tracks') {
+        const result = await SoundCloudService.searchTracksAuthenticated(searchQuery, 25);
+        setTracks(result.tracks);
+        setSearchPlaylists([]);
+        if (result.tracks.length === 0) {
+          showError("No results found. Try different keywords.");
+        }
+      } else if (searchType === 'playlists') {
+        const result = await SoundCloudService.searchPlaylists(searchQuery, 25);
+        setSearchPlaylists(result);
+        setTracks([]);
+        if (result.length === 0) {
+          showError("No playlists found. Try different keywords.");
+        }
+      } else if (searchType === 'albums') {
+        const result = await SoundCloudService.searchAlbums(searchQuery, 25);
+        setSearchPlaylists(result);
+        setTracks([]);
+        if (result.length === 0) {
+          showError("No albums found. Try different keywords.");
+        }
       }
     } catch (error) {
       console.error('[SoundCloudTabScreen] Search error:', error);
@@ -361,7 +380,7 @@ export default function SoundCloudTabScreen() {
     } finally {
       setSearching(false);
     }
-  }, [searchQuery, showError]);
+  }, [searchQuery, searchType, showError]);
 
   const playTrack = useCallback((track: SoundCloudTrack) => {
     const playableSong = {
@@ -392,6 +411,11 @@ export default function SoundCloudTabScreen() {
   const addToLibrary = async (track: SoundCloudTrack) => {
     setAddingIds(prev => new Set(prev).add(track.id));
     try {
+      // Sync to SoundCloud account
+      const syncResult = await SoundCloudService.likeTrackOnSoundCloud(track.id);
+      console.log('[SoundCloudTabScreen] Like sync result:', syncResult);
+      
+      // Also save to local favorites
       await SoundCloudService.addToFavorites(track);
       showSuccess(`Added "${track.title}" to favorites`);
     } catch (error) {
@@ -452,7 +476,11 @@ export default function SoundCloudTabScreen() {
       <Pressable 
         style={[
           styles.trackCard, 
-          { backgroundColor: colors.colorNeutralBackground2 },
+          { 
+            backgroundColor: colors.colorNeutralBackground2,
+            borderColor: colors.colorNeutralStroke2,
+            borderWidth: 1,
+          },
           getShadowStyle('shadow2', isDark),
         ]}
         onPress={() => playTrack(item)}
@@ -469,10 +497,10 @@ export default function SoundCloudTabScreen() {
         )}
         
         <View style={styles.trackInfo}>
-          <FluentText variant="body1" numberOfLines={1} style={{ fontWeight: '600' }}>
+          <FluentText variant="body1Strong" numberOfLines={1}>
             {item.title}
           </FluentText>
-          <FluentText variant="body2" color="secondary" numberOfLines={1}>
+          <FluentText variant="caption1" color="secondary" numberOfLines={1}>
             {item.artist}
           </FluentText>
           <View style={styles.trackMeta}>
@@ -483,10 +511,14 @@ export default function SoundCloudTabScreen() {
               </FluentText>
             </View>
             <FluentText variant="caption1" color="tertiary">
-              {SoundCloudService.formatPlaybackCount(item.playbackCount)} plays • {SoundCloudService.formatDurationFromSeconds(item.duration)}
+              {SoundCloudService.formatPlaybackCount(item.playbackCount)} plays
             </FluentText>
           </View>
         </View>
+
+        <FluentText variant="caption1" color="tertiary" style={styles.durationText}>
+          {SoundCloudService.formatDurationFromSeconds(item.duration)}
+        </FluentText>
 
         <Pressable
           style={[styles.addButton, { backgroundColor: colors.colorSubtleBackgroundHover }]}
@@ -502,6 +534,12 @@ export default function SoundCloudTabScreen() {
             <MaterialCommunityIcons name="heart-plus-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
           )}
         </Pressable>
+
+        <MaterialCommunityIcons 
+          name="chevron-right" 
+          size={FluentIconSize.small} 
+          color={colors.colorNeutralForeground3} 
+        />
       </Pressable>
     );
   };
@@ -556,6 +594,106 @@ export default function SoundCloudTabScreen() {
     </Pressable>
   );
 
+  const renderSearchTypeChips = () => (
+    <View style={[styles.searchTypeContainer, { backgroundColor: colors.colorNeutralBackground2 }]}>
+      {(['tracks', 'playlists', 'albums'] as SearchType[]).map((type) => (
+        <Pressable
+          key={type}
+          style={[
+            styles.searchTypeChip,
+            searchType === type && { backgroundColor: colors.colorBrandBackground },
+          ]}
+          onPress={() => setSearchType(type)}
+        >
+          <MaterialCommunityIcons
+            name={type === 'tracks' ? 'music-note' : type === 'playlists' ? 'playlist-music' : 'album'}
+            size={FluentIconSize.small}
+            color={searchType === type ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2}
+          />
+          <FluentText
+            variant="caption1"
+            style={{
+              color: searchType === type ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2,
+              fontWeight: searchType === type ? '600' : '400',
+              marginLeft: FluentSpacing.xs,
+            }}
+          >
+            {type === 'tracks' ? 'Tracks' : type === 'playlists' ? 'Playlists' : 'Albums'}
+          </FluentText>
+        </Pressable>
+      ))}
+    </View>
+  );
+
+  const renderSearchResults = () => {
+    if (searching) {
+      return (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <FluentText variant="body2" color="secondary" style={styles.statusText}>
+            Searching SoundCloud...
+          </FluentText>
+        </View>
+      );
+    }
+
+    if (searchType === 'tracks') {
+      if (tracks.length === 0) {
+        return (
+          <View style={styles.centerContainer}>
+            <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} style={{ opacity: 0.5 }} />
+            <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
+              {searchQuery ? "No tracks found" : "Search for music"}
+            </FluentText>
+            <FluentText variant="caption1" color="tertiary" style={styles.hintText}>
+              Full tracks with premium audio processing
+            </FluentText>
+          </View>
+        );
+      }
+      return (
+        <FlatList
+          data={tracks}
+          renderItem={renderTrack}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+        />
+      );
+    }
+
+    if (searchPlaylists.length === 0) {
+      return (
+        <View style={styles.centerContainer}>
+          <MaterialCommunityIcons 
+            name={searchType === 'playlists' ? 'playlist-music' : 'album'} 
+            size={FluentIconSize.xxlarge} 
+            color={colors.colorBrandForeground1} 
+            style={{ opacity: 0.5 }} 
+          />
+          <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
+            {searchQuery ? `No ${searchType} found` : `Search for ${searchType}`}
+          </FluentText>
+          <FluentText variant="caption1" color="tertiary" style={styles.hintText}>
+            {searchType === 'playlists' ? 'Find curated playlists' : 'Discover full albums'}
+          </FluentText>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={searchPlaylists}
+        renderItem={renderPlaylist}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
+    );
+  };
+
   const renderSearchContent = () => (
     <>
       <View style={styles.searchRow}>
@@ -563,7 +701,7 @@ export default function SoundCloudTabScreen() {
           <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color={colors.colorNeutralForeground3} />
           <TextInput
             style={[styles.input, { color: theme.text }]}
-            placeholder="Search SoundCloud..."
+            placeholder={`Search ${searchType}...`}
             placeholderTextColor={colors.colorNeutralForeground3}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -579,34 +717,45 @@ export default function SoundCloudTabScreen() {
         </Pressable>
       </View>
 
-      {searching ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-          <FluentText variant="body2" color="secondary" style={styles.statusText}>
-            Searching SoundCloud...
-          </FluentText>
-        </View>
-      ) : tracks.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} style={{ opacity: 0.5 }} />
-          <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
-            {searchQuery ? "No results found" : "Search for music"}
-          </FluentText>
-          <FluentText variant="caption1" color="tertiary" style={styles.hintText}>
-            Full tracks with premium audio processing
-          </FluentText>
-        </View>
-      ) : (
-        <FlatList
-          data={tracks}
-          renderItem={renderTrack}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
-      )}
+      {renderSearchTypeChips()}
+      {renderSearchResults()}
     </>
+  );
+
+  const handlePlayAllLikes = useCallback(() => {
+    if (likedTracks.length === 0) return;
+    const firstTrack = likedTracks[0];
+    playTrack(firstTrack);
+  }, [likedTracks, playTrack]);
+
+  const handleShuffleLikes = useCallback(() => {
+    if (likedTracks.length === 0) return;
+    const shuffled = [...likedTracks].sort(() => Math.random() - 0.5);
+    const firstTrack = shuffled[0];
+    playTrack(firstTrack);
+  }, [likedTracks, playTrack]);
+
+  const renderLikesHeader = () => (
+    <View style={styles.likesHeader}>
+      <FluentText variant="body2" color="secondary">
+        {likedTracks.length} {likedTracks.length === 1 ? 'track' : 'tracks'}
+      </FluentText>
+      <View style={styles.playAllButtons}>
+        <Pressable 
+          style={[styles.playAllButton, { backgroundColor: colors.colorBrandBackground }]} 
+          onPress={handlePlayAllLikes}
+        >
+          <MaterialCommunityIcons name="play" size={FluentIconSize.small} color="#FFFFFF" />
+          <FluentText variant="body2" style={{ color: '#FFFFFF', marginLeft: FluentSpacing.xs }}>Play All</FluentText>
+        </Pressable>
+        <Pressable 
+          style={[styles.shuffleButton, { backgroundColor: colors.colorNeutralBackground3 }]} 
+          onPress={handleShuffleLikes}
+        >
+          <MaterialCommunityIcons name="shuffle" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
+        </Pressable>
+      </View>
+    </View>
   );
 
   const renderLikesContent = () => {
@@ -643,6 +792,7 @@ export default function SoundCloudTabScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListHeaderComponent={renderLikesHeader}
       />
     );
   };
@@ -952,6 +1102,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.m,
     borderRadius: FluentControlRadius.button,
   },
+  searchTypeContainer: {
+    flexDirection: 'row',
+    marginHorizontal: FluentSpacing.m,
+    marginBottom: FluentSpacing.s,
+    borderRadius: FluentRadius.large,
+    padding: 4,
+    gap: 4,
+  },
+  searchTypeChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: FluentSpacing.xs,
+    paddingHorizontal: FluentSpacing.s,
+    borderRadius: FluentControlRadius.button,
+  },
   searchRow: {
     flexDirection: 'row',
     paddingHorizontal: FluentSpacing.m,
@@ -995,21 +1162,27 @@ const styles = StyleSheet.create({
   trackCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: FluentSpacing.m,
+    paddingVertical: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.l,
     borderRadius: FluentControlRadius.card,
+    marginBottom: FluentSpacing.s,
+    minHeight: 72,
     gap: FluentSpacing.m,
   },
   playIcon: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
-    borderRadius: FluentTouchTarget.minimum / 2,
+    width: FluentIconSize.xxlarge,
+    height: FluentIconSize.xxlarge,
+    borderRadius: FluentControlRadius.card,
     justifyContent: 'center',
     alignItems: 'center',
   },
   artworkImage: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
-    borderRadius: FluentControlRadius.chip,
+    width: FluentIconSize.xxlarge,
+    height: FluentIconSize.xxlarge,
+    borderRadius: FluentControlRadius.card,
+  },
+  durationText: {
+    marginRight: FluentSpacing.s,
   },
   trackInfo: {
     flex: 1,
@@ -1062,5 +1235,31 @@ const styles = StyleSheet.create({
   likesRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  likesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: FluentSpacing.xs,
+    marginBottom: FluentSpacing.m,
+  },
+  playAllButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: FluentSpacing.s,
+  },
+  playAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: FluentSpacing.m,
+    paddingVertical: FluentSpacing.s,
+    borderRadius: FluentRadius.circular,
+  },
+  shuffleButton: {
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentRadius.circular,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

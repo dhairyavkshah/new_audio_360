@@ -69,7 +69,13 @@ function StationListItem({ station, onPress, onToggleFavorite, colors }: Station
   
   return (
     <Pressable
-      style={[styles.stationItem, { backgroundColor: colors.colorNeutralBackground2, minHeight: FluentTouchTarget.minimum }]}
+      style={[
+        styles.stationItem, 
+        { 
+          backgroundColor: colors.colorNeutralBackground2,
+          borderColor: colors.colorNeutralStroke2,
+        }
+      ]}
       onPress={() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress();
@@ -110,6 +116,12 @@ function StationListItem({ station, onPress, onToggleFavorite, colors }: Station
         }}
         accessibilityLabel={station.isFavorite ? "Remove from favorites" : "Add to favorites"}
       />
+      
+      <MaterialCommunityIcons 
+        name="chevron-right" 
+        size={FluentIconSize.small} 
+        color={colors.colorNeutralForeground3} 
+      />
     </Pressable>
   );
 }
@@ -128,7 +140,13 @@ function OnlineStationCard({ station, onPlay, isPlaying, isFavorite, onToggleFav
   
   return (
     <Pressable
-      style={[styles.onlineStationItem, { backgroundColor: colors.colorNeutralBackground2, minHeight: FluentTouchTarget.minimum }]}
+      style={[
+        styles.onlineStationItem, 
+        { 
+          backgroundColor: colors.colorNeutralBackground2,
+          borderColor: isPlaying ? colors.colorBrandStroke1 : colors.colorNeutralStroke2,
+        }
+      ]}
       onPress={() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPlay();
@@ -142,12 +160,11 @@ function OnlineStationCard({ station, onPlay, isPlaying, isFavorite, onToggleFav
             source={{ uri: station.favicon }}
             style={styles.stationFavicon}
             contentFit="cover"
-            placeholder={require("@/assets/sounds/keypress.ogg")}
           />
         ) : (
           <MaterialCommunityIcons 
             name="radio" 
-            size={FluentIconSize.medium} 
+            size={FluentIconSize.regular} 
             color={colors.colorBrandForeground1} 
           />
         )}
@@ -193,6 +210,12 @@ function OnlineStationCard({ station, onPlay, isPlaying, isFavorite, onToggleFav
           onPlay();
         }}
         accessibilityLabel={isPlaying ? "Pause" : "Play"}
+      />
+      
+      <MaterialCommunityIcons 
+        name="chevron-right" 
+        size={FluentIconSize.small} 
+        color={colors.colorNeutralForeground3} 
       />
     </Pressable>
   );
@@ -770,26 +793,28 @@ const styles = StyleSheet.create({
     marginLeft: FluentSpacing.xs,
   },
   stationsList: {
-    gap: FluentSpacing.xs,
+    gap: FluentSpacing.s,
   },
   stationItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: FluentSpacing.s,
-    borderRadius: FluentControlRadius.button,
-    minHeight: FluentTouchTarget.minimum + FluentSpacing.m,
+    paddingVertical: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
+    minHeight: 72,
+    borderWidth: 1,
   },
   frequencyBadge: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
-    borderRadius: FluentControlRadius.button,
+    width: FluentIconSize.xxlarge,
+    height: FluentIconSize.xxlarge,
+    borderRadius: FluentControlRadius.card,
     justifyContent: "center",
     alignItems: "center",
   },
   stationInfo: {
     flex: 1,
-    marginLeft: FluentSpacing.s,
-    marginRight: FluentSpacing.s,
+    marginLeft: FluentSpacing.m,
+    gap: FluentSpacing.xxs,
   },
   signalContainer: {
     flexDirection: "row",
@@ -901,37 +926,39 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   onlineStationsList: {
-    gap: FluentSpacing.xs,
+    gap: FluentSpacing.s,
   },
   onlineStationItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: FluentSpacing.s,
-    borderRadius: FluentControlRadius.button,
+    paddingVertical: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
     minHeight: 72,
+    borderWidth: 1,
   },
   stationFaviconContainer: {
-    width: FluentTouchTarget.minimum + FluentSpacing.xs,
-    height: FluentTouchTarget.minimum + FluentSpacing.xs,
-    borderRadius: FluentRadius.medium,
+    width: FluentIconSize.xxlarge,
+    height: FluentIconSize.xxlarge,
+    borderRadius: FluentControlRadius.card,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
   },
   stationFavicon: {
-    width: FluentTouchTarget.minimum + FluentSpacing.xs,
-    height: FluentTouchTarget.minimum + FluentSpacing.xs,
+    width: FluentIconSize.xxlarge,
+    height: FluentIconSize.xxlarge,
+    borderRadius: FluentControlRadius.card,
   },
   onlineStationInfo: {
     flex: 1,
     marginLeft: FluentSpacing.m,
-    marginRight: FluentSpacing.s,
+    gap: FluentSpacing.xxs,
   },
   onlineStationMeta: {
     flexDirection: "row",
     alignItems: "center",
     gap: FluentSpacing.s,
-    marginTop: FluentSpacing.xxs,
   },
   tagsText: {
     flex: 1,

@@ -544,6 +544,106 @@ class SoundCloudServiceClass {
     }
   }
 
+  // ============================================================
+  // Search by Type (Tracks, Playlists, Albums)
+  // ============================================================
+
+  async searchPlaylists(
+    query: string,
+    limit: number = 25
+  ): Promise<SoundCloudPlaylist[]> {
+    if (!query.trim()) return [];
+
+    try {
+      const token = await this.ensureValidUserToken() || await this.getClientAccessToken();
+      
+      const params = new URLSearchParams({
+        q: query,
+        limit: limit.toString(),
+      });
+
+      const response = await fetch(`${API_BASE_URL}/playlists?${params}`, {
+        headers: {
+          'Authorization': `OAuth ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Playlist search failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const items = Array.isArray(data) ? data : (data.collection || []);
+      
+      return items.map((playlist: any) => ({
+        id: `sc_playlist_${playlist.id}`,
+        title: playlist.title,
+        trackCount: playlist.track_count || 0,
+        duration: Math.floor((playlist.duration || 0) / 1000),
+        artwork_url: playlist.artwork_url,
+        user: playlist.user?.username || 'Unknown',
+        likesCount: playlist.likes_count || 0,
+      }));
+    } catch (error) {
+      console.error('[SoundCloudService] Search playlists error:', error);
+      throw error;
+    }
+  }
+
+  async searchAlbums(
+    query: string,
+    limit: number = 25
+  ): Promise<SoundCloudPlaylist[]> {
+    if (!query.trim()) return [];
+
+    try {
+      const token = await this.ensureValidUserToken() || await this.getClientAccessToken();
+      
+      // SoundCloud treats albums as playlists with playlist_type = "album"
+      // We search playlists and filter for albums
+      const params = new URLSearchParams({
+        q: query,
+        limit: limit.toString(),
+      });
+
+      const response = await fetch(`${API_BASE_URL}/playlists?${params}`, {
+        headers: {
+          'Authorization': `OAuth ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Album search failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const items = Array.isArray(data) ? data : (data.collection || []);
+      
+      // Filter for albums (playlist_type === 'album' or similar indicators)
+      const albums = items.filter((item: any) => 
+        item.playlist_type === 'album' || 
+        item.is_album === true ||
+        item.set_type === 'album'
+      );
+      
+      // If no explicit albums found, return playlists with album-like characteristics
+      const results = albums.length > 0 ? albums : items.slice(0, Math.min(limit, 10));
+      
+      return results.map((playlist: any) => ({
+        id: `sc_playlist_${playlist.id}`,
+        title: playlist.title,
+        trackCount: playlist.track_count || 0,
+        duration: Math.floor((playlist.duration || 0) / 1000),
+        artwork_url: playlist.artwork_url,
+        user: playlist.user?.username || 'Unknown',
+        likesCount: playlist.likes_count || 0,
+      }));
+    } catch (error) {
+      console.error('[SoundCloudService] Search albums error:', error);
+      throw error;
+    }
+  }
+
   private async performSearch(
     query: string,
     token: string,
@@ -809,6 +909,148 @@ class SoundCloudServiceClass {
   async isFavorite(trackId: string): Promise<boolean> {
     const favorites = await this.getFavorites();
     return favorites.some(f => f.id === trackId);
+  }
+
+  // ============================================================
+  // SoundCloud Account Likes Sync
+  // ============================================================
+
+  /**
+   * Like a track on SoundCloud (syncs to user's account)
+   * Uses v2 API endpoint for track likes
+   */
+  async likeTrackOnSoundCloud(trackId: string): Promise<boolean> {
+    try {
+      const token = await this.ensureValidUserToken();
+      if (!token) {
+        console.log('[SoundCloudService] Cannot like - not authenticated');
+        return false;
+      }
+
+      const numericId = trackId.replace('sc_', '');
+      
+      // Try v2 API first (track_likes endpoint)
+      let response = await fetch(`${API_V2_BASE_URL}/users/me/track_likes/${numericId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `OAuth ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (response.ok || response.status === 201 || response.status === 200) {
+        console.log('[SoundCloudService] Track liked on SoundCloud (v2):', numericId);
+        return true;
+      }
+
+      // Fallback to v1 API (favorites endpoint)
+      console.log('[SoundCloudService] v2 like failed, trying v1:', response.status);
+      response = await fetch(`${ME_URL}/favorites/${numericId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `OAuth ${token}`,
+        },
+      });
+
+      if (response.ok || response.status === 201 || response.status === 200) {
+        console.log('[SoundCloudService] Track liked on SoundCloud (v1):', numericId);
+        return true;
+      }
+
+      console.log('[SoundCloudService] Like failed on both APIs:', response.status);
+      return false;
+    } catch (error) {
+      console.error('[SoundCloudService] Like track error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Unlike a track on SoundCloud (syncs to user's account)
+   * Uses v2 API endpoint for track likes
+   */
+  async unlikeTrackOnSoundCloud(trackId: string): Promise<boolean> {
+    try {
+      const token = await this.ensureValidUserToken();
+      if (!token) {
+        console.log('[SoundCloudService] Cannot unlike - not authenticated');
+        return false;
+      }
+
+      const numericId = trackId.replace('sc_', '');
+      
+      // Try v2 API first
+      let response = await fetch(`${API_V2_BASE_URL}/users/me/track_likes/${numericId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `OAuth ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (response.ok || response.status === 200 || response.status === 204) {
+        console.log('[SoundCloudService] Track unliked on SoundCloud (v2):', numericId);
+        return true;
+      }
+
+      // Fallback to v1 API
+      response = await fetch(`${ME_URL}/favorites/${numericId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `OAuth ${token}`,
+        },
+      });
+
+      if (response.ok || response.status === 200 || response.status === 204) {
+        console.log('[SoundCloudService] Track unliked on SoundCloud (v1):', numericId);
+        return true;
+      }
+
+      console.log('[SoundCloudService] Unlike failed on both APIs:', response.status);
+      return false;
+    } catch (error) {
+      console.error('[SoundCloudService] Unlike track error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if a track is liked on user's SoundCloud account
+   */
+  async isLikedOnSoundCloud(trackId: string): Promise<boolean> {
+    try {
+      const token = await this.ensureValidUserToken();
+      if (!token) return false;
+
+      const numericId = trackId.replace('sc_', '');
+      
+      // Check by fetching the specific favorite
+      const response = await fetch(`${ME_URL}/favorites/${numericId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `OAuth ${token}`,
+        },
+      });
+
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Toggle like status on SoundCloud - syncs to user's account
+   */
+  async toggleLikeOnSoundCloud(trackId: string): Promise<{ liked: boolean; success: boolean }> {
+    const isLiked = await this.isLikedOnSoundCloud(trackId);
+    
+    if (isLiked) {
+      const success = await this.unlikeTrackOnSoundCloud(trackId);
+      return { liked: false, success };
+    } else {
+      const success = await this.likeTrackOnSoundCloud(trackId);
+      return { liked: true, success };
+    }
   }
 
   getStoredStreamUrl(storedTrack: StoredSoundCloudTrack): string {

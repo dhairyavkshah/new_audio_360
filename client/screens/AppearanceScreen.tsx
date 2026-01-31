@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, ScrollView } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import { FluentScreenLayout, FluentText } from "@/components/fluent";
+import { FluentScreenLayout, FluentText, FluentSectionHeader } from "@/components/fluent";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { ThemeName } from "@/constants/theme";
@@ -27,9 +27,7 @@ export default function AppearanceScreen() {
         showsVerticalScrollIndicator={false}
         scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
-        <FluentText variant="subtitle1" style={styles.sectionHeader}>
-          Themes
-        </FluentText>
+        <FluentSectionHeader icon="palette-outline" title="Themes" />
         <FluentText variant="body2" color="secondary" style={styles.sectionDesc}>
           Choose a theme that matches your style. Your selection is saved automatically.
         </FluentText>
@@ -43,9 +41,7 @@ export default function AppearanceScreen() {
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: FluentSpacing.l,
-  },
-  sectionHeader: {
-    marginBottom: FluentSpacing.xs,
+    paddingTop: FluentSpacing.l,
   },
   sectionDesc: {
     marginBottom: FluentSpacing.m,

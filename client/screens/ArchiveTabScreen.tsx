@@ -152,31 +152,20 @@ export default function ArchiveTabScreen() {
 
     return (
       <Pressable 
-        style={[styles.trackCard, { backgroundColor: colors.colorNeutralBackground2 }]}
+        style={[styles.trackCard, { backgroundColor: colors.colorNeutralBackground2, borderColor: colors.colorNeutralStroke2 }]}
         onPress={() => playTrack(item)}
       >
-        <View style={[styles.playIcon, { backgroundColor: colors.colorBrandBackground }]}>
+        <View style={[styles.artwork, { backgroundColor: colors.colorBrandBackground }]}>
           <MaterialCommunityIcons name="play" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
         </View>
         
         <View style={styles.trackInfo}>
-          <FluentText variant="body1" numberOfLines={1} style={{ fontWeight: '600' }}>
+          <FluentText variant="body1Strong" numberOfLines={1}>
             {item.title}
           </FluentText>
-          <FluentText variant="body2" color="secondary" numberOfLines={1}>
+          <FluentText variant="caption1" color="secondary" numberOfLines={1}>
             {item.artist}
           </FluentText>
-          <View style={styles.trackMeta}>
-            <View style={[styles.badge, { backgroundColor: colors.colorPaletteGreenBackground1 }]}>
-              <MaterialCommunityIcons name="creative-commons" size={FluentIconSize.tiny} color={colors.colorPaletteGreenForeground1} />
-              <FluentText variant="caption2" style={{ color: colors.colorPaletteGreenForeground1, marginLeft: 2 }}>
-                Free
-              </FluentText>
-            </View>
-            <FluentText variant="caption1" color="tertiary">
-              {ArchiveOrgService.formatBitrate(item.bitrate)} • {ArchiveOrgService.formatDuration(item.duration || 0)}
-            </FluentText>
-          </View>
         </View>
 
         <Pressable
@@ -197,6 +186,11 @@ export default function ArchiveTabScreen() {
             />
           )}
         </Pressable>
+        <MaterialCommunityIcons 
+          name="chevron-right" 
+          size={FluentIconSize.small} 
+          color={colors.colorNeutralForeground3} 
+        />
       </Pressable>
     );
   };
@@ -372,33 +366,24 @@ const styles = StyleSheet.create({
   trackCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: FluentSpacing.m,
+    paddingVertical: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.l,
     borderRadius: FluentControlRadius.card,
-    gap: FluentSpacing.m,
+    minHeight: 72,
+    borderWidth: 1,
+    marginBottom: FluentSpacing.s,
   },
-  playIcon: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
-    borderRadius: FluentTouchTarget.minimum / 2,
+  artwork: {
+    width: FluentIconSize.xxlarge,
+    height: FluentIconSize.xxlarge,
+    borderRadius: FluentControlRadius.card,
     justifyContent: 'center',
     alignItems: 'center',
   },
   trackInfo: {
     flex: 1,
+    marginLeft: FluentSpacing.m,
     gap: FluentSpacing.xxs,
-  },
-  trackMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: FluentSpacing.s,
-    marginTop: FluentSpacing.xs,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: FluentSpacing.s,
-    paddingVertical: FluentSpacing.xxs,
-    borderRadius: FluentRadius.large,
   },
   addButton: {
     width: FluentTouchTarget.minimum,

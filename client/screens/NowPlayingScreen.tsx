@@ -105,6 +105,11 @@ export default function NowPlayingScreen() {
     if (isSoundCloudSong(currentSong)) {
       setFavoriteLoading(true);
       try {
+        // Sync to SoundCloud account first
+        const syncResult = await SoundCloudService.toggleLikeOnSoundCloud(currentSong.id);
+        console.log('[NowPlaying] SoundCloud sync result:', syncResult);
+        
+        // Also manage local favorites
         if (isOnlineFavorite) {
           await SoundCloudService.removeFromFavorites(currentSong.id);
         } else {
