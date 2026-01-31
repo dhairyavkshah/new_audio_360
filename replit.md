@@ -1,6 +1,12 @@
 # New Audio 360
 
-## Recent Changes (v30.0 - January 2026)
+## Recent Changes (v29.0 - January 2026)
+- **Repeat/Loop Fix**: Fixed repeat mode for all playback types (local, SoundCloud, Archive.org)
+  - Web audio element now properly handles repeat-one mode by seeking to 0 and replaying
+  - Last song in queue now correctly loops when repeat-all is enabled
+- **NowPlaying Back Button Fix**: Simplified back button to match default React Navigation header styling exactly
+  - Removed extra container wrapper and padding that caused position mismatch
+  - Icon now aligns with other screen headers
 - **Performance Optimization**: Comprehensive startup and scrolling performance improvements
   - PlaybackEngineModule and NativeEffectsManager now initialize after UI transitions complete (InteractionManager)
   - Added serialized initialization with in-flight promise guard to prevent concurrent init calls
@@ -26,7 +32,6 @@
   - **Theme Card Borders**: AppearanceScreen theme cards now have visible 1px Fluent 2 borders (2px when selected)
 - **Radio Screen Header Consolidation**: Merged FM/AM|Online toggle + Country selector into single compact row; FM unavailable notice now shows as toast only when user taps FM/AM tab
 - **Library Screen Spacing Fix**: Songs dropdown now fills available space with flex:1 and uses same 8px gap as Search/Filter row
-- **NowPlaying Back Button Styling**: Added container wrapper with platform-specific padding (iOS: 8px, Android/Web: 12px) for proper header spacing alignment
 - **AudioWaveform Animation Fix**: Waveform now only animates when audio is truly playing (not during loading/buffering states)
 - **Source Indicators in Liked Category**: Songs in the Liked category now show source icons (music note for local, SoundCloud cloud for SoundCloud, web icon for Archive) to differentiate song origins
 - **Settings Card Styling**: Added Fluent 2 card borders (1px colorNeutralStroke2) and 8px marginBottom spacing to FluentListItem
@@ -41,15 +46,13 @@
 - **Documentation Overhaul**:
   - LicenseScreen: Added Open Source Components section with 12 library licenses
   - Privacy Policy: Updated for SoundCloud OAuth and Internet Archive (v1.0.3)
-  - Release Notes: Added v28.0 through v30.0 sections
-  - App Store Descriptions: Added Discover features and v30.0 What's New
-- **Version Update**: Updated to v30.0 across all screens and Android gradle
-
-## Previous Changes (v29.0 - January 2026)
-- **Card Spacing Optimization**: Removed ItemSeparatorComponent from SoundCloud FlatLists to match Library screen 8px card gaps exactly
-- **Header Bottom Borders**: Added bottom border to Archive and SoundCloud search headers matching Library screen pattern
+  - Release Notes: Added v28.0 through v29.0 sections
+  - App Store Descriptions: Added Discover features and v29.0 What's New
+- **Version Update**: Updated to v29.0 across all screens and Android gradle
 
 ## Previous Changes (v28.1.1 - January 2026)
+- **Card Spacing Optimization**: Removed ItemSeparatorComponent from SoundCloud FlatLists to match Library screen 8px card gaps exactly
+- **Header Bottom Borders**: Added bottom border to Archive and SoundCloud search headers matching Library screen pattern
 - **Design System Refinement Phase 2** (23 tasks completed):
   - **New Design Tokens**: FluentSpacing.xxxxxxxl (80px), FluentRadius.xxLarge (16px), FluentControlRadius.heroCard (16px), FluentBlurIntensity (light/medium/heavy), colorFavorite brand color
   - **Typography Cleanup**: Replaced inline fontWeight with Strong variants across 17+ screens

@@ -722,7 +722,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!song) return;
 
     if (currentRepeat === 'one') {
-      if (useTrackPlayerRef.current) {
+      if (Platform.OS === 'web' && audioElementRef.current) {
+        audioElementRef.current.currentTime = 0;
+        audioElementRef.current.play().catch(console.error);
+        setIsPlaying(true);
+      } else if (useTrackPlayerRef.current) {
         TrackPlayerService.seekTo(0).then(() => {
           TrackPlayerService.play();
         });
