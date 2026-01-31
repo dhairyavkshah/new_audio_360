@@ -119,6 +119,7 @@ All song durations are normalized to **seconds** throughout the app:
 - **PlayerContext**: Durations normalized at playback start and state restoration
 - **SoundCloudService**: New favorites stored in seconds, legacy favorites normalized on load
 - **ProgressBar**: Guard shows "0:00" for invalid/garbage values (null, NaN, negative, > 10 hours)
+- **UI Components**: SongCard, PlaylistDetailScreen, QueueScreen formatDuration functions now expect seconds with invalid value guards
 
 ## External Dependencies
 
