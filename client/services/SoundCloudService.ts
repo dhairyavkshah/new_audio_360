@@ -917,7 +917,7 @@ class SoundCloudServiceClass {
 
   /**
    * Like a track on SoundCloud (syncs to user's account)
-   * Uses v2 API endpoint for track likes
+   * Uses the official /me/likes/tracks endpoint
    */
   async likeTrackOnSoundCloud(trackId: string): Promise<boolean> {
     try {
@@ -929,8 +929,23 @@ class SoundCloudServiceClass {
 
       const numericId = trackId.replace('sc_', '');
       
-      // Try v2 API first (track_likes endpoint)
-      let response = await fetch(`${API_V2_BASE_URL}/users/me/track_likes/${numericId}`, {
+      // Use official /me/likes/tracks endpoint (PUT method)
+      let response = await fetch(`${ME_URL}/likes/tracks/${numericId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `OAuth ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (response.ok || response.status === 201 || response.status === 200) {
+        console.log('[SoundCloudService] Track liked on SoundCloud:', numericId);
+        return true;
+      }
+
+      // Fallback to v2 API 
+      console.log('[SoundCloudService] v1 like failed, trying v2:', response.status);
+      response = await fetch(`${API_V2_BASE_URL}/users/me/track_likes/${numericId}`, {
         method: 'POST',
         headers: {
           'Authorization': `OAuth ${token}`,
@@ -940,20 +955,6 @@ class SoundCloudServiceClass {
 
       if (response.ok || response.status === 201 || response.status === 200) {
         console.log('[SoundCloudService] Track liked on SoundCloud (v2):', numericId);
-        return true;
-      }
-
-      // Fallback to v1 API (favorites endpoint)
-      console.log('[SoundCloudService] v2 like failed, trying v1:', response.status);
-      response = await fetch(`${ME_URL}/favorites/${numericId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `OAuth ${token}`,
-        },
-      });
-
-      if (response.ok || response.status === 201 || response.status === 200) {
-        console.log('[SoundCloudService] Track liked on SoundCloud (v1):', numericId);
         return true;
       }
 
@@ -967,7 +968,7 @@ class SoundCloudServiceClass {
 
   /**
    * Unlike a track on SoundCloud (syncs to user's account)
-   * Uses v2 API endpoint for track likes
+   * Uses the official /me/likes/tracks endpoint
    */
   async unlikeTrackOnSoundCloud(trackId: string): Promise<boolean> {
     try {
@@ -979,8 +980,22 @@ class SoundCloudServiceClass {
 
       const numericId = trackId.replace('sc_', '');
       
-      // Try v2 API first
-      let response = await fetch(`${API_V2_BASE_URL}/users/me/track_likes/${numericId}`, {
+      // Use official /me/likes/tracks endpoint
+      let response = await fetch(`${ME_URL}/likes/tracks/${numericId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `OAuth ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (response.ok || response.status === 200 || response.status === 204) {
+        console.log('[SoundCloudService] Track unliked on SoundCloud:', numericId);
+        return true;
+      }
+
+      // Fallback to v2 API
+      response = await fetch(`${API_V2_BASE_URL}/users/me/track_likes/${numericId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `OAuth ${token}`,
@@ -990,19 +1005,6 @@ class SoundCloudServiceClass {
 
       if (response.ok || response.status === 200 || response.status === 204) {
         console.log('[SoundCloudService] Track unliked on SoundCloud (v2):', numericId);
-        return true;
-      }
-
-      // Fallback to v1 API
-      response = await fetch(`${ME_URL}/favorites/${numericId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `OAuth ${token}`,
-        },
-      });
-
-      if (response.ok || response.status === 200 || response.status === 204) {
-        console.log('[SoundCloudService] Track unliked on SoundCloud (v1):', numericId);
         return true;
       }
 
