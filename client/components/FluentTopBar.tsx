@@ -397,6 +397,7 @@ const styles = StyleSheet.create({
   categoryRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: FluentSpacing.s,
     marginBottom: FluentSpacing.s,
   },
