@@ -112,6 +112,14 @@ The following unused files were removed during the codebase audit:
 - **MediaLibraryContext**: Parallelized initialization using `Promise.all` for `loadHiddenSongs`, `loadOnboardingStatus`, `loadSelectedFolders`, and `loadCachedSongs`. Also parallelized `checkPermission` and `validateOnboardingStatus`. This reduces sequential awaits and improves startup time.
 - **loadHiddenSongs**: Now returns the hidden IDs array to avoid stale state issues during parallel initialization.
 
+### Duration Normalization (v29.1 - January 2026)
+All song durations are normalized to **seconds** throughout the app:
+- **normalizeDuration/normalizeDurationToSeconds helpers**: Convert values > 36000 from milliseconds to seconds (heuristic: > 10 hours indicates ms)
+- **MediaLibraryContext**: expo-media-library returns seconds (no longer multiplied by 1000), MediaStoreScannerModule returns ms (divided by 1000), cached songs normalized on load
+- **PlayerContext**: Durations normalized at playback start and state restoration
+- **SoundCloudService**: New favorites stored in seconds, legacy favorites normalized on load
+- **ProgressBar**: Guard shows "0:00" for invalid/garbage values (null, NaN, negative, > 10 hours)
+
 ## External Dependencies
 
 ### Core
