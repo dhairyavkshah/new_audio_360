@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View, TouchableOpacity } from "react-native";
 import * as Haptics from "expo-haptics";
-import { useNavigation, NavigationProp, CommonActions } from "@react-navigation/native";
+import { useNavigation, NavigationProp, CommonActions, StackActions } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ListenStackNavigator from "@/navigation/ListenStackNavigator";
 import LibraryStackNavigator from "@/navigation/LibraryStackNavigator";
@@ -195,14 +195,25 @@ function MainTabNavigator() {
         }}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            // Reset ListenTab stack to initial route (Listen screen) when tab is pressed
-            // This prevents showing NowPlaying when tapping Listen tab
-            navigation.dispatch(
-              CommonActions.reset({
-                index: 0,
-                routes: [{ name: 'ListenTab', state: { routes: [{ name: 'Listen' }] } }],
-              })
-            );
+            // Prevent default behavior to handle navigation manually
+            e.preventDefault();
+            
+            // Get the current state of this tab's navigator
+            const state = navigation.getState();
+            const listenTabRoute = state?.routes?.find((r: any) => r.name === 'ListenTab');
+            const listenTabState = listenTabRoute?.state as { index?: number } | undefined;
+            
+            // If we're already on the Listen tab with nested screens, pop to top
+            if (listenTabState && typeof listenTabState.index === 'number' && listenTabState.index > 0) {
+              // Pop to the first screen (Listen home) in the stack
+              navigation.dispatch({
+                ...StackActions.popToTop(),
+                target: listenTabRoute?.key,
+              });
+            }
+            
+            // Always navigate to ListenTab to ensure we're on this tab
+            (navigation as any).navigate('ListenTab', { screen: 'Listen' });
           },
         })}
       />
