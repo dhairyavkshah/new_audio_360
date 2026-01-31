@@ -109,6 +109,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playbackEngineInitPromiseRef = useRef<Promise<boolean> | null>(null);
   const progressPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const nativeProgressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const trackEndHandledRef = useRef<boolean>(false);
   const lastKnownPositionRef = useRef<number>(0);
   const wasPlayingBeforeBackgroundRef = useRef<boolean>(false);
   const handleNextInternalRef = useRef<() => void>(() => {});
@@ -714,14 +715,27 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [isPlaying, currentSong]);
 
   const handleTrackEnd = useCallback(() => {
+    // Guard against double-handling (both polling and event listener can trigger)
+    if (trackEndHandledRef.current) {
+      console.log('[PlayerContext] Track end already handled, skipping');
+      return;
+    }
+    trackEndHandledRef.current = true;
+    
     const song = currentSongRef.current;
     const currentQueue = queueRef.current;
     const currentRepeat = repeatRef.current;
     const currentShuffle = shuffleRef.current;
 
-    if (!song) return;
+    if (!song) {
+      trackEndHandledRef.current = false; // Reset if no song
+      return;
+    }
 
     if (currentRepeat === 'one') {
+      // Reset guard for repeat-one since same track will end again
+      trackEndHandledRef.current = false;
+      
       if (Platform.OS === 'web' && audioElementRef.current) {
         audioElementRef.current.currentTime = 0;
         audioElementRef.current.play().catch(console.error);
@@ -1012,6 +1026,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [soundLabMode, eqBands, immersiveEffect]);
 
   const loadAndPlaySong = useCallback(async (song: PlayableSong) => {
+    // Reset track end guard for new track
+    trackEndHandledRef.current = false;
+    
     setIsLoading(true);
     setError(null);
     setCurrentTime(0);
