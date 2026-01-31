@@ -104,8 +104,13 @@ The following unused files were removed during the codebase audit:
 
 ### Architecture Notes
 - **PlayerContext** (~2200 lines) uses multiple playback engines with ref-based guards. The complexity is intentional to support Android native DSP, TrackPlayer fallback, and web audio.
+- **Auto-advance pattern**: Uses `loadAndPlaySongRef` to break circular dependency between `handleTrackEnd` (stable callback with empty deps) and `loadAndPlaySong` (defined later). The ref is updated via useEffect when `loadAndPlaySong` changes.
 - **SmartEnhancementsModule** is exported from `modules/audio-effects/index.ts` and used in SoundLabScreen for bass enhancement and HF restoration settings.
 - **NativeAudioService** is still used by SoundLabScreen for session management and live audio analysis.
+
+### Performance Optimizations (v29.1 - January 2026)
+- **MediaLibraryContext**: Parallelized initialization using `Promise.all` for `loadHiddenSongs`, `loadOnboardingStatus`, `loadSelectedFolders`, and `loadCachedSongs`. Also parallelized `checkPermission` and `validateOnboardingStatus`. This reduces sequential awaits and improves startup time.
+- **loadHiddenSongs**: Now returns the hidden IDs array to avoid stale state issues during parallel initialization.
 
 ## External Dependencies
 
