@@ -66,8 +66,11 @@ export default function QueueScreen() {
     }
   }, [selectedSongs, removeFromQueue, exitSelectionMode, playTapSound]);
 
-  const formatDuration = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
+  const formatDuration = (seconds: number) => {
+    if (!seconds || seconds <= 0 || !isFinite(seconds)) {
+      return "0:00";
+    }
+    const totalSeconds = Math.floor(seconds);
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
