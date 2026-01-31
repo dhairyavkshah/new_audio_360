@@ -8,7 +8,7 @@ import { FluentTopBar } from "@/components/FluentTopBar";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useToast } from "@/contexts/ToastContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentIconSize, FluentTouchTarget, FluentControlRadius } from "@/constants/fluent2";
 import ArchiveOrgService, { ArchiveOrgTrack, AudioQuality } from "@/services/ArchiveOrgService";
 import SoundCloudService, { SoundCloudTrack } from "@/services/SoundCloudService";
 
@@ -201,8 +201,8 @@ export default function ArchiveScreen() {
             style={styles.artworkImage}
           />
         ) : (
-          <View style={[styles.playIcon, { backgroundColor: theme.primary }]}>
-            <MaterialCommunityIcons name="play" size={20} color="#FFFFFF" />
+          <View style={[styles.playIcon, { backgroundColor: colors.colorBrandBackground }]}>
+            <MaterialCommunityIcons name="play" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
           </View>
         )}
         
@@ -214,9 +214,9 @@ export default function ArchiveScreen() {
             {item.artist}
           </FluentText>
           <View style={styles.trackMeta}>
-            <View style={[styles.webBadge, { backgroundColor: theme.primary + '20' }]}>
-              <MaterialCommunityIcons name="web" size={10} color={theme.primary} />
-              <FluentText variant="caption2" style={{ color: theme.primary, marginLeft: 2 }}>
+            <View style={[styles.webBadge, { backgroundColor: colors.colorBrandBackground + '20' }]}>
+              <MaterialCommunityIcons name="web" size={FluentIconSize.tiny} color={colors.colorBrandForeground1} />
+              <FluentText variant="caption2" style={{ color: colors.colorBrandForeground1, marginLeft: FluentSpacing.xxs }}>
                 Web
               </FluentText>
             </View>
@@ -227,7 +227,7 @@ export default function ArchiveScreen() {
         </View>
 
         <Pressable
-          style={[styles.addButton, { backgroundColor: theme.primary + '15' }]}
+          style={[styles.addButton, { backgroundColor: colors.colorSubtleBackgroundHover }]}
           onPress={(e) => {
             e.stopPropagation();
             addToLibrary(item);
@@ -235,9 +235,9 @@ export default function ArchiveScreen() {
           disabled={isAdding}
         >
           {isAdding ? (
-            <ActivityIndicator size="small" color={theme.primary} />
+            <ActivityIndicator size="small" color={colors.colorBrandForeground1} />
           ) : (
-            <MaterialCommunityIcons name="heart-plus-outline" size={22} color={theme.primary} />
+            <MaterialCommunityIcons name="heart-plus-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
           )}
         </Pressable>
       </Pressable>
@@ -246,10 +246,10 @@ export default function ArchiveScreen() {
 
   const searchButton = (
     <Pressable
-      style={[styles.searchButton, { backgroundColor: theme.primary }]}
+      style={[styles.searchButton, { backgroundColor: colors.colorBrandBackground }]}
       onPress={handleSearch}
     >
-      <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
+      <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
     </Pressable>
   );
 
@@ -275,7 +275,7 @@ export default function ArchiveScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.colorNeutralBackground1 }]}>
             <View style={styles.modalHeader}>
-              <MaterialCommunityIcons name="compass" size={48} color={theme.primary} />
+              <MaterialCommunityIcons name="compass" size={FluentIconSize.xxlarge} color={colors.colorBrandForeground1} />
               <FluentText variant="title2" style={styles.modalTitle}>
                 Open Music Discovery
               </FluentText>
@@ -323,10 +323,10 @@ export default function ArchiveScreen() {
               </Pressable>
               
               <Pressable
-                style={[styles.modalButton, styles.acceptButton, { backgroundColor: theme.primary }]}
+                style={[styles.modalButton, styles.acceptButton, { backgroundColor: colors.colorBrandBackground }]}
                 onPress={handleAcceptConsent}
               >
-                <FluentText variant="body2" style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                <FluentText variant="body2" style={{ color: colors.colorNeutralForegroundOnBrand, fontWeight: '600' }}>
                   I Understand
                 </FluentText>
               </Pressable>
@@ -349,7 +349,7 @@ export default function ArchiveScreen() {
                 styles.qualityChip,
                 { 
                   backgroundColor: selectedQuality === option.value 
-                    ? theme.primary 
+                    ? colors.colorBrandBackground 
                     : colors.colorNeutralBackground2 
                 },
               ]}
@@ -358,7 +358,7 @@ export default function ArchiveScreen() {
               <FluentText
                 variant="caption1"
                 style={{ 
-                  color: selectedQuality === option.value ? '#FFFFFF' : theme.text,
+                  color: selectedQuality === option.value ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground1,
                   fontWeight: selectedQuality === option.value ? '600' : '400',
                 }}
               >
@@ -370,14 +370,14 @@ export default function ArchiveScreen() {
 
         {loading ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={theme.primary} />
+            <ActivityIndicator size="large" color={colors.colorBrandForeground1} />
             <FluentText variant="body2" color="secondary" style={styles.statusText}>
               Searching...
             </FluentText>
           </View>
         ) : tracks.length === 0 ? (
           <View style={styles.centerContainer}>
-            <MaterialCommunityIcons name="compass-outline" size={64} color={theme.textTertiary} />
+            <MaterialCommunityIcons name="compass-outline" size={FluentIconSize.xxlarge} color={colors.colorNeutralForeground3} />
             <FluentText variant="subtitle1" color="secondary" style={styles.statusText}>
               {searchQuery ? "No results found" : "Discover free music"}
             </FluentText>
@@ -397,7 +397,7 @@ export default function ArchiveScreen() {
         )}
 
         <View style={[styles.footer, { borderTopColor: colors.colorNeutralStroke2 }]}>
-          <MaterialCommunityIcons name="music-note" size={14} color={theme.textTertiary} />
+          <MaterialCommunityIcons name="music-note" size={FluentIconSize.tiny} color={colors.colorNeutralForeground3} />
           <FluentText variant="caption2" color="tertiary">
             Free music from public sources
           </FluentText>
@@ -459,8 +459,9 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
+    minHeight: FluentTouchTarget.minimum,
     paddingVertical: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
+    borderRadius: FluentControlRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -469,9 +470,9 @@ const styles = StyleSheet.create({
   },
   acceptButton: {},
   searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: FluentRadius.medium,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentControlRadius.button,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -514,39 +515,39 @@ const styles = StyleSheet.create({
     gap: FluentSpacing.m,
   },
   playIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentTouchTarget.minimum / 2,
     justifyContent: 'center',
     alignItems: 'center',
   },
   artworkImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentRadius.large,
     backgroundColor: '#333',
   },
   trackInfo: {
     flex: 1,
-    gap: 2,
+    gap: FluentSpacing.xxs,
   },
   trackMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: FluentSpacing.s,
-    marginTop: 4,
+    marginTop: FluentSpacing.xs,
   },
   webBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xxs,
+    borderRadius: FluentRadius.large,
   },
   addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentTouchTarget.minimum / 2,
     justifyContent: 'center',
     alignItems: 'center',
   },

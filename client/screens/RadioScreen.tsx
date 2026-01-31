@@ -1325,8 +1325,8 @@ const styles = StyleSheet.create({
     marginRight: FluentSpacing.m,
   },
   persistentNowPlayingIcon: {
-    width: 40,
-    height: 40,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     borderRadius: FluentControlRadius.fab,
     backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
@@ -1380,15 +1380,15 @@ const styles = StyleSheet.create({
   signalContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
-    height: 28,
+    height: FluentIconSize.large,
     marginTop: FluentSpacing.m,
   },
   signalIcon: {
     marginRight: FluentSpacing.xs,
   },
   signalBar: {
-    width: 8,
-    marginHorizontal: 2,
+    width: FluentSpacing.s,
+    marginHorizontal: FluentSpacing.xxs,
     borderRadius: FluentControlRadius.checkbox,
   },
   sliderContainer: {
@@ -1424,8 +1424,8 @@ const styles = StyleSheet.create({
     gap: FluentSpacing.xxl,
   },
   playButton: {
-    width: 80,
-    height: 80,
+    width: FluentTouchTarget.minimum * 2,
+    height: FluentTouchTarget.minimum * 2,
     borderRadius: FluentControlRadius.avatar,
     justifyContent: "center",
     alignItems: "center",
@@ -1606,8 +1606,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   stationIcon: {
-    width: 40,
-    height: 40,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     borderRadius: FluentRadius.medium,
     justifyContent: "center",
     alignItems: "center",

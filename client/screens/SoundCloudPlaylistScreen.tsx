@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   },
   trackInfo: {
     flex: 1,
-    gap: 2,
+    gap: FluentSpacing.xxs,
   },
   addButton: {
     width: FluentTouchTarget.minimum,

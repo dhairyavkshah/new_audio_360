@@ -360,6 +360,43 @@ function LibraryScreen() {
     );
   }, [playTapSound, setQueue, playSong, navigation, setNowPlayingSource]);
 
+  const handlePlayAll = useCallback((songs: PlayableSong[]) => {
+    if (songs.length === 0) return;
+    playTapSound();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setQueue(songs);
+    playSong(songs[0]);
+    setNowPlayingSource({ tab: 'LibraryTab' });
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: "ListenTab",
+        params: {
+          screen: "NowPlaying",
+          params: { songId: songs[0].id },
+        },
+      })
+    );
+  }, [playTapSound, setQueue, playSong, navigation, setNowPlayingSource]);
+
+  const handleShuffleAll = useCallback((songs: PlayableSong[]) => {
+    if (songs.length === 0) return;
+    playTapSound();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const shuffled = [...songs].sort(() => Math.random() - 0.5);
+    setQueue(shuffled);
+    playSong(shuffled[0]);
+    setNowPlayingSource({ tab: 'LibraryTab' });
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: "ListenTab",
+        params: {
+          screen: "NowPlaying",
+          params: { songId: shuffled[0].id },
+        },
+      })
+    );
+  }, [playTapSound, setQueue, playSong, navigation, setNowPlayingSource]);
+
   const handlePlaylistPress = useCallback((playlist: Playlist) => {
     playTapSound();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -429,6 +466,27 @@ function LibraryScreen() {
     </View>
   );
 
+  const renderPlayAllHeader = (songs: PlayableSong[]) => (
+    <View style={styles.playAllHeader}>
+      <FluentText variant="caption1" color="tertiary">{songs.length} songs</FluentText>
+      <View style={styles.playAllButtons}>
+        <Pressable 
+          style={[styles.playAllButton, { backgroundColor: colors.colorBrandBackground }]} 
+          onPress={() => handlePlayAll(songs)}
+        >
+          <MaterialCommunityIcons name="play" size={FluentIconSize.small} color="#FFFFFF" />
+          <FluentText variant="body2" style={{ color: '#FFFFFF', marginLeft: FluentSpacing.xs }}>Play All</FluentText>
+        </Pressable>
+        <Pressable 
+          style={[styles.shuffleButton, { backgroundColor: colors.colorNeutralBackground3 }]} 
+          onPress={() => handleShuffleAll(songs)}
+        >
+          <MaterialCommunityIcons name="shuffle" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
+        </Pressable>
+      </View>
+    </View>
+  );
+
   const renderSongsList = (songs: PlayableSong[], emptyIcon: keyof typeof MaterialCommunityIcons.glyphMap, emptyMessage: string) => {
     if (songs.length === 0) {
       return renderEmptyState(emptyIcon, emptyMessage);
@@ -439,6 +497,7 @@ function LibraryScreen() {
         data={songs}
         renderItem={({ item }) => renderSongItem({ item, songs })}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={() => renderPlayAllHeader(songs)}
         contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + FluentSpacing.m }]}
         showsVerticalScrollIndicator={false}
         initialNumToRender={15}
@@ -843,6 +902,31 @@ const styles = StyleSheet.create({
   },
   archiveRemoveButton: {
     padding: FluentSpacing.xs,
+  },
+  playAllHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: FluentSpacing.m,
+  },
+  playAllButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: FluentSpacing.s,
+  },
+  playAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: FluentSpacing.m,
+    paddingVertical: FluentSpacing.s,
+    borderRadius: FluentRadius.circular,
+  },
+  shuffleButton: {
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentRadius.circular,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

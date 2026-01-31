@@ -55,16 +55,18 @@ export default function PlaylistDetailScreen() {
       .filter((s): s is DeviceSong => s !== undefined);
   }, [playlist, deviceSongs]);
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+  const formatDuration = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const totalDuration = useMemo(() => {
-    const total = songs.reduce((acc, s) => acc + s.duration, 0);
-    const hrs = Math.floor(total / 3600);
-    const mins = Math.floor((total % 3600) / 60);
+    const totalMs = songs.reduce((acc, s) => acc + s.duration, 0);
+    const totalSeconds = Math.floor(totalMs / 1000);
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
     if (hrs > 0) return `${hrs} hr ${mins} min`;
     return `${mins} min`;
   }, [songs]);

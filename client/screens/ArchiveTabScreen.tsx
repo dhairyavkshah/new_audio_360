@@ -8,7 +8,7 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { useToast } from "@/contexts/ToastContext";
-import { FluentSpacing, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize, FluentRadius, FluentTypography } from "@/constants/fluent2";
 import ArchiveOrgService, { ArchiveOrgTrack } from "@/services/ArchiveOrgService";
 
 const CONSENT_STORAGE_KEY = '@discover_consent_accepted';
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: FluentTypography.body1.fontSize,
   },
   searchButton: {
     width: FluentTouchTarget.minimum,
@@ -385,20 +385,20 @@ const styles = StyleSheet.create({
   },
   trackInfo: {
     flex: 1,
-    gap: 2,
+    gap: FluentSpacing.xxs,
   },
   trackMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: FluentSpacing.s,
-    marginTop: 4,
+    marginTop: FluentSpacing.xs,
   },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xxs,
+    borderRadius: FluentRadius.large,
   },
   addButton: {
     width: FluentTouchTarget.minimum,

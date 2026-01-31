@@ -80,7 +80,7 @@ function StationListItem({ station, onPress, onToggleFavorite, colors }: Station
       <View style={[styles.frequencyBadge, { backgroundColor: colors.colorBrandBackground + "20" }]}>
         <MaterialCommunityIcons 
           name={station.bandType === "fm" ? "radio" : "antenna"} 
-          size={20} 
+          size={FluentIconSize.regular} 
           color={colors.colorBrandForeground1} 
         />
       </View>
@@ -147,7 +147,7 @@ function OnlineStationCard({ station, onPlay, isPlaying, isFavorite, onToggleFav
         ) : (
           <MaterialCommunityIcons 
             name="radio" 
-            size={24} 
+            size={FluentIconSize.medium} 
             color={colors.colorBrandForeground1} 
           />
         )}
@@ -206,7 +206,7 @@ function EmptyState({ icon, title, message }: { icon: string; title: string; mes
     <View style={styles.emptyState}>
       <MaterialCommunityIcons 
         name={icon as any} 
-        size={48} 
+        size={FluentIconSize.xxlarge} 
         color={colors.colorNeutralForeground2} 
       />
       <FluentText variant="body1Strong" color="secondary" style={styles.emptyTitle}>
@@ -450,7 +450,7 @@ export default function RadioStationsScreen() {
             message={onlineError}
           />
           <FluentButton
-            iconBefore={<MaterialCommunityIcons name="refresh" size={20} />}
+            iconBefore={<MaterialCommunityIcons name="refresh" size={FluentIconSize.regular} />}
             onPress={() => {
               clearError();
               if (detectedCountryCode) {
@@ -594,7 +594,7 @@ export default function RadioStationsScreen() {
         </View>
 
         <FluentButton
-          iconBefore={<MaterialCommunityIcons name="radar" size={20} />}
+          iconBefore={<MaterialCommunityIcons name="radar" size={FluentIconSize.regular} />}
           onPress={handleScan}
           disabled={isScanning || !isAvailable}
           style={styles.scanButton}
@@ -606,7 +606,7 @@ export default function RadioStationsScreen() {
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons 
               name="star" 
-              size={20} 
+              size={FluentIconSize.regular} 
               color={colors.colorBrandForeground1} 
             />
             <FluentText variant="title3" style={styles.sectionTitle}>
@@ -639,7 +639,7 @@ export default function RadioStationsScreen() {
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons 
               name="radio-tower" 
-              size={20} 
+              size={FluentIconSize.regular} 
               color={colors.colorBrandForeground1} 
             />
             <FluentText variant="title3" style={styles.sectionTitle}>
@@ -777,11 +777,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: FluentSpacing.s,
     borderRadius: FluentControlRadius.button,
-    minHeight: 56,
+    minHeight: FluentTouchTarget.minimum + FluentSpacing.m,
   },
   frequencyBadge: {
-    width: 40,
-    height: 40,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     borderRadius: FluentControlRadius.button,
     justifyContent: "center",
     alignItems: "center",
@@ -794,12 +794,12 @@ const styles = StyleSheet.create({
   signalContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
-    gap: 2,
+    gap: FluentSpacing.xxs,
     marginRight: FluentSpacing.xs,
-    height: 16,
+    height: FluentIconSize.small,
   },
   signalBar: {
-    width: 4,
+    width: FluentSpacing.xs,
     borderRadius: FluentControlRadius.checkbox,
   },
   emptyState: {
@@ -833,8 +833,8 @@ const styles = StyleSheet.create({
     gap: FluentSpacing.m,
   },
   unavailableIconContainer: {
-    width: 40,
-    height: 40,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     borderRadius: FluentRadius.circular,
     justifyContent: "center",
     alignItems: "center",
@@ -911,16 +911,16 @@ const styles = StyleSheet.create({
     minHeight: 72,
   },
   stationFaviconContainer: {
-    width: 48,
-    height: 48,
+    width: FluentTouchTarget.minimum + FluentSpacing.xs,
+    height: FluentTouchTarget.minimum + FluentSpacing.xs,
     borderRadius: FluentRadius.medium,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
   },
   stationFavicon: {
-    width: 48,
-    height: 48,
+    width: FluentTouchTarget.minimum + FluentSpacing.xs,
+    height: FluentTouchTarget.minimum + FluentSpacing.xs,
   },
   onlineStationInfo: {
     flex: 1,

@@ -435,7 +435,7 @@ export default function SoundCloudTabScreen() {
             style={{
               color: activeSubTab === tab ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2,
               fontWeight: activeSubTab === tab ? '600' : '400',
-              marginLeft: 4,
+              marginLeft: FluentSpacing.xs,
             }}
           >
             {tab === 'search' ? 'Search' : tab === 'likes' ? 'Likes' : 'Playlists'}
@@ -540,7 +540,7 @@ export default function SoundCloudTabScreen() {
           {item.likesCount > 0 && (
             <View style={styles.likesRow}>
               <MaterialCommunityIcons name="heart" size={FluentIconSize.tiny} color={colors.colorNeutralForeground3} />
-              <FluentText variant="caption1" color="tertiary" style={{ marginLeft: 2 }}>
+              <FluentText variant="caption1" color="tertiary" style={{ marginLeft: FluentSpacing.xxs }}>
                 {SoundCloudService.formatPlaybackCount(item.likesCount)}
               </FluentText>
             </View>
@@ -1013,20 +1013,20 @@ const styles = StyleSheet.create({
   },
   trackInfo: {
     flex: 1,
-    gap: 2,
+    gap: FluentSpacing.xxs,
   },
   trackMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: FluentSpacing.s,
-    marginTop: 4,
+    marginTop: FluentSpacing.xs,
   },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: FluentRadius.small,
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xxs,
+    borderRadius: FluentRadius.large,
   },
   addButton: {
     width: FluentTouchTarget.minimum,
@@ -1051,13 +1051,13 @@ const styles = StyleSheet.create({
   },
   playlistInfo: {
     flex: 1,
-    gap: 2,
+    gap: FluentSpacing.xxs,
   },
   playlistMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: FluentSpacing.m,
-    marginTop: 4,
+    marginTop: FluentSpacing.xs,
   },
   likesRow: {
     flexDirection: 'row',
