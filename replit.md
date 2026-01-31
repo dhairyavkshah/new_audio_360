@@ -1,6 +1,8 @@
 # New Audio 360
 
 ## Recent Changes (v30.0 - January 2026)
+- **Radio Screen Header Consolidation**: Merged FM/AM|Online toggle + Country selector into single compact row; FM unavailable notice now shows as toast only when user taps FM/AM tab
+- **Library Screen Spacing Fix**: Songs dropdown now fills available space with flex:1 and uses same 8px gap as Search/Filter row
 - **NowPlaying Back Button Styling**: Added container wrapper with platform-specific padding (iOS: 8px, Android/Web: 12px) for proper header spacing alignment
 - **AudioWaveform Animation Fix**: Waveform now only animates when audio is truly playing (not during loading/buffering states)
 - **Source Indicators in Liked Category**: Songs in the Liked category now show source icons (music note for local, SoundCloud cloud for SoundCloud, web icon for Archive) to differentiate song origins
