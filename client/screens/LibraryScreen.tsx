@@ -936,7 +936,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: FluentSpacing.s,
-    marginLeft: 'auto',
   },
   topBarPlayAllButton: {
     flexDirection: 'row',

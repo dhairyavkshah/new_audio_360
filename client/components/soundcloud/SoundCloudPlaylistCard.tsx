@@ -74,6 +74,7 @@ const styles = StyleSheet.create({
     padding: FluentSpacing.m,
     borderRadius: FluentControlRadius.card,
     gap: FluentSpacing.m,
+    marginBottom: FluentSpacing.s,
   },
   playlistArtwork: {
     width: 56,
