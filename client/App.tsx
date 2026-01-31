@@ -31,6 +31,7 @@ import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionCo
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { PlatformModeProvider } from "@/contexts/PlatformModeContext";
+import { DiscoverFavoritesProvider } from "@/contexts/DiscoverFavoritesContext";
 import SplashScreen from "@/screens/SplashScreen";
 import LoadingScreen from "@/screens/LoadingScreen";
 import PermissionOnboardingFlow from "@/screens/PermissionOnboardingFlow";
@@ -147,9 +148,11 @@ export default function App() {
                     <RadioProvider>
                       <OnlineRadioProvider>
                         <PlayerProvider>
-                          <ToastProvider>
-                            <AppContent />
-                          </ToastProvider>
+                          <DiscoverFavoritesProvider>
+                            <ToastProvider>
+                              <AppContent />
+                            </ToastProvider>
+                          </DiscoverFavoritesProvider>
                         </PlayerProvider>
                       </OnlineRadioProvider>
                     </RadioProvider>

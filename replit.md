@@ -1,6 +1,11 @@
 # New Audio 360
 
 ## Recent Changes (v30.0 - January 2026)
+- **Favorites Sync Fix**: Created `DiscoverFavoritesContext` to unify favorites state across all screens
+  - NowPlayingScreen, ArchiveTabScreen, and SoundCloudTabScreen now share the same favorites state
+  - Liking a song from anywhere now instantly reflects across all screens
+  - Removed local favoritedIds state in favor of centralized context
+- **Duration Display Fix**: Fixed test songs displaying 0:00 duration by converting from seconds to milliseconds
 - **Comprehensive Design Consistency Audit**: Deep inside-out/outside-in analysis and fixes across all screens
   - **Card Styling Unified**: SoundCloudPlaylistCard now has proper 1px border with colorNeutralStroke2
   - **OnlineStationCard Background**: Changed from colorNeutralBackground3 to colorNeutralBackground2 for consistency

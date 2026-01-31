@@ -25,6 +25,7 @@ import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentD
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import SoundCloudService, { SoundCloudTrack } from "@/services/SoundCloudService";
 import ArchiveOrgService, { ArchiveOrgTrack } from "@/services/ArchiveOrgService";
+import { useDiscoverFavorites } from "@/contexts/DiscoverFavoritesContext";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 
@@ -41,6 +42,7 @@ export default function NowPlayingScreen() {
   const { playTapSound } = useUiSound();
   const { isFavorite, toggleFavorite } = usePlayerContext();
   const { setNowPlayingVisible } = useNavigationContext();
+  const { isSoundCloudFavorite, isArchiveFavorite, toggleSoundCloudFavorite, toggleArchiveFavorite } = useDiscoverFavorites();
   const {
     currentSong,
     isPlaying,
@@ -62,7 +64,6 @@ export default function NowPlayingScreen() {
 
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const visitCountRef = useRef(0);
-  const [isOnlineFavorite, setIsOnlineFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   const isSoundCloudSong = (song: PlayableSong | null): boolean => {
@@ -79,22 +80,6 @@ export default function NowPlayingScreen() {
     return isSoundCloudSong(song) || isArchiveSong(song);
   };
 
-  useEffect(() => {
-    const checkOnlineFavorite = async () => {
-      if (!currentSong) return;
-      
-      if (isSoundCloudSong(currentSong)) {
-        const isFav = await SoundCloudService.isFavorite(currentSong.id);
-        setIsOnlineFavorite(isFav);
-      } else if (isArchiveSong(currentSong)) {
-        const isFav = await ArchiveOrgService.isFavorite(currentSong.id);
-        setIsOnlineFavorite(isFav);
-      }
-    };
-    
-    checkOnlineFavorite();
-  }, [currentSong?.id]);
-
   const handleFavoriteToggle = async () => {
     if (!currentSong) return;
     
@@ -108,25 +93,20 @@ export default function NowPlayingScreen() {
         const syncResult = await SoundCloudService.toggleLikeOnSoundCloud(currentSong.id);
         console.log('[NowPlaying] SoundCloud sync result:', syncResult);
         
-        // Also manage local favorites
-        if (isOnlineFavorite) {
-          await SoundCloudService.removeFromFavorites(currentSong.id);
-        } else {
-          const scTrack: SoundCloudTrack = {
-            id: currentSong.id,
-            title: currentSong.title,
-            artist: currentSong.artist,
-            album: currentSong.album || 'SoundCloud',
-            duration: currentSong.duration / 1000,
-            stream_url: (currentSong as any).audioUrl || '',
-            artwork_url: (currentSong as any).artwork || null,
-            playbackCount: 0,
-            isOnlineStream: true,
-            source: 'soundcloud',
-          };
-          await SoundCloudService.addToFavorites(scTrack);
-        }
-        setIsOnlineFavorite(!isOnlineFavorite);
+        // Use context to manage favorites (syncs across all screens)
+        const scTrack: SoundCloudTrack = {
+          id: currentSong.id,
+          title: currentSong.title,
+          artist: currentSong.artist,
+          album: currentSong.album || 'SoundCloud',
+          duration: currentSong.duration / 1000,
+          stream_url: (currentSong as any).audioUrl || '',
+          artwork_url: (currentSong as any).artwork || null,
+          playbackCount: 0,
+          isOnlineStream: true,
+          source: 'soundcloud',
+        };
+        await toggleSoundCloudFavorite(scTrack);
       } catch (e) {
         console.error('[NowPlaying] Failed to toggle SoundCloud favorite:', e);
       }
@@ -134,26 +114,22 @@ export default function NowPlayingScreen() {
     } else if (isArchiveSong(currentSong)) {
       setFavoriteLoading(true);
       try {
-        if (isOnlineFavorite) {
-          await ArchiveOrgService.removeFromFavorites(currentSong.id);
-        } else {
-          const archiveTrack: ArchiveOrgTrack = {
-            id: currentSong.id,
-            itemId: currentSong.id.replace('archive_', '').split('/')[0] || '',
-            title: currentSong.title,
-            artist: currentSong.artist,
-            album: currentSong.album,
-            duration: currentSong.duration / 1000,
-            stream_url: (currentSong as any).audioUrl || '',
-            bitrate: 128,
-            format: 'MP3',
-            fileSize: 0,
-            isOnlineStream: true,
-            source: 'archive.org',
-          };
-          await ArchiveOrgService.addToFavorites(archiveTrack);
-        }
-        setIsOnlineFavorite(!isOnlineFavorite);
+        // Use context to manage favorites (syncs across all screens)
+        const archiveTrack: ArchiveOrgTrack = {
+          id: currentSong.id,
+          itemId: currentSong.id.replace('archive_', '').split('/')[0] || '',
+          title: currentSong.title,
+          artist: currentSong.artist,
+          album: currentSong.album,
+          duration: currentSong.duration / 1000,
+          stream_url: (currentSong as any).audioUrl || '',
+          bitrate: 128,
+          format: 'MP3',
+          fileSize: 0,
+          isOnlineStream: true,
+          source: 'archive.org',
+        };
+        await toggleArchiveFavorite(archiveTrack);
       } catch (e) {
         console.error('[NowPlaying] Failed to toggle Archive favorite:', e);
       }
@@ -165,8 +141,11 @@ export default function NowPlayingScreen() {
 
   const checkIsFavorite = (): boolean => {
     if (!currentSong) return false;
-    if (isOnlineSong(currentSong)) {
-      return isOnlineFavorite;
+    if (isSoundCloudSong(currentSong)) {
+      return isSoundCloudFavorite(currentSong.id);
+    }
+    if (isArchiveSong(currentSong)) {
+      return isArchiveFavorite(currentSong.id);
     }
     return isFavorite(currentSong.id);
   };

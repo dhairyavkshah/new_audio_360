@@ -18,6 +18,7 @@ import {
   SoundCloudLoginPrompt,
   SearchType,
 } from "@/components/soundcloud";
+import { useDiscoverFavorites } from "@/contexts/DiscoverFavoritesContext";
 
 type SubTabType = 'search' | 'likes' | 'playlists';
 
@@ -27,6 +28,7 @@ export default function SoundCloudTabScreen() {
   const { playSong, setQueue } = usePlayerContext();
   const { setNowPlayingSource } = useNavigationContext();
   const { showSuccess, showError, showInfo } = useToast();
+  const { soundCloudFavoriteIds, isSoundCloudFavorite, toggleSoundCloudFavorite, refreshSoundCloudFavorites } = useDiscoverFavorites();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -40,7 +42,6 @@ export default function SoundCloudTabScreen() {
   const [loadingLikes, setLoadingLikes] = useState(false);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
-  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
   const [userProfile, setUserProfile] = useState<{ username: string; avatar_url: string | null } | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<SubTabType>('search');
   const [searchType, setSearchType] = useState<SearchType>('tracks');
@@ -57,7 +58,6 @@ export default function SoundCloudTabScreen() {
 
   useEffect(() => {
     checkAuthStatus();
-    loadFavoritedIds();
     
     if (Platform.OS === 'web') {
       checkOAuthCallback();
@@ -69,15 +69,6 @@ export default function SoundCloudTabScreen() {
       }
     };
   }, []);
-
-  const loadFavoritedIds = async () => {
-    try {
-      const favorites = await SoundCloudService.getFavorites();
-      setFavoritedIds(new Set(favorites.map(f => f.id)));
-    } catch (error) {
-      console.log('[SoundCloudTabScreen] Error loading favorites:', error);
-    }
-  };
   
   const checkOAuthCallback = async () => {
     try {
@@ -428,15 +419,14 @@ export default function SoundCloudTabScreen() {
     try {
       const syncResult = await SoundCloudService.likeTrackOnSoundCloud(track.id);
       console.log('[SoundCloudTabScreen] Like sync result:', syncResult);
-      await SoundCloudService.addToFavorites(track);
-      setFavoritedIds(prev => new Set(prev).add(track.id));
-      showSuccess(`Added "${track.title}" to favorites`);
+      const nowFavorited = await toggleSoundCloudFavorite(track);
+      showSuccess(nowFavorited ? `Added "${track.title}" to favorites` : `Removed "${track.title}" from favorites`);
       // Refresh likes tab data
       if (likedTracks.length > 0) {
         loadLikedTracks();
       }
     } catch (error) {
-      showError("Failed to add song");
+      showError("Failed to update favorite");
     } finally {
       setAddingIds(prev => {
         const next = new Set(prev);
@@ -461,7 +451,7 @@ export default function SoundCloudTabScreen() {
       onPress={playTrack}
       onAddToLibrary={addToLibrary}
       isAdding={addingIds.has(item.id)}
-      isFavorited={favoritedIds.has(item.id)}
+      isFavorited={isSoundCloudFavorite(item.id)}
     />
   );
 

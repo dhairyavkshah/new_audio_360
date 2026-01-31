@@ -10,6 +10,7 @@ import { useNavigationContext } from "@/contexts/NavigationContext";
 import { useToast } from "@/contexts/ToastContext";
 import { FluentSpacing, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize, FluentRadius, FluentTypography } from "@/constants/fluent2";
 import ArchiveOrgService, { ArchiveOrgTrack } from "@/services/ArchiveOrgService";
+import { useDiscoverFavorites } from "@/contexts/DiscoverFavoritesContext";
 
 const CONSENT_STORAGE_KEY = '@discover_consent_accepted';
 
@@ -19,13 +20,13 @@ export default function ArchiveTabScreen() {
   const { playSong, setQueue } = usePlayerContext();
   const { setNowPlayingSource } = useNavigationContext();
   const { showSuccess, showError } = useToast();
+  const { archiveFavoriteIds, isArchiveFavorite, toggleArchiveFavorite } = useDiscoverFavorites();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [tracks, setTracks] = useState<ArchiveOrgTrack[]>([]);
   const [loading, setLoading] = useState(false);
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
-  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
   const [showConsentModal, setShowConsentModal] = useState(true);
 
   useEffect(() => {
@@ -41,19 +42,6 @@ export default function ArchiveTabScreen() {
     };
     checkConsent();
   }, []);
-
-  const loadFavorites = useCallback(async () => {
-    try {
-      const favorites = await ArchiveOrgService.getFavorites();
-      setFavoritedIds(new Set(favorites.map(f => f.id)));
-    } catch (error) {
-      console.error('[ArchiveTabScreen] Error loading favorites:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadFavorites();
-  }, [loadFavorites]);
 
   const handleAcceptConsent = async () => {
     try {
@@ -118,23 +106,12 @@ export default function ArchiveTabScreen() {
     );
   }, [playSong, setQueue, navigation, setNowPlayingSource]);
 
-  const toggleFavorite = async (track: ArchiveOrgTrack) => {
-    const isFavorited = favoritedIds.has(track.id);
+  const handleToggleFavorite = async (track: ArchiveOrgTrack) => {
+    const isFavorited = isArchiveFavorite(track.id);
     setAddingIds(prev => new Set(prev).add(track.id));
     try {
-      if (isFavorited) {
-        await ArchiveOrgService.removeFromFavorites(track.id);
-        setFavoritedIds(prev => {
-          const next = new Set(prev);
-          next.delete(track.id);
-          return next;
-        });
-        showSuccess(`Removed "${track.title}" from favorites`);
-      } else {
-        await ArchiveOrgService.addToFavorites(track);
-        setFavoritedIds(prev => new Set(prev).add(track.id));
-        showSuccess(`Added "${track.title}" to favorites`);
-      }
+      const nowFavorited = await toggleArchiveFavorite(track);
+      showSuccess(nowFavorited ? `Added "${track.title}" to favorites` : `Removed "${track.title}" from favorites`);
     } catch (error) {
       showError(isFavorited ? "Failed to remove song" : "Failed to add song");
     } finally {
@@ -148,7 +125,7 @@ export default function ArchiveTabScreen() {
 
   const renderTrack = ({ item }: { item: ArchiveOrgTrack }) => {
     const isAdding = addingIds.has(item.id);
-    const isFavorited = favoritedIds.has(item.id);
+    const isFavorited = isArchiveFavorite(item.id);
 
     return (
       <Pressable 
@@ -172,7 +149,7 @@ export default function ArchiveTabScreen() {
           style={[styles.addButton, { backgroundColor: isFavorited ? colors.colorPaletteRedBackground1 : colors.colorSubtleBackgroundHover }]}
           onPress={(e) => {
             e.stopPropagation();
-            toggleFavorite(item);
+            handleToggleFavorite(item);
           }}
           disabled={isAdding}
         >
