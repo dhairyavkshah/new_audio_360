@@ -77,14 +77,18 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
   const [initialized, setInitialized] = useState(false);
   const [selectedFolders, setSelectedFoldersState] = useState<string[]>([]);
 
-  const loadHiddenSongs = useCallback(async () => {
+  const loadHiddenSongs = useCallback(async (): Promise<string[]> => {
     try {
       const data = await AsyncStorage.getItem(HIDDEN_SONGS_KEY);
       if (data) {
-        setHiddenSongIds(JSON.parse(data));
+        const ids = JSON.parse(data);
+        setHiddenSongIds(ids);
+        return ids;
       }
+      return [];
     } catch (err) {
       console.error('Error loading hidden songs:', err);
+      return [];
     }
   }, []);
 
@@ -476,14 +480,15 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
   useEffect(() => {
     const initialize = async () => {
       console.log('[MediaLibrary] Starting initialization...');
-      await loadHiddenSongs();
-      await loadOnboardingStatus();
-      await loadSelectedFolders();
       
-      const cachedSongs = await loadCachedSongs();
+      const [hiddenIds, , , cachedSongs] = await Promise.all([
+        loadHiddenSongs(),
+        loadOnboardingStatus(),
+        loadSelectedFolders(),
+        loadCachedSongs(),
+      ]);
+      
       if (cachedSongs && cachedSongs.length > 0) {
-        const hiddenData = await AsyncStorage.getItem(HIDDEN_SONGS_KEY);
-        const hiddenIds = hiddenData ? JSON.parse(hiddenData) : [];
         const filtered = cachedSongs.filter((s: DeviceSong) => !hiddenIds.includes(s.id));
         setSongs(filtered);
         setAllSongsIncludingHidden(cachedSongs);
@@ -491,8 +496,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         console.log('[MediaLibrary] Loaded', filtered.length, 'songs from cache (fresh scan follows)');
       }
       
-      await checkPermission();
-      await validateOnboardingStatus();
+      await Promise.all([checkPermission(), validateOnboardingStatus()]);
       setInitialized(true);
       console.log('[MediaLibrary] Initialization complete');
     };
