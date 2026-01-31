@@ -320,7 +320,7 @@ export default function NowPlayingScreen() {
         {!isExtraCompact && (
           <View style={[styles.waveformContainer, { marginVertical: isVeryCompact ? FluentSpacing.xxs : isCompact ? FluentSpacing.s : FluentSpacing.m }]}>
             <AudioWaveform
-              isAnimating={isPlaying}
+              isAnimating={isPlaying && !isLoading && !isBuffering}
               barCount={isVeryCompact ? 35 : 50}
               barWidth={isVeryCompact ? 2 : 3}
               height={isVeryCompact ? 24 : 40}
