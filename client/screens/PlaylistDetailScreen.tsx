@@ -270,7 +270,7 @@ export default function PlaylistDetailScreen() {
                 )}
                 <Image source={song.artwork ? { uri: song.artwork } : DEFAULT_ALBUM_ART} style={styles.songArtwork} />
                 <View style={styles.songInfo}>
-                  <FluentText variant="body1" numberOfLines={1} style={{ fontWeight: "500" }}>
+                  <FluentText variant="body1Strong" numberOfLines={1}>
                     {song.title}
                   </FluentText>
                   <FluentText variant="caption1" color="secondary" numberOfLines={1}>
@@ -333,7 +333,6 @@ const styles = StyleSheet.create({
   },
   playlistTitle: {
     fontSize: FluentTypography.title1.fontSize,
-    fontWeight: "700",
     textAlign: "center",
   },
   actionButtons: {
@@ -366,7 +365,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: FluentSpacing.m,
-    fontWeight: "600",
   },
   songItem: {
     flexDirection: "row",

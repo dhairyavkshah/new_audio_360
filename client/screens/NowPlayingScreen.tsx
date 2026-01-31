@@ -414,7 +414,6 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   songTitle: {
-    fontWeight: "700",
     textAlign: "center",
   },
   artistRow: {
@@ -426,7 +425,6 @@ const styles = StyleSheet.create({
   },
   artistName: {
     textAlign: "center",
-    fontWeight: "500",
   },
   actionButtons: {
     flexDirection: "row",

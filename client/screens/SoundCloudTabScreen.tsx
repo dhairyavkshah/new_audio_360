@@ -455,10 +455,9 @@ export default function SoundCloudTabScreen() {
             color={activeSubTab === tab ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2}
           />
           <FluentText
-            variant="caption1"
+            variant={activeSubTab === tab ? "caption1Strong" : "caption1"}
             style={{
               color: activeSubTab === tab ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2,
-              fontWeight: activeSubTab === tab ? '600' : '400',
               marginLeft: FluentSpacing.xs,
             }}
           >
@@ -565,7 +564,7 @@ export default function SoundCloudTabScreen() {
       )}
       
       <View style={styles.playlistInfo}>
-        <FluentText variant="body1" numberOfLines={1} style={{ fontWeight: '600' }}>
+        <FluentText variant="body1Strong" numberOfLines={1}>
           {item.title}
         </FluentText>
         <FluentText variant="body2" color="secondary" numberOfLines={1}>
@@ -611,10 +610,9 @@ export default function SoundCloudTabScreen() {
             color={searchType === type ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2}
           />
           <FluentText
-            variant="caption1"
+            variant={searchType === type ? "caption1Strong" : "caption1"}
             style={{
               color: searchType === type ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2,
-              fontWeight: searchType === type ? '600' : '400',
               marginLeft: FluentSpacing.xs,
             }}
           >
@@ -890,7 +888,7 @@ export default function SoundCloudTabScreen() {
                 ) : (
                   <>
                     <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.medium} color={colors.colorNeutralForegroundOnBrand} />
-                    <FluentText variant="body1" style={{ color: colors.colorNeutralForegroundOnBrand, fontWeight: '600', marginLeft: 8 }}>
+                    <FluentText variant="body1Strong" style={{ color: colors.colorNeutralForegroundOnBrand, marginLeft: 8 }}>
                       Sign in with SoundCloud
                     </FluentText>
                   </>
@@ -937,7 +935,7 @@ export default function SoundCloudTabScreen() {
                 {isLoggingIn ? (
                   <ActivityIndicator size="small" color={colors.colorNeutralForegroundOnBrand} />
                 ) : (
-                  <FluentText variant="body1" style={{ color: colors.colorNeutralForegroundOnBrand, fontWeight: '600' }}>
+                  <FluentText variant="body1Strong" style={{ color: colors.colorNeutralForegroundOnBrand }}>
                     Submit Code
                   </FluentText>
                 )}
@@ -1030,7 +1028,6 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.l,
   },
   loginTitle: {
-    fontWeight: '600',
     marginBottom: FluentSpacing.s,
     textAlign: 'center',
   },

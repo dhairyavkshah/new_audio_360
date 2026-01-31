@@ -590,7 +590,7 @@ export default function SupportDeveloperScreen() {
             onPress={() => setShowThankYouModal(false)}
             style={[styles.thankYouButton, { backgroundColor: colors.colorBrandBackground }]}
           >
-            <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+            <FluentText variant="body1Strong" style={{ color: "#FFFFFF" }}>
               Continue
             </FluentText>
           </Pressable>
@@ -642,7 +642,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginLeft: FluentSpacing.s,
-    fontWeight: "600",
   },
   sectionDesc: {
     marginBottom: FluentSpacing.m,
@@ -689,7 +688,6 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.s,
   },
   tierAmount: {
-    fontWeight: "600",
     marginBottom: FluentSpacing.xxs,
   },
   customInputContainer: {
@@ -711,7 +709,6 @@ const styles = StyleSheet.create({
     borderRadius: FluentControlRadius.card,
   },
   payButtonText: {
-    fontWeight: "600",
     marginLeft: FluentSpacing.s,
   },
   payHint: {
@@ -751,7 +748,6 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     color: "#FFFFFF",
-    fontWeight: "600",
     marginLeft: FluentSpacing.s,
   },
   denyButton: {

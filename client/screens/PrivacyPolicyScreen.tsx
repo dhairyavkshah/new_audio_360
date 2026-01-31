@@ -160,7 +160,7 @@ export default function PrivacyPolicyScreen() {
         </View>
 
         <View style={styles.footer}>
-          <FluentText variant="caption2" color="secondary" align="center" style={{ fontWeight: "600" }}>
+          <FluentText variant="caption1Strong" color="secondary" align="center">
             Contact Information
           </FluentText>
           <FluentText
@@ -233,7 +233,6 @@ const styles = StyleSheet.create({
   },
   policySectionTitle: {
     marginLeft: FluentSpacing.s,
-    fontWeight: "600",
   },
   policySectionContent: {
     lineHeight: 18,

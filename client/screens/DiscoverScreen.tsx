@@ -35,7 +35,7 @@ export default function DiscoverScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.colorNeutralBackground1 }]}>
       <View style={[styles.header, { paddingTop: insets.top + FluentSpacing.s }]}>
-        <FluentText variant="title2" style={styles.title}>
+        <FluentText variant="title2">
           Discover
         </FluentText>
         
@@ -57,12 +57,8 @@ export default function DiscoverScreen() {
                   color={isActive ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2}
                 />
                 <FluentText
-                  variant="body2"
-                  style={[
-                    styles.tabLabel,
-                    { color: isActive ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2 },
-                    isActive && { fontWeight: '600' },
-                  ]}
+                  variant={isActive ? "body2Strong" : "body2"}
+                  style={{ color: isActive ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2 }}
                 >
                   {tab.label}
                 </FluentText>
@@ -87,14 +83,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.l,
     paddingBottom: FluentSpacing.m,
   },
-  title: {
-    marginBottom: FluentSpacing.m,
-    fontWeight: '600',
-  },
   tabBar: {
     flexDirection: 'row',
     borderRadius: FluentRadius.medium,
-    padding: FluentSpacing.xxs,
+    padding: FluentSpacing.xs,
+    marginTop: FluentSpacing.s,
   },
   tab: {
     flex: 1,
@@ -106,8 +99,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.m,
     borderRadius: FluentControlRadius.button,
     gap: FluentSpacing.xs,
-  },
-  tabLabel: {
   },
   content: {
     flex: 1,

@@ -147,7 +147,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   artistName: {
-    fontWeight: "700",
     marginBottom: FluentSpacing.xs,
   },
 });

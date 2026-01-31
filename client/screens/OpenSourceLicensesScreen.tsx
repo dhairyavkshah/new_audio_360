@@ -218,7 +218,6 @@ const styles = StyleSheet.create({
   copyrightTitle: {
     textAlign: "center",
     marginBottom: FluentSpacing.m,
-    fontWeight: "700",
   },
   copyrightText: {
     textAlign: "justify",
@@ -252,7 +251,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   libraryName: {
-    fontWeight: "500",
   },
   libraryLicense: {
     marginLeft: FluentSpacing.l + FluentSpacing.s,
@@ -264,7 +262,6 @@ const styles = StyleSheet.create({
   },
   licenseSectionTitle: {
     marginBottom: FluentSpacing.s,
-    fontWeight: "600",
   },
   licenseSectionContent: {
     lineHeight: 18,

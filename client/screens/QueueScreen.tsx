@@ -250,7 +250,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: FluentSpacing.l,
-    fontWeight: "600",
   },
   currentSongCard: {
     flexDirection: "row",

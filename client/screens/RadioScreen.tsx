@@ -1371,7 +1371,6 @@ const styles = StyleSheet.create({
   },
   frequencyNumber: {
     fontSize: 72,
-    fontWeight: "200",
     letterSpacing: -2,
   },
   bandLabel: {

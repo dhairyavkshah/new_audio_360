@@ -170,7 +170,6 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.m,
   },
   appName: {
-    fontWeight: "700",
   },
   version: {
     marginTop: FluentSpacing.xs,

@@ -816,7 +816,6 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.s,
   },
   albumName: {
-    fontWeight: "600",
   },
   artistRow: {
     gap: FluentSpacing.m,
@@ -840,7 +839,6 @@ const styles = StyleSheet.create({
     borderRadius: FluentRadius.circular,
   },
   artistName: {
-    fontWeight: "600",
     textAlign: "center",
   },
   emptyState: {

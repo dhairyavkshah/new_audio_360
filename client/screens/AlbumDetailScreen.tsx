@@ -151,7 +151,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   albumTitle: {
-    fontWeight: "700",
     marginBottom: FluentSpacing.xs,
   },
 });

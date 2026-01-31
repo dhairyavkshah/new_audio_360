@@ -527,7 +527,7 @@ export default function FolderSelectionScreen() {
             style={[styles.headerButton, { backgroundColor: colors.colorBrandBackground }]}
           >
             <MaterialCommunityIcons name="checkbox-multiple-marked" size={FluentIconSize.regular} color="#FFFFFF" />
-            <FluentText variant="body2" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.s }}>
+            <FluentText variant="body2Strong" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s }}>
               Select All
             </FluentText>
           </Pressable>
@@ -536,7 +536,7 @@ export default function FolderSelectionScreen() {
             style={[styles.headerButton, { backgroundColor: colors.colorNeutralBackground3, borderWidth: 1, borderColor: colors.colorNeutralStroke1 }]}
           >
             <MaterialCommunityIcons name="checkbox-multiple-blank-outline" size={FluentIconSize.regular} color={colors.colorNeutralForeground1} />
-            <FluentText variant="body2" style={{ color: colors.colorNeutralForeground1, fontWeight: "600", marginLeft: FluentSpacing.s }}>
+            <FluentText variant="body2Strong" style={{ color: colors.colorNeutralForeground1, marginLeft: FluentSpacing.s }}>
               Clear
             </FluentText>
           </Pressable>
@@ -677,7 +677,6 @@ const styles = StyleSheet.create({
   emptyTitle: {
     marginTop: FluentSpacing.l,
     marginBottom: FluentSpacing.s,
-    fontWeight: "600",
   },
   instructionsCard: {
     borderRadius: FluentControlRadius.card,

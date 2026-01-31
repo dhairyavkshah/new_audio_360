@@ -211,7 +211,7 @@ export default function SoundCloudPlaylistScreen() {
         )}
         
         <View style={styles.trackInfo}>
-          <FluentText variant="body1" numberOfLines={1} style={{ fontWeight: '600' }}>
+          <FluentText variant="body1Strong" numberOfLines={1}>
             {item.title}
           </FluentText>
           <FluentText variant="body2" color="secondary" numberOfLines={1}>
@@ -313,7 +313,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   playlistTitle: {
-    fontWeight: '600',
     marginBottom: FluentSpacing.xxs,
   },
   playlistMeta: {
@@ -331,7 +330,6 @@ const styles = StyleSheet.create({
     gap: FluentSpacing.xs,
   },
   playAllText: {
-    fontWeight: '600',
   },
   centerContainer: {
     flex: 1,

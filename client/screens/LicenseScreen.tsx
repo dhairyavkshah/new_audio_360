@@ -130,7 +130,7 @@ export default function LicenseScreen() {
               </View>
               <View style={styles.featureChecks}>
                 <View style={[styles.checkBox, { width: 60 }]}>
-                  <FluentText variant="caption1" style={{ color: colors.colorPaletteYellowForeground1, fontWeight: "600" }}>
+                  <FluentText variant="caption1Strong" style={{ color: colors.colorPaletteYellowForeground1 }}>
                     Included
                   </FluentText>
                 </View>
@@ -168,7 +168,7 @@ export default function LicenseScreen() {
                 ]}>
                   <MaterialCommunityIcons name="google-play" size={32} color={colors.colorBrandForeground1} />
                   <View style={{ flex: 1, marginLeft: FluentSpacing.m }}>
-                    <FluentText variant="body1" style={{ fontWeight: "600" }}>
+                    <FluentText variant="body1Strong">
                       Available on Google Play
                     </FluentText>
                     <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xxs }}>
@@ -190,7 +190,7 @@ export default function LicenseScreen() {
                   ]}
                 >
                   <MaterialCommunityIcons name="refresh" size={20} color="#FFFFFF" />
-                  <FluentText variant="body1" style={{ color: "#FFFFFF", fontWeight: "600", marginLeft: FluentSpacing.s }}>
+                  <FluentText variant="body1Strong" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s }}>
                     {isLoading ? "Verifying..." : "Verify Installation"}
                   </FluentText>
                 </Pressable>
@@ -286,7 +286,6 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.xs,
   },
   planName: {
-    fontWeight: "700",
   },
   comparisonSection: {
     marginBottom: FluentSpacing.xl,

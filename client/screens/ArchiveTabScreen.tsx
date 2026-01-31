@@ -250,7 +250,7 @@ export default function ArchiveTabScreen() {
                 style={[styles.modalButton, styles.acceptButton, { backgroundColor: colors.colorBrandBackground }]}
                 onPress={handleAcceptConsent}
               >
-                <FluentText variant="body2" style={{ color: colors.colorNeutralForegroundOnBrand, fontWeight: '600' }}>
+                <FluentText variant="body2Strong" style={{ color: colors.colorNeutralForegroundOnBrand }}>
                   I Understand
                 </FluentText>
               </Pressable>
@@ -413,7 +413,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     marginTop: FluentSpacing.m,
     textAlign: 'center',
-    fontWeight: '600',
   },
   modalBody: {
     marginBottom: FluentSpacing.l,

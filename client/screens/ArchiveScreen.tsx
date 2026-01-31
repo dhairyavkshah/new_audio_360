@@ -320,7 +320,7 @@ export default function ArchiveScreen() {
                 style={[styles.modalButton, styles.acceptButton, { backgroundColor: colors.colorBrandBackground }]}
                 onPress={handleAcceptConsent}
               >
-                <FluentText variant="body2" style={{ color: colors.colorNeutralForegroundOnBrand, fontWeight: '600' }}>
+                <FluentText variant="body2Strong" style={{ color: colors.colorNeutralForegroundOnBrand }}>
                   I Understand
                 </FluentText>
               </Pressable>
@@ -350,10 +350,9 @@ export default function ArchiveScreen() {
               onPress={() => setSelectedQuality(option.value)}
             >
               <FluentText
-                variant="caption1"
+                variant={selectedQuality === option.value ? "caption1Strong" : "caption1"}
                 style={{ 
                   color: selectedQuality === option.value ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground1,
-                  fontWeight: selectedQuality === option.value ? '600' : '400',
                 }}
               >
                 {option.label}
@@ -423,7 +422,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     marginTop: FluentSpacing.m,
     textAlign: 'center',
-    fontWeight: '600',
   },
   modalBody: {
     marginBottom: FluentSpacing.l,

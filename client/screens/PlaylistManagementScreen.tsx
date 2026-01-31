@@ -322,7 +322,6 @@ const styles = StyleSheet.create({
   emptyTitle: {
     marginTop: FluentSpacing.m,
     marginBottom: FluentSpacing.xs,
-    fontWeight: "600",
   },
   playlistsList: {
     gap: FluentSpacing.s,
@@ -392,7 +391,6 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     marginBottom: FluentSpacing.xs,
-    fontWeight: "500",
   },
   textInput: {
     padding: FluentSpacing.m,
