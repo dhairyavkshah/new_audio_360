@@ -54,7 +54,7 @@ export function SoundCloudSearchHeader({
         </Pressable>
       </View>
 
-      <View style={[styles.searchTypeContainer, { backgroundColor: colors.colorNeutralBackground2 }]}>
+      <View style={[styles.searchTypeContainer, { backgroundColor: colors.colorNeutralBackground2, borderBottomWidth: 1, borderBottomColor: colors.colorNeutralStroke2 }]}>
         {SEARCH_TYPE_CONFIG.map((type) => (
           <Pressable
             key={type.id}

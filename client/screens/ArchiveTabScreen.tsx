@@ -260,7 +260,7 @@ export default function ArchiveTabScreen() {
       </Modal>
 
       <View style={styles.container}>
-        <View style={styles.searchRow}>
+        <View style={[styles.searchRow, { borderBottomColor: colors.colorNeutralStroke2 }]}>
           <View style={[styles.searchInput, { backgroundColor: colors.colorNeutralBackground2 }]}>
             <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color={colors.colorNeutralForeground3} />
             <TextInput
@@ -322,6 +322,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.m,
     paddingVertical: FluentSpacing.s,
     gap: FluentSpacing.s,
+    borderBottomWidth: 1,
   },
   searchInput: {
     flex: 1,

@@ -1,6 +1,11 @@
 # New Audio 360
 
-## Recent Changes (v28.1.1 - January 2026)
+## Recent Changes (v29.0 - January 2026)
+- **Card Spacing Optimization**: Removed ItemSeparatorComponent from SoundCloud FlatLists to match Library screen 8px card gaps exactly
+- **Header Bottom Borders**: Added bottom border to Archive and SoundCloud search headers matching Library screen pattern
+- **Version Update**: Updated to v29.0 across Splash, About, Android gradle, and documentation
+
+## Previous Changes (v28.1.1 - January 2026)
 - **Design System Refinement Phase 2** (23 tasks completed):
   - **New Design Tokens**: FluentSpacing.xxxxxxxl (80px), FluentRadius.xxLarge (16px), FluentControlRadius.heroCard (16px), FluentBlurIntensity (light/medium/heavy), colorFavorite brand color
   - **Typography Cleanup**: Replaced inline fontWeight with Strong variants across 17+ screens

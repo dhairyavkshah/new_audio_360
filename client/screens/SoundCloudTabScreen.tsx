@@ -488,7 +488,6 @@ export default function SoundCloudTabScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
         />
       );
     }
@@ -519,7 +518,6 @@ export default function SoundCloudTabScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
     );
   };
@@ -606,7 +604,6 @@ export default function SoundCloudTabScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListHeaderComponent={renderLikesHeader}
       />
     );
@@ -645,7 +642,6 @@ export default function SoundCloudTabScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
     );
   };
@@ -753,9 +749,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: FluentSpacing.m,
-  },
-  separator: {
-    height: FluentSpacing.s,
   },
   likesHeader: {
     flexDirection: 'row',
