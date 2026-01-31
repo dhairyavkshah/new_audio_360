@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, StyleSheet, Animated, Platform } from "react-native";
+import { View, StyleSheet, Animated, Platform, ActivityIndicator } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { FluentSpacing, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { useEagerInitialization } from "@/hooks/useEagerInitialization";
 
 const appIcon = require("../../assets/images/icon.png");
 
@@ -21,6 +22,9 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [iconLoaded, setIconLoaded] = useState(false);
   const iconLoadedRef = useRef(false);
+  const [initStatus, setInitStatus] = useState<string>("Initializing...");
+  
+  const initState = useEagerInitialization();
 
   useEffect(() => {
     if (iconLoaded) {
@@ -36,7 +40,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   useEffect(() => {
     Image.prefetch(appIcon);
     
-    // Fallback: Force iconLoaded after 500ms if onLoad doesn't fire (web compatibility)
     const fallback = setTimeout(() => {
       if (!iconLoadedRef.current) {
         setIconLoaded(true);
@@ -46,27 +49,59 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   }, []);
 
   useEffect(() => {
+    if (initState.audioEngineReady) {
+      setInitStatus("Audio engine ready");
+    } else if (initState.isComplete) {
+      setInitStatus("Ready");
+    }
+  }, [initState]);
+
+  useEffect(() => {
     if (!iconLoaded) return;
 
-    // Start fade out after display period
-    const fadeOutTimer = setTimeout(() => {
+    const minDisplayTime = 1500;
+    const startTime = Date.now();
+    
+    const checkAndFinish = () => {
+      const elapsed = Date.now() - startTime;
+      const remainingTime = Math.max(0, minDisplayTime - elapsed);
+      
+      if (initState.isComplete) {
+        setTimeout(() => {
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver,
+          }).start();
+          
+          setTimeout(() => {
+            onFinish();
+          }, 400);
+        }, remainingTime);
+      }
+    };
+    
+    checkAndFinish();
+  }, [iconLoaded, initState.isComplete, fadeAnim, onFinish]);
+
+  useEffect(() => {
+    if (!iconLoaded) return;
+    
+    const maxWaitTimer = setTimeout(() => {
+      console.log('[SplashScreen] Max wait time reached, finishing...');
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 300,
         useNativeDriver,
       }).start();
-    }, 1500);
+      
+      setTimeout(() => {
+        onFinish();
+      }, 400);
+    }, 6000);
 
-    // Force finish regardless of animation callback (web compatibility)
-    const finishTimer = setTimeout(() => {
-      onFinish();
-    }, 1900);
-
-    return () => {
-      clearTimeout(fadeOutTimer);
-      clearTimeout(finishTimer);
-    };
-  }, [iconLoaded]);
+    return () => clearTimeout(maxWaitTimer);
+  }, [iconLoaded, fadeAnim, onFinish]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.colorNeutralBackground1 }]}>
@@ -92,6 +127,12 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         <FluentText variant="body1" color="secondary" align="center">
           The top-grade intelligent music experience{"\n"}built for you
         </FluentText>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={colors.colorBrandForeground1} />
+          <FluentText variant="caption1" color="tertiary" style={styles.loadingText}>
+            {initStatus}
+          </FluentText>
+        </View>
       </Animated.View>
       <View style={[styles.footer, { bottom: insets.bottom + FluentSpacing.xxxl }]}>
         <FluentText variant="caption1" color="tertiary" align="center">
@@ -127,6 +168,15 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: FluentSpacing.s,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: FluentSpacing.xxxl,
+    gap: FluentSpacing.s,
+  },
+  loadingText: {
+    marginLeft: FluentSpacing.xs,
   },
   footer: {
     position: "absolute",

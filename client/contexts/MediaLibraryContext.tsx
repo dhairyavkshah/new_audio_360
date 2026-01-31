@@ -16,6 +16,9 @@ import { MediaStoreScannerModule } from 'audio-effects';
 
 const HIDDEN_SONGS_KEY = '@new_audio_360_hidden_songs';
 const ONBOARDING_COMPLETE_KEY = '@new_audio_360_onboarding_complete';
+const SONGS_CACHE_KEY = '@new_audio_360_songs_cache';
+const SONGS_CACHE_TIMESTAMP_KEY = '@new_audio_360_songs_cache_timestamp';
+const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export interface DeviceSong extends Song {
   uri: string;
@@ -108,6 +111,48 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
       setSelectedFoldersState(folders);
     } catch (err) {
       console.error('Error loading selected folders:', err);
+    }
+  }, []);
+
+  const loadCachedSongs = useCallback(async (): Promise<DeviceSong[] | null> => {
+    if (Platform.OS === 'web') return null;
+    
+    try {
+      const [cachedData, timestampStr] = await Promise.all([
+        AsyncStorage.getItem(SONGS_CACHE_KEY),
+        AsyncStorage.getItem(SONGS_CACHE_TIMESTAMP_KEY),
+      ]);
+      
+      if (!cachedData || !timestampStr) return null;
+      
+      const timestamp = parseInt(timestampStr, 10);
+      const age = Date.now() - timestamp;
+      
+      if (age > CACHE_MAX_AGE_MS) {
+        console.log('[MediaLibrary] Song cache expired, will refresh');
+        return null;
+      }
+      
+      const songs = JSON.parse(cachedData) as DeviceSong[];
+      console.log('[MediaLibrary] Loaded', songs.length, 'songs from cache');
+      return songs;
+    } catch (err) {
+      console.error('[MediaLibrary] Error loading cached songs:', err);
+      return null;
+    }
+  }, []);
+
+  const saveSongsToCache = useCallback(async (songsToCache: DeviceSong[]) => {
+    if (Platform.OS === 'web') return;
+    
+    try {
+      await Promise.all([
+        AsyncStorage.setItem(SONGS_CACHE_KEY, JSON.stringify(songsToCache)),
+        AsyncStorage.setItem(SONGS_CACHE_TIMESTAMP_KEY, Date.now().toString()),
+      ]);
+      console.log('[MediaLibrary] Saved', songsToCache.length, 'songs to cache');
+    } catch (err) {
+      console.error('[MediaLibrary] Error saving songs to cache:', err);
     }
   }, []);
 
@@ -286,6 +331,9 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         setAllSongsIncludingHidden(deviceSongs);
         setUsingMockData(false);
         setProgress({ loaded: filtered.length, total: deviceSongs.length });
+        
+        saveSongsToCache(deviceSongs);
+        
         setIsLoading(false);
         return;
       }
@@ -330,6 +378,8 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
       setAllSongsIncludingHidden(deviceSongs);
       setUsingMockData(false);
       setProgress({ loaded: filtered.length, total: deviceSongs.length });
+      
+      saveSongsToCache(deviceSongs);
     } catch (err) {
       console.error('Error fetching audio files:', err);
       setError('Failed to fetch audio files from device');
@@ -339,7 +389,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [saveSongsToCache]);
 
   const refreshSongs = useCallback(async () => {
     console.log('[MediaLibrary] refreshSongs called', { platform: Platform.OS });
@@ -429,14 +479,25 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
       await loadHiddenSongs();
       await loadOnboardingStatus();
       await loadSelectedFolders();
+      
+      const cachedSongs = await loadCachedSongs();
+      if (cachedSongs && cachedSongs.length > 0) {
+        const hiddenData = await AsyncStorage.getItem(HIDDEN_SONGS_KEY);
+        const hiddenIds = hiddenData ? JSON.parse(hiddenData) : [];
+        const filtered = cachedSongs.filter((s: DeviceSong) => !hiddenIds.includes(s.id));
+        setSongs(filtered);
+        setAllSongsIncludingHidden(cachedSongs);
+        setUsingMockData(false);
+        console.log('[MediaLibrary] Loaded', filtered.length, 'songs from cache instantly');
+      }
+      
       await checkPermission();
-      // Validate that onboarding complete matches actual permission status
       await validateOnboardingStatus();
       setInitialized(true);
       console.log('[MediaLibrary] Initialization complete');
     };
     initialize();
-  }, [loadHiddenSongs, loadOnboardingStatus, loadSelectedFolders, checkPermission, validateOnboardingStatus]);
+  }, [loadHiddenSongs, loadOnboardingStatus, loadSelectedFolders, checkPermission, validateOnboardingStatus, loadCachedSongs]);
 
   useEffect(() => {
     console.log('[MediaLibrary] Check refresh trigger:', { initialized, isOnboardingComplete });
