@@ -82,11 +82,12 @@ function ThemeOption({
       style={[
         styles.themeOption,
         {
-          backgroundColor: colors.colorNeutralBackground2,
-          borderColor: isSelected ? themePreview.primary : "transparent",
-          borderWidth: 2,
+          backgroundColor: colors.colorNeutralBackground1,
+          borderColor: isSelected ? themePreview.primary : colors.colorNeutralStroke2,
+          borderWidth: 1,
           borderRadius: FluentControlRadius.card,
         },
+        isSelected && { borderWidth: 2 },
         animatedStyle,
       ]}
     >

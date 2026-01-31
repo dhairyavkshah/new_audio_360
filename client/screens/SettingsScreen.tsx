@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     gap: FluentSpacing.s,
   },
   section: {
-    marginBottom: FluentSpacing.xxl,
+    marginBottom: FluentSpacing.l,
   },
   footer: {
     paddingVertical: FluentSpacing.xxl,
