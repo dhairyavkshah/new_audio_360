@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText, FluentButton, FluentIconButton, FluentModal } from "@/components/fluent";
+import { useToast } from "@/contexts/ToastContext";
 import { FluentTopBar } from "@/components/FluentTopBar";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
@@ -120,6 +121,7 @@ function RadioScreen() {
   } = useOnlineRadio();
 
   const { mode: soundLabMode, eqPresetName, immersiveModeName, getImmersiveModeInfo } = useSoundLab();
+  const { showInfo } = useToast();
 
   const [radioMode, setRadioMode] = useState<RadioMode>('fmam');
   const [localFrequency, setLocalFrequency] = useState(currentFrequency);
@@ -198,6 +200,15 @@ function RadioScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
+    if (mode === 'fmam' && !isFmAvailable) {
+      const isIOS = Platform.OS === 'ios';
+      const message = isIOS 
+        ? 'FM Radio is not available on iPhone. Using online radio.'
+        : 'FM hardware not available on this device. Using online radio.';
+      showInfo(message);
+      return;
+    }
+
     if (mode === radioMode) return;
 
     if (mode === 'online' && isFmPlaying) {
@@ -212,7 +223,7 @@ function RadioScreen() {
     if (mode === 'online' && !hasLoadedOnline) {
       loadOnlineData();
     }
-  }, [radioMode, isFmPlaying, isOnlinePlaying, fmStop, onlineStop, hasLoadedOnline]);
+  }, [radioMode, isFmPlaying, isOnlinePlaying, fmStop, onlineStop, hasLoadedOnline, isFmAvailable, showInfo]);
 
   const handleInitialize = async () => {
     setIsInitializing(true);
@@ -403,32 +414,31 @@ function RadioScreen() {
   };
 
   const renderModeToggle = () => (
-    <RadioTabSelector
-      selectedMode={radioMode}
-      onModeChange={handleModeChange}
-      isFmAvailable={isFmAvailable}
-    />
+    <View style={styles.headerRow}>
+      <RadioTabSelector
+        selectedMode={radioMode}
+        onModeChange={handleModeChange}
+        isFmAvailable={isFmAvailable}
+      />
+      {radioMode === 'online' && (
+        <Pressable 
+          style={[styles.compactCountryDropdown, { backgroundColor: colors.colorNeutralBackground3, borderColor: colors.colorNeutralStroke2 }]}
+          onPress={handleOpenCountryPicker}
+          accessibilityLabel="Select country"
+          accessibilityRole="button"
+        >
+          <FluentText variant="body2Strong">
+            {getCountryFlag(detectedCountryCode)} {detectedCountryCode || 'Select'}
+          </FluentText>
+          <MaterialCommunityIcons
+            name="chevron-down"
+            size={FluentIconSize.small}
+            color={colors.colorNeutralForeground2}
+          />
+        </Pressable>
+      )}
+    </View>
   );
-
-  const renderFmUnavailableNotice = () => {
-    if (isFmAvailable || radioMode !== 'online') return null;
-    const isIOS = Platform.OS === 'ios';
-    const message = isIOS 
-      ? 'FM Radio is not available on iPhone. Enjoy streaming radio instead!'
-      : 'FM hardware not available on this device. Using online radio.';
-    return (
-      <View style={[styles.noticeCard, { backgroundColor: colors.colorNeutralBackground3 }]}>
-        <MaterialCommunityIcons
-          name={isIOS ? "apple" : "information-outline"}
-          size={FluentIconSize.small}
-          color={colors.colorNeutralForeground2}
-        />
-        <FluentText variant="caption1" color="secondary" style={styles.noticeText}>
-          {message}
-        </FluentText>
-      </View>
-    );
-  };
 
   const renderPersistentNowPlaying = () => {
     if (!currentStation || !isOnlinePlaying || radioMode === 'online') return null;
@@ -501,22 +511,6 @@ function RadioScreen() {
 
     return (
       <>
-        <Pressable 
-          style={[styles.countryDropdown, { backgroundColor: colors.colorNeutralBackground3, borderColor: colors.colorNeutralStroke2 }]}
-          onPress={handleOpenCountryPicker}
-          accessibilityLabel="Select country"
-          accessibilityRole="button"
-        >
-          <FluentText variant="body1Strong" style={styles.countryDropdownText}>
-            {getCountryFlag(detectedCountryCode)} {detectedCountry || 'Select Country'}
-          </FluentText>
-          <MaterialCommunityIcons
-            name="chevron-down"
-            size={FluentIconSize.regular}
-            color={colors.colorNeutralForeground2}
-          />
-        </Pressable>
-
         <View style={[styles.searchContainer, { backgroundColor: colors.colorNeutralBackground3 }]}>
           <MaterialCommunityIcons
             name="magnify"
@@ -952,7 +946,6 @@ function RadioScreen() {
       >
         {renderModeToggle()}
         {renderPersistentNowPlaying()}
-        {renderFmUnavailableNotice()}
         
         {radioMode === 'fmam' ? renderFmContent() : renderOnlineContent()}
       </ScrollView>
@@ -1056,6 +1049,21 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: FluentSpacing.m,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: FluentSpacing.l,
+  },
+  compactCountryDropdown: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: FluentSpacing.xs,
+    paddingHorizontal: FluentSpacing.m,
+    paddingVertical: FluentSpacing.s,
+    borderRadius: FluentControlRadius.button,
+    borderWidth: FluentBorderWidth.thin,
   },
   modeToggle: {
     flexDirection: "row",

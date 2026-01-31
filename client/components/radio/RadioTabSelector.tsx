@@ -38,7 +38,6 @@ const styles = StyleSheet.create({
   modeToggle: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: FluentSpacing.l,
   },
 });
 

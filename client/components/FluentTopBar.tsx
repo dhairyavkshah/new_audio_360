@@ -402,11 +402,11 @@ const styles = StyleSheet.create({
   categoryRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: FluentSpacing.m,
+    gap: FluentSpacing.s,
     marginBottom: FluentSpacing.s,
   },
   categoryDropdownButton: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: FluentSpacing.s,
