@@ -123,6 +123,7 @@ All song durations are normalized to **seconds** throughout the app:
 ### Metadata & Playback Fixes (v29.2 - January 2026)
 - **MediaStoreScannerModule**: Added fallback duration fetching using `MediaMetadataRetriever` when MediaStore returns 0. This handles cases where MediaStore hasn't fully indexed newly added files.
 - **PlayerContext progress callback**: Removed overly strict guard (`position <= duration`) that was resetting currentTime to 0 at end of tracks. Now uses industry-standard approach: allow position to reach duration without artificial capping, using `Math.min(position, duration)` for UI display.
+- **Auto-advance fix**: Native progress polling now calls `handleTrackEnd()` when detecting 'ended' state as a backup to the native event listener. Uses `handleTrackEndRef` pattern to avoid circular dependency issues. The guard in `handleTrackEnd` prevents double-handling if both polling and event listener fire.
 
 ## External Dependencies
 

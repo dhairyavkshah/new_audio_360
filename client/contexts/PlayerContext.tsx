@@ -122,6 +122,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // Ref to break circular dependency: handleTrackEnd (empty deps) needs loadAndPlaySong
   // Updated via useEffect after loadAndPlaySong is defined
   const loadAndPlaySongRef = useRef<(song: PlayableSong) => void>(() => {});
+  // Ref for handleTrackEnd to be used in progress polling (avoids dependency issues)
+  const handleTrackEndRef = useRef<() => void>(() => {});
   const usingSoundCloudWidgetRef = useRef<boolean>(false);
   const soundCloudTrackIdRef = useRef<number | null>(null);
   const handlePreviousInternalRef = useRef<() => void>(() => {});
@@ -694,12 +696,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       nativeProgressIntervalRef.current = setInterval(() => {
         const currentStatus = PlaybackEngineModule.getStatus();
         
-        // Stop polling if playback has ended
+        // Handle end of track - call handleTrackEnd and stop polling
         if (currentStatus.playbackState === 'ended') {
+          console.log('[PlayerContext] Polling detected ended state, triggering handleTrackEnd');
           if (nativeProgressIntervalRef.current) {
             clearInterval(nativeProgressIntervalRef.current);
             nativeProgressIntervalRef.current = null;
           }
+          // Call handleTrackEnd via ref (the guard prevents double-handling)
+          handleTrackEndRef.current();
           return;
         }
         
@@ -779,6 +784,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       loadAndPlaySongRef.current(nextSong);
     }
   }, []);
+
+  // Update handleTrackEndRef when handleTrackEnd changes (for polling callback)
+  useEffect(() => {
+    handleTrackEndRef.current = handleTrackEnd;
+  }, [handleTrackEnd]);
 
   // Subscribe to native playback state changes for auto-advance
   useEffect(() => {
@@ -1341,12 +1351,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           nativeProgressIntervalRef.current = setInterval(() => {
             const currentStatus = PlaybackEngineModule.getStatus();
             
-            // Stop polling if playback has ended
+            // Handle end of track - call handleTrackEnd and stop polling
             if (currentStatus.playbackState === 'ended') {
               if (nativeProgressIntervalRef.current) {
                 clearInterval(nativeProgressIntervalRef.current);
                 nativeProgressIntervalRef.current = null;
               }
+              // Call handleTrackEnd via ref (the guard prevents double-handling)
+              handleTrackEndRef.current();
               return;
             }
             
