@@ -2,6 +2,9 @@
 
 ## Recent Changes (v30.0 - January 2026)
 - **Source Indicators in Liked Category**: Songs in the Liked category now show source icons (music note for local, SoundCloud cloud for SoundCloud, web icon for Archive) to differentiate song origins
+- **Settings Card Styling**: Added Fluent 2 card borders (1px colorNeutralStroke2) and 8px marginBottom spacing to FluentListItem
+- **Browse Stations Header Optimization**: Merged FM/AM|Online toggle + Country selector into single compact row
+- **Library Header Compaction**: Reduced padding/margins for more compact header, improved spacing balance
 - **SoundCloud Header Optimization**: 
   - Merged profile bar + sub tabs into single compact row with icon-only buttons for Search/Likes/Playlists
   - Merged search field + type selector into single row with compact dropdown for Tracks/Playlists/Albums
