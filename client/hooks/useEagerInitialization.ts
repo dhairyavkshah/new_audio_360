@@ -100,7 +100,3 @@ export function useEagerInitialization(): InitializationState {
 
   return state;
 }
-
-export function getAudioSessionId(): number {
-  return 0;
-}

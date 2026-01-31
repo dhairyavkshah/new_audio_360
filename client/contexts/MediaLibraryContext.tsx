@@ -488,7 +488,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         setSongs(filtered);
         setAllSongsIncludingHidden(cachedSongs);
         setUsingMockData(false);
-        console.log('[MediaLibrary] Loaded', filtered.length, 'songs from cache instantly');
+        console.log('[MediaLibrary] Loaded', filtered.length, 'songs from cache (fresh scan follows)');
       }
       
       await checkPermission();
