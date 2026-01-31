@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
-import { Platform, AppState, AppStateStatus } from 'react-native';
+import { Platform, AppState, AppStateStatus, InteractionManager } from 'react-native';
 import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from 'expo-audio';
 import { Song, mockSongs } from '@/lib/data';
 import { DeviceSong, useMediaLibraryContext } from '@/contexts/MediaLibraryContext';
@@ -105,6 +105,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const useTrackPlayerRef = useRef(TrackPlayerService.isAvailable());
   const trackPlayerInitializedRef = useRef(false);
   const nativeAudioSessionIdRef = useRef<number>(0);
+  const playbackEngineInitializedRef = useRef<boolean>(false);
+  const playbackEngineInitPromiseRef = useRef<Promise<boolean> | null>(null);
   const progressPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const nativeProgressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastKnownPositionRef = useRef<number>(0);
@@ -404,27 +406,72 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [setupTrackPlayerCallbacks]);
 
-  useEffect(() => {
-    if (useNativePlaybackRef.current && !useTrackPlayerRef.current) {
-      PlaybackEngineModule.initialize().then(async (initResult) => {
+  // Serialized PlaybackEngineModule initialization to avoid concurrent init calls
+  const ensurePlaybackEngineInitialized = useCallback(async (): Promise<boolean> => {
+    // Already initialized - skip
+    if (playbackEngineInitializedRef.current) {
+      return true;
+    }
+    
+    // Init in progress - wait for it
+    if (playbackEngineInitPromiseRef.current) {
+      return playbackEngineInitPromiseRef.current;
+    }
+    
+    // Start initialization and store promise to prevent concurrent calls
+    playbackEngineInitPromiseRef.current = (async () => {
+      try {
+        const initResult = await PlaybackEngineModule.initialize();
         if (initResult.success && initResult.audioSessionId) {
           nativeAudioSessionIdRef.current = initResult.audioSessionId;
-          console.log('PlaybackEngineModule initialized with audioSessionId:', initResult.audioSessionId);
+          playbackEngineInitializedRef.current = true;
+          console.log('[PlayerContext] PlaybackEngineModule initialized with audioSessionId:', initResult.audioSessionId);
           
           const attached = await NativeEffectsManager.attach(initResult.audioSessionId);
           if (attached) {
-            console.log('NativeEffectsManager attached to audio session');
+            console.log('[PlayerContext] NativeEffectsManager attached to audio session');
           }
+          return true;
+        } else if (initResult.alreadyInitialized) {
+          playbackEngineInitializedRef.current = true;
+          return true;
         } else if (initResult.error) {
-          console.warn('PlaybackEngineModule initialization failed:', initResult.error);
+          console.warn('[PlayerContext] PlaybackEngineModule initialization failed:', initResult.error);
+          return false;
         }
-      });
-    }
+        return false;
+      } catch (err) {
+        console.warn('[PlayerContext] PlaybackEngineModule init error:', err);
+        return false;
+      } finally {
+        playbackEngineInitPromiseRef.current = null;
+      }
+    })();
     
+    return playbackEngineInitPromiseRef.current;
+  }, []);
+
+  useEffect(() => {
+    if (useNativePlaybackRef.current && !useTrackPlayerRef.current) {
+      // Defer heavy audio initialization until after UI transitions complete
+      // This prevents blocking the main thread during navigation/rendering
+      const interactionHandle = InteractionManager.runAfterInteractions(() => {
+        ensurePlaybackEngineInitialized();
+      });
+      
+      return () => {
+        interactionHandle.cancel();
+      };
+    }
+  }, [ensurePlaybackEngineInitialized]);
+  
+  useEffect(() => {
     return () => {
       if (useNativePlaybackRef.current && !useTrackPlayerRef.current) {
         NativeEffectsManager.release();
         PlaybackEngineModule.release();
+        playbackEngineInitializedRef.current = false;
+        playbackEngineInitPromiseRef.current = null;
       }
     };
   }, []);
@@ -1138,21 +1185,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         
         console.log('[PlayerContext] Using PlaybackEngineModule with DSP for playback', { isStreamingTrack });
         
-        // Initialize PlaybackEngineModule if not already initialized
-        try {
-          const initResult = await PlaybackEngineModule.initialize();
-          if (!initResult.success && !initResult.alreadyInitialized) {
-            console.error('[PlayerContext] Failed to initialize PlaybackEngineModule:', initResult.error);
-            setError('Failed to initialize audio player');
-            setIsLoading(false);
-            return;
-          }
-          if (initResult.audioSessionId) {
-            nativeAudioSessionIdRef.current = initResult.audioSessionId;
-          }
-          console.log('[PlayerContext] PlaybackEngineModule initialized, session:', initResult.audioSessionId || nativeAudioSessionIdRef.current);
-        } catch (initError) {
-          console.error('[PlayerContext] PlaybackEngineModule init error:', initError);
+        // Ensure PlaybackEngineModule is initialized (uses serialized init to avoid race conditions)
+        const initSuccess = await ensurePlaybackEngineInitialized();
+        if (!initSuccess) {
           setError('Failed to initialize audio player');
           setIsLoading(false);
           return;
@@ -1527,7 +1562,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       // Still set the song so UI displays correctly
       setCurrentSong(song);
     }
-  }, [cleanupPlayer, handleStatusUpdate, createEQChain, handleTrackEnd, soundLabMode, immersiveEffect, convertSongToTrackMetadata]);
+  }, [cleanupPlayer, handleStatusUpdate, createEQChain, handleTrackEnd, soundLabMode, immersiveEffect, convertSongToTrackMetadata, ensurePlaybackEngineInitialized]);
 
   useEffect(() => {
     return () => {

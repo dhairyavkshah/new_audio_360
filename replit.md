@@ -1,6 +1,10 @@
 # New Audio 360
 
 ## Recent Changes (v30.0 - January 2026)
+- **Performance Optimization**: Reduced UI lag on Android by deferring heavy audio initialization
+  - PlaybackEngineModule and NativeEffectsManager now initialize after UI transitions complete (InteractionManager)
+  - Added serialized initialization with in-flight promise guard to prevent concurrent init calls
+  - Cached initialization state to avoid redundant re-initialization on track changes
 - **Listen Tab Navigation Fix**: Tapping Listen tab now always goes to Listen home screen, not NowPlaying
   - Added listener to reset ListenTab stack to initial route when tab is pressed
   - NowPlaying is now only accessible via MiniPlayer tap
