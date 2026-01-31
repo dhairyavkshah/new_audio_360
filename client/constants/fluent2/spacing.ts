@@ -11,6 +11,13 @@ export const FluentSpacing = {
   xxxxl: 40,
   xxxxxl: 48,
   xxxxxxl: 64,
+  xxxxxxxl: 80,
+} as const;
+
+export const FluentBlurIntensity = {
+  light: 10,
+  medium: 20,
+  heavy: 40,
 } as const;
 
 export const FluentGap = {
@@ -46,3 +53,4 @@ export type SpacingToken = keyof typeof FluentSpacing;
 export type GapToken = keyof typeof FluentGap;
 export type PaddingToken = keyof typeof FluentPadding;
 export type IconSizeToken = keyof typeof FluentIconSize;
+export type BlurIntensityToken = keyof typeof FluentBlurIntensity;

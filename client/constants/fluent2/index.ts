@@ -1,5 +1,5 @@
-export { FluentSpacing, FluentGap, FluentPadding, FluentIconSize } from './spacing';
-export type { SpacingToken, GapToken, PaddingToken, IconSizeToken } from './spacing';
+export { FluentSpacing, FluentGap, FluentPadding, FluentIconSize, FluentBlurIntensity } from './spacing';
+export type { SpacingToken, GapToken, PaddingToken, IconSizeToken, BlurIntensityToken } from './spacing';
 
 export { 
   FluentControlHeight, 

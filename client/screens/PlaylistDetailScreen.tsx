@@ -162,7 +162,7 @@ export default function PlaylistDetailScreen() {
     return (
       <FluentScreenLayout hasBottomNavigation={false} isNestedScreen={true}>
         <View style={[styles.loadingContainer, { paddingTop: headerHeight }]}>
-          <MaterialCommunityIcons name="playlist-music" size={48} color={colors.colorNeutralForeground2} />
+          <MaterialCommunityIcons name="playlist-music" size={64} color={colors.colorNeutralForeground2} />
           <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.l }}>
             Playlist not found
           </FluentText>

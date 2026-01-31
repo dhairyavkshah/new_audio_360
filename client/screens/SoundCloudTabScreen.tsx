@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, TextInput, Image, Platform } from "react-native";
+import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, Image, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import * as WebBrowser from 'expo-web-browser';
@@ -11,11 +11,15 @@ import { useToast } from "@/contexts/ToastContext";
 import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import { getShadowStyle } from "@/constants/fluent2/shadows";
 import SoundCloudService, { SoundCloudTrack, SoundCloudPlaylist } from "@/services/SoundCloudService";
-import OAuthWebViewModal from "@/components/OAuthWebViewModal";
-
-type SubTabType = 'search' | 'likes' | 'playlists';
-type SearchType = 'tracks' | 'playlists' | 'albums';
-const SC_ACCENT = '#FF5500';
+import {
+  SoundCloudTrackCard,
+  SoundCloudPlaylistCard,
+  SoundCloudSubTabs,
+  SoundCloudSearchHeader,
+  SoundCloudLoginPrompt,
+  SubTabType,
+  SearchType,
+} from "@/components/soundcloud";
 
 export default function SoundCloudTabScreen() {
   const navigation = useNavigation();
@@ -411,11 +415,8 @@ export default function SoundCloudTabScreen() {
   const addToLibrary = async (track: SoundCloudTrack) => {
     setAddingIds(prev => new Set(prev).add(track.id));
     try {
-      // Sync to SoundCloud account
       const syncResult = await SoundCloudService.likeTrackOnSoundCloud(track.id);
       console.log('[SoundCloudTabScreen] Like sync result:', syncResult);
-      
-      // Also save to local favorites
       await SoundCloudService.addToFavorites(track);
       showSuccess(`Added "${track.title}" to favorites`);
     } catch (error) {
@@ -438,189 +439,20 @@ export default function SoundCloudTabScreen() {
     );
   };
 
-  const renderSubTabs = () => (
-    <View style={[styles.subTabContainer, { backgroundColor: colors.colorNeutralBackground2 }]}>
-      {(['search', 'likes', 'playlists'] as SubTabType[]).map((tab) => (
-        <Pressable
-          key={tab}
-          style={[
-            styles.subTab,
-            activeSubTab === tab && { backgroundColor: colors.colorBrandBackground },
-          ]}
-          onPress={() => setActiveSubTab(tab)}
-        >
-          <MaterialCommunityIcons
-            name={tab === 'search' ? 'magnify' : tab === 'likes' ? 'heart' : 'playlist-music'}
-            size={FluentIconSize.small}
-            color={activeSubTab === tab ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2}
-          />
-          <FluentText
-            variant={activeSubTab === tab ? "caption1Strong" : "caption1"}
-            style={{
-              color: activeSubTab === tab ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2,
-              marginLeft: FluentSpacing.xs,
-            }}
-          >
-            {tab === 'search' ? 'Search' : tab === 'likes' ? 'Likes' : 'Playlists'}
-          </FluentText>
-        </Pressable>
-      ))}
-    </View>
+  const renderTrack = ({ item }: { item: SoundCloudTrack }) => (
+    <SoundCloudTrackCard
+      track={item}
+      onPress={playTrack}
+      onAddToLibrary={addToLibrary}
+      isAdding={addingIds.has(item.id)}
+    />
   );
-
-  const renderTrack = ({ item }: { item: SoundCloudTrack }) => {
-    const isAdding = addingIds.has(item.id);
-
-    return (
-      <Pressable 
-        style={[
-          styles.trackCard, 
-          { 
-            backgroundColor: colors.colorNeutralBackground2,
-            borderColor: colors.colorNeutralStroke2,
-            borderWidth: 1,
-          },
-          getShadowStyle('shadow2', isDark),
-        ]}
-        onPress={() => playTrack(item)}
-      >
-        {item.artwork_url ? (
-          <Image 
-            source={{ uri: item.artwork_url }} 
-            style={styles.artworkImage}
-          />
-        ) : (
-          <View style={[styles.playIcon, { backgroundColor: colors.colorBrandBackground }]}>
-            <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
-          </View>
-        )}
-        
-        <View style={styles.trackInfo}>
-          <FluentText variant="body1Strong" numberOfLines={1}>
-            {item.title}
-          </FluentText>
-          <FluentText variant="caption1" color="secondary" numberOfLines={1}>
-            {item.artist}
-          </FluentText>
-          <View style={styles.trackMeta}>
-            <View style={[styles.badge, { backgroundColor: colors.colorSubtleBackgroundHover }]}>
-              <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.tiny} color={colors.colorBrandForeground1} />
-              <FluentText variant="caption2" style={{ color: colors.colorBrandForeground1, marginLeft: 2 }}>
-                Full
-              </FluentText>
-            </View>
-            <FluentText variant="caption1" color="tertiary">
-              {SoundCloudService.formatPlaybackCount(item.playbackCount)} plays
-            </FluentText>
-          </View>
-        </View>
-
-        <FluentText variant="caption1" color="tertiary" style={styles.durationText}>
-          {SoundCloudService.formatDurationFromSeconds(item.duration)}
-        </FluentText>
-
-        <Pressable
-          style={[styles.addButton, { backgroundColor: colors.colorSubtleBackgroundHover }]}
-          onPress={(e) => {
-            e.stopPropagation();
-            addToLibrary(item);
-          }}
-          disabled={isAdding}
-        >
-          {isAdding ? (
-            <ActivityIndicator size="small" color={colors.colorBrandForeground1} />
-          ) : (
-            <MaterialCommunityIcons name="heart-plus-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-          )}
-        </Pressable>
-
-        <MaterialCommunityIcons 
-          name="chevron-right" 
-          size={FluentIconSize.small} 
-          color={colors.colorNeutralForeground3} 
-        />
-      </Pressable>
-    );
-  };
 
   const renderPlaylist = ({ item }: { item: SoundCloudPlaylist }) => (
-    <Pressable 
-      style={[
-        styles.playlistCard, 
-        { backgroundColor: colors.colorNeutralBackground2 },
-        getShadowStyle('shadow2', isDark),
-      ]}
-      onPress={() => handlePlaylistTap(item)}
-    >
-      {item.artwork_url ? (
-        <Image 
-          source={{ uri: item.artwork_url }} 
-          style={styles.playlistArtwork}
-        />
-      ) : (
-        <View style={[styles.playlistArtwork, { backgroundColor: colors.colorBrandBackground }]}>
-          <MaterialCommunityIcons name="playlist-music" size={FluentIconSize.large} color={colors.colorNeutralForegroundOnBrand} />
-        </View>
-      )}
-      
-      <View style={styles.playlistInfo}>
-        <FluentText variant="body1Strong" numberOfLines={1}>
-          {item.title}
-        </FluentText>
-        <FluentText variant="body2" color="secondary" numberOfLines={1}>
-          {item.user}
-        </FluentText>
-        <View style={styles.playlistMeta}>
-          <FluentText variant="caption1" color="tertiary">
-            {item.trackCount} tracks • {SoundCloudService.formatDurationFromSeconds(item.duration)}
-          </FluentText>
-          {item.likesCount > 0 && (
-            <View style={styles.likesRow}>
-              <MaterialCommunityIcons name="heart" size={FluentIconSize.tiny} color={colors.colorNeutralForeground3} />
-              <FluentText variant="caption1" color="tertiary" style={{ marginLeft: FluentSpacing.xxs }}>
-                {SoundCloudService.formatPlaybackCount(item.likesCount)}
-              </FluentText>
-            </View>
-          )}
-        </View>
-      </View>
-
-      <MaterialCommunityIcons 
-        name="chevron-right" 
-        size={FluentIconSize.medium} 
-        color={colors.colorNeutralForeground3} 
-      />
-    </Pressable>
-  );
-
-  const renderSearchTypeChips = () => (
-    <View style={[styles.searchTypeContainer, { backgroundColor: colors.colorNeutralBackground2 }]}>
-      {(['tracks', 'playlists', 'albums'] as SearchType[]).map((type) => (
-        <Pressable
-          key={type}
-          style={[
-            styles.searchTypeChip,
-            searchType === type && { backgroundColor: colors.colorBrandBackground },
-          ]}
-          onPress={() => setSearchType(type)}
-        >
-          <MaterialCommunityIcons
-            name={type === 'tracks' ? 'music-note' : type === 'playlists' ? 'playlist-music' : 'album'}
-            size={FluentIconSize.small}
-            color={searchType === type ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2}
-          />
-          <FluentText
-            variant={searchType === type ? "caption1Strong" : "caption1"}
-            style={{
-              color: searchType === type ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2,
-              marginLeft: FluentSpacing.xs,
-            }}
-          >
-            {type === 'tracks' ? 'Tracks' : type === 'playlists' ? 'Playlists' : 'Albums'}
-          </FluentText>
-        </Pressable>
-      ))}
-    </View>
+    <SoundCloudPlaylistCard
+      playlist={item}
+      onPress={handlePlaylistTap}
+    />
   );
 
   const renderSearchResults = () => {
@@ -694,28 +526,13 @@ export default function SoundCloudTabScreen() {
 
   const renderSearchContent = () => (
     <>
-      <View style={styles.searchRow}>
-        <View style={[styles.searchInput, { backgroundColor: colors.colorNeutralBackground2 }]}>
-          <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color={colors.colorNeutralForeground3} />
-          <TextInput
-            style={[styles.input, { color: theme.text }]}
-            placeholder={`Search ${searchType}...`}
-            placeholderTextColor={colors.colorNeutralForeground3}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-          />
-        </View>
-        <Pressable
-          style={[styles.searchButton, { backgroundColor: colors.colorBrandBackground }]}
-          onPress={handleSearch}
-        >
-          <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
-        </Pressable>
-      </View>
-
-      {renderSearchTypeChips()}
+      <SoundCloudSearchHeader
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        onSearch={handleSearch}
+        searchType={searchType}
+        onSearchTypeChange={setSearchType}
+      />
       {renderSearchResults()}
     </>
   );
@@ -843,123 +660,20 @@ export default function SoundCloudTabScreen() {
 
   if (!isAuthenticated) {
     return (
-      <View style={styles.loginContainer}>
-        <View style={[
-          styles.loginCard, 
-          { backgroundColor: colors.colorNeutralBackground2 },
-          getShadowStyle('shadow8', isDark),
-        ]}>
-          <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground }]}>
-            <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.xxlarge} color={colors.colorNeutralForegroundOnBrand} />
-          </View>
-          
-          <FluentText variant="title2" style={styles.loginTitle}>
-            Connect SoundCloud
-          </FluentText>
-          
-          <FluentText variant="body2" color="secondary" style={styles.loginDescription}>
-            Sign in with your SoundCloud account to stream full tracks with our premium audio processing.
-          </FluentText>
-
-          <View style={styles.featureList}>
-            <View style={styles.featureItem}>
-              <MaterialCommunityIcons name="music-note" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-              <FluentText variant="body2" color="secondary">Full track playback</FluentText>
-            </View>
-            <View style={styles.featureItem}>
-              <MaterialCommunityIcons name="equalizer" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-              <FluentText variant="body2" color="secondary">DSP audio processing</FluentText>
-            </View>
-            <View style={styles.featureItem}>
-              <MaterialCommunityIcons name="brain" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
-              <FluentText variant="body2" color="secondary">Neural audio enhancement</FluentText>
-            </View>
-          </View>
-          
-          {!showCodeEntry ? (
-            <>
-              <Pressable
-                style={[styles.loginButton, { backgroundColor: colors.colorBrandBackground }]}
-                onPress={handleLogin}
-                disabled={isLoggingIn}
-              >
-                {isLoggingIn ? (
-                  <ActivityIndicator size="small" color={colors.colorNeutralForegroundOnBrand} />
-                ) : (
-                  <>
-                    <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.medium} color={colors.colorNeutralForegroundOnBrand} />
-                    <FluentText variant="body1Strong" style={{ color: colors.colorNeutralForegroundOnBrand, marginLeft: 8 }}>
-                      Sign in with SoundCloud
-                    </FluentText>
-                  </>
-                )}
-              </Pressable>
-              
-              <Pressable onPress={() => setShowCodeEntry(true)}>
-                <FluentText variant="caption1" color="secondary" style={{ textDecorationLine: 'underline', marginTop: FluentSpacing.s }}>
-                  Enter code manually
-                </FluentText>
-              </Pressable>
-              
-              <FluentText variant="caption1" color="tertiary" style={[styles.disclaimer, { marginTop: FluentSpacing.m }]}>
-                Your SoundCloud credentials are handled securely by SoundCloud. We never see your password.
-              </FluentText>
-            </>
-          ) : (
-            <>
-              <FluentText variant="body2" color="secondary" style={{ marginBottom: FluentSpacing.s, textAlign: 'center' }}>
-                After authorizing in the new tab, copy the entire URL from your browser's address bar and paste it below:
-              </FluentText>
-              <FluentText variant="caption1" color="tertiary" style={{ marginBottom: FluentSpacing.m, textAlign: 'center' }}>
-                The URL will contain "?code=" - that's what we need
-              </FluentText>
-              
-              <View style={[styles.searchInput, { backgroundColor: colors.colorNeutralBackground3, width: '100%', marginBottom: FluentSpacing.m }]}>
-                <TextInput
-                  style={[styles.input, { color: colors.colorNeutralForeground1 }]}
-                  placeholder="Paste URL or code here..."
-                  placeholderTextColor={colors.colorNeutralForeground3}
-                  value={manualCode}
-                  onChangeText={setManualCode}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  multiline
-                />
-              </View>
-              
-              <Pressable
-                style={[styles.loginButton, { backgroundColor: colors.colorBrandBackground }]}
-                onPress={handleManualCodeSubmit}
-                disabled={isLoggingIn || !manualCode.trim()}
-              >
-                {isLoggingIn ? (
-                  <ActivityIndicator size="small" color={colors.colorNeutralForegroundOnBrand} />
-                ) : (
-                  <FluentText variant="body1Strong" style={{ color: colors.colorNeutralForegroundOnBrand }}>
-                    Submit Code
-                  </FluentText>
-                )}
-              </Pressable>
-              
-              <Pressable onPress={() => { setShowCodeEntry(false); setManualCode(''); }}>
-                <FluentText variant="caption1" color="secondary" style={{ textDecorationLine: 'underline', marginTop: FluentSpacing.m }}>
-                  Back to sign in
-                </FluentText>
-              </Pressable>
-            </>
-          )}
-        </View>
-
-        <OAuthWebViewModal
-          visible={showLoginModal}
-          authUrl={authUrl}
-          redirectUri={authRedirectUri}
-          onSuccess={handleOAuthSuccess}
-          onCancel={handleOAuthCancel}
-          title="Sign in to SoundCloud"
-          accentColor={theme.primary}
-        />
-      </View>
+      <SoundCloudLoginPrompt
+        isLoggingIn={isLoggingIn}
+        showCodeEntry={showCodeEntry}
+        manualCode={manualCode}
+        showLoginModal={showLoginModal}
+        authUrl={authUrl}
+        authRedirectUri={authRedirectUri}
+        onLogin={handleLogin}
+        onManualCodeChange={setManualCode}
+        onManualCodeSubmit={handleManualCodeSubmit}
+        onShowCodeEntry={setShowCodeEntry}
+        onOAuthSuccess={handleOAuthSuccess}
+        onOAuthCancel={handleOAuthCancel}
+      />
     );
   }
 
@@ -987,7 +701,10 @@ export default function SoundCloudTabScreen() {
         </View>
       )}
 
-      {renderSubTabs()}
+      <SoundCloudSubTabs
+        activeTab={activeSubTab}
+        onTabChange={setActiveSubTab}
+      />
 
       {activeSubTab === 'search' && renderSearchContent()}
       {activeSubTab === 'likes' && renderLikesContent()}
@@ -1005,60 +722,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: FluentSpacing.xl,
-  },
-  loginContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: FluentSpacing.l,
-  },
-  loginCard: {
-    width: '100%',
-    maxWidth: 360,
-    borderRadius: FluentControlRadius.dialog,
-    padding: FluentSpacing.xl,
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: FluentSpacing.l,
-  },
-  loginTitle: {
-    marginBottom: FluentSpacing.s,
-    textAlign: 'center',
-  },
-  loginDescription: {
-    textAlign: 'center',
-    marginBottom: FluentSpacing.l,
-    lineHeight: 22,
-  },
-  featureList: {
-    width: '100%',
-    marginBottom: FluentSpacing.l,
-    gap: FluentSpacing.s,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: FluentSpacing.s,
-  },
-  loginButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    minHeight: FluentTouchTarget.minimum,
-    paddingVertical: FluentSpacing.m,
-    borderRadius: FluentControlRadius.button,
-    marginBottom: FluentSpacing.m,
-  },
-  disclaimer: {
-    textAlign: 'center',
-    lineHeight: 18,
   },
   profileBar: {
     flexDirection: 'row',
@@ -1080,68 +743,6 @@ const styles = StyleSheet.create({
   logoutButton: {
     padding: FluentSpacing.xs,
   },
-  subTabContainer: {
-    flexDirection: 'row',
-    marginHorizontal: FluentSpacing.m,
-    marginTop: FluentSpacing.s,
-    marginBottom: FluentSpacing.xs,
-    borderRadius: FluentRadius.large,
-    padding: 4,
-    gap: 4,
-  },
-  subTab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: FluentTouchTarget.minimum,
-    paddingVertical: FluentSpacing.s,
-    paddingHorizontal: FluentSpacing.m,
-    borderRadius: FluentControlRadius.button,
-  },
-  searchTypeContainer: {
-    flexDirection: 'row',
-    marginHorizontal: FluentSpacing.m,
-    marginBottom: FluentSpacing.s,
-    borderRadius: FluentRadius.large,
-    padding: 4,
-    gap: 4,
-  },
-  searchTypeChip: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: FluentSpacing.xs,
-    paddingHorizontal: FluentSpacing.s,
-    borderRadius: FluentControlRadius.button,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.s,
-    gap: FluentSpacing.s,
-  },
-  searchInput: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: FluentSpacing.m,
-    borderRadius: FluentControlRadius.input,
-    height: FluentTouchTarget.minimum,
-    gap: FluentSpacing.s,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-  },
-  searchButton: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
-    borderRadius: FluentControlRadius.button,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   statusText: {
     marginTop: FluentSpacing.m,
     textAlign: 'center',
@@ -1155,83 +756,6 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: FluentSpacing.s,
-  },
-  trackCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: FluentSpacing.m,
-    paddingHorizontal: FluentSpacing.l,
-    borderRadius: FluentControlRadius.card,
-    marginBottom: FluentSpacing.s,
-    minHeight: 72,
-    gap: FluentSpacing.m,
-  },
-  playIcon: {
-    width: FluentIconSize.xxlarge,
-    height: FluentIconSize.xxlarge,
-    borderRadius: FluentControlRadius.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  artworkImage: {
-    width: FluentIconSize.xxlarge,
-    height: FluentIconSize.xxlarge,
-    borderRadius: FluentControlRadius.card,
-  },
-  durationText: {
-    marginRight: FluentSpacing.s,
-  },
-  trackInfo: {
-    flex: 1,
-    gap: FluentSpacing.xxs,
-  },
-  trackMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: FluentSpacing.s,
-    marginTop: FluentSpacing.xs,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: FluentSpacing.s,
-    paddingVertical: FluentSpacing.xxs,
-    borderRadius: FluentRadius.large,
-  },
-  addButton: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
-    borderRadius: FluentTouchTarget.minimum / 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playlistCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: FluentSpacing.m,
-    borderRadius: FluentControlRadius.card,
-    gap: FluentSpacing.m,
-  },
-  playlistArtwork: {
-    width: 56,
-    height: 56,
-    borderRadius: FluentControlRadius.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playlistInfo: {
-    flex: 1,
-    gap: FluentSpacing.xxs,
-  },
-  playlistMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: FluentSpacing.m,
-    marginTop: FluentSpacing.xs,
-  },
-  likesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   likesHeader: {
     flexDirection: 'row',

@@ -213,7 +213,7 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
         <View style={[styles.iconContainer, { backgroundColor: colors.colorBrandBackground + '15' }]}>
           <MaterialCommunityIcons 
             name={currentPermission.icon} 
-            size={64} 
+            size={72} 
             color={colors.colorBrandForeground1} 
           />
         </View>
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   privacyNote: {
-    marginTop: FluentSpacing.m,
+    marginTop: FluentSpacing.l,
   },
   webContent: {
     flex: 1,

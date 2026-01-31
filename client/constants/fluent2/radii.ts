@@ -4,6 +4,7 @@ export const FluentRadius = {
   medium: 4,
   large: 8,
   xLarge: 12,
+  xxLarge: 16,
   circular: 9999,
 } as const;
 
@@ -16,6 +17,7 @@ export const FluentControlRadius = {
   dialog: 12,
   bottomSheet: 16,
   fab: 16,
+  heroCard: 16,
   avatar: 9999,
 } as const;
 

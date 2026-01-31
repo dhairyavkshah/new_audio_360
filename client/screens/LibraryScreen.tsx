@@ -74,13 +74,13 @@ const AlbumCard = memo(function AlbumCard({ album, onPress }: AlbumCardProps) {
   return (
     <AnimatedCard
       style={styles.albumCard}
-      borderRadius={FluentRadius.large}
+      borderRadius={FluentControlRadius.card}
       onPress={handlePress}
       accessibilityLabel={`${album.name} by ${album.artist}`}
     >
       <Image source={imageSource} style={styles.albumArtwork} />
-      <FluentText variant="body1" numberOfLines={1} style={styles.albumName}>{album.name}</FluentText>
-      <FluentText variant="caption1" color="tertiary" numberOfLines={1}>{album.artist}</FluentText>
+      <FluentText variant="body1Strong" numberOfLines={1} style={styles.albumName}>{album.name}</FluentText>
+      <FluentText variant="caption1" color="secondary" numberOfLines={1}>{album.artist}</FluentText>
     </AnimatedCard>
   );
 });
@@ -104,8 +104,8 @@ const ArtistCard = memo(function ArtistCard({ artist, onPress }: ArtistCardProps
       <View style={styles.artistAvatarContainer}>
         <Image source={imageSource} style={styles.artistAvatar} />
       </View>
-      <FluentText variant="body1" numberOfLines={1} style={styles.artistName}>{artist.name}</FluentText>
-      <FluentText variant="caption1" color="tertiary" numberOfLines={1}>{artist.songCount} {artist.songCount === 1 ? 'song' : 'songs'}</FluentText>
+      <FluentText variant="body1Strong" numberOfLines={1} style={styles.artistName}>{artist.name}</FluentText>
+      <FluentText variant="caption1" color="secondary" numberOfLines={1}>{artist.songCount} {artist.songCount === 1 ? 'song' : 'songs'}</FluentText>
     </AnimatedCard>
   );
 });

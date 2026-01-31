@@ -1,0 +1,145 @@
+import React from "react";
+import { View, StyleSheet, Pressable, ActivityIndicator, Image } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { FluentText } from "@/components/fluent";
+import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { getShadowStyle } from "@/constants/fluent2/shadows";
+import { useThemeContext } from "@/contexts/ThemeContext";
+import SoundCloudService, { SoundCloudTrack } from "@/services/SoundCloudService";
+
+interface SoundCloudTrackCardProps {
+  track: SoundCloudTrack;
+  onPress: (track: SoundCloudTrack) => void;
+  onAddToLibrary: (track: SoundCloudTrack) => void;
+  isAdding: boolean;
+}
+
+export function SoundCloudTrackCard({ track, onPress, onAddToLibrary, isAdding }: SoundCloudTrackCardProps) {
+  const { isDark } = useThemeContext();
+  const colors = isDark ? FluentDarkColors : FluentLightColors;
+
+  return (
+    <Pressable 
+      style={[
+        styles.trackCard, 
+        { 
+          backgroundColor: colors.colorNeutralBackground2,
+          borderColor: colors.colorNeutralStroke2,
+          borderWidth: 1,
+        },
+        getShadowStyle('shadow2', isDark),
+      ]}
+      onPress={() => onPress(track)}
+    >
+      {track.artwork_url ? (
+        <Image 
+          source={{ uri: track.artwork_url }} 
+          style={styles.artworkImage}
+        />
+      ) : (
+        <View style={[styles.playIcon, { backgroundColor: colors.colorBrandBackground }]}>
+          <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
+        </View>
+      )}
+      
+      <View style={styles.trackInfo}>
+        <FluentText variant="body1Strong" numberOfLines={1}>
+          {track.title}
+        </FluentText>
+        <FluentText variant="caption1" color="secondary" numberOfLines={1}>
+          {track.artist}
+        </FluentText>
+        <View style={styles.trackMeta}>
+          <View style={[styles.badge, { backgroundColor: colors.colorSubtleBackgroundHover }]}>
+            <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.tiny} color={colors.colorBrandForeground1} />
+            <FluentText variant="caption2" style={{ color: colors.colorBrandForeground1, marginLeft: 2 }}>
+              Full
+            </FluentText>
+          </View>
+          <FluentText variant="caption1" color="tertiary">
+            {SoundCloudService.formatPlaybackCount(track.playbackCount)} plays
+          </FluentText>
+        </View>
+      </View>
+
+      <FluentText variant="caption1" color="tertiary" style={styles.durationText}>
+        {SoundCloudService.formatDurationFromSeconds(track.duration)}
+      </FluentText>
+
+      <Pressable
+        style={[styles.addButton, { backgroundColor: colors.colorSubtleBackgroundHover }]}
+        onPress={(e) => {
+          e.stopPropagation();
+          onAddToLibrary(track);
+        }}
+        disabled={isAdding}
+      >
+        {isAdding ? (
+          <ActivityIndicator size="small" color={colors.colorBrandForeground1} />
+        ) : (
+          <MaterialCommunityIcons name="heart-plus-outline" size={FluentIconSize.regular} color={colors.colorBrandForeground1} />
+        )}
+      </Pressable>
+
+      <MaterialCommunityIcons 
+        name="chevron-right" 
+        size={FluentIconSize.small} 
+        color={colors.colorNeutralForeground3} 
+      />
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  trackCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.l,
+    borderRadius: FluentControlRadius.card,
+    marginBottom: FluentSpacing.s,
+    minHeight: 72,
+    gap: FluentSpacing.m,
+  },
+  playIcon: {
+    width: FluentIconSize.xxlarge,
+    height: FluentIconSize.xxlarge,
+    borderRadius: FluentControlRadius.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  artworkImage: {
+    width: FluentIconSize.xxlarge,
+    height: FluentIconSize.xxlarge,
+    borderRadius: FluentControlRadius.card,
+  },
+  durationText: {
+    marginRight: FluentSpacing.s,
+  },
+  trackInfo: {
+    flex: 1,
+    gap: FluentSpacing.xxs,
+  },
+  trackMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: FluentSpacing.s,
+    marginTop: FluentSpacing.xs,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.xxs,
+    borderRadius: FluentRadius.large,
+  },
+  addButton: {
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentTouchTarget.minimum / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
+export default SoundCloudTrackCard;

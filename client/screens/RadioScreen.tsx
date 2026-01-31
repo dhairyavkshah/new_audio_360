@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Platform, ActivityIndicator, TextInput, FlatList } from "react-native";
-import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -12,10 +11,18 @@ import { FluentTopBar } from "@/components/FluentTopBar";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
-import { useRadio, RadioStation, RDSData, FMBandType } from "@/contexts/RadioContext";
+import { useRadio, RadioStation, FMBandType } from "@/contexts/RadioContext";
 import { useOnlineRadio, OnlineRadioStation } from "@/contexts/OnlineRadioContext";
 import { useSoundLab } from "@/contexts/SoundLabContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
+import {
+  RadioTabSelector,
+  FMDial,
+  AMDial,
+  OnlineStationCard,
+  FavoriteStationCard,
+  RadioMode,
+} from "@/components/radio";
 import {
   FluentSpacing,
   FluentRadius,
@@ -28,22 +35,11 @@ import {
   FluentTypography,
   FluentBorderWidth,
   FluentFontWeight,
-  FluentSliderSize,
 } from "@/constants/fluent2";
 
-const FM_MIN = 87.5;
-const FM_MAX = 108.0;
-const FM_STEP = 0.1;
-
-const AM_MIN = 530;
-const AM_MAX = 1710;
 const AM_STEP = 10;
 
-const SIGNAL_STRENGTH_BARS = 5;
-
 const STORAGE_KEY_RADIO_MODE = '@new_audio_360_radio_mode';
-
-type RadioMode = 'fmam' | 'online';
 
 const COUNTRY_FLAGS: Record<string, string> = {
   US: '🇺🇸', GB: '🇬🇧', DE: '🇩🇪', FR: '🇫🇷', ES: '🇪🇸', IT: '🇮🇹', JP: '🇯🇵',
@@ -406,52 +402,12 @@ function RadioScreen() {
     return Math.round(freq).toString();
   };
 
-  const renderSignalStrength = () => {
-    const normalizedStrength = Math.min(Math.max(signalStrength / 100, 0), 1);
-    const activeBars = Math.round(normalizedStrength * SIGNAL_STRENGTH_BARS);
-
-    return (
-      <View style={styles.signalContainer} accessibilityLabel={`Signal strength: ${Math.round(normalizedStrength * 100)}%`}>
-        <MaterialCommunityIcons
-          name="signal-cellular-1"
-          size={FluentIconSize.small}
-          color={colors.colorNeutralForeground2}
-          style={styles.signalIcon}
-        />
-        {Array.from({ length: SIGNAL_STRENGTH_BARS }).map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.signalBar,
-              {
-                height: 8 + index * 4,
-                backgroundColor:
-                  index < activeBars
-                    ? colors.colorBrandForeground1
-                    : colors.colorNeutralBackground3,
-              },
-            ]}
-          />
-        ))}
-      </View>
-    );
-  };
-
   const renderModeToggle = () => (
-    <View style={styles.modeToggle}>
-      <EffectChip
-        label="FM/AM"
-        isSelected={radioMode === "fmam"}
-        onPress={() => handleModeChange("fmam")}
-        disabled={!isFmAvailable}
-      />
-      <View style={{ width: FluentSpacing.m }} />
-      <EffectChip
-        label="Online"
-        isSelected={radioMode === "online"}
-        onPress={() => handleModeChange("online")}
-      />
-    </View>
+    <RadioTabSelector
+      selectedMode={radioMode}
+      onModeChange={handleModeChange}
+      isFmAvailable={isFmAvailable}
+    />
   );
 
   const renderFmUnavailableNotice = () => {
@@ -691,78 +647,16 @@ function RadioScreen() {
             </FluentText>
             <View style={styles.stationsGrid}>
               {favoriteStations.slice(0, 8).map((station) => (
-                <Pressable
+                <OnlineStationCard
                   key={station.stationuuid}
-                  style={[
-                    styles.onlineStationCard,
-                    {
-                      backgroundColor: currentStation?.stationuuid === station.stationuuid
-                        ? colors.colorBrandBackgroundSelected
-                        : colors.colorNeutralBackground3,
-                      borderColor: currentStation?.stationuuid === station.stationuuid
-                        ? colors.colorBrandStroke1
-                        : colors.colorNeutralStroke2,
-                      minHeight: FluentTouchTarget.minimum,
-                    },
-                  ]}
-                  onPress={() => handleOnlineStationPress(station)}
-                  accessibilityLabel={`Play ${station.name}`}
-                  accessibilityRole="button"
-                >
-                  <View style={styles.onlineStationContent}>
-                    {station.favicon ? (
-                      <View style={[styles.stationIcon, { backgroundColor: colors.colorNeutralBackground2 }]}>
-                        <MaterialCommunityIcons
-                          name="radio"
-                          size={FluentIconSize.regular}
-                          color={colors.colorBrandForeground1}
-                        />
-                      </View>
-                    ) : (
-                      <View style={[styles.stationIcon, { backgroundColor: colors.colorBrandBackground + '20' }]}>
-                        <MaterialCommunityIcons
-                          name="radio"
-                          size={FluentIconSize.regular}
-                          color={colors.colorBrandForeground1}
-                        />
-                      </View>
-                    )}
-                    <View style={styles.stationDetails}>
-                      <FluentText
-                        variant="body2Strong"
-                        numberOfLines={1}
-                        style={{
-                          color: currentStation?.stationuuid === station.stationuuid
-                            ? colors.colorBrandForeground1
-                            : colors.colorNeutralForeground1,
-                        }}
-                      >
-                        {station.name}
-                      </FluentText>
-                      <FluentText variant="caption1" color="secondary" numberOfLines={1}>
-                        {station.tags?.split(',')[0] || station.country}
-                      </FluentText>
-                    </View>
-                    <Pressable
-                      onPress={() => removeStationFromFavorites(station.stationuuid)}
-                      style={{ padding: FluentSpacing.xs }}
-                      accessibilityLabel={`Remove ${station.name} from favorites`}
-                    >
-                      <MaterialCommunityIcons
-                        name="heart"
-                        size={FluentIconSize.small}
-                        color={colors.colorPaletteRedForeground1 || '#e74c3c'}
-                      />
-                    </Pressable>
-                    {currentStation?.stationuuid === station.stationuuid && isOnlinePlaying && (
-                      <MaterialCommunityIcons
-                        name="volume-high"
-                        size={FluentIconSize.small}
-                        color={colors.colorBrandForeground1}
-                      />
-                    )}
-                  </View>
-                </Pressable>
+                  station={station}
+                  isSelected={currentStation?.stationuuid === station.stationuuid}
+                  isPlaying={isOnlinePlaying}
+                  isFavorite={true}
+                  showFavoriteButton={true}
+                  onPress={handleOnlineStationPress}
+                  onFavoritePress={removeStationFromFavorites}
+                />
               ))}
             </View>
           </View>
@@ -875,134 +769,43 @@ function RadioScreen() {
           />
         </View>
 
-        <GlassCard style={{ ...cardStyle, ...styles.frequencyCard }}>
-          <View style={styles.frequencyDisplay}>
-            <FluentText variant="display" style={styles.frequencyNumber}>
-              {formatFrequency(localFrequency, bandType)}
-            </FluentText>
-            <FluentText variant="title2" color="secondary" style={styles.bandLabel}>
-              {bandType === "fm" ? "MHz" : "kHz"}
-            </FluentText>
-          </View>
-          {renderSignalStrength()}
-        </GlassCard>
-
-        <View style={styles.sliderContainer}>
-          <FluentText variant="caption1" color="secondary">
-            {bandType === "fm" ? `${FM_MIN} MHz` : `${AM_MIN} kHz`}
-          </FluentText>
-          <View style={styles.sliderWrapper}>
-            <CrossPlatformSlider
-              style={styles.slider}
-              minimumValue={bandType === "fm" ? FM_MIN : AM_MIN}
-              maximumValue={bandType === "fm" ? FM_MAX : AM_MAX}
-              step={bandType === "fm" ? FM_STEP : AM_STEP}
-              value={localFrequency}
-              onValueChange={handleFrequencyChange}
-              onSlidingComplete={handleFrequencyChangeComplete}
-              minimumTrackTintColor={colors.colorBrandForeground1}
-              maximumTrackTintColor={colors.colorNeutralStroke1}
-              thumbTintColor={colors.colorBrandForeground1}
-              trackHeight={FluentSliderSize.trackMedium}
-              accessibilityLabel="Frequency tuner"
-              accessibilityHint={`Tune to a ${bandType === "fm" ? "FM" : "AM"} frequency`}
-            />
-          </View>
-          <FluentText variant="caption1" color="secondary">
-            {bandType === "fm" ? `${FM_MAX} MHz` : `${AM_MAX} kHz`}
-          </FluentText>
-        </View>
-
-        {(rdsData.stationName || rdsData.radioText || rdsData.title) && (
-          <GlassCard style={{ ...cardStyle, ...styles.rdsCard }}>
-            {rdsData.stationName && (
-              <FluentText variant="title3" style={styles.stationName}>
-                {rdsData.stationName}
-              </FluentText>
-            )}
-            {rdsData.title && rdsData.artist && (
-              <View style={styles.nowPlayingRow}>
-                <MaterialCommunityIcons
-                  name="music"
-                  size={FluentIconSize.small}
-                  color={colors.colorBrandForeground1}
-                />
-                <FluentText variant="body1" style={styles.nowPlayingText}>
-                  {rdsData.artist} - {rdsData.title}
-                </FluentText>
-              </View>
-            )}
-            {rdsData.radioText && !rdsData.title && (
-              <FluentText variant="body2" color="secondary" numberOfLines={2}>
-                {rdsData.radioText}
-              </FluentText>
-            )}
-          </GlassCard>
+        {bandType === "fm" ? (
+          <FMDial
+            frequency={localFrequency}
+            signalStrength={signalStrength}
+            isPlaying={isFmPlaying}
+            isFavorite={isFavorite}
+            isScanning={isScanning}
+            rdsData={rdsData}
+            cardStyle={cardStyle}
+            onFrequencyChange={handleFrequencyChange}
+            onFrequencyChangeComplete={handleFrequencyChangeComplete}
+            onPlayStop={handleFmPlayStop}
+            onSeekUp={handleSeekUp}
+            onSeekDown={handleSeekDown}
+            onToggleFavorite={handleToggleFavorite}
+            onScan={handleScan}
+            onNavigateToSoundLab={handleNavigateToSoundLab}
+          />
+        ) : (
+          <AMDial
+            frequency={localFrequency}
+            signalStrength={signalStrength}
+            isPlaying={isFmPlaying}
+            isFavorite={isFavorite}
+            isScanning={isScanning}
+            rdsData={rdsData}
+            cardStyle={cardStyle}
+            onFrequencyChange={handleFrequencyChange}
+            onFrequencyChangeComplete={handleFrequencyChangeComplete}
+            onPlayStop={handleFmPlayStop}
+            onSeekUp={handleSeekUp}
+            onSeekDown={handleSeekDown}
+            onToggleFavorite={handleToggleFavorite}
+            onScan={handleScan}
+            onNavigateToSoundLab={handleNavigateToSoundLab}
+          />
         )}
-
-        <View style={styles.playbackControls}>
-          <FluentIconButton
-            icon={<MaterialCommunityIcons name="skip-previous" />}
-            size="large"
-            variant="subtle"
-            onPress={handleSeekDown}
-            accessibilityLabel="Seek to previous station"
-          />
-          <Pressable
-            style={[
-              styles.playButton,
-              { backgroundColor: colors.colorBrandBackground },
-            ]}
-            onPress={handleFmPlayStop}
-            accessibilityLabel={isFmPlaying ? "Stop radio" : "Play radio"}
-            accessibilityRole="button"
-          >
-            <MaterialCommunityIcons
-              name={isFmPlaying ? "stop" : "play"}
-              size={40}
-              color={colors.colorNeutralForegroundOnBrand}
-            />
-          </Pressable>
-          <FluentIconButton
-            icon={<MaterialCommunityIcons name="skip-next" />}
-            size="large"
-            variant="subtle"
-            onPress={handleSeekUp}
-            accessibilityLabel="Seek to next station"
-          />
-        </View>
-
-        <View style={styles.actionsRow}>
-          <FluentIconButton
-            icon={<MaterialCommunityIcons name={isFavorite ? "heart" : "heart-outline"} />}
-            size="large"
-            variant={isFavorite ? "primary" : "subtle"}
-            iconColor={isFavorite ? colors.colorPaletteRedForeground1 : colors.colorNeutralForeground3}
-            onPress={handleToggleFavorite}
-            accessibilityLabel={isFavorite ? "Remove from favorites" : "Add to favorites"}
-          />
-          <FluentIconButton
-            icon={
-              isScanning ? (
-                <ActivityIndicator size="small" color={colors.colorBrandForeground1} />
-              ) : (
-                <MaterialCommunityIcons name="radio-tower" />
-              )
-            }
-            size="large"
-            variant="subtle"
-            onPress={handleScan}
-            disabled={isScanning}
-            accessibilityLabel="Scan for stations"
-          />
-          <FluentIconButton
-            icon={<MaterialCommunityIcons name="tune-vertical" />}
-            size="large"
-            variant="subtle"
-            onPress={handleNavigateToSoundLab}
-            accessibilityLabel="Open Sound Lab"
-          />
-        </View>
 
         {isFmPlaying && (
           <Pressable
@@ -1101,50 +904,14 @@ function RadioScreen() {
             </FluentText>
             <View style={styles.stationsGrid}>
               {stations.map((station) => (
-                <Pressable
+                <FavoriteStationCard
                   key={station.id}
-                  style={[
-                    styles.stationChip,
-                    {
-                      backgroundColor:
-                        station.frequency === currentFrequency && station.bandType === bandType
-                          ? colors.colorBrandBackground
-                          : colors.colorNeutralBackground3,
-                      borderColor:
-                        station.frequency === currentFrequency && station.bandType === bandType
-                          ? colors.colorBrandStroke1
-                          : colors.colorNeutralStroke2,
-                      minHeight: FluentTouchTarget.minimum,
-                    },
-                  ]}
-                  onPress={() => handleStationPress(station)}
-                  hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
-                  accessibilityLabel={`Tune to ${station.frequencyMHz} ${station.bandType === "fm" ? "FM" : "AM"}`}
-                  accessibilityRole="button"
-                >
-                  <FluentText
-                    variant="body1Strong"
-                    style={{
-                      color:
-                        station.frequency === currentFrequency && station.bandType === bandType
-                          ? colors.colorNeutralForegroundOnBrand
-                          : colors.colorNeutralForeground1,
-                    }}
-                  >
-                    {formatFrequency(station.frequencyMHz, station.bandType)}
-                  </FluentText>
-                  <FluentText
-                    variant="caption1"
-                    style={{
-                      color:
-                        station.frequency === currentFrequency && station.bandType === bandType
-                          ? colors.colorNeutralForegroundOnBrand
-                          : colors.colorNeutralForeground2,
-                    }}
-                  >
-                    {station.bandType === "fm" ? "FM" : "AM"}
-                  </FluentText>
-                </Pressable>
+                  station={station}
+                  isSelected={station.frequency === currentFrequency && station.bandType === bandType}
+                  currentFrequency={currentFrequency}
+                  currentBandType={bandType}
+                  onPress={handleStationPress}
+                />
               ))}
             </View>
           </View>
@@ -1157,28 +924,14 @@ function RadioScreen() {
             </FluentText>
             <View style={styles.stationsGrid}>
               {scanResults.map((station) => (
-                <Pressable
+                <FavoriteStationCard
                   key={station.id}
-                  style={[
-                    styles.stationChip,
-                    {
-                      backgroundColor: colors.colorNeutralBackground3,
-                      borderColor: colors.colorNeutralStroke2,
-                      minHeight: FluentTouchTarget.minimum,
-                    },
-                  ]}
-                  onPress={() => handleStationPress(station)}
-                  hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
-                  accessibilityLabel={`Tune to ${station.frequencyMHz} ${station.bandType === "fm" ? "FM" : "AM"}`}
-                  accessibilityRole="button"
-                >
-                  <FluentText variant="body1Strong">
-                    {formatFrequency(station.frequencyMHz, station.bandType)}
-                  </FluentText>
-                  <FluentText variant="caption1" color="secondary">
-                    {station.bandType === "fm" ? "FM" : "AM"}
-                  </FluentText>
-                </Pressable>
+                  station={station}
+                  isSelected={false}
+                  currentFrequency={currentFrequency}
+                  currentBandType={bandType}
+                  onPress={handleStationPress}
+                />
               ))}
             </View>
           </View>
@@ -1458,14 +1211,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: FluentSpacing.m,
   },
-  stationChip: {
-    paddingHorizontal: FluentSpacing.l,
-    paddingVertical: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
-    borderWidth: 1,
-    alignItems: "center",
-    minWidth: 80,
-  },
   unavailableContainer: {
     flex: 1,
     justifyContent: "center",
@@ -1592,29 +1337,6 @@ const styles = StyleSheet.create({
   },
   stationsSection: {
     marginBottom: FluentSpacing.l,
-  },
-  onlineStationCard: {
-    flex: 1,
-    minWidth: '45%',
-    padding: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
-    borderWidth: 1,
-  },
-  onlineStationContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  stationIcon: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
-    borderRadius: FluentRadius.medium,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  stationDetails: {
-    flex: 1,
-    marginLeft: FluentSpacing.s,
-    marginRight: FluentSpacing.xs,
   },
   browseButton: {
     marginTop: FluentSpacing.m,

@@ -124,7 +124,7 @@ export default function PlaylistManagementScreen() {
 
         {playlists.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="playlist-music" size={48} color={colors.colorNeutralForeground2} />
+            <MaterialCommunityIcons name="playlist-music" size={64} color={colors.colorNeutralForeground2} />
             <FluentText variant="body1" color="secondary" style={styles.emptyTitle}>
               No Playlists Yet
             </FluentText>

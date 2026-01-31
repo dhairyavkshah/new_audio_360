@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Alert, TextInput, Platform } from "react-native";
-import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
+import { View, StyleSheet, ScrollView, Pressable, TextInput, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
-import { FluentScreenLayout, FluentText, FluentButton, FluentModal } from "@/components/fluent";
-import { EffectChip } from "@/components/EffectChip";
+import { FluentScreenLayout, FluentText, FluentModal } from "@/components/fluent";
+import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
+import { EQPresetCard, ImmersiveModeCard, SmartEnhancementCard } from "@/components/soundlab";
 import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useSoundLab } from "@/contexts/SoundLabContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
-import { FluentSpacing, FluentRadius, FluentControlRadius, FluentTypography, FluentIconSize, FluentControlHeight, FluentFontWeight, FluentSliderSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentTypography, FluentIconSize, FluentSliderSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { 
   getEQPreset, saveEQPreset, clearEQPreset, 
@@ -114,7 +114,6 @@ const EQ_PRESETS = [
   },
 ];
 
-
 const CUSTOM_EQ_BAND_LABELS = ["60Hz", "170Hz", "310Hz", "600Hz", "1kHz", "3kHz", "6kHz", "12kHz", "14kHz", "16kHz"];
 
 const DISPLAY_IMMERSIVE_MODES: ImmersiveMode[] = [
@@ -167,8 +166,6 @@ function SoundLabScreen() {
   const MAX_CUSTOM_PRESETS = 5;
 
   const immersiveModes = useMemo(() => {
-    // Always use the static DISPLAY_IMMERSIVE_MODES list with IMMERSIVE_MODE_INFO
-    // This ensures Sports mode is always included
     return DISPLAY_IMMERSIVE_MODES.map(modeId => ({
       id: modeId,
       name: IMMERSIVE_MODE_INFO[modeId].name,
@@ -182,7 +179,6 @@ function SoundLabScreen() {
       return;
     }
     
-    // Apply on native Android
     if (BassBoostModule.isAvailable()) {
       try {
         if (bass === 0) {
@@ -192,7 +188,6 @@ function SoundLabScreen() {
           BassBoostModule.setStrength(Math.abs(bass) * 200);
         }
       } catch (error) {
-        // Silently handle error in production
       }
     }
   }, []);
@@ -218,9 +213,9 @@ function SoundLabScreen() {
       setCustomBands(bands);
       setCustomPresets(presets);
       setBassControl(bassLvl);
-      setBassBoost(bassLvl); // Sync to context for software DSP
+      setBassBoost(bassLvl);
       setTrebleControl(trebleLvl);
-      setTrebleBoost(trebleLvl); // Sync to context for software DSP
+      setTrebleBoost(trebleLvl);
       setSpatialEnhancement(spatialEnabled);
       setBassEnhancementEnabled(bassEnh > 0);
       setBassEnhancementLevel(getEnhancementLevelFromValue(bassEnh));
@@ -244,7 +239,6 @@ function SoundLabScreen() {
           setSelectedImmersive("off");
         }
       } else {
-        // Default to Flat EQ when no preference saved
         setSoundLabMode("equalizer");
         setSelectedEQ("Flat");
         const flatPreset = EQ_PRESETS.find(p => p.name === "Flat");
@@ -261,7 +255,6 @@ function SoundLabScreen() {
     
     if (preset === "Custom") {
       if (isCustomEQ && soundLabMode === "equalizer") {
-        // Revert to Flat instead of turning off
         setIsCustomEQ(false);
         setSelectedEQ("Flat");
         await saveEQPreset("Flat");
@@ -281,7 +274,6 @@ function SoundLabScreen() {
       }
     } else {
       if (soundLabMode === "equalizer" && selectedEQ === preset && !isCustomEQ && preset !== "Flat") {
-        // Revert to Flat instead of turning off (Flat cannot be deselected)
         setSelectedEQ("Flat");
         await saveEQPreset("Flat");
         await NativeAudioService.setImmersiveMode('off');
@@ -296,23 +288,19 @@ function SoundLabScreen() {
         await clearSoundMode();
         await saveEQPreset(preset);
         await NativeAudioService.setImmersiveMode('off');
-        // Apply the preset's EQ bands and load bass/treble values
         const presetData = EQ_PRESETS.find(p => p.name === preset);
         if (presetData) {
           NativeEffectsManager.applyTenBandEQ(presetData.bands);
-          // Load bass/treble values from preset into state
           const newBass = presetData.bassControl ?? 0;
           const newTreble = presetData.trebleControl ?? 0;
           setBassControl(newBass);
-          setBassBoost(newBass); // Sync to context for software DSP
+          setBassBoost(newBass);
           setTrebleControl(newTreble);
-          setTrebleBoost(newTreble); // Sync to context for software DSP
-          // Persist to storage
+          setTrebleBoost(newTreble);
           await Promise.all([
             saveBassControlLevel(newBass),
             saveTrebleControlLevel(newTreble)
           ]);
-          // Apply effects to native audio
           applyAudioEffects(newBass, newTreble);
         }
       }
@@ -324,7 +312,6 @@ function SoundLabScreen() {
     newBands[index] = Math.round(value);
     setCustomBands(newBands);
     await saveCustomEQBands(newBands);
-    // Apply to native equalizer in real-time
     NativeEffectsManager.applyTenBandEQ(newBands);
   };
 
@@ -339,7 +326,7 @@ function SoundLabScreen() {
   const handleBassControlChange = async (level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setBassControl(level);
-    setBassBoost(level); // Update context for software DSP
+    setBassBoost(level);
     await saveBassControlLevel(level);
     
     if (Platform.OS !== 'web' && BassBoostModule.isAvailable()) {
@@ -352,7 +339,6 @@ function SoundLabScreen() {
           BassBoostModule.setStrength(strength);
         }
       } catch (error) {
-        // Silently handle error in production
       }
     }
   };
@@ -360,7 +346,7 @@ function SoundLabScreen() {
   const handleTrebleControlChange = async (level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setTrebleControl(level);
-    setTrebleBoost(level); // Update context for software DSP
+    setTrebleBoost(level);
     await saveTrebleControlLevel(level);
   };
 
@@ -369,7 +355,6 @@ function SoundLabScreen() {
     setSpatialEnhancement(level);
     await saveSpatialEnhancement(level);
     
-    // Apply spatial enhancement on web
     if (Platform.OS === 'web') {
       if (typeof (WebAudioEffectsEngine as any).setSpatialEnhancement === 'function') {
         (WebAudioEffectsEngine as any).setSpatialEnhancement(level);
@@ -377,7 +362,6 @@ function SoundLabScreen() {
       return;
     }
     
-    // Apply spatial enhancement on Android via SpatialEnhancementModule
     if (SpatialEnhancementModule.isAvailable()) {
       try {
         if (typeof (SpatialEnhancementModule as any).setLevel === 'function') {
@@ -386,7 +370,6 @@ function SoundLabScreen() {
           SpatialEnhancementModule.setEnabled(level > 0);
         }
       } catch (error) {
-        // Silently handle error in production
       }
     }
   };
@@ -430,14 +413,13 @@ function SoundLabScreen() {
     const newBass = preset.bassControl ?? 0;
     const newTreble = preset.trebleControl ?? 0;
     setBassControl(newBass);
-    setBassBoost(newBass); // Sync to context for software DSP
+    setBassBoost(newBass);
     setTrebleControl(newTreble);
-    setTrebleBoost(newTreble); // Sync to context for software DSP
+    setTrebleBoost(newTreble);
     await Promise.all([
       saveBassControlLevel(newBass),
       saveTrebleControlLevel(newTreble)
     ]);
-    // Apply effects to native audio
     applyAudioEffects(newBass, newTreble);
   };
 
@@ -466,9 +448,9 @@ function SoundLabScreen() {
     const presetBass = preset.bassControl ?? 0;
     const presetTreble = preset.trebleControl ?? 0;
     setBassControl(presetBass);
-    setBassBoost(presetBass); // Sync to context for software DSP
+    setBassBoost(presetBass);
     setTrebleControl(presetTreble);
-    setTrebleBoost(presetTreble); // Sync to context for software DSP
+    setTrebleBoost(presetTreble);
     NativeEffectsManager.applyTenBandEQ(preset.bands);
     setShowEditDialog(true);
   };
@@ -508,7 +490,6 @@ function SoundLabScreen() {
     if (soundLabMode === "immersive" && selectedImmersive === modeId) {
       const result = await NativeAudioService.setImmersiveMode('off');
       if (result.success) {
-        // Revert to Flat EQ instead of turning off
         setSoundLabMode("equalizer");
         setSelectedImmersive("off");
         setSelectedEQ("Flat");
@@ -533,21 +514,6 @@ function SoundLabScreen() {
         showError(result.error || "Failed to set immersive mode. Please ensure audio is playing.");
       }
     }
-  };
-
-  const getModeIcon = (iconName: string): keyof typeof MaterialCommunityIcons.glyphMap => {
-    const iconMap: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
-      'volume-off': 'volume-off',
-      'music': 'music',
-      'surround-sound': 'surround-sound',
-      'music-circle': 'music-circle',
-      'gamepad-variant': 'gamepad-variant',
-      'podcast': 'podcast',
-      'movie-open': 'movie-open',
-      'stadium': 'stadium',
-      'tune': 'tune',
-    };
-    return iconMap[iconName] || 'music';
   };
 
   const handleBassEnhancementToggle = async (enabled: boolean) => {
@@ -645,427 +611,49 @@ function SoundLabScreen() {
           </View>
         )}
 
-        <View style={[styles.sectionCard, cardStyle]}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="tune-vertical" size={FluentIconSize.regular} color={tokens.colors.primary} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Equalizer Mode
-            </FluentText>
-            {isEqualizerActive ? (
-              <View style={[styles.activeIndicator, { backgroundColor: tokens.colors.primary }]}>
-                <FluentText variant="caption1" color="onBrand" style={{ fontWeight: FluentFontWeight.semibold }}>Active</FluentText>
-              </View>
-            ) : null}
-          </View>
-          
-          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
-            Premium world-class EQ presets
-          </FluentText>
+        <EQPresetCard
+          isActive={isEqualizerActive}
+          selectedPreset={selectedEQ}
+          isCustomEQ={isCustomEQ}
+          presets={EQ_PRESETS}
+          customBands={customBands}
+          customPresets={customPresets}
+          maxCustomPresets={MAX_CUSTOM_PRESETS}
+          bassControl={bassControl}
+          trebleControl={trebleControl}
+          spatialEnhancement={spatialEnhancement}
+          onPresetChange={handleEQChange}
+          onBandChange={handleBandChange}
+          onResetBands={handleResetBands}
+          onSavePreset={() => setShowSaveDialog(true)}
+          onLoadPreset={handleLoadPreset}
+          onEditPreset={handleEditPreset}
+          onDeletePreset={handleDeletePreset}
+          onBassChange={handleBassControlChange}
+          onTrebleChange={handleTrebleControlChange}
+          onSpatialChange={handleSpatialEnhancementChange}
+          bandLabels={CUSTOM_EQ_BAND_LABELS}
+        />
 
-          <View style={styles.chipsContainer}>
-            {EQ_PRESETS.map((preset) => (
-              <EffectChip
-                key={preset.name}
-                label={preset.name}
-                isSelected={isEqualizerActive && selectedEQ === preset.name && !isCustomEQ}
-                onPress={() => handleEQChange(preset.name)}
-              />
-            ))}
-            <EffectChip
-              label="Custom"
-              isSelected={isEqualizerActive && isCustomEQ}
-              onPress={() => handleEQChange("Custom")}
-              isPremium={false}
-            />
-          </View>
+        <ImmersiveModeCard
+          isActive={isImmersiveActive}
+          selectedMode={selectedImmersive}
+          isLicensed={isLicensed}
+          modes={immersiveModes}
+          onModeChange={handleImmersiveChange}
+        />
 
-          {isEqualizerActive && selectedEQ && !isCustomEQ ? (
-            <View style={styles.presetInfo}>
-              <FluentText variant="body1Strong">{selectedEQ}</FluentText>
-              <FluentText variant="caption1" color="secondary" style={{ marginTop: FluentSpacing.xs }}>
-                {EQ_PRESETS.find(p => p.name === selectedEQ)?.description}
-              </FluentText>
-            </View>
-          ) : null}
-
-          {isEqualizerActive ? (
-            <View style={[styles.effectControlsSection, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: FluentRadius.large }]}>
-              <FluentText variant="body2Strong" style={{ marginBottom: FluentSpacing.s }}>Audio Effects</FluentText>
-              
-              <View style={styles.effectSliderRow}>
-                <View style={styles.effectSliderHeader}>
-                  <MaterialCommunityIcons name="speaker-wireless" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Bass</FluentText>
-                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
-                    {bassControl === 0 ? "Off" : bassControl > 0 ? `+${bassControl}` : `${bassControl}`}
-                  </FluentText>
-                </View>
-                <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">-5</FluentText>
-                  <CrossPlatformSlider
-                    style={styles.effectSlider}
-                    minimumValue={-5}
-                    maximumValue={5}
-                    step={1}
-                    value={bassControl}
-                    onValueChange={(value) => handleBassControlChange(value)}
-                    minimumTrackTintColor={colors.colorBrandForeground1}
-                    maximumTrackTintColor={colors.colorNeutralStroke1}
-                    thumbTintColor={colors.colorBrandForeground1}
-                    trackHeight={FluentSliderSize.trackMedium}
-                  />
-                  <FluentText variant="caption1" color="secondary">+5</FluentText>
-                </View>
-              </View>
-
-              <View style={styles.effectSliderRow}>
-                <View style={styles.effectSliderHeader}>
-                  <MaterialCommunityIcons name="tune-vertical" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Treble</FluentText>
-                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 40, textAlign: 'right' }}>
-                    {trebleControl === 0 ? "Off" : trebleControl > 0 ? `+${trebleControl}` : `${trebleControl}`}
-                  </FluentText>
-                </View>
-                <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">-5</FluentText>
-                  <CrossPlatformSlider
-                    style={styles.effectSlider}
-                    minimumValue={-5}
-                    maximumValue={5}
-                    step={1}
-                    value={trebleControl}
-                    onValueChange={(value) => handleTrebleControlChange(value)}
-                    minimumTrackTintColor={colors.colorBrandForeground1}
-                    maximumTrackTintColor={colors.colorNeutralStroke1}
-                    thumbTintColor={colors.colorBrandForeground1}
-                    trackHeight={FluentSliderSize.trackMedium}
-                  />
-                  <FluentText variant="caption1" color="secondary">+5</FluentText>
-                </View>
-              </View>
-
-              <View style={styles.effectSliderRow}>
-                <View style={styles.effectSliderHeader}>
-                  <MaterialCommunityIcons name="axis-x-rotate-counterclockwise" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, flex: 1 }}>Spatial Enhancement</FluentText>
-                  <FluentText variant="body2Strong" style={{ color: tokens.colors.primary, minWidth: 70, textAlign: 'right' }}>
-                    {["Off", "Subtle", "Mild", "Moderate", "Enhanced", "Maximum"][spatialEnhancement] || "Off"}
-                  </FluentText>
-                </View>
-                <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.xs }}>
-                  Adjusts soundstage depth and width. Safe for all content.
-                </FluentText>
-                <View style={styles.effectSliderContainer}>
-                  <FluentText variant="caption1" color="secondary">Off</FluentText>
-                  <CrossPlatformSlider
-                    style={styles.effectSlider}
-                    minimumValue={0}
-                    maximumValue={5}
-                    step={1}
-                    value={spatialEnhancement}
-                    onValueChange={(value) => handleSpatialEnhancementChange(value)}
-                    minimumTrackTintColor={colors.colorBrandForeground1}
-                    maximumTrackTintColor={colors.colorNeutralStroke1}
-                    thumbTintColor={colors.colorBrandForeground1}
-                    trackHeight={FluentSliderSize.trackMedium}
-                  />
-                  <FluentText variant="caption1" color="secondary">Max</FluentText>
-                </View>
-              </View>
-            </View>
-          ) : null}
-
-          {isEqualizerActive && isCustomEQ ? (
-            <View style={styles.customEQContainer}>
-              <FluentText variant="body1Strong" style={{ marginBottom: FluentSpacing.m }}>
-                Custom Equalizer
-              </FluentText>
-              
-              {CUSTOM_EQ_BAND_LABELS.map((label, index) => (
-                <View key={label} style={styles.bandRow}>
-                  <FluentText variant="caption1" style={styles.bandLabel}>{label}</FluentText>
-                  <CrossPlatformSlider
-                    style={styles.slider}
-                    minimumValue={-8}
-                    maximumValue={8}
-                    step={1}
-                    value={customBands[index]}
-                    onValueChange={(value) => handleBandChange(index, value)}
-                    minimumTrackTintColor={colors.colorBrandForeground1}
-                    maximumTrackTintColor={colors.colorNeutralStroke1}
-                    thumbTintColor={colors.colorBrandForeground1}
-                    trackHeight={FluentSliderSize.trackMedium}
-                  />
-                  <FluentText variant="caption1" style={styles.bandValue}>
-                    {customBands[index] > 0 ? `+${customBands[index]}` : customBands[index]}
-                  </FluentText>
-                </View>
-              ))}
-              
-              <View style={styles.customEQButtons}>
-                <Pressable
-                  style={[styles.actionButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
-                  onPress={handleResetBands}
-                >
-                  <MaterialCommunityIcons name="refresh" size={16} color={tokens.colors.text} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs }}>Reset</FluentText>
-                </Pressable>
-                <Pressable
-                  style={[styles.actionButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
-                  onPress={() => setShowSaveDialog(true)}
-                >
-                  <MaterialCommunityIcons name="content-save" size={16} color={tokens.colors.onPrimary} />
-                  <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, color: tokens.colors.onPrimary }}>Save Preset</FluentText>
-                </Pressable>
-              </View>
-
-              {customPresets.length > 0 ? (
-                <View style={styles.savedPresetsSection}>
-                  <FluentText variant="body2" color="secondary" style={{ marginBottom: FluentSpacing.s }}>
-                    My Presets ({customPresets.length}/{MAX_CUSTOM_PRESETS})
-                  </FluentText>
-                  {customPresets.map((preset) => (
-                    <View key={preset.id} style={[styles.savedPresetRow, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.cardBorderRadius }]}>
-                      <Pressable style={styles.savedPresetInfo} onPress={() => handleLoadPreset(preset)}>
-                        <FluentText variant="body2">{preset.name}</FluentText>
-                        <FluentText variant="caption1" color="secondary">
-                          {preset.bands.map(b => b > 0 ? `+${b}` : b).join(", ")}
-                        </FluentText>
-                      </Pressable>
-                      <View style={styles.presetActions}>
-                        <Pressable onPress={() => handleEditPreset(preset)} style={styles.actionIconButton}>
-                          <MaterialCommunityIcons name="pencil-outline" size={FluentIconSize.regular} color={tokens.colors.primary} />
-                        </Pressable>
-                        <Pressable onPress={() => handleDeletePreset(preset)} style={styles.actionIconButton}>
-                          <MaterialCommunityIcons name="delete-outline" size={FluentIconSize.regular} color={tokens.colors.error} />
-                        </Pressable>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-            </View>
-          ) : null}
-        </View>
-
-        <View style={[styles.sectionCard, cardStyle]}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="headphones" size={FluentIconSize.regular} color={tokens.colors.primary} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Immersive Modes
-            </FluentText>
-            {!isLicensed ? (
-              <View style={[styles.premiumBadge, { backgroundColor: tokens.colors.warning }]}>
-                <MaterialCommunityIcons name="crown" size={12} color={tokens.colors.onPrimary} />
-                <FluentText variant="caption1" style={{ color: tokens.colors.onPrimary, fontWeight: FluentFontWeight.semibold, marginLeft: 4 }}>License Required</FluentText>
-              </View>
-            ) : isImmersiveActive && selectedImmersive !== 'off' ? (
-              <View style={[styles.activeIndicator, { backgroundColor: tokens.colors.primary }]}>
-                <FluentText variant="caption1" color="onBrand" style={{ fontWeight: FluentFontWeight.semibold }}>Active</FluentText>
-              </View>
-            ) : null}
-          </View>
-          
-          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
-            Premium world-class sound modes for an immersive experience
-          </FluentText>
-          
-          <View style={styles.modesContainer}>
-            {immersiveModes.filter(mode => mode.id !== 'off').map((mode) => (
-              <Pressable
-                key={mode.id}
-                onPress={() => handleImmersiveChange(mode.id)}
-                style={[
-                  styles.modeCard,
-                  {
-                    backgroundColor: isImmersiveActive && selectedImmersive === mode.id 
-                      ? tokens.colors.primary 
-                      : tokens.colors.surface,
-                    borderRadius: tokens.shapes.cardBorderRadius,
-                  },
-                ]}
-              >
-                <View style={styles.modeCardContent}>
-                  <MaterialCommunityIcons
-                    name={getModeIcon(mode.icon)}
-                    size={20}
-                    color={isImmersiveActive && selectedImmersive === mode.id ? tokens.colors.onPrimary : tokens.colors.text}
-                  />
-                  <View style={styles.modeCardText}>
-                    <FluentText
-                      variant="body1"
-                      style={{
-                        fontWeight: FluentFontWeight.semibold,
-                        color: isImmersiveActive && selectedImmersive === mode.id ? tokens.colors.onPrimary : tokens.colors.text,
-                      }}
-                    >
-                      {mode.name}
-                    </FluentText>
-                    <FluentText
-                      variant="caption1"
-                      style={{
-                        color: isImmersiveActive && selectedImmersive === mode.id 
-                          ? "rgba(255,255,255,0.8)" 
-                          : tokens.colors.textSecondary,
-                      }}
-                    >
-                      {mode.description}
-                    </FluentText>
-                  </View>
-                  {isImmersiveActive && selectedImmersive === mode.id ? (
-                    <MaterialCommunityIcons name="check-circle" size={20} color={tokens.colors.onPrimary} />
-                  ) : null}
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        {/* Smart Enhancements Section */}
-        <View style={[styles.sectionCard, cardStyle]}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="auto-fix" size={FluentIconSize.regular} color={tokens.colors.primary} />
-            <FluentText variant="subtitle1" style={styles.sectionTitle}>
-              Smart Enhancements
-            </FluentText>
-            {!isLicensed ? (
-              <View style={[styles.premiumBadge, { backgroundColor: tokens.colors.warning }]}>
-                <MaterialCommunityIcons name="crown" size={12} color={tokens.colors.onPrimary} />
-                <FluentText variant="caption1" style={{ color: tokens.colors.onPrimary, fontWeight: FluentFontWeight.semibold, marginLeft: 4 }}>License Required</FluentText>
-              </View>
-            ) : (bassEnhancementEnabled || hfRestorationEnabled) ? (
-              <View style={[styles.activeIndicator, { backgroundColor: tokens.colors.primary }]}>
-                <FluentText variant="caption1" color="onBrand" style={{ fontWeight: FluentFontWeight.semibold }}>Active</FluentText>
-              </View>
-            ) : null}
-          </View>
-          
-          <FluentText variant="caption1" color="secondary" style={{ marginBottom: FluentSpacing.m }}>
-            AI-powered audio enhancements for richer, fuller sound
-          </FluentText>
-
-          {/* Bass Enhancement with Toggle + 3-Step Selector */}
-          <View style={{ marginBottom: FluentSpacing.l }}>
-            <Pressable 
-              onPress={() => isLicensed && handleBassEnhancementToggle(!bassEnhancementEnabled)}
-              style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: FluentSpacing.xs }}
-            >
-              <View style={{ flex: 1 }}>
-                <FluentText variant="body2" style={{ fontWeight: FluentFontWeight.medium }}>
-                  Bass Enhancement
-                </FluentText>
-                <FluentText variant="caption1" color="secondary">
-                  Adds rich harmonics to low frequencies
-                </FluentText>
-              </View>
-              <View style={[
-                styles.toggle,
-                { 
-                  backgroundColor: bassEnhancementEnabled ? tokens.colors.primary : tokens.colors.surfaceVariant,
-                  opacity: isLicensed ? 1 : 0.5
-                }
-              ]}>
-                <View style={[
-                  styles.toggleThumb,
-                  { 
-                    backgroundColor: tokens.colors.onPrimary,
-                    transform: [{ translateX: bassEnhancementEnabled ? 20 : 2 }]
-                  }
-                ]} />
-              </View>
-            </Pressable>
-            
-            {bassEnhancementEnabled && (
-              <View style={[styles.threeStepSelector, { marginTop: FluentSpacing.s }]}>
-                {(['low', 'medium', 'high'] as const).map((level) => (
-                  <Pressable
-                    key={level}
-                    onPress={() => isLicensed && handleBassEnhancementLevelChange(level)}
-                    style={[
-                      styles.threeStepOption,
-                      {
-                        backgroundColor: bassEnhancementLevel === level ? tokens.colors.primary : tokens.colors.surfaceVariant,
-                        borderRadius: FluentRadius.medium,
-                        opacity: isLicensed ? 1 : 0.5
-                      }
-                    ]}
-                  >
-                    <FluentText 
-                      variant="caption1" 
-                      style={{ 
-                        fontWeight: bassEnhancementLevel === level ? FluentFontWeight.semibold : FluentFontWeight.regular,
-                        color: bassEnhancementLevel === level ? tokens.colors.onPrimary : tokens.colors.text
-                      }}
-                    >
-                      {level.charAt(0).toUpperCase() + level.slice(1)}
-                    </FluentText>
-                  </Pressable>
-                ))}
-              </View>
-            )}
-          </View>
-
-          {/* AI Upscaling with Toggle + 3-Step Selector */}
-          <View>
-            <Pressable 
-              onPress={() => isLicensed && handleHfRestorationToggle(!hfRestorationEnabled)}
-              style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-            >
-              <View style={{ flex: 1 }}>
-                <FluentText variant="body2" style={{ fontWeight: FluentFontWeight.medium }}>
-                  AI Upscaling
-                </FluentText>
-                <FluentText variant="caption1" color="secondary">
-                  Lightweight AI-based audio-restoration and upscaling
-                </FluentText>
-              </View>
-              <View style={[
-                styles.toggle,
-                { 
-                  backgroundColor: hfRestorationEnabled ? tokens.colors.primary : tokens.colors.surfaceVariant,
-                  opacity: isLicensed ? 1 : 0.5
-                }
-              ]}>
-                <View style={[
-                  styles.toggleThumb,
-                  { 
-                    backgroundColor: tokens.colors.onPrimary,
-                    transform: [{ translateX: hfRestorationEnabled ? 20 : 2 }]
-                  }
-                ]} />
-              </View>
-            </Pressable>
-
-            {hfRestorationEnabled && (
-              <View style={[styles.threeStepSelector, { marginTop: FluentSpacing.s }]}>
-                {(['low', 'medium', 'high'] as const).map((level) => (
-                  <Pressable
-                    key={level}
-                    onPress={() => isLicensed && handleHfRestorationLevelChange(level)}
-                    style={[
-                      styles.threeStepOption,
-                      {
-                        backgroundColor: hfRestorationLevel === level ? tokens.colors.primary : tokens.colors.surfaceVariant,
-                        borderRadius: FluentRadius.medium,
-                        opacity: isLicensed ? 1 : 0.5
-                      }
-                    ]}
-                  >
-                    <FluentText 
-                      variant="caption1" 
-                      style={{ 
-                        fontWeight: hfRestorationLevel === level ? FluentFontWeight.semibold : FluentFontWeight.regular,
-                        color: hfRestorationLevel === level ? tokens.colors.onPrimary : tokens.colors.text
-                      }}
-                    >
-                      {level.charAt(0).toUpperCase() + level.slice(1)}
-                    </FluentText>
-                  </Pressable>
-                ))}
-              </View>
-            )}
-          </View>
-        </View>
+        <SmartEnhancementCard
+          isLicensed={isLicensed}
+          bassEnhancementEnabled={bassEnhancementEnabled}
+          bassEnhancementLevel={bassEnhancementLevel}
+          hfRestorationEnabled={hfRestorationEnabled}
+          hfRestorationLevel={hfRestorationLevel}
+          onBassEnhancementToggle={handleBassEnhancementToggle}
+          onBassEnhancementLevelChange={handleBassEnhancementLevelChange}
+          onHfRestorationToggle={handleHfRestorationToggle}
+          onHfRestorationLevelChange={handleHfRestorationLevelChange}
+        />
 
         <View style={[styles.sectionCard, cardStyle, styles.infoCard]}>
           <View style={styles.infoContent}>
@@ -1249,227 +837,6 @@ const styles = StyleSheet.create({
     padding: FluentSpacing.l,
     marginBottom: FluentSpacing.m,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: FluentSpacing.m,
-  },
-  sectionTitle: {
-    marginLeft: FluentSpacing.xs,
-    flex: 1,
-  },
-  activeIndicator: {
-    paddingHorizontal: FluentSpacing.s,
-    paddingVertical: FluentSpacing.xs,
-    borderRadius: FluentRadius.circular,
-  },
-  premiumBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: FluentSpacing.s,
-    paddingVertical: FluentSpacing.xs,
-    borderRadius: FluentRadius.circular,
-  },
-  chipsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: FluentSpacing.s,
-  },
-  presetInfo: {
-    marginTop: FluentSpacing.m,
-  },
-  effectControlsSection: {
-    marginTop: FluentSpacing.m,
-    padding: FluentSpacing.m,
-    gap: FluentSpacing.s,
-  },
-  effectSliderRow: {
-    gap: FluentSpacing.xs,
-  },
-  effectSliderHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  effectSliderContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: FluentSpacing.xs,
-  },
-  effectSlider: {
-    flex: 1,
-    height: FluentControlHeight.medium,
-  },
-  effectToggleRow: {
-    marginTop: FluentSpacing.s,
-    paddingTop: FluentSpacing.s,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(128,128,128,0.15)",
-  },
-  effectToggleContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: FluentSpacing.s,
-  },
-  effectToggleText: {
-    flex: 1,
-    gap: FluentSpacing.xs / 2,
-  },
-  toggleSwitch: {
-    width: 38,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    padding: 2,
-    justifyContent: "center",
-  },
-  toggleKnob: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-  },
-  customEQContainer: {
-    marginTop: FluentSpacing.m,
-  },
-  bandRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: FluentSpacing.s,
-  },
-  bandLabel: {
-    width: 50,
-  },
-  slider: {
-    flex: 1,
-    height: FluentControlHeight.large,
-  },
-  bandValue: {
-    width: 30,
-    textAlign: "right",
-  },
-  customEQButtons: {
-    flexDirection: "row",
-    gap: FluentSpacing.s,
-    marginTop: FluentSpacing.m,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: FluentSpacing.m,
-  },
-  savedPresetsSection: {
-    marginTop: FluentSpacing.l,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(128,128,128,0.2)",
-    paddingTop: FluentSpacing.m,
-  },
-  savedPresetRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: FluentSpacing.m,
-    marginBottom: FluentSpacing.xs,
-  },
-  savedPresetInfo: {
-    flex: 1,
-  },
-  presetActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: FluentSpacing.xs,
-  },
-  actionIconButton: {
-    padding: FluentSpacing.xs,
-  },
-  enhancementsContainer: {
-    gap: 0,
-  },
-  enhancementItem: {
-    paddingVertical: FluentSpacing.m,
-  },
-  enhancementDivider: {
-    height: 1,
-    opacity: 0.3,
-  },
-  enhancementSection: {
-    padding: FluentSpacing.l,
-    borderWidth: 1,
-    borderColor: "rgba(128,128,128,0.15)",
-  },
-  enhancementHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  enhancementText: {
-    flex: 1,
-    marginLeft: FluentSpacing.m,
-  },
-  enhancementIconContainer: {
-    width: FluentControlHeight.large,
-    height: FluentControlHeight.large,
-    borderRadius: FluentControlRadius.fab,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  levelBadge: {
-    minWidth: 40,
-    paddingHorizontal: FluentSpacing.s,
-    paddingVertical: FluentSpacing.xs,
-    borderRadius: FluentRadius.circular,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sliderLabel: {
-    width: 24,
-    textAlign: "center",
-  },
-  toggleIndicator: {
-    paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.xs,
-    borderRadius: FluentRadius.circular,
-  },
-  strengthSelector: {
-    marginTop: FluentSpacing.m,
-    paddingTop: FluentSpacing.m,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(128,128,128,0.2)",
-  },
-  strengthChips: {
-    flexDirection: "row",
-    gap: FluentSpacing.s,
-  },
-  strengthChip: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: FluentSpacing.s,
-  },
-  sliderContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: FluentSpacing.m,
-    paddingTop: FluentSpacing.m,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(128,128,128,0.2)",
-    gap: FluentSpacing.s,
-  },
-  controlSlider: {
-    flex: 1,
-    height: FluentControlHeight.large,
-  },
-  modesContainer: {
-    gap: FluentSpacing.s,
-  },
-  modeCard: {
-    padding: FluentSpacing.m,
-  },
-  modeCardContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  modeCardText: {
-    flex: 1,
-    marginLeft: FluentSpacing.m,
-  },
   infoCard: {
     marginTop: FluentSpacing.m,
   },
@@ -1508,26 +875,21 @@ const styles = StyleSheet.create({
   iosNoticeText: {
     flex: 1,
   },
-  toggle: {
-    width: 44,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
+  bandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: FluentSpacing.s,
   },
-  toggleThumb: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+  bandLabel: {
+    width: 50,
   },
-  threeStepSelector: {
-    flexDirection: 'row',
-    gap: FluentSpacing.s,
-  },
-  threeStepOption: {
+  slider: {
     flex: 1,
-    alignItems: 'center',
-    paddingVertical: FluentSpacing.s,
-    paddingHorizontal: FluentSpacing.m,
+    height: 40,
+  },
+  bandValue: {
+    width: 30,
+    textAlign: "right",
   },
 });
 
