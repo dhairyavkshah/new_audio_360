@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, Modal, ScrollView, TextInput } from "react-native";
+import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, Modal, ScrollView, TextInput, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -282,7 +282,11 @@ export default function ArchiveTabScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
-            
+            initialNumToRender={15}
+            maxToRenderPerBatch={10}
+            windowSize={10}
+            removeClippedSubviews={Platform.OS === 'android'}
+            updateCellsBatchingPeriod={50}
           />
         )}
       </View>
