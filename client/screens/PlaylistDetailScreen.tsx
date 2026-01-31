@@ -227,7 +227,7 @@ export default function PlaylistDetailScreen() {
 
         {songs.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="music-off" size={40} color={colors.colorNeutralForeground2} />
+            <MaterialCommunityIcons name="music-off" size={64} color={colors.colorNeutralForeground2} />
             <FluentText variant="body1" color="secondary" style={{ marginTop: FluentSpacing.l }}>
               No songs in this playlist
             </FluentText>

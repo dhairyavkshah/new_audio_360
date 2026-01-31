@@ -255,13 +255,13 @@ function SongCardComponent({
               { 
                 backgroundColor: sourceType === 'soundcloud' ? '#FF5500' + '20' 
                   : sourceType === 'archive' ? '#00BFA5' + '20' 
-                  : colors.colorSubtleBackground 
+                  : fluentColors.colorSubtleBackground 
               }
             ]}>
               <MaterialCommunityIcons 
                 name={sourceType === 'soundcloud' ? 'soundcloud' : sourceType === 'archive' ? 'web' : 'music-note'} 
-                size={10} 
-                color={sourceType === 'soundcloud' ? '#FF5500' : sourceType === 'archive' ? '#00BFA5' : colors.colorNeutralForeground3} 
+                size={FluentIconSize.tiny} 
+                color={sourceType === 'soundcloud' ? '#FF5500' : sourceType === 'archive' ? '#00BFA5' : fluentColors.colorNeutralForeground3} 
               />
             </View>
           )}

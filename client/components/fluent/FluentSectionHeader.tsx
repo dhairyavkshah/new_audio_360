@@ -33,7 +33,7 @@ export function FluentSectionHeader({
         size={FluentIconSize.regular}
         color={iconColor || colors.colorBrandForeground1}
       />
-      <FluentText variant="subtitle1" style={styles.title}>
+      <FluentText variant="subtitle1Strong" style={styles.title}>
         {title}
       </FluentText>
     </View>
@@ -48,7 +48,6 @@ const styles = StyleSheet.create({
   },
   title: {
     marginLeft: FluentSpacing.s,
-    fontWeight: '600',
   },
 });
 

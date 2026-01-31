@@ -20,7 +20,11 @@ export function SoundCloudPlaylistCard({ playlist, onPress }: SoundCloudPlaylist
     <Pressable 
       style={[
         styles.playlistCard, 
-        { backgroundColor: colors.colorNeutralBackground2 },
+        { 
+          backgroundColor: colors.colorNeutralBackground2,
+          borderColor: colors.colorNeutralStroke2,
+          borderWidth: 1,
+        },
         getShadowStyle('shadow2', isDark),
       ]}
       onPress={() => onPress(playlist)}

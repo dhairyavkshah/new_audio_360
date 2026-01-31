@@ -140,7 +140,7 @@ export default function QueueScreen() {
         </FluentText>
         {isCurrentSong ? (
           <View style={[styles.playingBadge, { backgroundColor: colors.colorBrandBackground }]}>
-            <MaterialCommunityIcons name="volume-high" size={12} color="#FFFFFF" />
+            <MaterialCommunityIcons name="volume-high" size={FluentIconSize.tiny} color="#FFFFFF" />
           </View>
         ) : null}
       </Pressable>

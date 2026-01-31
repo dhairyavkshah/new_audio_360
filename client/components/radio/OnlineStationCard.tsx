@@ -58,7 +58,7 @@ function OnlineStationCardComponent({
         {
           backgroundColor: isSelected
             ? colors.colorBrandBackgroundSelected
-            : colors.colorNeutralBackground3,
+            : colors.colorNeutralBackground2,
           borderColor: isSelected
             ? colors.colorBrandStroke1
             : colors.colorNeutralStroke2,
