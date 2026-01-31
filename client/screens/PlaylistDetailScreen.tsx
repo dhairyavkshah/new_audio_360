@@ -369,9 +369,13 @@ const styles = StyleSheet.create({
   songItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: FluentSpacing.m,
+    paddingVertical: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.l,
     borderRadius: FluentControlRadius.card,
-    minHeight: Layout.listItemStandard,
+    minHeight: 72,
+    marginBottom: FluentSpacing.s,
+    borderWidth: 1,
+    borderColor: "transparent",
   },
   songIndex: {
     width: 24,
@@ -380,7 +384,7 @@ const styles = StyleSheet.create({
   songArtwork: {
     width: 48,
     height: 48,
-    borderRadius: FluentControlRadius.chip,
+    borderRadius: FluentControlRadius.card,
     marginLeft: FluentSpacing.m,
   },
   songInfo: {

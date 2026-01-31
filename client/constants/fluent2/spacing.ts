@@ -17,7 +17,7 @@ export const FluentSpacing = {
 export const FluentBlurIntensity = {
   light: 10,
   medium: 20,
-  heavy: 40,
+  heavy: 30,
 } as const;
 
 export const FluentGap = {
