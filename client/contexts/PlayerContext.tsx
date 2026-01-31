@@ -113,6 +113,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const lastKnownPositionRef = useRef<number>(0);
   const wasPlayingBeforeBackgroundRef = useRef<boolean>(false);
   const handleNextInternalRef = useRef<() => void>(() => {});
+  // Ref to break circular dependency: handleTrackEnd (empty deps) needs loadAndPlaySong
+  // Updated via useEffect after loadAndPlaySong is defined
+  const loadAndPlaySongRef = useRef<(song: PlayableSong) => void>(() => {});
   const usingSoundCloudWidgetRef = useRef<boolean>(false);
   const soundCloudTrackIdRef = useRef<number | null>(null);
   const handlePreviousInternalRef = useRef<() => void>(() => {});
@@ -768,7 +771,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     const nextSong = currentQueue[nextIndex];
     if (nextSong) {
-      loadAndPlaySong(nextSong);
+      console.log('[PlayerContext] Auto-advancing to next song:', nextSong.id);
+      loadAndPlaySongRef.current(nextSong);
     }
   }, []);
 
@@ -1615,6 +1619,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setCurrentSong(song);
     }
   }, [cleanupPlayer, handleStatusUpdate, createEQChain, handleTrackEnd, soundLabMode, immersiveEffect, convertSongToTrackMetadata, ensurePlaybackEngineInitialized]);
+
+  useEffect(() => {
+    loadAndPlaySongRef.current = loadAndPlaySong;
+  }, [loadAndPlaySong]);
 
   useEffect(() => {
     return () => {
