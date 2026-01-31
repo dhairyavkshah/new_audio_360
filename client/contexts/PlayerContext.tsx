@@ -5,7 +5,7 @@ import { Song, mockSongs } from '@/lib/data';
 import { DeviceSong, useMediaLibraryContext } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
 import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
-import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule, AudioSessionBridgeModule } from 'audio-effects';
+import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule, AudioSessionBridgeModule, PlaybackStateChangedEvent } from 'audio-effects';
 import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
@@ -762,6 +762,25 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Subscribe to native playback state changes for auto-advance
+  useEffect(() => {
+    if (Platform.OS !== 'android' || useTrackPlayerRef.current) {
+      return;
+    }
+    
+    const subscription = PlaybackEngineModule.addPlaybackStateListener((event: PlaybackStateChangedEvent) => {
+      console.log('[PlayerContext] Native playback state changed:', event.state);
+      if (event.state === 'ended') {
+        console.log('[PlayerContext] Track ended via native event, calling handleTrackEnd');
+        handleTrackEnd();
+      }
+    });
+    
+    return () => {
+      subscription?.remove();
+    };
+  }, [handleTrackEnd]);
+
   const handleStatusUpdate = useCallback((status: AudioStatus) => {
     if (status.currentTime !== undefined) {
       setCurrentTime(status.currentTime);
@@ -1182,6 +1201,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
         AudioCoordinator.notifyPlaybackStarted('music');
       } else if (Platform.OS === 'android' && useNativePlaybackRef.current) {
+        // Clean up existing progress interval before starting new track
+        if (nativeProgressIntervalRef.current) {
+          clearInterval(nativeProgressIntervalRef.current);
+          nativeProgressIntervalRef.current = null;
+        }
+        
         // On Android, use PlaybackEngineModule which has DSP processing integrated
         // This applies to both local files and streaming (SoundCloud, Archive.org)
         const isSoundCloudTrack = ('source' in song && song.source === 'soundcloud') || song.id.startsWith('sc_');
@@ -1294,6 +1319,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (!nativeProgressIntervalRef.current) {
           nativeProgressIntervalRef.current = setInterval(() => {
             const currentStatus = PlaybackEngineModule.getStatus();
+            
+            // Stop polling if playback has ended
+            if (currentStatus.playbackState === 'ended') {
+              if (nativeProgressIntervalRef.current) {
+                clearInterval(nativeProgressIntervalRef.current);
+                nativeProgressIntervalRef.current = null;
+              }
+              return;
+            }
+            
             if (currentStatus.isPlaying) {
               setCurrentTime(currentStatus.currentPositionMs / 1000);
               if (currentStatus.durationMs > 0) {

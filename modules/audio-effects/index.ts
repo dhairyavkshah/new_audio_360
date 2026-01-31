@@ -1,5 +1,30 @@
-import { requireNativeModule } from 'expo-modules-core';
+import { requireNativeModule, EventEmitter, type EventSubscription } from 'expo-modules-core';
 import { Platform } from 'react-native';
+
+// Event types for PlaybackEngineModule
+export interface PlaybackStateChangedEvent {
+  state: 'idle' | 'buffering' | 'ready' | 'ended' | 'unknown';
+}
+
+export interface IsPlayingChangedEvent {
+  isPlaying: boolean;
+}
+
+export interface TrackChangedEvent {
+  index: number;
+  reason: 'auto' | 'seek' | 'playlist' | 'repeat' | 'unknown';
+}
+
+export interface PlaybackErrorEvent {
+  code: string;
+  message: string;
+}
+
+export interface ProgressEvent {
+  positionMs: number;
+  durationMs: number;
+  bufferedPositionMs: number;
+}
 
 // Playback Engine Module Types
 export interface PlaybackStatus {
@@ -286,6 +311,7 @@ interface AppContextModuleInterface {
 
 // Native Module Instances
 let PlaybackEngineModuleNative: PlaybackEngineModuleInterface | null = null;
+let PlaybackEngineEmitter: InstanceType<typeof EventEmitter> | null = null;
 let EqualizerModuleNative: EqualizerModuleInterface | null = null;
 let BassBoostModuleNative: BassBoostModuleInterface | null = null;
 let SpatialEnhancementModuleNative: SpatialEnhancementModuleInterface | null = null;
@@ -296,7 +322,9 @@ let AppContextModuleNative: AppContextModuleInterface | null = null;
 
 if (Platform.OS === 'android') {
   try {
-    PlaybackEngineModuleNative = requireNativeModule<PlaybackEngineModuleInterface>('PlaybackEngineModule');
+    const nativeModule = requireNativeModule('PlaybackEngineModule');
+    PlaybackEngineModuleNative = nativeModule as PlaybackEngineModuleInterface;
+    PlaybackEngineEmitter = new EventEmitter(nativeModule);
   } catch (e) {
     console.warn('PlaybackEngineModule not available:', e);
   }
@@ -672,6 +700,41 @@ export const PlaybackEngineModule = {
       console.error('PlaybackEngineModule.release error:', error);
       return { success: false, error: String(error) };
     }
+  },
+
+  addPlaybackStateListener: (listener: (event: PlaybackStateChangedEvent) => void): EventSubscription | null => {
+    if (!PlaybackEngineEmitter) {
+      return null;
+    }
+    return PlaybackEngineEmitter.addListener('onPlaybackStateChanged', listener);
+  },
+
+  addIsPlayingListener: (listener: (event: IsPlayingChangedEvent) => void): EventSubscription | null => {
+    if (!PlaybackEngineEmitter) {
+      return null;
+    }
+    return PlaybackEngineEmitter.addListener('onIsPlayingChanged', listener);
+  },
+
+  addTrackChangedListener: (listener: (event: TrackChangedEvent) => void): EventSubscription | null => {
+    if (!PlaybackEngineEmitter) {
+      return null;
+    }
+    return PlaybackEngineEmitter.addListener('onTrackChanged', listener);
+  },
+
+  addErrorListener: (listener: (event: PlaybackErrorEvent) => void): EventSubscription | null => {
+    if (!PlaybackEngineEmitter) {
+      return null;
+    }
+    return PlaybackEngineEmitter.addListener('onError', listener);
+  },
+
+  addProgressListener: (listener: (event: ProgressEvent) => void): EventSubscription | null => {
+    if (!PlaybackEngineEmitter) {
+      return null;
+    }
+    return PlaybackEngineEmitter.addListener('onProgress', listener);
   }
 };
 
