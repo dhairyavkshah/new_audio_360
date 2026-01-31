@@ -1,6 +1,14 @@
 # New Audio 360
 
-## Recent Changes (v28.1 - January 2026)
+## Recent Changes (v28.1.1 - January 2026)
+- **Design System Refinement Phase 2** (23 tasks completed):
+  - **New Design Tokens**: FluentSpacing.xxxxxxxl (80px), FluentRadius.xxLarge (16px), FluentControlRadius.heroCard (16px), FluentBlurIntensity (light/medium/heavy), colorFavorite brand color
+  - **Typography Cleanup**: Replaced inline fontWeight with Strong variants across 17+ screens
+  - **Component Extractions**: SoundLabScreen 42% reduction (1535→896 lines), SoundCloudTabScreen 38% (1261→786), RadioScreen 17% (1685→1405)
+  - **Screen Fixes**: LoginScreen, SplashScreen, DiscoverScreen, QueueScreen, PermissionOnboardingFlow, LibraryScreen, PlaylistDetailScreen updated to baseline styling
+  - **Empty State Icons**: Increased from 48px to 64px for better visual hierarchy
+
+## Previous Changes (v28.1 - January 2026)
 - **Design Consistency**: Unified card styling across Radio, Discover (SoundCloud/Archive), and Settings screens to match Library baseline (48x48 rounded square artwork, body1Strong/caption1 text variants, chevron-right navigation, 72px minHeight, 1px border)
 - **SoundCloud Search by Type**: Added search type filter (Tracks/Playlists/Albums) with 25 result limit per category
 - **SoundCloud Likes Sync**: Liking tracks from the app now syncs bidirectionally to user's SoundCloud account (PUT /me/likes/tracks endpoint)
