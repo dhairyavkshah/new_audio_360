@@ -7,6 +7,7 @@
   - **Component Extractions**: SoundLabScreen 42% reduction (1535→896 lines), SoundCloudTabScreen 38% (1261→786), RadioScreen 17% (1685→1405)
   - **Screen Fixes**: LoginScreen, SplashScreen, DiscoverScreen, QueueScreen, PermissionOnboardingFlow, LibraryScreen, PlaylistDetailScreen updated to baseline styling
   - **Empty State Icons**: Increased from 48px to 64px for better visual hierarchy
+  - **Discover Card Optimization**: SoundCloudTrackCard and ArchiveTabScreen cards now match compact SongCard baseline (removed redundant metadata row, reduced vertical spacing)
 
 ## Previous Changes (v28.1 - January 2026)
 - **Design Consistency**: Unified card styling across Radio, Discover (SoundCloud/Archive), and Settings screens to match Library baseline (48x48 rounded square artwork, body1Strong/caption1 text variants, chevron-right navigation, 72px minHeight, 1px border)
