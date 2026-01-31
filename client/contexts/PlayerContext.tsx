@@ -674,44 +674,40 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [setupTrackPlayerCallbacks, restoreTrackPlayerQueue]);
 
+  // Ensure progress polling is active when playing on native Android
+  // This handles cases where playback resumes without going through loadAndPlaySong
+  // (e.g., togglePlayPause after pause, restore from background)
   useEffect(() => {
+    if (Platform.OS !== 'android') return;
     if (useTrackPlayerRef.current) return;
     if (!useNativePlaybackRef.current) return;
 
-    if (isPlaying && currentSong) {
-      progressPollingRef.current = setInterval(() => {
-        const status = PlaybackEngineModule.getStatus();
+    if (isPlaying && currentSong && !nativeProgressIntervalRef.current) {
+      // Start progress polling if not already running
+      nativeProgressIntervalRef.current = setInterval(() => {
+        const currentStatus = PlaybackEngineModule.getStatus();
         
-        if (status.currentPositionMs !== undefined) {
-          setCurrentTime(status.currentPositionMs / 1000);
-        }
-        if (status.durationMs !== undefined && status.durationMs > 0) {
-          setDuration(status.durationMs / 1000);
-        }
-        
-        setIsBuffering(status.playbackState === 'buffering');
-        
-        if (status.playbackState === 'ended') {
-          handleTrackEnd();
+        // Stop polling if playback has ended
+        if (currentStatus.playbackState === 'ended') {
+          if (nativeProgressIntervalRef.current) {
+            clearInterval(nativeProgressIntervalRef.current);
+            nativeProgressIntervalRef.current = null;
+          }
+          return;
         }
         
-        if (!status.isPlaying && isPlaying && status.playbackState !== 'buffering') {
-          setIsPlaying(false);
+        if (currentStatus.isPlaying) {
+          setCurrentTime(currentStatus.currentPositionMs / 1000);
+          if (currentStatus.durationMs > 0) {
+            setDuration(currentStatus.durationMs / 1000);
+          }
         }
+        
+        setIsBuffering(currentStatus.playbackState === 'buffering');
       }, 1000);
-    } else {
-      if (progressPollingRef.current) {
-        clearInterval(progressPollingRef.current);
-        progressPollingRef.current = null;
-      }
     }
-
-    return () => {
-      if (progressPollingRef.current) {
-        clearInterval(progressPollingRef.current);
-        progressPollingRef.current = null;
-      }
-    };
+    // Note: We don't clear the interval when isPlaying becomes false
+    // because the interval self-manages based on playback state
   }, [isPlaying, currentSong]);
 
   const handleTrackEnd = useCallback(() => {

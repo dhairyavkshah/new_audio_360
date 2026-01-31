@@ -286,7 +286,10 @@ class EqualizerModule : Module() {
                     val context = appContext.reactContext
                     if (context != null) {
                         val neuralProcessor = NeuralAudioProcessorTFLite.getInstance()
-                        if (!neuralProcessor.isReady()) {
+                        val status = neuralProcessor.getStatus()
+                        // Only initialize if not already ready and not already initializing
+                        if (status != NeuralAudioProcessorTFLite.Status.READY && 
+                            status != NeuralAudioProcessorTFLite.Status.INITIALIZING) {
                             android.util.Log.d("EqualizerModule", "Initializing neural audio processor...")
                             neuralProcessor.initialize(context)
                         }
