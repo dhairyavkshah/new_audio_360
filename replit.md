@@ -1,5 +1,12 @@
 # New Audio 360
 
+## Recent Changes (v28.1 - January 2026)
+- **Design Consistency**: Unified card styling across Radio, Discover (SoundCloud/Archive), and Settings screens to match Library baseline (48x48 rounded square artwork, body1Strong/caption1 text variants, chevron-right navigation, 72px minHeight, 1px border)
+- **SoundCloud Search by Type**: Added search type filter (Tracks/Playlists/Albums) with 25 result limit per category
+- **SoundCloud Likes Sync**: Liking tracks from the app now syncs bidirectionally to user's SoundCloud account (PUT /me/likes/tracks endpoint)
+- **Play All/Shuffle**: Added Play All and Shuffle buttons to SoundCloud Likes tab
+- **Settings Fluent 2**: AppearanceScreen and LicenseScreen now use FluentSectionHeader and proper icon sizing
+
 ## Overview
 New Audio 360 is a premium mobile music player built with React Native and Expo, offering studio-quality audio processing through software-based DSP and neural AI upscaling. It features 55 customizable themes and comprehensive music organization. The app operates on a one-time purchase model with local data storage, aiming to provide a top-grade, intelligent music experience tailored for the user. It supports Android, iOS, Web, and Windows platforms, with the Windows version distributed as a PWA via the Microsoft Store.
 
