@@ -62,6 +62,12 @@ interface PlayerContextType {
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
+const normalizeDurationToSeconds = (dur: number): number => {
+  if (!dur || dur <= 0) return 0;
+  if (dur > 36000) return Math.floor(dur / 1000);
+  return Math.floor(dur);
+};
+
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const { mode: soundLabMode, eqBands, immersiveEffect, bassBoost, trebleBoost } = useSoundLab();
   const { songs: mediaLibrarySongs, isLoading: mediaLibraryLoading } = useMediaLibraryContext();
@@ -550,7 +556,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           // Set the queue and current song without auto-playing
           setQueueState(restoredQueue);
           setCurrentSong(currentSongToRestore);
-          setDuration(currentSongToRestore.duration || 0);
+          setDuration(normalizeDurationToSeconds(currentSongToRestore.duration || 0));
           
           // currentTime was already restored in the previous effect
           console.log('[PlayerContext] Playback state restored successfully (paused at', state.currentTime, 'seconds)');
@@ -1032,7 +1038,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
     setCurrentTime(0);
-    setDuration(song.duration || 0);
+    setDuration(normalizeDurationToSeconds(song.duration || 0));
     setCurrentSong(song);
 
     try {

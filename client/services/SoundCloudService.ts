@@ -858,7 +858,11 @@ class SoundCloudServiceClass {
     try {
       const stored = await AsyncStorage.getItem(FAVORITES_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const favorites = JSON.parse(stored) as StoredSoundCloudTrack[];
+        return favorites.map(f => ({
+          ...f,
+          duration: f.duration > 36000 ? Math.floor(f.duration / 1000) : f.duration,
+        }));
       }
     } catch (e) {
       console.log('[SoundCloudService] Get favorites error:', e);
@@ -879,7 +883,7 @@ class SoundCloudServiceClass {
         title: track.title,
         artist: track.artist,
         album: track.album,
-        duration: track.duration,
+        duration: Math.floor(track.duration / 1000),
         encryptedUrl: this.simpleEncrypt(track.stream_url),
         artwork_url: track.artwork_url,
         playbackCount: track.playbackCount,

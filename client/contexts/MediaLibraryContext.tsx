@@ -118,6 +118,14 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     }
   }, []);
 
+  const normalizeDuration = (duration: number): number => {
+    if (!duration || duration <= 0) return 0;
+    if (duration > 36000) {
+      return Math.floor(duration / 1000);
+    }
+    return Math.floor(duration);
+  };
+
   const loadCachedSongs = useCallback(async (): Promise<DeviceSong[] | null> => {
     if (Platform.OS === 'web') return null;
     
@@ -138,8 +146,12 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
       }
       
       const songs = JSON.parse(cachedData) as DeviceSong[];
-      console.log('[MediaLibrary] Loaded', songs.length, 'songs from cache');
-      return songs;
+      const normalizedSongs = songs.map(song => ({
+        ...song,
+        duration: normalizeDuration(song.duration),
+      }));
+      console.log('[MediaLibrary] Loaded', normalizedSongs.length, 'songs from cache (durations normalized)');
+      return normalizedSongs;
     } catch (err) {
       console.error('[MediaLibrary] Error loading cached songs:', err);
       return null;
@@ -313,7 +325,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
           title: song.title || extractTitle(song.filename),
           artist: song.artist || parseArtistFromFilename(song.filename) || 'Unknown Artist',
           album: song.album || 'Unknown Album',
-          duration: Math.floor(song.duration || 0),
+          duration: Math.floor((song.duration || 0) / 1000),
           artwork: song.albumArt || undefined,
           uri: song.uri,
           filename: song.filename,
@@ -369,7 +381,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
         title: extractTitle(asset.filename),
         artist: parseArtistFromFilename(asset.filename) || 'Unknown Artist',
         album: 'Unknown Album',
-        duration: Math.floor(asset.duration * 1000),
+        duration: Math.floor(asset.duration),
         artwork: undefined,
         uri: asset.uri,
         filename: asset.filename,

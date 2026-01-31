@@ -56,6 +56,9 @@ export function ProgressBar({
   const trackHeight = useSharedValue<number>(TRACK_HEIGHT);
 
   const formatTime = (seconds: number) => {
+    if (!seconds || !isFinite(seconds) || seconds < 0 || seconds > 36000) {
+      return "0:00";
+    }
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
