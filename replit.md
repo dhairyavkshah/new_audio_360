@@ -1,6 +1,9 @@
 # New Audio 360
 
 ## Recent Changes (v30.0 - January 2026)
+- **Listen Tab Navigation Fix**: Tapping Listen tab now always goes to Listen home screen, not NowPlaying
+  - Added listener to reset ListenTab stack to initial route when tab is pressed
+  - NowPlaying is now only accessible via MiniPlayer tap
 - **Favorites Sync Fix**: Created `DiscoverFavoritesContext` to unify favorites state across all screens
   - NowPlayingScreen, ArchiveTabScreen, and SoundCloudTabScreen now share the same favorites state
   - Liking a song from anywhere now instantly reflects across all screens

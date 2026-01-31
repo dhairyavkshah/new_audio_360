@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet, View, TouchableOpacity } from "react-native";
 import * as Haptics from "expo-haptics";
-import { useNavigation, NavigationProp } from "@react-navigation/native";
+import { useNavigation, NavigationProp, CommonActions } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ListenStackNavigator from "@/navigation/ListenStackNavigator";
 import LibraryStackNavigator from "@/navigation/LibraryStackNavigator";
@@ -193,6 +193,18 @@ function MainTabNavigator() {
             />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // Reset ListenTab stack to initial route (Listen screen) when tab is pressed
+            // This prevents showing NowPlaying when tapping Listen tab
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'ListenTab', state: { routes: [{ name: 'Listen' }] } }],
+              })
+            );
+          },
+        })}
       />
       <Tab.Screen
         name="LibraryTab"
