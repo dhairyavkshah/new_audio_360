@@ -97,10 +97,11 @@ function SongCardComponent({
   
   const artworkSource = useMemo(() => song.artwork ? { uri: song.artwork } : DEFAULT_ALBUM_ART, [song.artwork]);
   
-  const formatDuration = useCallback((ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
+  const formatDuration = useCallback((seconds: number) => {
+    if (!seconds || !isFinite(seconds) || seconds < 0) return "0:00";
+    const normalizedSeconds = seconds > 36000 ? Math.floor(seconds / 1000) : Math.floor(seconds);
+    const mins = Math.floor(normalizedSeconds / 60);
+    const secs = normalizedSeconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   }, []);
   
