@@ -490,20 +490,6 @@ export default function RadioStationsScreen() {
 
     return (
       <>
-        <View style={[styles.countryHeader, { backgroundColor: colors.colorNeutralBackground2 }]}>
-          <FluentText variant="title2" style={styles.countryHeaderText}>
-            {getCountryFlag(detectedCountryCode)} {detectedCountry || "Detecting location..."}
-          </FluentText>
-          <FluentIconButton
-            icon={<MaterialCommunityIcons name="refresh" />}
-            variant="subtle"
-            size="large"
-            onPress={handleForceRefresh}
-            disabled={isRefreshingStations || !detectedCountryCode}
-            accessibilityLabel="Re-scan for radio stations"
-          />
-        </View>
-        
         {isRefreshingStations && (
           <View style={styles.refreshingBanner}>
             <ActivityIndicator size="small" color={colors.colorBrandForeground1} />
@@ -746,16 +732,33 @@ export default function RadioStationsScreen() {
         }
       >
         <View style={styles.modeToggleRow}>
-          <EffectChip
-            label="FM/AM"
-            isSelected={radioMode === "fmam"}
-            onPress={() => handleModeChange("fmam")}
-          />
-          <EffectChip
-            label="Online"
-            isSelected={radioMode === "online"}
-            onPress={() => handleModeChange("online")}
-          />
+          <View style={styles.modeToggleLeft}>
+            <EffectChip
+              label="FM/AM"
+              isSelected={radioMode === "fmam"}
+              onPress={() => handleModeChange("fmam")}
+            />
+            <EffectChip
+              label="Online"
+              isSelected={radioMode === "online"}
+              onPress={() => handleModeChange("online")}
+            />
+          </View>
+          {radioMode === "online" && (
+            <View style={styles.countrySelector}>
+              <FluentText variant="body1Strong" style={styles.countrySelectorText}>
+                {getCountryFlag(detectedCountryCode)} {detectedCountry || "Detecting..."}
+              </FluentText>
+              <FluentIconButton
+                icon={<MaterialCommunityIcons name="refresh" />}
+                variant="subtle"
+                size="medium"
+                onPress={handleForceRefresh}
+                disabled={isRefreshingStations || !detectedCountryCode}
+                accessibilityLabel="Re-scan for radio stations"
+              />
+            </View>
+          )}
         </View>
 
         {radioMode === "fmam" ? renderFmAmContent() : renderOnlineContent()}
@@ -770,8 +773,21 @@ const styles = StyleSheet.create({
   },
   modeToggleRow: {
     flexDirection: "row",
-    gap: FluentSpacing.s,
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: FluentSpacing.m,
+  },
+  modeToggleLeft: {
+    flexDirection: "row",
+    gap: FluentSpacing.s,
+  },
+  countrySelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: FluentSpacing.xxs,
+  },
+  countrySelectorText: {
+    maxWidth: 120,
   },
   filterRow: {
     flexDirection: "row",
@@ -877,17 +893,6 @@ const styles = StyleSheet.create({
   fallbackText: {
     flex: 1,
     lineHeight: 20,
-  },
-  countryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: FluentSpacing.m,
-    borderRadius: FluentControlRadius.button,
-    marginBottom: FluentSpacing.m,
-  },
-  countryHeaderText: {
-    flex: 1,
   },
   refreshingBanner: {
     flexDirection: "row",

@@ -143,7 +143,12 @@ export function FluentTopBar({
       </View>
 
       {categoryOptions && activeCategoryConfig && (
-        <View style={styles.categoryRow}>
+        <View
+          style={[
+            styles.categoryRow,
+            !rightAction && { justifyContent: "flex-start" },
+          ]}
+        >
           <Pressable
             style={[
               styles.categoryDropdownButton,
@@ -383,13 +388,13 @@ const styles = StyleSheet.create({
   container: {
     borderBottomWidth: 1,
     paddingHorizontal: FluentSpacing.l,
-    paddingBottom: FluentSpacing.m,
+    paddingBottom: FluentSpacing.s,
     zIndex: 100,
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: FluentSpacing.s,
+    marginBottom: FluentSpacing.xs,
   },
   title: {
     flex: 1,
@@ -398,7 +403,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: FluentSpacing.s,
+    gap: FluentSpacing.m,
     marginBottom: FluentSpacing.s,
   },
   categoryDropdownButton: {

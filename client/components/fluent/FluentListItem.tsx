@@ -89,7 +89,10 @@ export function FluentListItem({
 
   const containerStyle = [
     styles.container,
-    { backgroundColor: getBackgroundColor() },
+    { 
+      backgroundColor: getBackgroundColor(),
+      borderColor: colors.colorNeutralStroke2,
+    },
     shadowStyle,
     disabled && styles.disabled,
     style,
@@ -129,6 +132,8 @@ const styles = StyleSheet.create({
     padding: FluentSpacing.l,
     borderRadius: FluentControlRadius.card,
     minHeight: 56,
+    borderWidth: 1,
+    marginBottom: FluentSpacing.s,
   },
   iconContainer: {
     width: FluentTouchTarget.minimum,
