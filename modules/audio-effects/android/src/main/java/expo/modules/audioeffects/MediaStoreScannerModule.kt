@@ -95,7 +95,7 @@ class MediaStoreScannerModule : Module() {
                             val artist = cursor.getString(artistColumn) ?: "Unknown Artist"
                             val album = cursor.getString(albumColumn) ?: "Unknown Album"
                             val albumId = cursor.getLong(albumIdColumn)
-                            val duration = cursor.getLong(durationColumn)
+                            var duration = cursor.getLong(durationColumn)
                             val size = cursor.getLong(sizeColumn)
                             val dateModified = cursor.getLong(dateModifiedColumn)
                             val displayName = cursor.getString(displayNameColumn) ?: ""
@@ -106,6 +106,11 @@ class MediaStoreScannerModule : Module() {
                                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                                 id
                             )
+                            
+                            // Fallback: If MediaStore returns 0 duration, use MediaMetadataRetriever
+                            if (duration <= 0) {
+                                duration = getDurationWithRetriever(context, contentUri)
+                            }
                             
                             var albumArt: String? = null
                             if (albumArtCache.containsKey(albumId)) {
@@ -173,6 +178,28 @@ class MediaStoreScannerModule : Module() {
                 ))
             } catch (e: Exception) {
                 promise.resolve(mapOf("success" to false, "albumArt" to null))
+            }
+        }
+    }
+    
+    /**
+     * Fallback duration fetching using MediaMetadataRetriever when MediaStore returns 0.
+     * This handles cases where MediaStore hasn't fully indexed the file yet.
+     */
+    private fun getDurationWithRetriever(context: android.content.Context, uri: Uri): Long {
+        val retriever = android.media.MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(context, uri)
+            val durationStr = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+            return durationStr?.toLongOrNull() ?: 0L
+        } catch (e: Exception) {
+            Log.d(TAG, "MediaMetadataRetriever fallback failed for $uri: ${e.message}")
+            return 0L
+        } finally {
+            try {
+                retriever.release()
+            } catch (e: Exception) {
+                // Ignore release errors
             }
         }
     }

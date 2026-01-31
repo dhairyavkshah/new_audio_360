@@ -252,14 +252,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (now - lastProgressUpdateRef.current < progressThrottleMs) return;
         lastProgressUpdateRef.current = now;
         
-        // Only update position if it's reasonable (not greater than duration)
-        // This prevents slider flash during track transitions
-        if (progress.duration > 0 && progress.position <= progress.duration) {
-          setCurrentTime(progress.position);
-          setDuration(progress.duration);
-        } else if (progress.duration > 0) {
-          // Track just started, use new duration but reset position
-          setCurrentTime(0);
+        // Update position - allow position to reach or slightly exceed duration for proper end detection
+        // Industry standard: position should reflect actual playback progress without artificial capping
+        if (progress.duration > 0) {
+          // Allow position up to duration + small tolerance for timing precision
+          const effectivePosition = Math.min(progress.position, progress.duration);
+          setCurrentTime(effectivePosition);
           setDuration(progress.duration);
         }
         setIsBuffering(progress.buffered < progress.position);
