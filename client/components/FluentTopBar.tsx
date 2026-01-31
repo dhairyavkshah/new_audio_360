@@ -166,7 +166,7 @@ export function FluentTopBar({
             <Text
               style={[
                 FluentTypography.body1Strong,
-                { color: fluentColors.colorNeutralForeground1, flex: 1 },
+                { color: fluentColors.colorNeutralForeground1 },
               ]}
             >
               {activeCategoryConfig.label}
@@ -175,7 +175,7 @@ export function FluentTopBar({
               <Text
                 style={[
                   FluentTypography.caption1,
-                  { color: fluentColors.colorNeutralForeground3, marginRight: FluentSpacing.xs },
+                  { color: fluentColors.colorNeutralForeground3, marginLeft: FluentSpacing.xs },
                 ]}
               >
                 {activeCategoryConfig.count}
@@ -185,8 +185,10 @@ export function FluentTopBar({
               name={showCategoryDropdown ? "chevron-up" : "chevron-down"}
               size={FluentIconSize.regular}
               color={fluentColors.colorNeutralForeground3}
+              style={{ marginLeft: FluentSpacing.xs }}
             />
           </Pressable>
+          {rightAction}
         </View>
       )}
 
@@ -247,7 +249,6 @@ export function FluentTopBar({
               />
             </Pressable>
           )}
-          {rightAction}
         </View>
       )}
 
@@ -394,6 +395,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   categoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: FluentSpacing.s,
     marginBottom: FluentSpacing.s,
   },
   categoryDropdownButton: {

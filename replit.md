@@ -1,9 +1,16 @@
 # New Audio 360
 
-## Recent Changes (v29.0 - January 2026)
+## Recent Changes (v30.0 - January 2026)
+- **SoundCloud Header Optimization**: 
+  - Merged profile bar + sub tabs into single compact row with icon-only buttons for Search/Likes/Playlists
+  - Merged search field + type selector into single row with compact dropdown for Tracks/Playlists/Albums
+  - Maximized content display area by eliminating separate header rows
+- **Library Header Optimization**: Moved Play All/Shuffle buttons beside Songs dropdown in FluentTopBar category row
+- **Version Update**: Updated to v30.0 across all screens and Android gradle
+
+## Previous Changes (v29.0 - January 2026)
 - **Card Spacing Optimization**: Removed ItemSeparatorComponent from SoundCloud FlatLists to match Library screen 8px card gaps exactly
 - **Header Bottom Borders**: Added bottom border to Archive and SoundCloud search headers matching Library screen pattern
-- **Version Update**: Updated to v29.0 across Splash, About, Android gradle, and documentation
 
 ## Previous Changes (v28.1.1 - January 2026)
 - **Design System Refinement Phase 2** (23 tasks completed):

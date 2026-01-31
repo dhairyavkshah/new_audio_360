@@ -14,12 +14,12 @@ import SoundCloudService, { SoundCloudTrack, SoundCloudPlaylist } from "@/servic
 import {
   SoundCloudTrackCard,
   SoundCloudPlaylistCard,
-  SoundCloudSubTabs,
   SoundCloudSearchHeader,
   SoundCloudLoginPrompt,
-  SubTabType,
   SearchType,
 } from "@/components/soundcloud";
+
+type SubTabType = 'search' | 'likes' | 'playlists';
 
 export default function SoundCloudTabScreen() {
   const navigation = useNavigation();
@@ -673,34 +673,53 @@ export default function SoundCloudTabScreen() {
     );
   }
 
+  const SUB_TAB_CONFIG: { id: SubTabType; icon: 'magnify' | 'heart' | 'playlist-music' }[] = [
+    { id: 'search', icon: 'magnify' },
+    { id: 'likes', icon: 'heart' },
+    { id: 'playlists', icon: 'playlist-music' },
+  ];
+
   return (
     <View style={styles.container}>
-      {userProfile && (
-        <View style={[
-          styles.profileBar, 
-          { backgroundColor: colors.colorNeutralBackground2 },
-          getShadowStyle('shadow2', isDark),
-        ]}>
-          {userProfile.avatar_url ? (
-            <Image source={{ uri: userProfile.avatar_url }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, { backgroundColor: colors.colorBrandBackground }]}>
-              <MaterialCommunityIcons name="account" size={FluentIconSize.small} color={colors.colorNeutralForegroundOnBrand} />
-            </View>
-          )}
-          <FluentText variant="body2" style={{ flex: 1 }}>
-            {userProfile.username}
-          </FluentText>
-          <Pressable onPress={handleLogout} style={styles.logoutButton}>
-            <MaterialCommunityIcons name="logout" size={FluentIconSize.small} color={colors.colorNeutralForeground2} />
-          </Pressable>
-        </View>
-      )}
+      <View style={[styles.compactHeader, { borderBottomColor: colors.colorNeutralStroke2 }]}>
+        {userProfile && (
+          <View style={styles.profileRow}>
+            {userProfile.avatar_url ? (
+              <Image source={{ uri: userProfile.avatar_url }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: colors.colorBrandBackground }]}>
+                <MaterialCommunityIcons name="account" size={FluentIconSize.small} color={colors.colorNeutralForegroundOnBrand} />
+              </View>
+            )}
+            <FluentText variant="body2" numberOfLines={1} style={styles.username}>
+              {userProfile.username}
+            </FluentText>
 
-      <SoundCloudSubTabs
-        activeTab={activeSubTab}
-        onTabChange={setActiveSubTab}
-      />
+            <View style={styles.subTabButtons}>
+              {SUB_TAB_CONFIG.map((tab) => (
+                <Pressable
+                  key={tab.id}
+                  style={[
+                    styles.subTabButton,
+                    { backgroundColor: activeSubTab === tab.id ? colors.colorBrandBackground : colors.colorNeutralBackground3 },
+                  ]}
+                  onPress={() => setActiveSubTab(tab.id)}
+                >
+                  <MaterialCommunityIcons
+                    name={tab.icon}
+                    size={FluentIconSize.regular}
+                    color={activeSubTab === tab.id ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2}
+                  />
+                </Pressable>
+              ))}
+            </View>
+
+            <Pressable onPress={handleLogout} style={[styles.logoutButton, { backgroundColor: colors.colorNeutralBackground3 }]}>
+              <MaterialCommunityIcons name="logout" size={FluentIconSize.regular} color={colors.colorNeutralForeground2} />
+            </Pressable>
+          </View>
+        )}
+      </View>
 
       {activeSubTab === 'search' && renderSearchContent()}
       {activeSubTab === 'likes' && renderLikesContent()}
@@ -719,14 +738,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: FluentSpacing.xl,
   },
-  profileBar: {
+  compactHeader: {
+    borderBottomWidth: 1,
+  },
+  profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: FluentSpacing.m,
     paddingVertical: FluentSpacing.s,
-    marginHorizontal: FluentSpacing.m,
-    marginTop: FluentSpacing.s,
-    borderRadius: FluentControlRadius.card,
     gap: FluentSpacing.s,
   },
   avatar: {
@@ -736,8 +755,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  username: {
+    flexShrink: 1,
+    marginRight: FluentSpacing.s,
+  },
+  subTabButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: FluentSpacing.xs,
+    marginLeft: 'auto',
+  },
+  subTabButton: {
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentControlRadius.button,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   logoutButton: {
-    padding: FluentSpacing.xs,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
+    borderRadius: FluentControlRadius.button,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statusText: {
     marginTop: FluentSpacing.m,

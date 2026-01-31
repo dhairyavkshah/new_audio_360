@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, Pressable, TextInput } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
@@ -30,12 +30,20 @@ export function SoundCloudSearchHeader({
 }: SoundCloudSearchHeaderProps) {
   const { theme, isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+
+  const activeTypeConfig = SEARCH_TYPE_CONFIG.find(t => t.id === searchType) || SEARCH_TYPE_CONFIG[0];
+
+  const handleTypeSelect = (type: SearchType) => {
+    onSearchTypeChange(type);
+    setShowTypeDropdown(false);
+  };
 
   return (
-    <>
+    <View style={styles.container}>
       <View style={styles.searchRow}>
-        <View style={[styles.searchInput, { backgroundColor: colors.colorNeutralBackground2 }]}>
-          <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color={colors.colorNeutralForeground3} />
+        <View style={[styles.searchInput, { backgroundColor: colors.colorNeutralBackground3 }]}>
+          <MaterialCommunityIcons name="magnify" size={FluentIconSize.small} color={colors.colorNeutralForeground3} />
           <TextInput
             style={[styles.input, { color: theme.text }]}
             placeholder={`Search ${searchType}...`}
@@ -47,6 +55,22 @@ export function SoundCloudSearchHeader({
           />
         </View>
         <Pressable
+          style={[styles.typeDropdownButton, { backgroundColor: colors.colorNeutralBackground3 }]}
+          onPress={() => setShowTypeDropdown(!showTypeDropdown)}
+        >
+          <MaterialCommunityIcons 
+            name={activeTypeConfig.icon} 
+            size={FluentIconSize.small} 
+            color={colors.colorNeutralForeground1} 
+          />
+          <MaterialCommunityIcons 
+            name={showTypeDropdown ? "chevron-up" : "chevron-down"} 
+            size={FluentIconSize.tiny} 
+            color={colors.colorNeutralForeground3} 
+            style={{ marginLeft: FluentSpacing.xxs }}
+          />
+        </Pressable>
+        <Pressable
           style={[styles.searchButton, { backgroundColor: colors.colorBrandBackground }]}
           onPress={onSearch}
         >
@@ -54,43 +78,74 @@ export function SoundCloudSearchHeader({
         </Pressable>
       </View>
 
-      <View style={[styles.searchTypeContainer, { backgroundColor: colors.colorNeutralBackground2, borderBottomWidth: 1, borderBottomColor: colors.colorNeutralStroke2 }]}>
-        {SEARCH_TYPE_CONFIG.map((type) => (
+      {showTypeDropdown && (
+        <>
           <Pressable
-            key={type.id}
+            style={styles.overlayBackdrop}
+            onPress={() => setShowTypeDropdown(false)}
+          />
+          <View
             style={[
-              styles.searchTypeChip,
-              searchType === type.id && { backgroundColor: colors.colorBrandBackground },
+              styles.dropdownOverlay,
+              {
+                backgroundColor: colors.colorNeutralBackground1,
+                borderColor: colors.colorNeutralStroke2,
+              },
             ]}
-            onPress={() => onSearchTypeChange(type.id)}
           >
-            <MaterialCommunityIcons
-              name={type.icon}
-              size={FluentIconSize.small}
-              color={searchType === type.id ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2}
-            />
-            <FluentText
-              variant={searchType === type.id ? "caption1Strong" : "caption1"}
-              style={{
-                color: searchType === type.id ? colors.colorNeutralForegroundOnBrand : colors.colorNeutralForeground2,
-                marginLeft: FluentSpacing.xs,
-              }}
-            >
-              {type.label}
-            </FluentText>
-          </Pressable>
-        ))}
-      </View>
-    </>
+            {SEARCH_TYPE_CONFIG.map((type) => {
+              const isActive = searchType === type.id;
+              return (
+                <Pressable
+                  key={type.id}
+                  style={[
+                    styles.dropdownOption,
+                    isActive && { backgroundColor: colors.colorNeutralBackground3 },
+                  ]}
+                  onPress={() => handleTypeSelect(type.id)}
+                >
+                  <MaterialCommunityIcons
+                    name={type.icon}
+                    size={FluentIconSize.small}
+                    color={isActive ? colors.colorBrandForeground1 : colors.colorNeutralForeground1}
+                  />
+                  <FluentText
+                    variant={isActive ? "body1Strong" : "body1"}
+                    style={[
+                      styles.dropdownOptionLabel,
+                      { color: isActive ? colors.colorBrandForeground1 : colors.colorNeutralForeground1 },
+                    ]}
+                  >
+                    {type.label}
+                  </FluentText>
+                  {isActive && (
+                    <MaterialCommunityIcons
+                      name="check"
+                      size={FluentIconSize.small}
+                      color={colors.colorBrandForeground1}
+                      style={{ marginLeft: 'auto' }}
+                    />
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+        </>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    zIndex: 10,
+  },
   searchRow: {
     flexDirection: 'row',
     paddingHorizontal: FluentSpacing.m,
     paddingVertical: FluentSpacing.s,
     gap: FluentSpacing.s,
+    alignItems: 'center',
   },
   searchInput: {
     flex: 1,
@@ -103,7 +158,16 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14,
+  },
+  typeDropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: FluentTouchTarget.minimum,
+    paddingHorizontal: FluentSpacing.m,
+    borderRadius: FluentControlRadius.button,
+    gap: FluentSpacing.xxs,
   },
   searchButton: {
     width: FluentTouchTarget.minimum,
@@ -112,22 +176,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  searchTypeContainer: {
-    flexDirection: 'row',
-    marginHorizontal: FluentSpacing.m,
-    marginBottom: FluentSpacing.s,
-    borderRadius: FluentRadius.large,
-    padding: 4,
-    gap: 4,
+  overlayBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: -1000,
+    zIndex: 50,
   },
-  searchTypeChip: {
-    flex: 1,
+  dropdownOverlay: {
+    position: 'absolute',
+    top: FluentTouchTarget.minimum + FluentSpacing.s + FluentSpacing.s,
+    right: FluentSpacing.m + FluentTouchTarget.minimum + FluentSpacing.s,
+    minWidth: 140,
+    borderRadius: FluentRadius.medium,
+    borderWidth: 1,
+    padding: FluentSpacing.xs,
+    zIndex: 100,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  dropdownOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: FluentSpacing.xs,
-    paddingHorizontal: FluentSpacing.s,
+    paddingVertical: FluentSpacing.s,
+    paddingHorizontal: FluentSpacing.m,
     borderRadius: FluentControlRadius.button,
+    gap: FluentSpacing.s,
+  },
+  dropdownOptionLabel: {
+    flex: 1,
   },
 });
 

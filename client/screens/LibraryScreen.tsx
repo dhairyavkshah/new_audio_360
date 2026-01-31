@@ -440,13 +440,56 @@ function LibraryScreen() {
     handleCategoryChange(key as CategoryType);
   }, [handleCategoryChange]);
 
-  const renderPlaylistAddButton = () => (
-    activeCategory === "playlists" ? (
-      <Pressable style={[styles.addButton, { backgroundColor: colors.colorBrandBackground }]} onPress={handleManagePlaylists}>
-        <MaterialCommunityIcons name="plus" size={FluentIconSize.regular} color="#FFFFFF" />
-      </Pressable>
-    ) : null
-  );
+  const getCurrentSongsList = useCallback((): PlayableSong[] => {
+    switch (activeCategory) {
+      case "liked":
+        return filteredData.liked;
+      case "recent":
+        return filteredData.recent;
+      case "top":
+        return filteredData.top;
+      case "songs":
+        return filteredData.songs;
+      default:
+        return [];
+    }
+  }, [activeCategory, filteredData]);
+
+  const renderTopBarRightAction = () => {
+    if (activeCategory === "playlists") {
+      return (
+        <Pressable style={[styles.addButton, { backgroundColor: colors.colorBrandBackground }]} onPress={handleManagePlaylists}>
+          <MaterialCommunityIcons name="plus" size={FluentIconSize.regular} color="#FFFFFF" />
+        </Pressable>
+      );
+    }
+    
+    const songCategories: CategoryType[] = ["liked", "recent", "top", "songs"];
+    if (songCategories.includes(activeCategory)) {
+      const songs = getCurrentSongsList();
+      if (songs.length === 0) return null;
+      
+      return (
+        <View style={styles.topBarPlayButtons}>
+          <Pressable 
+            style={[styles.topBarPlayAllButton, { backgroundColor: colors.colorBrandBackground }]} 
+            onPress={() => handlePlayAll(songs)}
+          >
+            <MaterialCommunityIcons name="play" size={FluentIconSize.small} color="#FFFFFF" />
+            <FluentText variant="body2" style={{ color: '#FFFFFF', marginLeft: FluentSpacing.xs }}>Play All</FluentText>
+          </Pressable>
+          <Pressable 
+            style={[styles.topBarShuffleButton, { backgroundColor: colors.colorNeutralBackground3 }]} 
+            onPress={() => handleShuffleAll(songs)}
+          >
+            <MaterialCommunityIcons name="shuffle" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
+          </Pressable>
+        </View>
+      );
+    }
+    
+    return null;
+  };
 
   const renderSongItem = ({ item: song, songs }: { item: PlayableSong; songs: PlayableSong[] }) => {
     return (
@@ -469,21 +512,6 @@ function LibraryScreen() {
   const renderPlayAllHeader = (songs: PlayableSong[]) => (
     <View style={styles.playAllHeader}>
       <FluentText variant="caption1" color="tertiary">{songs.length} songs</FluentText>
-      <View style={styles.playAllButtons}>
-        <Pressable 
-          style={[styles.playAllButton, { backgroundColor: colors.colorBrandBackground }]} 
-          onPress={() => handlePlayAll(songs)}
-        >
-          <MaterialCommunityIcons name="play" size={FluentIconSize.small} color="#FFFFFF" />
-          <FluentText variant="body2" style={{ color: '#FFFFFF', marginLeft: FluentSpacing.xs }}>Play All</FluentText>
-        </Pressable>
-        <Pressable 
-          style={[styles.shuffleButton, { backgroundColor: colors.colorNeutralBackground3 }]} 
-          onPress={() => handleShuffleAll(songs)}
-        >
-          <MaterialCommunityIcons name="shuffle" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
-        </Pressable>
-      </View>
     </View>
   );
 
@@ -761,7 +789,7 @@ function LibraryScreen() {
         setShowSortOptions(!showSortOptions);
         setShowCategoryDropdown(false);
       }}
-      rightAction={renderPlaylistAddButton()}
+      rightAction={renderTopBarRightAction()}
     />
   );
 
@@ -902,27 +930,25 @@ const styles = StyleSheet.create({
     padding: FluentSpacing.xs,
   },
   playAllHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: FluentSpacing.m,
+    marginBottom: FluentSpacing.s,
   },
-  playAllButtons: {
+  topBarPlayButtons: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: FluentSpacing.s,
+    marginLeft: 'auto',
   },
-  playAllButton: {
+  topBarPlayAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: FluentSpacing.m,
-    paddingVertical: FluentSpacing.s,
-    borderRadius: FluentRadius.circular,
+    paddingVertical: FluentSpacing.xs,
+    borderRadius: FluentControlRadius.button,
   },
-  shuffleButton: {
-    width: FluentTouchTarget.minimum,
-    height: FluentTouchTarget.minimum,
-    borderRadius: FluentRadius.circular,
+  topBarShuffleButton: {
+    width: 32,
+    height: 32,
+    borderRadius: FluentControlRadius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },
