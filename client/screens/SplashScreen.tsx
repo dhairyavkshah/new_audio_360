@@ -97,8 +97,8 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         <FluentText variant="caption1" color="tertiary" align="center">
           By: Dhairya Shah, The Team 360
         </FluentText>
-        <FluentText variant="caption1" color="tertiary" align="center" style={{ marginTop: FluentSpacing.xs }}>
-          v28.0
+        <FluentText variant="caption1" color="tertiary" align="center" style={{ marginTop: FluentSpacing.s }}>
+          v28.1
         </FluentText>
       </View>
     </View>
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     height: 120,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: FluentSpacing.xxl,
+    marginBottom: FluentSpacing.xxxl,
   },
   icon: {
     width: 120,

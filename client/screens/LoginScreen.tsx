@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Pressable, Image, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -55,7 +55,7 @@ export default function LoginScreen() {
             Sign in to access your music
           </FluentText>
           
-          <FluentText variant="body2" color="secondary" align="center" style={styles.description}>
+          <FluentText variant="body1" color="secondary" align="center" style={styles.description}>
             A license is required to use New Audio 360. Sign in with your Google account to verify your purchase.
           </FluentText>
 
@@ -78,10 +78,7 @@ export default function LoginScreen() {
               <ActivityIndicator size="small" color={isDark ? '#FFFFFF' : '#4285F4'} />
             ) : (
               <>
-                <Image
-                  source={{ uri: 'https://www.google.com/favicon.ico' }}
-                  style={styles.googleIcon}
-                />
+                <MaterialCommunityIcons name="google" size={24} color={isDark ? '#FFFFFF' : '#4285F4'} />
                 <FluentText 
                   variant="subtitle2" 
                   style={{ color: isDark ? '#FFFFFF' : '#757575' }}
@@ -147,7 +144,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: FluentSpacing.l,
+    gap: FluentSpacing.xl,
   },
   welcomeText: {
     marginBottom: FluentSpacing.xs,
@@ -160,7 +157,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: FluentSpacing.m,
-    borderRadius: FluentControlRadius.card,
+    borderRadius: FluentControlRadius.dialog,
     gap: FluentSpacing.s,
   },
   errorText: {
@@ -178,10 +175,6 @@ const styles = StyleSheet.create({
     minWidth: 250,
     height: 52,
   },
-  googleIcon: {
-    width: 24,
-    height: 24,
-  },
   testButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -191,8 +184,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: FluentSpacing.l,
     borderRadius: FluentControlRadius.dialog,
     borderWidth: 1,
-    borderStyle: 'dashed',
     minWidth: 200,
+    opacity: 0.7,
   },
   footer: {
     gap: FluentSpacing.s,

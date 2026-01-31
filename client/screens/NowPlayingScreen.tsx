@@ -21,7 +21,7 @@ import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentDarkColors, FluentTouchTarget } from "@/constants/fluent2";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import SoundCloudService, { SoundCloudTrack } from "@/services/SoundCloudService";
 import ArchiveOrgService, { ArchiveOrgTrack } from "@/services/ArchiveOrgService";
@@ -29,8 +29,7 @@ import ArchiveOrgService, { ArchiveOrgTrack } from "@/services/ArchiveOrgService
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 
 const BLUR_INTENSITY = 40;
-const TOUCH_TARGET_MIN = 44;
-const HORIZONTAL_PADDING = FluentSpacing.l;
+const HORIZONTAL_PADDING = FluentSpacing.xl;
 
 export default function NowPlayingScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -435,8 +434,8 @@ const styles = StyleSheet.create({
     gap: FluentSpacing.xxl,
   },
   actionButton: {
-    width: TOUCH_TARGET_MIN,
-    height: TOUCH_TARGET_MIN,
+    width: FluentTouchTarget.minimum,
+    height: FluentTouchTarget.minimum,
     justifyContent: "center",
     alignItems: "center",
   },

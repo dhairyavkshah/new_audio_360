@@ -12,7 +12,7 @@ import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import { FluentSpacing, FluentPadding, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentPadding, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentIconSize, FluentTouchTarget } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 
@@ -95,18 +95,25 @@ export default function QueueScreen() {
       <Pressable
         style={[
           styles.songItem,
-          { backgroundColor: isSelected ? colors.colorBrandBackground + "20" : colors.colorNeutralBackground1 },
-          isCurrentSong && styles.currentSong,
+          { backgroundColor: isSelected ? colors.colorNeutralBackground1Pressed : colors.colorNeutralBackground2 },
+          isCurrentSong && [styles.currentSong, { borderColor: colors.colorBrandStroke1 }],
         ]}
         onPress={() => handleSongPress(item)}
         onLongPress={() => handleLongPress(item)}
         delayLongPress={400}
       >
+        <View style={styles.dragHandle}>
+          <MaterialCommunityIcons
+            name="drag-horizontal-variant"
+            size={FluentIconSize.regular}
+            color={colors.colorNeutralForeground3}
+          />
+        </View>
         <View style={styles.songIndex}>
           {selectionMode ? (
             <MaterialCommunityIcons
               name={isSelected ? "checkbox-marked-circle" : "checkbox-blank-circle-outline"}
-              size={24}
+              size={FluentIconSize.medium}
               color={isSelected ? colors.colorBrandForeground1 : colors.colorNeutralForeground2}
             />
           ) : (
@@ -118,9 +125,9 @@ export default function QueueScreen() {
         <Image source={item.artwork ? { uri: item.artwork } : DEFAULT_ALBUM_ART} style={styles.artwork} />
         <View style={styles.songInfo}>
           <FluentText 
-            variant="body1" 
+            variant="body1Strong" 
             numberOfLines={1} 
-            style={[styles.songTitle, isCurrentSong && { color: colors.colorBrandForeground1 }]}
+            style={isCurrentSong ? { color: colors.colorBrandForeground1 } : undefined}
           >
             {item.title}
           </FluentText>
@@ -128,7 +135,7 @@ export default function QueueScreen() {
             {item.artist}
           </FluentText>
         </View>
-        <FluentText variant="caption1" color="secondary">
+        <FluentText variant="caption1" color="tertiary">
           {formatDuration(item.duration)}
         </FluentText>
         {isCurrentSong ? (
@@ -269,30 +276,37 @@ const styles = StyleSheet.create({
   songItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: FluentSpacing.m,
+    paddingVertical: FluentSpacing.m,
+    paddingHorizontal: FluentSpacing.m,
     borderRadius: FluentControlRadius.card,
-    marginBottom: FluentSpacing.xs,
+    marginBottom: FluentSpacing.s,
+    minHeight: 72,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   currentSong: {
-    borderLeftWidth: 3,
+    borderWidth: 1,
+  },
+  dragHandle: {
+    width: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: FluentSpacing.xs,
   },
   songIndex: {
-    width: 32,
+    width: 28,
     alignItems: "center",
     justifyContent: "center",
   },
   artwork: {
     width: 48,
     height: 48,
-    borderRadius: FluentControlRadius.chip,
+    borderRadius: FluentControlRadius.card,
     marginLeft: FluentSpacing.xs,
   },
   songInfo: {
     flex: 1,
     marginLeft: FluentSpacing.m,
-  },
-  songTitle: {
-    fontWeight: "500",
   },
   playingBadge: {
     width: 32,
