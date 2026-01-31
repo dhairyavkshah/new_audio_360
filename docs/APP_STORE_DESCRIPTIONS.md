@@ -77,7 +77,7 @@ Explore millions of tracks from SoundCloud and Internet Archive:
 - Internet Archive - Stream public domain and Creative Commons music
 - Full DSP Support - Apply all Sound Lab effects to streaming audio
 - Neural AI Upscaling - Enhance streaming audio quality in real-time
-- Offline Favorites - Save streaming tracks for quick access
+- Quick Access Favorites - Save streaming tracks to your favorites for easy access
 
 POWERFUL LIBRARY MANAGEMENT
 
