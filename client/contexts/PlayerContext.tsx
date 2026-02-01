@@ -775,19 +775,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         audioElementRef.current.play().then(() => {
           setIsPlaying(true);
         }).catch(console.error);
-      } else if (useTrackPlayerRef.current) {
-        // TrackPlayer: must await seekTo before play
-        TrackPlayerService.seekTo(0).then(() => {
-          TrackPlayerService.play();
-          // TrackPlayer state listener will update isPlaying
-        });
-      } else if (useNativePlaybackRef.current) {
-        // Native Android: must await seekTo before play (async operations)
+      } else if (Platform.OS === 'android' && useNativePlaybackRef.current) {
+        // Native Android (PlaybackEngineModule with DSP): must await seekTo before play
+        // Check this BEFORE TrackPlayer since native takes priority when available
         console.log('[PlayerContext] Repeat one: seeking to 0 then playing');
         PlaybackEngineModule.seekTo(0).then(() => {
           console.log('[PlayerContext] Seek complete, now calling play');
           PlaybackEngineModule.play();
           // Native isPlaying listener will update isPlaying state
+        });
+      } else if (useTrackPlayerRef.current) {
+        // TrackPlayer: fallback for native builds without custom module
+        TrackPlayerService.seekTo(0).then(() => {
+          TrackPlayerService.play();
+          // TrackPlayer state listener will update isPlaying
         });
       } else if (playerRef.current) {
         playerRef.current.seekTo(0);
