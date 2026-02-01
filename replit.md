@@ -124,13 +124,14 @@ All song durations are normalized to **seconds** throughout the app:
 - **MediaStoreScannerModule**: Added fallback duration fetching using `MediaMetadataRetriever` when MediaStore returns 0. This handles cases where MediaStore hasn't fully indexed newly added files.
 - **PlayerContext progress callback**: Removed overly strict guard (`position <= duration`) that was resetting currentTime to 0 at end of tracks. Now uses industry-standard approach: allow position to reach duration without artificial capping, using `Math.min(position, duration)` for UI display.
 
-### Sample-Based Progress & Decoder End-of-Stream (v29.3 - February 2026)
-- **Sample counting in DSP**: `SoftwareDSPAudioProcessor` counts processed audio frames. Formula: `playback_time = samples_played / sample_rate`.
-- **Synchronous end detection**: PlayerContext polls every 250ms and triggers auto-advance when `position >= duration - 100ms`. This is the primary, most reliable method.
-- **PlaybackStatus extended**: Added `sampleBasedPositionMs` and `trackEnded` fields to expose DSP's sample-based tracking to JS layer.
-- **Seek race condition fix**: Uses `setPendingSamplePosition()` BEFORE calling `player.seekTo()` to prevent ExoPlayer's async `flush()` from resetting the sample counter.
-- **Notification tap to open app**: MediaSession includes `setSessionActivity()` with PendingIntent to launch app when notification is tapped.
-- **onTrackEnded event**: Added native event from DSP decoder end-of-stream for additional reliability.
+### Event-Based Progress & Track End (v29.3 - February 2026)
+- **Event-driven like web**: Android now works like web - native player PUSHES updates to the app (not app polling the player).
+- **onProgress event**: Native fires every 1 second with position and duration in SECONDS (like web's `ontimeupdate`).
+- **onTrackEnded event**: When position reaches duration, native fires track ended event (like web's `onended`).
+- **No more polling**: Removed all setInterval polling from PlayerContext for Android playback.
+- **Seconds not milliseconds**: All progress values are now in clean integer seconds.
+- **Seek race condition fix**: Uses `setPendingSamplePosition()` BEFORE calling `player.seekTo()` to preserve sample counter.
+- **Notification tap to open app**: MediaSession includes `setSessionActivity()` with PendingIntent to launch app.
 
 ## External Dependencies
 

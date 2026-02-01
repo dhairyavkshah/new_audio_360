@@ -5,7 +5,7 @@ import { Song, mockSongs } from '@/lib/data';
 import { DeviceSong, useMediaLibraryContext } from '@/contexts/MediaLibraryContext';
 import { savePlayerState, getPlayerState, getFavorites, saveFavorites, getRecentlyPlayed, addToRecentlyPlayed, getMostPlayed, incrementPlayCount } from '@/lib/storage';
 import { useSoundLab, EQBands } from '@/contexts/SoundLabContext';
-import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule, AudioSessionBridgeModule, PlaybackStateChangedEvent } from 'audio-effects';
+import { PlaybackEngineModule, PlaybackStatus, ImmersiveModeEngineModule, AudioSessionBridgeModule, PlaybackStateChangedEvent, ProgressEvent, TrackEndedEvent } from 'audio-effects';
 import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 import { TrackPlayerService, State, TrackMetadata, PlaybackSource } from '@/services/TrackPlayerService';
 import { AudioCoordinator } from '@/services/AudioCoordinator';
@@ -114,7 +114,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playbackEngineInitializedRef = useRef<boolean>(false);
   const playbackEngineInitPromiseRef = useRef<Promise<boolean> | null>(null);
   const progressPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const nativeProgressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const nativeProgressSubscriptionRef = useRef<{ remove: () => void } | null>(null);
+  const nativeTrackEndedSubscriptionRef = useRef<{ remove: () => void } | null>(null);
   const trackEndHandledRef = useRef<boolean>(false);
   const lastKnownPositionRef = useRef<number>(0);
   const wasPlayingBeforeBackgroundRef = useRef<boolean>(false);
@@ -683,52 +684,37 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [setupTrackPlayerCallbacks, restoreTrackPlayerQueue]);
 
-  // Ensure progress polling is active when playing on native Android
-  // This handles cases where playback resumes without going through loadAndPlaySong
-  // (e.g., togglePlayPause after pause, restore from background)
+  // Set up native event listeners for Android playback (like web's ontimeupdate and onended)
+  // Native player PUSHES updates to the app, not the app polling the player
   useEffect(() => {
     if (Platform.OS !== 'android') return;
-    if (useTrackPlayerRef.current) return;
     if (!useNativePlaybackRef.current) return;
-
-    if (isPlaying && currentSong && !nativeProgressIntervalRef.current) {
-      // Start progress polling - synchronous position-based detection
-      nativeProgressIntervalRef.current = setInterval(() => {
-        const currentStatus = PlaybackEngineModule.getStatus();
-        
-        // Use sample-based position from DSP processor (more accurate than timing-based)
-        const sampleBasedPositionMs = currentStatus.sampleBasedPositionMs || 0;
-        const positionMs = sampleBasedPositionMs > 0 ? sampleBasedPositionMs : (currentStatus.currentPositionMs || 0);
-        const durationMs = currentStatus.durationMs || 0;
-        
-        // Synchronous end detection: position reached or exceeded duration
-        const positionReachedEnd = durationMs > 0 && positionMs >= durationMs - 100;
-        const isEnded = currentStatus.playbackState === 'ended';
-        const dspTrackEnded = currentStatus.trackEnded === true;
-        
-        if (positionReachedEnd || isEnded || dspTrackEnded) {
-          console.log('[PlayerContext] Track ended (sync):', { positionMs, durationMs, isEnded, dspTrackEnded });
-          if (nativeProgressIntervalRef.current) {
-            clearInterval(nativeProgressIntervalRef.current);
-            nativeProgressIntervalRef.current = null;
-          }
-          handleTrackEndRef.current();
-          return;
-        }
-        
-        if (currentStatus.isPlaying) {
-          setCurrentTime(positionMs / 1000);
-          if (durationMs > 0) {
-            setDuration(durationMs / 1000);
-          }
-        }
-        
-        setIsBuffering(currentStatus.playbackState === 'buffering');
-      }, 250); // Poll every 250ms for precise end detection
-    }
-    // Note: We don't clear the interval when isPlaying becomes false
-    // because the interval self-manages based on playback state
-  }, [isPlaying, currentSong]);
+    
+    // Listen for progress updates (like web's ontimeupdate - fires every second)
+    const progressSub = PlaybackEngineModule.addProgressListener((event: ProgressEvent) => {
+      // Native sends position and duration in SECONDS
+      setCurrentTime(event.position);
+      if (event.duration > 0) {
+        setDuration(event.duration);
+      }
+    });
+    nativeProgressSubscriptionRef.current = progressSub;
+    
+    // Listen for track ended (like web's onended)
+    const trackEndedSub = PlaybackEngineModule.addTrackEndedListener((event: TrackEndedEvent) => {
+      console.log('[PlayerContext] Track ended (native event):', { position: event.position, duration: event.duration });
+      setIsPlaying(false);
+      handleTrackEndRef.current();
+    });
+    nativeTrackEndedSubscriptionRef.current = trackEndedSub;
+    
+    return () => {
+      nativeProgressSubscriptionRef.current?.remove();
+      nativeTrackEndedSubscriptionRef.current?.remove();
+      nativeProgressSubscriptionRef.current = null;
+      nativeTrackEndedSubscriptionRef.current = null;
+    };
+  }, []);
 
   const handleTrackEnd = useCallback(() => {
     // Guard against double-handling (both polling and event listener can trigger)
@@ -837,11 +823,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (progressPollingRef.current) {
       clearInterval(progressPollingRef.current);
       progressPollingRef.current = null;
-    }
-    
-    if (nativeProgressIntervalRef.current) {
-      clearInterval(nativeProgressIntervalRef.current);
-      nativeProgressIntervalRef.current = null;
     }
     
     if (Platform.OS === 'android' && useNativePlaybackRef.current) {
@@ -1240,12 +1221,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
         AudioCoordinator.notifyPlaybackStarted('music');
       } else if (Platform.OS === 'android' && useNativePlaybackRef.current) {
-        // Clean up existing progress interval before starting new track
-        if (nativeProgressIntervalRef.current) {
-          clearInterval(nativeProgressIntervalRef.current);
-          nativeProgressIntervalRef.current = null;
-        }
-        
         // On Android, use PlaybackEngineModule which has DSP processing integrated
         // This applies to both local files and streaming (SoundCloud, Archive.org)
         const isSoundCloudTrack = ('source' in song && song.source === 'soundcloud') || song.id.startsWith('sc_');
@@ -1353,42 +1328,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setIsPlaying(true);
         setIsLoading(false);
         AudioCoordinator.notifyPlaybackStarted('music');
-        
-        // Start progress polling for DSP playback - synchronous position-based detection
-        if (!nativeProgressIntervalRef.current) {
-          nativeProgressIntervalRef.current = setInterval(() => {
-            const currentStatus = PlaybackEngineModule.getStatus();
-            
-            // Use sample-based position from DSP processor (more accurate than timing-based)
-            // Falls back to ExoPlayer position if sample-based not available
-            const sampleBasedPositionMs = currentStatus.sampleBasedPositionMs || 0;
-            const positionMs = sampleBasedPositionMs > 0 ? sampleBasedPositionMs : (currentStatus.currentPositionMs || 0);
-            const durationMs = currentStatus.durationMs || 0;
-            
-            // Synchronous end detection: position reached or exceeded duration
-            // This is the most reliable method - when progress reaches end, song is done
-            const positionReachedEnd = durationMs > 0 && positionMs >= durationMs - 100;
-            const isEnded = currentStatus.playbackState === 'ended';
-            const dspTrackEnded = currentStatus.trackEnded === true;
-            
-            if (positionReachedEnd || isEnded || dspTrackEnded) {
-              console.log('[PlayerContext] Track ended (sync):', { positionMs, durationMs, isEnded, dspTrackEnded });
-              if (nativeProgressIntervalRef.current) {
-                clearInterval(nativeProgressIntervalRef.current);
-                nativeProgressIntervalRef.current = null;
-              }
-              handleTrackEndRef.current();
-              return;
-            }
-            
-            if (currentStatus.isPlaying) {
-              setCurrentTime(positionMs / 1000);
-              if (durationMs > 0) {
-                setDuration(durationMs / 1000);
-              }
-            }
-          }, 250); // Poll every 250ms for precise end detection
-        }
+        // Progress updates and track end are now handled by native event listeners
+        // (set up in useEffect - like web's ontimeupdate and onended)
       } else if (useTrackPlayerRef.current) {
         // Fallback to TrackPlayer if PlaybackEngineModule is not available
         console.log('[PlayerContext] Using TrackPlayer for playback (no DSP for streaming)');

@@ -423,26 +423,39 @@ class PlaybackService : MediaSessionService() {
             override fun run() {
                 player?.let { p ->
                     if (p.isPlaying) {
-                        // Update cached values for thread-safe access
+                        // Update cached values
                         cachedPositionMs = p.currentPosition
-                        val duration = p.duration
-                        cachedDurationMs = if (duration == C.TIME_UNSET) 0L else duration
+                        val durationMs = p.duration
+                        cachedDurationMs = if (durationMs == C.TIME_UNSET) 0L else durationMs
                         cachedBufferedPositionMs = p.bufferedPosition
                         
-                        // Get sample-based position from DSP (more accurate)
-                        val samplePosition = dspProcessor?.getSampleBasedPositionMs() ?: 0L
-                        val trackEnded = dspProcessor?.hasTrackEnded() ?: false
+                        // Convert to SECONDS (integer) for simple, clean updates
+                        val positionSeconds = (cachedPositionMs / 1000).toInt()
+                        val durationSeconds = (cachedDurationMs / 1000).toInt()
                         
+                        // Send progress update in SECONDS (like web's ontimeupdate)
                         progressCallback?.invoke(mapOf(
-                            "positionMs" to p.currentPosition,
-                            "sampleBasedPositionMs" to samplePosition,
-                            "durationMs" to p.duration,
-                            "bufferedMs" to p.bufferedPosition,
-                            "trackEnded" to trackEnded
+                            "position" to positionSeconds,
+                            "duration" to durationSeconds
                         ))
+                        
+                        // Check if song ended: position reached duration
+                        // This fires "onended" like web does
+                        if (durationSeconds > 0 && positionSeconds >= durationSeconds) {
+                            Log.d(TAG, "Song ended: position=$positionSeconds, duration=$durationSeconds")
+                            cachedTrackEnded = true
+                            stopProgressUpdates()
+                            trackEndedCallback?.invoke()
+                            notifyStateChange(mapOf(
+                                "type" to "trackEnded",
+                                "position" to positionSeconds,
+                                "duration" to durationSeconds
+                            ))
+                            return
+                        }
                     }
                 }
-                progressHandler?.postDelayed(this, 1000)
+                progressHandler?.postDelayed(this, 1000) // Update every 1 second
             }
         }
         progressHandler?.post(progressRunnable!!)

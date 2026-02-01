@@ -21,9 +21,13 @@ export interface PlaybackErrorEvent {
 }
 
 export interface ProgressEvent {
-  positionMs: number;
-  durationMs: number;
-  bufferedPositionMs: number;
+  position: number;  // Position in SECONDS
+  duration: number;  // Duration in SECONDS
+}
+
+export interface TrackEndedEvent {
+  position: number;  // Position in SECONDS
+  duration: number;  // Duration in SECONDS
 }
 
 // Playback Engine Module Types
@@ -741,6 +745,13 @@ export const PlaybackEngineModule = {
       return null;
     }
     return PlaybackEngineEmitter.addListener('onProgress', listener);
+  },
+
+  addTrackEndedListener: (listener: (event: TrackEndedEvent) => void): EventSubscription | null => {
+    if (!PlaybackEngineEmitter) {
+      return null;
+    }
+    return PlaybackEngineEmitter.addListener('onTrackEnded', listener);
   }
 };
 
