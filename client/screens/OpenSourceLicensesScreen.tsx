@@ -53,7 +53,6 @@ const OPEN_SOURCE_LIBRARIES = [
 const SMART_ENHANCEMENT_LIBRARIES = [
   { name: "TensorFlow.js", license: "Apache License 2.0", version: "4.x", description: "Neural AI audio upscaling on Web/PWA" },
   { name: "TensorFlow Lite", license: "Apache License 2.0", version: "2.x", description: "Neural AI audio upscaling on Android" },
-  { name: "Web Audio API", license: "W3C License", version: "Standard", description: "Browser-based DSP and audio processing" },
 ];
 
 export default function OpenSourceLicensesScreen() {
