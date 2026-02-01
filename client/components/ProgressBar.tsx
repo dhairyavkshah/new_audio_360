@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Platform } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -23,6 +23,7 @@ interface ProgressBarProps {
   duration: number;
   currentTime: number;
   onSeek: (time: number) => void;
+  onTrackEnd?: () => void;
   width?: number;
   height?: number;
   showTextShadow?: boolean;
@@ -37,6 +38,7 @@ export function ProgressBar({
   duration,
   currentTime,
   onSeek,
+  onTrackEnd,
   width = 320,
   height = TRACK_HEIGHT,
   showTextShadow = false,
@@ -44,6 +46,30 @@ export function ProgressBar({
   const { isDark } = useThemeContext();
   const tokens = useThemeTokens();
   const { trackStyle, progressStyle, trackRadius } = getProgressBarStyle(tokens);
+  
+  // Track end detection - ref to prevent double-triggering
+  const trackEndTriggeredRef = useRef(false);
+  
+  // SYNCHRONOUS end detection: when currentTime reaches duration, trigger end
+  // This is the slider itself ensuring proper queue/next/same song playback
+  useEffect(() => {
+    // Guard: need valid duration and callback
+    if (!onTrackEnd || duration <= 0) return;
+    
+    // Guard: currentTime must be at or past duration (within 1 second tolerance)
+    const isAtEnd = currentTime >= duration - 1 && currentTime > 0;
+    
+    if (isAtEnd && !trackEndTriggeredRef.current) {
+      console.log('[ProgressBar] Track ended - currentTime:', currentTime, 'duration:', duration);
+      trackEndTriggeredRef.current = true;
+      onTrackEnd();
+    }
+    
+    // Reset the guard when a new track starts (currentTime resets to beginning)
+    if (currentTime < 5 && trackEndTriggeredRef.current) {
+      trackEndTriggeredRef.current = false;
+    }
+  }, [currentTime, duration, onTrackEnd]);
 
   const textShadowStyle = showTextShadow ? {
     textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
