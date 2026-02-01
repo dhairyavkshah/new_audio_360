@@ -116,6 +116,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const progressPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const nativeProgressSubscriptionRef = useRef<{ remove: () => void } | null>(null);
   const nativeTrackEndedSubscriptionRef = useRef<{ remove: () => void } | null>(null);
+  const nativeIsPlayingSubscriptionRef = useRef<{ remove: () => void } | null>(null);
   const trackEndHandledRef = useRef<boolean>(false);
   const lastKnownPositionRef = useRef<number>(0);
   const wasPlayingBeforeBackgroundRef = useRef<boolean>(false);
@@ -708,11 +709,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     });
     nativeTrackEndedSubscriptionRef.current = trackEndedSub;
     
+    // Listen for isPlaying changes (sync waveform with actual playback)
+    const isPlayingSub = PlaybackEngineModule.addIsPlayingListener((event) => {
+      console.log('[PlayerContext] Native isPlaying changed:', event.isPlaying);
+      setIsPlaying(event.isPlaying);
+    });
+    nativeIsPlayingSubscriptionRef.current = isPlayingSub;
+    
     return () => {
       nativeProgressSubscriptionRef.current?.remove();
       nativeTrackEndedSubscriptionRef.current?.remove();
+      nativeIsPlayingSubscriptionRef.current?.remove();
       nativeProgressSubscriptionRef.current = null;
       nativeTrackEndedSubscriptionRef.current = null;
+      nativeIsPlayingSubscriptionRef.current = null;
     };
   }, []);
 
@@ -738,22 +748,34 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       // Reset guard for repeat-one since same track will end again
       trackEndHandledRef.current = false;
       
-      // Reset currentTime immediately so ProgressBar guard resets
+      // Reset currentTime immediately (UI update)
       setCurrentTime(0);
-      setIsPlaying(true);
+      // Note: Don't set isPlaying(true) here - let native state event update it
+      // This ensures waveform only animates when audio is actually playing
       
       if (Platform.OS === 'web' && audioElementRef.current) {
         audioElementRef.current.currentTime = 0;
-        audioElementRef.current.play().catch(console.error);
+        audioElementRef.current.play().then(() => {
+          setIsPlaying(true);
+        }).catch(console.error);
       } else if (useTrackPlayerRef.current) {
-        TrackPlayerService.seekTo(0);
-        TrackPlayerService.play();
+        // TrackPlayer: must await seekTo before play
+        TrackPlayerService.seekTo(0).then(() => {
+          TrackPlayerService.play();
+          // TrackPlayer state listener will update isPlaying
+        });
       } else if (useNativePlaybackRef.current) {
-        PlaybackEngineModule.seekTo(0);
-        PlaybackEngineModule.play();
+        // Native Android: must await seekTo before play (async operations)
+        console.log('[PlayerContext] Repeat one: seeking to 0 then playing');
+        PlaybackEngineModule.seekTo(0).then(() => {
+          console.log('[PlayerContext] Seek complete, now calling play');
+          PlaybackEngineModule.play();
+          // Native isPlaying listener will update isPlaying state
+        });
       } else if (playerRef.current) {
         playerRef.current.seekTo(0);
         playerRef.current.play();
+        setIsPlaying(true);
       }
       return;
     }

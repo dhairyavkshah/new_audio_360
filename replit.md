@@ -128,10 +128,12 @@ All song durations are normalized to **seconds** throughout the app:
 - **Event-driven like web**: Android now works like web - native player PUSHES updates to the app (not app polling the player).
 - **onProgress event**: Native fires every 1 second with position and duration in SECONDS (like web's `ontimeupdate`).
 - **onTrackEnded event**: When position reaches duration, native fires track ended event (like web's `onended`).
+- **onIsPlayingChanged event**: Native fires when playback state changes, syncing isPlaying state with actual audio playback.
 - **No more polling**: Removed all setInterval polling from PlayerContext for Android playback.
 - **Seconds not milliseconds**: All progress values are now in clean integer seconds.
 - **Seek race condition fix**: Uses `setPendingSamplePosition()` BEFORE calling `player.seekTo()` to preserve sample counter.
 - **Notification tap to open app**: MediaSession includes `setSessionActivity()` with PendingIntent to launch app.
+- **Repeat one fix**: Properly awaits `seekTo(0)` before calling `play()` to avoid race conditions. Waveform only animates when native player confirms audio is playing.
 
 ## External Dependencies
 
