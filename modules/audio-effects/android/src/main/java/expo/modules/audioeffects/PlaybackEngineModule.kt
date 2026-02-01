@@ -582,7 +582,7 @@ class PlaybackEngineModule : Module() {
             }
         }
         
-        Events("onPlaybackStateChanged", "onIsPlayingChanged", "onTrackChanged", "onError", "onProgress")
+        Events("onPlaybackStateChanged", "onIsPlayingChanged", "onTrackChanged", "onTrackEnded", "onError", "onProgress")
     }
     
     private fun setupServiceCallbacks(service: PlaybackService) {
@@ -594,6 +594,13 @@ class PlaybackEngineModule : Module() {
                     "index" to data["index"],
                     "reason" to data["reason"]
                 ))
+                "trackEnded" -> {
+                    // DSP decoder signaled end-of-stream (most reliable track-end signal)
+                    android.util.Log.d("PlaybackEngineModule", "Received trackEnded from DSP decoder")
+                    sendEvent("onTrackEnded", mapOf(
+                        "source" to (data["source"] ?: "dsp")
+                    ))
+                }
                 "error" -> sendEvent("onError", mapOf(
                     "code" to data["code"],
                     "message" to data["message"]

@@ -125,12 +125,12 @@ All song durations are normalized to **seconds** throughout the app:
 - **PlayerContext progress callback**: Removed overly strict guard (`position <= duration`) that was resetting currentTime to 0 at end of tracks. Now uses industry-standard approach: allow position to reach duration without artificial capping, using `Math.min(position, duration)` for UI display.
 
 ### Sample-Based Progress & Decoder End-of-Stream (v29.3 - February 2026)
-- **Sample counting in DSP**: `SoftwareDSPAudioProcessor` now counts processed audio frames (`samplesProcessed`). Formula: `playback_time = samples_played / sample_rate`. This is more accurate than timing-based methods.
-- **DSP end-of-stream callback**: When decoder signals end-of-stream AND output buffer is drained, `hasTrackEnded()` returns true and fires callback. This is the most reliable auto-advance signal.
+- **Sample counting in DSP**: `SoftwareDSPAudioProcessor` counts processed audio frames. Formula: `playback_time = samples_played / sample_rate`.
+- **Synchronous end detection**: PlayerContext polls every 250ms and triggers auto-advance when `position >= duration - 100ms`. This is the primary, most reliable method.
 - **PlaybackStatus extended**: Added `sampleBasedPositionMs` and `trackEnded` fields to expose DSP's sample-based tracking to JS layer.
-- **Auto-advance priority**: PlayerContext now checks: (1) DSP `trackEnded`, (2) ExoPlayer `STATE_ENDED`, (3) position-based fallback.
-- **Seek race condition fix**: Uses `setPendingSamplePosition()` BEFORE calling `player.seekTo()` to prevent ExoPlayer's async `flush()` from resetting the sample counter to 0.
-- **Notification tap to open app**: MediaSession now includes `setSessionActivity()` with a PendingIntent to launch the app when the notification is tapped.
+- **Seek race condition fix**: Uses `setPendingSamplePosition()` BEFORE calling `player.seekTo()` to prevent ExoPlayer's async `flush()` from resetting the sample counter.
+- **Notification tap to open app**: MediaSession includes `setSessionActivity()` with PendingIntent to launch app when notification is tapped.
+- **onTrackEnded event**: Added native event from DSP decoder end-of-stream for additional reliability.
 
 ## External Dependencies
 

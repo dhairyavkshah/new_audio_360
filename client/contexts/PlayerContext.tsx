@@ -692,30 +692,26 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!useNativePlaybackRef.current) return;
 
     if (isPlaying && currentSong && !nativeProgressIntervalRef.current) {
-      // Start progress polling if not already running
+      // Start progress polling - synchronous position-based detection
       nativeProgressIntervalRef.current = setInterval(() => {
         const currentStatus = PlaybackEngineModule.getStatus();
         
         // Use sample-based position from DSP processor (more accurate than timing-based)
-        // Falls back to ExoPlayer position if sample-based not available
         const sampleBasedPositionMs = currentStatus.sampleBasedPositionMs || 0;
         const positionMs = sampleBasedPositionMs > 0 ? sampleBasedPositionMs : (currentStatus.currentPositionMs || 0);
         const durationMs = currentStatus.durationMs || 0;
         
-        // Decoder end-of-stream detection (most reliable - from DSP processor)
-        // This signals that the decoder finished AND all samples have been output
-        const dspTrackEnded = currentStatus.trackEnded === true;
+        // Synchronous end detection: position reached or exceeded duration
+        const positionReachedEnd = durationMs > 0 && positionMs >= durationMs - 100;
         const isEnded = currentStatus.playbackState === 'ended';
-        // Fallback: Position-based end detection
-        const positionReachedEnd = durationMs > 0 && positionMs >= durationMs - 200;
+        const dspTrackEnded = currentStatus.trackEnded === true;
         
-        if (dspTrackEnded || isEnded || positionReachedEnd) {
-          console.log('[PlayerContext] Track ended detected:', { dspTrackEnded, isEnded, positionReachedEnd, positionMs, durationMs });
+        if (positionReachedEnd || isEnded || dspTrackEnded) {
+          console.log('[PlayerContext] Track ended (sync):', { positionMs, durationMs, isEnded, dspTrackEnded });
           if (nativeProgressIntervalRef.current) {
             clearInterval(nativeProgressIntervalRef.current);
             nativeProgressIntervalRef.current = null;
           }
-          // Call handleTrackEnd via ref (the guard prevents double-handling)
           handleTrackEndRef.current();
           return;
         }
@@ -728,7 +724,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
         
         setIsBuffering(currentStatus.playbackState === 'buffering');
-      }, 500); // Poll every 500ms for responsive end detection
+      }, 250); // Poll every 250ms for precise end detection
     }
     // Note: We don't clear the interval when isPlaying becomes false
     // because the interval self-manages based on playback state
@@ -1358,7 +1354,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
         AudioCoordinator.notifyPlaybackStarted('music');
         
-        // Start progress polling for DSP playback
+        // Start progress polling for DSP playback - synchronous position-based detection
         if (!nativeProgressIntervalRef.current) {
           nativeProgressIntervalRef.current = setInterval(() => {
             const currentStatus = PlaybackEngineModule.getStatus();
@@ -1369,20 +1365,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             const positionMs = sampleBasedPositionMs > 0 ? sampleBasedPositionMs : (currentStatus.currentPositionMs || 0);
             const durationMs = currentStatus.durationMs || 0;
             
-            // Decoder end-of-stream detection (most reliable - from DSP processor)
-            // This signals that the decoder finished AND all samples have been output
-            const dspTrackEnded = currentStatus.trackEnded === true;
+            // Synchronous end detection: position reached or exceeded duration
+            // This is the most reliable method - when progress reaches end, song is done
+            const positionReachedEnd = durationMs > 0 && positionMs >= durationMs - 100;
             const isEnded = currentStatus.playbackState === 'ended';
-            // Fallback: Position-based end detection
-            const positionReachedEnd = durationMs > 0 && positionMs >= durationMs - 200;
+            const dspTrackEnded = currentStatus.trackEnded === true;
             
-            if (dspTrackEnded || isEnded || positionReachedEnd) {
-              console.log('[PlayerContext] Track ended detected:', { dspTrackEnded, isEnded, positionReachedEnd, positionMs, durationMs });
+            if (positionReachedEnd || isEnded || dspTrackEnded) {
+              console.log('[PlayerContext] Track ended (sync):', { positionMs, durationMs, isEnded, dspTrackEnded });
               if (nativeProgressIntervalRef.current) {
                 clearInterval(nativeProgressIntervalRef.current);
                 nativeProgressIntervalRef.current = null;
               }
-              // Call handleTrackEnd via ref (the guard prevents double-handling)
               handleTrackEndRef.current();
               return;
             }
@@ -1393,7 +1387,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 setDuration(durationMs / 1000);
               }
             }
-          }, 500); // Poll every 500ms for responsive end detection
+          }, 250); // Poll every 250ms for precise end detection
         }
       } else if (useTrackPlayerRef.current) {
         // Fallback to TrackPlayer if PlaybackEngineModule is not available
