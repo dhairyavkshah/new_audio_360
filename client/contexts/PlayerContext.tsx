@@ -696,9 +696,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       nativeProgressIntervalRef.current = setInterval(() => {
         const currentStatus = PlaybackEngineModule.getStatus();
         
-        // Handle end of track - call handleTrackEnd and stop polling
-        if (currentStatus.playbackState === 'ended') {
-          console.log('[PlayerContext] Polling detected ended state, triggering handleTrackEnd');
+        // Handle end of track - check both playback state AND position
+        // This mirrors web's audio.onended behavior which is reliable
+        const positionMs = currentStatus.currentPositionMs || 0;
+        const durationMs = currentStatus.durationMs || 0;
+        const isEnded = currentStatus.playbackState === 'ended';
+        // Position-based end detection: trigger when position reaches duration
+        // regardless of isPlaying state (mirrors web's onended which fires at EOF)
+        const positionReachedEnd = durationMs > 0 && positionMs >= durationMs - 200;
+        
+        if (isEnded || positionReachedEnd) {
+          console.log('[PlayerContext] Track ended detected:', { isEnded, positionReachedEnd, positionMs, durationMs, isPlaying: currentStatus.isPlaying });
           if (nativeProgressIntervalRef.current) {
             clearInterval(nativeProgressIntervalRef.current);
             nativeProgressIntervalRef.current = null;
@@ -709,14 +717,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
         
         if (currentStatus.isPlaying) {
-          setCurrentTime(currentStatus.currentPositionMs / 1000);
-          if (currentStatus.durationMs > 0) {
-            setDuration(currentStatus.durationMs / 1000);
+          setCurrentTime(positionMs / 1000);
+          if (durationMs > 0) {
+            setDuration(durationMs / 1000);
           }
         }
         
         setIsBuffering(currentStatus.playbackState === 'buffering');
-      }, 1000);
+      }, 500); // Poll every 500ms for more responsive end detection
     }
     // Note: We don't clear the interval when isPlaying becomes false
     // because the interval self-manages based on playback state
@@ -1351,8 +1359,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           nativeProgressIntervalRef.current = setInterval(() => {
             const currentStatus = PlaybackEngineModule.getStatus();
             
-            // Handle end of track - call handleTrackEnd and stop polling
-            if (currentStatus.playbackState === 'ended') {
+            // Handle end of track - check both playback state AND position
+            // This mirrors web's audio.onended behavior which is reliable
+            const positionMs = currentStatus.currentPositionMs || 0;
+            const durationMs = currentStatus.durationMs || 0;
+            const isEnded = currentStatus.playbackState === 'ended';
+            // Position-based end detection: trigger when position reaches duration
+            // regardless of isPlaying state (mirrors web's onended which fires at EOF)
+            const positionReachedEnd = durationMs > 0 && positionMs >= durationMs - 200;
+            
+            if (isEnded || positionReachedEnd) {
+              console.log('[PlayerContext] Track ended detected:', { isEnded, positionReachedEnd, positionMs, durationMs, isPlaying: currentStatus.isPlaying });
               if (nativeProgressIntervalRef.current) {
                 clearInterval(nativeProgressIntervalRef.current);
                 nativeProgressIntervalRef.current = null;
@@ -1363,12 +1380,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             }
             
             if (currentStatus.isPlaying) {
-              setCurrentTime(currentStatus.currentPositionMs / 1000);
-              if (currentStatus.durationMs > 0) {
-                setDuration(currentStatus.durationMs / 1000);
+              setCurrentTime(positionMs / 1000);
+              if (durationMs > 0) {
+                setDuration(durationMs / 1000);
               }
             }
-          }, 1000);
+          }, 500); // Poll every 500ms for responsive end detection
         }
       } else if (useTrackPlayerRef.current) {
         // Fallback to TrackPlayer if PlaybackEngineModule is not available
