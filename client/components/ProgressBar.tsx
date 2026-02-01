@@ -56,8 +56,9 @@ export function ProgressBar({
     // Guard: need valid duration and callback
     if (!onTrackEnd || duration <= 0) return;
     
-    // Guard: currentTime must be at or past duration (within 1 second tolerance)
-    const isAtEnd = currentTime >= duration - 1 && currentTime > 0;
+    // Guard: currentTime must be at or past duration (within 0.5 second tolerance for precision)
+    // This ensures the song plays to near-completion before triggering
+    const isAtEnd = currentTime >= duration - 0.5 && currentTime > 0;
     
     if (isAtEnd && !trackEndTriggeredRef.current) {
       console.log('[ProgressBar] Track ended - currentTime:', currentTime, 'duration:', duration);
@@ -65,8 +66,9 @@ export function ProgressBar({
       onTrackEnd();
     }
     
-    // Reset the guard when a new track starts (currentTime resets to beginning)
-    if (currentTime < 5 && trackEndTriggeredRef.current) {
+    // Reset the guard when currentTime resets (new track or repeat one)
+    // This allows repeat-one to work correctly
+    if (currentTime < 2 && trackEndTriggeredRef.current) {
       trackEndTriggeredRef.current = false;
     }
   }, [currentTime, duration, onTrackEnd]);

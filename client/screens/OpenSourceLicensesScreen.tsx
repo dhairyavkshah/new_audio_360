@@ -50,6 +50,12 @@ const OPEN_SOURCE_LIBRARIES = [
   { name: "Radio Browser API", license: "CC BY-SA 4.0", version: "Community API" },
 ];
 
+const SMART_ENHANCEMENT_LIBRARIES = [
+  { name: "TensorFlow.js", license: "Apache License 2.0", version: "4.x", description: "Neural AI audio upscaling on Web/PWA" },
+  { name: "TensorFlow Lite", license: "Apache License 2.0", version: "2.x", description: "Neural AI audio upscaling on Android" },
+  { name: "Web Audio API", license: "W3C License", version: "Standard", description: "Browser-based DSP and audio processing" },
+];
+
 export default function OpenSourceLicensesScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const { isDark } = useThemeContext();
@@ -137,6 +143,42 @@ export default function OpenSourceLicensesScreen() {
               </View>
               <FluentText variant="caption2" color="secondary" style={styles.libraryLicense}>
                 {lib.license}
+              </FluentText>
+            </View>
+          ))}
+
+          <FluentText variant="subtitle2" style={[styles.sectionHeader, { marginTop: FluentSpacing.l }]}>
+            Smart Enhancements Components
+          </FluentText>
+          <FluentText variant="caption1" color="secondary" style={styles.sectionDescription}>
+            The following components power our Smart Enhancements features including AI Audio Upscaling, Bass Enhancement, and real-time DSP processing.
+          </FluentText>
+
+          {SMART_ENHANCEMENT_LIBRARIES.map((lib, index) => (
+            <View 
+              key={`smart-${index}`} 
+              style={[styles.libraryItem, { backgroundColor: colors.colorNeutralBackground2 }]}
+            >
+              <View style={styles.libraryHeader}>
+                <MaterialCommunityIcons 
+                  name="brain" 
+                  size={FluentIconSize.small} 
+                  color={colors.colorBrandForeground1} 
+                />
+                <View style={styles.libraryDetails}>
+                  <FluentText variant="body2" style={styles.libraryName}>
+                    {lib.name}
+                  </FluentText>
+                  <FluentText variant="caption2" color="tertiary">
+                    Version {lib.version}
+                  </FluentText>
+                </View>
+              </View>
+              <FluentText variant="caption2" color="secondary" style={styles.libraryLicense}>
+                {lib.license}
+              </FluentText>
+              <FluentText variant="caption2" color="tertiary" style={styles.libraryLicense}>
+                {lib.description}
               </FluentText>
             </View>
           ))}

@@ -739,18 +739,19 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       // Reset guard for repeat-one since same track will end again
       trackEndHandledRef.current = false;
       
+      // Reset currentTime immediately so ProgressBar guard resets
+      setCurrentTime(0);
+      setIsPlaying(true);
+      
       if (Platform.OS === 'web' && audioElementRef.current) {
         audioElementRef.current.currentTime = 0;
         audioElementRef.current.play().catch(console.error);
-        setIsPlaying(true);
       } else if (useTrackPlayerRef.current) {
-        TrackPlayerService.seekTo(0).then(() => {
-          TrackPlayerService.play();
-        });
+        TrackPlayerService.seekTo(0);
+        TrackPlayerService.play();
       } else if (useNativePlaybackRef.current) {
-        PlaybackEngineModule.seekTo(0).then(() => {
-          PlaybackEngineModule.play();
-        });
+        PlaybackEngineModule.seekTo(0);
+        PlaybackEngineModule.play();
       } else if (playerRef.current) {
         playerRef.current.seekTo(0);
         playerRef.current.play();
