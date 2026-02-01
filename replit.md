@@ -134,6 +134,7 @@ All song durations are normalized to **seconds** throughout the app:
 - **Seek race condition fix**: Uses `setPendingSamplePosition()` BEFORE calling `player.seekTo()` to preserve sample counter.
 - **Notification tap to open app**: MediaSession includes `setSessionActivity()` with PendingIntent to launch app.
 - **Repeat one fix**: Properly awaits `seekTo(0)` before calling `play()` to avoid race conditions. Waveform only animates when native player confirms audio is playing.
+- **Single trackEnded source**: DSP end-of-stream callback is the ONLY source of trackEnded events. Removed duplicate firing from progress runnable and playback state listener to prevent guard conflicts.
 
 ## External Dependencies
 

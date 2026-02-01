@@ -137,14 +137,19 @@ class PlaybackService : MediaSessionService() {
         dspProcessor = SoftwareDSPAudioProcessor.getInstance()
         
         // Set up end-of-stream callback from DSP processor (most reliable track-end signal)
+        // This is the ONLY source of trackEnded events to avoid duplicates
         dspProcessor?.setEndOfStreamCallback {
-            Log.d(TAG, "DSP end-of-stream callback fired")
+            Log.d(TAG, "DSP end-of-stream callback fired - THIS IS THE AUTHORITATIVE TRACK END")
             cachedTrackEnded = true
+            val position = cachedPositionMs / 1000
+            val duration = cachedDurationMs / 1000
             mainHandler.post {
                 trackEndedCallback?.invoke()
                 notifyStateChange(mapOf(
                     "type" to "trackEnded",
-                    "source" to "dspDecoder"
+                    "source" to "dspDecoder",
+                    "position" to position,
+                    "duration" to duration
                 ))
             }
         }
@@ -440,17 +445,12 @@ class PlaybackService : MediaSessionService() {
                         ))
                         
                         // Check if song ended: position reached duration
-                        // This fires "onended" like web does
+                        // Note: Track end detection is handled by DSP end-of-stream callback (more reliable)
+                        // The DSP processor fires when all samples are delivered, which is the true "end"
+                        // We don't fire trackEnded here to avoid duplicate events
                         if (durationSeconds > 0 && positionSeconds >= durationSeconds) {
-                            Log.d(TAG, "Song ended: position=$positionSeconds, duration=$durationSeconds")
-                            cachedTrackEnded = true
+                            Log.d(TAG, "Progress shows end: position=$positionSeconds, duration=$durationSeconds (DSP will fire trackEnded)")
                             stopProgressUpdates()
-                            trackEndedCallback?.invoke()
-                            notifyStateChange(mapOf(
-                                "type" to "trackEnded",
-                                "position" to positionSeconds,
-                                "duration" to durationSeconds
-                            ))
                             return
                         }
                     }

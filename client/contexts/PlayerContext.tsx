@@ -705,7 +705,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const trackEndedSub = PlaybackEngineModule.addTrackEndedListener((event: TrackEndedEvent) => {
       console.log('[PlayerContext] Track ended (native event):', { position: event.position, duration: event.duration });
       setIsPlaying(false);
-      handleTrackEndRef.current();
+      // Call handleTrackEnd via ref - the ref is updated whenever handleTrackEnd changes
+      // This ensures we always call the latest version of handleTrackEnd
+      console.log('[PlayerContext] Calling handleTrackEndRef.current, ref exists:', !!handleTrackEndRef.current);
+      if (handleTrackEndRef.current) {
+        handleTrackEndRef.current();
+      } else {
+        console.error('[PlayerContext] handleTrackEndRef.current is null/undefined!');
+      }
     });
     nativeTrackEndedSubscriptionRef.current = trackEndedSub;
     
@@ -727,6 +734,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleTrackEnd = useCallback(() => {
+    console.log('[PlayerContext] handleTrackEnd called, repeatRef:', repeatRef.current, 'guard:', trackEndHandledRef.current);
+    
     // Guard against double-handling (both polling and event listener can trigger)
     if (trackEndHandledRef.current) {
       console.log('[PlayerContext] Track end already handled, skipping');
@@ -738,8 +747,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const currentQueue = queueRef.current;
     const currentRepeat = repeatRef.current;
     const currentShuffle = shuffleRef.current;
+    
+    console.log('[PlayerContext] handleTrackEnd processing:', { 
+      hasSong: !!song, 
+      repeatMode: currentRepeat, 
+      shuffleMode: currentShuffle,
+      queueLength: currentQueue.length 
+    });
 
     if (!song) {
+      console.log('[PlayerContext] No song, resetting guard');
       trackEndHandledRef.current = false; // Reset if no song
       return;
     }
@@ -807,24 +824,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     handleTrackEndRef.current = handleTrackEnd;
   }, [handleTrackEnd]);
 
-  // Subscribe to native playback state changes for auto-advance
-  useEffect(() => {
-    if (Platform.OS !== 'android' || useTrackPlayerRef.current) {
-      return;
-    }
-    
-    const subscription = PlaybackEngineModule.addPlaybackStateListener((event: PlaybackStateChangedEvent) => {
-      console.log('[PlayerContext] Native playback state changed:', event.state);
-      if (event.state === 'ended') {
-        console.log('[PlayerContext] Track ended via native event, calling handleTrackEnd');
-        handleTrackEnd();
-      }
-    });
-    
-    return () => {
-      subscription?.remove();
-    };
-  }, [handleTrackEnd]);
+  // Note: Track end handling is done via the dedicated trackEnded event listener (line 705-719)
+  // The playback state listener for 'ended' is intentionally removed to avoid duplicate handling
+  // The DSP end-of-stream callback is the authoritative track end signal
 
   const handleStatusUpdate = useCallback((status: AudioStatus) => {
     if (status.currentTime !== undefined) {
