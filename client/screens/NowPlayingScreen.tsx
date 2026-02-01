@@ -60,7 +60,6 @@ export default function NowPlayingScreen() {
     seek,
     toggleShuffle,
     toggleRepeat,
-    handleTrackEnd,
   } = usePlayer();
 
   const colors = isDark ? FluentDarkColors : FluentLightColors;
@@ -315,7 +314,6 @@ export default function NowPlayingScreen() {
             duration={duration || currentSong.duration}
             currentTime={currentTime}
             onSeek={seek}
-            onTrackEnd={handleTrackEnd}
             width={screenWidth - (isExtraCompact ? FluentSpacing.m * 2 : isCompact ? FluentSpacing.l * 2 : FluentSpacing.xxl * 2)}
             showTextShadow={true}
           />

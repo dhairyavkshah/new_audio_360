@@ -58,7 +58,6 @@ interface PlayerContextType {
   clearQueue: () => void;
   setSleepTimer: (minutes: number | null) => void;
   setQueue: (songs: PlayableSong[]) => void;
-  handleTrackEnd: () => void;
 }
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -2181,7 +2180,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     clearQueue,
     setSleepTimer,
     setQueue,
-    handleTrackEnd,
   };
 
   return (
