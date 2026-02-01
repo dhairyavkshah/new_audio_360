@@ -444,15 +444,10 @@ class PlaybackService : MediaSessionService() {
                             "duration" to durationSeconds
                         ))
                         
-                        // Check if song ended: position reached duration
-                        // Note: Track end detection is handled by DSP end-of-stream callback (more reliable)
-                        // The DSP processor fires when all samples are delivered, which is the true "end"
-                        // We don't fire trackEnded here to avoid duplicate events
-                        if (durationSeconds > 0 && positionSeconds >= durationSeconds) {
-                            Log.d(TAG, "Progress shows end: position=$positionSeconds, duration=$durationSeconds (DSP will fire trackEnded)")
-                            stopProgressUpdates()
-                            return
-                        }
+                        // Note: We DO NOT stop progress updates based on position >= duration
+                        // The DSP end-of-stream callback is the authoritative track end signal
+                        // It will fire trackEnded and handle repeat/advance logic
+                        // Stopping early would prevent the final progress update from being sent
                     }
                 }
                 progressHandler?.postDelayed(this, 1000) // Update every 1 second
