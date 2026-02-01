@@ -6,54 +6,70 @@
 
 ---
 
-## What's New in v30.0
+## What's New in v29.0
 
-**Header Optimization Release** - Maximized content display by merging header rows:
-- SoundCloud: Compact profile bar with icon-only buttons for Search/Likes/Playlists
-- SoundCloud Search: Single-row search with type selector dropdown
-- Library: Play All/Shuffle buttons now beside Songs dropdown
-- More screen space for your music!
+**Playback Engine Overhaul** - Complete rewrite of the audio playback system:
+
+- Event-driven architecture mirrors web audio behaviour
+- Seamless track transitions with zero gaps
+- Repeat mode works flawlessly
+- Progress bar reaches full track duration
+- Improved battery efficiency
 
 ---
 
 ## Google Play Store Release Note (Under 500 Characters)
 
 ```
-New Audio 360 v1.0 - Premium Music Player
+v29.0 - Playback Engine Overhaul
 
-Studio-grade audio experience:
-• 10-band parametric EQ with 10 presets
-• Bass & Treble controls: ±12 dB range
-• Spatial Enhancement (0-5 levels) and multi-tap reverb
-• Intelligent brickwall limiting
-• 6 immersive audio modes
-• 55 stunning themes
-• Fast music library scanning
-• Online Radio with hundreds of stations
+SMOOTHER PLAYBACK
+Improved audio engine delivers seamless track transitions and responsive controls.
 
-One-time purchase. No ads. No subscriptions. Lifetime access.
+REPEAT MODE FIXED
+Single track repeat now works flawlessly - songs loop without interruption.
+
+PROGRESS BAR ENHANCED
+Slider accurately shows playback position and reaches full track duration.
+
+PERFORMANCE BOOST
+Faster response times and reduced battery usage during playback.
+
+One-time purchase, lifetime access.
 ```
 
 ---
 
-## Version 30.0 (January 31, 2026)
+## Version 29.0 (February 2026)
 
-**Header Optimization Release**
+**Playback Engine Overhaul**
 
-- SoundCloud Header: Merged profile bar + sub tabs into single compact row with icon-only buttons
-- SoundCloud Search: Merged search field + type selector into single row with compact dropdown
-- Library Header: Moved Play All/Shuffle buttons beside Songs dropdown in category row
-- Maximized content display area by eliminating separate header rows
+### Event-Driven Playback Architecture
+- Native player now pushes updates to the app (like web audio's `ontimeupdate` and `onended`)
+- Eliminated all polling for Android playback - events fire naturally
+- Progress updates every second with clean integer values
+- Single authoritative track-end source via DSP end-of-stream callback
 
----
+### Repeat Mode Fixes
+- Fixed repeat one not playing after track ends
+- Proper seek-then-play sequencing eliminates race conditions
+- Native Android playback correctly prioritised over TrackPlayer fallback
+- Guard logic prevents duplicate event handling
 
-## Version 29.0 (January 2026)
+### Progress Bar Improvements
+- Slider now reaches full track duration before repeat/advance
+- Removed premature progress update stopping
+- Accurate position display throughout playback
 
-**Card Spacing and Visual Polish**
+### Waveform Synchronisation
+- Waveform animation syncs with actual native playback state
+- Added `onIsPlayingChanged` event listener for accurate state
+- Animation only runs when audio is confirmed playing
 
-- Fixed SoundCloud card spacing to match Library screen (8px gaps)
-- Added header bottom borders for visual separation
-- Consistent card styling across all Discover screens
+### Performance Improvements
+- Reduced CPU usage by eliminating polling loops
+- Lower battery consumption during playback
+- Faster response to playback controls
 
 ---
 
@@ -88,7 +104,7 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 - Full SoundCloud track streaming with DSP effects
 - Internet Archive public domain/CC music streaming
 - Tabbed Discover screen with Archive and SoundCloud tabs
-- HRTF Binaural Virtualization in Spatial Enhancement
+- HRTF Binaural Virtualisation in Spatial Enhancement
 - Bass Enhancement with harmonic generation
 - Neural AI Audio Upscaling (Kuleshov-style 1D U-Net CNN)
 
@@ -105,7 +121,7 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 #### Equalizer
 - 10-band parametric equalizer: 60Hz, 170Hz, 310Hz, 600Hz, 1kHz, 3kHz, 6kHz, 12kHz, 14kHz, 16kHz
 - 10 presets: Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity
-- Zero-sum normalization prevents volume jumps when switching
+- Zero-sum normalisation prevents volume jumps when switching
 - Custom 10-band EQ editor for personal tuning
 
 #### Bass & Treble
@@ -140,7 +156,7 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 - Folder selection to choose specific locations
 - Handles large libraries (10,000+ songs)
 - Hide songs feature
-- Smart categories: Recently Played, Most Played, Favorites
+- Smart categories: Recently Played, Most Played, Favourites
 - Quick access navigation
 
 ---
@@ -171,15 +187,15 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 #### FM/AM Radio
 - Native radio tuning (hardware required)
 - Station scanning
-- Favorites
+- Favourites
 - Sound Lab effects on radio
 
 #### Online Radio
-- Hundreds of verified stations
+- 40,000+ verified stations worldwide
 - Quality streams only
 - Location-based discovery
 - Genre filtering
-- Favorites
+- Favourites
 
 ---
 
@@ -207,24 +223,42 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 
 ---
 
+### Platform Support
+
+| Platform | Distribution | Status |
+|----------|--------------|--------|
+| Android | Google Play Store | Available |
+| iOS | Apple App Store | Planned |
+| Windows | Microsoft Store (PWA) | Planned |
+| Web | Progressive Web App | Available |
+
+---
+
 ### Requirements
 
 - Android 8.0 or higher
-- Works on all Android devices
+- iOS 15.0 or higher (planned)
+- Windows 10/11 (PWA)
+- Works on all devices
 
 ---
 
 ## Roadmap
 
-### Version 1.1 (Planned)
+### Version 29.1 (Planned)
 - Crossfade between tracks
+- Gapless playback improvements
+- Enhanced notification controls
+
+### Version 30.0 (Planned)
 - Car mode UI
 - Home screen widget
-
-### Version 1.2 (Planned)
-- Lyrics display
-- Enhanced sleep timer
 - Additional themes
+
+### Future
+- Lyrics display
+- Apple CarPlay / Android Auto support
+- Chromecast integration
 
 ---
 
@@ -235,4 +269,4 @@ One-time purchase. No ads. No subscriptions. Lifetime access.
 
 ---
 
-*Last Updated: January 31, 2026*
+*Last Updated: February 1, 2026*

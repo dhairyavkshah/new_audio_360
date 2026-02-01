@@ -124,17 +124,19 @@ Download now and elevate your music experience!
 ## What's New (500 characters max)
 
 ```
-v30.0 - Header Optimization & UI Polish
+v29.0 - Playback Engine Overhaul
 
-NEW: Compact headers maximize content display
-- SoundCloud: Single-row profile + icon-only navigation
-- SoundCloud: Inline search type dropdown
-- Library: Play All/Shuffle beside category dropdown
+SMOOTHER PLAYBACK
+Improved audio engine delivers seamless track transitions and responsive controls.
 
-DISCOVER: Stream from SoundCloud & Internet Archive
-- Full DSP effects on streaming audio
-- Neural AI upscaling support
-- SoundCloud OAuth with likes sync
+REPEAT MODE FIXED
+Single track repeat now works flawlessly - songs loop without interruption.
+
+PROGRESS BAR ENHANCED
+Slider accurately shows playback position and reaches full track duration.
+
+PERFORMANCE BOOST
+Faster response times and reduced battery usage during playback.
 
 One-time purchase, lifetime access.
 ```
@@ -186,4 +188,4 @@ music player, audio player, equalizer, bass boost, treble, EQ, radio, online rad
 
 ---
 
-*Last Updated: January 31, 2026*
+*Last Updated: February 1, 2026*

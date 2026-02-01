@@ -3,14 +3,14 @@
 **New Audio 360**
 
 **Effective Date:** January 19, 2026  
-**Last Updated:** January 31, 2026  
-**Version:** 1.0.3
+**Last Updated:** February 1, 2026  
+**Version:** 1.1.0
 
 ---
 
 ## 1. Introduction
 
-New Audio 360 ("the App," "we," "our," or "us") is a premium Android music player application developed by Dhairya Vipulkumar Shah under The Team 360 and available exclusively on Google Play Store. This Privacy Policy describes how we collect, use, and protect your information when you use our application.
+New Audio 360 ("the App," "we," "our," or "us") is a premium music player application developed by Dhairya Vipulkumar Shah under The Team 360. The App is available on Google Play Store for Android, with planned availability on iOS App Store and Microsoft Store. This Privacy Policy describes how we collect, use, and protect your information when you use our application.
 
 **Our Privacy Commitment:** New Audio 360 is designed with privacy as a core principle. The App operates primarily offline, stores all user data locally on your device, and does not transmit personal information to external servers.
 
@@ -44,7 +44,7 @@ New Audio 360 does not collect, store, or transmit:
 - Personal identification information (name, email, phone)
 - Device identifiers for advertising
 - Location data (except temporarily for online radio discovery)
-- Usage analytics or behavioral data
+- Usage analytics or behavioural data
 - Audio files or music content
 - Crash reports to external servers
 - Any data to our servers
@@ -53,16 +53,34 @@ New Audio 360 does not collect, store, or transmit:
 
 ## 3. Third-Party Services
 
-### 3.1 Google Play Services
+### 3.1 Google Play Services (Android)
 
-For purchase processing and license verification only:
+For purchase processing and licence verification only:
 
 - **Purchase Processing**: Handled entirely by Google Play
-- **License Verification**: Confirms legitimate Play Store installation
+- **Licence Verification**: Confirms legitimate Play Store installation
 
 Google's data handling is governed by [Google's Privacy Policy](https://policies.google.com/privacy).
 
-### 3.2 Online Radio Service
+### 3.2 Apple App Store (iOS)
+
+For purchase processing and licence verification only:
+
+- **Purchase Processing**: Handled entirely by Apple
+- **Licence Verification**: Confirms legitimate App Store installation
+
+Apple's data handling is governed by [Apple's Privacy Policy](https://www.apple.com/legal/privacy/).
+
+### 3.3 Microsoft Store (Windows)
+
+For distribution of the PWA version:
+
+- **App Distribution**: Handled by Microsoft Store
+- **No Additional Data Collection**: The PWA operates with the same privacy principles as other platforms
+
+Microsoft's data handling is governed by [Microsoft's Privacy Statement](https://privacy.microsoft.com/en-gb/privacystatement).
+
+### 3.4 Online Radio Service
 
 When using Online Radio features:
 
@@ -70,19 +88,19 @@ When using Online Radio features:
 - Your IP address may be visible to the radio service
 - No personal data is transmitted
 
-### 3.3 SoundCloud Integration
+### 3.5 SoundCloud Integration
 
 When using SoundCloud features:
 
 - **Authentication**: The App uses SoundCloud OAuth 2.1 with PKCE (Proof Key for Code Exchange) for secure authentication
 - **Data Access**: Upon login, the App accesses your SoundCloud user profile, likes, and playlists via the SoundCloud API
 - **Streaming**: Audio tracks are streamed directly from SoundCloud's servers
-- **Token Storage**: OAuth tokens are stored locally on your device using encrypted storage (Android Keystore with AES-256-GCM). No SoundCloud credentials are stored on our servers
+- **Token Storage**: OAuth tokens are stored locally on your device using encrypted storage. No SoundCloud credentials are stored on our servers
 - **Data Handling**: Your SoundCloud profile data is cached locally for display purposes only
 
 SoundCloud's data handling is governed by [SoundCloud's Privacy Policy](https://soundcloud.com/pages/privacy).
 
-### 3.4 Internet Archive Integration
+### 3.6 Internet Archive Integration
 
 When using Internet Archive features:
 
@@ -91,19 +109,37 @@ When using Internet Archive features:
 - **Network Access**: Your IP address may be visible to Internet Archive servers when streaming content
 - **No Personal Data**: No personal information is transmitted to the Internet Archive
 
-Internet Archive's data handling is governed by [Internet Archive's Privacy Policy](https://archive.org/about/terms.php).
+Internet Archive's data handling is governed by [Internet Archive's Terms of Use](https://archive.org/about/terms.php).
 
 ---
 
 ## 4. Device Permissions
 
-| Android Permission | Purpose | Required |
+### Android Permissions
+
+| Permission | Purpose | Required |
 |------------|---------|----------|
 | READ_MEDIA_AUDIO / READ_EXTERNAL_STORAGE | Access music files on your device | Yes |
 | FOREGROUND_SERVICE_MEDIA_PLAYBACK | Background audio playback | Yes |
 | ACCESS_COARSE_LOCATION | Discover local radio stations | Optional |
 | POST_NOTIFICATIONS | Display playback controls | Optional |
-| INTERNET | Online radio, SoundCloud API, Internet Archive streaming, license check | Yes |
+| INTERNET | Online radio, SoundCloud API, Internet Archive streaming, licence check | Yes |
+
+### iOS Permissions
+
+| Permission | Purpose | Required |
+|------------|---------|----------|
+| Media Library | Access music files on your device | Yes |
+| Background Audio | Background audio playback | Yes |
+| Location (When In Use) | Discover local radio stations | Optional |
+
+### Windows (PWA) Permissions
+
+| Permission | Purpose | Required |
+|------------|---------|----------|
+| File System Access | Access music files on your device | Yes |
+| Notifications | Display playback controls | Optional |
+| Location | Discover local radio stations | Optional |
 
 All permissions are requested with clear explanations. You may deny optional permissions.
 
@@ -126,11 +162,11 @@ We do not use your information for advertising, profiling, or sale to third part
 
 ## 6. Data Security
 
-- Sensitive data stored using Android Keystore with AES-256-GCM encryption
-- Device-bound encryption keys with HMAC integrity verification
+- Sensitive data stored using platform-appropriate encryption (Android Keystore, iOS Keychain, Windows DPAPI)
+- Device-bound encryption keys with integrity verification
 - User data never leaves your device
 - All network requests use encrypted HTTPS connections
-- No cloud backup of app data
+- No cloud backup of app data by default
 
 ---
 
@@ -170,6 +206,8 @@ This App is designed to comply with:
 - California Consumer Privacy Act (CCPA)
 - Children's Online Privacy Protection Act (COPPA)
 - Google Play Developer Program Policies
+- Apple App Store Review Guidelines
+- Microsoft Store Policies
 
 ---
 
@@ -195,7 +233,7 @@ By downloading, installing, or using New Audio 360, you consent to:
 
 - Local storage of App data on your device
 - The App's request for necessary device permissions
-- Network communication for online radio, SoundCloud, Internet Archive, and license verification
+- Network communication for online radio, SoundCloud, Internet Archive, and licence verification
 
 If you do not agree, please do not install or use the Application.
 
@@ -207,4 +245,4 @@ Developed by Dhairya Vipulkumar Shah | The Team 360
 
 ---
 
-*Last Updated: January 31, 2026*
+*Last Updated: February 1, 2026*
