@@ -31,6 +31,7 @@ export interface PlaybackStatus {
   isInitialized: boolean;
   isPlaying: boolean;
   currentPositionMs: number;
+  sampleBasedPositionMs: number; // More accurate position from DSP sample counting
   durationMs: number;
   bufferedPositionMs: number;
   currentIndex: number;
@@ -39,6 +40,7 @@ export interface PlaybackStatus {
   repeatMode: 'off' | 'one' | 'all';
   shuffleEnabled: boolean;
   audioSessionId: number;
+  trackEnded: boolean; // DSP decoder end-of-stream signal (most reliable)
 }
 
 export interface PlaybackResult {
@@ -624,6 +626,7 @@ export const PlaybackEngineModule = {
         isInitialized: false,
         isPlaying: false,
         currentPositionMs: 0,
+        sampleBasedPositionMs: 0,
         durationMs: 0,
         bufferedPositionMs: 0,
         currentIndex: 0,
@@ -631,7 +634,8 @@ export const PlaybackEngineModule = {
         playbackState: 'idle',
         repeatMode: 'off',
         shuffleEnabled: false,
-        audioSessionId: 0
+        audioSessionId: 0,
+        trackEnded: false
       };
     }
     try {
@@ -642,6 +646,7 @@ export const PlaybackEngineModule = {
         isInitialized: false,
         isPlaying: false,
         currentPositionMs: 0,
+        sampleBasedPositionMs: 0,
         durationMs: 0,
         bufferedPositionMs: 0,
         currentIndex: 0,
@@ -649,7 +654,8 @@ export const PlaybackEngineModule = {
         playbackState: 'idle',
         repeatMode: 'off',
         shuffleEnabled: false,
-        audioSessionId: 0
+        audioSessionId: 0,
+        trackEnded: false
       };
     }
   },

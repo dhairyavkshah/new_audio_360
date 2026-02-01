@@ -80,6 +80,7 @@ class PlaybackService : MediaSessionService() {
     
     private var stateCallback: ((Map<String, Any>) -> Unit)? = null
     private var progressCallback: ((Map<String, Any>) -> Unit)? = null
+    private var trackEndedCallback: (() -> Unit)? = null
     private var progressHandler: Handler? = null
     private var progressRunnable: Runnable? = null
     
@@ -97,6 +98,8 @@ class PlaybackService : MediaSessionService() {
     @Volatile private var cachedRepeatMode: String = "off"
     @Volatile private var cachedShuffleEnabled: Boolean = false
     @Volatile private var cachedAudioSessionId: Int = 0
+    @Volatile private var cachedSampleBasedPositionMs: Long = 0L
+    @Volatile private var cachedTrackEnded: Boolean = false
     
     override fun onCreate() {
         super.onCreate()
@@ -132,6 +135,19 @@ class PlaybackService : MediaSessionService() {
         if (player != null) return
         
         dspProcessor = SoftwareDSPAudioProcessor.getInstance()
+        
+        // Set up end-of-stream callback from DSP processor (most reliable track-end signal)
+        dspProcessor?.setEndOfStreamCallback {
+            Log.d(TAG, "DSP end-of-stream callback fired")
+            cachedTrackEnded = true
+            mainHandler.post {
+                trackEndedCallback?.invoke()
+                notifyStateChange(mapOf(
+                    "type" to "trackEnded",
+                    "source" to "dspDecoder"
+                ))
+            }
+        }
         
         val audioSink = DefaultAudioSink.Builder(this)
             .setAudioProcessors(arrayOf(dspProcessor!!))
@@ -269,6 +285,12 @@ class PlaybackService : MediaSessionService() {
         cachedBufferedPositionMs = p.bufferedPosition
         cachedCurrentIndex = p.currentMediaItemIndex
         cachedQueueLength = p.mediaItemCount
+        
+        // Update sample-based position from DSP processor (more accurate than timing-based)
+        dspProcessor?.let {
+            cachedSampleBasedPositionMs = it.getSampleBasedPositionMs()
+            cachedTrackEnded = it.hasTrackEnded()
+        }
     }
     
     /**
@@ -276,10 +298,15 @@ class PlaybackService : MediaSessionService() {
      * Safe to call from any thread since all fields are volatile.
      */
     fun getCachedStatus(): Map<String, Any> {
+        // Get latest sample-based position (thread-safe volatile read from DSP)
+        val samplePosition = dspProcessor?.getSampleBasedPositionMs() ?: 0L
+        val trackEnded = dspProcessor?.hasTrackEnded() ?: false
+        
         return mapOf(
             "isInitialized" to (player != null),
             "isPlaying" to cachedIsPlaying,
             "currentPositionMs" to cachedPositionMs,
+            "sampleBasedPositionMs" to samplePosition,
             "durationMs" to cachedDurationMs,
             "bufferedPositionMs" to cachedBufferedPositionMs,
             "currentIndex" to cachedCurrentIndex,
@@ -287,7 +314,8 @@ class PlaybackService : MediaSessionService() {
             "playbackState" to cachedPlaybackState,
             "repeatMode" to cachedRepeatMode,
             "shuffleEnabled" to cachedShuffleEnabled,
-            "audioSessionId" to cachedAudioSessionId
+            "audioSessionId" to cachedAudioSessionId,
+            "trackEnded" to trackEnded
         )
     }
     
@@ -359,6 +387,10 @@ class PlaybackService : MediaSessionService() {
         progressCallback = callback
     }
     
+    fun setTrackEndedCallback(callback: (() -> Unit)?) {
+        trackEndedCallback = callback
+    }
+    
     private fun notifyStateChange(data: Map<String, Any>) {
         mainHandler.post {
             stateCallback?.invoke(data)
@@ -379,10 +411,16 @@ class PlaybackService : MediaSessionService() {
                         cachedDurationMs = if (duration == C.TIME_UNSET) 0L else duration
                         cachedBufferedPositionMs = p.bufferedPosition
                         
+                        // Get sample-based position from DSP (more accurate)
+                        val samplePosition = dspProcessor?.getSampleBasedPositionMs() ?: 0L
+                        val trackEnded = dspProcessor?.hasTrackEnded() ?: false
+                        
                         progressCallback?.invoke(mapOf(
                             "positionMs" to p.currentPosition,
+                            "sampleBasedPositionMs" to samplePosition,
                             "durationMs" to p.duration,
-                            "bufferedMs" to p.bufferedPosition
+                            "bufferedMs" to p.bufferedPosition,
+                            "trackEnded" to trackEnded
                         ))
                     }
                 }
@@ -408,6 +446,10 @@ class PlaybackService : MediaSessionService() {
         try {
             p.stop()
             p.clearMediaItems()
+            
+            // Reset sample counter for new track
+            dspProcessor?.resetSampleCounter(0L)
+            cachedTrackEnded = false
             
             val metadata = MediaMetadata.Builder()
                 .setTitle(title ?: "Unknown Track")
@@ -440,6 +482,10 @@ class PlaybackService : MediaSessionService() {
         try {
             p.stop()
             p.clearMediaItems()
+            
+            // Reset sample counter for new queue
+            dspProcessor?.resetSampleCounter(0L)
+            cachedTrackEnded = false
             
             val mediaItems = uris.mapIndexed { index, uri ->
                 val meta = metadata?.getOrNull(index)
@@ -554,6 +600,13 @@ class PlaybackService : MediaSessionService() {
     fun seekTo(positionMs: Long): Boolean {
         return try {
             player?.seekTo(positionMs)
+            // Reset sample counter to match seek position
+            // Formula: samples = (positionMs / 1000) * sampleRate
+            dspProcessor?.let { dsp ->
+                val sampleRate = dsp.getSampleRate()
+                val newSamples = ((positionMs / 1000.0) * sampleRate).toLong()
+                dsp.resetSampleCounter(newSamples)
+            }
             true
         } catch (e: Exception) {
             Log.e(TAG, "Error seeking: ${e.message}", e)
@@ -564,6 +617,9 @@ class PlaybackService : MediaSessionService() {
     fun skipToNext(): Boolean {
         val p = player ?: return false
         return if (p.hasNextMediaItem()) {
+            // Reset sample counter for new track
+            dspProcessor?.resetSampleCounter(0L)
+            cachedTrackEnded = false
             p.seekToNextMediaItem()
             true
         } else {
@@ -573,6 +629,9 @@ class PlaybackService : MediaSessionService() {
     
     fun skipToPrevious(): Boolean {
         val p = player ?: return false
+        // Reset sample counter for previous/restart track
+        dspProcessor?.resetSampleCounter(0L)
+        cachedTrackEnded = false
         return if (p.hasPreviousMediaItem()) {
             p.seekToPreviousMediaItem()
             true
@@ -585,6 +644,9 @@ class PlaybackService : MediaSessionService() {
     fun skipToIndex(index: Int): Boolean {
         val p = player ?: return false
         return if (index >= 0 && index < p.mediaItemCount) {
+            // Reset sample counter for new track
+            dspProcessor?.resetSampleCounter(0L)
+            cachedTrackEnded = false
             p.seekTo(index, 0)
             true
         } else {

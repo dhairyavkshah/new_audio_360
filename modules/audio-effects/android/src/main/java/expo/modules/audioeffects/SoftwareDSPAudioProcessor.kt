@@ -109,6 +109,12 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     // Current input format properties
     private var currentEncoding: Int = C.ENCODING_PCM_16BIT
     private var currentSampleRate: Float = STANDARD_SAMPLE_RATE
+    
+    // Sample counting for accurate progress tracking
+    // This is more accurate than ExoPlayer's timing-based position
+    @Volatile private var samplesProcessed: Long = 0L
+    @Volatile private var trackEnded: Boolean = false
+    private var endOfStreamCallback: (() -> Unit)? = null
 
     // All filters configured at 48 kHz (reconfigured at runtime if input differs)
     private val eqFilters = Array(10) { i ->
@@ -385,6 +391,11 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         }
         
         outputBuffer.flip()
+        
+        // Update sample counter for accurate progress tracking
+        // sampleCount is per-channel samples, so for stereo we divide by channel count
+        val framesProcessed = sampleCount / channelCount
+        samplesProcessed += framesProcessed
     }
 
     /**
@@ -440,6 +451,7 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
 
     override fun queueEndOfStream() {
         inputEnded = true
+        android.util.Log.d("SoftwareDSP", "End of stream queued, samples processed: $samplesProcessed")
     }
 
     override fun getOutput(): ByteBuffer {
@@ -448,12 +460,23 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         return output
     }
 
-    override fun isEnded(): Boolean = inputEnded && outputBuffer === AudioProcessor.EMPTY_BUFFER
+    override fun isEnded(): Boolean {
+        val ended = inputEnded && outputBuffer === AudioProcessor.EMPTY_BUFFER
+        // Fire callback when track truly ends (decoder finished + buffer drained)
+        if (ended && !trackEnded) {
+            trackEnded = true
+            android.util.Log.d("SoftwareDSP", "Track ended - all samples delivered, total: $samplesProcessed")
+            endOfStreamCallback?.invoke()
+        }
+        return ended
+    }
 
     override fun flush() {
         outputBuffer = AudioProcessor.EMPTY_BUFFER
         inputBuffer = AudioProcessor.EMPTY_BUFFER
         inputEnded = false
+        trackEnded = false
+        samplesProcessed = 0L
         
         eqFilters.forEach { it.resetAllChannels() }
         bassShelfFilter.resetAllChannels()
@@ -504,6 +527,52 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         inputFormat = AudioFormat.NOT_SET
         outputFormat = AudioFormat.NOT_SET
         isActive = false
+    }
+
+    // =========================================
+    // SAMPLE-BASED PROGRESS TRACKING API
+    // =========================================
+    
+    /**
+     * Get the number of audio frames (samples per channel) processed since last flush/reset.
+     * Formula: playback_time_seconds = samplesProcessed / sampleRate
+     */
+    fun getSamplesProcessed(): Long = samplesProcessed
+    
+    /**
+     * Get current sample rate for position calculation.
+     */
+    fun getSampleRate(): Float = currentSampleRate
+    
+    /**
+     * Get playback position in milliseconds based on sample counting.
+     * This is more accurate than timing-based methods as it counts actual audio delivered.
+     */
+    fun getSampleBasedPositionMs(): Long {
+        if (currentSampleRate <= 0f) return 0L
+        return ((samplesProcessed.toDouble() / currentSampleRate) * 1000.0).toLong()
+    }
+    
+    /**
+     * Returns true if the decoder has signaled end-of-stream AND all samples have been output.
+     * This is the most reliable signal that playback has truly completed.
+     */
+    fun hasTrackEnded(): Boolean = trackEnded
+    
+    /**
+     * Set a callback to be invoked when the track truly ends (all samples delivered).
+     * This fires when isEnded() becomes true for the first time after playback.
+     */
+    fun setEndOfStreamCallback(callback: (() -> Unit)?) {
+        endOfStreamCallback = callback
+    }
+    
+    /**
+     * Reset sample counter without full flush (for seeking).
+     */
+    fun resetSampleCounter(toSamples: Long = 0L) {
+        samplesProcessed = toSamples
+        trackEnded = false
     }
 
     fun setEqBandGain(band: Int, gainUnits: Float) {

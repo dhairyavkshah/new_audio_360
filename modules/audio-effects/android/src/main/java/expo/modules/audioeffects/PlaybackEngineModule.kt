@@ -522,6 +522,7 @@ class PlaybackEngineModule : Module() {
                     "isInitialized" to isInitialized,
                     "isPlaying" to false,
                     "currentPositionMs" to 0L,
+                    "sampleBasedPositionMs" to 0L,
                     "durationMs" to 0L,
                     "bufferedPositionMs" to 0L,
                     "currentIndex" to 0,
@@ -529,7 +530,8 @@ class PlaybackEngineModule : Module() {
                     "playbackState" to "unknown",
                     "repeatMode" to "off",
                     "shuffleEnabled" to false,
-                    "audioSessionId" to 0
+                    "audioSessionId" to 0,
+                    "trackEnded" to false
                 )
             }
         }

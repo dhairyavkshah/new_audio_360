@@ -123,8 +123,12 @@ All song durations are normalized to **seconds** throughout the app:
 ### Metadata & Playback Fixes (v29.2 - January 2026)
 - **MediaStoreScannerModule**: Added fallback duration fetching using `MediaMetadataRetriever` when MediaStore returns 0. This handles cases where MediaStore hasn't fully indexed newly added files.
 - **PlayerContext progress callback**: Removed overly strict guard (`position <= duration`) that was resetting currentTime to 0 at end of tracks. Now uses industry-standard approach: allow position to reach duration without artificial capping, using `Math.min(position, duration)` for UI display.
-- **Auto-advance fix**: Native progress polling now calls `handleTrackEnd()` when detecting 'ended' state as a backup to the native event listener. Uses `handleTrackEndRef` pattern to avoid circular dependency issues. The guard in `handleTrackEnd` prevents double-handling if both polling and event listener fire.
-- **Position-based end detection**: Added position-based end detection mirroring web's `audio.onended` reliability. When position reaches duration - 200ms, auto-advance triggers regardless of isPlaying state. Polling interval reduced to 500ms for responsive detection.
+
+### Sample-Based Progress & Decoder End-of-Stream (v29.3 - February 2026)
+- **Sample counting in DSP**: `SoftwareDSPAudioProcessor` now counts processed audio frames (`samplesProcessed`). Formula: `playback_time = samples_played / sample_rate`. This is more accurate than timing-based methods.
+- **DSP end-of-stream callback**: When decoder signals end-of-stream AND output buffer is drained, `hasTrackEnded()` returns true and fires callback. This is the most reliable auto-advance signal.
+- **PlaybackStatus extended**: Added `sampleBasedPositionMs` and `trackEnded` fields to expose DSP's sample-based tracking to JS layer.
+- **Auto-advance priority**: PlayerContext now checks: (1) DSP `trackEnded`, (2) ExoPlayer `STATE_ENDED`, (3) position-based fallback. Sample counter resets on seek, track skip, and new queue load.
 
 ## External Dependencies
 
