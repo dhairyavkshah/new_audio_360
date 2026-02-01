@@ -256,6 +256,19 @@ class PlaybackService : MediaSessionService() {
                 cachedAudioSessionId = audioSessionId
             }
         
+        // Create PendingIntent for notification tap to open app
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val sessionActivityIntent = if (launchIntent != null) {
+            PendingIntent.getActivity(
+                this,
+                0,
+                launchIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else null
+        
         mediaSession = MediaSession.Builder(this, player!!)
             .setCallback(object : MediaSession.Callback {
                 override fun onConnect(
@@ -268,6 +281,11 @@ class PlaybackService : MediaSessionService() {
                     )
                 }
             })
+            .apply {
+                if (sessionActivityIntent != null) {
+                    setSessionActivity(sessionActivityIntent)
+                }
+            }
             .build()
         
         Log.d(TAG, "Player initialized with audio session: ${player?.audioSessionId}")
@@ -599,14 +617,15 @@ class PlaybackService : MediaSessionService() {
     
     fun seekTo(positionMs: Long): Boolean {
         return try {
-            player?.seekTo(positionMs)
-            // Reset sample counter to match seek position
-            // Formula: samples = (positionMs / 1000) * sampleRate
+            // Set pending sample position BEFORE seeking
+            // This ensures flush() (called by ExoPlayer during seek) uses this value
             dspProcessor?.let { dsp ->
                 val sampleRate = dsp.getSampleRate()
                 val newSamples = ((positionMs / 1000.0) * sampleRate).toLong()
-                dsp.resetSampleCounter(newSamples)
+                dsp.setPendingSamplePosition(newSamples)
             }
+            cachedTrackEnded = false
+            player?.seekTo(positionMs)
             true
         } catch (e: Exception) {
             Log.e(TAG, "Error seeking: ${e.message}", e)

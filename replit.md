@@ -128,7 +128,9 @@ All song durations are normalized to **seconds** throughout the app:
 - **Sample counting in DSP**: `SoftwareDSPAudioProcessor` now counts processed audio frames (`samplesProcessed`). Formula: `playback_time = samples_played / sample_rate`. This is more accurate than timing-based methods.
 - **DSP end-of-stream callback**: When decoder signals end-of-stream AND output buffer is drained, `hasTrackEnded()` returns true and fires callback. This is the most reliable auto-advance signal.
 - **PlaybackStatus extended**: Added `sampleBasedPositionMs` and `trackEnded` fields to expose DSP's sample-based tracking to JS layer.
-- **Auto-advance priority**: PlayerContext now checks: (1) DSP `trackEnded`, (2) ExoPlayer `STATE_ENDED`, (3) position-based fallback. Sample counter resets on seek, track skip, and new queue load.
+- **Auto-advance priority**: PlayerContext now checks: (1) DSP `trackEnded`, (2) ExoPlayer `STATE_ENDED`, (3) position-based fallback.
+- **Seek race condition fix**: Uses `setPendingSamplePosition()` BEFORE calling `player.seekTo()` to prevent ExoPlayer's async `flush()` from resetting the sample counter to 0.
+- **Notification tap to open app**: MediaSession now includes `setSessionActivity()` with a PendingIntent to launch the app when the notification is tapped.
 
 ## External Dependencies
 

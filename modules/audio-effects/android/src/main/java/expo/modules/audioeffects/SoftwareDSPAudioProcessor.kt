@@ -115,6 +115,11 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     @Volatile private var samplesProcessed: Long = 0L
     @Volatile private var trackEnded: Boolean = false
     private var endOfStreamCallback: (() -> Unit)? = null
+    
+    // Pending sample position for seeks - flush() will use this value instead of 0
+    // This prevents race conditions where ExoPlayer's async flush() resets the counter
+    // after we've set it via resetSampleCounter()
+    @Volatile private var pendingSamplePosition: Long? = null
 
     // All filters configured at 48 kHz (reconfigured at runtime if input differs)
     private val eqFilters = Array(10) { i ->
@@ -476,7 +481,17 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         inputBuffer = AudioProcessor.EMPTY_BUFFER
         inputEnded = false
         trackEnded = false
-        samplesProcessed = 0L
+        
+        // Use pending sample position if set (from seek), otherwise reset to 0 (new track)
+        val pending = pendingSamplePosition
+        if (pending != null) {
+            samplesProcessed = pending
+            pendingSamplePosition = null
+            android.util.Log.d("SoftwareDSP", "flush() using pending position: $pending samples")
+        } else {
+            samplesProcessed = 0L
+            android.util.Log.d("SoftwareDSP", "flush() reset to 0 (new track)")
+        }
         
         eqFilters.forEach { it.resetAllChannels() }
         bassShelfFilter.resetAllChannels()
@@ -568,9 +583,21 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     }
     
     /**
-     * Reset sample counter without full flush (for seeking).
+     * Set pending sample position for next flush (used during seek).
+     * ExoPlayer calls flush() asynchronously during seek, so we store the 
+     * desired position and let flush() apply it.
+     */
+    fun setPendingSamplePosition(samples: Long) {
+        pendingSamplePosition = samples
+        trackEnded = false
+        android.util.Log.d("SoftwareDSP", "setPendingSamplePosition: $samples")
+    }
+    
+    /**
+     * Reset sample counter to 0 for new track loads (not seeks).
      */
     fun resetSampleCounter(toSamples: Long = 0L) {
+        pendingSamplePosition = null
         samplesProcessed = toSamples
         trackEnded = false
     }
