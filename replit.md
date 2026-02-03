@@ -142,6 +142,8 @@ All song durations are normalized to **seconds** throughout the app:
 - **SplashScreen.tsx**: Added shared `isMountedRef` across all useEffects. All setTimeout callbacks check `isMountedRef.current` before proceeding. `fadeAnim.stopAnimation()` called on unmount.
 - **PlaybackService.kt**: Fixed artwork loading to properly handle data URIs (base64), file:// URIs, content:// URIs, and HTTP(S) URLs using appropriate Glide APIs. Prevents crashes from invalid URI parsing.
 - **SoftwareDSPAudioProcessor.kt**: Fixed reverb delay buffer clearing in `flush()` method. Previously, seek operations did not clear the 4-tap reverb delay buffers, causing stale audio samples to mix with new audio after seeking, producing jittery/distorted processing sounds. Now all reverb buffers are cleared during seek/flush to ensure clean audio transitions.
+- **SoftwareDSPAudioProcessor.kt**: Added `clearAudioBuffers()` method for comprehensive DSP buffer clearing during track transitions. Clears reverb delay buffers, ITD spatial delay buffer, resets all filter states (EQ, bass/treble shelf, limiter, psychoacoustic, HRTF, bass enhancement, HF restoration).
+- **PlaybackService.kt**: Added `clearAudioBuffers()` call in `onMediaItemTransition` callback. Now all track transitions (auto-advance, next, previous, playlist changes, repeat) properly clear DSP buffers to prevent audio artifacts from previous tracks bleeding into new ones.
 
 ## External Dependencies
 

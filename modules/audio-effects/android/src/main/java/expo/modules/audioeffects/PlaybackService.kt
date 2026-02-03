@@ -223,6 +223,13 @@ class PlaybackService : MediaSessionService() {
                         val index = player?.currentMediaItemIndex ?: 0
                         cachedCurrentIndex = index
                         updateCachedStatus()
+                        
+                        // Clear DSP audio buffers on track transition to prevent artifacts
+                        // from previous track (reverb tail, filter states, etc.)
+                        dspProcessor?.clearAudioBuffers()
+                        dspProcessor?.resetSampleCounter(0L)
+                        cachedTrackEnded = false
+                        
                         notifyStateChange(mapOf(
                             "index" to index,
                             "type" to "trackChanged",

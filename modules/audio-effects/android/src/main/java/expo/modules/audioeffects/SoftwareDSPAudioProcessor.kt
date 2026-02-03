@@ -608,6 +608,65 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         samplesProcessed = toSamples
         trackEnded = false
     }
+    
+    /**
+     * Clear all audio buffers for clean track transitions.
+     * Called when switching between tracks (auto-advance, next, previous, etc.)
+     * to prevent audio artifacts from previous track bleeding into new one.
+     * 
+     * This does NOT reset settings/gains - only clears delay buffers and filter states.
+     */
+    fun clearAudioBuffers() {
+        android.util.Log.d("SoftwareDSP", "clearAudioBuffers() - clearing all delay buffers for track transition")
+        
+        // Clear reverb delay buffers
+        for (tap in 0 until 4) {
+            delayBuffersL[tap].fill(0f)
+            delayBuffersR[tap].fill(0f)
+            delayIndices[tap] = 0
+        }
+        
+        // Clear ITD delay buffer (spatial processing)
+        itdDelayBuffer.fill(0f)
+        itdDelayWriteIndex = 0
+        
+        // Reset filter states (removes transients from previous audio)
+        eqFilters.forEach { it.resetAllChannels() }
+        bassShelfFilter.resetAllChannels()
+        trebleShelfFilter.resetAllChannels()
+        limiter.reset()
+        
+        // Reset psychoacoustic stereo enhancement filter states
+        bassMonoLowpassL.resetAllChannels()
+        bassMonoLowpassR.resetAllChannels()
+        bassMonoHighpassL.resetAllChannels()
+        bassMonoHighpassR.resetAllChannels()
+        sideHighpassFilter.resetAllChannels()
+        allpassFilter1.resetAllChannels()
+        allpassFilter2.resetAllChannels()
+        
+        // Reset correlation monitor
+        correlationSum = 0.0
+        leftSquaredSum = 0.0
+        rightSquaredSum = 0.0
+        runningCorrelation = 1.0f
+        
+        // Reset HRTF filter states
+        hrtfPinnaFilterL.resetAllChannels()
+        hrtfPinnaFilterR.resetAllChannels()
+        hrtfElevationFilterL.resetAllChannels()
+        hrtfElevationFilterR.resetAllChannels()
+        
+        // Reset Bass Enhancement filter states
+        bassEnhanceLowpass.resetAllChannels()
+        bassEnhanceHighpass.resetAllChannels()
+        bassHarmonicsFilter.resetAllChannels()
+        
+        // Reset HF Restoration filter states
+        hfAnalyzeFilter.resetAllChannels()
+        hfRestoreFilter.resetAllChannels()
+        hfEnergySmooth = 0f
+    }
 
     fun setEqBandGain(band: Int, gainUnits: Float) {
         if (band in 0..9) {
