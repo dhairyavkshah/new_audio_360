@@ -141,6 +141,7 @@ All song durations are normalized to **seconds** throughout the app:
 - **Toast.tsx**: Added persistent `isMountedRef` to prevent animation callbacks from firing after unmount. Animations are stopped when `visible` becomes false before component returns null.
 - **SplashScreen.tsx**: Added shared `isMountedRef` across all useEffects. All setTimeout callbacks check `isMountedRef.current` before proceeding. `fadeAnim.stopAnimation()` called on unmount.
 - **PlaybackService.kt**: Fixed artwork loading to properly handle data URIs (base64), file:// URIs, content:// URIs, and HTTP(S) URLs using appropriate Glide APIs. Prevents crashes from invalid URI parsing.
+- **SoftwareDSPAudioProcessor.kt**: Fixed reverb delay buffer clearing in `flush()` method. Previously, seek operations did not clear the 4-tap reverb delay buffers, causing stale audio samples to mix with new audio after seeking, producing jittery/distorted processing sounds. Now all reverb buffers are cleared during seek/flush to ensure clean audio transitions.
 
 ## External Dependencies
 

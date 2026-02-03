@@ -498,6 +498,13 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         trebleShelfFilter.resetAllChannels()
         limiter.reset()
         
+        // Clear reverb delay buffers to prevent stale audio artifacts after seek
+        for (tap in 0 until 4) {
+            delayBuffersL[tap].fill(0f)
+            delayBuffersR[tap].fill(0f)
+            delayIndices[tap] = 0
+        }
+        
         // Reset psychoacoustic stereo enhancement filters
         bassMonoLowpassL.resetAllChannels()
         bassMonoLowpassR.resetAllChannels()
