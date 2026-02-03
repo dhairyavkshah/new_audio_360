@@ -146,6 +146,12 @@ All song durations are normalized to **seconds** throughout the app:
 - **PlaybackService.kt**: Added `clearAudioBuffers()` call in `onMediaItemTransition` callback. Now all track transitions (auto-advance, next, previous, playlist changes, repeat) properly clear DSP buffers to prevent audio artifacts from previous tracks bleeding into new ones.
 - **SoftwareDSPAudioProcessor.kt**: Fixed auto-advance not working with Bass Enhancement or AI Upscaling. The bug was in `queueInput()` which set `outputBuffer = buffer` for empty buffers, breaking the reference equality check `outputBuffer === AudioProcessor.EMPTY_BUFFER` in `isEnded()`. Now correctly uses `outputBuffer = AudioProcessor.EMPTY_BUFFER`.
 - **PlaybackService.kt**: Added STATE_ENDED fallback for trackEnded event. If DSP's `isEnded()` callback doesn't fire (e.g., due to buffering delays with DSP effects), `onPlaybackStateChanged` with `STATE_ENDED` will fire the trackEnded event as a backup.
+- **Web Shadow Deprecation Fixes**: Updated all components to use `boxShadow` CSS string format for web instead of deprecated `shadowColor/shadowOffset/shadowOpacity/shadowRadius` props. Similarly, `textShadow` CSS string format is used instead of `textShadowColor/textShadowOffset/textShadowRadius`. Uses `Platform.select` to maintain iOS/Android behavior.
+
+### Known Library Warnings (Cannot Fix in App Code)
+- `[expo-av]: Expo AV has been deprecated` - Library deprecation, awaiting SDK 54 migration to expo-audio/expo-video
+- `[expo-notifications] Listening to push token changes is not yet fully supported on web` - Platform limitation
+- `props.pointerEvents is deprecated` - From react-native-reanimated library, not our code
 
 ## External Dependencies
 
