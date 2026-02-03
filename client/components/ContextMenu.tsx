@@ -11,12 +11,6 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  runOnJS,
-} from "react-native-reanimated";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
@@ -24,8 +18,6 @@ import {
   FluentControlRadius,
   FluentSpacing,
   FluentIconSize,
-  FluentDuration,
-  FluentCurve,
   getShadowStyle,
   FluentLightColors,
   FluentDarkColors,
@@ -61,47 +53,8 @@ export function ContextMenu({
   const { isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
   const insets = useSafeAreaInsets();
-  const [isRendered, setIsRendered] = useState(visible);
-  const scale = useSharedValue(0.9);
-  const opacity = useSharedValue(0);
-  const scrimOpacity = useSharedValue(0);
 
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-
-  const handleAnimationComplete = useCallback((toVisible: boolean) => {
-    if (!toVisible) {
-      setIsRendered(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (visible) {
-      setIsRendered(true);
-      scale.value = withTiming(1, {
-        duration: FluentDuration.fast,
-        easing: FluentCurve.decelerateMid,
-      });
-      opacity.value = withTiming(1, {
-        duration: FluentDuration.fast,
-      });
-      scrimOpacity.value = withTiming(0.5, {
-        duration: FluentDuration.normal,
-      });
-    } else if (isRendered) {
-      scale.value = withTiming(0.9, {
-        duration: FluentDuration.faster,
-        easing: FluentCurve.accelerateMid,
-      });
-      opacity.value = withTiming(0, {
-        duration: FluentDuration.faster,
-      }, () => {
-        runOnJS(handleAnimationComplete)(false);
-      });
-      scrimOpacity.value = withTiming(0, {
-        duration: FluentDuration.faster,
-      });
-    }
-  }, [visible]);
 
   const handleDismiss = () => {
     if (Platform.OS !== "web") {
@@ -118,15 +71,6 @@ export function ContextMenu({
     onSelect(id);
     onDismiss();
   };
-
-  const menuStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  const scrimStyle = useAnimatedStyle(() => ({
-    opacity: scrimOpacity.value,
-  }));
 
   const getMenuPosition = () => {
     if (!anchorPosition) {
@@ -161,24 +105,24 @@ export function ContextMenu({
     };
   };
 
-  if (!isRendered) return null;
+  if (!visible) return null;
 
   return (
     <Modal
-      visible={isRendered}
+      visible={visible}
       transparent
-      animationType="none"
+      animationType="fade"
       onRequestClose={handleDismiss}
       statusBarTranslucent
     >
       <View style={styles.overlay}>
-        <Animated.View
-          style={[styles.scrim, { backgroundColor: colors.colorNeutralBackgroundInverted }, scrimStyle]}
+        <View
+          style={[styles.scrim, { backgroundColor: colors.colorNeutralBackgroundInverted, opacity: 0.5 }]}
         >
-          <Pressable style={styles.scrimPressable} onPress={handleDismiss} />
-        </Animated.View>
+          <Pressable style={styles.scrimPressable} onPress={handleDismiss} android_ripple={null} />
+        </View>
 
-        <Animated.View
+        <View
           style={[
             styles.menu,
             {
@@ -187,7 +131,6 @@ export function ContextMenu({
             },
             getShadowStyle('shadow16', isDark),
             getMenuPosition(),
-            menuStyle,
           ]}
           accessibilityRole="menu"
         >
@@ -204,6 +147,7 @@ export function ContextMenu({
                 accessibilityRole="menuitem"
                 accessibilityLabel={item.label}
                 accessibilityState={{ disabled: item.disabled }}
+                android_ripple={null}
                 style={({ pressed }) => [
                   styles.menuItem,
                   {
@@ -247,7 +191,7 @@ export function ContextMenu({
               </Pressable>
             ))}
           </ScrollView>
-        </Animated.View>
+        </View>
       </View>
     </Modal>
   );

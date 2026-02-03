@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
 import {
   View,
   StyleSheet,
@@ -7,12 +7,6 @@ import {
   Platform,
   Modal,
 } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  runOnJS,
-} from "react-native-reanimated";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
 import { Button } from "@/components/Button";
@@ -20,8 +14,6 @@ import { useThemeContext } from "@/contexts/ThemeContext";
 import {
   FluentControlRadius,
   FluentSpacing,
-  FluentDuration,
-  FluentCurve,
   getShadowStyle,
   FluentLightColors,
   FluentDarkColors,
@@ -38,79 +30,30 @@ const DIALOG_WIDTH = Math.min(SCREEN_WIDTH * 0.9, FluentLayoutSize.dialogMaxWidt
 
 export function AudioTipNotification({ visible, onDismiss }: AudioTipNotificationProps) {
   const { isDark } = useThemeContext();
-  const [isRendered, setIsRendered] = useState(visible);
-  const scale = useSharedValue(0.9);
-  const opacity = useSharedValue(0);
-  const scrimOpacity = useSharedValue(0);
-
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-
-  const handleAnimationComplete = useCallback((toVisible: boolean) => {
-    if (!toVisible) {
-      setIsRendered(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (visible) {
-      setIsRendered(true);
-      scale.value = withTiming(1, {
-        duration: FluentDuration.normal,
-        easing: FluentCurve.decelerateMid,
-      });
-      opacity.value = withTiming(1, {
-        duration: FluentDuration.normal,
-      });
-      scrimOpacity.value = withTiming(0.5, {
-        duration: FluentDuration.normal,
-      });
-    } else if (isRendered) {
-      scale.value = withTiming(0.9, {
-        duration: FluentDuration.fast,
-        easing: FluentCurve.accelerateMid,
-      });
-      opacity.value = withTiming(0, {
-        duration: FluentDuration.fast,
-      }, () => {
-        runOnJS(handleAnimationComplete)(false);
-      });
-      scrimOpacity.value = withTiming(0, {
-        duration: FluentDuration.fast,
-      });
-    }
-  }, [visible]);
 
   const handleDismiss = () => {
     onDismiss();
   };
 
-  const dialogStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  const scrimStyle = useAnimatedStyle(() => ({
-    opacity: scrimOpacity.value,
-  }));
-
-  if (!isRendered) return null;
+  if (!visible) return null;
 
   return (
     <Modal
-      visible={isRendered}
+      visible={visible}
       transparent
-      animationType="none"
+      animationType="fade"
       onRequestClose={handleDismiss}
       statusBarTranslucent
     >
       <View style={styles.overlay}>
-        <Animated.View
-          style={[styles.scrim, { backgroundColor: colors.colorNeutralBackgroundInverted }, scrimStyle]}
+        <View
+          style={[styles.scrim, { backgroundColor: colors.colorNeutralBackgroundInverted, opacity: 0.5 }]}
         >
-          <Pressable style={styles.scrimPressable} onPress={handleDismiss} />
-        </Animated.View>
+          <Pressable style={styles.scrimPressable} onPress={handleDismiss} android_ripple={null} />
+        </View>
 
-        <Animated.View
+        <View
           style={[
             styles.dialog,
             {
@@ -118,7 +61,6 @@ export function AudioTipNotification({ visible, onDismiss }: AudioTipNotificatio
               width: DIALOG_WIDTH,
             },
             getShadowStyle('shadow64', isDark),
-            dialogStyle,
           ]}
           accessibilityRole="alert"
           accessibilityLiveRegion="polite"
@@ -186,7 +128,7 @@ export function AudioTipNotification({ visible, onDismiss }: AudioTipNotificatio
               Got it
             </Button>
           </View>
-        </Animated.View>
+        </View>
       </View>
     </Modal>
   );

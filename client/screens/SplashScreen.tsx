@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, StyleSheet, Animated, Platform, ActivityIndicator } from "react-native";
+import { View, StyleSheet, Platform, ActivityIndicator } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentText } from "@/components/fluent";
@@ -13,13 +13,10 @@ type SplashScreenProps = {
   onFinish: () => void;
 };
 
-const useNativeDriver = Platform.OS !== "web";
-
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
   const insets = useSafeAreaInsets();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
   const [iconLoaded, setIconLoaded] = useState(false);
   const iconLoadedRef = useRef(false);
   const isMountedRef = useRef(true);
@@ -32,20 +29,14 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     
     return () => {
       isMountedRef.current = false;
-      fadeAnim.stopAnimation();
     };
-  }, [fadeAnim]);
+  }, []);
 
   useEffect(() => {
     if (iconLoaded) {
       iconLoadedRef.current = true;
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver,
-      }).start();
     }
-  }, [iconLoaded, fadeAnim]);
+  }, [iconLoaded]);
 
   useEffect(() => {
     Image.prefetch(appIcon);
@@ -72,7 +63,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     const minDisplayTime = 1500;
     const startTime = Date.now();
     let remainingTimer: ReturnType<typeof setTimeout> | null = null;
-    let finishTimer: ReturnType<typeof setTimeout> | null = null;
     
     const checkAndFinish = () => {
       const elapsed = Date.now() - startTime;
@@ -80,19 +70,9 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       
       if (initState.isComplete && isMountedRef.current) {
         remainingTimer = setTimeout(() => {
-          if (!isMountedRef.current) return;
-          
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver,
-          }).start();
-          
-          finishTimer = setTimeout(() => {
-            if (isMountedRef.current) {
-              onFinish();
-            }
-          }, 400);
+          if (isMountedRef.current) {
+            onFinish();
+          }
         }, remainingTime);
       }
     };
@@ -101,46 +81,27 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     
     return () => {
       if (remainingTimer) clearTimeout(remainingTimer);
-      if (finishTimer) clearTimeout(finishTimer);
     };
-  }, [iconLoaded, initState.isComplete, fadeAnim, onFinish]);
+  }, [iconLoaded, initState.isComplete, onFinish]);
 
   useEffect(() => {
     if (!iconLoaded) return;
-    
-    let finishTimer: ReturnType<typeof setTimeout> | null = null;
     
     const maxWaitTimer = setTimeout(() => {
       if (!isMountedRef.current) return;
       
       console.log('[SplashScreen] Max wait time reached, finishing...');
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver,
-      }).start();
-      
-      finishTimer = setTimeout(() => {
-        if (isMountedRef.current) {
-          onFinish();
-        }
-      }, 400);
+      onFinish();
     }, 6000);
 
     return () => {
       clearTimeout(maxWaitTimer);
-      if (finishTimer) clearTimeout(finishTimer);
     };
-  }, [iconLoaded, fadeAnim, onFinish]);
+  }, [iconLoaded, onFinish]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.colorNeutralBackground1 }]}>
-      <Animated.View
-        style={[
-          styles.content,
-          { opacity: fadeAnim },
-        ]}
-      >
+      <View style={styles.content}>
         <View style={styles.iconContainer}>
           <Image
             source={appIcon}
@@ -163,7 +124,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
             {initStatus}
           </FluentText>
         </View>
-      </Animated.View>
+      </View>
       <View style={[styles.footer, { bottom: insets.bottom + FluentSpacing.xxxl }]}>
         <FluentText variant="caption1" color="tertiary" align="center">
           By: Dhairya Shah, The Team 360

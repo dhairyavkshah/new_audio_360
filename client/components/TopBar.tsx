@@ -2,18 +2,12 @@
  * @deprecated Use FluentTopBar from @/components/fluent instead.
  * This component is kept for backward compatibility but will be removed in a future version.
  */
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, Pressable, Platform, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import {
@@ -21,8 +15,6 @@ import {
   FluentIconSize,
   FluentTypography,
   FluentControlRadius,
-  FluentDuration,
-  FluentEasingValues,
   FluentLightColors,
   FluentDarkColors,
   FluentLayoutSize,
@@ -37,8 +29,6 @@ interface TopBarProps {
   actions?: React.ReactNode;
   transparent?: boolean;
 }
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function TopBar({
   title,
@@ -141,29 +131,16 @@ function IconButton({
   isDark: boolean;
 }) {
   const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
-  const scale = useSharedValue(1);
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [hoverActive, setHoverActive] = useState(false);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   const handlePressIn = () => {
     setIsPressed(true);
-    scale.value = withTiming(0.95, { 
-      duration: FluentDuration.fast,
-      easing: Easing.bezier(FluentEasingValues.easeMax.x1, FluentEasingValues.easeMax.y1, FluentEasingValues.easeMax.x2, FluentEasingValues.easeMax.y2),
-    });
   };
 
   const handlePressOut = () => {
     setIsPressed(false);
-    scale.value = withTiming(1, { 
-      duration: FluentDuration.normal,
-      easing: Easing.bezier(FluentEasingValues.easeMax.x1, FluentEasingValues.easeMax.y1, FluentEasingValues.easeMax.x2, FluentEasingValues.easeMax.y2),
-    });
   };
 
   const handleHoverIn = () => {
@@ -192,7 +169,7 @@ function IconButton({
   }) : {};
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -200,11 +177,11 @@ function IconButton({
       onHoverOut={handleHoverOut}
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
+      android_ripple={null}
       style={[
         styles.iconButton, 
         { backgroundColor: getBackgroundColor() },
         focusStyle,
-        animatedStyle,
       ]}
       hitSlop={{ top: FluentSpacing.xs, bottom: FluentSpacing.xs, left: FluentSpacing.xs, right: FluentSpacing.xs }}
       accessibilityRole="button"
@@ -215,7 +192,7 @@ function IconButton({
         size={FluentIconSize.medium}
         color={fluentColors.colorNeutralForeground1}
       />
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 
@@ -232,14 +209,9 @@ export function TopBarAction({
 }) {
   const { theme, isDark } = useThemeContext();
   const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
-  const scale = useSharedValue(1);
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [hoverActive, setHoverActive] = useState(false);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   const handlePress = () => {
     if (Platform.OS !== "web") {
@@ -250,18 +222,10 @@ export function TopBarAction({
 
   const handlePressIn = () => {
     setIsPressed(true);
-    scale.value = withTiming(0.95, { 
-      duration: FluentDuration.fast,
-      easing: Easing.bezier(FluentEasingValues.easeMax.x1, FluentEasingValues.easeMax.y1, FluentEasingValues.easeMax.x2, FluentEasingValues.easeMax.y2),
-    });
   };
 
   const handlePressOut = () => {
     setIsPressed(false);
-    scale.value = withTiming(1, { 
-      duration: FluentDuration.normal,
-      easing: Easing.bezier(FluentEasingValues.easeMax.x1, FluentEasingValues.easeMax.y1, FluentEasingValues.easeMax.x2, FluentEasingValues.easeMax.y2),
-    });
   };
 
   const handleHoverIn = () => {
@@ -290,7 +254,7 @@ export function TopBarAction({
   }) : {};
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -298,11 +262,11 @@ export function TopBarAction({
       onHoverOut={handleHoverOut}
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
+      android_ripple={null}
       style={[
         styles.iconButton, 
         { backgroundColor: getBackgroundColor() },
         focusStyle,
-        animatedStyle,
       ]}
       hitSlop={{ top: FluentSpacing.xs, bottom: FluentSpacing.xs, left: FluentSpacing.xs, right: FluentSpacing.xs }}
       accessibilityRole="button"
@@ -314,7 +278,7 @@ export function TopBarAction({
           <Text style={styles.badgeText}>{badge > 99 ? "99+" : badge}</Text>
         </View>
       ) : null}
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 

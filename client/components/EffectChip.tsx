@@ -1,11 +1,6 @@
 import React from "react";
 import { StyleSheet, Pressable, View, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
@@ -28,8 +23,6 @@ interface EffectChipProps {
   disabled?: boolean;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export function EffectChip({
   label,
   isSelected,
@@ -40,19 +33,6 @@ export function EffectChip({
 }: EffectChipProps) {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.95, { damping: 15, stiffness: 200 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 200 });
-  };
 
   const handlePress = () => {
     if (Platform.OS !== "web") {
@@ -74,11 +54,10 @@ export function EffectChip({
       : colors.colorNeutralForeground1;
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
       disabled={disabled}
+      android_ripple={null}
       style={[
         styles.container,
         {
@@ -87,7 +66,6 @@ export function EffectChip({
           borderWidth: FluentBorderWidth.medium,
           opacity: disabled ? 0.5 : 1,
         },
-        animatedStyle,
       ]}
     >
       <FluentText
@@ -106,7 +84,7 @@ export function EffectChip({
       ) : isPremium ? (
         <View style={[styles.premiumIndicator, { backgroundColor: colors.colorBrandForeground1 }]} />
       ) : null}
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 

@@ -1,11 +1,5 @@
 import React, { useCallback, useRef } from "react";
-import { StyleSheet, Pressable, ViewStyle, Platform, StyleProp } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
+import { StyleSheet, Pressable, ViewStyle, Platform, StyleProp, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
@@ -13,8 +7,6 @@ import {
   FluentSpacing,
   FluentRadius,
   FluentControlRadius,
-  FluentDuration,
-  FluentEasingValues,
   getShadowStyle,
   FluentLightColors,
   FluentDarkColors,
@@ -33,8 +25,6 @@ interface AnimatedCardProps {
   accessibilityLabel?: string;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export function AnimatedCard({
   children,
   onPress,
@@ -49,47 +39,17 @@ export function AnimatedCard({
 }: AnimatedCardProps) {
   const { isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
-  const scale = useSharedValue(1);
-  const bgOpacity = useSharedValue(0);
   const longPressTriggered = useRef(false);
 
   const colors = isDark ? FluentDarkColors : FluentLightColors;
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const bgAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: bgOpacity.value,
-  }));
-
   const handlePressIn = useCallback(() => {
     if (disabled) return;
     longPressTriggered.current = false;
-    scale.value = withTiming(0.98, { 
-      duration: FluentDuration.fast,
-      easing: Easing.bezier(
-        FluentEasingValues.decelerateMid.x1,
-        FluentEasingValues.decelerateMid.y1,
-        FluentEasingValues.decelerateMid.x2,
-        FluentEasingValues.decelerateMid.y2
-      ),
-    });
-    bgOpacity.value = withTiming(1, { duration: FluentDuration.fast });
-  }, [disabled, scale, bgOpacity]);
+  }, [disabled]);
 
   const handlePressOut = useCallback(() => {
-    scale.value = withTiming(1, { 
-      duration: FluentDuration.normal,
-      easing: Easing.bezier(
-        FluentEasingValues.decelerateMid.x1,
-        FluentEasingValues.decelerateMid.y1,
-        FluentEasingValues.decelerateMid.x2,
-        FluentEasingValues.decelerateMid.y2
-      ),
-    });
-    bgOpacity.value = withTiming(0, { duration: FluentDuration.normal });
-  }, [scale, bgOpacity]);
+  }, []);
 
   const handlePress = useCallback(() => {
     if (longPressTriggered.current) {
@@ -122,7 +82,7 @@ export function AnimatedCard({
   };
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={onPress ? handlePress : undefined}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -131,6 +91,7 @@ export function AnimatedCard({
       disabled={disabled || !onPress}
       accessibilityRole={onPress ? "button" : undefined}
       accessibilityLabel={accessibilityLabel}
+      android_ripple={null}
       style={[
         styles.container,
         {
@@ -139,22 +100,11 @@ export function AnimatedCard({
         },
         borderStyle,
         shadowStyle,
-        animatedStyle,
         style,
       ]}
     >
-      <Animated.View 
-        style={[
-          StyleSheet.absoluteFill, 
-          { 
-            backgroundColor: colors.colorNeutralBackground3, 
-            borderRadius: Math.max(0, borderRadius - 1),
-          },
-          bgAnimatedStyle,
-        ]} 
-      />
       {children}
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 

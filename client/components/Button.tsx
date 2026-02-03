@@ -1,11 +1,5 @@
 import React, { ReactNode, useState, useCallback } from "react";
-import { StyleSheet, Pressable, ViewStyle, StyleProp, Platform } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
+import { StyleSheet, Pressable, ViewStyle, StyleProp, Platform, View } from "react-native";
 
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
@@ -13,8 +7,6 @@ import { useUiSound } from "@/contexts/UiSoundContext";
 import {
   FluentSpacing,
   FluentControlRadius,
-  FluentDuration,
-  FluentEasingValues,
   getShadowStyle,
   FluentLightColors,
   FluentDarkColors,
@@ -35,8 +27,6 @@ interface ButtonProps {
   size?: ButtonSize;
   accessibilityLabel?: string;
 }
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const sizeStyles = {
   sm: { 
@@ -67,16 +57,11 @@ export function Button({
 }: ButtonProps) {
   const { isDark } = useThemeContext();
   const { playKeypressSound } = useUiSound();
-  const scale = useSharedValue(1);
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [hoverActive, setHoverActive] = useState(false);
 
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   const handlePress = useCallback(() => {
     if (!disabled && onPress) {
@@ -88,30 +73,12 @@ export function Button({
   const handlePressIn = () => {
     if (!disabled) {
       setIsPressed(true);
-      scale.value = withTiming(0.98, { 
-        duration: FluentDuration.fast,
-        easing: Easing.bezier(
-          FluentEasingValues.decelerateMid.x1,
-          FluentEasingValues.decelerateMid.y1,
-          FluentEasingValues.decelerateMid.x2,
-          FluentEasingValues.decelerateMid.y2
-        ),
-      });
     }
   };
 
   const handlePressOut = () => {
     if (!disabled) {
       setIsPressed(false);
-      scale.value = withTiming(1, { 
-        duration: FluentDuration.normal,
-        easing: Easing.bezier(
-          FluentEasingValues.decelerateMid.x1,
-          FluentEasingValues.decelerateMid.y1,
-          FluentEasingValues.decelerateMid.x2,
-          FluentEasingValues.decelerateMid.y2
-        ),
-      });
     }
   };
 
@@ -212,7 +179,7 @@ export function Button({
     : {};
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -224,6 +191,7 @@ export function Button({
       accessibilityRole="button"
       accessibilityState={{ disabled }}
       accessibilityLabel={accessibilityLabel}
+      android_ripple={null}
       style={[
         styles.button,
         sizeStyles[size],
@@ -237,7 +205,6 @@ export function Button({
         shadowStyle,
         focusRingStyle,
         style,
-        animatedStyle,
       ]}
     >
       <FluentText
@@ -246,7 +213,7 @@ export function Button({
       >
         {children}
       </FluentText>
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 

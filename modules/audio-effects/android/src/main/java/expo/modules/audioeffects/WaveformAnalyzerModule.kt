@@ -30,13 +30,36 @@ class WaveformAnalyzerModule : Module() {
                     release()
                     
                     audioSessionId = sessionId
-                    visualizer = Visualizer(sessionId).apply {
-                        captureSize = Visualizer.getCaptureSizeRange()[1]
-                        scalingMode = Visualizer.SCALING_MODE_NORMALIZED
-                        measurementMode = Visualizer.MEASUREMENT_MODE_PEAK_RMS
+                    android.util.Log.d("WaveformAnalyzer", "Attempting to attach Visualizer to audio session: $sessionId")
+                    
+                    try {
+                        visualizer = Visualizer(sessionId).apply {
+                            captureSize = Visualizer.getCaptureSizeRange()[1]
+                            scalingMode = Visualizer.SCALING_MODE_NORMALIZED
+                            measurementMode = Visualizer.MEASUREMENT_MODE_PEAK_RMS
+                        }
+                    } catch (e: RuntimeException) {
+                        val errorCode = when {
+                            e.message?.contains("-3") == true -> -3
+                            e.message?.contains("-1") == true -> -1
+                            e.message?.contains("-4") == true -> -4
+                            else -> 0
+                        }
+                        
+                        val userMessage = when (errorCode) {
+                            -3 -> "Cannot initialize audio visualizer. The audio session may not be ready yet or another app is using it. Try playing some audio first."
+                            -1 -> "Audio visualizer initialization failed. Please check if the app has RECORD_AUDIO permission."
+                            -4 -> "Audio visualizer is already in use. Please stop any other visualizer first."
+                            else -> "Audio visualizer initialization failed: ${e.message}. Try restarting the app."
+                        }
+                        
+                        android.util.Log.e("WaveformAnalyzer", "Visualizer init failed with error code $errorCode: ${e.message}")
+                        promise.reject("VISUALIZER_INIT_ERROR", userMessage, e)
+                        return@post
                     }
                     
                     val vis = visualizer!!
+                    android.util.Log.d("WaveformAnalyzer", "Visualizer attached successfully. Capture size: ${vis.captureSize}")
                     
                     promise.resolve(mapOf(
                         "success" to true,
@@ -48,7 +71,8 @@ class WaveformAnalyzerModule : Module() {
                     ))
                     
                 } catch (e: Exception) {
-                    promise.reject("ATTACH_ERROR", e.message, e)
+                    android.util.Log.e("WaveformAnalyzer", "Unexpected error attaching visualizer: ${e.message}", e)
+                    promise.reject("ATTACH_ERROR", "Failed to attach audio visualizer: ${e.message}", e)
                 }
             }
         }

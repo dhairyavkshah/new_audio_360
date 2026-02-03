@@ -1,18 +1,10 @@
 import React from "react";
-import { StyleSheet, Pressable, ViewStyle, Platform } from "react-native";
+import { StyleSheet, Pressable, ViewStyle, Platform, View } from "react-native";
 import { BlurView } from "expo-blur";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
   FluentControlRadius,
-  FluentDuration,
-  FluentEasingValues,
   getShadowStyle,
   FluentLightColors,
   FluentDarkColors,
@@ -28,8 +20,6 @@ interface GlassCardProps {
   selected?: boolean;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export function GlassCard({
   children,
   onPress,
@@ -39,56 +29,15 @@ export function GlassCard({
   selected = false,
 }: GlassCardProps) {
   const { isDark } = useThemeContext();
-  const scale = useSharedValue(1);
-  const bgOpacity = useSharedValue(0);
-
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const bgAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: bgOpacity.value,
-  }));
-
-  const handlePressIn = () => {
-    if (!disabled && onPress) {
-      scale.value = withTiming(0.98, { 
-        duration: FluentDuration.fast,
-        easing: Easing.bezier(
-          FluentEasingValues.decelerateMid.x1,
-          FluentEasingValues.decelerateMid.y1,
-          FluentEasingValues.decelerateMid.x2,
-          FluentEasingValues.decelerateMid.y2
-        ),
-      });
-      bgOpacity.value = withTiming(1, { duration: FluentDuration.fast });
-    }
-  };
-
-  const handlePressOut = () => {
-    scale.value = withTiming(1, { 
-      duration: FluentDuration.normal,
-      easing: Easing.bezier(
-        FluentEasingValues.decelerateMid.x1,
-        FluentEasingValues.decelerateMid.y1,
-        FluentEasingValues.decelerateMid.x2,
-        FluentEasingValues.decelerateMid.y2
-      ),
-    });
-    bgOpacity.value = withTiming(0, { duration: FluentDuration.normal });
-  };
-
   const shadowStyle = getShadowStyle('shadow2', isDark);
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
       disabled={disabled || !onPress}
-      style={[styles.card, shadowStyle, animatedStyle, style]}
+      android_ripple={null}
+      style={[styles.card, shadowStyle, style]}
     >
       {Platform.OS === "ios" ? (
         <BlurView
@@ -102,17 +51,10 @@ export function GlassCard({
             }
           ]}
         >
-          <Animated.View 
-            style={[
-              StyleSheet.absoluteFill, 
-              { backgroundColor: colors.colorNeutralBackground3, borderRadius: FluentControlRadius.card },
-              bgAnimatedStyle,
-            ]} 
-          />
           {children}
         </BlurView>
       ) : (
-        <Animated.View
+        <View
           style={[
             styles.blur,
             {
@@ -122,17 +64,10 @@ export function GlassCard({
             },
           ]}
         >
-          <Animated.View 
-            style={[
-              StyleSheet.absoluteFill, 
-              { backgroundColor: colors.colorNeutralBackground3, borderRadius: FluentControlRadius.card },
-              bgAnimatedStyle,
-            ]} 
-          />
           {children}
-        </Animated.View>
+        </View>
       )}
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 

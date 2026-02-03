@@ -1,11 +1,9 @@
-import React, { useRef, useEffect, useState } from "react";
-import { View, StyleSheet, Pressable, Animated, Platform } from "react-native";
+import React, { useState } from "react";
+import { View, StyleSheet, Pressable, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import {
-  FluentDuration,
-  FluentSpring,
   FluentSpacing,
   FluentLightColors,
   FluentDarkColors,
@@ -38,48 +36,13 @@ export function FluentToggle({
   const thumbSize = size === 'large' ? 24 : 14;
   const thumbTravel = trackWidth - thumbSize - 6;
   const trackBorderRadius = trackHeight / 2;
-  
-  const translateX = useRef(new Animated.Value(value ? thumbTravel : 0)).current;
-  const thumbScale = useRef(new Animated.Value(1)).current;
-  const trackOpacity = useRef(new Animated.Value(value ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(translateX, {
-        toValue: value ? thumbTravel : 0,
-        useNativeDriver: true,
-        damping: FluentSpring.standard.damping,
-        stiffness: FluentSpring.standard.stiffness,
-        mass: FluentSpring.standard.mass,
-      }),
-      Animated.timing(trackOpacity, {
-        toValue: value ? 1 : 0,
-        duration: FluentDuration.fast,
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, [value, translateX, trackOpacity, thumbTravel]);
 
   const handlePressIn = () => {
     setIsPressed(true);
-    Animated.spring(thumbScale, {
-      toValue: 0.85,
-      useNativeDriver: true,
-      damping: FluentSpring.gentle.damping,
-      stiffness: FluentSpring.gentle.stiffness,
-      mass: FluentSpring.gentle.mass,
-    }).start();
   };
 
   const handlePressOut = () => {
     setIsPressed(false);
-    Animated.spring(thumbScale, {
-      toValue: 1,
-      useNativeDriver: true,
-      damping: FluentSpring.gentle.damping,
-      stiffness: FluentSpring.gentle.stiffness,
-      mass: FluentSpring.gentle.mass,
-    }).start();
   };
 
   const handleHoverIn = () => {
@@ -115,10 +78,7 @@ export function FluentToggle({
     return fluentColors.colorCompoundBrandBackground;
   };
 
-  const trackBackgroundColor = trackOpacity.interpolate({
-    inputRange: [0, 1],
-    outputRange: [getTrackOffColor(), getTrackOnColor()],
-  });
+  const trackBackgroundColor = value ? getTrackOnColor() : getTrackOffColor();
 
   const getBorderColor = () => {
     if (value) return 'transparent';
@@ -168,8 +128,9 @@ export function FluentToggle({
         style={[styles.pressable, focusRingStyle]}
         accessibilityRole="switch"
         accessibilityState={{ checked: value, disabled }}
+        android_ripple={null}
       >
-        <Animated.View
+        <View
           style={[
             styles.track,
             {
@@ -183,7 +144,7 @@ export function FluentToggle({
             },
           ]}
         >
-          <Animated.View
+          <View
             style={[
               styles.thumb,
               {
@@ -191,15 +152,12 @@ export function FluentToggle({
                 height: thumbSize,
                 borderRadius: thumbSize / 2,
                 backgroundColor: thumbColor,
-                transform: [
-                  { translateX },
-                  { scale: thumbScale },
-                ],
+                transform: [{ translateX: value ? thumbTravel : 0 }],
                 ...thumbShadow,
               },
             ]}
           />
-        </Animated.View>
+        </View>
       </Pressable>
     </View>
   );

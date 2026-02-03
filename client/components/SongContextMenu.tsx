@@ -11,11 +11,9 @@ import {
   Platform,
 } from "react-native";
 
-// Default album art for songs without artwork
 const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentText } from "@/components/fluent";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -161,6 +159,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
       <Pressable
         style={[styles.menuItem, { backgroundColor: colors.colorNeutralBackground2 }]}
         onPress={() => handleNavigate("selectPlaylist")}
+        android_ripple={null}
       >
         <View style={[styles.menuItemIcon, { backgroundColor: colors.colorBrandBackground + "20" }]}>
           <MaterialCommunityIcons name="playlist-plus" size={20} color={colors.colorBrandForeground1} />
@@ -177,6 +176,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
       <Pressable
         style={[styles.menuItem, { backgroundColor: colors.colorNeutralBackground2 }]}
         onPress={() => handleNavigate("createPlaylist")}
+        android_ripple={null}
       >
         <View style={[styles.menuItemIcon, { backgroundColor: colors.colorPaletteGreenBackground1 }]}>
           <MaterialCommunityIcons name="playlist-music" size={20} color={colors.colorPaletteGreenForeground1} />
@@ -197,6 +197,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
             style={[styles.menuItem, { backgroundColor: colors.colorNeutralBackground2 }]}
             onPress={handleHideSong}
             disabled={isLoading}
+            android_ripple={null}
           >
             <View style={[styles.menuItemIcon, { backgroundColor: colors.colorPaletteRedBackground1 }]}>
               <MaterialCommunityIcons name="eye-off" size={20} color={colors.colorPaletteRedForeground1} />
@@ -215,7 +216,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
 
   const renderPlaylistSelection = () => (
     <View style={styles.menuContent}>
-      <Pressable style={styles.backHeader} onPress={() => handleNavigate("main")}>
+      <Pressable style={styles.backHeader} onPress={() => handleNavigate("main")} android_ripple={null}>
         <MaterialCommunityIcons name="arrow-left" size={20} color={colors.colorNeutralForeground1} />
         <FluentText variant="body1Strong" color="primary" style={{ marginLeft: FluentSpacing.s }}>
           Select Playlist
@@ -233,6 +234,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
           <Pressable
             style={[styles.createButton, { backgroundColor: colors.colorBrandBackground }]}
             onPress={() => handleNavigate("createPlaylist")}
+            android_ripple={null}
           >
             <MaterialCommunityIcons name="plus" size={18} color={colors.colorNeutralForegroundOnBrand} />
             <FluentText variant="body1" color="onBrand" style={{ marginLeft: FluentSpacing.xs }}>
@@ -254,6 +256,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
                 ]}
                 onPress={() => !isAlreadyAdded && handleAddToPlaylist(playlist)}
                 disabled={isAlreadyAdded || isLoading}
+                android_ripple={null}
               >
                 <View style={[styles.playlistIcon, { backgroundColor: colors.colorBrandBackground + "15" }]}>
                   <MaterialCommunityIcons name="playlist-music" size={24} color={colors.colorBrandForeground1} />
@@ -283,7 +286,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
   const renderCreatePlaylist = () => (
     <KeyboardAwareScrollViewCompat>
       <View style={styles.menuContent}>
-        <Pressable style={styles.backHeader} onPress={() => handleNavigate("main")}>
+        <Pressable style={styles.backHeader} onPress={() => handleNavigate("main")} android_ripple={null}>
           <MaterialCommunityIcons name="arrow-left" size={20} color={colors.colorNeutralForeground1} />
           <FluentText variant="body1Strong" color="primary" style={{ marginLeft: FluentSpacing.s }}>
             Create New Playlist
@@ -328,6 +331,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
             ]}
             onPress={handleCreatePlaylist}
             disabled={!newPlaylistName.trim() || isLoading}
+            android_ripple={null}
           >
             <MaterialCommunityIcons
               name="playlist-plus"
@@ -350,18 +354,14 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
   );
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
-      <Animated.View
-        entering={FadeIn.duration(200)}
-        exiting={FadeOut.duration(150)}
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
+      <View
         style={[styles.backdrop, { backgroundColor: colors.colorBackgroundScrim }]}
       >
-        <Pressable style={styles.backdropPressable} onPress={handleClose} />
-      </Animated.View>
+        <Pressable style={styles.backdropPressable} onPress={handleClose} android_ripple={null} />
+      </View>
 
-      <Animated.View
-        entering={SlideInDown.springify().damping(20).stiffness(200)}
-        exiting={SlideOutDown.duration(200)}
+      <View
         style={[styles.menuContainer, { backgroundColor: colors.colorNeutralBackground1, paddingBottom: FluentSpacing.xl + safeBottom }]}
       >
         <View style={[styles.handle, { backgroundColor: colors.colorNeutralForeground3 + "40" }]} />
@@ -372,12 +372,13 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
         <Pressable
           style={[styles.cancelButton, { backgroundColor: colors.colorNeutralBackground3 }]}
           onPress={handleClose}
+          android_ripple={null}
         >
           <FluentText variant="body1Strong" color="primary">
             Cancel
           </FluentText>
         </Pressable>
-      </Animated.View>
+      </View>
     </Modal>
   );
 }

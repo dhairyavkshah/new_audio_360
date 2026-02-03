@@ -6,11 +6,6 @@ import {
   Platform,
   View,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import {
@@ -19,7 +14,6 @@ import {
   FluentSpacing,
   FluentIconSize,
   FluentControlRadius,
-  FluentSpring,
   IconSizeToken,
   FluentTouchTarget,
 } from '@/constants/fluent2';
@@ -34,8 +28,6 @@ export interface FluentIconButtonProps extends PressableProps {
   selected?: boolean;
   iconColor?: string;
 }
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const sizeConfig: Record<IconButtonSize, { containerSize: number; iconSizeToken: IconSizeToken }> = {
   small: { containerSize: 28, iconSizeToken: 'small' },
@@ -64,9 +56,7 @@ export function FluentIconButton({
 
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const scale = useSharedValue(1);
 
-  // Calculate hitSlop to ensure minimum touch target of 44px
   const calculateHitSlop = () => {
     const minTouchTarget = FluentTouchTarget.minimum;
     const extraSpace = Math.max(0, (minTouchTarget - config.containerSize) / 2);
@@ -78,16 +68,10 @@ export function FluentIconButton({
     };
   };
 
-  // Provide default accessibility label if none provided
   const finalAccessibilityLabel = accessibilityLabel || 'Icon button';
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   const handlePressIn = (e: any) => {
     setIsPressed(true);
-    scale.value = withSpring(0.92, FluentSpring.stiff);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -96,7 +80,6 @@ export function FluentIconButton({
 
   const handlePressOut = (e: any) => {
     setIsPressed(false);
-    scale.value = withSpring(1, FluentSpring.stiff);
     onPressOut?.(e);
   };
 
@@ -151,7 +134,7 @@ export function FluentIconButton({
   };
 
   return (
-    <AnimatedPressable
+    <Pressable
       style={[
         styles.button,
         {
@@ -163,7 +146,6 @@ export function FluentIconButton({
           borderColor: getBorderColor(),
           opacity: disabled ? 0.5 : 1,
         },
-        animatedStyle,
         style,
       ]}
       disabled={disabled}
@@ -176,13 +158,14 @@ export function FluentIconButton({
       accessibilityRole="button"
       accessibilityLabel={finalAccessibilityLabel}
       accessibilityState={{ disabled: disabled || undefined, selected: selected || undefined }}
+      android_ripple={null}
       {...props}
     >
       {React.cloneElement(icon as React.ReactElement<{ color?: string; size?: number }>, {
         color: iconColor || getIconColor(),
         size: iconSize,
       })}
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 

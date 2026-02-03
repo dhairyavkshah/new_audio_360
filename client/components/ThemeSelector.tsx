@@ -1,11 +1,6 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Alert } from "react-native";
+import { View, StyleSheet, Pressable, Alert, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
@@ -24,8 +19,6 @@ interface ThemeSelectorProps {
   currentTheme: ThemeName;
   onThemeChange: (theme: ThemeName) => void;
 }
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function ThemeOption({
   themeName,
@@ -46,25 +39,13 @@ function ThemeOption({
   onPress: () => void;
   colors: typeof FluentLightColors;
 }) {
-  const scale = useSharedValue(1);
-
   const themePreview = ThemeColors[themeName][previewIsDark ? "dark" : "light"];
   const skin = getSkin(themeName);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 200 });
-  };
-
   const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     if (isLocked) {
       Alert.alert("Premium Theme", "Upgrade to Premium to unlock all 55 themes.", [
         { text: "OK", style: "default" }
@@ -75,10 +56,9 @@ function ThemeOption({
   };
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      android_ripple={null}
       style={[
         styles.themeOption,
         {
@@ -88,7 +68,6 @@ function ThemeOption({
           borderRadius: FluentControlRadius.card,
         },
         isSelected && { borderWidth: 2 },
-        animatedStyle,
       ]}
     >
       <View style={styles.colorPreview}>
@@ -122,7 +101,7 @@ function ThemeOption({
           <MaterialCommunityIcons name="check" size={14} color="#FFFFFF" />
         </View>
       ) : null}
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 

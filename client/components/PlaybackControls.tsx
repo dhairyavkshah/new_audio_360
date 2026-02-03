@@ -1,11 +1,6 @@
 import React from "react";
 import { View, StyleSheet, Pressable, Platform, ViewStyle } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useThemeTokens } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
@@ -13,7 +8,6 @@ import { getButtonEffectStyle, getGlowStyle, ThemeTokens } from "@/lib/themeUtil
 import {
   FluentSpacing,
   FluentIconSize,
-  FluentSpring,
 } from "@/constants/fluent2";
 
 interface PlaybackControlsProps {
@@ -26,8 +20,6 @@ interface PlaybackControlsProps {
   shuffleEnabled?: boolean;
   repeatMode?: "off" | "one" | "all";
 }
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function ControlButton({
   icon,
@@ -47,19 +39,6 @@ function ControlButton({
   tokens: ThemeTokens;
 }) {
   const { playTapSound } = useUiSound();
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.9, FluentSpring.standard);
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, FluentSpring.standard);
-  };
 
   const handlePress = () => {
     playTapSound();
@@ -98,17 +77,15 @@ function ControlButton({
   } : {};
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      android_ripple={null}
       style={[
         baseStyle,
         isPrimary && buttonEffectStyle,
         activeStyle,
         glowStyle,
         bevelStyle,
-        animatedStyle,
       ]}
     >
       <MaterialCommunityIcons 
@@ -116,7 +93,7 @@ function ControlButton({
         size={size} 
         color={color} 
       />
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 

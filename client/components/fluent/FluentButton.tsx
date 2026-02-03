@@ -8,11 +8,6 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import {
@@ -21,7 +16,6 @@ import {
   FluentTypography,
   FluentControlRadius,
   FluentSpacing,
-  FluentSpring,
   FluentControlHeight,
   FluentIconSize,
 } from '@/constants/fluent2';
@@ -38,8 +32,6 @@ export interface FluentButtonProps extends Omit<PressableProps, 'children'> {
   fullWidth?: boolean;
   children: React.ReactNode;
 }
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const sizeStyles = {
   small: {
@@ -161,15 +153,9 @@ export function FluentButton({
 
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   const handlePressIn = (e: any) => {
     setIsPressed(true);
-    scale.value = withSpring(0.97, FluentSpring.stiff);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -178,7 +164,6 @@ export function FluentButton({
 
   const handlePressOut = (e: any) => {
     setIsPressed(false);
-    scale.value = withSpring(1, FluentSpring.stiff);
     onPressOut?.(e);
   };
 
@@ -204,7 +189,7 @@ export function FluentButton({
     : buttonColors.foreground;
 
   return (
-    <AnimatedPressable
+    <Pressable
       style={[
         styles.button,
         {
@@ -218,7 +203,6 @@ export function FluentButton({
           opacity: isDisabled ? 0.5 : 1,
         },
         fullWidth && styles.fullWidth,
-        animatedStyle,
         style,
       ]}
       disabled={isDisabled}
@@ -230,6 +214,7 @@ export function FluentButton({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || (typeof children === 'string' ? children : undefined)}
       accessibilityState={{ disabled: isDisabled }}
+      android_ripple={null}
       {...props}
     >
       <View style={styles.content}>
@@ -269,7 +254,7 @@ export function FluentButton({
           </>
         )}
       </View>
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 

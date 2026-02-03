@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
 import { Pressable, PressableProps, View, StyleSheet, Platform } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { FluentSurface } from './FluentSurface';
@@ -13,7 +8,6 @@ import {
   FluentDarkColors,
   FluentSpacing,
   FluentControlRadius,
-  FluentSpring,
   getShadowStyle,
   ShadowLevel,
   FluentBorderWidth,
@@ -29,8 +23,6 @@ export interface FluentCardProps extends Omit<PressableProps, 'children'> {
   children?: React.ReactNode;
   noPadding?: boolean;
 }
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const elevationToShadow: Record<ElevationLevel, ShadowLevel | null> = {
   none: null,
@@ -55,16 +47,10 @@ export function FluentCard({
 
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   const handlePressIn = () => {
     if (!interactive && !onPress) return;
     setIsPressed(true);
-    scale.value = withSpring(0.98, FluentSpring.stiff);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -72,7 +58,6 @@ export function FluentCard({
 
   const handlePressOut = () => {
     setIsPressed(false);
-    scale.value = withSpring(1, FluentSpring.stiff);
   };
 
   const getBackgroundColor = () => {
@@ -106,7 +91,7 @@ export function FluentCard({
 
   if (isInteractive) {
     return (
-      <AnimatedPressable
+      <Pressable
         style={[
           styles.card,
           {
@@ -114,7 +99,6 @@ export function FluentCard({
             borderRadius: FluentControlRadius.card,
           },
           shadowStyle,
-          animatedStyle,
           style,
         ]}
         onPress={onPress}
@@ -123,10 +107,11 @@ export function FluentCard({
         onHoverIn={() => setIsHovered(true)}
         onHoverOut={() => setIsHovered(false)}
         accessibilityRole="button"
+        android_ripple={null}
         {...props}
       >
         {cardContent}
-      </AnimatedPressable>
+      </Pressable>
     );
   }
 

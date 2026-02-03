@@ -7,11 +7,6 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useThemeContext } from '@/contexts/ThemeContext';
@@ -22,7 +17,6 @@ import {
   FluentControlRadius,
   FluentSpacing,
   FluentIconSize,
-  FluentSpring,
   FluentLayoutSize,
   FluentBorderWidth,
 } from '@/constants/fluent2';
@@ -37,8 +31,6 @@ export interface FluentChipProps extends Omit<PressableProps, 'children'> {
   dismissible?: boolean;
   onDismiss?: () => void;
 }
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const sizeStyles = {
   small: {
@@ -80,15 +72,9 @@ export function FluentChip({
 
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   const handlePressIn = (e: any) => {
     setIsPressed(true);
-    scale.value = withSpring(0.95, FluentSpring.stiff);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -97,7 +83,6 @@ export function FluentChip({
 
   const handlePressOut = (e: any) => {
     setIsPressed(false);
-    scale.value = withSpring(1, FluentSpring.stiff);
     onPressOut?.(e);
   };
 
@@ -137,7 +122,7 @@ export function FluentChip({
   const foregroundColor = getForegroundColor();
 
   return (
-    <AnimatedPressable
+    <Pressable
       style={[
         styles.chip,
         {
@@ -149,7 +134,6 @@ export function FluentChip({
           minHeight: sizeConfig.minHeight,
           opacity: disabled ? 0.5 : 1,
         },
-        animatedStyle,
         style,
       ]}
       disabled={disabled}
@@ -161,6 +145,7 @@ export function FluentChip({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || label}
       accessibilityState={{ disabled: disabled || undefined, selected: selected || undefined }}
+      android_ripple={null}
       {...props}
     >
       <View style={styles.content}>
@@ -189,6 +174,7 @@ export function FluentChip({
             style={styles.dismissButton}
             accessibilityLabel={`Remove ${label}`}
             accessibilityRole="button"
+            android_ripple={null}
           >
             <MaterialCommunityIcons
               name="close"
@@ -198,7 +184,7 @@ export function FluentChip({
           </Pressable>
         )}
       </View>
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 
