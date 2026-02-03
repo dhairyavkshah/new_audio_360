@@ -174,11 +174,16 @@ export default function NowPlayingScreen() {
 
   // Animation disabled to prevent overlay issues
 
-  const textShadowStyle = {
-    textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  };
+  const textShadowStyle = Platform.select({
+    native: {
+      textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 4,
+    },
+    default: {
+      textShadow: `0px 1px 4px ${isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)'}`,
+    },
+  });
 
   if (!currentSong) {
     return (
@@ -359,12 +364,21 @@ const styles = StyleSheet.create({
   },
   artworkWrapper: {
     borderRadius: FluentRadius.xLarge,
-    elevation: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
     position: "relative",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 20,
+      },
+      default: {
+        boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.3)",
+      },
+    }),
   },
   artwork: {
     borderRadius: FluentRadius.xLarge,

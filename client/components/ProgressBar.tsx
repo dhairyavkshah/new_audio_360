@@ -45,11 +45,16 @@ export function ProgressBar({
   const tokens = useThemeTokens();
   const { trackStyle, progressStyle, trackRadius } = getProgressBarStyle(tokens);
 
-  const textShadowStyle = showTextShadow ? {
-    textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  } : {};
+  const textShadowStyle = showTextShadow ? Platform.select({
+    native: {
+      textShadowColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 3,
+    },
+    default: {
+      textShadow: `0px 1px 3px ${isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.3)'}`,
+    },
+  }) : {};
   
   const translateX = useSharedValue(progress * (width - THUMB_SIZE));
   const isDragging = useSharedValue(false);

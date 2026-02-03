@@ -22,6 +22,19 @@ const createShadow = (
   elevation,
 });
 
+const toBoxShadow = (shadow: FluentShadow): string => {
+  const { r, g, b } = hexToRgb(shadow.shadowColor);
+  const alpha = shadow.shadowOpacity;
+  return `0px ${shadow.shadowOffset.height}px ${shadow.shadowRadius}px rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) }
+    : { r: 0, g: 0, b: 0 };
+};
+
 export const FluentShadows = {
   shadow2: createShadow(1, 2, 0.12, 2),
   shadow4: createShadow(2, 4, 0.14, 4),
@@ -55,10 +68,7 @@ export const getShadowStyle = (level: keyof typeof FluentShadows, isDark: boolea
       elevation: shadow.elevation,
     },
     default: {
-      shadowColor: shadow.shadowColor,
-      shadowOffset: shadow.shadowOffset,
-      shadowOpacity: shadow.shadowOpacity,
-      shadowRadius: shadow.shadowRadius,
+      boxShadow: toBoxShadow(shadow),
     },
   });
 };

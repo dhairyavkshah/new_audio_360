@@ -1,6 +1,27 @@
-import { ViewStyle, TextStyle } from 'react-native';
+import { ViewStyle, TextStyle, Platform } from 'react-native';
 import { ThemeName, ThemeColors } from '@/constants/theme';
 import { SkinDefinition, ShapeTokens, ComponentStyles, IconPack, getSkin } from '@/constants/skins';
+
+const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) }
+    : { r: 0, g: 0, b: 0 };
+};
+
+const toBoxShadow = (shadow: {
+  shadowColor: string;
+  shadowOffset: { width: number; height: number };
+  shadowOpacity: number;
+  shadowRadius: number;
+}): string => {
+  const { r, g, b } = hexToRgb(shadow.shadowColor);
+  return `${shadow.shadowOffset.width}px ${shadow.shadowOffset.height}px ${shadow.shadowRadius}px rgba(${r}, ${g}, ${b}, ${shadow.shadowOpacity})`;
+};
+
+const toTextShadow = (color: string, offsetX: number, offsetY: number, radius: number): string => {
+  return `${offsetX}px ${offsetY}px ${radius}px ${color}`;
+};
 
 export interface ThemeTokens {
   colors: typeof ThemeColors.fluent.light;
@@ -36,6 +57,7 @@ export interface CardEffectStyle {
   shadowRadius?: number;
   elevation?: number;
   overflow?: 'visible' | 'hidden';
+  boxShadow?: string;
 }
 
 export function getCardEffectStyle(
@@ -82,11 +104,18 @@ export function getCardEffectStyle(
     
     if (components.useShadow && elevation > 0) {
       const shadowIntensity = components.shadowIntensity || 0.1;
-      style.shadowColor = '#000000';
-      style.shadowOffset = { width: 0, height: elevation * 2 };
-      style.shadowOpacity = shadowIntensity * elevation;
-      style.shadowRadius = elevation * 4;
-      style.elevation = elevation * 2;
+      const shadowProps = {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: elevation * 2 },
+        shadowOpacity: shadowIntensity * elevation,
+        shadowRadius: elevation * 4,
+      };
+      const platformShadow = Platform.select({
+        ios: shadowProps,
+        android: { elevation: elevation * 2 },
+        default: { boxShadow: toBoxShadow(shadowProps) },
+      });
+      Object.assign(style, platformShadow);
     }
   }
 
@@ -103,6 +132,7 @@ export interface ButtonEffectStyle {
   shadowOpacity?: number;
   shadowRadius?: number;
   elevation?: number;
+  boxShadow?: string;
 }
 
 export function getButtonEffectStyle(
@@ -146,10 +176,18 @@ export function getButtonEffectStyle(
   }
 
   if (components.useGlow && components.glowColor) {
-    style.shadowColor = components.glowColor;
-    style.shadowOffset = { width: 0, height: 0 };
-    style.shadowOpacity = components.glowIntensity || 0.5;
-    style.shadowRadius = 8;
+    const shadowProps = {
+      shadowColor: components.glowColor,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: components.glowIntensity || 0.5,
+      shadowRadius: 8,
+    };
+    const platformShadow = Platform.select({
+      ios: shadowProps,
+      android: { elevation: 4 },
+      default: { boxShadow: toBoxShadow(shadowProps) },
+    });
+    Object.assign(style, platformShadow);
   }
 
   return style;
@@ -182,12 +220,18 @@ export function getGlowStyle(tokens: ThemeTokens): ViewStyle | null {
     return null;
   }
 
-  return {
+  const shadowProps = {
     shadowColor: components.glowColor,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: components.glowIntensity || 0.5,
     shadowRadius: 12,
   };
+
+  return Platform.select({
+    ios: shadowProps,
+    android: { elevation: 6 },
+    default: { boxShadow: toBoxShadow(shadowProps) },
+  }) as ViewStyle;
 }
 
 export function getTextGlowStyle(tokens: ThemeTokens): TextStyle | null {
@@ -197,11 +241,16 @@ export function getTextGlowStyle(tokens: ThemeTokens): TextStyle | null {
     return null;
   }
 
-  return {
-    textShadowColor: components.glowColor,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 6,
-  };
+  return Platform.select({
+    native: {
+      textShadowColor: components.glowColor,
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 6,
+    },
+    default: {
+      textShadow: toTextShadow(components.glowColor, 0, 0, 6),
+    },
+  }) as TextStyle;
 }
 
 export function getLcdTextStyle(tokens: ThemeTokens): TextStyle | null {
@@ -211,13 +260,24 @@ export function getLcdTextStyle(tokens: ThemeTokens): TextStyle | null {
     return null;
   }
 
-  return {
+  const glowColor = components.glowColor || colors.primary;
+  const baseStyle = {
     fontFamily: 'monospace',
-    color: components.glowColor || colors.primary,
-    textShadowColor: components.glowColor || colors.primary,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 4,
+    color: glowColor,
   };
+
+  const textShadowStyle = Platform.select({
+    native: {
+      textShadowColor: glowColor,
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 4,
+    },
+    default: {
+      textShadow: toTextShadow(glowColor, 0, 0, 4),
+    },
+  });
+
+  return { ...baseStyle, ...textShadowStyle } as TextStyle;
 }
 
 export function getProgressBarStyle(tokens: ThemeTokens): {
@@ -251,10 +311,18 @@ export function getProgressBarStyle(tokens: ThemeTokens): {
   }
 
   if (components.useGlow && components.glowColor) {
-    progressStyle.shadowColor = components.glowColor;
-    progressStyle.shadowOffset = { width: 0, height: 0 };
-    progressStyle.shadowOpacity = 0.6;
-    progressStyle.shadowRadius = 4;
+    const shadowProps = {
+      shadowColor: components.glowColor,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.6,
+      shadowRadius: 4,
+    };
+    const platformShadow = Platform.select({
+      ios: shadowProps,
+      android: { elevation: 2 },
+      default: { boxShadow: toBoxShadow(shadowProps) },
+    });
+    Object.assign(progressStyle, platformShadow);
   }
 
   return { trackStyle, progressStyle, trackRadius };
@@ -280,10 +348,18 @@ export function getSliderThumbStyle(tokens: ThemeTokens): ViewStyle {
   }
 
   if (components.useGlow && components.glowColor) {
-    style.shadowColor = components.glowColor;
-    style.shadowOffset = { width: 0, height: 0 };
-    style.shadowOpacity = 0.8;
-    style.shadowRadius = 6;
+    const shadowProps = {
+      shadowColor: components.glowColor,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.8,
+      shadowRadius: 6,
+    };
+    const platformShadow = Platform.select({
+      ios: shadowProps,
+      android: { elevation: 3 },
+      default: { boxShadow: toBoxShadow(shadowProps) },
+    });
+    Object.assign(style, platformShadow);
   }
 
   return style;
