@@ -6,43 +6,43 @@
 
 ---
 
-## What's New in v29.0
+## What's New in v30.0
 
-**Playback Engine Overhaul** - Complete rewrite of the audio playback system:
+**Audio Processing & Stability Update** - Enhanced DSP and improved reliability:
 
-- Event-driven architecture mirrors web audio behaviour
-- Seamless track transitions with zero gaps
-- Repeat mode works flawlessly
-- Progress bar reaches full track duration
-- Improved battery efficiency
+- Audio buffer clearing on all track changes prevents artifacts
+- Improved animation cleanup for smoother UI
+- Better artwork loading with robust URI handling
+- Cleaner transitions between songs
+- Reduced processing glitches during seek
 
 ---
 
 ## Google Play Store Release Note (Under 500 Characters)
 
 ```
-v29.0 - Playback Engine Overhaul
+v30.0 - Audio Processing & Stability Update
 
-SMOOTHER PLAYBACK
-Improved audio engine delivers seamless track transitions and responsive controls.
+CLEANER AUDIO
+DSP buffers now clear properly between tracks - no more processing artifacts or reverb bleed.
 
-REPEAT MODE FIXED
-Single track repeat now works flawlessly - songs loop without interruption.
+IMPROVED STABILITY
+Fixed animation cleanup issues and artwork loading for smoother performance.
 
-PROGRESS BAR ENHANCED
-Slider accurately shows playback position and reaches full track duration.
+SEAMLESS TRANSITIONS
+All track changes (next, previous, auto-advance) now produce clean audio.
 
-PERFORMANCE BOOST
-Faster response times and reduced battery usage during playback.
+SEEK IMPROVEMENTS
+Seeking within tracks no longer produces jittery processing sounds.
 
 One-time purchase, lifetime access.
 ```
 
 ---
 
-## Version 29.0 (February 2026)
+## Version 30.0 (February 2026)
 
-**Playback Engine Overhaul**
+**Audio Processing & Stability Update**
 
 ### Event-Driven Playback Architecture
 - Native player now pushes updates to the app (like web audio's `ontimeupdate` and `onended`)

@@ -94,7 +94,7 @@ The application uses pure software DSP and neural AI upscaling, with all enhance
 
 ## Code Health
 
-### Dead Code Removed (v29.0 Audit - January 2026)
+### Dead Code Removed (v29.0 Audit - January 2026, carried forward to v30.0)
 The following unused files were removed during the codebase audit:
 - **`client/services/MicTestService.ts`**: Microphone testing service - never imported
 - **`client/services/AudioDeviceService.ts`**: Audio device enumeration - never imported
@@ -136,7 +136,7 @@ All song durations are normalized to **seconds** throughout the app:
 - **Repeat one fix**: Properly awaits `seekTo(0)` before calling `play()` to avoid race conditions. Waveform only animates when native player confirms audio is playing.
 - **Single trackEnded source**: DSP end-of-stream callback is the ONLY source of trackEnded events. Removed duplicate firing from progress runnable and playback state listener to prevent guard conflicts.
 
-### Animation Cleanup & Performance (v29.4 - February 2026)
+### Animation Cleanup & Performance (v30.0 - February 2026)
 - **AudioWaveform.tsx**: Added proper Reanimated cleanup using `cancelAnimation()` for all repeating animations on unmount. Uses `isMountedRef` pattern to prevent animation updates after unmount.
 - **Toast.tsx**: Added persistent `isMountedRef` to prevent animation callbacks from firing after unmount. Animations are stopped when `visible` becomes false before component returns null.
 - **SplashScreen.tsx**: Added shared `isMountedRef` across all useEffects. All setTimeout callbacks check `isMountedRef.current` before proceeding. `fadeAnim.stopAnimation()` called on unmount.

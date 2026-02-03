@@ -124,13 +124,13 @@ Download now and elevate your music experience!
 ## What's New (500 characters max)
 
 ```
-v29.0 - Playback Engine Overhaul
+v30.0 - Audio Processing & Stability Update
 
-SMOOTHER PLAYBACK
-Improved audio engine delivers seamless track transitions and responsive controls.
+CLEANER AUDIO
+DSP buffers now clear properly between tracks - no more processing artifacts.
 
-REPEAT MODE FIXED
-Single track repeat now works flawlessly - songs loop without interruption.
+IMPROVED STABILITY
+Fixed animation cleanup issues and artwork loading for smoother performance.
 
 PROGRESS BAR ENHANCED
 Slider accurately shows playback position and reaches full track duration.
