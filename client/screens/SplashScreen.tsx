@@ -22,9 +22,19 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [iconLoaded, setIconLoaded] = useState(false);
   const iconLoadedRef = useRef(false);
+  const isMountedRef = useRef(true);
   const [initStatus, setInitStatus] = useState<string>("Initializing...");
   
   const initState = useEagerInitialization();
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+      fadeAnim.stopAnimation();
+    };
+  }, [fadeAnim]);
 
   useEffect(() => {
     if (iconLoaded) {
@@ -35,7 +45,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         useNativeDriver,
       }).start();
     }
-  }, [iconLoaded]);
+  }, [iconLoaded, fadeAnim]);
 
   useEffect(() => {
     Image.prefetch(appIcon);
@@ -61,33 +71,48 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
     const minDisplayTime = 1500;
     const startTime = Date.now();
+    let remainingTimer: ReturnType<typeof setTimeout> | null = null;
+    let finishTimer: ReturnType<typeof setTimeout> | null = null;
     
     const checkAndFinish = () => {
       const elapsed = Date.now() - startTime;
       const remainingTime = Math.max(0, minDisplayTime - elapsed);
       
-      if (initState.isComplete) {
-        setTimeout(() => {
+      if (initState.isComplete && isMountedRef.current) {
+        remainingTimer = setTimeout(() => {
+          if (!isMountedRef.current) return;
+          
           Animated.timing(fadeAnim, {
             toValue: 0,
             duration: 300,
             useNativeDriver,
           }).start();
           
-          setTimeout(() => {
-            onFinish();
+          finishTimer = setTimeout(() => {
+            if (isMountedRef.current) {
+              onFinish();
+            }
           }, 400);
         }, remainingTime);
       }
     };
     
     checkAndFinish();
+    
+    return () => {
+      if (remainingTimer) clearTimeout(remainingTimer);
+      if (finishTimer) clearTimeout(finishTimer);
+    };
   }, [iconLoaded, initState.isComplete, fadeAnim, onFinish]);
 
   useEffect(() => {
     if (!iconLoaded) return;
     
+    let finishTimer: ReturnType<typeof setTimeout> | null = null;
+    
     const maxWaitTimer = setTimeout(() => {
+      if (!isMountedRef.current) return;
+      
       console.log('[SplashScreen] Max wait time reached, finishing...');
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -95,12 +120,17 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         useNativeDriver,
       }).start();
       
-      setTimeout(() => {
-        onFinish();
+      finishTimer = setTimeout(() => {
+        if (isMountedRef.current) {
+          onFinish();
+        }
       }, 400);
     }, 6000);
 
-    return () => clearTimeout(maxWaitTimer);
+    return () => {
+      clearTimeout(maxWaitTimer);
+      if (finishTimer) clearTimeout(finishTimer);
+    };
   }, [iconLoaded, fadeAnim, onFinish]);
 
   return (

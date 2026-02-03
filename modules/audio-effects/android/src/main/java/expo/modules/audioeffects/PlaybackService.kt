@@ -573,12 +573,33 @@ class PlaybackService : MediaSessionService() {
             try {
                 val bitmap = withContext(Dispatchers.IO) {
                     try {
-                        val connection = URL(url).openConnection()
-                        connection.connectTimeout = 5000
-                        connection.readTimeout = 5000
-                        BitmapFactory.decodeStream(connection.getInputStream())
+                        when {
+                            url.startsWith("data:") -> {
+                                val base64Data = url.substringAfter(",")
+                                val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                            }
+                            url.startsWith("file://") || url.startsWith("/") -> {
+                                val path = if (url.startsWith("file://")) url.removePrefix("file://") else url
+                                BitmapFactory.decodeFile(path)
+                            }
+                            url.startsWith("http://") || url.startsWith("https://") -> {
+                                val connection = URL(url).openConnection()
+                                connection.connectTimeout = 5000
+                                connection.readTimeout = 5000
+                                BitmapFactory.decodeStream(connection.getInputStream())
+                            }
+                            url.startsWith("content://") -> {
+                                val uri = Uri.parse(url)
+                                val inputStream = applicationContext.contentResolver.openInputStream(uri)
+                                BitmapFactory.decodeStream(inputStream)
+                            }
+                            else -> {
+                                null
+                            }
+                        }
                     } catch (e: Exception) {
-                        Log.w(TAG, "Failed to load artwork: ${e.message}")
+                        Log.d(TAG, "Could not load artwork from: ${url.take(50)}...")
                         null
                     }
                 }
@@ -587,7 +608,7 @@ class PlaybackService : MediaSessionService() {
                     currentArtwork = bitmap
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Error loading artwork: ${e.message}")
+                Log.d(TAG, "Error loading artwork: ${e.message}")
             }
         }
     }

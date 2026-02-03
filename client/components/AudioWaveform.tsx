@@ -6,6 +6,7 @@ import Animated, {
   withRepeat,
   withTiming,
   withDelay,
+  cancelAnimation,
   Easing,
 } from "react-native-reanimated";
 import { useThemeContext } from "@/contexts/ThemeContext";
@@ -55,7 +56,11 @@ function WaveBar({
     } else {
       animatedHeight.value = withTiming(0.2, { duration: 300 });
     }
-  }, [isAnimating]);
+    
+    return () => {
+      cancelAnimation(animatedHeight);
+    };
+  }, [isAnimating, delay, animatedHeight]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     height: height * animatedHeight.value,

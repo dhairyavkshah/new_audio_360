@@ -37,9 +37,22 @@ export function Toast({
   const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+  const isMountedRef = useRef(true);
   const toastShadow = getShadowStyle('shadow8', isDark);
 
   useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+      translateY.stopAnimation();
+      opacity.stopAnimation();
+    };
+  }, [translateY, opacity]);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    
     if (visible) {
       Animated.parallel([
         Animated.spring(translateY, {
@@ -55,15 +68,26 @@ export function Toast({
         }),
       ]).start();
 
-      const timer = setTimeout(() => {
-        hideToast();
+      timer = setTimeout(() => {
+        if (isMountedRef.current) {
+          hideToast();
+        }
       }, duration);
-
-      return () => clearTimeout(timer);
+    } else {
+      translateY.stopAnimation();
+      opacity.stopAnimation();
+      translateY.setValue(-100);
+      opacity.setValue(0);
     }
-  }, [visible]);
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [visible, duration, translateY, opacity]);
 
   const hideToast = () => {
+    if (!isMountedRef.current) return;
+    
     Animated.parallel([
       Animated.timing(translateY, {
         toValue: -100,
@@ -76,7 +100,9 @@ export function Toast({
         useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start(() => {
-      onDismiss();
+      if (isMountedRef.current) {
+        onDismiss();
+      }
     });
   };
 
