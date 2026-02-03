@@ -1,7 +1,7 @@
 # New Audio 360
 
 ## Overview
-New Audio 360 is a premium mobile music player built with React Native and Expo, providing studio-quality audio processing through software-based DSP and neural AI upscaling. It offers 55 customizable themes and extensive music organization features. The application operates on a one-time purchase model with local data storage, aiming to deliver a high-quality, intelligent music experience. It supports Android, iOS, Web, and Windows platforms, with the Windows version distributed as a PWA via the Microsoft Store.
+New Audio 360 is a premium mobile music player built with React Native and Expo, offering studio-quality audio processing through software-based DSP and neural AI upscaling. It provides 55 customizable themes and extensive music organization features. The application operates on a one-time purchase model with local data storage, aiming to deliver a high-quality, intelligent music experience across Android, iOS, Web, and Windows platforms.
 
 ## User Preferences
 - Concise and direct communication
@@ -14,144 +14,51 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 ## System Architecture
 
 ### Platform & Framework
-- **Framework**: React Native with Expo SDK 53.0.0 (using React Native 0.79.2).
-- **State Management**: React Context API with custom hooks.
-- **Design System**: Microsoft Fluent 2 (4px grid, semantic tokens, elevation shadows).
-- **Data Persistence**: Local storage using AsyncStorage/SecureStorage.
+The application is built with React Native (SDK 53.0.0, React Native 0.79.2) and Expo. State management uses the React Context API with custom hooks. The design system is based on Microsoft Fluent 2, adhering to a 4px grid, semantic tokens, and elevation shadows. Data persistence is handled via local storage mechanisms like AsyncStorage and SecureStorage. It supports Android, iOS, Web, and Windows (PWA with native integration).
 
-### Platform Modes
-Supports Android, iOS, Web, and Windows (PWA with native integration via PWABuilder).
-
-### Detailed Technical Architecture
-
-#### Context Provider Hierarchy
-The app uses a deeply nested provider architecture to share state, including `PlatformModeProvider`, `ThemeProvider`, `AuthProvider`, `PlayerProvider`, and `DiscoverFavoritesProvider`, leading to `AppContent (Navigation)`.
-
-#### Playback Engine Selection
-PlayerContext dynamically selects the playback engine:
-1. **Android Native** (`PlaybackEngineModule`): Custom ExoPlayer with integrated DSP.
-2. **TrackPlayer** (`TrackPlayerService`): Fallback for native builds without custom module.
-3. **Web Audio**: HTML5 `<audio>` element with `WebAudioEffectsEngine`.
+### Core Technical Architecture
+The app utilizes a deeply nested Context Provider hierarchy to manage global state, including `PlatformModeProvider`, `ThemeProvider`, `AuthProvider`, `PlayerProvider`, and `DiscoverFavoritesProvider`. The `PlayerContext` dynamically selects playback engines: a custom Android native ExoPlayer module with integrated DSP (`PlaybackEngineModule`), `react-native-track-player` as a fallback, and Web Audio API (`WebAudioEffectsEngine`) for web platforms.
 
 #### Android Native Modules
-Expo modules built with Kotlin and exposed via `expo-modules-core`:
-- `PlaybackEngineModule`: ExoPlayer integration with DSP, MediaSession, queue.
-- `SoftwareDSPAudioProcessor`: Biquad filters, limiter, spatial processing.
-- `NeuralAudioProcessorTFLite`: TensorFlow Lite AI upscaling.
-- `EqualizerModule`, `BassBoostModule`, `SpatialEnhancementModule`, `ImmersiveModeEngineModule`.
-- `WaveformAnalyzerModule`: Real-time FFT and waveform data.
-- `MediaStoreScannerModule`: Android MediaStore audio scanning.
-- `AppContextModule`: License validation.
-- `SecureStateManager`: Encrypted storage.
-- `RuntimeIntegrity`: Signature verification.
+Custom Expo modules developed in Kotlin expose native functionalities:
+- **Audio Processing**: `PlaybackEngineModule` (ExoPlayer with DSP), `SoftwareDSPAudioProcessor` (biquad filters, limiter, spatial processing), `NeuralAudioProcessorTFLite` (TensorFlow Lite AI upscaling), `EqualizerModule`, `BassBoostModule`, `SpatialEnhancementModule`, `ImmersiveModeEngineModule`.
+- **Utilities**: `WaveformAnalyzerModule` (real-time FFT), `MediaStoreScannerModule` (audio scanning), `AppContextModule` (license validation), `SecureStateManager` (encrypted storage), `RuntimeIntegrity` (signature verification).
 
 #### Web Audio Architecture
-- `WebAudioEffectsEngine`: Web Audio API node graph for effects.
-- `NeuralAudioProcessor`: TensorFlow.js model for AI upscaling.
-- `SoundCloudWidgetPlayer`: SoundCloud Widget API for CORS-bypassed streaming.
+For web, `WebAudioEffectsEngine` utilizes the Web Audio API for effects, and `@tensorflow/tfjs` for `NeuralAudioProcessor` (AI upscaling). SoundCloud streaming is handled via `SoundCloudWidgetPlayer` to bypass CORS.
 
 #### Key Services
-- `NativeEffectsManager` (Android): Bridges PlayerContext to native DSP modules.
-- `TrackPlayerService` (iOS/Android): `react-native-track-player` wrapper.
-- `SoundCloudService`: OAuth 2.1 PKCE, API calls, token management.
-- `ArchiveOrgService`: Internet Archive metadata and streaming.
-- `OnlineRadioService`: Radio Browser API integration.
-- `AudioCoordinator`: Manages conflicting audio sources.
+- **Audio Management**: `NativeEffectsManager` (bridges PlayerContext to Android DSP), `TrackPlayerService` (react-native-track-player wrapper), `AudioCoordinator` (manages audio sources).
+- **Content Discovery**: `SoundCloudService` (OAuth 2.1 PKCE, API calls), `ArchiveOrgService` (Internet Archive metadata), `OnlineRadioService` (Radio Browser API).
 
-#### Navigation Structure
-A `RootStackNavigator` contains a `MainTabNavigator` with five tabs (`Listen`, `Library`, `Radio`, `Discover`, `Settings`) and a persistent MiniPlayer overlay. Each tab has its own stack navigator.
+### Navigation
+The application uses `@react-navigation` with a `RootStackNavigator` containing a `MainTabNavigator` (Listen, Library, Radio, Discover, Settings) and a persistent MiniPlayer. Each tab has its own stack navigator.
 
-### Audio Effects Architecture (Pure Software DSP + Neural AI)
-The application uses pure software DSP and neural AI upscaling, with all enhancements additive within ±12dB Android headroom.
-
-**Signal Chain Order**: AI Audio Upscaling → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble Shelf → Spatial (with HRTF) → Reverb → Limiter → Output.
+### Audio Effects (Pure Software DSP + Neural AI)
+The application employs pure software DSP and neural AI upscaling, with all enhancements additive within ±12dB Android headroom. The signal chain order is: AI Audio Upscaling → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble Shelf → Spatial (with HRTF) → Reverb → Limiter → Output.
 
 **Key DSP Components**:
-- **10-Band Parametric EQ**: With 10 presets.
-- **Bass/Treble Boost Filters**: Shelf filters.
-- **Multi-Tap Delay Reverb**: 4 delay lines.
-- **Intelligent Limiter**: Brickwall limiting.
-- **Spatial Enhancement**: Psychoacoustic stereo widening with HRTF.
-- **Immersive Modes**: 6 distinct modes.
-- **Smart Enhancements**:
-    - **HRTF Binaural Virtualization**: Integrated into Spatial Enhancement.
-    - **Bass Enhancement**: Psychoacoustic harmonic generation.
-    - **AI Upscaling (Audio Super-Resolution)**: Neural audio enhancement using a Kuleshov-style 1D U-Net CNN. Implemented with TensorFlow.js on Web and TensorFlow Lite on Android.
+- 10-Band Parametric EQ with presets.
+- Bass/Treble Boost Filters.
+- Multi-Tap Delay Reverb.
+- Intelligent Brickwall Limiter.
+- Psychoacoustic Spatial Enhancement with HRTF.
+- 6 Immersive Modes.
+- Smart Enhancements: HRTF Binaural Virtualization, Psychoacoustic Bass Enhancement, AI Upscaling (Kuleshov-style 1D U-Net CNN via TensorFlow.js/TensorFlow Lite).
 
 **DSP Architecture Details**:
-- **Internal Processing**: 32-bit float.
-- **Android DSP**: Custom ExoPlayer `AudioProcessor` with biquad filters and TensorFlow Lite.
-- **Web DSP**: `WebAudioEffectsEngine` leveraging Web Audio API and TensorFlow.js.
-- **Unified DSP for Streaming**: All Android audio routes through a single DSP chain via `PlaybackEngineModule`. Web streaming uses Web Audio API.
+- Internal processing is 32-bit float.
+- Android DSP uses a custom ExoPlayer `AudioProcessor` with biquad filters and TensorFlow Lite.
+- Web DSP uses `WebAudioEffectsEngine` with Web Audio API and TensorFlow.js.
+- All Android audio routes through a single DSP chain via `PlaybackEngineModule`.
 
 ### Feature Specifications
-- **Sound Lab**: 10 EQ presets, custom 10-band EQ, 6 immersive modes, bass/treble control, Smart Enhancements (Bass Enhancement, AI Upscaling).
-- **Theming**: 55 themes.
+- **Sound Lab**: 10 EQ presets, custom 10-band EQ, 6 immersive modes, bass/treble control, Smart Enhancements.
+- **Theming**: 55 customizable themes.
 - **Radio**: Native FM/AM and online streaming with Intelligent Radio Discovery.
 - **Playback**: Background playback, notification controls, queue, shuffle/repeat, playback speed, sleep timer, favorites.
 - **Library Management**: Music folder selection, paginated loading, playlist CRUD.
-- **Open Music Discovery**: Internet Archive (public domain/CC) and SoundCloud (full track streaming with user authentication via OAuth 2.1). DSP/AI upscaling supported on Archive via web, and on SoundCloud via Android. SoundCloud web playback uses the Widget API.
-
-## Code Health
-
-### Dead Code Removed (v29.0 Audit - January 2026, carried forward to v30.0)
-The following unused files were removed during the codebase audit:
-- **`client/services/MicTestService.ts`**: Microphone testing service - never imported
-- **`client/services/AudioDeviceService.ts`**: Audio device enumeration - never imported
-- **`client/screens/BiometricLockScreen.tsx`**: Biometric lock screen - never imported
-- **`client/hooks/useWindowsFolderScanner.ts`**: Windows folder scanner hook - never imported
-- **`client/hooks/useMediaLibrary.ts`**: Media library hook - superseded by MediaLibraryContext
-
-### Architecture Notes
-- **PlayerContext** (~2200 lines) uses multiple playback engines with ref-based guards. The complexity is intentional to support Android native DSP, TrackPlayer fallback, and web audio.
-- **Auto-advance pattern**: Uses `loadAndPlaySongRef` to break circular dependency between `handleTrackEnd` (stable callback with empty deps) and `loadAndPlaySong` (defined later). The ref is updated via useEffect when `loadAndPlaySong` changes.
-- **SmartEnhancementsModule** is exported from `modules/audio-effects/index.ts` and used in SoundLabScreen for bass enhancement and HF restoration settings.
-- **NativeAudioService** is still used by SoundLabScreen for session management and live audio analysis.
-
-### Performance Optimizations (v29.1 - January 2026)
-- **MediaLibraryContext**: Parallelized initialization using `Promise.all` for `loadHiddenSongs`, `loadOnboardingStatus`, `loadSelectedFolders`, and `loadCachedSongs`. Also parallelized `checkPermission` and `validateOnboardingStatus`. This reduces sequential awaits and improves startup time.
-- **loadHiddenSongs**: Now returns the hidden IDs array to avoid stale state issues during parallel initialization.
-
-### Duration Normalization (v29.1 - January 2026)
-All song durations are normalized to **seconds** throughout the app:
-- **normalizeDuration/normalizeDurationToSeconds helpers**: Convert values > 36000 from milliseconds to seconds (heuristic: > 10 hours indicates ms)
-- **MediaLibraryContext**: expo-media-library returns seconds (no longer multiplied by 1000), MediaStoreScannerModule returns ms (divided by 1000), cached songs normalized on load
-- **PlayerContext**: Durations normalized at playback start and state restoration
-- **SoundCloudService**: New favorites stored in seconds, legacy favorites normalized on load
-- **ProgressBar**: Guard shows "0:00" for invalid/garbage values (null, NaN, negative, > 10 hours)
-
-### Metadata & Playback Fixes (v29.2 - January 2026)
-- **MediaStoreScannerModule**: Added fallback duration fetching using `MediaMetadataRetriever` when MediaStore returns 0. This handles cases where MediaStore hasn't fully indexed newly added files.
-- **PlayerContext progress callback**: Removed overly strict guard (`position <= duration`) that was resetting currentTime to 0 at end of tracks. Now uses industry-standard approach: allow position to reach duration without artificial capping, using `Math.min(position, duration)` for UI display.
-
-### Event-Based Progress & Track End (v29.3 - February 2026)
-- **Event-driven like web**: Android now works like web - native player PUSHES updates to the app (not app polling the player).
-- **onProgress event**: Native fires every 1 second with position and duration in SECONDS (like web's `ontimeupdate`).
-- **onTrackEnded event**: When position reaches duration, native fires track ended event (like web's `onended`).
-- **onIsPlayingChanged event**: Native fires when playback state changes, syncing isPlaying state with actual audio playback.
-- **No more polling**: Removed all setInterval polling from PlayerContext for Android playback.
-- **Seconds not milliseconds**: All progress values are now in clean integer seconds.
-- **Seek race condition fix**: Uses `setPendingSamplePosition()` BEFORE calling `player.seekTo()` to preserve sample counter.
-- **Notification tap to open app**: MediaSession includes `setSessionActivity()` with PendingIntent to launch app.
-- **Repeat one fix**: Properly awaits `seekTo(0)` before calling `play()` to avoid race conditions. Waveform only animates when native player confirms audio is playing.
-- **Single trackEnded source**: DSP end-of-stream callback is the ONLY source of trackEnded events. Removed duplicate firing from progress runnable and playback state listener to prevent guard conflicts.
-
-### Animation Cleanup & Performance (v30.0 - February 2026)
-- **AudioWaveform.tsx**: Added proper Reanimated cleanup using `cancelAnimation()` for all repeating animations on unmount. Uses `isMountedRef` pattern to prevent animation updates after unmount.
-- **Toast.tsx**: Added persistent `isMountedRef` to prevent animation callbacks from firing after unmount. Animations are stopped when `visible` becomes false before component returns null.
-- **SplashScreen.tsx**: Added shared `isMountedRef` across all useEffects. All setTimeout callbacks check `isMountedRef.current` before proceeding. `fadeAnim.stopAnimation()` called on unmount.
-- **PlaybackService.kt**: Fixed artwork loading to properly handle data URIs (base64), file:// URIs, content:// URIs, and HTTP(S) URLs using appropriate Glide APIs. Prevents crashes from invalid URI parsing.
-- **SoftwareDSPAudioProcessor.kt**: Fixed reverb delay buffer clearing in `flush()` method. Previously, seek operations did not clear the 4-tap reverb delay buffers, causing stale audio samples to mix with new audio after seeking, producing jittery/distorted processing sounds. Now all reverb buffers are cleared during seek/flush to ensure clean audio transitions.
-- **SoftwareDSPAudioProcessor.kt**: Added `clearAudioBuffers()` method for comprehensive DSP buffer clearing during track transitions. Clears reverb delay buffers, ITD spatial delay buffer, resets all filter states (EQ, bass/treble shelf, limiter, psychoacoustic, HRTF, bass enhancement, HF restoration).
-- **PlaybackService.kt**: Added `clearAudioBuffers()` call in `onMediaItemTransition` callback. Now all track transitions (auto-advance, next, previous, playlist changes, repeat) properly clear DSP buffers to prevent audio artifacts from previous tracks bleeding into new ones.
-- **SoftwareDSPAudioProcessor.kt**: Fixed auto-advance not working with Bass Enhancement or AI Upscaling. The bug was in `queueInput()` which set `outputBuffer = buffer` for empty buffers, breaking the reference equality check `outputBuffer === AudioProcessor.EMPTY_BUFFER` in `isEnded()`. Now correctly uses `outputBuffer = AudioProcessor.EMPTY_BUFFER`.
-- **PlaybackService.kt**: Added STATE_ENDED fallback for trackEnded event. If DSP's `isEnded()` callback doesn't fire (e.g., due to buffering delays with DSP effects), `onPlaybackStateChanged` with `STATE_ENDED` will fire the trackEnded event as a backup.
-- **Web Shadow Deprecation Fixes**: Updated all components to use `boxShadow` CSS string format for web instead of deprecated `shadowColor/shadowOffset/shadowOpacity/shadowRadius` props. Similarly, `textShadow` CSS string format is used instead of `textShadowColor/textShadowOffset/textShadowRadius`. Uses `Platform.select` to maintain iOS/Android behavior.
-
-### Known Library Warnings (Cannot Fix in App Code)
-- `[expo-av]: Expo AV has been deprecated` - Library deprecation, awaiting SDK 54 migration to expo-audio/expo-video
-- `[expo-notifications] Listening to push token changes is not yet fully supported on web` - Platform limitation
-- `props.pointerEvents is deprecated` - From react-native-reanimated library, not our code
+- **Open Music Discovery**: Integration with Internet Archive (public domain/CC) and SoundCloud (full track streaming via OAuth 2.1), supporting DSP/AI upscaling.
 
 ## External Dependencies
 
