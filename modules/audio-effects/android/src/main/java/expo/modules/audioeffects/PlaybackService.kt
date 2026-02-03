@@ -136,10 +136,16 @@ class PlaybackService : MediaSessionService() {
         
         dspProcessor = SoftwareDSPAudioProcessor.getInstance()
         
-        // Set up end-of-stream callback from DSP processor (most reliable track-end signal)
-        // This is the ONLY source of trackEnded events to avoid duplicates
+        // Set up end-of-stream callback from DSP processor (primary track-end signal)
+        // STATE_ENDED fallback may also fire if DSP doesn't detect end-of-stream
+        // Both sources check cachedTrackEnded to prevent duplicates
         dspProcessor?.setEndOfStreamCallback {
-            Log.d(TAG, "DSP end-of-stream callback fired - THIS IS THE AUTHORITATIVE TRACK END")
+            // Check if already handled (by STATE_ENDED fallback)
+            if (cachedTrackEnded) {
+                Log.d(TAG, "DSP end-of-stream callback fired but already handled")
+                return@setEndOfStreamCallback
+            }
+            Log.d(TAG, "DSP end-of-stream callback fired - primary track end signal")
             cachedTrackEnded = true
             val position = cachedPositionMs / 1000
             val duration = cachedDurationMs / 1000
@@ -204,6 +210,28 @@ class PlaybackService : MediaSessionService() {
                         
                         if (state == Player.STATE_ENDED) {
                             stopProgressUpdates()
+                            
+                            // FALLBACK: Fire trackEnded if DSP callback hasn't already fired
+                            // This handles edge cases where DSP isEnded() check doesn't trigger
+                            // (e.g., with Bass Enhancement or AI Upscaling causing buffering delays)
+                            // Check both cached flag and DSP's internal flag to avoid duplicates
+                            val dspAlreadyFired = dspProcessor?.hasTrackEnded() ?: false
+                            if (!cachedTrackEnded && !dspAlreadyFired) {
+                                Log.d(TAG, "STATE_ENDED fallback - DSP didn't fire, triggering trackEnded")
+                                // Set flag synchronously to prevent DSP callback from also firing
+                                cachedTrackEnded = true
+                                val position = cachedPositionMs / 1000
+                                val duration = cachedDurationMs / 1000
+                                mainHandler.post {
+                                    trackEndedCallback?.invoke()
+                                    notifyStateChange(mapOf(
+                                        "type" to "trackEnded",
+                                        "source" to "stateEnded",
+                                        "position" to position,
+                                        "duration" to duration
+                                    ))
+                                }
+                            }
                         }
                     }
                     

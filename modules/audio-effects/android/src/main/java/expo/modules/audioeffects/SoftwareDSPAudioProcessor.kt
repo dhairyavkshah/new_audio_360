@@ -280,7 +280,9 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
 
     override fun queueInput(buffer: ByteBuffer) {
         if (buffer.remaining() == 0) {
-            outputBuffer = buffer
+            // CRITICAL: Must use the exact EMPTY_BUFFER reference for isEnded() === check to work
+            // Previously this set outputBuffer = buffer which broke the reference equality
+            outputBuffer = AudioProcessor.EMPTY_BUFFER
             return
         }
 

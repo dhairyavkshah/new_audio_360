@@ -144,6 +144,8 @@ All song durations are normalized to **seconds** throughout the app:
 - **SoftwareDSPAudioProcessor.kt**: Fixed reverb delay buffer clearing in `flush()` method. Previously, seek operations did not clear the 4-tap reverb delay buffers, causing stale audio samples to mix with new audio after seeking, producing jittery/distorted processing sounds. Now all reverb buffers are cleared during seek/flush to ensure clean audio transitions.
 - **SoftwareDSPAudioProcessor.kt**: Added `clearAudioBuffers()` method for comprehensive DSP buffer clearing during track transitions. Clears reverb delay buffers, ITD spatial delay buffer, resets all filter states (EQ, bass/treble shelf, limiter, psychoacoustic, HRTF, bass enhancement, HF restoration).
 - **PlaybackService.kt**: Added `clearAudioBuffers()` call in `onMediaItemTransition` callback. Now all track transitions (auto-advance, next, previous, playlist changes, repeat) properly clear DSP buffers to prevent audio artifacts from previous tracks bleeding into new ones.
+- **SoftwareDSPAudioProcessor.kt**: Fixed auto-advance not working with Bass Enhancement or AI Upscaling. The bug was in `queueInput()` which set `outputBuffer = buffer` for empty buffers, breaking the reference equality check `outputBuffer === AudioProcessor.EMPTY_BUFFER` in `isEnded()`. Now correctly uses `outputBuffer = AudioProcessor.EMPTY_BUFFER`.
+- **PlaybackService.kt**: Added STATE_ENDED fallback for trackEnded event. If DSP's `isEnded()` callback doesn't fire (e.g., due to buffering delays with DSP effects), `onPlaybackStateChanged` with `STATE_ENDED` will fire the trackEnded event as a backup.
 
 ## External Dependencies
 
