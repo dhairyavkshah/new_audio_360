@@ -136,6 +136,12 @@ All song durations are normalized to **seconds** throughout the app:
 - **Repeat one fix**: Properly awaits `seekTo(0)` before calling `play()` to avoid race conditions. Waveform only animates when native player confirms audio is playing.
 - **Single trackEnded source**: DSP end-of-stream callback is the ONLY source of trackEnded events. Removed duplicate firing from progress runnable and playback state listener to prevent guard conflicts.
 
+### Animation Cleanup & Performance (v29.4 - February 2026)
+- **AudioWaveform.tsx**: Added proper Reanimated cleanup using `cancelAnimation()` for all repeating animations on unmount. Uses `isMountedRef` pattern to prevent animation updates after unmount.
+- **Toast.tsx**: Added persistent `isMountedRef` to prevent animation callbacks from firing after unmount. Animations are stopped when `visible` becomes false before component returns null.
+- **SplashScreen.tsx**: Added shared `isMountedRef` across all useEffects. All setTimeout callbacks check `isMountedRef.current` before proceeding. `fadeAnim.stopAnimation()` called on unmount.
+- **PlaybackService.kt**: Fixed artwork loading to properly handle data URIs (base64), file:// URIs, content:// URIs, and HTTP(S) URLs using appropriate Glide APIs. Prevents crashes from invalid URI parsing.
+
 ## External Dependencies
 
 ### Core
