@@ -148,9 +148,10 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     
     // Multi-tap delay reverb (4 delay lines for richer sound)
     // Max delay sized for 48 kHz (industry standard sample rate)
+    // Memory optimized: longest delay is 89ms, so 5000 samples (~104ms) gives safety margin
     private val DELAY_TIMES = floatArrayOf(0.023f, 0.041f, 0.067f, 0.089f) // seconds
     private val DELAY_FEEDBACKS = floatArrayOf(0.4f, 0.35f, 0.3f, 0.25f)
-    private val MAX_DELAY_SAMPLES = 9600 // ~200ms at 48kHz
+    private val MAX_DELAY_SAMPLES = 5000 // ~104ms at 48kHz (optimized from 9600)
     private val delayBuffersL = Array(4) { FloatArray(MAX_DELAY_SAMPLES) }
     private val delayBuffersR = Array(4) { FloatArray(MAX_DELAY_SAMPLES) }
     private val delayIndices = IntArray(4) { 0 }

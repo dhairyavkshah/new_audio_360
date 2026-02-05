@@ -325,8 +325,19 @@ class WaveformAnalyzerModule : Module() {
     }
     
     private fun release() {
-        visualizer?.enabled = false
-        visualizer?.release()
+        // Stop any scheduled captures first
+        captureHandler?.removeCallbacks(captureRunnable ?: return)
+        captureHandler = null
+        captureRunnable = null
+        
+        // Release visualizer resources
+        try {
+            visualizer?.setDataCaptureListener(null, 0, false, false)
+            visualizer?.enabled = false
+            visualizer?.release()
+        } catch (e: Exception) {
+            android.util.Log.w("WaveformAnalyzer", "Error releasing visualizer: ${e.message}")
+        }
         visualizer = null
         isCapturing = false
         audioSessionId = 0
