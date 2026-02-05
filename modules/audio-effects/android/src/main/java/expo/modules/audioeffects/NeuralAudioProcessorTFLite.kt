@@ -62,6 +62,8 @@ class NeuralAudioProcessorTFLite private constructor() {
         
         private const val TIME_BUDGET_MS = 10L
         private const val BYPASS_LOG_INTERVAL = 100
+        private const val DECIMATION_FACTOR = 4  // Process only 1 out of N chunks to reduce CPU load
+        private const val COOLDOWN_MS = 2000L    // Cooldown period after timeout (2 seconds)
         
         @Volatile
         private var instance: NeuralAudioProcessorTFLite? = null
@@ -119,6 +121,13 @@ class NeuralAudioProcessorTFLite private constructor() {
     private val timeoutBypassCount = AtomicLong(0)
     private val errorBypassCount = AtomicLong(0)
     private val totalProcessedChunks = AtomicLong(0)
+    
+    // Decimation and cooldown for real-time performance
+    private val chunkCounter = AtomicLong(0)
+    @Volatile
+    private var lastTimeoutTime: Long = 0L
+    @Volatile
+    private var lastEnhancedResult: FloatArray? = null  // Cache last result for decimation
     
     init {
         Log.d(TAG, "Initialized - Kuleshov architecture v$MODEL_VERSION")
@@ -268,78 +277,112 @@ class NeuralAudioProcessorTFLite private constructor() {
             return samples
         }
         
+        // Cooldown check: if we recently had a timeout, bypass processing entirely
+        val now = System.currentTimeMillis()
+        if (now - lastTimeoutTime < COOLDOWN_MS) {
+            recordBypass(BypassReason.COOLDOWN)
+            return samples
+        }
+        
+        // Decimation: only process every Nth chunk to reduce CPU load
+        val chunkNum = chunkCounter.incrementAndGet()
+        if (chunkNum % DECIMATION_FACTOR != 0L) {
+            // Return cached result if available, otherwise return original
+            val cached = lastEnhancedResult
+            if (cached != null && cached.size == samples.size) {
+                // Blend cached enhancement with current samples for smoother transitions
+                val result = FloatArray(samples.size)
+                for (i in samples.indices) {
+                    result[i] = samples[i] * 0.7f + cached[i] * 0.3f
+                }
+                return result
+            }
+            recordBypass(BypassReason.DECIMATION)
+            return samples
+        }
+        
+        // Try to acquire lock without blocking - if can't, bypass
+        if (!processingLock.tryLock()) {
+            recordBypass(BypassReason.LOCK_CONTENTION)
+            return samples
+        }
+        
         val startTime = System.nanoTime()
         
-        return processingLock.withLock {
-            try {
-                if (status == Status.RELEASED) {
-                    recordBypass(BypassReason.RELEASED)
-                    return@withLock samples
-                }
-                
-                val previousStatus = status
-                setStatus(Status.PROCESSING)
-                
-                var maxVal = 0f
-                for (i in 0 until INPUT_LENGTH) {
-                    val absVal = kotlin.math.abs(samples[i])
-                    if (absVal > maxVal) maxVal = absVal
-                }
-                if (maxVal == 0f) maxVal = 1f
-                
-                currentInputBuffer.rewind()
-                for (i in 0 until INPUT_LENGTH) {
-                    currentInputBuffer.putFloat(samples[i] / maxVal)
-                }
-                currentInputBuffer.rewind()
-                currentOutputBuffer.rewind()
-                
-                val elapsedBeforeInference = (System.nanoTime() - startTime) / 1_000_000
-                if (elapsedBeforeInference > TIME_BUDGET_MS) {
-                    setStatus(Status.READY)
-                    recordBypass(BypassReason.TIMEOUT)
-                    return@withLock samples
-                }
-                
-                try {
-                    currentInterpreter.run(currentInputBuffer, currentOutputBuffer)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Inference failed: ${e.message}")
-                    setStatus(Status.READY)
-                    recordBypass(BypassReason.ERROR)
-                    return@withLock samples
-                }
-                
-                val inferenceMs = (System.nanoTime() - startTime) / 1_000_000
-                if (inferenceMs > TIME_BUDGET_MS) {
-                    setStatus(Status.READY)
-                    recordBypass(BypassReason.TIMEOUT)
-                    return@withLock samples
-                }
-                
-                currentOutputBuffer.rewind()
-                val result = FloatArray(INPUT_LENGTH)
-                for (i in 0 until INPUT_LENGTH) {
-                    val enhanced = (currentOutputBuffer.float) * maxVal
-                    val original = samples[i]
-                    result[i] = original + (enhanced - original) * blend
-                }
-                
-                totalProcessedChunks.incrementAndGet()
+        return try {
+            if (status == Status.RELEASED) {
+                recordBypass(BypassReason.RELEASED)
+                return samples
+            }
+            
+            setStatus(Status.PROCESSING)
+            
+            var maxVal = 0f
+            for (i in 0 until INPUT_LENGTH) {
+                val absVal = kotlin.math.abs(samples[i])
+                if (absVal > maxVal) maxVal = absVal
+            }
+            if (maxVal == 0f) maxVal = 1f
+            
+            currentInputBuffer.rewind()
+            for (i in 0 until INPUT_LENGTH) {
+                currentInputBuffer.putFloat(samples[i] / maxVal)
+            }
+            currentInputBuffer.rewind()
+            currentOutputBuffer.rewind()
+            
+            val elapsedBeforeInference = (System.nanoTime() - startTime) / 1_000_000
+            if (elapsedBeforeInference > TIME_BUDGET_MS) {
                 setStatus(Status.READY)
-                
-                val totalMs = (System.nanoTime() - startTime) / 1_000_000.0
-                if (totalMs > 50) {
-                    Log.d(TAG, "Inference time: ${String.format("%.2f", totalMs)}ms")
-                }
-                
-                result
+                lastTimeoutTime = System.currentTimeMillis()  // Trigger cooldown
+                recordBypass(BypassReason.TIMEOUT)
+                return samples
+            }
+            
+            try {
+                currentInterpreter.run(currentInputBuffer, currentOutputBuffer)
             } catch (e: Exception) {
-                Log.e(TAG, "Processing error: ${e.message}", e)
+                Log.e(TAG, "Inference failed: ${e.message}")
                 setStatus(Status.READY)
                 recordBypass(BypassReason.ERROR)
-                samples
+                return samples
             }
+            
+            val inferenceMs = (System.nanoTime() - startTime) / 1_000_000
+            if (inferenceMs > TIME_BUDGET_MS) {
+                setStatus(Status.READY)
+                lastTimeoutTime = System.currentTimeMillis()  // Trigger cooldown
+                recordBypass(BypassReason.TIMEOUT)
+                return samples
+            }
+            
+            currentOutputBuffer.rewind()
+            val result = FloatArray(INPUT_LENGTH)
+            for (i in 0 until INPUT_LENGTH) {
+                val enhanced = (currentOutputBuffer.float) * maxVal
+                val original = samples[i]
+                result[i] = original + (enhanced - original) * blend
+            }
+            
+            // Cache the enhanced result for decimation
+            lastEnhancedResult = result.copyOf()
+            
+            totalProcessedChunks.incrementAndGet()
+            setStatus(Status.READY)
+            
+            val totalMs = (System.nanoTime() - startTime) / 1_000_000.0
+            if (totalMs > 50) {
+                Log.d(TAG, "Inference time: ${String.format("%.2f", totalMs)}ms")
+            }
+            
+            result
+        } catch (e: Exception) {
+            Log.e(TAG, "Processing error: ${e.message}", e)
+            setStatus(Status.READY)
+            recordBypass(BypassReason.ERROR)
+            samples
+        } finally {
+            processingLock.unlock()
         }
     }
     
@@ -348,6 +391,9 @@ class NeuralAudioProcessorTFLite private constructor() {
         INVALID_INPUT,
         BUFFER_NULL,
         RELEASED,
+        COOLDOWN,
+        DECIMATION,
+        LOCK_CONTENTION,
         TIMEOUT,
         ERROR
     }
