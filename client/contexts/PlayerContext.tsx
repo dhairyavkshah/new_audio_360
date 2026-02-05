@@ -44,6 +44,7 @@ interface PlayerContextType {
   sleepTimerMinutes: number | null;
   isLoading: boolean;
   isBuffering: boolean;
+  isSeeking: boolean;
   error: string | null;
   isFavorite: (songId: string) => boolean;
   toggleFavorite: (songId: string) => void;
@@ -85,6 +86,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [sleepTimerMinutes, setSleepTimerMinutesState] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false);
+  const seekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   const playerRef = useRef<AudioPlayer | null>(null);
@@ -2097,6 +2100,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       hasAudioElement: !!audioElementRef.current,
     });
 
+    // Set seeking guard to prevent slider position updates during seek
+    setIsSeeking(true);
+    if (seekTimeoutRef.current) {
+      clearTimeout(seekTimeoutRef.current);
+    }
+    // Clear seeking guard after native position has settled
+    seekTimeoutRef.current = setTimeout(() => {
+      setIsSeeking(false);
+    }, 500);
+
     setCurrentTime(targetTime);
     
     try {
@@ -2214,6 +2227,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       sleepTimerMinutes,
       isLoading,
       isBuffering,
+      isSeeking,
       error,
       isFavorite,
       toggleFavorite: toggleFavoriteHandler,
@@ -2244,6 +2258,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       sleepTimerMinutes,
       isLoading,
       isBuffering,
+      isSeeking,
       error,
       isFavorite,
       toggleFavoriteHandler,

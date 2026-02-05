@@ -53,6 +53,7 @@ export default function NowPlayingScreen() {
     repeat,
     isLoading,
     isBuffering,
+    isSeeking,
     error,
     togglePlayPause,
     handleNext,
@@ -319,6 +320,7 @@ export default function NowPlayingScreen() {
             duration={duration || currentSong.duration}
             currentTime={currentTime}
             onSeek={seek}
+            isSeeking={isSeeking}
             width={screenWidth - (isExtraCompact ? FluentSpacing.m * 2 : isCompact ? FluentSpacing.l * 2 : FluentSpacing.xxl * 2)}
             showTextShadow={true}
           />

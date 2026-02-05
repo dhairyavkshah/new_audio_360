@@ -23,6 +23,7 @@ interface ProgressBarProps {
   duration: number;
   currentTime: number;
   onSeek: (time: number) => void;
+  isSeeking?: boolean;
   width?: number;
   height?: number;
   showTextShadow?: boolean;
@@ -37,6 +38,7 @@ export function ProgressBar({
   duration,
   currentTime,
   onSeek,
+  isSeeking = false,
   width = 320,
   height = TRACK_HEIGHT,
   showTextShadow = false,
@@ -117,7 +119,9 @@ export function ProgressBar({
   const composedGesture = Gesture.Race(panGesture, tapGesture);
 
   const thumbStyle = useAnimatedStyle(() => {
-    if (!isDragging.value) {
+    // Only update thumb position from progress when NOT dragging and NOT seeking
+    // This prevents the slider from jumping back during seek operations
+    if (!isDragging.value && !isSeeking) {
       translateX.value = progress * (width - THUMB_SIZE);
     }
     return {
