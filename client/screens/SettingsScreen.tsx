@@ -216,7 +216,7 @@ export default function SettingsScreen() {
 
         <View style={styles.footer}>
           <FluentText variant="caption1" style={{ color: colors.colorNeutralForeground3, textAlign: "center" }}>
-            New Audio 360 v30.0
+            New Audio 360 v31.0
           </FluentText>
           <FluentText
             variant="caption1"

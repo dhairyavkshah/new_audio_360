@@ -124,19 +124,16 @@ Download now and elevate your music experience!
 ## What's New (500 characters max)
 
 ```
-v30.0 - Audio Processing & Stability Update
+v31.0 - Theme & UI Polish Update
 
-CLEANER AUDIO
-DSP buffers now clear properly between tracks - no more processing artifacts.
+FULL THEME ADAPTATION
+All 55 themes now dynamically adapt across entire UI with Fluent 2 color tokens.
 
-IMPROVED STABILITY
-Fixed animation cleanup issues and artwork loading for smoother performance.
+TAP FEEDBACK
+All interactive elements now show visual feedback when pressed.
 
-PROGRESS BAR ENHANCED
-Slider accurately shows playback position and reaches full track duration.
-
-PERFORMANCE BOOST
-Faster response times and reduced battery usage during playback.
+IMPROVED CONSISTENCY
+Unified look and feel across all screens and components.
 
 One-time purchase, lifetime access.
 ```

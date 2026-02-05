@@ -6,7 +6,17 @@
 
 ---
 
-## What's New in v30.0
+## What's New in v31.0
+
+**Theme & UI Polish Update** - Full theme adaptation and tap feedback:
+
+- Complete theme adaptation across all 70+ files with dynamic Fluent 2 color tokens
+- Tap/click feedback (opacity 0.9) on all interactive elements
+- All 55 themes now fully adaptive across entire UI
+
+---
+
+## v30.0
 
 **Audio Processing & Stability Update** - Enhanced DSP and improved reliability:
 
@@ -21,22 +31,36 @@
 ## Google Play Store Release Note (Under 500 Characters)
 
 ```
-v30.0 - Audio Processing & Stability Update
+v31.0 - Theme & UI Polish Update
 
-CLEANER AUDIO
-DSP buffers now clear properly between tracks - no more processing artifacts or reverb bleed.
+FULL THEME ADAPTATION
+All 55 themes now dynamically adapt across entire UI with Fluent 2 color tokens.
 
-IMPROVED STABILITY
-Fixed animation cleanup issues and artwork loading for smoother performance.
+TAP FEEDBACK
+All interactive elements now show visual feedback when pressed.
 
-SEAMLESS TRANSITIONS
-All track changes (next, previous, auto-advance) now produce clean audio.
-
-SEEK IMPROVEMENTS
-Seeking within tracks no longer produces jittery processing sounds.
+IMPROVED CONSISTENCY
+Unified look and feel across all screens and components.
 
 One-time purchase, lifetime access.
 ```
+
+---
+
+## Version 31.0 (February 2026)
+
+**Theme & UI Polish Update**
+
+### Full Theme Adaptation
+- Created `getThemedFluentColors()` utility to map theme colors to Fluent 2 design tokens
+- Added `useThemedColors()` hook for dynamic theme adaptation
+- Updated all 70+ files to use themed colors
+- All 55 themes now fully adaptive across entire UI
+
+### Tap/Click Feedback
+- Added opacity 0.9 press feedback to 40+ Pressable components
+- FluentCard, FluentListItem, all station cards, track cards, playlist cards updated
+- All interactive buttons across all screens now show visual feedback
 
 ---
 
@@ -250,7 +274,7 @@ One-time purchase, lifetime access.
 - Gapless playback improvements
 - Enhanced notification controls
 
-### Version 30.0 (Planned)
+### Version 32.0 (Planned)
 - Car mode UI
 - Home screen widget
 - Additional themes
