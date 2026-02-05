@@ -156,15 +156,15 @@ class EqualizerModule : Module() {
                     )
                 }
                 
-                // Clear EQ buffers before applying new preset to prevent layering/lag
-                dsp.clearEqBuffers()
+                // Note: Buffer clearing removed - biquad filters transition smoothly between coefficients
+                // Clearing was causing unnecessary lag on preset changes
                 
                 val qf = gqf()
                 val scaledGains = presetGains.map { it * qf }
                 dsp.setAllEqBandGains(scaledGains)
                 dsp.setReverb(0f)
                 
-                android.util.Log.d("EqualizerModule", "Applied preset: $presetName with buffer clear")
+                android.util.Log.d("EqualizerModule", "Applied preset: $presetName")
                 return@Function mapOf("success" to true, "preset" to preset, "presetName" to presetName)
             } catch (e: Exception) {
                 return@Function mapOf("success" to true, "preset" to preset)
@@ -182,8 +182,7 @@ class EqualizerModule : Module() {
                     return@Function mapOf("success" to true)
                 }
                 
-                // Clear EQ buffers before applying custom bands to prevent layering/lag
-                dsp.clearEqBuffers()
+                // Note: Buffer clearing removed - biquad filters transition smoothly between coefficients
                 
                 val qf = gqf()
                 val gains = levels.map { (it.toDouble() / 100.0) * qf }
@@ -191,7 +190,7 @@ class EqualizerModule : Module() {
                 
                 dsp.setReverb(0f)
                 
-                android.util.Log.d("EqualizerModule", "Applied custom bands with buffer clear")
+                android.util.Log.d("EqualizerModule", "Applied custom bands")
                 return@Function mapOf("success" to true)
             } catch (e: Exception) {
                 return@Function mapOf("success" to true)
@@ -223,8 +222,7 @@ class EqualizerModule : Module() {
                     return@Function mapOf("success" to true)
                 }
                 
-                // Clear EQ buffers before applying new EQ bands to prevent layering/lag
-                dsp.clearEqBuffers()
+                // Note: Buffer clearing removed - biquad filters transition smoothly between coefficients
                 
                 val qf = gqf()
                 val scaledBands = bands.map { it * qf }
@@ -232,7 +230,7 @@ class EqualizerModule : Module() {
                 
                 dsp.setReverb(0f)
                 
-                android.util.Log.d("EqualizerModule", "Applied EQ bands with buffer clear")
+                android.util.Log.d("EqualizerModule", "Applied EQ bands")
                 return@Function mapOf("success" to true)
             } catch (e: Exception) {
                 return@Function mapOf("success" to true)
