@@ -673,8 +673,15 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     fun setEqBandGain(band: Int, gainUnits: Float) {
         if (band in 0..9) {
             val gainDb = (gainUnits * DB_PER_UNIT).coerceIn(-MAX_DB, MAX_DB)
+            val previousGain = eqGains[band]
             eqGains[band] = gainDb
             eqFilters[band].setGain(gainDb)
+            
+            // Reset the specific filter state when gain changes significantly to prevent transients
+            if (kotlin.math.abs(previousGain - gainDb) > 3.0f) {
+                eqFilters[band].resetAllChannels()
+                android.util.Log.d("SoftwareDSP", "EQ band $band filter reset for significant gain change")
+            }
         }
     }
 
@@ -685,17 +692,43 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
             }
         }
     }
+    
+    /**
+     * Clear EQ filter states to prevent transients when preset changes.
+     * Call this when switching EQ presets for clean transitions.
+     */
+    fun clearEqBuffers() {
+        android.util.Log.d("SoftwareDSP", "clearEqBuffers() - clearing EQ filters for preset change")
+        eqFilters.forEach { it.resetAllChannels() }
+        bassShelfFilter.resetAllChannels()
+        trebleShelfFilter.resetAllChannels()
+        limiter.reset()
+    }
 
     fun setBassBoost(gainUnits: Float) {
         val gainDb = (gainUnits * DB_PER_UNIT).coerceIn(-MAX_DB, MAX_DB)
+        val previousGain = bassGain
         bassGain = gainDb
         bassShelfFilter.setGain(gainDb)
+        
+        // Clear bass shelf filter state when gain changes significantly
+        if (kotlin.math.abs(previousGain - bassGain) > 1.0f) {
+            bassShelfFilter.resetAllChannels()
+            android.util.Log.d("SoftwareDSP", "Bass shelf filter reset for gain change")
+        }
     }
 
     fun setTrebleBoost(gainUnits: Float) {
         val gainDb = (gainUnits * DB_PER_UNIT).coerceIn(-MAX_DB, MAX_DB)
+        val previousGain = trebleGain
         trebleGain = gainDb
         trebleShelfFilter.setGain(gainDb)
+        
+        // Clear treble shelf filter state when gain changes significantly
+        if (kotlin.math.abs(previousGain - trebleGain) > 1.0f) {
+            trebleShelfFilter.resetAllChannels()
+            android.util.Log.d("SoftwareDSP", "Treble shelf filter reset for gain change")
+        }
     }
 
     /**
@@ -708,8 +741,14 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      * Level 5: Maximum - 18% sideGain, 0.60ms ITD, 18% decorr, 55% wet (1.5x multiplier)
      */
     fun setSpatialEnhancementLevel(level: Int) {
+        val previousLevel = spatialEnhancementLevel
         spatialEnhancementLevel = level.coerceIn(0, 5)
         explicitSpatialParams = false // Switch back to level-based mode
+        
+        // Clear audio buffers when spatial level changes to prevent layering/lag
+        if (previousLevel != spatialEnhancementLevel) {
+            clearSpatialBuffers()
+        }
         
         // Apply slider-based spatial parameters
         spatialSideGainPercent = SLIDER_SIDE_GAIN[spatialEnhancementLevel]
@@ -728,6 +767,46 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         
         val levelNames = arrayOf("Off", "Subtle", "Mild", "Moderate", "Enhanced", "Maximum")
         android.util.Log.d("SoftwareDSP", "Spatial enhancement level: ${levelNames[spatialEnhancementLevel]} (${SLIDER_MULTIPLIERS[spatialEnhancementLevel]}x multiplier, HRTF: ${hrtfPinnaGain}dB)")
+    }
+    
+    /**
+     * Clear only spatial processing buffers (ITD delay, HRTF, reverb).
+     * Called when spatial settings change to prevent layering artifacts.
+     */
+    fun clearSpatialBuffers() {
+        android.util.Log.d("SoftwareDSP", "clearSpatialBuffers() - clearing spatial/reverb buffers for effect change")
+        
+        // Clear reverb delay buffers
+        for (tap in 0 until 4) {
+            delayBuffersL[tap].fill(0f)
+            delayBuffersR[tap].fill(0f)
+            delayIndices[tap] = 0
+        }
+        
+        // Clear ITD delay buffer
+        itdDelayBuffer.fill(0f)
+        itdDelayWriteIndex = 0
+        
+        // Reset spatial filter states
+        bassMonoLowpassL.resetAllChannels()
+        bassMonoLowpassR.resetAllChannels()
+        bassMonoHighpassL.resetAllChannels()
+        bassMonoHighpassR.resetAllChannels()
+        sideHighpassFilter.resetAllChannels()
+        allpassFilter1.resetAllChannels()
+        allpassFilter2.resetAllChannels()
+        
+        // Reset HRTF filter states
+        hrtfPinnaFilterL.resetAllChannels()
+        hrtfPinnaFilterR.resetAllChannels()
+        hrtfElevationFilterL.resetAllChannels()
+        hrtfElevationFilterR.resetAllChannels()
+        
+        // Reset correlation monitor
+        correlationSum = 0.0
+        leftSquaredSum = 0.0
+        rightSquaredSum = 0.0
+        runningCorrelation = 1.0f
     }
     
     /**
@@ -760,6 +839,9 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      * @param wetMix Wet mix in % (0-100, blends processed with original)
      */
     fun setSpatialEnhancementParams(sideGain: Float, itdMs: Float, decorrelation: Float, wetMix: Float) {
+        // Clear spatial buffers when params change to prevent layering/lag
+        clearSpatialBuffers()
+        
         // Apply hard safety caps directly (no slider multiplier combination)
         spatialSideGainPercent = sideGain.coerceIn(0f, MAX_SIDE_GAIN_PERCENT)
         spatialItdMs = itdMs.coerceIn(0f, MAX_ITD_MS)
@@ -952,8 +1034,27 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      * Uses equal-power crossfade for smooth blending
      */
     fun setReverb(wetMix: Float) {
+        val previousMix = reverbWetMix
         reverbWetMix = wetMix.coerceIn(0f, 1f)
+        
+        // Clear reverb delay buffers when reverb mix changes significantly to prevent layering
+        if (kotlin.math.abs(previousMix - reverbWetMix) > 0.05f) {
+            clearReverbBuffers()
+        }
         android.util.Log.d("SoftwareDSP", "Reverb wet mix set to ${(reverbWetMix * 100).toInt()}%")
+    }
+    
+    /**
+     * Clear only reverb delay buffers.
+     * Called when reverb settings change to prevent layering artifacts.
+     */
+    private fun clearReverbBuffers() {
+        android.util.Log.d("SoftwareDSP", "clearReverbBuffers() - clearing reverb buffers for effect change")
+        for (tap in 0 until 4) {
+            delayBuffersL[tap].fill(0f)
+            delayBuffersR[tap].fill(0f)
+            delayIndices[tap] = 0
+        }
     }
 
     fun getReverb(): Float = reverbWetMix
@@ -963,8 +1064,24 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      * Uses psychoacoustic harmonic generation via soft clipping
      */
     fun setBassEnhancement(level: Float) {
+        val previousLevel = bassEnhancementLevel
         bassEnhancementLevel = level.coerceIn(0f, 100f)
+        
+        // Clear bass enhancement filter states when level changes significantly
+        if (kotlin.math.abs(previousLevel - bassEnhancementLevel) > 5f) {
+            clearBassEnhancementBuffers()
+        }
         android.util.Log.d("SoftwareDSP", "Bass Enhancement set to ${bassEnhancementLevel.toInt()}%")
+    }
+    
+    /**
+     * Clear bass enhancement filter states.
+     */
+    fun clearBassEnhancementBuffers() {
+        android.util.Log.d("SoftwareDSP", "clearBassEnhancementBuffers() - clearing bass enhancement filters")
+        bassEnhanceLowpass.resetAllChannels()
+        bassEnhanceHighpass.resetAllChannels()
+        bassHarmonicsFilter.resetAllChannels()
     }
     
     fun getBassEnhancement(): Float = bassEnhancementLevel
@@ -973,9 +1090,26 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      * Enable or disable HF Restoration / AI Audio Upscaling (neural super-resolution)
      */
     fun setHfRestoration(enabled: Boolean) {
+        val wasEnabled = hfRestorationEnabled
         hfRestorationEnabled = enabled
+        
+        // Clear HF restoration filter states when toggled
+        if (wasEnabled != enabled) {
+            clearHfRestorationBuffers()
+        }
+        
         NeuralAudioProcessorTFLite.getInstance().setEnabled(enabled)
         android.util.Log.d("SoftwareDSP", "AI Audio Upscaling ${if (enabled) "enabled" else "disabled"}")
+    }
+    
+    /**
+     * Clear HF restoration filter states.
+     */
+    private fun clearHfRestorationBuffers() {
+        android.util.Log.d("SoftwareDSP", "clearHfRestorationBuffers() - clearing HF restoration filters")
+        hfAnalyzeFilter.resetAllChannels()
+        hfRestoreFilter.resetAllChannels()
+        hfEnergySmooth = 0f
     }
     
     fun getHfRestoration(): Boolean = hfRestorationEnabled
@@ -985,7 +1119,14 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      * Maps to neural processor enhancement levels: low=0.3, medium=0.6, high=1.0
      */
     fun setHfRestorationLevel(level: Float) {
+        val previousLevel = hfRestorationLevel
         hfRestorationLevel = level.coerceIn(0f, 100f)
+        
+        // Clear HF buffers when level changes significantly
+        if (kotlin.math.abs(previousLevel - hfRestorationLevel) > 10f) {
+            clearHfRestorationBuffers()
+        }
+        
         val neuralLevel = when {
             hfRestorationLevel <= 33f -> NeuralAudioProcessorTFLite.EnhancementLevel.LOW
             hfRestorationLevel <= 66f -> NeuralAudioProcessorTFLite.EnhancementLevel.MEDIUM

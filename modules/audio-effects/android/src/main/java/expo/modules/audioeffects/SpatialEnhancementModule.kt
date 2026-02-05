@@ -29,7 +29,10 @@ class SpatialEnhancementModule : Module() {
         Function("setLevel") { newLevel: Int ->
             try {
                 level = newLevel.coerceIn(0, 5)
-                SoftwareDSPAudioProcessor.getInstance().setSpatialEnhancementLevel(level)
+                val dsp = SoftwareDSPAudioProcessor.getInstance()
+                
+                // setSpatialEnhancementLevel internally clears buffers when level changes
+                dsp.setSpatialEnhancementLevel(level)
                 val levelName = levelNames[level]
                 val multiplier = multipliers[level]
                 android.util.Log.d("SpatialEnhancementModule", "Spatial Enhancement: $levelName (${multiplier}x)")
@@ -69,7 +72,10 @@ class SpatialEnhancementModule : Module() {
         Function("setEnabled") { enabled: Boolean ->
             try {
                 level = if (enabled) 2 else 0  // Default to "Mild" when enabled
-                SoftwareDSPAudioProcessor.getInstance().setSpatialEnhancementLevel(level)
+                val dsp = SoftwareDSPAudioProcessor.getInstance()
+                
+                // setSpatialEnhancementLevel internally clears buffers when level changes
+                dsp.setSpatialEnhancementLevel(level)
                 val levelName = levelNames[level]
                 android.util.Log.d("SpatialEnhancementModule", "Spatial Enhancement enabled=$enabled ($levelName)")
                 return@Function mapOf("success" to true, "enabled" to enabled, "level" to level)

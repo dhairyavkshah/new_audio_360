@@ -187,7 +187,18 @@ class NeuralAudioProcessorTFLite private constructor() {
                             useGpu = false
                         }
                     } catch (e: Exception) {
-                        Log.w(TAG, "GPU delegate instantiation failed, using CPU: ${e.message}")
+                        Log.w(TAG, "GPU delegate instantiation failed, falling back to CPU: ${e.message}")
+                        
+                        // Clean up any partial GPU state to prevent residual issues
+                        gpuDelegate?.let { delegate ->
+                            try {
+                                val closeMethod = delegate.javaClass.getMethod("close")
+                                closeMethod.invoke(delegate)
+                            } catch (closeError: Exception) {
+                                Log.w(TAG, "Failed to close partial GPU delegate: ${closeError.message}")
+                            }
+                        }
+                        gpuDelegate = null
                         useGpu = false
                     }
                 } else {

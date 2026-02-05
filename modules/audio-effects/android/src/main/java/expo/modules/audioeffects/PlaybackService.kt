@@ -382,10 +382,21 @@ class PlaybackService : MediaSessionService() {
     }
     
     override fun onTaskRemoved(rootIntent: Intent?) {
-        val player = this.player
-        if (player == null || !player.playWhenReady || player.mediaItemCount == 0) {
-            stopSelf()
+        Log.d(TAG, "onTaskRemoved called - stopping playback and service")
+        
+        // Always stop playback when the app task is removed (user swiped away app)
+        // This ensures music stops when the app is force-closed
+        player?.let { p ->
+            try {
+                p.stop()
+                p.clearMediaItems()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error stopping player on task removed: ${e.message}")
+            }
         }
+        
+        // Always stop the service when task is removed
+        stopSelf()
     }
     
     override fun onDestroy() {

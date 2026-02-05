@@ -52,11 +52,20 @@ class BassBoostModule : Module() {
         
         Function("setStrength") { strength: Int ->
             try {
+                val previousStrength = currentStrength
                 val clampedStrength = strength.coerceIn(0, 1000)
                 currentStrength = clampedStrength
                 
+                val dsp = SoftwareDSPAudioProcessor.getInstance()
+                
+                // Clear bass buffers when strength changes significantly to prevent layering
+                if (kotlin.math.abs(previousStrength - clampedStrength) > 200) {
+                    dsp?.clearBassEnhancementBuffers()
+                    android.util.Log.d("BassBoostModule", "Cleared bass buffers for significant strength change")
+                }
+                
                 val gainUnits = (clampedStrength / 1000.0f) * 5.0f
-                SoftwareDSPAudioProcessor.getInstance()?.setBassBoost(gainUnits)
+                dsp?.setBassBoost(gainUnits)
                 
                 android.util.Log.d("BassBoostModule", "Software DSP bass boost set: strength=$clampedStrength, gain=$gainUnits")
                 
