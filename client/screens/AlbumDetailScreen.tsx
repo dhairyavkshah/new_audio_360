@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from "react";
-import { View, StyleSheet, FlatList, Image } from "react-native";
+import { View, StyleSheet, FlatList, Image, Platform } from "react-native";
 
 // Default album art for songs without artwork
 const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
@@ -14,6 +14,7 @@ import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { FluentSpacing, FluentControlRadius } from "@/constants/fluent2";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
+import { getCapabilitiesSync } from "@/lib/deviceCapabilities";
 
 type AlbumDetailRouteProp = RouteProp<LibraryStackParamList, "AlbumDetail">;
 
@@ -24,6 +25,9 @@ export default function AlbumDetailScreen() {
   const { playSong, currentSong, queue, setQueue } = usePlayerContext();
   const { songs: deviceSongs, isOnboardingComplete } = useMediaLibraryContext();
   const tabBarHeight = useSafeTabBarHeight();
+  const capabilities = getCapabilitiesSync();
+  const flatListWindowSize = capabilities?.flatListWindowSize ?? 5;
+  const flatListMaxToRenderPerBatch = capabilities?.flatListMaxToRenderPerBatch ?? 8;
 
   const albumSongs: PlayableSong[] = useMemo(() => {
     if (album.songs && album.songs.length > 0) {
@@ -61,6 +65,17 @@ export default function AlbumDetailScreen() {
   }, [deviceSongs, isOnboardingComplete, album]);
 
   const navigation = useNavigation();
+
+  const SONG_ITEM_HEIGHT = 80;
+
+  const getItemLayout = useCallback(
+    (data: ArrayLike<PlayableSong> | null | undefined, index: number) => ({
+      length: SONG_ITEM_HEIGHT,
+      offset: SONG_ITEM_HEIGHT * index,
+      index,
+    }),
+    []
+  );
 
   const handlePlaySong = useCallback((song: PlayableSong) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -122,9 +137,12 @@ export default function AlbumDetailScreen() {
           { paddingBottom: tabBarHeight + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
-        initialNumToRender={15}
-        maxToRenderPerBatch={10}
-        windowSize={5}
+        initialNumToRender={10}
+        maxToRenderPerBatch={flatListMaxToRenderPerBatch}
+        windowSize={flatListWindowSize}
+        removeClippedSubviews={Platform.OS === 'android'}
+        updateCellsBatchingPeriod={50}
+        getItemLayout={getItemLayout}
       />
     </FluentScreenLayout>
   );

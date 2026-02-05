@@ -1,11 +1,12 @@
 import React, { useCallback, useRef, useMemo, memo } from "react";
-import { View, StyleSheet, Pressable, Image, Platform, GestureResponderEvent, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Pressable, Platform, GestureResponderEvent, TouchableOpacity } from "react-native";
 
 // Default album art for songs without artwork
 const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
+import { LazyImage } from "@/components/LazyImage";
 import { useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
@@ -187,7 +188,11 @@ function SongCardComponent({
       {...containerProps}
     >
       <View style={styles.artworkContainer}>
-        <Image source={artworkSource} style={styles.artwork} />
+        <LazyImage 
+          source={artworkSource} 
+          fallbackSource={DEFAULT_ALBUM_ART}
+          style={styles.artwork}
+        />
         {isPlaying ? (
           <View style={[styles.playingIndicator, { backgroundColor: fluentColors.colorBrandBackground, borderColor: fluentColors.colorNeutralBackground1 }]}>
             <MaterialCommunityIcons name="volume-high" size={FluentIconSize.tiny} color="#FFFFFF" />

@@ -288,10 +288,14 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         }
 
         if (!isEnabled) {
-            // Passthrough mode - copy input data to output buffer
+            // Passthrough mode - copy input data to output buffer using buffer pool
             val remaining = buffer.remaining()
             if (outputBuffer.capacity() < remaining) {
-                outputBuffer = ByteBuffer.allocateDirect(remaining).order(ByteOrder.nativeOrder())
+                // Return old buffer to pool if it was from pool
+                if (outputBuffer !== AudioProcessor.EMPTY_BUFFER && outputBuffer.isDirect) {
+                    ByteBufferPool.getInstance().release(outputBuffer)
+                }
+                outputBuffer = ByteBufferPool.getInstance().acquire(remaining)
             }
             outputBuffer.clear()
             outputBuffer.put(buffer)
@@ -384,7 +388,11 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         // =========================================
         
         if (outputBuffer.capacity() < remaining) {
-            outputBuffer = ByteBuffer.allocateDirect(remaining).order(ByteOrder.nativeOrder())
+            // Return old buffer to pool if it was from pool
+            if (outputBuffer !== AudioProcessor.EMPTY_BUFFER && outputBuffer.isDirect) {
+                ByteBufferPool.getInstance().release(outputBuffer)
+            }
+            outputBuffer = ByteBufferPool.getInstance().acquire(remaining)
         } else {
             outputBuffer.clear()
         }
@@ -480,6 +488,14 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     }
 
     override fun flush() {
+        // Return buffers to pool before resetting
+        if (outputBuffer !== AudioProcessor.EMPTY_BUFFER && outputBuffer.isDirect) {
+            ByteBufferPool.getInstance().release(outputBuffer)
+        }
+        if (inputBuffer !== AudioProcessor.EMPTY_BUFFER && inputBuffer.isDirect) {
+            ByteBufferPool.getInstance().release(inputBuffer)
+        }
+        
         outputBuffer = AudioProcessor.EMPTY_BUFFER
         inputBuffer = AudioProcessor.EMPTY_BUFFER
         inputEnded = false
@@ -563,6 +579,21 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      * Formula: playback_time_seconds = samplesProcessed / sampleRate
      */
     fun getSamplesProcessed(): Long = samplesProcessed
+    
+    /**
+     * Clear delay buffers to free memory during memory pressure events.
+     * Safe to call during playback - will cause brief reverb discontinuity.
+     */
+    fun clearDelayBuffers() {
+        for (tap in 0 until 4) {
+            delayBuffersL[tap].fill(0f)
+            delayBuffersR[tap].fill(0f)
+            delayIndices[tap] = 0
+        }
+        itdDelayBuffer.fill(0f)
+        itdDelayWriteIndex = 0
+        android.util.Log.d("SoftwareDSP", "Delay buffers cleared for memory optimization")
+    }
     
     /**
      * Get current sample rate for position calculation.

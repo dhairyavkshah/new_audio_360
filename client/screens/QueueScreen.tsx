@@ -15,6 +15,7 @@ import { usePlayerContext } from "@/contexts/PlayerContext";
 import { FluentSpacing, FluentPadding, FluentControlRadius, FluentIconSize, FluentTouchTarget } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
+import { getCapabilitiesSync } from "@/lib/deviceCapabilities";
 
 type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 
@@ -26,6 +27,9 @@ export default function QueueScreen() {
   const { queue, currentSong, playSong, removeFromQueue } = usePlayerContext();
   const [selectedSongs, setSelectedSongs] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
+  const capabilities = getCapabilitiesSync();
+  const flatListWindowSize = capabilities?.flatListWindowSize ?? 5;
+  const flatListMaxToRenderPerBatch = capabilities?.flatListMaxToRenderPerBatch ?? 8;
 
   const handleSongPress = useCallback((song: Song) => {
     if (selectionMode) {
@@ -228,9 +232,9 @@ export default function QueueScreen() {
           { paddingBottom: insets.bottom + FluentSpacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
-        initialNumToRender={15}
-        maxToRenderPerBatch={10}
-        windowSize={10}
+        initialNumToRender={10}
+        maxToRenderPerBatch={flatListMaxToRenderPerBatch}
+        windowSize={flatListWindowSize}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
         getItemLayout={getItemLayout}

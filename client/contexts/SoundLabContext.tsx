@@ -11,6 +11,7 @@ import {
 } from '../../modules/audio-effects';
 import { AudioSessionSource } from '@/services/NativeEffectsManager';
 import { WebAudioEffectsEngine } from '@/services/WebAudioEffectsEngine';
+import { getDeviceCapabilities } from '@/lib/deviceCapabilities';
 
 export type EQBands = {
   sub: number;
@@ -118,12 +119,25 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
     setTrebleBoostState(Math.max(-5, Math.min(5, value)));
   }, []);
 
-  const eqBands = EQ_PRESETS[eqPresetName] || EQ_PRESETS.Flat;
+  const eqBands = useMemo(
+    () => EQ_PRESETS[eqPresetName] || EQ_PRESETS.Flat,
+    [eqPresetName]
+  );
 
   useEffect(() => {
     if (!webAudioInitialized) {
-      WebAudioEffectsEngine.initialize().then((success) => {
-        setWebAudioInitialized(success);
+      getDeviceCapabilities().then((capabilities) => {
+        if (!capabilities.enableAIUpscaling) {
+          if (capabilities.memory.memoryClass === 'low') {
+            console.warn('[SoundLabContext] Low-memory device detected (<3GB): Advanced audio features will be limited');
+          } else if (capabilities.memory.totalRamMB < 4096) {
+            console.warn('[SoundLabContext] Medium-memory device detected (<4GB): Some advanced audio features disabled');
+          }
+        }
+        
+        WebAudioEffectsEngine.initialize().then((success) => {
+          setWebAudioInitialized(success);
+        });
       });
     }
     return () => {
@@ -239,8 +253,8 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, [refreshSettings]);
 
-  return (
-    <SoundLabContext.Provider value={{
+  const contextValue = useMemo(
+    () => ({
       mode,
       eqPresetName,
       immersiveModeName,
@@ -258,7 +272,29 @@ export function SoundLabProvider({ children }: { children: ReactNode }) {
       getImmersiveModeInfo,
       setImmersiveMode,
       refreshSettings,
-    }}>
+    }),
+    [
+      mode,
+      eqPresetName,
+      immersiveModeName,
+      immersiveModeSettings,
+      immersiveEffect,
+      eqBands,
+      availableImmersiveModes,
+      audioSource,
+      isEffectsActive,
+      bassBoost,
+      trebleBoost,
+      setBassBoost,
+      setTrebleBoost,
+      getImmersiveModeInfo,
+      setImmersiveMode,
+      refreshSettings,
+    ]
+  );
+
+  return (
+    <SoundLabContext.Provider value={contextValue}>
       {children}
     </SoundLabContext.Provider>
   );

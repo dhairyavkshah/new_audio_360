@@ -533,6 +533,34 @@ class NeuralAudioProcessorTFLite private constructor() {
     fun isReady(): Boolean = status == Status.READY && interpreter != null
     
     /**
+     * Check if the processor is enabled.
+     */
+    fun isEnabled(): Boolean = isEnabled
+    
+    /**
+     * Release the model to free memory when under pressure.
+     * Can be re-initialized later with initialize().
+     */
+    @Synchronized
+    fun releaseModel() {
+        if (status != Status.READY && status != Status.IDLE) return
+        
+        Log.d(TAG, "Releasing model for memory optimization")
+        
+        try {
+            interpreter?.close()
+        } catch (e: Exception) {
+            Log.w(TAG, "Error closing interpreter: ${e.message}")
+        }
+        interpreter = null
+        inputBuffer = null
+        outputBuffer = null
+        setStatus(Status.IDLE)
+        
+        Log.d(TAG, "Model released, status set to IDLE")
+    }
+    
+    /**
      * Register a listener for status changes.
      */
     @Synchronized

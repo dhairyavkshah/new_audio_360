@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { AudioContext, BiquadFilterNode, GainNode } from 'react-native-audio-api';
 import { NeuralAudioProcessor, EnhancementLevel } from './NeuralAudioProcessor';
+import { getDeviceCapabilities } from '@/lib/deviceCapabilities';
 
 /**
  * WebAudioEffectsEngine - Pure software DSP for Web/Windows platform
@@ -218,6 +219,16 @@ class WebAudioEffectsEngineClass {
     }
 
     try {
+      const capabilities = await getDeviceCapabilities();
+      this.useNeuralProcessing = capabilities.enableAIUpscaling;
+      
+      if (!this.useNeuralProcessing && capabilities.memory.memoryClass === 'low') {
+        console.warn('[WebAudioEffectsEngine] Low-memory device detected (<3GB): Neural processing disabled to conserve resources');
+      }
+      if (!this.useNeuralProcessing && capabilities.memory.totalRamMB < 4096 && capabilities.memory.memoryClass !== 'low') {
+        console.warn('[WebAudioEffectsEngine] Medium-memory device detected (<4GB): Neural processing disabled to conserve resources');
+      }
+      
       this.audioContext = new AudioContext();
       
       // Create dry/wet mix gains for reverb

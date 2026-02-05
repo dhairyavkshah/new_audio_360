@@ -23,6 +23,7 @@ import { Song } from "@/lib/data";
 import { Album } from "@/navigation/LibraryStackNavigator";
 import ArchiveOrgService, { StoredArchiveTrack, ArchiveOrgTrack } from "@/services/ArchiveOrgService";
 import SoundCloudService, { StoredSoundCloudTrack } from "@/services/SoundCloudService";
+import { getCapabilitiesSync } from "@/lib/deviceCapabilities";
 
 interface DerivedAlbum extends Album {
   songs: DeviceSong[];
@@ -115,6 +116,9 @@ function LibraryScreen() {
   const { isDark } = useThemeContext();
   const colors = useThemedColors();
   const { playTapSound } = useUiSound();
+  const capabilities = getCapabilitiesSync();
+  const flatListWindowSize = capabilities?.flatListWindowSize ?? 5;
+  const flatListMaxToRenderPerBatch = capabilities?.flatListMaxToRenderPerBatch ?? 8;
   const { favorites, recentlyPlayed, mostPlayed, playSong, setQueue } = usePlayerContext();
   const { songs: deviceSongs, isLoading: isLoadingSongs, progress, usingMockData, hideSong } = useMediaLibraryContext();
   const { currentSong, isPlaying } = usePlayer();
@@ -516,6 +520,17 @@ function LibraryScreen() {
     </View>
   );
 
+  const SONG_ITEM_HEIGHT = 80;
+
+  const getSongItemLayout = useCallback(
+    (data: ArrayLike<PlayableSong> | null | undefined, index: number) => ({
+      length: SONG_ITEM_HEIGHT,
+      offset: SONG_ITEM_HEIGHT * index,
+      index,
+    }),
+    []
+  );
+
   const renderSongsList = (songs: PlayableSong[], emptyIcon: keyof typeof MaterialCommunityIcons.glyphMap, emptyMessage: string, showSource = false) => {
     if (songs.length === 0) {
       return renderEmptyState(emptyIcon, emptyMessage);
@@ -529,11 +544,12 @@ function LibraryScreen() {
         ListHeaderComponent={() => renderPlayAllHeader(songs)}
         contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + FluentSpacing.m }]}
         showsVerticalScrollIndicator={false}
-        initialNumToRender={15}
-        maxToRenderPerBatch={10}
-        windowSize={10}
+        initialNumToRender={10}
+        maxToRenderPerBatch={flatListMaxToRenderPerBatch}
+        windowSize={flatListWindowSize}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
+        getItemLayout={getSongItemLayout}
         keyboardShouldPersistTaps="handled"
       />
     );
@@ -562,8 +578,8 @@ function LibraryScreen() {
         columnWrapperStyle={styles.albumRow}
         showsVerticalScrollIndicator={false}
         initialNumToRender={10}
-        maxToRenderPerBatch={8}
-        windowSize={5}
+        maxToRenderPerBatch={flatListMaxToRenderPerBatch}
+        windowSize={flatListWindowSize}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
         keyboardShouldPersistTaps="handled"
@@ -594,14 +610,25 @@ function LibraryScreen() {
         columnWrapperStyle={styles.artistRow}
         showsVerticalScrollIndicator={false}
         initialNumToRender={10}
-        maxToRenderPerBatch={8}
-        windowSize={5}
+        maxToRenderPerBatch={flatListMaxToRenderPerBatch}
+        windowSize={flatListWindowSize}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
         keyboardShouldPersistTaps="handled"
       />
     );
   };
+
+  const PLAYLIST_ITEM_HEIGHT = 56;
+
+  const getPlaylistItemLayout = useCallback(
+    (data: ArrayLike<Playlist> | null | undefined, index: number) => ({
+      length: PLAYLIST_ITEM_HEIGHT,
+      offset: PLAYLIST_ITEM_HEIGHT * index,
+      index,
+    }),
+    []
+  );
 
   const renderPlaylistsList = () => {
     if (filteredData.playlists.length === 0) {
@@ -632,11 +659,12 @@ function LibraryScreen() {
         contentContainerStyle={[styles.listContent, { paddingBottom: tabBarHeight + 80 + FluentSpacing.m }]}
         ItemSeparatorComponent={() => <View style={{ height: FluentSpacing.s }} />}
         showsVerticalScrollIndicator={false}
-        initialNumToRender={15}
-        maxToRenderPerBatch={10}
-        windowSize={10}
+        initialNumToRender={10}
+        maxToRenderPerBatch={flatListMaxToRenderPerBatch}
+        windowSize={flatListWindowSize}
         removeClippedSubviews={Platform.OS === 'android'}
         updateCellsBatchingPeriod={50}
+        getItemLayout={getPlaylistItemLayout}
         keyboardShouldPersistTaps="handled"
       />
     );
@@ -670,6 +698,17 @@ function LibraryScreen() {
       })
     );
   }, [playSong, navigation]);
+
+  const ARCHIVE_ITEM_HEIGHT = 68;
+
+  const getArchiveItemLayout = useCallback(
+    (data: ArrayLike<StoredArchiveTrack> | null | undefined, index: number) => ({
+      length: ARCHIVE_ITEM_HEIGHT,
+      offset: ARCHIVE_ITEM_HEIGHT * index,
+      index,
+    }),
+    []
+  );
 
   const renderArchiveList = () => {
     return (
@@ -726,6 +765,12 @@ function LibraryScreen() {
             contentContainerStyle={{ paddingBottom: tabBarHeight + 80 + FluentSpacing.m }}
             ItemSeparatorComponent={() => <View style={{ height: FluentSpacing.s }} />}
             showsVerticalScrollIndicator={false}
+            initialNumToRender={10}
+            maxToRenderPerBatch={flatListMaxToRenderPerBatch}
+            windowSize={flatListWindowSize}
+            removeClippedSubviews={Platform.OS === 'android'}
+            updateCellsBatchingPeriod={50}
+            getItemLayout={getArchiveItemLayout}
           />
         )}
       </View>

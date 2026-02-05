@@ -15,6 +15,17 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 - **Resource Leak Fixes**: Fixed MediaMetadataRetriever and ByteArrayOutputStream leaks in MediaStoreScannerModule with proper try-finally cleanup
 - **WaveformAnalyzerModule Memory Fix**: Fixed resource cleanup in release() - now properly nulls captureHandler/captureRunnable and always releases Visualizer resources regardless of capture state
 
+### Poweramp-Level Memory Optimizations (v31.0.1)
+- **DeviceCapabilities Utility** (`client/lib/deviceCapabilities.ts`): RAM detection with 3-tier classification (Low <3GB, Medium 3-6GB, High >6GB)
+- **LazyImage Component** (`client/components/LazyImage.tsx`): Visibility-based image loading with LRU cache (50 items max)
+- **FlatList Optimizations**: Adaptive windowSize (3-10), maxToRenderPerBatch (5-15), removeClippedSubviews, getItemLayout for fixed-height items
+- **Context Memoization**: Wrapped PlayerContext and SoundLabContext values in useMemo/useCallback to prevent unnecessary re-renders
+- **Adaptive Waveform Capture**: 20Hz (low-RAM), 30Hz (medium), 60Hz (high-memory) via NativeAudioService
+- **Memory-Aware AI Upscaling**: Neural processing auto-disabled on devices <4GB RAM via WebAudioEffectsEngine device capability check
+- **Android onTrimMemory Handler** (`DeviceInfoModule.kt`): Responds to memory pressure by clearing delay buffers and releasing neural model
+- **ByteBufferPool** (`ByteBufferPool.kt`): Thread-safe buffer pooling with 2MB cap, integrated into SoftwareDSPAudioProcessor
+- **C++/NDK DSP Foundation**: NEON SIMD implementation for PCM conversion, gain, soft clip operations (`NativeDSPModule.kt`, `simd_processor.cpp`)
+
 ## User Preferences
 - Concise and direct communication
 - Prioritize core functionality and architectural integrity

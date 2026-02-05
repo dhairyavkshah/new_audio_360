@@ -11,6 +11,7 @@ import {
   ImmersiveModeSettings,
   ImmersiveModeInfo
 } from '../../modules/audio-effects';
+import { getDeviceCapabilities } from '@/lib/deviceCapabilities';
 
 export interface AudioServiceState {
   isInitialized: boolean;
@@ -230,6 +231,8 @@ class NativeAudioServiceClass {
         repeatMode: 'off',
         shuffleEnabled: false,
         audioSessionId: 0,
+        sampleBasedPositionMs: 0,
+        trackEnded: false,
       };
     }
     return PlaybackEngineModule.getStatus();
@@ -367,13 +370,24 @@ class NativeAudioServiceClass {
     }
   }
 
-  async startWaveformCapture(rateHz: number = 30): Promise<{ success: boolean; error?: string }> {
+  async startWaveformCapture(rateHz?: number): Promise<{ success: boolean; error?: string }> {
     if (!this.isWaveformAvailable()) {
       return { success: false, error: 'Waveform analyzer not available on this platform' };
     }
 
     try {
-      const result = await WaveformAnalyzerModule.startCapture(rateHz);
+      let captureRate = rateHz;
+      
+      if (captureRate === undefined) {
+        const capabilities = await getDeviceCapabilities();
+        captureRate = capabilities.recommendedWaveformRate;
+        
+        if (capabilities.memory.memoryClass === 'low') {
+          console.warn('[NativeAudioService] Low-memory device detected: using adaptive waveform rate of 20Hz to conserve resources');
+        }
+      }
+      
+      const result = await WaveformAnalyzerModule.startCapture(captureRate);
       if (result.success) {
         this.isWaveformCapturing = true;
         this.startWaveformPolling();

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo, ReactNode } from 'react';
 import { Platform, AppState, AppStateStatus, InteractionManager } from 'react-native';
 import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from 'expo-audio';
 import { Song, mockSongs } from '@/lib/data';
@@ -2188,36 +2188,78 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }, minutes * 60 * 1000);
   }, []);
 
-  const value: PlayerContextType = {
-    currentSong,
-    isPlaying,
-    currentTime,
-    duration: duration || currentSong?.duration || 0,
-    shuffle,
-    repeat,
-    queue,
-    progress: (duration || currentSong?.duration) ? currentTime / (duration || currentSong?.duration || 1) : 0,
-    favorites,
-    recentlyPlayed,
-    mostPlayed,
-    sleepTimerMinutes,
-    isLoading,
-    isBuffering,
-    error,
-    isFavorite,
-    toggleFavorite: toggleFavoriteHandler,
-    playSong,
-    togglePlayPause,
-    handleNext,
-    handlePrevious,
-    seek,
-    toggleShuffle,
-    toggleRepeat,
-    removeFromQueue,
-    clearQueue,
-    setSleepTimer,
-    setQueue,
-  };
+  const computedDuration = useMemo(
+    () => duration || currentSong?.duration || 0,
+    [duration, currentSong?.duration]
+  );
+
+  const progress = useMemo(
+    () => (computedDuration > 0 ? currentTime / computedDuration : 0),
+    [currentTime, computedDuration]
+  );
+
+  const value: PlayerContextType = useMemo(
+    () => ({
+      currentSong,
+      isPlaying,
+      currentTime,
+      duration: computedDuration,
+      shuffle,
+      repeat,
+      queue,
+      progress,
+      favorites,
+      recentlyPlayed,
+      mostPlayed,
+      sleepTimerMinutes,
+      isLoading,
+      isBuffering,
+      error,
+      isFavorite,
+      toggleFavorite: toggleFavoriteHandler,
+      playSong,
+      togglePlayPause,
+      handleNext,
+      handlePrevious,
+      seek,
+      toggleShuffle,
+      toggleRepeat,
+      removeFromQueue,
+      clearQueue,
+      setSleepTimer,
+      setQueue,
+    }),
+    [
+      currentSong,
+      isPlaying,
+      currentTime,
+      computedDuration,
+      shuffle,
+      repeat,
+      queue,
+      progress,
+      favorites,
+      recentlyPlayed,
+      mostPlayed,
+      sleepTimerMinutes,
+      isLoading,
+      isBuffering,
+      error,
+      isFavorite,
+      toggleFavoriteHandler,
+      playSong,
+      togglePlayPause,
+      handleNext,
+      handlePrevious,
+      seek,
+      toggleShuffle,
+      toggleRepeat,
+      removeFromQueue,
+      clearQueue,
+      setSleepTimer,
+      setQueue,
+    ]
+  );
 
   return (
     <PlayerContext.Provider value={value}>

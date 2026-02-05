@@ -12,7 +12,8 @@
       "expo.modules.audioeffects.AudioSessionBridgeModule",
       "expo.modules.audioeffects.MetadataExtractorModule",
       "expo.modules.audioeffects.MediaStoreScannerModule",
-      "expo.modules.audioeffects.AppContextModule"
+      "expo.modules.audioeffects.AppContextModule",
+      "expo.modules.audioeffects.DeviceInfoModule"
     ]
   }
 }
