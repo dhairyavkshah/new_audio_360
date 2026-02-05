@@ -6,6 +6,10 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 ## Recent Changes (v31.0 - February 2026)
 - **Full Theme Adaptation**: Created `getThemedFluentColors()` utility and `useThemedColors()` hook for dynamic Fluent 2 color token mapping across all 70+ files
 - **Tap/Click Feedback**: Added opacity 0.9 press feedback to 40+ Pressable components (FluentCard, FluentListItem, all cards, buttons)
+- **Neural AI Performance Safeguards**: Both Android and Web neural processors have GPU/timing checks to prevent audio lag:
+  - Android: TIME_BUDGET_MS=10ms, requires GPU delegate or stays disabled
+  - Web: WARMUP_THRESHOLD_MS=500ms, per-chunk TIME_BUDGET_MS=50ms bypass, auto-disables after 3 consecutive timeouts
+- **Network Security**: Added network_security_config.xml for HTTP radio station favicons (specific domains only)
 - **Version Bump**: Updated version to 31.0 across package.json, screens, gradle, and documentation
 
 ## User Preferences
