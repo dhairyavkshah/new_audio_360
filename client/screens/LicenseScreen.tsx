@@ -3,10 +3,10 @@ import { View, StyleSheet, ScrollView, Pressable, Linking } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText, FluentSectionHeader } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.theteam360.newaudio360';
 
@@ -49,8 +49,7 @@ const OPEN_SOURCE_LIBRARIES: OpenSourceLibrary[] = [
 
 export default function LicenseScreen() {
   const tabBarHeight = useSafeTabBarHeight();
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const { licenseStatus, isLoading, checkLicenseStatus } = useSubscription();
 
   const handleVerifyInstallation = async () => {

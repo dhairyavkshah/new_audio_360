@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import { View, StyleSheet, Pressable, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import {
   FluentSpacing,
-  FluentLightColors,
-  FluentDarkColors,
   getShadowStyle,
 } from "@/constants/fluent2";
 
@@ -24,12 +22,11 @@ export function FluentToggle({
   size = 'default',
 }: FluentToggleProps) {
   const { isDark } = useThemeContext();
+  const fluentColors = useThemedColors();
   const { playTickSound } = useUiSound();
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [hoverActive, setHoverActive] = useState(false);
-
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
   
   const trackWidth = size === 'large' ? 52 : 40;
   const trackHeight = size === 'large' ? 32 : 20;
@@ -69,12 +66,12 @@ export function FluentToggle({
   const getTrackOffColor = () => {
     if (isPressed) return fluentColors.colorNeutralBackground1Pressed;
     if (hoverActive) return fluentColors.colorNeutralBackground1Hover;
-    return fluentColors.colorNeutralBackground5;
+    return fluentColors.colorNeutralBackground4;
   };
 
   const getTrackOnColor = () => {
-    if (isPressed) return fluentColors.colorCompoundBrandBackgroundPressed;
-    if (hoverActive) return fluentColors.colorCompoundBrandBackgroundHover;
+    if (isPressed) return fluentColors.colorBrandBackgroundPressed;
+    if (hoverActive) return fluentColors.colorBrandBackgroundHover;
     return fluentColors.colorCompoundBrandBackground;
   };
 
@@ -82,9 +79,9 @@ export function FluentToggle({
 
   const getBorderColor = () => {
     if (value) return 'transparent';
-    if (isPressed) return fluentColors.colorNeutralStrokeAccessiblePressed;
-    if (hoverActive) return fluentColors.colorNeutralStrokeAccessibleHover;
-    return fluentColors.colorNeutralStrokeAccessible;
+    if (isPressed) return fluentColors.colorNeutralStroke1;
+    if (hoverActive) return fluentColors.colorNeutralStroke2;
+    return fluentColors.colorNeutralStroke1;
   };
 
   const thumbColor = value 
@@ -93,7 +90,7 @@ export function FluentToggle({
 
   const focusRingStyle = isFocused ? Platform.select({
     web: {
-      outline: `2px solid ${fluentColors.colorStrokeFocus2}`,
+      outline: `2px solid ${fluentColors.colorBrandForeground1}`,
       outlineOffset: 2,
     },
     default: {},
@@ -108,7 +105,7 @@ export function FluentToggle({
           style={[
             styles.focusRing, 
             { 
-              borderColor: fluentColors.colorStrokeFocus2,
+              borderColor: fluentColors.colorBrandForeground1,
               width: trackWidth + 8,
               height: trackHeight + 8,
               borderRadius: (trackHeight + 8) / 2,

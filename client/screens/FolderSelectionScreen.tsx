@@ -6,14 +6,12 @@ import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import * as Haptics from "expo-haptics";
 import * as MediaLibrary from "expo-media-library";
 import { FluentScreenLayout, FluentText, FluentSectionHeader } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { 
   FluentSpacing, 
   FluentControlRadius, 
   FluentRadius, 
-  FluentLightColors, 
-  FluentDarkColors, 
   FluentTouchTarget, 
   FluentIconSize, 
   FluentControlHeight,
@@ -86,7 +84,7 @@ export default function FolderSelectionScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const { refreshSongs, setSelectedFolders: updateContextFolders, setWebAudioFiles } = useMediaLibraryContext();
   const [folders, setFolders] = useState<FolderInfo[]>([]);
   const [selectedFolderIds, setSelectedFolderIds] = useState<string[]>([]);

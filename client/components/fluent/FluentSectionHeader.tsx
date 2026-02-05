@@ -1,11 +1,9 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemedColors } from '@/contexts/ThemeContext';
 import { FluentText } from './FluentText';
 import {
-  FluentLightColors,
-  FluentDarkColors,
   FluentSpacing,
   FluentIconSize,
 } from '@/constants/fluent2';
@@ -23,8 +21,7 @@ export function FluentSectionHeader({
   iconColor,
   style,
 }: FluentSectionHeaderProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   return (
     <View style={[styles.container, style]}>

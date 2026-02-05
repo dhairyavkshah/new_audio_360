@@ -4,8 +4,8 @@
  */
 import { View, type ViewProps } from "react-native";
 
+import { useThemedColors } from "@/contexts/ThemeContext";
 import { useTheme } from "@/hooks/useTheme";
-import { FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
 
 export type ThemedViewProps = ViewProps & {
   lightColor?: string;
@@ -21,7 +21,7 @@ export function ThemedView({
   ...otherProps
 }: ThemedViewProps) {
   const { isDark } = useTheme();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   const getBackgroundColor = (): string => {
     if (isDark && darkColor) {
@@ -41,9 +41,9 @@ export function ThemedView({
       case "background4":
         return colors.colorNeutralBackground4;
       case "background5":
-        return colors.colorNeutralBackground5;
+        return colors.colorNeutralBackground4;
       case "background6":
-        return colors.colorNeutralBackground6;
+        return colors.colorNeutralBackground4;
       default:
         return colors.colorNeutralBackground1;
     }

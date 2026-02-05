@@ -3,11 +3,11 @@ import { View, StyleSheet, FlatList, Pressable, ActivityIndicator, Image } from 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute, CommonActions, RouteProp } from "@react-navigation/native";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { useToast } from "@/contexts/ToastContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import { getShadowStyle } from "@/constants/fluent2/shadows";
 import SoundCloudService, { SoundCloudTrack, SoundCloudPlaylist } from "@/services/SoundCloudService";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,10 +22,10 @@ export default function SoundCloudPlaylistScreen() {
   const route = useRoute<SoundCloudPlaylistScreenRouteProp>();
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useThemeContext();
+  const colors = useThemedColors();
   const { playSong, setQueue } = usePlayerContext();
   const { setNowPlayingSource } = useNavigationContext();
   const { showSuccess, showError } = useToast();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const { playlist } = route.params;
   const [tracks, setTracks] = useState<SoundCloudTrack[]>([]);

@@ -2,8 +2,8 @@ import React from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { FluentSpacing, FluentRadius, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { useThemedColors } from "@/contexts/ThemeContext";
 
 export type SubTabType = 'search' | 'likes' | 'playlists';
 
@@ -19,8 +19,7 @@ const TAB_CONFIG: { id: SubTabType; label: string; icon: 'magnify' | 'heart' | '
 ];
 
 export function SoundCloudSubTabs({ activeTab, onTabChange }: SoundCloudSubTabsProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   return (
     <View style={[styles.subTabContainer, { backgroundColor: colors.colorNeutralBackground2 }]}>

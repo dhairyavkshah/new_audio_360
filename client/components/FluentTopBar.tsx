@@ -3,15 +3,13 @@ import { View, StyleSheet, Pressable, TextInput, Platform, Text } from "react-na
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import {
   FluentSpacing,
   FluentIconSize,
   FluentTypography,
   FluentControlRadius,
-  FluentLightColors,
-  FluentDarkColors,
   FluentLayoutSize,
   FluentControlHeight,
 } from "@/constants/fluent2";
@@ -75,7 +73,7 @@ export function FluentTopBar({
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const fluentColors = useThemedColors();
 
   const activeCategoryConfig = categoryOptions?.find(c => c.key === activeCategory);
 

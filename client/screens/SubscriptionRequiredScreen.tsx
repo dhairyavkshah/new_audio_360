@@ -4,16 +4,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { FluentScreenLayout, FluentText } from '@/components/fluent';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
+import { FluentSpacing, FluentControlRadius } from '@/constants/fluent2';
 
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.theteam360.newaudio360';
 
 export default function SubscriptionRequiredScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const { checkLicenseStatus, isLoading } = useSubscription();
 
   const handleVerify = async () => {

@@ -9,10 +9,10 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
-import { FluentSpacing, FluentPadding, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentIconSize, FluentTouchTarget } from "@/constants/fluent2";
+import { FluentSpacing, FluentPadding, FluentControlRadius, FluentIconSize, FluentTouchTarget } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 
@@ -21,8 +21,7 @@ type NavigationProp = NativeStackNavigationProp<ListenStackParamList>;
 export default function QueueScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const { playTapSound } = useUiSound();
   const { queue, currentSong, playSong, removeFromQueue } = usePlayerContext();
   const [selectedSongs, setSelectedSongs] = useState<string[]>([]);

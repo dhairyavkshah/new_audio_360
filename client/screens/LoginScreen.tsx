@@ -4,17 +4,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { FluentScreenLayout, FluentText } from '@/components/fluent';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
+import { FluentSpacing, FluentControlRadius } from '@/constants/fluent2';
 
 const DEV_MODE = __DEV__ || process.env.NODE_ENV === 'development';
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const { signInWithGoogle, signInAsTestUser, isLoading } = useAuth();
   const { setLicenseForTesting } = useSubscription();
   const [error, setError] = useState<string | null>(null);

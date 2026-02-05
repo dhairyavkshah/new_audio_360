@@ -16,12 +16,12 @@ import { FluentText } from "@/components/fluent";
 import { PlaybackControls } from "@/components/PlaybackControls";
 import { ProgressBar } from "@/components/ProgressBar";
 import { AudioWaveform } from "@/components/AudioWaveform";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { FluentSpacing, FluentRadius, FluentIconSize, FluentLightColors, FluentDarkColors, FluentTouchTarget } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentIconSize, FluentTouchTarget } from "@/constants/fluent2";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import SoundCloudService, { SoundCloudTrack } from "@/services/SoundCloudService";
 import ArchiveOrgService, { ArchiveOrgTrack } from "@/services/ArchiveOrgService";
@@ -62,7 +62,7 @@ export default function NowPlayingScreen() {
     toggleRepeat,
   } = usePlayer();
 
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const visitCountRef = useRef(0);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
 

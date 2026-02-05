@@ -3,8 +3,8 @@ import { View, StyleSheet, Platform, ActivityIndicator } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
+import { FluentSpacing } from "@/constants/fluent2";
 import { useEagerInitialization } from "@/hooks/useEagerInitialization";
 
 const appIcon = require("../../assets/images/icon.png");
@@ -14,8 +14,7 @@ type SplashScreenProps = {
 };
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const insets = useSafeAreaInsets();
   const [iconLoaded, setIconLoaded] = useState(false);
   const iconLoadedRef = useRef(false);

@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { View, StyleSheet, Pressable, TextInput, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { FluentSpacing, FluentRadius, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 
 export type SearchType = 'tracks' | 'playlists' | 'albums';
 
@@ -28,8 +28,8 @@ export function SoundCloudSearchHeader({
   searchType,
   onSearchTypeChange,
 }: SoundCloudSearchHeaderProps) {
-  const { theme, isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const { theme } = useThemeContext();
+  const colors = useThemedColors();
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
 
   const activeTypeConfig = SEARCH_TYPE_CONFIG.find(t => t.id === searchType) || SEARCH_TYPE_CONFIG[0];

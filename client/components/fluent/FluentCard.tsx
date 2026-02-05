@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { Pressable, PressableProps, View, StyleSheet, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
 import { FluentSurface } from './FluentSurface';
 import {
-  FluentLightColors,
-  FluentDarkColors,
   FluentSpacing,
   FluentControlRadius,
   getShadowStyle,
@@ -43,7 +41,7 @@ export function FluentCard({
   ...props
 }: FluentCardProps) {
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -97,6 +95,7 @@ export function FluentCard({
           {
             backgroundColor: getBackgroundColor(),
             borderRadius: FluentControlRadius.card,
+            opacity: isPressed ? 0.9 : 1,
           },
           shadowStyle,
           style,

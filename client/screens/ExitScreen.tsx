@@ -3,8 +3,8 @@ import { View, StyleSheet, Animated, BackHandler, Platform } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
 import { Button } from "@/components/Button";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
+import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 
 type ExitScreenProps = {
   onCancel: () => void;
@@ -12,8 +12,7 @@ type ExitScreenProps = {
 };
 
 export default function ExitScreen({ onCancel, onConfirm }: ExitScreenProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {

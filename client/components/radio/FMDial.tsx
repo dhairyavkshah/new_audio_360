@@ -4,13 +4,11 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { FluentText, FluentIconButton } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemedColors } from "@/contexts/ThemeContext";
 import { RDSData } from "@/contexts/RadioContext";
 import {
   FluentSpacing,
   FluentRadius,
-  FluentLightColors,
-  FluentDarkColors,
   FluentIconSize,
   FluentTouchTarget,
   FluentControlRadius,
@@ -57,8 +55,7 @@ function FMDialComponent({
   onScan,
   onNavigateToSoundLab,
 }: FMDialProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   const formatFrequency = (freq: number): string => {
     return freq.toFixed(1);

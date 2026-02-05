@@ -1,13 +1,11 @@
 import React, { memo } from "react";
 import { StyleSheet, Pressable } from "react-native";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemedColors } from "@/contexts/ThemeContext";
 import { RadioStation, FMBandType } from "@/contexts/RadioContext";
 import {
   FluentSpacing,
   FluentRadius,
-  FluentLightColors,
-  FluentDarkColors,
   FluentTouchTarget,
 } from "@/constants/fluent2";
 
@@ -26,8 +24,7 @@ function FavoriteStationCardComponent({
   currentBandType,
   onPress,
 }: FavoriteStationCardProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   const formatFrequency = (freq: number, band: FMBandType): string => {
     if (band === "fm") {

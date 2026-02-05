@@ -5,10 +5,10 @@ import { useNavigation, CommonActions } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FluentText, FluentScreenLayout } from "@/components/fluent";
 import { FluentTopBar } from "@/components/FluentTopBar";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useToast } from "@/contexts/ToastContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentIconSize, FluentTouchTarget, FluentControlRadius } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentIconSize, FluentTouchTarget, FluentControlRadius } from "@/constants/fluent2";
 import ArchiveOrgService, { ArchiveOrgTrack, AudioQuality } from "@/services/ArchiveOrgService";
 import SoundCloudService, { SoundCloudTrack } from "@/services/SoundCloudService";
 
@@ -29,9 +29,9 @@ const QUALITY_OPTIONS: { label: string; value: AudioQuality }[] = [
 export default function ArchiveScreen() {
   const navigation = useNavigation();
   const { theme, isDark } = useThemeContext();
+  const colors = useThemedColors();
   const { playSong } = usePlayerContext();
   const { showSuccess, showError } = useToast();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [tracks, setTracks] = useState<UnifiedTrack[]>([]);

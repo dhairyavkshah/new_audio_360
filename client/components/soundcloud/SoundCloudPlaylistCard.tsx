@@ -2,9 +2,9 @@ import React from "react";
 import { View, StyleSheet, Pressable, Image } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
-import { FluentSpacing, FluentLightColors, FluentDarkColors, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import { getShadowStyle } from "@/constants/fluent2/shadows";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import SoundCloudService, { SoundCloudPlaylist } from "@/services/SoundCloudService";
 
 interface SoundCloudPlaylistCardProps {
@@ -14,7 +14,7 @@ interface SoundCloudPlaylistCardProps {
 
 export function SoundCloudPlaylistCard({ playlist, onPress }: SoundCloudPlaylistCardProps) {
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   return (
     <Pressable 

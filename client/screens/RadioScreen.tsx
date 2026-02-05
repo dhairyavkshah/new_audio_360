@@ -11,7 +11,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { FluentTopBar } from "@/components/FluentTopBar";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
-import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemeTokens, useThemedColors } from "@/contexts/ThemeContext";
 import { useRadio, RadioStation, FMBandType } from "@/contexts/RadioContext";
 import { useOnlineRadio, OnlineRadioStation } from "@/contexts/OnlineRadioContext";
 import { useSoundLab } from "@/contexts/SoundLabContext";
@@ -27,8 +27,6 @@ import {
 import {
   FluentSpacing,
   FluentRadius,
-  FluentLightColors,
-  FluentDarkColors,
   FluentIconSize,
   FluentTouchTarget,
   FluentControlRadius,
@@ -63,7 +61,7 @@ function RadioScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const tokens = useThemeTokens();
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const cardStyle = getCardEffectStyle(tokens);
 
   const {

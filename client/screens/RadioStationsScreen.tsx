@@ -8,11 +8,12 @@ import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText, FluentButton, FluentIconButton, FluentChip } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
 import { EffectChip } from "@/components/EffectChip";
-import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemeTokens, useThemedColors } from "@/contexts/ThemeContext";
 import { useRadio, RadioStation } from "@/contexts/RadioContext";
 import { useOnlineRadio } from "@/contexts/OnlineRadioContext";
 import { OnlineRadioStation, OnlineRadioService } from "@/services/OnlineRadioService";
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentRadius, FluentIconSize, FluentTypography } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius, FluentTouchTarget, FluentRadius, FluentIconSize, FluentTypography } from "@/constants/fluent2";
+import { ThemedFluentColors } from "@/lib/themeUtils";
 import { RadioStackParamList } from "@/navigation/RadioStackNavigator";
 
 type BandFilter = "all" | "fm" | "am";
@@ -35,7 +36,7 @@ interface StationListItemProps {
   station: RadioStation;
   onPress: () => void;
   onToggleFavorite: () => void;
-  colors: typeof FluentLightColors;
+  colors: ThemedFluentColors;
 }
 
 function SignalStrengthIndicator({ strength, color }: { strength: number; color: string }) {
@@ -132,7 +133,7 @@ interface OnlineStationCardProps {
   isPlaying: boolean;
   isFavorite: boolean;
   onToggleFavorite: () => void;
-  colors: typeof FluentLightColors;
+  colors: ThemedFluentColors;
 }
 
 function OnlineStationCard({ station, onPlay, isPlaying, isFavorite, onToggleFavorite, colors }: OnlineStationCardProps) {
@@ -222,8 +223,7 @@ function OnlineStationCard({ station, onPlay, isPlaying, isFavorite, onToggleFav
 }
 
 function EmptyState({ icon, title, message }: { icon: string; title: string; message: string }) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   
   return (
     <View style={styles.emptyState}>
@@ -243,8 +243,7 @@ function EmptyState({ icon, title, message }: { icon: string; title: string; mes
 }
 
 function LoadingState({ message }: { message: string }) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   
   return (
     <View style={styles.loadingState}>
@@ -263,7 +262,7 @@ export default function RadioStationsScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const tokens = useThemeTokens();
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   
   const { 
     stations: rawStations, 

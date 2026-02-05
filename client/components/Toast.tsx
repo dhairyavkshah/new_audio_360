@@ -2,9 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FluentText } from '@/components/fluent';
-import { useThemeTokens } from '@/contexts/ThemeContext';
-import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLayoutSize, FluentLightColors, FluentDarkColors, getShadowStyle } from '@/constants/fluent2';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemeTokens, useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLayoutSize, getShadowStyle } from '@/constants/fluent2';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -34,7 +33,7 @@ export function Toast({
   const tokens = useThemeTokens();
   const { isDark } = useThemeContext();
   const insets = useSafeAreaInsets();
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const fluentColors = useThemedColors();
   const isMountedRef = useRef(true);
   const toastShadow = getShadowStyle('shadow8', isDark);
 
@@ -67,11 +66,11 @@ export function Toast({
   const getColors = () => {
     switch (type) {
       case 'success':
-        return { bg: fluentColors.colorPaletteGreenBorderActive, icon: fluentColors.colorNeutralForegroundOnBrand };
+        return { bg: fluentColors.colorPaletteGreenForeground1, icon: fluentColors.colorNeutralForegroundOnBrand };
       case 'error':
-        return { bg: fluentColors.colorPaletteRedBorderActive, icon: fluentColors.colorNeutralForegroundOnBrand };
+        return { bg: fluentColors.colorPaletteRedForeground1, icon: fluentColors.colorNeutralForegroundOnBrand };
       case 'warning':
-        return { bg: fluentColors.colorPaletteYellowBorderActive, icon: fluentColors.colorNeutralForeground1 };
+        return { bg: fluentColors.colorPaletteYellowForeground1, icon: fluentColors.colorNeutralForeground1 };
       case 'info':
       default:
         return { bg: fluentColors.colorBrandBackground, icon: fluentColors.colorNeutralForegroundOnBrand };

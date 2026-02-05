@@ -6,12 +6,12 @@ import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText, FluentModal } from "@/components/fluent";
 import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { EQPresetCard, ImmersiveModeCard, SmartEnhancementCard } from "@/components/soundlab";
-import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemeTokens, useThemedColors } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useSoundLab } from "@/contexts/SoundLabContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
-import { FluentSpacing, FluentRadius, FluentTypography, FluentIconSize, FluentSliderSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentTypography, FluentIconSize, FluentSliderSize } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { 
   getEQPreset, saveEQPreset, clearEQPreset, 
@@ -124,7 +124,7 @@ function SoundLabScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const tokens = useThemeTokens();
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const { isLicensed } = useSubscription();
   const { showSuccess, showError, showWarning } = useToast();
   const { setBassBoost, setTrebleBoost } = useSoundLab();

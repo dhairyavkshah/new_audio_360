@@ -1,12 +1,11 @@
 import React from 'react';
 import { Text, TextProps, StyleSheet } from 'react-native';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemedColors } from '@/contexts/ThemeContext';
 import {
   FluentTypography,
-  FluentLightColors,
-  FluentDarkColors,
   TypographyVariant,
 } from '@/constants/fluent2';
+import { ThemedFluentColors } from '@/lib/themeUtils';
 
 type ColorVariant = 'primary' | 'secondary' | 'tertiary' | 'disabled' | 'brand' | 'error' | 'success' | 'warning' | 'onBrand' | 'inverted';
 
@@ -17,7 +16,7 @@ export interface FluentTextProps extends TextProps {
   children: React.ReactNode;
 }
 
-const getTextColor = (colorVariant: ColorVariant, colors: typeof FluentLightColors): string => {
+const getTextColor = (colorVariant: ColorVariant, colors: ThemedFluentColors): string => {
   switch (colorVariant) {
     case 'primary':
       return colors.colorNeutralForeground1;
@@ -52,8 +51,7 @@ export function FluentText({
   children,
   ...props
 }: FluentTextProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const typography = FluentTypography[variant];
   const textColor = getTextColor(color, colors);
 

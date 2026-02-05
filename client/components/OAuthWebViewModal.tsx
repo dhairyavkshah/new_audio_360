@@ -4,8 +4,8 @@ import { WebView } from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
+import { FluentSpacing, FluentRadius } from "@/constants/fluent2";
 
 interface OAuthWebViewModalProps {
   visible: boolean;
@@ -28,7 +28,7 @@ export default function OAuthWebViewModal({
 }: OAuthWebViewModalProps) {
   const insets = useSafeAreaInsets();
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const webViewRef = useRef<WebView>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isAuthenticating, setIsAuthenticating] = React.useState(false);

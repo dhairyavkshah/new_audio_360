@@ -7,10 +7,8 @@ import {
   View,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemedColors } from '@/contexts/ThemeContext';
 import {
-  FluentLightColors,
-  FluentDarkColors,
   FluentSpacing,
   FluentIconSize,
   FluentControlRadius,
@@ -49,8 +47,7 @@ export function FluentIconButton({
   accessibilityLabel,
   ...props
 }: FluentIconButtonProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const config = sizeConfig[size];
   const iconSize = FluentIconSize[config.iconSizeToken];
 
@@ -99,9 +96,9 @@ export function FluentIconButton({
         if (isHovered) return colors.colorSubtleBackgroundHover;
         return colors.colorSubtleBackground;
       case 'transparent':
-        if (isPressed) return colors.colorTransparentBackgroundPressed;
-        if (isHovered) return colors.colorTransparentBackgroundHover;
-        return colors.colorTransparentBackground;
+        if (isPressed) return colors.colorSubtleBackgroundPressed;
+        if (isHovered) return colors.colorSubtleBackgroundHover;
+        return 'transparent';
       case 'outline':
         if (isPressed) return colors.colorSubtleBackgroundPressed;
         if (isHovered) return colors.colorSubtleBackgroundHover;
@@ -114,9 +111,9 @@ export function FluentIconButton({
   const getBorderColor = () => {
     if (variant !== 'outline') return undefined;
     if (disabled) return colors.colorNeutralStrokeDisabled;
-    if (isPressed) return colors.colorNeutralStrokeAccessiblePressed;
-    if (isHovered) return colors.colorNeutralStrokeAccessibleHover;
-    return colors.colorNeutralStrokeAccessible;
+    if (isPressed) return colors.colorNeutralStroke1;
+    if (isHovered) return colors.colorNeutralStroke1;
+    return colors.colorNeutralStroke1;
   };
 
   const getIconColor = () => {

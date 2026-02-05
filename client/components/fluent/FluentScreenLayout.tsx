@@ -1,9 +1,10 @@
 import React, { ReactNode } from 'react';
 import { View, StyleSheet, StatusBar, Platform, KeyboardAvoidingView, ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeContext } from '@/contexts/ThemeContext';
-import { FluentLightColors, FluentDarkColors, FluentSpacing, FluentPadding } from '@/constants/fluent2';
+import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
+import { FluentSpacing, FluentPadding } from '@/constants/fluent2';
 import { useSafeTabBarHeight } from '@/hooks/useSafeTabBarHeight';
+import { ThemedFluentColors } from '@/lib/themeUtils';
 
 type BackgroundVariant = 'neutral1' | 'neutral2' | 'neutral3';
 
@@ -21,8 +22,7 @@ export interface FluentScreenLayoutProps {
   isNestedScreen?: boolean;
 }
 
-const getBackgroundColor = (variant: BackgroundVariant, isDark: boolean): string => {
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+const getBackgroundColor = (variant: BackgroundVariant, colors: ThemedFluentColors): string => {
   switch (variant) {
     case 'neutral1':
       return colors.colorNeutralBackground1;
@@ -51,13 +51,11 @@ export function FluentScreenLayout({
   const insets = useSafeAreaInsets();
   const tabBarHeight = useSafeTabBarHeight();
   const { isDark } = useThemeContext();
+  const colors = useThemedColors();
 
-  const bgColor = getBackgroundColor(backgroundColor, isDark);
+  const bgColor = getBackgroundColor(backgroundColor, colors);
   const paddingValue = FluentPadding[contentPadding];
 
-  // For nested screens (inside stack navigators with headers), don't add top safe area
-  // The navigator header already handles the status bar spacing
-  // On Android, we never need top edge as the navigator manages status bar space
   const safeAreaEdges = (Platform.OS === 'android' || isNestedScreen)
     ? edges.filter(e => e !== 'top') 
     : edges;
@@ -79,7 +77,6 @@ export function FluentScreenLayout({
     </View>
   );
 
-  // For nested screens, the navigator handles the status bar, so we skip rendering it
   const shouldRenderStatusBar = !hideStatusBar && !isNestedScreen && Platform.OS !== 'android';
 
   return (

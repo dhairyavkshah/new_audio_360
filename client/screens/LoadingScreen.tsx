@@ -2,8 +2,8 @@ import React from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
+import { FluentSpacing } from "@/constants/fluent2";
 
 type LoadingScreenProps = {
   message?: string;
@@ -11,8 +11,7 @@ type LoadingScreenProps = {
 
 export default function LoadingScreen({ message = "Loading..." }: LoadingScreenProps) {
   const insets = useSafeAreaInsets();
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.colorNeutralBackground1, paddingTop: insets.top, paddingBottom: insets.bottom }]}>

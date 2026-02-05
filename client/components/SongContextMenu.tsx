@@ -17,15 +17,13 @@ import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FluentText } from "@/components/fluent";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import {
   FluentSpacing,
   FluentRadius,
   FluentControlRadius,
   FluentTypography,
-  FluentLightColors,
-  FluentDarkColors,
   FluentPadding,
   FluentTouchTarget,
 } from "@/constants/fluent2";
@@ -55,7 +53,7 @@ const MIN_BOTTOM_PADDING = 24;
 
 export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong, showHideOption = false }: SongContextMenuProps) {
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const { playTapSound } = useUiSound();
   const insets = useSafeAreaInsets();
   const safeBottom = Platform.OS === 'android' ? Math.max(insets.bottom, MIN_BOTTOM_PADDING) : insets.bottom;
@@ -178,7 +176,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
         onPress={() => handleNavigate("createPlaylist")}
         android_ripple={null}
       >
-        <View style={[styles.menuItemIcon, { backgroundColor: colors.colorPaletteGreenBackground1 }]}>
+        <View style={[styles.menuItemIcon, { backgroundColor: colors.colorPaletteGreenForeground1 + "20" }]}>
           <MaterialCommunityIcons name="playlist-music" size={20} color={colors.colorPaletteGreenForeground1} />
         </View>
         <View style={styles.menuItemText}>
@@ -199,7 +197,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
             disabled={isLoading}
             android_ripple={null}
           >
-            <View style={[styles.menuItemIcon, { backgroundColor: colors.colorPaletteRedBackground1 }]}>
+            <View style={[styles.menuItemIcon, { backgroundColor: colors.colorPaletteRedForeground1 + "20" }]}>
               <MaterialCommunityIcons name="eye-off" size={20} color={colors.colorPaletteRedForeground1} />
             </View>
             <View style={styles.menuItemText}>
@@ -356,7 +354,7 @@ export function SongContextMenu({ visible, song, onClose, onSuccess, onHideSong,
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
       <View
-        style={[styles.backdrop, { backgroundColor: colors.colorBackgroundScrim }]}
+        style={[styles.backdrop, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
       >
         <Pressable style={styles.backdropPressable} onPress={handleClose} android_ripple={null} />
       </View>

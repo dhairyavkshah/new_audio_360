@@ -4,8 +4,9 @@
  */
 import { Text, type TextProps, TextStyle } from "react-native";
 
+import { useThemedColors } from "@/contexts/ThemeContext";
 import { useTheme } from "@/hooks/useTheme";
-import { FluentTypography, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentTypography } from "@/constants/fluent2";
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
@@ -56,7 +57,7 @@ export function ThemedText({
   ...rest
 }: ThemedTextProps) {
   const { isDark } = useTheme();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   const getColor = (): string => {
     if (isDark && darkColor) {
@@ -68,7 +69,7 @@ export function ThemedText({
     }
 
     if (type === "link") {
-      return colors.colorBrandForegroundLink;
+      return colors.colorBrandForeground1;
     }
 
     if (

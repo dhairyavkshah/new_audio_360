@@ -5,7 +5,7 @@ import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { FluentText } from "@/components/fluent";
 import { EffectChip } from "@/components/EffectChip";
 import { EQBandSlider } from "./EQBandSlider";
-import { useThemeContext, useThemeTokens } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemeTokens, useThemedColors } from "@/contexts/ThemeContext";
 import { getCardEffectStyle } from "@/lib/themeUtils";
 import { 
   FluentSpacing, 
@@ -14,8 +14,6 @@ import {
   FluentControlHeight, 
   FluentFontWeight, 
   FluentSliderSize, 
-  FluentLightColors, 
-  FluentDarkColors 
 } from "@/constants/fluent2";
 import { CustomEQPreset } from "@/lib/storage";
 
@@ -76,7 +74,7 @@ function EQPresetCardComponent({
 }: EQPresetCardProps) {
   const tokens = useThemeTokens();
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const cardStyle = getCardEffectStyle(tokens);
 
   const spatialLabels = ["Off", "Subtle", "Mild", "Moderate", "Enhanced", "Maximum"];

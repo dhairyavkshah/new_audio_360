@@ -6,15 +6,14 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText, FluentModal } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors, FluentTypography } from "@/constants/fluent2";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
+import { FluentSpacing, FluentControlRadius, FluentTypography } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 import { Playlist, getPlaylists, addPlaylist, updatePlaylist, deletePlaylist } from "@/lib/storage";
 
 export default function PlaylistManagementScreen() {
   const tabBarHeight = useSafeTabBarHeight();
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);

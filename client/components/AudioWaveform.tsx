@@ -9,12 +9,8 @@ import Animated, {
   cancelAnimation,
   Easing,
 } from "react-native-reanimated";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import {
-  FluentSpacing,
-  FluentLightColors,
-  FluentDarkColors,
-} from "@/constants/fluent2";
+import { useThemedColors } from "@/contexts/ThemeContext";
+import { FluentSpacing } from "@/constants/fluent2";
 
 interface AudioWaveformProps {
   isAnimating?: boolean;
@@ -85,8 +81,7 @@ export function AudioWaveform({
   style,
   color,
 }: AudioWaveformProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const barColor = color || colors.colorBrandForeground1;
 
   return (

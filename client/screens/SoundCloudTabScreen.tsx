@@ -4,11 +4,11 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import * as WebBrowser from 'expo-web-browser';
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { useToast } from "@/contexts/ToastContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import { getShadowStyle } from "@/constants/fluent2/shadows";
 import SoundCloudService, { SoundCloudTrack, SoundCloudPlaylist } from "@/services/SoundCloudService";
 import {
@@ -25,11 +25,11 @@ type SubTabType = 'search' | 'likes' | 'playlists';
 export default function SoundCloudTabScreen() {
   const navigation = useNavigation();
   const { theme, isDark } = useThemeContext();
+  const colors = useThemedColors();
   const { playSong, setQueue } = usePlayerContext();
   const { setNowPlayingSource } = useNavigationContext();
   const { showSuccess, showError, showInfo } = useToast();
   const { soundCloudFavoriteIds, isSoundCloudFavorite, toggleSoundCloudFavorite, refreshSoundCloudFavorites } = useDiscoverFavorites();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

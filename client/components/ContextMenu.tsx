@@ -12,15 +12,13 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import {
   FluentControlRadius,
   FluentSpacing,
   FluentIconSize,
   getShadowStyle,
-  FluentLightColors,
-  FluentDarkColors,
   FluentLayoutSize,
 } from "@/constants/fluent2";
 
@@ -54,7 +52,7 @@ export function ContextMenu({
   const { playTapSound } = useUiSound();
   const insets = useSafeAreaInsets();
 
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   const handleDismiss = () => {
     if (Platform.OS !== "web") {
@@ -117,7 +115,7 @@ export function ContextMenu({
     >
       <View style={styles.overlay}>
         <View
-          style={[styles.scrim, { backgroundColor: colors.colorNeutralBackgroundInverted, opacity: 0.5 }]}
+          style={[styles.scrim, { backgroundColor: colors.colorNeutralForegroundInverted, opacity: 0.5 }]}
         >
           <Pressable style={styles.scrimPressable} onPress={handleDismiss} android_ripple={null} />
         </View>

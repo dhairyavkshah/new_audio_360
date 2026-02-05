@@ -6,14 +6,15 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText, FluentListItem, FluentSectionHeader } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentTouchTarget, FluentLightColors, FluentDarkColors, getShadowStyle } from "@/constants/fluent2";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
+import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentTouchTarget, getShadowStyle } from "@/constants/fluent2";
+import { ThemedFluentColors } from "@/lib/themeUtils";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 
 export default function AboutScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
 
   return (
@@ -134,7 +135,7 @@ function FeatureItem({
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   title: string;
   description: string;
-  colors: typeof FluentLightColors;
+  colors: ThemedFluentColors;
   isDark: boolean;
 }) {
   return (

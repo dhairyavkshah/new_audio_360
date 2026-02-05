@@ -7,9 +7,9 @@ import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText, FluentListItem, FluentSectionHeader } from "@/components/fluent";
 import { FluentTopBar } from "@/components/FluentTopBar";
 import { FluentToggle } from "@/components/FluentToggle";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentIconSize, FluentControlHeight, FluentFontWeight, getShadowStyle } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentIconSize, FluentControlHeight, FluentFontWeight, getShadowStyle } from "@/constants/fluent2";
 import { SettingsStackParamList } from "@/navigation/SettingsStackNavigator";
 import { getHapticEnabled, setHapticEnabled as saveHapticEnabled } from "@/lib/storage";
 import { usePlayerContext } from "@/contexts/PlayerContext";
@@ -27,7 +27,7 @@ const SLEEP_TIMER_OPTIONS = [
 export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const { uiSoundEnabled, isPlaybackActive, setUiSoundEnabled, playTapSound } = useUiSound();
   const { sleepTimerMinutes, setSleepTimer } = usePlayerContext();
   const [hapticEnabled, setHapticEnabled] = useState(true);

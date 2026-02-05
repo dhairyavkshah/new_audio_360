@@ -2,8 +2,8 @@ import React, { memo } from "react";
 import { View, StyleSheet } from "react-native";
 import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlHeight, FluentSliderSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { useThemedColors } from "@/contexts/ThemeContext";
+import { FluentSpacing, FluentControlHeight, FluentSliderSize } from "@/constants/fluent2";
 
 export interface EQBandSliderProps {
   label: string;
@@ -20,8 +20,7 @@ function EQBandSliderComponent({
   minValue = -8,
   maxValue = 8,
 }: EQBandSliderProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   return (
     <View style={styles.bandRow}>

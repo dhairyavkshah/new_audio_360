@@ -417,7 +417,10 @@ export interface ThemedFluentColors {
   colorNeutralBackground2: string;
   colorNeutralBackground3: string;
   colorNeutralBackground4: string;
+  colorNeutralBackground5: string;
+  colorNeutralBackground6: string;
   colorNeutralBackgroundDisabled: string;
+  colorNeutralBackgroundInverted: string;
   colorNeutralStroke1: string;
   colorNeutralStroke2: string;
   colorNeutralStroke3: string;
@@ -425,13 +428,19 @@ export interface ThemedFluentColors {
   colorBrandBackground: string;
   colorBrandBackgroundHover: string;
   colorBrandBackgroundPressed: string;
+  colorBrandBackgroundSelected: string;
   colorBrandForeground1: string;
   colorBrandForeground2: string;
   colorBrandStroke1: string;
   colorCompoundBrandForeground1: string;
   colorCompoundBrandBackground: string;
+  colorPaletteRedBackground1: string;
+  colorPaletteRedBackground2: string;
   colorPaletteRedForeground1: string;
+  colorPaletteGreenBackground1: string;
   colorPaletteGreenForeground1: string;
+  colorPaletteYellowBackground1: string;
+  colorPaletteYellowBackground2: string;
   colorPaletteYellowForeground1: string;
   colorSubtleBackground: string;
   colorSubtleBackgroundHover: string;
@@ -456,7 +465,10 @@ export function getThemedFluentColors(tokens: ThemeTokens): ThemedFluentColors {
     colorNeutralBackground2: colors.backgroundDefault,
     colorNeutralBackground3: colors.backgroundSecondary,
     colorNeutralBackground4: colors.backgroundTertiary,
+    colorNeutralBackground5: isDark ? darken(colors.backgroundTertiary, 0.1) : lighten(colors.backgroundTertiary, 0.1),
+    colorNeutralBackground6: isDark ? darken(colors.backgroundTertiary, 0.2) : lighten(colors.backgroundTertiary, 0.2),
     colorNeutralBackgroundDisabled: isDark ? darken(colors.surface, 0.2) : lighten(colors.surface, 0.1),
+    colorNeutralBackgroundInverted: isDark ? '#FFFFFF' : colors.backgroundRoot,
     colorNeutralStroke1: colors.stroke1,
     colorNeutralStroke2: colors.stroke2,
     colorNeutralStroke3: colors.outline,
@@ -464,13 +476,19 @@ export function getThemedFluentColors(tokens: ThemeTokens): ThemedFluentColors {
     colorBrandBackground: colors.primary,
     colorBrandBackgroundHover: colors.primaryHover,
     colorBrandBackgroundPressed: colors.primaryPressed,
+    colorBrandBackgroundSelected: isDark ? darken(colors.primary, 0.2) : darken(colors.primary, 0.15),
     colorBrandForeground1: colors.primary,
     colorBrandForeground2: isDark ? lighten(colors.primary, 0.15) : darken(colors.primary, 0.15),
     colorBrandStroke1: colors.primary,
     colorCompoundBrandForeground1: colors.primary,
     colorCompoundBrandBackground: colors.primary,
+    colorPaletteRedBackground1: isDark ? darken(colors.error, 0.7) : lighten(colors.error, 0.85),
+    colorPaletteRedBackground2: isDark ? darken(colors.error, 0.5) : lighten(colors.error, 0.7),
     colorPaletteRedForeground1: colors.error,
+    colorPaletteGreenBackground1: isDark ? darken(colors.success, 0.7) : lighten(colors.success, 0.85),
     colorPaletteGreenForeground1: colors.success,
+    colorPaletteYellowBackground1: isDark ? darken(colors.warning, 0.7) : lighten(colors.warning, 0.85),
+    colorPaletteYellowBackground2: isDark ? darken(colors.warning, 0.5) : lighten(colors.warning, 0.7),
     colorPaletteYellowForeground1: colors.warning,
     colorSubtleBackground: 'transparent',
     colorSubtleBackgroundHover: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',

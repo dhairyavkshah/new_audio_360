@@ -2,13 +2,11 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemedColors } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
   FluentRadius,
   FluentIconSize,
-  FluentLightColors,
-  FluentDarkColors,
 } from "@/constants/fluent2";
 
 interface EmptyStateProps {
@@ -19,8 +17,7 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   return (
     <View style={styles.container}>

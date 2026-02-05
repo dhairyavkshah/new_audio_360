@@ -1,13 +1,11 @@
 import React from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemedColors } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
   FluentRadius,
   FluentSliderSize,
-  FluentLightColors,
-  FluentDarkColors,
 } from "@/constants/fluent2";
 
 interface LoadingStateProps {
@@ -16,8 +14,7 @@ interface LoadingStateProps {
 }
 
 export function LoadingState({ message = "Loading...", progress }: LoadingStateProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   return (
     <View style={styles.container}>

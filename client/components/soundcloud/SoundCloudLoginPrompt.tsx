@@ -2,9 +2,9 @@ import React from "react";
 import { View, StyleSheet, Pressable, ActivityIndicator, TextInput } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
-import { FluentSpacing, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { FluentSpacing, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import { getShadowStyle } from "@/constants/fluent2/shadows";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import OAuthWebViewModal from "@/components/OAuthWebViewModal";
 
 interface SoundCloudLoginPromptProps {
@@ -43,7 +43,7 @@ export function SoundCloudLoginPrompt({
   onOAuthCancel,
 }: SoundCloudLoginPromptProps) {
   const { theme, isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   return (
     <View style={styles.loginContainer}>

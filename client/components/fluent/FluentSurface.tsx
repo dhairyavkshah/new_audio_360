@@ -1,14 +1,13 @@
 import React from 'react';
 import { View, ViewProps, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
 import {
-  FluentLightColors,
-  FluentDarkColors,
   FluentRadius,
   getShadowStyle,
   ShadowLevel,
   RadiusToken,
 } from '@/constants/fluent2';
+import { ThemedFluentColors } from '@/lib/themeUtils';
 
 type ElevationLevel = 'none' | 'subtle' | 'medium' | 'strong';
 type BackgroundVariant = 'neutral1' | 'neutral2' | 'neutral3' | 'neutral4' | 'neutral5' | 'neutral6' | 'brand' | 'subtle' | 'transparent';
@@ -28,7 +27,7 @@ const elevationToShadow: Record<ElevationLevel, ShadowLevel | null> = {
   strong: 'shadow16',
 };
 
-const getBackgroundColor = (variant: BackgroundVariant, colors: typeof FluentLightColors): string => {
+const getBackgroundColor = (variant: BackgroundVariant, colors: ThemedFluentColors): string => {
   switch (variant) {
     case 'neutral1':
       return colors.colorNeutralBackground1;
@@ -39,15 +38,15 @@ const getBackgroundColor = (variant: BackgroundVariant, colors: typeof FluentLig
     case 'neutral4':
       return colors.colorNeutralBackground4;
     case 'neutral5':
-      return colors.colorNeutralBackground5;
+      return colors.colorNeutralBackground1;
     case 'neutral6':
-      return colors.colorNeutralBackground6;
+      return colors.colorNeutralBackground1;
     case 'brand':
       return colors.colorBrandBackground;
     case 'subtle':
       return colors.colorSubtleBackground;
     case 'transparent':
-      return colors.colorTransparentBackground;
+      return 'transparent';
     default:
       return colors.colorNeutralBackground1;
   }
@@ -63,7 +62,7 @@ export function FluentSurface({
   ...props
 }: FluentSurfaceProps) {
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const backgroundColor = getBackgroundColor(background, colors);
   const borderRadius = FluentRadius[radius];
   

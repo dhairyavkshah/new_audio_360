@@ -10,13 +10,11 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
 import { Button } from "@/components/Button";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import {
   FluentControlRadius,
   FluentSpacing,
   getShadowStyle,
-  FluentLightColors,
-  FluentDarkColors,
   FluentLayoutSize,
 } from "@/constants/fluent2";
 
@@ -30,7 +28,7 @@ const DIALOG_WIDTH = Math.min(SCREEN_WIDTH * 0.9, FluentLayoutSize.dialogMaxWidt
 
 export function AudioTipNotification({ visible, onDismiss }: AudioTipNotificationProps) {
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   const handleDismiss = () => {
     onDismiss();
@@ -48,7 +46,7 @@ export function AudioTipNotification({ visible, onDismiss }: AudioTipNotificatio
     >
       <View style={styles.overlay}>
         <View
-          style={[styles.scrim, { backgroundColor: colors.colorNeutralBackgroundInverted, opacity: 0.5 }]}
+          style={[styles.scrim, { backgroundColor: colors.colorNeutralForegroundInverted, opacity: 0.5 }]}
         >
           <Pressable style={styles.scrimPressable} onPress={handleDismiss} android_ripple={null} />
         </View>
@@ -65,7 +63,7 @@ export function AudioTipNotification({ visible, onDismiss }: AudioTipNotificatio
           accessibilityRole="alert"
           accessibilityLiveRegion="polite"
         >
-          <View style={[styles.iconContainer, { backgroundColor: colors.colorPaletteYellowBackground2 }]}>
+          <View style={[styles.iconContainer, { backgroundColor: colors.colorPaletteYellowForeground1 + "20" }]}>
             <MaterialCommunityIcons
               name="lightbulb-on-outline"
               size={28}

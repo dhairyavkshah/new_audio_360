@@ -3,15 +3,13 @@ import { View, StyleSheet, Pressable, Alert, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors, ThemedFluentColors } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { ThemeName, ThemeColors, themeRegistry } from "@/constants/theme";
 import { getSkin } from "@/constants/skins";
 import {
   FluentSpacing,
   FluentControlRadius,
-  FluentLightColors,
-  FluentDarkColors,
   FluentIconSize,
 } from "@/constants/fluent2";
 
@@ -37,7 +35,7 @@ function ThemeOption({
   isLocked: boolean;
   previewIsDark: boolean;
   onPress: () => void;
-  colors: typeof FluentLightColors;
+  colors: ThemedFluentColors;
 }) {
   const themePreview = ThemeColors[themeName][previewIsDark ? "dark" : "light"];
   const skin = getSkin(themeName);
@@ -93,7 +91,7 @@ function ThemeOption({
         </FluentText>
       </View>
       {isLocked ? (
-        <View style={[styles.lockBadge, { backgroundColor: colors.colorPaletteYellowBackground1 }]}>
+        <View style={[styles.lockBadge, { backgroundColor: colors.colorPaletteYellowForeground1 + "20" }]}>
           <MaterialCommunityIcons name="lock" size={14} color={colors.colorPaletteYellowForeground1} />
         </View>
       ) : isSelected ? (
@@ -120,7 +118,7 @@ const categories = [
 
 export function ThemeSelector({ currentTheme, onThemeChange }: ThemeSelectorProps) {
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const { isLicensed } = useSubscription();
 
   const themesByCategory = categories.map(cat => ({

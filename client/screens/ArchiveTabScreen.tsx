@@ -4,11 +4,11 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { usePlayerContext } from "@/contexts/PlayerContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { useToast } from "@/contexts/ToastContext";
-import { FluentSpacing, FluentLightColors, FluentDarkColors, FluentTouchTarget, FluentControlRadius, FluentIconSize, FluentRadius, FluentTypography } from "@/constants/fluent2";
+import { FluentSpacing, FluentTouchTarget, FluentControlRadius, FluentIconSize, FluentRadius, FluentTypography } from "@/constants/fluent2";
 import ArchiveOrgService, { ArchiveOrgTrack } from "@/services/ArchiveOrgService";
 import { useDiscoverFavorites } from "@/contexts/DiscoverFavoritesContext";
 
@@ -17,11 +17,11 @@ const CONSENT_STORAGE_KEY = '@discover_consent_accepted';
 export default function ArchiveTabScreen() {
   const navigation = useNavigation();
   const { theme, isDark } = useThemeContext();
+  const colors = useThemedColors();
   const { playSong, setQueue } = usePlayerContext();
   const { setNowPlayingSource } = useNavigationContext();
   const { showSuccess, showError } = useToast();
   const { archiveFavoriteIds, isArchiveFavorite, toggleArchiveFavorite } = useDiscoverFavorites();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [tracks, setTracks] = useState<ArchiveOrgTrack[]>([]);

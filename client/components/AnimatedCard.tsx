@@ -1,15 +1,13 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { StyleSheet, Pressable, ViewStyle, Platform, StyleProp, View } from "react-native";
 import * as Haptics from "expo-haptics";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import {
   FluentSpacing,
   FluentRadius,
   FluentControlRadius,
   getShadowStyle,
-  FluentLightColors,
-  FluentDarkColors,
 } from "@/constants/fluent2";
 
 interface AnimatedCardProps {
@@ -38,17 +36,19 @@ export function AnimatedCard({
   accessibilityLabel,
 }: AnimatedCardProps) {
   const { isDark } = useThemeContext();
+  const colors = useThemedColors();
   const { playTapSound } = useUiSound();
   const longPressTriggered = useRef(false);
-
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const [isPressed, setIsPressed] = useState(false);
 
   const handlePressIn = useCallback(() => {
     if (disabled) return;
     longPressTriggered.current = false;
+    setIsPressed(true);
   }, [disabled]);
 
   const handlePressOut = useCallback(() => {
+    setIsPressed(false);
   }, []);
 
   const handlePress = useCallback(() => {
@@ -97,6 +97,7 @@ export function AnimatedCard({
         {
           backgroundColor: colors.colorNeutralBackground2,
           borderRadius,
+          opacity: isPressed ? 0.9 : 1,
         },
         borderStyle,
         shadowStyle,

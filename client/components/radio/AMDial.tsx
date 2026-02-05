@@ -4,12 +4,10 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { CrossPlatformSlider } from "@/components/CrossPlatformSlider";
 import { FluentText, FluentIconButton } from "@/components/fluent";
 import { GlassCard } from "@/components/GlassCard";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemedColors } from "@/contexts/ThemeContext";
 import { RDSData } from "@/contexts/RadioContext";
 import {
   FluentSpacing,
-  FluentLightColors,
-  FluentDarkColors,
   FluentIconSize,
   FluentTouchTarget,
   FluentControlRadius,
@@ -56,8 +54,7 @@ function AMDialComponent({
   onScan,
   onNavigateToSoundLab,
 }: AMDialProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   const formatFrequency = (freq: number): string => {
     return Math.round(freq).toString();

@@ -2,11 +2,9 @@ import React from 'react';
 import { Pressable, View, StyleSheet, ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
 import { FluentText } from './FluentText';
 import {
-  FluentLightColors,
-  FluentDarkColors,
   FluentSpacing,
   FluentControlRadius,
   FluentIconSize,
@@ -40,7 +38,7 @@ export function FluentListItem({
   elevation = true,
 }: FluentListItemProps) {
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   const handlePress = () => {
     if (disabled || !onPress) return;

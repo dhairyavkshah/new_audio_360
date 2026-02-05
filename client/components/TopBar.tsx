@@ -9,14 +9,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
   FluentIconSize,
   FluentTypography,
   FluentControlRadius,
-  FluentLightColors,
-  FluentDarkColors,
   FluentLayoutSize,
   FluentTouchTarget,
   getShadowStyle,
@@ -39,7 +37,7 @@ export function TopBar({
 }: TopBarProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { theme } = useThemeContext();
+  const { theme, isDark } = useThemeContext();
   
   const canGoBack = navigation.canGoBack();
   const shouldShowBack = showBack && canGoBack;
@@ -61,8 +59,7 @@ export function TopBar({
     });
   };
 
-  const { isDark } = useThemeContext();
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const fluentColors = useThemedColors();
   const shadowStyle = !transparent ? getShadowStyle('shadow4', isDark) : {};
 
   return (
@@ -130,7 +127,7 @@ function IconButton({
   theme: any;
   isDark: boolean;
 }) {
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const fluentColors = useThemedColors();
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [hoverActive, setHoverActive] = useState(false);
@@ -208,7 +205,7 @@ export function TopBarAction({
   label: string;
 }) {
   const { theme, isDark } = useThemeContext();
-  const fluentColors = isDark ? FluentDarkColors : FluentLightColors;
+  const fluentColors = useThemedColors();
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [hoverActive, setHoverActive] = useState(false);
@@ -274,7 +271,7 @@ export function TopBarAction({
     >
       <MaterialCommunityIcons name={icon} size={FluentIconSize.medium} color={fluentColors.colorNeutralForeground1} />
       {badge && badge > 0 ? (
-        <View style={[styles.badge, { backgroundColor: fluentColors.colorPaletteRedForeground2 }]}>
+        <View style={[styles.badge, { backgroundColor: fluentColors.colorPaletteRedForeground1 }]}>
           <Text style={styles.badgeText}>{badge > 99 ? "99+" : badge}</Text>
         </View>
       ) : null}

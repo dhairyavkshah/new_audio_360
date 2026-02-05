@@ -9,10 +9,8 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemedColors } from '@/contexts/ThemeContext';
 import {
-  FluentLightColors,
-  FluentDarkColors,
   FluentTypography,
   FluentControlRadius,
   FluentSpacing,
@@ -66,8 +64,7 @@ export function FluentChip({
   accessibilityLabel,
   ...props
 }: FluentChipProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const sizeConfig = sizeStyles[size];
 
   const [isPressed, setIsPressed] = useState(false);

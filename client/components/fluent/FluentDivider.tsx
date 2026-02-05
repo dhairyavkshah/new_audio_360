@@ -1,11 +1,7 @@
 import React from 'react';
 import { View, ViewProps, StyleSheet } from 'react-native';
-import { useThemeContext } from '@/contexts/ThemeContext';
-import {
-  FluentLightColors,
-  FluentDarkColors,
-  FluentSpacing,
-} from '@/constants/fluent2';
+import { useThemedColors } from '@/contexts/ThemeContext';
+import { FluentSpacing } from '@/constants/fluent2';
 
 type Orientation = 'horizontal' | 'vertical';
 type DividerAppearance = 'default' | 'strong' | 'brand' | 'subtle';
@@ -29,8 +25,7 @@ export function FluentDivider({
   style,
   ...props
 }: FluentDividerProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   const getColor = () => {
     switch (appearance) {

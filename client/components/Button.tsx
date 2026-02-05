@@ -2,14 +2,12 @@ import React, { ReactNode, useState, useCallback } from "react";
 import { StyleSheet, Pressable, ViewStyle, StyleProp, Platform, View } from "react-native";
 
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import {
   FluentSpacing,
   FluentControlRadius,
   getShadowStyle,
-  FluentLightColors,
-  FluentDarkColors,
   FluentControlHeight,
   FluentControlMinWidth,
   FluentBorderWidth,
@@ -56,12 +54,11 @@ export function Button({
   accessibilityLabel,
 }: ButtonProps) {
   const { isDark } = useThemeContext();
+  const colors = useThemedColors();
   const { playKeypressSound } = useUiSound();
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [hoverActive, setHoverActive] = useState(false);
-
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const handlePress = useCallback(() => {
     if (!disabled && onPress) {
@@ -105,7 +102,7 @@ export function Button({
         };
       case 'outline':
         return {
-          rest: colors.colorTransparentBackground,
+          rest: 'transparent',
           hover: colors.colorSubtleBackgroundHover,
           pressed: colors.colorSubtleBackgroundPressed,
           text: colors.colorBrandForeground1,
@@ -129,9 +126,9 @@ export function Button({
         };
       case 'destructive':
         return {
-          rest: colors.colorPaletteRedForeground2,
+          rest: colors.colorPaletteRedForeground1,
           hover: colors.colorPaletteRedForeground1,
-          pressed: colors.colorPaletteRedBorderActive,
+          pressed: colors.colorPaletteRedForeground1,
           text: colors.colorNeutralForegroundOnBrand,
         };
       default:
@@ -160,7 +157,7 @@ export function Button({
   };
 
   const getFocusRingColor = () => {
-    return colors.colorStrokeFocus2;
+    return colors.colorBrandForeground1;
   };
 
   const focusRingStyle = isFocused ? Platform.select({

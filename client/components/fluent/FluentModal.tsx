@@ -11,11 +11,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
 import { FluentText } from './FluentText';
 import {
-  FluentLightColors,
-  FluentDarkColors,
   FluentSpacing,
   FluentControlRadius,
   FluentIconSize,
@@ -46,7 +44,7 @@ export function FluentModal({
   presentationStyle = 'pageSheet',
 }: FluentModalProps) {
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const insets = useSafeAreaInsets();
   const shadowStyle = getShadowStyle('shadow16', isDark);
 
@@ -61,7 +59,7 @@ export function FluentModal({
       {presentationStyle === 'overFullScreen' ? (
         <View style={styles.scrimContainer}>
           <Pressable
-            style={[styles.scrim, { backgroundColor: colors.colorBackgroundScrim }]}
+            style={[styles.scrim, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]}
             onPress={onClose}
             accessibilityLabel="Close modal"
             accessibilityRole="button"

@@ -8,11 +8,11 @@ import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { FluentTopBar, SortOption } from "@/components/FluentTopBar";
 import { SongCard } from "@/components/SongCard";
 import { SongContextMenu } from "@/components/SongContextMenu";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import { PlayableSong } from "@/contexts/PlayerContext";
@@ -23,11 +23,10 @@ function ListenScreen() {
   const tabBarHeight = useSafeTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const { isDark } = useThemeContext();
+  const colors = useThemedColors();
   const { currentSong, isPlaying, playSong, setQueue } = usePlayer();
   const { songs: deviceSongs } = useMediaLibraryContext();
   const { setNowPlayingSource } = useNavigationContext();
-
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("title_asc");

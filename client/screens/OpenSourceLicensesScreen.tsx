@@ -3,13 +3,14 @@ import { View, StyleSheet, ScrollView } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentControlRadius, FluentIconSize, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
+import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { ThemedFluentColors } from "@/lib/themeUtils";
 
 interface LicenseSectionProps {
   title: string;
   content: string;
-  colors: typeof FluentLightColors;
+  colors: ThemedFluentColors;
 }
 
 function LicenseSection({ title, content, colors }: LicenseSectionProps) {
@@ -57,8 +58,7 @@ const SMART_ENHANCEMENT_LIBRARIES = [
 
 export default function OpenSourceLicensesScreen() {
   const tabBarHeight = useSafeTabBarHeight();
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   return (
     <FluentScreenLayout hasBottomNavigation={true} isNestedScreen={true}>

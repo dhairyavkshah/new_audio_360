@@ -9,16 +9,15 @@ import {
   Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemedColors } from '@/contexts/ThemeContext';
 import {
-  FluentLightColors,
-  FluentDarkColors,
   FluentTypography,
   FluentControlRadius,
   FluentSpacing,
   FluentControlHeight,
   FluentIconSize,
 } from '@/constants/fluent2';
+import { ThemedFluentColors } from '@/lib/themeUtils';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'subtle' | 'transparent';
 type ButtonSize = 'small' | 'medium' | 'large';
@@ -71,7 +70,7 @@ interface ButtonColors {
 
 const getButtonColors = (
   variant: ButtonVariant,
-  colors: typeof FluentLightColors
+  colors: ThemedFluentColors
 ): ButtonColors => {
   switch (variant) {
     case 'primary':
@@ -92,8 +91,8 @@ const getButtonColors = (
         foreground: colors.colorNeutralForeground1,
         foregroundDisabled: colors.colorNeutralForegroundDisabled,
         border: colors.colorNeutralStroke1,
-        borderHover: colors.colorNeutralStrokeAccessibleHover,
-        borderPressed: colors.colorNeutralStrokeAccessiblePressed,
+        borderHover: colors.colorNeutralStroke1,
+        borderPressed: colors.colorNeutralStroke1,
       };
     case 'outline':
       return {
@@ -104,8 +103,8 @@ const getButtonColors = (
         foreground: colors.colorBrandForeground1,
         foregroundDisabled: colors.colorNeutralForegroundDisabled,
         border: colors.colorBrandStroke1,
-        borderHover: colors.colorCompoundBrandStrokeHover,
-        borderPressed: colors.colorCompoundBrandStrokePressed,
+        borderHover: colors.colorBrandStroke1,
+        borderPressed: colors.colorBrandStroke1,
       };
     case 'subtle':
       return {
@@ -118,10 +117,10 @@ const getButtonColors = (
       };
     case 'transparent':
       return {
-        background: colors.colorTransparentBackground,
-        backgroundHover: colors.colorTransparentBackgroundHover,
-        backgroundPressed: colors.colorTransparentBackgroundPressed,
-        backgroundDisabled: colors.colorTransparentBackground,
+        background: 'transparent',
+        backgroundHover: colors.colorSubtleBackgroundHover,
+        backgroundPressed: colors.colorSubtleBackgroundPressed,
+        backgroundDisabled: 'transparent',
         foreground: colors.colorNeutralForeground1,
         foregroundDisabled: colors.colorNeutralForegroundDisabled,
       };
@@ -146,8 +145,7 @@ export function FluentButton({
   accessibilityLabel,
   ...props
 }: FluentButtonProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const buttonColors = getButtonColors(variant, colors);
   const sizeConfig = sizeStyles[size];
 

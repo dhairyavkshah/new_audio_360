@@ -2,13 +2,11 @@ import React, { memo } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemedColors } from "@/contexts/ThemeContext";
 import { OnlineRadioStation } from "@/contexts/OnlineRadioContext";
 import {
   FluentSpacing,
   FluentRadius,
-  FluentLightColors,
-  FluentDarkColors,
   FluentIconSize,
   FluentTouchTarget,
 } from "@/constants/fluent2";
@@ -48,8 +46,7 @@ function OnlineStationCardComponent({
   onPress,
   onFavoritePress,
 }: OnlineStationCardProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   return (
     <Pressable
@@ -57,7 +54,7 @@ function OnlineStationCardComponent({
         styles.onlineStationCard,
         {
           backgroundColor: isSelected
-            ? colors.colorBrandBackgroundSelected
+            ? colors.colorBrandBackground
             : colors.colorNeutralBackground2,
           borderColor: isSelected
             ? colors.colorBrandStroke1

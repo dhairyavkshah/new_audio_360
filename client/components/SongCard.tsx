@@ -6,7 +6,7 @@ const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
 import {
@@ -14,8 +14,6 @@ import {
   FluentControlRadius,
   FluentTypography,
   FluentIconSize,
-  FluentLightColors,
-  FluentDarkColors,
   FluentTouchTarget,
 } from "@/constants/fluent2";
 
@@ -77,12 +75,12 @@ function SongCardComponent({
   showAddToPlaylist = false,
   sourceType,
 }: SongCardProps) {
-  const { isDark } = useThemeContext();
+  const fluentColors = useThemedColors();
   const { playTapSound } = useUiSound();
   const { isFavorite, toggleFavorite } = usePlayerContext();
   const longPressTriggered = useRef(false);
   const favorite = isFavorite(song.id);
-  const fluentColors = useMemo(() => isDark ? FluentDarkColors : FluentLightColors, [isDark]);
+  const [isPressed, setIsPressed] = React.useState(false);
   
   const artworkSource = useMemo(() => song.artwork ? { uri: song.artwork } : DEFAULT_ALBUM_ART, [song.artwork]);
   
@@ -116,6 +114,11 @@ function SongCardComponent({
 
   const handlePressIn = () => {
     longPressTriggered.current = false;
+    setIsPressed(true);
+  };
+
+  const handlePressOut = () => {
+    setIsPressed(false);
   };
 
   const handlePress = () => {
@@ -158,6 +161,7 @@ function SongCardComponent({
     <Pressable
       onPress={handlePress}
       onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       onLongPress={onContextMenu ? handleLongPress : undefined}
       delayLongPress={400}
       style={[
@@ -166,6 +170,7 @@ function SongCardComponent({
           backgroundColor: fluentColors.colorNeutralBackground2,
           borderColor: isPlaying ? fluentColors.colorBrandStroke1 : fluentColors.colorNeutralStroke2,
           borderWidth: 1,
+          opacity: isPressed ? 0.9 : 1,
           ...(Platform.OS === "web" ? {
             boxShadow: "0 1px 2px rgba(0, 0, 0, 0.14)",
           } : {

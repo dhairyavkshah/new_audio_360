@@ -3,8 +3,8 @@ import { View, StyleSheet, Pressable, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentSpacing, FluentRadius, FluentLightColors, FluentDarkColors, FluentTypography, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
+import { FluentSpacing, FluentRadius, FluentTouchTarget, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import ArchiveTabScreen from "./ArchiveTabScreen";
 import SoundCloudTabScreen from "./SoundCloudTabScreen";
 
@@ -12,8 +12,7 @@ type TabType = 'archive' | 'soundcloud';
 
 export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
-  const { theme, isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   
   const [activeTab, setActiveTab] = useState<TabType>('archive');
   

@@ -5,10 +5,11 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 import { FluentText, FluentSurface } from '@/components/fluent';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
 import { useUiSound } from '@/contexts/UiSoundContext';
 import { useMediaLibraryContext } from '@/contexts/MediaLibraryContext';
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
+import { FluentSpacing, FluentControlRadius } from '@/constants/fluent2';
+import { ThemedFluentColors } from '@/lib/themeUtils';
 
 interface PermissionOnboardingScreenProps {
   onComplete: () => void;
@@ -20,13 +21,12 @@ interface PermissionItemProps {
   title: string;
   description: string;
   status: 'pending' | 'granted' | 'denied';
-  colors: typeof FluentLightColors;
+  colors: ThemedFluentColors;
 }
 
 export default function PermissionOnboardingScreen({ onComplete, onSkip }: PermissionOnboardingScreenProps) {
   const insets = useSafeAreaInsets();
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const { playTapSound } = useUiSound();
   const { requestPermission } = useMediaLibraryContext();
   const [mediaPermission, setMediaPermission] = useState<'pending' | 'granted' | 'denied'>('pending');

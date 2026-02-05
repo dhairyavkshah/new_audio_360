@@ -7,10 +7,10 @@ import * as Notifications from 'expo-notifications';
 import * as MediaLibrary from 'expo-media-library';
 
 import { FluentText, FluentSurface } from '@/components/fluent';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
 import { useUiSound } from '@/contexts/UiSoundContext';
 import { useMediaLibraryContext } from '@/contexts/MediaLibraryContext';
-import { FluentSpacing, FluentControlRadius, FluentControlHeight, FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
+import { FluentSpacing, FluentControlRadius, FluentControlHeight } from '@/constants/fluent2';
 
 interface PermissionOnboardingFlowProps {
   onComplete: () => void;
@@ -51,8 +51,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function PermissionOnboardingFlow({ onComplete, onSkip }: PermissionOnboardingFlowProps) {
   const insets = useSafeAreaInsets();
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const { playTapSound } = useUiSound();
   const { requestPermission: requestMediaPermission } = useMediaLibraryContext();
   

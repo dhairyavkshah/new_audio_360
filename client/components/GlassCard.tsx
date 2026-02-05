@@ -1,13 +1,11 @@
 import React from "react";
 import { StyleSheet, Pressable, ViewStyle, Platform, View } from "react-native";
 import { BlurView } from "expo-blur";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
   FluentControlRadius,
   getShadowStyle,
-  FluentLightColors,
-  FluentDarkColors,
   FluentBorderWidth,
 } from "@/constants/fluent2";
 
@@ -29,7 +27,7 @@ export function GlassCard({
   selected = false,
 }: GlassCardProps) {
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const shadowStyle = getShadowStyle('shadow2', isDark);
 
   return (

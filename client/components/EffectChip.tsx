@@ -3,13 +3,11 @@ import { StyleSheet, Pressable, View, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemedColors } from "@/contexts/ThemeContext";
 import {
   FluentSpacing,
   FluentRadius,
   FluentControlRadius,
-  FluentLightColors,
-  FluentDarkColors,
   FluentIconSize,
   FluentBorderWidth,
 } from "@/constants/fluent2";
@@ -31,8 +29,7 @@ export function EffectChip({
   isLocked = false,
   disabled = false,
 }: EffectChipProps) {
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   const handlePress = () => {
     if (Platform.OS !== "web") {

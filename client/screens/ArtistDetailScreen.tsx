@@ -9,10 +9,10 @@ import * as Haptics from "expo-haptics";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
 import { SongCard } from "@/components/SongCard";
 import { EmptyState } from "@/components/EmptyState";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
-import { FluentSpacing, FluentControlRadius, FluentLightColors, FluentDarkColors } from "@/constants/fluent2";
+import { FluentSpacing, FluentControlRadius } from "@/constants/fluent2";
 import { LibraryStackParamList } from "@/navigation/LibraryStackNavigator";
 
 type ArtistDetailRouteProp = RouteProp<LibraryStackParamList, "ArtistDetail">;
@@ -20,8 +20,7 @@ type ArtistDetailRouteProp = RouteProp<LibraryStackParamList, "ArtistDetail">;
 export default function ArtistDetailScreen() {
   const route = useRoute<ArtistDetailRouteProp>();
   const { artist } = route.params;
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   const { playSong, currentSong, setQueue } = usePlayerContext();
   const { songs: deviceSongs, isOnboardingComplete } = useMediaLibraryContext();
   const tabBarHeight = useSafeTabBarHeight();
