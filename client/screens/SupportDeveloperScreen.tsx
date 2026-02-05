@@ -115,7 +115,7 @@ export default function SupportDeveloperScreen() {
     }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const result = await PaymentHandler.openUPIPayment(finalAmount);
+    const result = await PaymentHandler.openUPIPayment(finalAmount, selectedCurrency || "INR");
 
     if (result.success && result.requiresConfirmation) {
       setPendingPaymentMethod("upi");
