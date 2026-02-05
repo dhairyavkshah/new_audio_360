@@ -4,11 +4,6 @@ import { View, StyleSheet, Pressable, Image, Platform, GestureResponderEvent, To
 // Default album art for songs without artwork
 const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { FluentText } from "@/components/fluent";
 import { useThemeContext } from "@/contexts/ThemeContext";
@@ -19,8 +14,6 @@ import {
   FluentControlRadius,
   FluentTypography,
   FluentIconSize,
-  FluentDuration,
-  FluentCurve,
   FluentLightColors,
   FluentDarkColors,
   FluentTouchTarget,
@@ -73,8 +66,6 @@ interface SongCardProps {
   sourceType?: SourceType;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 function SongCardComponent({ 
   song, 
   onPress, 
@@ -89,8 +80,6 @@ function SongCardComponent({
   const { isDark } = useThemeContext();
   const { playTapSound } = useUiSound();
   const { isFavorite, toggleFavorite } = usePlayerContext();
-  const scale = useSharedValue(1);
-  const bgOpacity = useSharedValue(0);
   const longPressTriggered = useRef(false);
   const favorite = isFavorite(song.id);
   const fluentColors = useMemo(() => isDark ? FluentDarkColors : FluentLightColors, [isDark]);
@@ -125,29 +114,8 @@ function SongCardComponent({
     onAddToPlaylist?.(song);
   }, [song, onAddToPlaylist, playTapSound]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const bgAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: bgOpacity.value,
-  }));
-
   const handlePressIn = () => {
     longPressTriggered.current = false;
-    scale.value = withTiming(0.98, { 
-      duration: FluentDuration.fast,
-      easing: FluentCurve.decelerateMid,
-    });
-    bgOpacity.value = withTiming(1, { duration: FluentDuration.fast });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withTiming(1, { 
-      duration: FluentDuration.normal,
-      easing: FluentCurve.decelerateMid,
-    });
-    bgOpacity.value = withTiming(0, { duration: FluentDuration.normal });
   };
 
   const handlePress = () => {
@@ -187,10 +155,9 @@ function SongCardComponent({
   const containerProps = useMemo(() => Platform.OS === "web" ? { onContextMenu: handleContextMenuWeb } : {}, [handleContextMenuWeb]);
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={handlePress}
       onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
       onLongPress={onContextMenu ? handleLongPress : undefined}
       delayLongPress={400}
       style={[
@@ -209,22 +176,11 @@ function SongCardComponent({
             elevation: 1,
           }),
         },
-        animatedStyle,
       ]}
       accessibilityRole="button"
       accessibilityLabel={`${song.title} by ${song.artist}`}
       {...containerProps}
     >
-      <Animated.View 
-        style={[
-          StyleSheet.absoluteFill, 
-          { 
-            backgroundColor: fluentColors.colorNeutralBackground1Pressed, 
-            borderRadius: FluentControlRadius.card - 1 
-          },
-          bgAnimatedStyle,
-        ]} 
-      />
       <View style={styles.artworkContainer}>
         <Image source={artworkSource} style={styles.artwork} />
         {isPlaying ? (
@@ -300,7 +256,7 @@ function SongCardComponent({
         size={FluentIconSize.small} 
         color={fluentColors.colorNeutralForeground3} 
       />
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 
