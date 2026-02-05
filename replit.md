@@ -7,6 +7,9 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 - **Full Theme Adaptation**: Created `getThemedFluentColors()` utility and `useThemedColors()` hook for dynamic Fluent 2 color token mapping across all 70+ files
 - **Tap/Click Feedback**: Added opacity 0.9 press feedback to 40+ Pressable components (FluentCard, FluentListItem, all cards, buttons)
 - **Version Bump**: Updated version to 31.0 across package.json, screens, gradle, and documentation
+- **CPU-Only Neural Audio Processing**: Removed GPU delegation from NeuralAudioProcessorTFLite (industry standard for real-time audio - GPU adds memory transfer overhead incompatible with <10ms latency requirements)
+- **Spatial Enhancement Throttling**: Added 50ms throttle to SpatialEnhancementModule to prevent ripple artifacts during rapid slider movement
+- **Track End Cooldown**: Added 300ms cooldown to handleTrackEnd to prevent jittery auto-advance from duplicate track end events
 
 ## User Preferences
 - Concise and direct communication
