@@ -27,7 +27,7 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 - **C++/NDK DSP Foundation**: NEON SIMD implementation for PCM conversion, gain, soft clip operations (`NativeDSPModule.kt`, `simd_processor.cpp`)
 
 ### Audio Quality Fixes (v31.0.2 - February 2026)
-- **Fixed 24-bit PCM Output**: SoftwareDSPAudioProcessor now ALWAYS outputs 24-bit PCM regardless of input format (was incorrectly matching input format)
+- **32-bit Float Internal Processing**: SoftwareDSPAudioProcessor uses 32-bit float internally for maximum dynamic range, outputs in same format as input for AudioSink compatibility
 - **Complete RippleDrawable Fix**: Added `android_ripple={null}` to all remaining Pressable components (SongCard, SoundCloudTrackCard, SoundCloudPlaylistCard, OnlineStationCard, FavoriteStationCard, EQPresetCard, SmartEnhancementCard, ImmersiveModeCard)
 - **Removed Duplicate isEnabled()**: Fixed duplicate function definition in NeuralAudioProcessorTFLite.kt causing Kotlin compilation errors
 
@@ -75,11 +75,11 @@ The application employs pure software DSP and neural AI upscaling, with all enha
 - Smart Enhancements: HRTF Binaural Virtualization, Psychoacoustic Bass Enhancement, AI Upscaling (Kuleshov-style 1D U-Net CNN via TensorFlow.js/TensorFlow Lite).
 
 **DSP Architecture Details**:
-- Internal processing is 32-bit float with fixed 24-bit PCM output.
+- Internal processing is 32-bit float for maximum dynamic range.
 - Android DSP uses a custom ExoPlayer `AudioProcessor` with biquad filters and TensorFlow Lite.
 - Web DSP uses `WebAudioEffectsEngine` with Web Audio API and TensorFlow.js.
 - All Android audio routes through a single DSP chain via `PlaybackEngineModule`.
-- **Audio Quality**: Input can be 16-bit or 24-bit PCM, but output is ALWAYS 24-bit PCM for maximum quality.
+- **Audio Quality**: 32-bit float internal processing preserves full dynamic range. Output format matches input (16-bit or 24-bit) for AudioSink compatibility.
 
 ### Theme System Architecture
 The application features a two-layer color system with full dynamic theme adaptation:
