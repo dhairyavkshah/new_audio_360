@@ -30,8 +30,17 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 - **32-bit Float Internal Processing**: SoftwareDSPAudioProcessor uses 32-bit float internally for maximum dynamic range, outputs in same format as input for AudioSink compatibility
 - **Complete RippleDrawable Fix**: Added `android_ripple={null}` to all remaining Pressable components (SongCard, SoundCloudTrackCard, SoundCloudPlaylistCard, OnlineStationCard, FavoriteStationCard, EQPresetCard, SmartEnhancementCard, ImmersiveModeCard)
 - **Removed Duplicate isEnabled()**: Fixed duplicate function definition in NeuralAudioProcessorTFLite.kt causing Kotlin compilation errors
-- **Track Transition Lag Fix**: Removed redundant `clearAudioBuffers()` call from ImmersiveModeEngineModule.applyImmersiveSettings - buffer clearing now only happens once in PlaybackService.onMediaItemTransition
-- **EQ Preset Lag Fix**: Removed unnecessary `clearEqBuffers()` calls from EqualizerModule - biquad filters transition smoothly between coefficient values without needing buffer resets
+- **DSP Buffer Clearing Strategy Overhaul**: 
+  - NO buffer clearing on track transitions/auto-advance (removed from PlaybackService.onMediaItemTransition)
+  - Buffer clearing ONLY on explicit user DSP changes (any value change, no percentage thresholds)
+  - EQ presets/bands: No clearing (biquad filters transition smoothly between coefficients)
+  - Bass Boost/Treble Boost: Clear on any value change (previousGain != newGain)
+  - Reverb: Clear on any value change (previousMix != newMix)
+  - Bass Enhancement: Clear on any level change (previousLevel != newLevel)
+  - AI Upscaling: Clear on toggle or level change
+  - Spatial Enhancement: Debounced 200ms after slider stops
+  - Immersive Modes: Clear all buffers when switching modes or setting custom parameters
+  - BassBoostModule: Clear on any strength change (removed >200 threshold)
 
 ## User Preferences
 - Concise and direct communication

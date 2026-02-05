@@ -58,10 +58,10 @@ class BassBoostModule : Module() {
                 
                 val dsp = SoftwareDSPAudioProcessor.getInstance()
                 
-                // Clear bass buffers when strength changes significantly to prevent layering
-                if (kotlin.math.abs(previousStrength - clampedStrength) > 200) {
+                // Clear bass buffers when strength changes (user adjusted setting)
+                if (previousStrength != clampedStrength) {
                     dsp?.clearBassEnhancementBuffers()
-                    android.util.Log.d("BassBoostModule", "Cleared bass buffers for significant strength change")
+                    android.util.Log.d("BassBoostModule", "Cleared bass buffers for strength change")
                 }
                 
                 val gainUnits = (clampedStrength / 1000.0f) * 5.0f

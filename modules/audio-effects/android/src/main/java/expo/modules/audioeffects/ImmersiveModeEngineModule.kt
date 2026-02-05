@@ -197,6 +197,10 @@ class ImmersiveModeEngineModule : Module() {
                     }
                     
                     val dsp = SoftwareDSPAudioProcessor.getInstance()
+                    
+                    // Clear audio buffers when user sets custom parameters (user-initiated DSP change)
+                    dsp?.clearAudioBuffers()
+                    
                     val mf = gmf()
                     
                     val bassGainUnits = (bassStrength / 1000.0f) * 5.0f * mf
@@ -206,7 +210,7 @@ class ImmersiveModeEngineModule : Module() {
                     val scaledSpatialLevel = (spatialEnhancementLevel * mf).toInt()
                     dsp?.setSpatialEnhancementLevel(scaledSpatialLevel)
                     
-                    android.util.Log.d("ImmersiveMode", "Custom: bass=$bassStrength, spatial=$spatialEnhancementLevel, factor=$mf")
+                    android.util.Log.d("ImmersiveMode", "Custom: bass=$bassStrength, spatial=$spatialEnhancementLevel (buffers cleared)")
                     
                     currentMode = "custom"
                     
@@ -267,8 +271,9 @@ class ImmersiveModeEngineModule : Module() {
     ) {
         val dsp = SoftwareDSPAudioProcessor.getInstance() ?: return
         
-        // Note: Buffer clearing is NOT done here - it's only needed on track transitions
-        // (handled by PlaybackService.onMediaItemTransition). Filter coefficients update smoothly.
+        // Clear audio buffers when user switches immersive mode (user-initiated DSP change)
+        // Note: EQ biquad filters transition smoothly, but delay/reverb buffers need clearing
+        dsp.clearAudioBuffers()
         
         val mf = gmf()
         

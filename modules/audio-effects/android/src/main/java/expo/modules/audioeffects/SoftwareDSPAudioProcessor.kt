@@ -710,15 +710,9 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     fun setEqBandGain(band: Int, gainUnits: Float) {
         if (band in 0..9) {
             val gainDb = (gainUnits * DB_PER_UNIT).coerceIn(-MAX_DB, MAX_DB)
-            val previousGain = eqGains[band]
             eqGains[band] = gainDb
             eqFilters[band].setGain(gainDb)
-            
-            // Reset the specific filter state when gain changes significantly to prevent transients
-            if (kotlin.math.abs(previousGain - gainDb) > 3.0f) {
-                eqFilters[band].resetAllChannels()
-                android.util.Log.d("SoftwareDSP", "EQ band $band filter reset for significant gain change")
-            }
+            // Note: No buffer clearing - biquad EQ filters transition smoothly between coefficients
         }
     }
 
@@ -748,8 +742,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         bassGain = gainDb
         bassShelfFilter.setGain(gainDb)
         
-        // Clear bass shelf filter state when gain changes significantly
-        if (kotlin.math.abs(previousGain - bassGain) > 1.0f) {
+        // Clear bass shelf filter state when gain changes (user adjusted setting)
+        if (previousGain != bassGain) {
             bassShelfFilter.resetAllChannels()
             android.util.Log.d("SoftwareDSP", "Bass shelf filter reset for gain change")
         }
@@ -761,8 +755,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         trebleGain = gainDb
         trebleShelfFilter.setGain(gainDb)
         
-        // Clear treble shelf filter state when gain changes significantly
-        if (kotlin.math.abs(previousGain - trebleGain) > 1.0f) {
+        // Clear treble shelf filter state when gain changes (user adjusted setting)
+        if (previousGain != trebleGain) {
             trebleShelfFilter.resetAllChannels()
             android.util.Log.d("SoftwareDSP", "Treble shelf filter reset for gain change")
         }
@@ -1085,8 +1079,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         val previousMix = reverbWetMix
         reverbWetMix = wetMix.coerceIn(0f, 1f)
         
-        // Clear reverb delay buffers when reverb mix changes significantly to prevent layering
-        if (kotlin.math.abs(previousMix - reverbWetMix) > 0.05f) {
+        // Clear reverb delay buffers when reverb mix changes (user adjusted setting)
+        if (previousMix != reverbWetMix) {
             clearReverbBuffers()
         }
         android.util.Log.d("SoftwareDSP", "Reverb wet mix set to ${(reverbWetMix * 100).toInt()}%")
@@ -1115,8 +1109,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         val previousLevel = bassEnhancementLevel
         bassEnhancementLevel = level.coerceIn(0f, 100f)
         
-        // Clear bass enhancement filter states when level changes significantly
-        if (kotlin.math.abs(previousLevel - bassEnhancementLevel) > 5f) {
+        // Clear bass enhancement filter states when level changes (user adjusted setting)
+        if (previousLevel != bassEnhancementLevel) {
             clearBassEnhancementBuffers()
         }
         android.util.Log.d("SoftwareDSP", "Bass Enhancement set to ${bassEnhancementLevel.toInt()}%")
@@ -1170,8 +1164,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         val previousLevel = hfRestorationLevel
         hfRestorationLevel = level.coerceIn(0f, 100f)
         
-        // Clear HF buffers when level changes significantly
-        if (kotlin.math.abs(previousLevel - hfRestorationLevel) > 10f) {
+        // Clear HF buffers when level changes (user adjusted setting)
+        if (previousLevel != hfRestorationLevel) {
             clearHfRestorationBuffers()
         }
         
