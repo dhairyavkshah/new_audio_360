@@ -698,6 +698,7 @@ function SoundLabScreen() {
         <View style={styles.modalButtons}>
           <Pressable
             style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
+            android_ripple={null}
             onPress={() => {
               setShowSaveDialog(false);
               setNewPresetName("");
@@ -707,6 +708,7 @@ function SoundLabScreen() {
           </Pressable>
           <Pressable
             style={[styles.modalButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
+            android_ripple={null}
             onPress={handleSavePreset}
           >
             <FluentText variant="body2" style={{ color: tokens.colors.onPrimary }}>Save</FluentText>
@@ -769,6 +771,7 @@ function SoundLabScreen() {
         <View style={styles.modalButtons}>
           <Pressable
             style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
+            android_ripple={null}
             onPress={() => {
               setShowEditDialog(false);
               setEditingPreset(null);
@@ -779,6 +782,7 @@ function SoundLabScreen() {
           </Pressable>
           <Pressable
             style={[styles.modalButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
+            android_ripple={null}
             onPress={handleUpdatePreset}
           >
             <FluentText variant="body2" style={{ color: tokens.colors.onPrimary }}>Save Changes</FluentText>
@@ -807,6 +811,7 @@ function SoundLabScreen() {
         <View style={styles.modalButtons}>
           <Pressable
             style={[styles.modalButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
+            android_ripple={null}
             onPress={() => {
               setShowDeleteDialog(false);
               setPresetToDelete(null);
@@ -816,6 +821,7 @@ function SoundLabScreen() {
           </Pressable>
           <Pressable
             style={[styles.modalButton, { backgroundColor: tokens.colors.error, borderRadius: tokens.shapes.buttonBorderRadius }]}
+            android_ripple={null}
             onPress={confirmDeletePreset}
           >
             <FluentText variant="body2" style={{ color: "#FFFFFF" }}>Delete</FluentText>

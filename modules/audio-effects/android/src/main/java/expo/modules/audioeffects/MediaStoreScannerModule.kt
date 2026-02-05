@@ -253,11 +253,10 @@ class MediaStoreScannerModule : Module() {
         }
         
         if (audioUri != null) {
+            val retriever = android.media.MediaMetadataRetriever()
             try {
-                val retriever = android.media.MediaMetadataRetriever()
                 retriever.setDataSource(context, audioUri)
                 val art = retriever.embeddedPicture
-                retriever.release()
                 
                 if (art != null && art.isNotEmpty()) {
                     val bitmap = BitmapFactory.decodeByteArray(art, 0, art.size)
@@ -267,6 +266,8 @@ class MediaStoreScannerModule : Module() {
                 }
             } catch (e: Exception) {
                 Log.d(TAG, "MediaMetadataRetriever fallback failed: ${e.message}")
+            } finally {
+                try { retriever.release() } catch (_: Exception) {}
             }
         }
         
@@ -292,8 +293,12 @@ class MediaStoreScannerModule : Module() {
     private fun bitmapToBase64(bitmap: Bitmap): String {
         val scaledBitmap = scaleBitmap(bitmap, 300)
         val outputStream = ByteArrayOutputStream()
-        scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
-        val bytes = outputStream.toByteArray()
-        return "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
+        return try {
+            scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+            val bytes = outputStream.toByteArray()
+            "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
+        } finally {
+            try { outputStream.close() } catch (_: Exception) {}
+        }
     }
 }

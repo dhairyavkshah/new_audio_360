@@ -61,6 +61,7 @@ export function FluentModal({
           <Pressable
             style={[styles.scrim, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]}
             onPress={onClose}
+            android_ripple={null}
             accessibilityLabel="Close modal"
             accessibilityRole="button"
           />
@@ -100,6 +101,7 @@ export function FluentModal({
                     <Pressable
                       onPress={onClose}
                       style={styles.closeButton}
+                      android_ripple={null}
                       hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                       accessibilityLabel="Close"
                       accessibilityRole="button"
@@ -151,6 +153,7 @@ export function FluentModal({
                 <Pressable
                   onPress={onClose}
                   style={styles.closeButton}
+                  android_ripple={null}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   accessibilityLabel="Close"
                   accessibilityRole="button"

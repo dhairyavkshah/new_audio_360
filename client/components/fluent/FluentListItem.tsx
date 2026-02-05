@@ -113,6 +113,7 @@ export function FluentListItem({
       accessibilityRole="button"
       accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
       accessibilityState={{ disabled }}
+      android_ripple={null}
     >
       {content}
     </Pressable>
