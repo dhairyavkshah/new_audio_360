@@ -52,9 +52,17 @@ The application employs pure software DSP and neural AI upscaling, with all enha
 - Web DSP uses `WebAudioEffectsEngine` with Web Audio API and TensorFlow.js.
 - All Android audio routes through a single DSP chain via `PlaybackEngineModule`.
 
+### Theme System Architecture
+The application features a two-layer color system with full dynamic theme adaptation:
+- **Theme Colors** (`tokens.colors`): 55 themes with semantic colors (primary, secondary, surface, text, etc.)
+- **Fluent Color Mapping** (`useThemedColors()`): Maps theme colors to Fluent 2 design tokens dynamically
+- **Key Files**: `client/lib/themeUtils.ts` (getThemedFluentColors), `client/contexts/ThemeContext.tsx` (useThemedColors hook)
+- All components use `useThemedColors()` for consistent theme adaptation
+- Tap/click effects on cards use opacity feedback (0.9 when pressed) - NO animations except waveform
+
 ### Feature Specifications
 - **Sound Lab**: 10 EQ presets, custom 10-band EQ, 6 immersive modes, bass/treble control, Smart Enhancements.
-- **Theming**: 55 customizable themes.
+- **Theming**: 55 fully adaptive themes with dynamic Fluent color token mapping across all UI components.
 - **Radio**: Native FM/AM and online streaming with Intelligent Radio Discovery.
 - **Playback**: Background playback, notification controls, queue, shuffle/repeat, playback speed, sleep timer, favorites.
 - **Library Management**: Music folder selection, paginated loading, playlist CRUD.
