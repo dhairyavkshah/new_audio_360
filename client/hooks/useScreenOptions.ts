@@ -1,8 +1,8 @@
 import { Platform, StatusBar } from "react-native";
 import { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 
-import { useThemeContext } from "@/contexts/ThemeContext";
-import { FluentLightColors, FluentDarkColors, FluentTypography } from "@/constants/fluent2";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
+import { FluentTypography } from "@/constants/fluent2";
 
 interface UseScreenOptionsParams {
   transparent?: boolean;
@@ -12,7 +12,7 @@ export function useScreenOptions({
   transparent = true,
 }: UseScreenOptionsParams = {}): NativeStackNavigationOptions {
   const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
 
   return {
     headerTitleAlign: "left",

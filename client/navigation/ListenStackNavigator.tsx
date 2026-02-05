@@ -13,10 +13,8 @@ import Animated, {
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { HeaderTitle } from "@/components/HeaderTitle";
 import { useNavigationContext } from "@/contexts/NavigationContext";
-import { useThemeContext } from "@/contexts/ThemeContext";
+import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { 
-  FluentLightColors, 
-  FluentDarkColors, 
   FluentIconSize, 
   FluentTouchTarget,
   FluentDuration,
@@ -33,8 +31,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 function NowPlayingBackButton() {
   const navigation = useNavigation<any>();
   const { nowPlayingSource, setNowPlayingSource } = useNavigationContext();
-  const { isDark } = useThemeContext();
-  const colors = isDark ? FluentDarkColors : FluentLightColors;
+  const colors = useThemedColors();
   
   const scale = useSharedValue(1);
   const [isFocused, setIsFocused] = useState(false);

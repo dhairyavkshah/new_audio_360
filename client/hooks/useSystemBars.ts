@@ -1,18 +1,17 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as NavigationBar from 'expo-navigation-bar';
-import { useThemeContext } from '@/contexts/ThemeContext';
-import { FluentLightColors, FluentDarkColors } from '@/constants/fluent2';
+import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
 
 export function useSystemBars() {
   const { isDark } = useThemeContext();
+  const colors = useThemedColors();
 
   useEffect(() => {
     if (Platform.OS !== 'android') return;
 
     const configureNavigationBar = async () => {
       try {
-        const colors = isDark ? FluentDarkColors : FluentLightColors;
         const backgroundColor = colors.colorNeutralBackground1;
         
         await NavigationBar.setBackgroundColorAsync(backgroundColor);
@@ -23,7 +22,7 @@ export function useSystemBars() {
     };
 
     configureNavigationBar();
-  }, [isDark]);
+  }, [colors, isDark]);
 }
 
 export default useSystemBars;
