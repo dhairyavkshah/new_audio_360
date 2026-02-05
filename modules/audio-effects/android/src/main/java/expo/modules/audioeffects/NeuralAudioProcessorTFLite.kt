@@ -62,8 +62,9 @@ class NeuralAudioProcessorTFLite private constructor() {
         
         private const val TIME_BUDGET_MS = 10L
         private const val BYPASS_LOG_INTERVAL = 100
-        private const val DECIMATION_FACTOR = 4  // Process only 1 out of N chunks to reduce CPU load
-        private const val COOLDOWN_MS = 2000L    // Cooldown period after timeout (2 seconds)
+        private const val DECIMATION_FACTOR = 2  // Process only 1 out of N chunks to reduce CPU load (50%)
+        private const val COOLDOWN_MS = 500L     // Cooldown period after timeout (500ms)
+        private const val CONSECUTIVE_TIMEOUTS_FOR_COOLDOWN = 3  // Require 3 consecutive timeouts before cooldown
         
         @Volatile
         private var instance: NeuralAudioProcessorTFLite? = null
@@ -127,7 +128,7 @@ class NeuralAudioProcessorTFLite private constructor() {
     @Volatile
     private var lastTimeoutTime: Long = 0L
     @Volatile
-    private var lastEnhancedResult: FloatArray? = null  // Cache last result for decimation
+    private var consecutiveTimeouts: Int = 0  // Track consecutive timeouts for cooldown trigger
     
     init {
         Log.d(TAG, "Initialized - Kuleshov architecture v$MODEL_VERSION")
@@ -277,28 +278,18 @@ class NeuralAudioProcessorTFLite private constructor() {
             return samples
         }
         
-        // Cooldown check: if we recently had a timeout, bypass processing entirely
+        // Cooldown check: only apply after consecutive timeouts, not single timeout
         val now = System.currentTimeMillis()
-        if (now - lastTimeoutTime < COOLDOWN_MS) {
+        if (consecutiveTimeouts >= CONSECUTIVE_TIMEOUTS_FOR_COOLDOWN && now - lastTimeoutTime < COOLDOWN_MS) {
             recordBypass(BypassReason.COOLDOWN)
             return samples
         }
         
-        // Decimation: only process every Nth chunk to reduce CPU load
+        // Decimation: only process every Nth chunk to reduce CPU load (true bypass, no blending)
         val chunkNum = chunkCounter.incrementAndGet()
         if (chunkNum % DECIMATION_FACTOR != 0L) {
-            // Return cached result if available, otherwise return original
-            val cached = lastEnhancedResult
-            if (cached != null && cached.size == samples.size) {
-                // Blend cached enhancement with current samples for smoother transitions
-                val result = FloatArray(samples.size)
-                for (i in samples.indices) {
-                    result[i] = samples[i] * 0.7f + cached[i] * 0.3f
-                }
-                return result
-            }
             recordBypass(BypassReason.DECIMATION)
-            return samples
+            return samples  // True bypass - return original samples unchanged
         }
         
         // Try to acquire lock without blocking - if can't, bypass
@@ -334,7 +325,8 @@ class NeuralAudioProcessorTFLite private constructor() {
             val elapsedBeforeInference = (System.nanoTime() - startTime) / 1_000_000
             if (elapsedBeforeInference > TIME_BUDGET_MS) {
                 setStatus(Status.READY)
-                lastTimeoutTime = System.currentTimeMillis()  // Trigger cooldown
+                consecutiveTimeouts++
+                lastTimeoutTime = System.currentTimeMillis()
                 recordBypass(BypassReason.TIMEOUT)
                 return samples
             }
@@ -351,7 +343,8 @@ class NeuralAudioProcessorTFLite private constructor() {
             val inferenceMs = (System.nanoTime() - startTime) / 1_000_000
             if (inferenceMs > TIME_BUDGET_MS) {
                 setStatus(Status.READY)
-                lastTimeoutTime = System.currentTimeMillis()  // Trigger cooldown
+                consecutiveTimeouts++
+                lastTimeoutTime = System.currentTimeMillis()
                 recordBypass(BypassReason.TIMEOUT)
                 return samples
             }
@@ -364,8 +357,8 @@ class NeuralAudioProcessorTFLite private constructor() {
                 result[i] = original + (enhanced - original) * blend
             }
             
-            // Cache the enhanced result for decimation
-            lastEnhancedResult = result.copyOf()
+            // Reset consecutive timeouts on successful processing
+            consecutiveTimeouts = 0
             
             totalProcessedChunks.incrementAndGet()
             setStatus(Status.READY)
