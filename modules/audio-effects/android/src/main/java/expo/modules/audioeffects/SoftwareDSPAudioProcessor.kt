@@ -12,7 +12,7 @@ import java.nio.ByteOrder
  * Audio Processing Standards:
  * - Input: PCM16 (16-bit) or PCM24 (24-bit) at any sample rate
  * - Internal: 32-bit float processing throughout the signal chain
- * - Output: Same format as input (PCM16 or PCM24) at input sample rate
+ * - Output: ALWAYS 24-bit PCM for maximum audio quality (regardless of input format)
  * - Filters: Configured at input sample rate for accurate frequency response
  * - Design reference: 48 kHz (Android native output rate, most common)
  * - True stereo processing with independent L/R channel states
@@ -20,6 +20,12 @@ import java.nio.ByteOrder
  * Note: Filters are always configured at the input sample rate to ensure
  * correct frequency response. No resampling is performed - the processor
  * operates at the source sample rate (typically 44.1kHz or 48kHz).
+ * 
+ * Audio Quality: All audio output is upscaled to 24-bit PCM to preserve the
+ * full dynamic range of 32-bit float internal processing. ExoPlayer's DefaultAudioSink
+ * handles device compatibility: if the device AudioTrack doesn't support 24-bit,
+ * DefaultAudioSink automatically converts to 16-bit via its internal audio processing.
+ * This is standard ExoPlayer behavior (see DefaultAudioSink.supportsFormat()).
  * 
  * Signal Chain (v31.0):
  * Input → AI Audio Upscaling (Neural) → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble Shelf → Spatial Enhancement (with HRTF) → Reverb → Limiter → Output
@@ -268,13 +274,20 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         itdDelaySamples = ((ITD_DELAY_MS / 1000f) * currentSampleRate).toInt().coerceIn(1, MAX_ITD_DELAY_SAMPLES - 1)
 
         inputFormat = inputAudioFormat
-        outputFormat = inputAudioFormat
+        
+        // ALWAYS output 24-bit PCM for maximum audio quality
+        // Internal processing is 32-bit float, output as 24-bit regardless of input
+        outputFormat = AudioFormat(
+            inputAudioFormat.sampleRate,
+            inputAudioFormat.channelCount,
+            C.ENCODING_PCM_24BIT
+        )
         isActive = true
         
-        val bitDepth = if (encoding == C.ENCODING_PCM_16BIT) 16 else 24
-        android.util.Log.d("SoftwareDSP", "Configured: ${bitDepth}-bit PCM @ ${currentSampleRate.toInt()} Hz, 32-bit float internal, ITD delay: $itdDelaySamples samples")
+        val inputBitDepth = if (encoding == C.ENCODING_PCM_16BIT) 16 else 24
+        android.util.Log.d("SoftwareDSP", "Configured: ${inputBitDepth}-bit input → 24-bit output @ ${currentSampleRate.toInt()} Hz, 32-bit float internal, ITD delay: $itdDelaySamples samples")
 
-        return inputAudioFormat
+        return outputFormat
     }
 
     override fun isActive(): Boolean = isEnabled && isActive
@@ -387,24 +400,20 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         // Convert 32-bit float back to output PCM format
         // =========================================
         
-        if (outputBuffer.capacity() < remaining) {
+        // Output is ALWAYS 24-bit PCM (3 bytes per sample) regardless of input format
+        val outputSize = sampleCount * 3
+        if (outputBuffer.capacity() < outputSize) {
             // Return old buffer to pool if it was from pool
             if (outputBuffer !== AudioProcessor.EMPTY_BUFFER && outputBuffer.isDirect) {
                 ByteBufferPool.getInstance().release(outputBuffer)
             }
-            outputBuffer = ByteBufferPool.getInstance().acquire(remaining)
+            outputBuffer = ByteBufferPool.getInstance().acquire(outputSize)
         } else {
             outputBuffer.clear()
         }
         
-        when (currentEncoding) {
-            C.ENCODING_PCM_16BIT -> {
-                floatToPcm16(floatSamples, outputBuffer, sampleCount)
-            }
-            C.ENCODING_PCM_24BIT -> {
-                floatToPcm24(floatSamples, outputBuffer, sampleCount)
-            }
-        }
+        // Always output as 24-bit PCM for maximum audio quality
+        floatToPcm24(floatSamples, outputBuffer, sampleCount)
         
         outputBuffer.flip()
         

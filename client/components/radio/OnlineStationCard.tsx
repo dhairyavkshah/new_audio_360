@@ -66,6 +66,7 @@ function OnlineStationCardComponent({
       onPress={() => onPress(station)}
       accessibilityLabel={`Play ${station.name}`}
       accessibilityRole="button"
+      android_ripple={null}
     >
       <View style={styles.onlineStationContent}>
         <View style={[styles.stationIcon, { backgroundColor: colors.colorBrandBackground + '20' }]}>
@@ -96,6 +97,7 @@ function OnlineStationCardComponent({
             onPress={() => onFavoritePress(station.stationuuid)}
             style={{ padding: FluentSpacing.xs }}
             accessibilityLabel={isFavorite ? `Remove ${station.name} from favorites` : `Add ${station.name} to favorites`}
+            android_ripple={null}
           >
             <MaterialCommunityIcons
               name={isFavorite ? "heart" : "heart-outline"}

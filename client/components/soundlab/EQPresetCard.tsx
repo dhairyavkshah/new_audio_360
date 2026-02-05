@@ -229,6 +229,7 @@ function EQPresetCardComponent({
             <Pressable
               style={({ pressed }) => [styles.actionButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius, opacity: pressed ? 0.9 : 1 }]}
               onPress={onResetBands}
+              android_ripple={null}
             >
               <MaterialCommunityIcons name="refresh" size={16} color={tokens.colors.text} />
               <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs }}>Reset</FluentText>
@@ -236,6 +237,7 @@ function EQPresetCardComponent({
             <Pressable
               style={({ pressed }) => [styles.actionButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius, opacity: pressed ? 0.9 : 1 }]}
               onPress={onSavePreset}
+              android_ripple={null}
             >
               <MaterialCommunityIcons name="content-save" size={16} color={tokens.colors.onPrimary} />
               <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs, color: tokens.colors.onPrimary }}>Save Preset</FluentText>

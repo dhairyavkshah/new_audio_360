@@ -76,6 +76,7 @@ function ImmersiveModeCardComponent({
           <Pressable
             key={mode.id}
             onPress={() => onModeChange(mode.id)}
+            android_ripple={null}
             style={[
               styles.modeCard,
               {

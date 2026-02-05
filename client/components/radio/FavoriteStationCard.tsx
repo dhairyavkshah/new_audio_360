@@ -51,6 +51,7 @@ function FavoriteStationCardComponent({
         },
       ]}
       onPress={() => onPress(station)}
+      android_ripple={null}
       hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
       accessibilityLabel={`Tune to ${station.frequencyMHz} ${station.bandType === "fm" ? "FM" : "AM"}`}
       accessibilityRole="button"

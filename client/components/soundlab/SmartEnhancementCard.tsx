@@ -63,6 +63,7 @@ function SmartEnhancementCardComponent({
         <Pressable 
           onPress={() => isLicensed && onBassEnhancementToggle(!bassEnhancementEnabled)}
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: FluentSpacing.xs }}
+          android_ripple={null}
         >
           <View style={{ flex: 1 }}>
             <FluentText variant="body2" style={{ fontWeight: FluentFontWeight.medium }}>
@@ -95,6 +96,7 @@ function SmartEnhancementCardComponent({
               <Pressable
                 key={level}
                 onPress={() => isLicensed && onBassEnhancementLevelChange(level)}
+                android_ripple={null}
                 style={[
                   styles.threeStepOption,
                   {
@@ -123,6 +125,7 @@ function SmartEnhancementCardComponent({
         <Pressable 
           onPress={() => isLicensed && onHfRestorationToggle(!hfRestorationEnabled)}
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+          android_ripple={null}
         >
           <View style={{ flex: 1 }}>
             <FluentText variant="body2" style={{ fontWeight: FluentFontWeight.medium }}>
@@ -155,6 +158,7 @@ function SmartEnhancementCardComponent({
               <Pressable
                 key={level}
                 onPress={() => isLicensed && onHfRestorationLevelChange(level)}
+                android_ripple={null}
                 style={[
                   styles.threeStepOption,
                   {

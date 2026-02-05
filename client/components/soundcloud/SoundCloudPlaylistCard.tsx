@@ -29,6 +29,7 @@ export function SoundCloudPlaylistCard({ playlist, onPress }: SoundCloudPlaylist
         getShadowStyle('shadow2', isDark),
       ]}
       onPress={() => onPress(playlist)}
+      android_ripple={null}
     >
       {playlist.artwork_url ? (
         <Image 

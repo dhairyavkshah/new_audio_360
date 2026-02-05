@@ -165,6 +165,7 @@ function SongCardComponent({
       onPressOut={handlePressOut}
       onLongPress={onContextMenu ? handleLongPress : undefined}
       delayLongPress={400}
+      android_ripple={null}
       style={[
         styles.container,
         {

@@ -32,6 +32,7 @@ export function SoundCloudTrackCard({ track, onPress, onAddToLibrary, isAdding, 
         getShadowStyle('shadow2', isDark),
       ]}
       onPress={() => onPress(track)}
+      android_ripple={null}
     >
       {track.artwork_url ? (
         <Image 
@@ -64,6 +65,7 @@ export function SoundCloudTrackCard({ track, onPress, onAddToLibrary, isAdding, 
           onAddToLibrary(track);
         }}
         disabled={isAdding || isFavorited}
+        android_ripple={null}
       >
         {isAdding ? (
           <ActivityIndicator size="small" color={colors.colorBrandForeground1} />
