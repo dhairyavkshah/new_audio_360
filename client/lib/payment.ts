@@ -290,12 +290,6 @@ export interface DonationTier {
   icon: string;
 }
 
-export interface PaymentResult {
-  success: boolean;
-  requiresConfirmation?: boolean;
-  error?: string;
-}
-
 export const CURRENCIES: CurrencyOption[] = [
   { value: "INR", label: "Indian Rupee (₹)", symbol: "₹" },
   { value: "USD", label: "US Dollar ($)", symbol: "$" },
@@ -341,23 +335,14 @@ export const PaymentHandler = {
     // Placeholder - donation status not tracked
   },
   
-  async openUPIPayment(amount: number, currency: string): Promise<PaymentResult> {
+  openUPIPayment(amount: number, currency: string): void {
     // Placeholder - UPI payment not implemented
     console.log('[PaymentHandler] UPI payment:', amount, currency);
-    return {
-      success: false,
-      requiresConfirmation: true,
-      error: "No UPI app found on this device.",
-    };
   },
   
-  async openPayPalPayment(amount: number, currency: string): Promise<PaymentResult> {
+  openPayPalPayment(amount: number, currency: string): void {
     // Placeholder - PayPal payment not implemented
     console.log('[PaymentHandler] PayPal payment:', amount, currency);
-    return {
-      success: false,
-      error: "Failed to open PayPal.",
-    };
   },
   
   getCurrencySymbol(currency: Currency): string {
