@@ -384,3 +384,97 @@ export function getSurfaceColor(tokens: ThemeTokens, level: 0 | 1 | 2 | 3 = 1): 
       return colors.surface;
   }
 }
+
+function lighten(hex: string, amount: number): string {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return hex;
+  const r = Math.min(255, Math.round(parseInt(result[1], 16) + (255 - parseInt(result[1], 16)) * amount));
+  const g = Math.min(255, Math.round(parseInt(result[2], 16) + (255 - parseInt(result[2], 16)) * amount));
+  const b = Math.min(255, Math.round(parseInt(result[3], 16) + (255 - parseInt(result[3], 16)) * amount));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
+}
+
+function darken(hex: string, amount: number): string {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return hex;
+  const r = Math.max(0, Math.round(parseInt(result[1], 16) * (1 - amount)));
+  const g = Math.max(0, Math.round(parseInt(result[2], 16) * (1 - amount)));
+  const b = Math.max(0, Math.round(parseInt(result[3], 16) * (1 - amount)));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
+}
+
+export interface ThemedFluentColors {
+  colorNeutralForeground1: string;
+  colorNeutralForeground2: string;
+  colorNeutralForeground3: string;
+  colorNeutralForeground4: string;
+  colorNeutralForegroundDisabled: string;
+  colorNeutralForegroundInverted: string;
+  colorNeutralForegroundOnBrand: string;
+  colorNeutralBackground1: string;
+  colorNeutralBackground1Hover: string;
+  colorNeutralBackground1Pressed: string;
+  colorNeutralBackground2: string;
+  colorNeutralBackground3: string;
+  colorNeutralBackground4: string;
+  colorNeutralBackgroundDisabled: string;
+  colorNeutralStroke1: string;
+  colorNeutralStroke2: string;
+  colorNeutralStroke3: string;
+  colorNeutralStrokeDisabled: string;
+  colorBrandBackground: string;
+  colorBrandBackgroundHover: string;
+  colorBrandBackgroundPressed: string;
+  colorBrandForeground1: string;
+  colorBrandForeground2: string;
+  colorBrandStroke1: string;
+  colorCompoundBrandForeground1: string;
+  colorCompoundBrandBackground: string;
+  colorPaletteRedForeground1: string;
+  colorPaletteGreenForeground1: string;
+  colorPaletteYellowForeground1: string;
+  colorSubtleBackground: string;
+  colorSubtleBackgroundHover: string;
+  colorSubtleBackgroundPressed: string;
+  colorFavorite: string;
+}
+
+export function getThemedFluentColors(tokens: ThemeTokens): ThemedFluentColors {
+  const { colors, isDark } = tokens;
+  
+  return {
+    colorNeutralForeground1: colors.text,
+    colorNeutralForeground2: colors.textSecondary,
+    colorNeutralForeground3: colors.textTertiary,
+    colorNeutralForeground4: isDark ? darken(colors.textTertiary, 0.2) : lighten(colors.textTertiary, 0.2),
+    colorNeutralForegroundDisabled: isDark ? darken(colors.textTertiary, 0.4) : lighten(colors.textTertiary, 0.4),
+    colorNeutralForegroundInverted: isDark ? colors.backgroundRoot : '#FFFFFF',
+    colorNeutralForegroundOnBrand: colors.onPrimary,
+    colorNeutralBackground1: colors.surface,
+    colorNeutralBackground1Hover: isDark ? lighten(colors.surface, 0.08) : darken(colors.surface, 0.04),
+    colorNeutralBackground1Pressed: isDark ? darken(colors.surface, 0.08) : darken(colors.surface, 0.08),
+    colorNeutralBackground2: colors.backgroundDefault,
+    colorNeutralBackground3: colors.backgroundSecondary,
+    colorNeutralBackground4: colors.backgroundTertiary,
+    colorNeutralBackgroundDisabled: isDark ? darken(colors.surface, 0.2) : lighten(colors.surface, 0.1),
+    colorNeutralStroke1: colors.stroke1,
+    colorNeutralStroke2: colors.stroke2,
+    colorNeutralStroke3: colors.outline,
+    colorNeutralStrokeDisabled: isDark ? darken(colors.outline, 0.3) : lighten(colors.outline, 0.3),
+    colorBrandBackground: colors.primary,
+    colorBrandBackgroundHover: colors.primaryHover,
+    colorBrandBackgroundPressed: colors.primaryPressed,
+    colorBrandForeground1: colors.primary,
+    colorBrandForeground2: isDark ? lighten(colors.primary, 0.15) : darken(colors.primary, 0.15),
+    colorBrandStroke1: colors.primary,
+    colorCompoundBrandForeground1: colors.primary,
+    colorCompoundBrandBackground: colors.primary,
+    colorPaletteRedForeground1: colors.error,
+    colorPaletteGreenForeground1: colors.success,
+    colorPaletteYellowForeground1: colors.warning,
+    colorSubtleBackground: 'transparent',
+    colorSubtleBackgroundHover: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+    colorSubtleBackgroundPressed: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)',
+    colorFavorite: isDark ? '#FF6B7D' : '#FF4D67',
+  };
+}

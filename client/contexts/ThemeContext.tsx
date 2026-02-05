@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeColors, ThemeName, themeRegistry } from '@/constants/theme';
 import { SkinDefinition, IconPack, ShapeTokens, ComponentStyles, getSkin } from '@/constants/skins';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { ThemeTokens, getThemeTokens } from '@/lib/themeUtils';
+import { ThemeTokens, getThemeTokens, getThemedFluentColors, ThemedFluentColors } from '@/lib/themeUtils';
 
 interface ThemeContextValue {
   themeName: ThemeName;
@@ -96,4 +96,9 @@ export function useComponentStyles() {
 export function useThemeTokens() {
   const { tokens } = useThemeContext();
   return tokens;
+}
+
+export function useThemedColors(): ThemedFluentColors {
+  const tokens = useThemeTokens();
+  return useMemo(() => getThemedFluentColors(tokens), [tokens]);
 }
