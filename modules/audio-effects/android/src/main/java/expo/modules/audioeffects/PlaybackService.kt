@@ -271,9 +271,9 @@ class PlaybackService : MediaSessionService() {
                         cachedCurrentIndex = index
                         updateCachedStatus()
                         
-                        // Note: NO buffer clearing on track transitions
-                        // DSP buffers (reverb, filters) should persist across tracks for smooth playback
-                        // Buffer clearing only happens when user explicitly changes DSP settings
+                        // Clear DSP audio buffers on track change (manual or auto-advance)
+                        // This clears delay/reverb buffers but preserves all DSP settings
+                        dspProcessor?.clearAudioBuffers()
                         dspProcessor?.resetSampleCounter(0L)
                         cachedTrackEnded = false
                         

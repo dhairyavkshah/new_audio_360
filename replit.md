@@ -31,8 +31,9 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 - **Complete RippleDrawable Fix**: Added `android_ripple={null}` to all remaining Pressable components (SongCard, SoundCloudTrackCard, SoundCloudPlaylistCard, OnlineStationCard, FavoriteStationCard, EQPresetCard, SmartEnhancementCard, ImmersiveModeCard)
 - **Removed Duplicate isEnabled()**: Fixed duplicate function definition in NeuralAudioProcessorTFLite.kt causing Kotlin compilation errors
 - **DSP Buffer Clearing Strategy Overhaul**: 
-  - NO buffer clearing on track transitions/auto-advance (removed from PlaybackService.onMediaItemTransition)
-  - Buffer clearing ONLY on explicit user DSP changes (any value change, no percentage thresholds)
+  - Buffer clearing on track transitions/auto-advance (single call in PlaybackService.onMediaItemTransition)
+  - Buffer clearing on explicit user DSP changes (any value change, no percentage thresholds)
+  - Track changes: Clear all buffers once (preserves DSP settings, clears delay/reverb buffers)
   - EQ presets/bands: No clearing (biquad filters transition smoothly between coefficients)
   - Bass Boost/Treble Boost: Clear on any value change (previousGain != newGain)
   - Reverb: Clear on any value change (previousMix != newMix)
