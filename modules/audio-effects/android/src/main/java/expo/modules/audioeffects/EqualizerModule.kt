@@ -286,33 +286,40 @@ class EqualizerModule : Module() {
         }
         
         // Smart Enhancements - AI Upscaling (Neural Audio Super-Resolution)
+        // NOTE: Neural model is preloaded on PlaybackService startup (async, non-blocking).
+        // This function only toggles the enabled flag - no blocking initialization here.
         Function("setHfRestoration") { enabled: Boolean ->
             try {
                 val dsp = getDspProcessor()
                 if (dsp == null) {
-                    return@Function mapOf("success" to true, "enabled" to false)
+                    return@Function mapOf("success" to true, "enabled" to false, "ready" to false)
                 }
                 
-                // Initialize neural processor if enabling for the first time
-                if (enabled) {
+                val neuralProcessor = NeuralAudioProcessorTFLite.getInstance()
+                val isReady = neuralProcessor.isReady()
+                val status = neuralProcessor.getStatus()
+                
+                // Log current state
+                android.util.Log.d("EqualizerModule", "setHfRestoration: enabled=$enabled, modelReady=$isReady, status=$status")
+                
+                // Toggle the DSP flag (model initialization happens on service startup)
+                dsp.setHfRestoration(enabled)
+                
+                // If enabling but model not ready yet, trigger async init as fallback
+                if (enabled && !isReady && status != NeuralAudioProcessorTFLite.Status.INITIALIZING) {
                     val context = appContext.reactContext
                     if (context != null) {
-                        val neuralProcessor = NeuralAudioProcessorTFLite.getInstance()
-                        val status = neuralProcessor.getStatus()
-                        // Only initialize if not already ready and not already initializing
-                        if (status != NeuralAudioProcessorTFLite.Status.READY && 
-                            status != NeuralAudioProcessorTFLite.Status.INITIALIZING) {
-                            android.util.Log.d("EqualizerModule", "Initializing neural audio processor...")
-                            neuralProcessor.initialize(context)
+                        android.util.Log.d("EqualizerModule", "Model not ready, triggering async initialization...")
+                        neuralProcessor.initializeAsync(context) { success ->
+                            android.util.Log.d("EqualizerModule", "Fallback async init complete: $success")
                         }
                     }
                 }
                 
-                dsp.setHfRestoration(enabled)
-                return@Function mapOf("success" to true, "enabled" to enabled)
+                return@Function mapOf("success" to true, "enabled" to enabled, "ready" to isReady)
             } catch (e: Exception) {
                 android.util.Log.e("EqualizerModule", "setHfRestoration error: ${e.message}")
-                return@Function mapOf("success" to true, "enabled" to false)
+                return@Function mapOf("success" to true, "enabled" to false, "ready" to false)
             }
         }
         

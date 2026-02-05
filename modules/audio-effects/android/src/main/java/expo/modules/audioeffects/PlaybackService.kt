@@ -108,11 +108,30 @@ class PlaybackService : MediaSessionService() {
         createNotificationChannel()
         initializePlayer()
         
+        // Preload neural audio processor in background (async, non-blocking)
+        // This ensures AI upscaling is ready when user enables it without blocking audio
+        preloadNeuralAudioProcessor()
+        
         // Signal that service is ready
         readyLatch?.countDown()
         readyLatch = null
         
         Log.d(TAG, "PlaybackService created")
+    }
+    
+    /**
+     * Preload the neural audio processor in a background thread.
+     * This avoids blocking the audio thread when AI upscaling is enabled.
+     */
+    private fun preloadNeuralAudioProcessor() {
+        Log.d(TAG, "Preloading neural audio processor...")
+        NeuralAudioProcessorTFLite.getInstance().initializeAsync(this) { success ->
+            if (success) {
+                Log.d(TAG, "Neural audio processor preloaded successfully")
+            } else {
+                Log.w(TAG, "Neural audio processor preload failed - AI upscaling may not be available")
+            }
+        }
     }
     
     private fun createNotificationChannel() {

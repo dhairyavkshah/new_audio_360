@@ -10,6 +10,7 @@ import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.Executors
 import kotlin.concurrent.withLock
 
 /**
@@ -62,6 +63,9 @@ class NeuralAudioProcessorTFLite private constructor() {
         
         private const val TIME_BUDGET_MS = 10L
         private const val BYPASS_LOG_INTERVAL = 100
+        
+        // Single-threaded executor for async initialization (avoids audio thread blocking)
+        private val initExecutor = Executors.newSingleThreadExecutor()
         
         @Volatile
         private var instance: NeuralAudioProcessorTFLite? = null
@@ -182,6 +186,36 @@ class NeuralAudioProcessorTFLite private constructor() {
             Log.e(TAG, "Initialization failed: ${e.message}", e)
             setStatus(Status.ERROR)
             false
+        }
+    }
+    
+    /**
+     * Initialize the TensorFlow Lite interpreter asynchronously in a background thread.
+     * This prevents blocking the audio/UI thread during model loading.
+     * 
+     * Call this on app startup (e.g., in PlaybackService.onCreate()) to preload the model.
+     * The processor will gracefully bypass audio until initialization completes.
+     * 
+     * @param context Android context for accessing assets
+     * @param onComplete Optional callback when initialization finishes (called on background thread)
+     */
+    fun initializeAsync(context: Context, onComplete: ((Boolean) -> Unit)? = null) {
+        if (status == Status.READY) {
+            Log.d(TAG, "Already initialized, skipping async init")
+            onComplete?.invoke(true)
+            return
+        }
+        
+        if (status == Status.INITIALIZING) {
+            Log.d(TAG, "Initialization already in progress")
+            return
+        }
+        
+        Log.d(TAG, "Starting async initialization...")
+        initExecutor.execute {
+            val result = initialize(context)
+            Log.d(TAG, "Async initialization complete: $result")
+            onComplete?.invoke(result)
         }
     }
     

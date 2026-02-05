@@ -741,12 +741,23 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      * Level 5: Maximum - 18% sideGain, 0.60ms ITD, 18% decorr, 55% wet (1.5x multiplier)
      */
     fun setSpatialEnhancementLevel(level: Int) {
+        setSpatialEnhancementLevel(level, clearBuffers = true)
+    }
+    
+    /**
+     * Set spatial enhancement level with optional buffer clearing.
+     * 
+     * @param level Spatial enhancement level (0-5)
+     * @param clearBuffers If true, clears spatial buffers when level changes. 
+     *                     Set to false during slider dragging to prevent audio artifacts.
+     */
+    fun setSpatialEnhancementLevel(level: Int, clearBuffers: Boolean) {
         val previousLevel = spatialEnhancementLevel
         spatialEnhancementLevel = level.coerceIn(0, 5)
         explicitSpatialParams = false // Switch back to level-based mode
         
-        // Clear audio buffers when spatial level changes to prevent layering/lag
-        if (previousLevel != spatialEnhancementLevel) {
+        // Only clear audio buffers if requested (skip during dragging to prevent ripple)
+        if (clearBuffers && previousLevel != spatialEnhancementLevel) {
             clearSpatialBuffers()
         }
         

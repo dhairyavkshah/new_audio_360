@@ -1,5 +1,7 @@
 package expo.modules.audioeffects
 
+import android.os.Handler
+import android.os.Looper
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
@@ -13,18 +15,25 @@ import expo.modules.kotlin.modules.ModuleDefinition
  * Level 4: Enhanced - 14% sideGain, 0.40ms ITD, 12% decorr, 40% wet (1.4x multiplier)
  * Level 5: Maximum - 18% sideGain, 0.60ms ITD, 18% decorr, 55% wet (1.5x multiplier)
  * 
- * Throttling: setLevel is throttled to prevent rapid successive calls that cause ripple effects.
+ * Debounced Buffer Clearing: Buffer clearing is delayed to 200ms after slider drag ends
+ * to prevent ripple/click artifacts during rapid slider movement.
  */
 class SpatialEnhancementModule : Module() {
     private var level = 0
     private var lastAppliedLevel = -1
     private var lastUpdateTime = 0L
+    private var pendingBufferClear = false
     
     private val levelNames = arrayOf("Off", "Subtle", "Mild", "Moderate", "Enhanced", "Maximum")
     private val multipliers = floatArrayOf(0.0f, 0.5f, 1.0f, 1.25f, 1.4f, 1.5f)
     
+    // Handler for delayed buffer clearing
+    private val handler = Handler(Looper.getMainLooper())
+    private var bufferClearRunnable: Runnable? = null
+    
     companion object {
         private const val THROTTLE_INTERVAL_MS = 50L  // Minimum 50ms between level changes
+        private const val BUFFER_CLEAR_DELAY_MS = 200L  // Clear buffers 200ms after slider stops
     }
     
     override fun definition() = ModuleDefinition {
@@ -50,10 +59,10 @@ class SpatialEnhancementModule : Module() {
                     )
                 }
                 
-                // Throttle rapid successive calls to prevent ripple effects
+                // Throttle rapid successive calls
                 val timeSinceLastUpdate = currentTime - lastUpdateTime
                 if (timeSinceLastUpdate < THROTTLE_INTERVAL_MS && lastAppliedLevel >= 0) {
-                    // Still update local level for UI consistency, but skip DSP update
+                    // Update local level for UI consistency but skip DSP update
                     level = requestedLevel
                     return@Function mapOf(
                         "success" to true,
@@ -65,21 +74,28 @@ class SpatialEnhancementModule : Module() {
                 }
                 
                 level = requestedLevel
+                val previousLevel = lastAppliedLevel
                 lastAppliedLevel = requestedLevel
                 lastUpdateTime = currentTime
                 
+                // Apply level WITHOUT clearing buffers (prevents ripple during dragging)
                 val dsp = SoftwareDSPAudioProcessor.getInstance()
-                dsp.setSpatialEnhancementLevel(level)
+                dsp.setSpatialEnhancementLevel(level, false)  // false = don't clear buffers
+                
+                // Schedule delayed buffer clear (debounced - cancelled on each new call)
+                // This ensures buffers only clear once slider stops moving (200ms of no changes)
+                scheduleDelayedBufferClear(previousLevel, requestedLevel)
                 
                 val levelName = levelNames[level]
                 val multiplier = multipliers[level]
-                android.util.Log.d("SpatialEnhancementModule", "Spatial Enhancement: $levelName (${multiplier}x)")
+                android.util.Log.d("SpatialEnhancementModule", "Spatial Enhancement: $levelName (${multiplier}x) [buffer clear pending]")
                 return@Function mapOf(
                     "success" to true, 
                     "level" to level, 
                     "levelName" to levelName,
                     "multiplier" to multiplier,
-                    "throttled" to false
+                    "throttled" to false,
+                    "bufferClearPending" to true
                 )
             } catch (e: Exception) {
                 android.util.Log.e("SpatialEnhancementModule", "setLevel failed: ${e.message}", e)
@@ -158,5 +174,37 @@ class SpatialEnhancementModule : Module() {
                 "isSoftwareDSP" to true
             )
         }
+    }
+    
+    /**
+     * Schedule delayed buffer clear after slider stops moving.
+     * Cancels any pending clear and schedules a new one 200ms in the future.
+     * This debouncing ensures buffers only clear once after drag ends, not during dragging.
+     * 
+     * Always clears buffers after drag ends to ensure clean state (no residual lag).
+     */
+    private fun scheduleDelayedBufferClear(previousLevel: Int, newLevel: Int) {
+        // Cancel any pending buffer clear (debounce - only execute once after all changes)
+        bufferClearRunnable?.let { handler.removeCallbacks(it) }
+        
+        // Skip if no actual change
+        if (previousLevel == newLevel) {
+            return
+        }
+        
+        pendingBufferClear = true
+        
+        // Schedule buffer clear after delay (always clears to ensure clean state)
+        bufferClearRunnable = Runnable {
+            try {
+                val dsp = SoftwareDSPAudioProcessor.getInstance()
+                dsp.clearSpatialBuffers()
+                pendingBufferClear = false
+                android.util.Log.d("SpatialEnhancementModule", "Delayed buffer clear executed (slider stopped, $previousLevel -> $newLevel)")
+            } catch (e: Exception) {
+                android.util.Log.e("SpatialEnhancementModule", "Delayed buffer clear failed: ${e.message}")
+            }
+        }
+        handler.postDelayed(bufferClearRunnable!!, BUFFER_CLEAR_DELAY_MS)
     }
 }
