@@ -267,9 +267,8 @@ class ImmersiveModeEngineModule : Module() {
     ) {
         val dsp = SoftwareDSPAudioProcessor.getInstance() ?: return
         
-        // Clear all audio buffers before applying new immersive mode to prevent layering/lag
-        dsp.clearAudioBuffers()
-        android.util.Log.d("ImmersiveMode", "Cleared audio buffers before applying new mode")
+        // Note: Buffer clearing is NOT done here - it's only needed on track transitions
+        // (handled by PlaybackService.onMediaItemTransition). Filter coefficients update smoothly.
         
         val mf = gmf()
         
