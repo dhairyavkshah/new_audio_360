@@ -18,12 +18,13 @@ export function SoundCloudPlaylistCard({ playlist, onPress }: SoundCloudPlaylist
 
   return (
     <Pressable 
-      style={[
+      style={({ pressed }) => [
         styles.playlistCard, 
         { 
           backgroundColor: colors.colorNeutralBackground2,
           borderColor: colors.colorNeutralStroke2,
           borderWidth: 1,
+          opacity: pressed ? 0.9 : 1,
         },
         getShadowStyle('shadow2', isDark),
       ]}

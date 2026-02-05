@@ -420,7 +420,7 @@ function RadioScreen() {
       />
       {radioMode === 'online' && (
         <Pressable 
-          style={[styles.compactCountryDropdown, { backgroundColor: colors.colorNeutralBackground3, borderColor: colors.colorNeutralStroke2 }]}
+          style={({ pressed }) => [styles.compactCountryDropdown, { backgroundColor: colors.colorNeutralBackground3, borderColor: colors.colorNeutralStroke2, opacity: pressed ? 0.9 : 1 }]}
           onPress={handleOpenCountryPicker}
           accessibilityLabel="Select country"
           accessibilityRole="button"
@@ -443,11 +443,12 @@ function RadioScreen() {
     
     return (
       <Pressable
-        style={[
+        style={({ pressed }) => [
           styles.persistentNowPlaying,
           {
             backgroundColor: colors.colorBrandBackground,
             borderRadius: FluentRadius.large,
+            opacity: pressed ? 0.9 : 1,
           },
         ]}
         onPress={() => handleModeChange('online')}
@@ -801,7 +802,7 @@ function RadioScreen() {
 
         {isFmPlaying && (
           <Pressable
-            style={[
+            style={({ pressed }) => [
               styles.soundLabCard,
               {
                 backgroundColor: isEffectsAttached 
@@ -811,6 +812,7 @@ function RadioScreen() {
                   ? colors.colorBrandStroke1
                   : colors.colorNeutralStroke2,
                 minHeight: FluentTouchTarget.minimum,
+                opacity: pressed ? 0.9 : 1,
               },
             ]}
             onPress={handleNavigateToSoundLab}
@@ -995,12 +997,13 @@ function RadioScreen() {
             keyExtractor={(item) => item.iso_3166_1}
             renderItem={({ item }) => (
               <Pressable
-                style={[
+                style={({ pressed }) => [
                   styles.countryItem,
                   {
                     backgroundColor: item.iso_3166_1 === detectedCountryCode
                       ? colors.colorBrandBackgroundSelected
                       : 'transparent',
+                    opacity: pressed ? 0.9 : 1,
                   }
                 ]}
                 onPress={() => handleSelectCountry(item.iso_3166_1, item.name)}

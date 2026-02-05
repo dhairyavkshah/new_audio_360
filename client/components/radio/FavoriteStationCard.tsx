@@ -37,7 +37,7 @@ function FavoriteStationCardComponent({
 
   return (
     <Pressable
-      style={[
+      style={({ pressed }) => [
         styles.stationChip,
         {
           backgroundColor: isCurrentStation
@@ -47,6 +47,7 @@ function FavoriteStationCardComponent({
             ? colors.colorBrandStroke1
             : colors.colorNeutralStroke2,
           minHeight: FluentTouchTarget.minimum,
+          opacity: pressed ? 0.9 : 1,
         },
       ]}
       onPress={() => onPress(station)}

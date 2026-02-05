@@ -50,7 +50,7 @@ function OnlineStationCardComponent({
 
   return (
     <Pressable
-      style={[
+      style={({ pressed }) => [
         styles.onlineStationCard,
         {
           backgroundColor: isSelected
@@ -60,6 +60,7 @@ function OnlineStationCardComponent({
             ? colors.colorBrandStroke1
             : colors.colorNeutralStroke2,
           minHeight: FluentTouchTarget.minimum,
+          opacity: pressed ? 0.9 : 1,
         },
       ]}
       onPress={() => onPress(station)}

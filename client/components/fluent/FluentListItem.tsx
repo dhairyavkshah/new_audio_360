@@ -106,7 +106,10 @@ export function FluentListItem({
     <Pressable
       onPress={handlePress}
       disabled={disabled}
-      style={containerStyle}
+      style={({ pressed }) => [
+        ...containerStyle,
+        { opacity: pressed ? 0.9 : 1 },
+      ]}
       accessibilityRole="button"
       accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
       accessibilityState={{ disabled }}

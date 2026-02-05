@@ -227,14 +227,14 @@ function EQPresetCardComponent({
           
           <View style={styles.customEQButtons}>
             <Pressable
-              style={[styles.actionButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius }]}
+              style={({ pressed }) => [styles.actionButton, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.buttonBorderRadius, opacity: pressed ? 0.9 : 1 }]}
               onPress={onResetBands}
             >
               <MaterialCommunityIcons name="refresh" size={16} color={tokens.colors.text} />
               <FluentText variant="body2" style={{ marginLeft: FluentSpacing.xs }}>Reset</FluentText>
             </Pressable>
             <Pressable
-              style={[styles.actionButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius }]}
+              style={({ pressed }) => [styles.actionButton, { backgroundColor: tokens.colors.primary, borderRadius: tokens.shapes.buttonBorderRadius, opacity: pressed ? 0.9 : 1 }]}
               onPress={onSavePreset}
             >
               <MaterialCommunityIcons name="content-save" size={16} color={tokens.colors.onPrimary} />
@@ -249,17 +249,17 @@ function EQPresetCardComponent({
               </FluentText>
               {customPresets.map((preset) => (
                 <View key={preset.id} style={[styles.savedPresetRow, { backgroundColor: tokens.colors.surfaceVariant, borderRadius: tokens.shapes.cardBorderRadius }]}>
-                  <Pressable style={styles.savedPresetInfo} onPress={() => onLoadPreset(preset)}>
+                  <Pressable style={({ pressed }) => [styles.savedPresetInfo, { opacity: pressed ? 0.9 : 1 }]} onPress={() => onLoadPreset(preset)}>
                     <FluentText variant="body2">{preset.name}</FluentText>
                     <FluentText variant="caption1" color="secondary">
                       {preset.bands.map(b => b > 0 ? `+${b}` : b).join(", ")}
                     </FluentText>
                   </Pressable>
                   <View style={styles.presetActions}>
-                    <Pressable onPress={() => onEditPreset(preset)} style={styles.actionIconButton}>
+                    <Pressable onPress={() => onEditPreset(preset)} style={({ pressed }) => [styles.actionIconButton, { opacity: pressed ? 0.9 : 1 }]}>
                       <MaterialCommunityIcons name="pencil-outline" size={FluentIconSize.regular} color={tokens.colors.primary} />
                     </Pressable>
-                    <Pressable onPress={() => onDeletePreset(preset)} style={styles.actionIconButton}>
+                    <Pressable onPress={() => onDeletePreset(preset)} style={({ pressed }) => [styles.actionIconButton, { opacity: pressed ? 0.9 : 1 }]}>
                       <MaterialCommunityIcons name="delete-outline" size={FluentIconSize.regular} color={tokens.colors.error} />
                     </Pressable>
                   </View>

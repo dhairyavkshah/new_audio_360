@@ -146,12 +146,13 @@ export default function SettingsScreen() {
             {SLEEP_TIMER_OPTIONS.map((option) => (
               <Pressable
                 key={option.label}
-                style={[
+                style={({ pressed }) => [
                   styles.timerOption,
                   { 
                     backgroundColor: sleepTimerMinutes === option.value 
                       ? colors.colorBrandBackground 
-                      : colors.colorNeutralBackground2 
+                      : colors.colorNeutralBackground2,
+                    opacity: pressed ? 0.9 : 1,
                   },
                 ]}
                 onPress={() => {

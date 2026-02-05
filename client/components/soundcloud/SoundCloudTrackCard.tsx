@@ -21,12 +21,13 @@ export function SoundCloudTrackCard({ track, onPress, onAddToLibrary, isAdding, 
 
   return (
     <Pressable 
-      style={[
+      style={({ pressed }) => [
         styles.trackCard, 
         { 
           backgroundColor: colors.colorNeutralBackground2,
           borderColor: colors.colorNeutralStroke2,
           borderWidth: 1,
+          opacity: pressed ? 0.9 : 1,
         },
         getShadowStyle('shadow2', isDark),
       ]}

@@ -192,7 +192,7 @@ export default function ArchiveScreen() {
 
     return (
       <Pressable 
-        style={[styles.trackCard, { backgroundColor: colors.colorNeutralBackground2, borderColor: colors.colorNeutralStroke2 }]}
+        style={({ pressed }) => [styles.trackCard, { backgroundColor: colors.colorNeutralBackground2, borderColor: colors.colorNeutralStroke2, opacity: pressed ? 0.9 : 1 }]}
         onPress={() => playTrack(item)}
       >
         {artwork ? (
@@ -308,7 +308,7 @@ export default function ArchiveScreen() {
             
             <View style={styles.modalActions}>
               <Pressable
-                style={[styles.modalButton, styles.declineButton, { borderColor: colors.colorNeutralStroke1 }]}
+                style={({ pressed }) => [styles.modalButton, styles.declineButton, { borderColor: colors.colorNeutralStroke1, opacity: pressed ? 0.9 : 1 }]}
                 onPress={handleDeclineConsent}
               >
                 <FluentText variant="body2" color="secondary">
@@ -317,7 +317,7 @@ export default function ArchiveScreen() {
               </Pressable>
               
               <Pressable
-                style={[styles.modalButton, styles.acceptButton, { backgroundColor: colors.colorBrandBackground }]}
+                style={({ pressed }) => [styles.modalButton, styles.acceptButton, { backgroundColor: colors.colorBrandBackground, opacity: pressed ? 0.9 : 1 }]}
                 onPress={handleAcceptConsent}
               >
                 <FluentText variant="body2Strong" style={{ color: colors.colorNeutralForegroundOnBrand }}>
@@ -339,12 +339,13 @@ export default function ArchiveScreen() {
           {QUALITY_OPTIONS.map((option) => (
             <Pressable
               key={option.value}
-              style={[
+              style={({ pressed }) => [
                 styles.qualityChip,
                 { 
                   backgroundColor: selectedQuality === option.value 
                     ? colors.colorBrandBackground 
-                    : colors.colorNeutralBackground2 
+                    : colors.colorNeutralBackground2,
+                  opacity: pressed ? 0.9 : 1,
                 },
               ]}
               onPress={() => setSelectedQuality(option.value)}

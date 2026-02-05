@@ -572,14 +572,14 @@ export default function SoundCloudTabScreen() {
       </FluentText>
       <View style={styles.playAllButtons}>
         <Pressable 
-          style={[styles.playAllButton, { backgroundColor: colors.colorBrandBackground }]} 
+          style={({ pressed }) => [styles.playAllButton, { backgroundColor: colors.colorBrandBackground, opacity: pressed ? 0.9 : 1 }]} 
           onPress={handlePlayAllLikes}
         >
           <MaterialCommunityIcons name="play" size={FluentIconSize.small} color="#FFFFFF" />
           <FluentText variant="body2" style={{ color: '#FFFFFF', marginLeft: FluentSpacing.xs }}>Play All</FluentText>
         </Pressable>
         <Pressable 
-          style={[styles.shuffleButton, { backgroundColor: colors.colorNeutralBackground3 }]} 
+          style={({ pressed }) => [styles.shuffleButton, { backgroundColor: colors.colorNeutralBackground3, opacity: pressed ? 0.9 : 1 }]} 
           onPress={handleShuffleLikes}
         >
           <MaterialCommunityIcons name="shuffle" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
@@ -726,9 +726,9 @@ export default function SoundCloudTabScreen() {
               {SUB_TAB_CONFIG.map((tab) => (
                 <Pressable
                   key={tab.id}
-                  style={[
+                  style={({ pressed }) => [
                     styles.subTabButton,
-                    { backgroundColor: activeSubTab === tab.id ? colors.colorBrandBackground : colors.colorNeutralBackground3 },
+                    { backgroundColor: activeSubTab === tab.id ? colors.colorBrandBackground : colors.colorNeutralBackground3, opacity: pressed ? 0.9 : 1 },
                   ]}
                   onPress={() => setActiveSubTab(tab.id)}
                 >
