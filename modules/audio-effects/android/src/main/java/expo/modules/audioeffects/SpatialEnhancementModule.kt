@@ -12,12 +12,20 @@ import expo.modules.kotlin.modules.ModuleDefinition
  * Level 3: Moderate - 10% sideGain, 0.25ms ITD, 8% decorr, 30% wet (1.25x multiplier)
  * Level 4: Enhanced - 14% sideGain, 0.40ms ITD, 12% decorr, 40% wet (1.4x multiplier)
  * Level 5: Maximum - 18% sideGain, 0.60ms ITD, 18% decorr, 55% wet (1.5x multiplier)
+ * 
+ * Throttling: setLevel is throttled to prevent rapid successive calls that cause ripple effects.
  */
 class SpatialEnhancementModule : Module() {
     private var level = 0
+    private var lastAppliedLevel = -1
+    private var lastUpdateTime = 0L
     
     private val levelNames = arrayOf("Off", "Subtle", "Mild", "Moderate", "Enhanced", "Maximum")
     private val multipliers = floatArrayOf(0.0f, 0.5f, 1.0f, 1.25f, 1.4f, 1.5f)
+    
+    companion object {
+        private const val THROTTLE_INTERVAL_MS = 50L  // Minimum 50ms between level changes
+    }
     
     override fun definition() = ModuleDefinition {
         Name("SpatialEnhancementModule")
@@ -28,11 +36,41 @@ class SpatialEnhancementModule : Module() {
         
         Function("setLevel") { newLevel: Int ->
             try {
-                level = newLevel.coerceIn(0, 5)
-                val dsp = SoftwareDSPAudioProcessor.getInstance()
+                val requestedLevel = newLevel.coerceIn(0, 5)
+                val currentTime = System.currentTimeMillis()
                 
-                // setSpatialEnhancementLevel internally clears buffers when level changes
+                // Skip if same level already applied
+                if (requestedLevel == lastAppliedLevel) {
+                    return@Function mapOf(
+                        "success" to true,
+                        "level" to requestedLevel,
+                        "levelName" to levelNames[requestedLevel],
+                        "multiplier" to multipliers[requestedLevel],
+                        "throttled" to true
+                    )
+                }
+                
+                // Throttle rapid successive calls to prevent ripple effects
+                val timeSinceLastUpdate = currentTime - lastUpdateTime
+                if (timeSinceLastUpdate < THROTTLE_INTERVAL_MS && lastAppliedLevel >= 0) {
+                    // Still update local level for UI consistency, but skip DSP update
+                    level = requestedLevel
+                    return@Function mapOf(
+                        "success" to true,
+                        "level" to requestedLevel,
+                        "levelName" to levelNames[requestedLevel],
+                        "multiplier" to multipliers[requestedLevel],
+                        "throttled" to true
+                    )
+                }
+                
+                level = requestedLevel
+                lastAppliedLevel = requestedLevel
+                lastUpdateTime = currentTime
+                
+                val dsp = SoftwareDSPAudioProcessor.getInstance()
                 dsp.setSpatialEnhancementLevel(level)
+                
                 val levelName = levelNames[level]
                 val multiplier = multipliers[level]
                 android.util.Log.d("SpatialEnhancementModule", "Spatial Enhancement: $levelName (${multiplier}x)")
@@ -40,7 +78,8 @@ class SpatialEnhancementModule : Module() {
                     "success" to true, 
                     "level" to level, 
                     "levelName" to levelName,
-                    "multiplier" to multiplier
+                    "multiplier" to multiplier,
+                    "throttled" to false
                 )
             } catch (e: Exception) {
                 android.util.Log.e("SpatialEnhancementModule", "setLevel failed: ${e.message}", e)
@@ -71,10 +110,18 @@ class SpatialEnhancementModule : Module() {
         
         Function("setEnabled") { enabled: Boolean ->
             try {
-                level = if (enabled) 2 else 0  // Default to "Mild" when enabled
-                val dsp = SoftwareDSPAudioProcessor.getInstance()
+                val targetLevel = if (enabled) 2 else 0
                 
-                // setSpatialEnhancementLevel internally clears buffers when level changes
+                // Skip if same level already applied
+                if (targetLevel == lastAppliedLevel) {
+                    return@Function mapOf("success" to true, "enabled" to enabled, "level" to targetLevel)
+                }
+                
+                level = targetLevel
+                lastAppliedLevel = targetLevel
+                lastUpdateTime = System.currentTimeMillis()
+                
+                val dsp = SoftwareDSPAudioProcessor.getInstance()
                 dsp.setSpatialEnhancementLevel(level)
                 val levelName = levelNames[level]
                 android.util.Log.d("SpatialEnhancementModule", "Spatial Enhancement enabled=$enabled ($levelName)")

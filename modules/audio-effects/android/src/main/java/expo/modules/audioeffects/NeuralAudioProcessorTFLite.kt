@@ -33,7 +33,7 @@ import kotlin.concurrent.withLock
  * - Direct ByteBuffers for TFLite I/O (avoids memory copies)
  * - Buffer reuse to minimize GC pressure
  * - Lazy initialization
- * - GPU delegate with automatic CPU fallback
+ * - CPU-only processing (industry standard for real-time audio DSP)
  * 
  * Thread Safety:
  * - Uses ReentrantLock for critical sections
@@ -100,15 +100,11 @@ class NeuralAudioProcessorTFLite private constructor() {
     @Volatile
     private var interpreter: Interpreter? = null
     @Volatile
-    private var gpuDelegate: Any? = null
-    @Volatile
     private var status: Status = Status.IDLE
     @Volatile
     private var isEnabled: Boolean = false
     @Volatile
     private var currentLevel: EnhancementLevel = EnhancementLevel.MEDIUM
-    @Volatile
-    private var useGpu: Boolean = false
     
     @Volatile
     private var inputBuffer: ByteBuffer? = null
@@ -162,56 +158,16 @@ class NeuralAudioProcessorTFLite private constructor() {
                 return false
             }
             
+            // CPU-only processing - industry standard for real-time audio DSP
+            // GPU is NOT suitable for real-time audio because:
+            // 1. GPU introduces memory transfer overhead (CPU→GPU→CPU)
+            // 2. Audio uses small buffer sizes (8192 samples), inefficient for GPU
+            // 3. Real-time audio has strict latency requirements (~10ms)
+            // 4. CPU timing is more predictable than GPU scheduling
             val options = Interpreter.Options()
-            options.setNumThreads(4)
+            options.setNumThreads(4)  // Multi-threaded CPU inference
             
-            // Try to enable GPU delegate using reflection to avoid NoClassDefFoundError
-            // when the GPU library is not available
-            try {
-                val compatListClass = Class.forName("org.tensorflow.lite.gpu.CompatibilityList")
-                val compatList = compatListClass.getDeclaredConstructor().newInstance()
-                val isDelegateSupportedMethod = compatListClass.getMethod("isDelegateSupportedOnThisDevice")
-                val isSupported = isDelegateSupportedMethod.invoke(compatList) as Boolean
-                
-                if (isSupported) {
-                    try {
-                        val gpuDelegateClass = Class.forName("org.tensorflow.lite.gpu.GpuDelegate")
-                        val gpuDelegateInstance = gpuDelegateClass.getDeclaredConstructor().newInstance()
-                        gpuDelegate = gpuDelegateInstance as? org.tensorflow.lite.Delegate
-                        if (gpuDelegate != null) {
-                            options.addDelegate(gpuDelegate as org.tensorflow.lite.Delegate)
-                            useGpu = true
-                            Log.d(TAG, "GPU delegate enabled via reflection")
-                        } else {
-                            Log.w(TAG, "GPU delegate instance is null, using CPU")
-                            useGpu = false
-                        }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "GPU delegate instantiation failed, falling back to CPU: ${e.message}")
-                        
-                        // Clean up any partial GPU state to prevent residual issues
-                        gpuDelegate?.let { delegate ->
-                            try {
-                                val closeMethod = delegate.javaClass.getMethod("close")
-                                closeMethod.invoke(delegate)
-                            } catch (closeError: Exception) {
-                                Log.w(TAG, "Failed to close partial GPU delegate: ${closeError.message}")
-                            }
-                        }
-                        gpuDelegate = null
-                        useGpu = false
-                    }
-                } else {
-                    Log.d(TAG, "GPU not supported on this device, using CPU")
-                    useGpu = false
-                }
-            } catch (e: ClassNotFoundException) {
-                Log.d(TAG, "GPU delegate library not available, using CPU only: ${e.message}")
-                useGpu = false
-            } catch (e: Exception) {
-                Log.w(TAG, "GPU delegate check failed, using CPU: ${e.message}")
-                useGpu = false
-            }
+            Log.d(TAG, "Using CPU-only processing (industry standard for real-time audio)")
             
             interpreter = Interpreter(modelBuffer, options)
             
@@ -220,7 +176,7 @@ class NeuralAudioProcessorTFLite private constructor() {
             warmup()
             
             setStatus(Status.READY)
-            Log.d(TAG, "Model ready (v$MODEL_VERSION, GPU: $useGpu)")
+            Log.d(TAG, "Model ready (v$MODEL_VERSION, CPU-only)")
             true
         } catch (e: Exception) {
             Log.e(TAG, "Initialization failed: ${e.message}", e)
@@ -580,7 +536,7 @@ class NeuralAudioProcessorTFLite private constructor() {
             "blend" to currentLevel.blend,
             "inputLength" to INPUT_LENGTH,
             "modelLoaded" to (interpreter != null),
-            "useGpu" to useGpu,
+            "processingMode" to "CPU-only (industry standard)",
             "architecture" to "Kuleshov Audio Super-Resolution (1D U-Net CNN)",
             "version" to MODEL_VERSION,
             "timeBudgetMs" to TIME_BUDGET_MS,
@@ -624,21 +580,6 @@ class NeuralAudioProcessorTFLite private constructor() {
                 Log.w(TAG, "Error closing interpreter: ${e.message}")
             }
             interpreter = null
-            
-            try {
-                // Close GPU delegate using reflection since type may vary
-                gpuDelegate?.let { delegate ->
-                    try {
-                        val closeMethod = delegate.javaClass.getMethod("close")
-                        closeMethod.invoke(delegate)
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Error closing GPU delegate via reflection: ${e.message}")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Error closing GPU delegate: ${e.message}")
-            }
-            gpuDelegate = null
             
             inputBuffer = null
             outputBuffer = null

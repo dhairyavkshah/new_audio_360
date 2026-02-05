@@ -118,6 +118,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const nativeTrackEndedSubscriptionRef = useRef<{ remove: () => void } | null>(null);
   const nativeIsPlayingSubscriptionRef = useRef<{ remove: () => void } | null>(null);
   const trackEndHandledRef = useRef<boolean>(false);
+  const lastTrackEndTimeRef = useRef<number>(0);
   const lastKnownPositionRef = useRef<number>(0);
   const wasPlayingBeforeBackgroundRef = useRef<boolean>(false);
   const handleNextInternalRef = useRef<() => void>(() => {});
@@ -736,12 +737,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const handleTrackEnd = useCallback(() => {
     console.log('[PlayerContext] handleTrackEnd called, repeatRef:', repeatRef.current, 'guard:', trackEndHandledRef.current);
     
+    // Cooldown to prevent rapid successive track end calls (prevents jittery auto-advance)
+    const now = Date.now();
+    const timeSinceLastEnd = now - lastTrackEndTimeRef.current;
+    const TRACK_END_COOLDOWN_MS = 300; // Minimum 300ms between track ends
+    
+    if (timeSinceLastEnd < TRACK_END_COOLDOWN_MS) {
+      console.log('[PlayerContext] Track end cooldown active, skipping (time since last:', timeSinceLastEnd, 'ms)');
+      return;
+    }
+    
     // Guard against double-handling (both polling and event listener can trigger)
     if (trackEndHandledRef.current) {
       console.log('[PlayerContext] Track end already handled, skipping');
       return;
     }
     trackEndHandledRef.current = true;
+    lastTrackEndTimeRef.current = now;
     
     const song = currentSongRef.current;
     const currentQueue = queueRef.current;
