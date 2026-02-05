@@ -2,7 +2,6 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import LibraryScreen from "@/screens/LibraryScreen";
-import RecordingsScreen from "@/screens/RecordingsScreen";
 import PlaylistManagementScreen from "@/screens/PlaylistManagementScreen";
 import PlaylistDetailScreen from "@/screens/PlaylistDetailScreen";
 import AlbumDetailScreen from "@/screens/AlbumDetailScreen";
@@ -27,7 +26,6 @@ export interface Artist {
 
 export type LibraryStackParamList = {
   Library: undefined;
-  Recordings: undefined;
   PlaylistManagement: undefined;
   PlaylistDetail: { playlistId: string; playlistName: string };
   AlbumDetail: { album: Album };
@@ -46,13 +44,6 @@ export default function LibraryStackNavigator() {
         component={LibraryScreen}
         options={{
           headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="Recordings"
-        component={RecordingsScreen}
-        options={{
-          headerTitle: "My Recordings",
         }}
       />
       <Stack.Screen

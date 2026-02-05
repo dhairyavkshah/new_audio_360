@@ -1,10 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Recording, PlayerState } from './data';
-
-export type { Recording };
+import { PlayerState } from './data';
 
 const STORAGE_KEYS = {
-  RECORDINGS: '@new_audio_360_recordings',
   PLAYER_STATE: '@new_audio_360_player_state',
   THEME: '@new_audio_360_theme',
   EQ_PRESET: '@new_audio_360_eq_preset',
@@ -131,36 +128,6 @@ export async function reorderPlaylistSongs(playlistId: string, newSongIds: strin
     playlists[index].updatedAt = Date.now();
     await savePlaylists(playlists);
   }
-}
-
-export async function saveRecordings(recordings: Recording[]): Promise<void> {
-  try {
-    await AsyncStorage.setItem(STORAGE_KEYS.RECORDINGS, JSON.stringify(recordings));
-  } catch (error) {
-    console.error('Error saving recordings:', error);
-  }
-}
-
-export async function getRecordings(): Promise<Recording[]> {
-  try {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.RECORDINGS);
-    return data ? JSON.parse(data) : [];
-  } catch (error) {
-    console.error('Error getting recordings:', error);
-    return [];
-  }
-}
-
-export async function addRecording(recording: Recording): Promise<void> {
-  const recordings = await getRecordings();
-  recordings.unshift(recording);
-  await saveRecordings(recordings);
-}
-
-export async function deleteRecording(id: string): Promise<void> {
-  const recordings = await getRecordings();
-  const filtered = recordings.filter(r => r.id !== id);
-  await saveRecordings(filtered);
 }
 
 export async function savePlayerState(state: PlayerState): Promise<void> {

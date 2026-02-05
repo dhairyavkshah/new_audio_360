@@ -8,25 +8,6 @@ export interface Song {
   audioUrl?: string;
 }
 
-export interface Recording {
-  id: string;
-  title: string;
-  songId: string;
-  songTitle: string;
-  artist: string;
-  createdAt: string;
-  duration: number;
-  voiceVolume: number;
-  musicVolume: number;
-  effect: string;
-  fileUri?: string;
-  backingTrackUri?: string;
-  voiceTrackUri?: string;
-  reverbPreset?: string;
-  noiseReduction?: string;
-  fileSize?: number;
-}
-
 export interface PlayerState {
   currentSongId: string | null;
   isPlaying: boolean;

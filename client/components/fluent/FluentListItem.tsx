@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Pressable, View, StyleSheet, ViewStyle } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -41,7 +41,6 @@ export function FluentListItem({
 }: FluentListItemProps) {
   const { isDark } = useThemeContext();
   const colors = isDark ? FluentDarkColors : FluentLightColors;
-  const [isPressed, setIsPressed] = useState(false);
 
   const handlePress = () => {
     if (disabled || !onPress) return;
@@ -49,11 +48,7 @@ export function FluentListItem({
     onPress();
   };
 
-  const getBackgroundColor = () => {
-    if (disabled) return colors.colorNeutralBackground2;
-    if (isPressed && onPress) return colors.colorNeutralBackground1Pressed;
-    return colors.colorNeutralBackground2;
-  };
+  const backgroundColor = disabled ? colors.colorNeutralBackground2 : colors.colorNeutralBackground2;
 
   const shadowStyle = elevation ? getShadowStyle('shadow2', isDark) : {};
 
@@ -90,7 +85,7 @@ export function FluentListItem({
   const containerStyle = [
     styles.container,
     { 
-      backgroundColor: getBackgroundColor(),
+      backgroundColor,
       borderColor: colors.colorNeutralStroke2,
     },
     shadowStyle,
@@ -112,8 +107,6 @@ export function FluentListItem({
   return (
     <Pressable
       onPress={handlePress}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
       disabled={disabled}
       style={containerStyle}
       accessibilityRole="button"
