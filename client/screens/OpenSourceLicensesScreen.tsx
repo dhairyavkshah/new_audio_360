@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentScreenLayout, FluentText } from "@/components/fluent";
-import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
+import { useThemedColors } from "@/contexts/ThemeContext";
 import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 import { ThemedFluentColors } from "@/lib/themeUtils";
 
@@ -26,34 +26,166 @@ function LicenseSection({ title, content, colors }: LicenseSectionProps) {
   );
 }
 
-const OPEN_SOURCE_LIBRARIES = [
+const CORE_LIBRARIES = [
   { name: "React Native", license: "MIT License", version: "0.79.2" },
+  { name: "React", license: "MIT License", version: "19.0.0" },
+  { name: "React DOM", license: "MIT License", version: "19.0.0" },
   { name: "Expo SDK", license: "MIT License", version: "53.0.0" },
-  { name: "React Navigation", license: "MIT License", version: "7.x" },
-  { name: "React Native Reanimated", license: "MIT License", version: "3.x" },
-  { name: "React Native Track Player", license: "Apache License 2.0", version: "4.x" },
-  { name: "React Native IAP", license: "MIT License", version: "12.x" },
-  { name: "React Native Audio API", license: "MIT License", version: "0.x" },
+  { name: "React Native Web", license: "MIT License", version: "0.20.0" },
+];
+
+const NAVIGATION_LIBRARIES = [
+  { name: "React Navigation Native", license: "MIT License", version: "7.1.6" },
+  { name: "React Navigation Native Stack", license: "MIT License", version: "7.3.10" },
+  { name: "React Navigation Bottom Tabs", license: "MIT License", version: "7.3.10" },
+  { name: "React Navigation Elements", license: "MIT License", version: "2.3.8" },
+  { name: "React Native Screens", license: "MIT License", version: "4.10.0" },
+  { name: "React Native Safe Area Context", license: "MIT License", version: "5.4.0" },
+  { name: "React Native Gesture Handler", license: "MIT License", version: "2.24.0" },
+];
+
+const UI_LIBRARIES = [
+  { name: "React Native Reanimated", license: "MIT License", version: "3.17.5" },
+  { name: "Expo Vector Icons", license: "MIT License", version: "14.0.4" },
+  { name: "Material Community Icons", license: "SIL Open Font License 1.1", version: "7.x" },
+  { name: "Expo Blur", license: "MIT License", version: "14.1.5" },
+  { name: "Expo Image", license: "MIT License", version: "2.4.1" },
+  { name: "Expo Splash Screen", license: "MIT License", version: "0.30.10" },
+  { name: "Expo Status Bar", license: "MIT License", version: "2.2.3" },
+  { name: "Expo Navigation Bar", license: "MIT License", version: "5.0.10" },
+  { name: "Expo System UI", license: "MIT License", version: "5.0.11" },
+  { name: "React Native Keyboard Controller", license: "MIT License", version: "1.20.6" },
+  { name: "React Native Community Slider", license: "MIT License", version: "4.5.5" },
+];
+
+const AUDIO_LIBRARIES = [
+  { name: "React Native Track Player", license: "Apache License 2.0", version: "4.1.1" },
+  { name: "React Native Audio API", license: "MIT License", version: "0.11.1" },
+  { name: "Expo AV", license: "MIT License", version: "15.1.7" },
+  { name: "Expo Audio", license: "MIT License", version: "0.4.9" },
   { name: "AndroidX Media3 ExoPlayer", license: "Apache License 2.0", version: "1.2.1" },
+  { name: "Browser ID3 Writer", license: "MIT License", version: "6.3.1" },
+];
+
+const EXPO_MODULES = [
+  { name: "Expo Media Library", license: "MIT License", version: "17.1.7" },
+  { name: "Expo File System", license: "MIT License", version: "19.0.21" },
+  { name: "Expo Haptics", license: "MIT License", version: "14.1.4" },
+  { name: "Expo Notifications", license: "MIT License", version: "0.31.4" },
+  { name: "Expo Location", license: "MIT License", version: "18.1.6" },
+  { name: "Expo Local Authentication", license: "MIT License", version: "16.0.5" },
+  { name: "Expo Application", license: "MIT License", version: "7.0.8" },
+  { name: "Expo Secure Store", license: "MIT License", version: "14.2.4" },
+  { name: "Expo Crypto", license: "MIT License", version: "14.1.5" },
+  { name: "Expo Clipboard", license: "MIT License", version: "7.1.5" },
+  { name: "Expo Constants", license: "MIT License", version: "17.1.8" },
+  { name: "Expo Asset", license: "MIT License", version: "11.1.7" },
+  { name: "Expo Font", license: "MIT License", version: "13.3.2" },
+  { name: "Expo Linking", license: "MIT License", version: "7.1.7" },
+  { name: "Expo Web Browser", license: "MIT License", version: "14.2.0" },
+  { name: "Expo Auth Session", license: "MIT License", version: "6.2.1" },
+  { name: "Expo Build Properties", license: "MIT License", version: "0.14.8" },
+  { name: "Expo Dev Client", license: "MIT License", version: "5.2.4" },
+];
+
+const STORAGE_LIBRARIES = [
+  { name: "Async Storage", license: "MIT License", version: "2.1.2" },
+  { name: "PostgreSQL Client (node-postgres)", license: "MIT License", version: "8.17.2" },
+];
+
+const NETWORK_LIBRARIES = [
+  { name: "Express", license: "MIT License", version: "5.2.1" },
+  { name: "AWS SDK S3 Client", license: "Apache License 2.0", version: "3.975.0" },
+  { name: "TanStack React Query", license: "MIT License", version: "5.90.7" },
+  { name: "CORS Middleware", license: "MIT License", version: "2.8.6" },
+  { name: "React Native WebView", license: "MIT License", version: "13.16.0" },
+];
+
+const UTILITY_LIBRARIES = [
+  { name: "Zod", license: "MIT License", version: "3.24.2" },
+  { name: "Zod Validation Error", license: "MIT License", version: "3.4.0" },
+];
+
+const ANDROID_NATIVE_LIBRARIES = [
   { name: "Google Play Billing Library", license: "Apache License 2.0", version: "6.1.0" },
   { name: "AndroidX Security Crypto", license: "Apache License 2.0", version: "1.1.0" },
-  { name: "Expo AV", license: "MIT License", version: "~15.x" },
-  { name: "Expo Media Library", license: "MIT License", version: "~17.x" },
-  { name: "Expo Haptics", license: "MIT License", version: "~14.x" },
-  { name: "Expo Notifications", license: "MIT License", version: "~0.29.x" },
-  { name: "Expo Location", license: "MIT License", version: "~18.x" },
-  { name: "Expo Local Authentication", license: "MIT License", version: "~15.x" },
-  { name: "Expo Application", license: "MIT License", version: "~6.x" },
-  { name: "Expo Linear Gradient", license: "MIT License", version: "~14.x" },
-  { name: "Expo Secure Store", license: "MIT License", version: "~14.x" },
-  { name: "Async Storage", license: "MIT License", version: "2.x" },
-  { name: "Material Community Icons", license: "SIL Open Font License 1.1", version: "7.x" },
-  { name: "Radio Browser API", license: "CC BY-SA 4.0", version: "Community API" },
+  { name: "Android NDK (C++/NEON SIMD)", license: "Apache License 2.0", version: "25.1.8937393" },
 ];
 
 const SMART_ENHANCEMENT_LIBRARIES = [
-  { name: "TensorFlow.js", license: "Apache License 2.0", version: "4.x", description: "Neural AI audio upscaling on Web/PWA" },
+  { name: "TensorFlow.js", license: "Apache License 2.0", version: "4.22.0", description: "Neural AI audio upscaling on Web/PWA" },
   { name: "TensorFlow Lite", license: "Apache License 2.0", version: "2.x", description: "Neural AI audio upscaling on Android" },
+  { name: "ARM NEON Intrinsics", license: "BSD-3-Clause", version: "ARMv8-A", description: "SIMD optimizations for PCM conversion and DSP" },
+];
+
+const API_SERVICES = [
+  { name: "Radio Browser API", license: "CC BY-SA 4.0", version: "Community API" },
+  { name: "Internet Archive API", license: "Various (Public Domain/CC)", version: "Public API" },
+  { name: "SoundCloud API", license: "Proprietary (OAuth 2.1)", version: "v2" },
+];
+
+interface LibraryCategory {
+  title: string;
+  description: string;
+  libraries: Array<{ name: string; license: string; version: string; description?: string }>;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+}
+
+const LIBRARY_CATEGORIES: LibraryCategory[] = [
+  {
+    title: "Core Framework",
+    description: "Foundation libraries powering the application.",
+    libraries: CORE_LIBRARIES,
+    icon: "react",
+  },
+  {
+    title: "Navigation",
+    description: "Screen navigation and gesture handling.",
+    libraries: NAVIGATION_LIBRARIES,
+    icon: "navigation",
+  },
+  {
+    title: "User Interface",
+    description: "UI components, animations, and visual elements.",
+    libraries: UI_LIBRARIES,
+    icon: "palette",
+  },
+  {
+    title: "Audio Processing",
+    description: "Audio playback, track management, and media handling.",
+    libraries: AUDIO_LIBRARIES,
+    icon: "music-note",
+  },
+  {
+    title: "Expo Modules",
+    description: "Cross-platform device APIs and native functionality.",
+    libraries: EXPO_MODULES,
+    icon: "cellphone",
+  },
+  {
+    title: "Data Storage",
+    description: "Local and cloud data persistence.",
+    libraries: STORAGE_LIBRARIES,
+    icon: "database",
+  },
+  {
+    title: "Networking",
+    description: "API communication and cloud services.",
+    libraries: NETWORK_LIBRARIES,
+    icon: "cloud",
+  },
+  {
+    title: "Utilities",
+    description: "Validation and helper libraries.",
+    libraries: UTILITY_LIBRARIES,
+    icon: "tools",
+  },
+  {
+    title: "Android Native",
+    description: "Native Android SDKs and performance optimizations.",
+    libraries: ANDROID_NATIVE_LIBRARIES,
+    icon: "android",
+  },
 ];
 
 export default function OpenSourceLicensesScreen() {
@@ -113,45 +245,67 @@ export default function OpenSourceLicensesScreen() {
         </View>
 
         <View style={styles.sectionsContainer}>
-          <FluentText variant="subtitle2" style={styles.sectionHeader}>
-            Open Source Components
-          </FluentText>
-          <FluentText variant="caption1" color="secondary" style={styles.sectionDescription}>
-            This application incorporates the following third-party open source software components, each distributed under their respective licenses. We gratefully acknowledge the contributions of the open source community.
-          </FluentText>
-
-          {OPEN_SOURCE_LIBRARIES.map((lib, index) => (
-            <View 
-              key={index} 
-              style={[styles.libraryItem, { backgroundColor: colors.colorNeutralBackground2 }]}
-            >
-              <View style={styles.libraryHeader}>
+          {LIBRARY_CATEGORIES.map((category, catIndex) => (
+            <View key={`cat-${catIndex}`}>
+              <View style={styles.categoryHeader}>
                 <MaterialCommunityIcons 
-                  name="package-variant" 
-                  size={FluentIconSize.small} 
+                  name={category.icon} 
+                  size={FluentIconSize.medium} 
                   color={colors.colorBrandForeground1} 
                 />
-                <View style={styles.libraryDetails}>
-                  <FluentText variant="body2" style={styles.libraryName}>
-                    {lib.name}
+                <View style={styles.categoryTitleContainer}>
+                  <FluentText variant="subtitle2">
+                    {category.title}
                   </FluentText>
                   <FluentText variant="caption2" color="tertiary">
-                    Version {lib.version}
+                    {category.description}
                   </FluentText>
                 </View>
               </View>
-              <FluentText variant="caption2" color="secondary" style={styles.libraryLicense}>
-                {lib.license}
-              </FluentText>
+
+              {category.libraries.map((lib, index) => (
+                <View 
+                  key={`${catIndex}-${index}`} 
+                  style={[styles.libraryItem, { backgroundColor: colors.colorNeutralBackground2 }]}
+                >
+                  <View style={styles.libraryHeader}>
+                    <MaterialCommunityIcons 
+                      name="package-variant" 
+                      size={FluentIconSize.small} 
+                      color={colors.colorNeutralForeground3} 
+                    />
+                    <View style={styles.libraryDetails}>
+                      <FluentText variant="body2" style={styles.libraryName}>
+                        {lib.name}
+                      </FluentText>
+                      <FluentText variant="caption2" color="tertiary">
+                        v{lib.version}
+                      </FluentText>
+                    </View>
+                  </View>
+                  <FluentText variant="caption2" color="secondary" style={styles.libraryLicense}>
+                    {lib.license}
+                  </FluentText>
+                </View>
+              ))}
             </View>
           ))}
 
-          <FluentText variant="subtitle2" style={[styles.sectionHeader, { marginTop: FluentSpacing.l }]}>
-            Smart Enhancements Components
-          </FluentText>
-          <FluentText variant="caption1" color="secondary" style={styles.sectionDescription}>
-            The following components power our Smart Enhancements features including AI Audio Upscaling, Bass Enhancement, and real-time DSP processing.
-          </FluentText>
+          <View style={styles.categoryHeader}>
+            <MaterialCommunityIcons 
+              name="brain" 
+              size={FluentIconSize.medium} 
+              color={colors.colorBrandForeground1} 
+            />
+            <View style={styles.categoryTitleContainer}>
+              <FluentText variant="subtitle2">
+                Smart Enhancements
+              </FluentText>
+              <FluentText variant="caption2" color="tertiary">
+                AI audio upscaling and real-time DSP processing.
+              </FluentText>
+            </View>
+          </View>
 
           {SMART_ENHANCEMENT_LIBRARIES.map((lib, index) => (
             <View 
@@ -160,16 +314,16 @@ export default function OpenSourceLicensesScreen() {
             >
               <View style={styles.libraryHeader}>
                 <MaterialCommunityIcons 
-                  name="brain" 
+                  name="chip" 
                   size={FluentIconSize.small} 
-                  color={colors.colorBrandForeground1} 
+                  color={colors.colorNeutralForeground3} 
                 />
                 <View style={styles.libraryDetails}>
                   <FluentText variant="body2" style={styles.libraryName}>
                     {lib.name}
                   </FluentText>
                   <FluentText variant="caption2" color="tertiary">
-                    Version {lib.version}
+                    v{lib.version}
                   </FluentText>
                 </View>
               </View>
@@ -178,6 +332,48 @@ export default function OpenSourceLicensesScreen() {
               </FluentText>
               <FluentText variant="caption2" color="tertiary" style={styles.libraryLicense}>
                 {lib.description}
+              </FluentText>
+            </View>
+          ))}
+
+          <View style={styles.categoryHeader}>
+            <MaterialCommunityIcons 
+              name="api" 
+              size={FluentIconSize.medium} 
+              color={colors.colorBrandForeground1} 
+            />
+            <View style={styles.categoryTitleContainer}>
+              <FluentText variant="subtitle2">
+                External API Services
+              </FluentText>
+              <FluentText variant="caption2" color="tertiary">
+                Third-party APIs for content discovery.
+              </FluentText>
+            </View>
+          </View>
+
+          {API_SERVICES.map((lib, index) => (
+            <View 
+              key={`api-${index}`} 
+              style={[styles.libraryItem, { backgroundColor: colors.colorNeutralBackground2 }]}
+            >
+              <View style={styles.libraryHeader}>
+                <MaterialCommunityIcons 
+                  name="earth" 
+                  size={FluentIconSize.small} 
+                  color={colors.colorNeutralForeground3} 
+                />
+                <View style={styles.libraryDetails}>
+                  <FluentText variant="body2" style={styles.libraryName}>
+                    {lib.name}
+                  </FluentText>
+                  <FluentText variant="caption2" color="tertiary">
+                    {lib.version}
+                  </FluentText>
+                </View>
+              </View>
+              <FluentText variant="caption2" color="secondary" style={styles.libraryLicense}>
+                {lib.license}
               </FluentText>
             </View>
           ))}
@@ -191,6 +387,12 @@ export default function OpenSourceLicensesScreen() {
           <LicenseSection
             title="Apache License, Version 2.0"
             content={'Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:\n\nhttp://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.'}
+            colors={colors}
+          />
+
+          <LicenseSection
+            title="BSD 3-Clause License"
+            content={'Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n\n1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n\n2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n\n3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.'}
             colors={colors}
           />
 
@@ -215,8 +417,8 @@ export default function OpenSourceLicensesScreen() {
 
         <View style={styles.footer}>
           <FluentText variant="caption2" color="tertiary" align="center">
-            This legal notice was last updated on January 26, 2026.{"\n"}
-            Document Version: 1.0.3
+            This legal notice was last updated on February 5, 2026.{"\n"}
+            Document Version: 2.0.0
           </FluentText>
         </View>
       </ScrollView>
@@ -268,13 +470,15 @@ const styles = StyleSheet.create({
   sectionsContainer: {
     gap: FluentSpacing.s,
   },
-  sectionHeader: {
-    marginBottom: FluentSpacing.xs,
+  categoryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: FluentSpacing.l,
+    marginBottom: FluentSpacing.s,
+    gap: FluentSpacing.s,
   },
-  sectionDescription: {
-    marginBottom: FluentSpacing.m,
-    lineHeight: 20,
-    textAlign: "justify",
+  categoryTitleContainer: {
+    flex: 1,
   },
   libraryItem: {
     flexDirection: "column",
