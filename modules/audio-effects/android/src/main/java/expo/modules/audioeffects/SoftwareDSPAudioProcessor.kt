@@ -513,10 +513,8 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         if (pending != null) {
             samplesProcessed = pending
             pendingSamplePosition = null
-            android.util.Log.d("SoftwareDSP", "flush() using pending position: $pending samples")
         } else {
             samplesProcessed = 0L
-            android.util.Log.d("SoftwareDSP", "flush() reset to 0 (new track)")
         }
         
         eqFilters.forEach { it.resetAllChannels() }
@@ -650,15 +648,27 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
         trackEnded = false
     }
     
+    // Debounce guard for clearAudioBuffers to prevent redundant calls
+    @Volatile
+    private var lastClearBuffersTime = 0L
+    private val clearBuffersDebounceMs = 100L  // 100ms debounce
+    
     /**
      * Clear all audio buffers for clean track transitions.
      * Called when switching between tracks (auto-advance, next, previous, etc.)
      * to prevent audio artifacts from previous track bleeding into new one.
      * 
      * This does NOT reset settings/gains - only clears delay buffers and filter states.
+     * Debounced to prevent redundant calls during track transitions (100ms window).
      */
     fun clearAudioBuffers() {
-        android.util.Log.d("SoftwareDSP", "clearAudioBuffers() - clearing all delay buffers for track transition")
+        val now = System.currentTimeMillis()
+        if (now - lastClearBuffersTime < clearBuffersDebounceMs) {
+            return  // Skip redundant call within debounce window
+        }
+        lastClearBuffersTime = now
+        
+        android.util.Log.d("SoftwareDSP", "clearAudioBuffers() - clearing buffers")
         
         // Clear reverb delay buffers
         for (tap in 0 until 4) {
