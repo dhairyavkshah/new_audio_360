@@ -325,7 +325,7 @@ class NeuralAudioProcessorClass {
 
     const startTime = performance.now();
     
-    return tf.tidy(() => {
+    const result = tf.tidy(() => {
       let maxVal = 0;
       for (let i = 0; i < chunk.length; i++) {
         const absVal = Math.abs(chunk[i]);
@@ -343,15 +343,35 @@ class NeuralAudioProcessorClass {
       const outputTensor = this.model!.predict(inputTensor) as tf.Tensor;
       const outputData = outputTensor.dataSync();
       
-      const result = new Float32Array(INPUT_LENGTH);
+      const processedResult = new Float32Array(INPUT_LENGTH);
       for (let i = 0; i < INPUT_LENGTH; i++) {
         const enhanced = outputData[i] * maxVal;
         const original = chunk[i];
-        result[i] = original + (enhanced - original) * blend;
+        processedResult[i] = original + (enhanced - original) * blend;
       }
       
-      return result;
+      return processedResult;
     });
+    
+    // Check if processing exceeded time budget
+    const processingTime = performance.now() - startTime;
+    if (processingTime > TIME_BUDGET_MS) {
+      this.timeoutBypassCount++;
+      
+      // After 3 consecutive timeouts, disable to prevent audio lag
+      if (this.timeoutBypassCount >= 3) {
+        console.warn('[NeuralAudioProcessor] Disabling due to repeated timeouts (' + processingTime.toFixed(0) + 'ms > ' + TIME_BUDGET_MS + 'ms)');
+        this.isEnabled = false;
+        this.backendTooSlow = true;
+      }
+      
+      // Return original audio for this chunk to prevent lag
+      return chunk;
+    }
+    
+    // Reset timeout counter on successful fast processing
+    this.timeoutBypassCount = 0;
+    return result;
   }
 
   async processBuffer(buffer: AudioBuffer): Promise<AudioBuffer> {
