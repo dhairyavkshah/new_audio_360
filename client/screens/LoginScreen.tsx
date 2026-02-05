@@ -67,9 +67,9 @@ export default function LoginScreen() {
           )}
 
           <Pressable
-            style={[
+            style={({ pressed }) => [
               styles.googleButton,
-              { backgroundColor: isDark ? '#4285F4' : '#FFFFFF', borderColor: colors.colorNeutralStroke1 }
+              { backgroundColor: isDark ? '#4285F4' : '#FFFFFF', borderColor: colors.colorNeutralStroke1, opacity: pressed ? 0.9 : 1 }
             ]}
             onPress={handleGoogleSignIn}
             disabled={isLoading}
@@ -91,9 +91,9 @@ export default function LoginScreen() {
 
           {DEV_MODE && (
             <Pressable
-              style={[
+              style={({ pressed }) => [
                 styles.testButton,
-                { borderColor: colors.colorNeutralStroke2 }
+                { borderColor: colors.colorNeutralStroke2, opacity: pressed ? 0.9 : 1 }
               ]}
               onPress={handleTestSignIn}
               disabled={isLoading}

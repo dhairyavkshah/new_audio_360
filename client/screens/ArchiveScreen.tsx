@@ -216,7 +216,7 @@ export default function ArchiveScreen() {
         </View>
 
         <Pressable
-          style={[styles.addButton, { backgroundColor: colors.colorSubtleBackgroundHover }]}
+          style={({ pressed }) => [styles.addButton, { backgroundColor: colors.colorSubtleBackgroundHover, opacity: pressed ? 0.9 : 1 }]}
           onPress={(e) => {
             e.stopPropagation();
             addToLibrary(item);
@@ -240,7 +240,7 @@ export default function ArchiveScreen() {
 
   const searchButton = (
     <Pressable
-      style={[styles.searchButton, { backgroundColor: colors.colorBrandBackground }]}
+      style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.colorBrandBackground, opacity: pressed ? 0.9 : 1 }]}
       onPress={handleSearch}
     >
       <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />

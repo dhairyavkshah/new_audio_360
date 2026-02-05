@@ -328,10 +328,11 @@ export default function FolderSelectionScreen() {
       <Pressable
         key={folder.id}
         onPress={() => isWeb ? undefined : toggleFolder(folder.id)}
-        style={[
+        style={({ pressed }) => [
           styles.folderItem,
           getShadowStyle('shadow2', isDark),
           { backgroundColor: colors.colorNeutralBackground2 },
+          { opacity: pressed ? 0.9 : 1 },
         ]}
       >
         <View style={[styles.folderIconContainer, { backgroundColor: colors.colorBrandBackground + "20" }]}>
@@ -356,19 +357,20 @@ export default function FolderSelectionScreen() {
         {isWeb ? (
           <Pressable
             onPress={() => handleRemoveFolder(folder.id)}
-            style={[styles.removeButton, { backgroundColor: colors.colorPaletteRedForeground1 + "15" }]}
+            style={({ pressed }) => [styles.removeButton, { backgroundColor: colors.colorPaletteRedForeground1 + "15" }, { opacity: pressed ? 0.9 : 1 }]}
           >
             <MaterialCommunityIcons name="close" size={FluentIconSize.regular} color={colors.colorPaletteRedForeground1} />
           </Pressable>
         ) : (
           <Pressable
             onPress={() => toggleFolder(folder.id)}
-            style={[
+            style={({ pressed }) => [
               styles.checkboxCircle,
               { 
                 backgroundColor: isSelected ? colors.colorBrandBackground : "transparent",
                 borderColor: isSelected ? colors.colorBrandBackground : colors.colorNeutralStroke1,
               },
+              { opacity: pressed ? 0.9 : 1 },
             ]}
           >
             {isSelected && (
@@ -386,11 +388,11 @@ export default function FolderSelectionScreen() {
         <Pressable
           onPress={handleAddFolder}
           disabled={isScanning}
-          style={[
+          style={({ pressed }) => [
             styles.addButton, 
             { 
               backgroundColor: colors.colorBrandBackground, 
-              opacity: isScanning ? 0.7 : 1 
+              opacity: isScanning ? 0.7 : pressed ? 0.9 : 1 
             }
           ]}
         >
@@ -479,11 +481,11 @@ export default function FolderSelectionScreen() {
           <Pressable
             onPress={handleSave}
             disabled={isSaving}
-            style={[
+            style={({ pressed }) => [
               styles.saveButton, 
               { 
                 backgroundColor: colors.colorBrandBackground,
-                opacity: isSaving ? 0.7 : 1,
+                opacity: isSaving ? 0.7 : pressed ? 0.9 : 1,
               }
             ]}
           >
@@ -522,7 +524,7 @@ export default function FolderSelectionScreen() {
         <View style={styles.headerButtonsRow}>
           <Pressable
             onPress={selectAll}
-            style={[styles.headerButton, { backgroundColor: colors.colorBrandBackground }]}
+            style={({ pressed }) => [styles.headerButton, { backgroundColor: colors.colorBrandBackground }, { opacity: pressed ? 0.9 : 1 }]}
           >
             <MaterialCommunityIcons name="checkbox-multiple-marked" size={FluentIconSize.regular} color="#FFFFFF" />
             <FluentText variant="body2Strong" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s }}>
@@ -531,7 +533,7 @@ export default function FolderSelectionScreen() {
           </Pressable>
           <Pressable
             onPress={clearAll}
-            style={[styles.headerButton, { backgroundColor: colors.colorNeutralBackground3, borderWidth: 1, borderColor: colors.colorNeutralStroke1 }]}
+            style={({ pressed }) => [styles.headerButton, { backgroundColor: colors.colorNeutralBackground3, borderWidth: 1, borderColor: colors.colorNeutralStroke1 }, { opacity: pressed ? 0.9 : 1 }]}
           >
             <MaterialCommunityIcons name="checkbox-multiple-blank-outline" size={FluentIconSize.regular} color={colors.colorNeutralForeground1} />
             <FluentText variant="body2Strong" style={{ color: colors.colorNeutralForeground1, marginLeft: FluentSpacing.s }}>
@@ -592,11 +594,11 @@ export default function FolderSelectionScreen() {
         <Pressable
           onPress={handleSave}
           disabled={isSaving}
-          style={[
+          style={({ pressed }) => [
             styles.saveButton, 
             { 
               backgroundColor: colors.colorBrandBackground,
-              opacity: isSaving ? 0.7 : 1,
+              opacity: isSaving ? 0.7 : pressed ? 0.9 : 1,
             }
           ]}
         >

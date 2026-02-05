@@ -129,7 +129,7 @@ export default function ArchiveTabScreen() {
 
     return (
       <Pressable 
-        style={[styles.trackCard, { backgroundColor: colors.colorNeutralBackground2, borderColor: colors.colorNeutralStroke2 }]}
+        style={({ pressed }) => [styles.trackCard, { backgroundColor: colors.colorNeutralBackground2, borderColor: colors.colorNeutralStroke2 }, { opacity: pressed ? 0.9 : 1 }]}
         onPress={() => playTrack(item)}
       >
         <View style={[styles.artwork, { backgroundColor: colors.colorBrandBackground }]}>
@@ -146,7 +146,7 @@ export default function ArchiveTabScreen() {
         </View>
 
         <Pressable
-          style={[styles.addButton, { backgroundColor: isFavorited ? colors.colorPaletteRedBackground1 : colors.colorSubtleBackgroundHover }]}
+          style={({ pressed }) => [styles.addButton, { backgroundColor: isFavorited ? colors.colorPaletteRedBackground1 : colors.colorSubtleBackgroundHover }, { opacity: pressed ? 0.9 : 1 }]}
           onPress={(e) => {
             e.stopPropagation();
             handleToggleFavorite(item);
@@ -215,7 +215,7 @@ export default function ArchiveTabScreen() {
             
             <View style={styles.modalActions}>
               <Pressable
-                style={[styles.modalButton, styles.declineButton, { borderColor: colors.colorNeutralStroke1 }]}
+                style={({ pressed }) => [styles.modalButton, styles.declineButton, { borderColor: colors.colorNeutralStroke1 }, { opacity: pressed ? 0.9 : 1 }]}
                 onPress={handleDeclineConsent}
               >
                 <FluentText variant="body2" color="secondary">
@@ -224,7 +224,7 @@ export default function ArchiveTabScreen() {
               </Pressable>
               
               <Pressable
-                style={[styles.modalButton, styles.acceptButton, { backgroundColor: colors.colorBrandBackground }]}
+                style={({ pressed }) => [styles.modalButton, styles.acceptButton, { backgroundColor: colors.colorBrandBackground }, { opacity: pressed ? 0.9 : 1 }]}
                 onPress={handleAcceptConsent}
               >
                 <FluentText variant="body2Strong" style={{ color: colors.colorNeutralForegroundOnBrand }}>
@@ -251,7 +251,7 @@ export default function ArchiveTabScreen() {
             />
           </View>
           <Pressable
-            style={[styles.searchButton, { backgroundColor: colors.colorBrandBackground }]}
+            style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.colorBrandBackground }, { opacity: pressed ? 0.9 : 1 }]}
             onPress={handleSearch}
           >
             <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />

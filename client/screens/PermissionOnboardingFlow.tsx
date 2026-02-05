@@ -172,7 +172,7 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
           </FluentText>
           <View style={styles.webButtons}>
             <Pressable
-              style={[styles.button, { backgroundColor: colors.colorBrandBackground }]}
+              style={({ pressed }) => [styles.button, { backgroundColor: colors.colorBrandBackground, opacity: pressed ? 0.9 : 1 }]}
               onPress={onComplete}
             >
               <FluentText variant="subtitle1" color="onBrand">Get Started</FluentText>
@@ -252,9 +252,9 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
         {currentStatus === 'pending' ? (
           <>
             <Pressable
-              style={[
+              style={({ pressed }) => [
                 styles.button,
-                { backgroundColor: colors.colorBrandBackground },
+                { backgroundColor: colors.colorBrandBackground, opacity: pressed ? 0.9 : 1 },
                 isRequesting && styles.buttonDisabled
               ]}
               onPress={requestCurrentPermission}
@@ -270,7 +270,7 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
               )}
             </Pressable>
             <Pressable
-              style={[styles.secondaryButton, { borderColor: colors.colorNeutralStroke1 }]}
+              style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.colorNeutralStroke1, opacity: pressed ? 0.9 : 1 }]}
               onPress={handleSkip}
             >
               <FluentText variant="body1" color="secondary">Skip</FluentText>

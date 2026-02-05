@@ -199,11 +199,11 @@ export default function LicenseScreen() {
                 <Pressable
                   onPress={handleVerifyInstallation}
                   disabled={isLoading}
-                  style={[
+                  style={({ pressed }) => [
                     styles.verifyButton,
                     { 
                       backgroundColor: colors.colorBrandBackground,
-                      opacity: isLoading ? 0.6 : 1,
+                      opacity: isLoading ? 0.6 : pressed ? 0.9 : 1,
                       marginTop: FluentSpacing.l,
                     },
                   ]}
@@ -216,11 +216,12 @@ export default function LicenseScreen() {
 
                 <Pressable
                   onPress={handleOpenPlayStore}
-                  style={[
+                  style={({ pressed }) => [
                     styles.playStoreButton,
                     { 
                       backgroundColor: colors.colorNeutralBackground3,
                       marginTop: FluentSpacing.m,
+                      opacity: pressed ? 0.9 : 1,
                     },
                   ]}
                 >

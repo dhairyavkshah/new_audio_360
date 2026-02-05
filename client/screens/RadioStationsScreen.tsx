@@ -70,11 +70,12 @@ function StationListItem({ station, onPress, onToggleFavorite, colors }: Station
   
   return (
     <Pressable
-      style={[
+      style={({ pressed }) => [
         styles.stationItem, 
         { 
           backgroundColor: colors.colorNeutralBackground2,
           borderColor: colors.colorNeutralStroke2,
+          opacity: pressed ? 0.9 : 1,
         }
       ]}
       onPress={() => {
@@ -141,11 +142,12 @@ function OnlineStationCard({ station, onPlay, isPlaying, isFavorite, onToggleFav
   
   return (
     <Pressable
-      style={[
+      style={({ pressed }) => [
         styles.onlineStationItem, 
         { 
           backgroundColor: colors.colorNeutralBackground2,
           borderColor: isPlaying ? colors.colorBrandStroke1 : colors.colorNeutralStroke2,
+          opacity: pressed ? 0.9 : 1,
         }
       ]}
       onPress={() => {

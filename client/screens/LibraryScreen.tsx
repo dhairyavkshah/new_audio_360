@@ -452,7 +452,7 @@ function LibraryScreen() {
   const renderTopBarRightAction = () => {
     if (activeCategory === "playlists") {
       return (
-        <Pressable style={[styles.addButton, { backgroundColor: colors.colorBrandBackground }]} onPress={handleManagePlaylists}>
+        <Pressable style={({ pressed }) => [styles.addButton, { backgroundColor: colors.colorBrandBackground }, { opacity: pressed ? 0.9 : 1 }]} onPress={handleManagePlaylists}>
           <MaterialCommunityIcons name="plus" size={FluentIconSize.regular} color="#FFFFFF" />
         </Pressable>
       );
@@ -466,14 +466,14 @@ function LibraryScreen() {
       return (
         <View style={styles.topBarPlayButtons}>
           <Pressable 
-            style={[styles.topBarPlayAllButton, { backgroundColor: colors.colorBrandBackground }]} 
+            style={({ pressed }) => [styles.topBarPlayAllButton, { backgroundColor: colors.colorBrandBackground }, { opacity: pressed ? 0.9 : 1 }]} 
             onPress={() => handlePlayAll(songs)}
           >
             <MaterialCommunityIcons name="play" size={FluentIconSize.small} color="#FFFFFF" />
             <FluentText variant="body2" style={{ color: '#FFFFFF', marginLeft: FluentSpacing.xs }}>Play All</FluentText>
           </Pressable>
           <Pressable 
-            style={[styles.topBarShuffleButton, { backgroundColor: colors.colorNeutralBackground3 }]} 
+            style={({ pressed }) => [styles.topBarShuffleButton, { backgroundColor: colors.colorNeutralBackground3 }, { opacity: pressed ? 0.9 : 1 }]} 
             onPress={() => handleShuffleAll(songs)}
           >
             <MaterialCommunityIcons name="shuffle" size={FluentIconSize.small} color={colors.colorNeutralForeground1} />
@@ -609,7 +609,7 @@ function LibraryScreen() {
         <View style={styles.emptyState}>
           <MaterialCommunityIcons name="playlist-music" size={64} color={colors.colorNeutralForeground3} />
           <FluentText variant="body1" color="tertiary" style={styles.emptyText}>No playlists yet</FluentText>
-          <Pressable style={[styles.createButton, { backgroundColor: colors.colorBrandBackground }]} onPress={handleManagePlaylists}>
+          <Pressable style={({ pressed }) => [styles.createButton, { backgroundColor: colors.colorBrandBackground }, { opacity: pressed ? 0.9 : 1 }]} onPress={handleManagePlaylists}>
             <MaterialCommunityIcons name="plus" size={FluentIconSize.regular} color="#FFFFFF" />
             <FluentText variant="body2" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s }}>Create Playlist</FluentText>
           </Pressable>
@@ -675,7 +675,7 @@ function LibraryScreen() {
     return (
       <View style={[styles.listContent, { flex: 1 }]}>
         <Pressable
-          style={[styles.archiveSearchButton, { backgroundColor: colors.colorBrandBackground }]}
+          style={({ pressed }) => [styles.archiveSearchButton, { backgroundColor: colors.colorBrandBackground }, { opacity: pressed ? 0.9 : 1 }]}
           onPress={() => navigation.dispatch(CommonActions.navigate({ name: 'DiscoverTab' }))}
         >
           <MaterialCommunityIcons name="magnify" size={FluentIconSize.regular} color="#FFFFFF" />
@@ -700,7 +700,7 @@ function LibraryScreen() {
             renderItem={({ item }) => (
               <View style={[styles.archiveTrackItem, { backgroundColor: colors.colorNeutralBackground2 }]}>
                 <Pressable
-                  style={[styles.archivePlayButton, { backgroundColor: colors.colorBrandBackground }]}
+                  style={({ pressed }) => [styles.archivePlayButton, { backgroundColor: colors.colorBrandBackground }, { opacity: pressed ? 0.9 : 1 }]}
                   onPress={() => handlePlayArchiveTrack(item)}
                 >
                   <MaterialCommunityIcons name="play" size={20} color="#FFFFFF" />
@@ -715,7 +715,7 @@ function LibraryScreen() {
                   </View>
                 </View>
                 <Pressable
-                  style={styles.archiveRemoveButton}
+                  style={({ pressed }) => [styles.archiveRemoveButton, { opacity: pressed ? 0.9 : 1 }]}
                   onPress={() => handleRemoveArchiveFavorite(item.id)}
                 >
                   <MaterialCommunityIcons name="close" size={20} color={colors.colorNeutralForeground3} />

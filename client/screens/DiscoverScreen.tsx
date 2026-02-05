@@ -44,9 +44,10 @@ export default function DiscoverScreen() {
             return (
               <Pressable
                 key={tab.key}
-                style={[
+                style={({ pressed }) => [
                   styles.tab,
                   isActive && { backgroundColor: colors.colorBrandBackground },
+                  { opacity: pressed ? 0.9 : 1 },
                 ]}
                 onPress={() => setActiveTab(tab.key)}
               >

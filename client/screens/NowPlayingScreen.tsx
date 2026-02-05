@@ -270,7 +270,7 @@ export default function NowPlayingScreen() {
           </View>
           <View style={[styles.actionButtons, (isExtraCompact || isVeryCompact) && { marginTop: FluentSpacing.xs, gap: FluentSpacing.l }]}>
             <Pressable
-              style={styles.actionButton}
+              style={({ pressed }) => [styles.actionButton, { opacity: pressed ? 0.9 : 1 }]}
               onPress={handleFavoriteToggle}
               disabled={favoriteLoading}
             >
@@ -285,7 +285,7 @@ export default function NowPlayingScreen() {
               )}
             </Pressable>
             <Pressable
-              style={styles.actionButton}
+              style={({ pressed }) => [styles.actionButton, { opacity: pressed ? 0.9 : 1 }]}
               onPress={() => {
                 playTapSound();
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
