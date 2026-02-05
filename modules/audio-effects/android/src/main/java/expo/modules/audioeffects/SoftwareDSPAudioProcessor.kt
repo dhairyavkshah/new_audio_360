@@ -1132,13 +1132,10 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
      * Enable or disable HF Restoration / AI Audio Upscaling (neural super-resolution)
      */
     fun setHfRestoration(enabled: Boolean) {
-        val wasEnabled = hfRestorationEnabled
         hfRestorationEnabled = enabled
         
-        // Clear HF restoration filter states when toggled
-        if (wasEnabled != enabled) {
-            clearHfRestorationBuffers()
-        }
+        // Note: Buffer clearing is handled by setHfRestorationLevel() which is always called after toggle
+        // This avoids redundant buffer clearing when both toggle and level are set together
         
         NeuralAudioProcessorTFLite.getInstance().setEnabled(enabled)
         android.util.Log.d("SoftwareDSP", "AI Audio Upscaling ${if (enabled) "enabled" else "disabled"}")

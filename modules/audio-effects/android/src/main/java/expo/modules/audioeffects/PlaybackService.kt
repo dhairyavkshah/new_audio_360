@@ -267,6 +267,10 @@ class PlaybackService : MediaSessionService() {
                     }
                     
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                        // Skip processing when mediaItem is null (happens during clearMediaItems())
+                        // This prevents redundant buffer clearing
+                        if (mediaItem == null) return
+                        
                         val index = player?.currentMediaItemIndex ?: 0
                         cachedCurrentIndex = index
                         updateCachedStatus()
