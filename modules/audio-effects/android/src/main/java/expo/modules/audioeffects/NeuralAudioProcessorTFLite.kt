@@ -202,6 +202,15 @@ class NeuralAudioProcessorTFLite private constructor() {
                 useGpu = false
             }
             
+            // CRITICAL: CPU inference is too slow for real-time audio (1000ms+ per chunk).
+            // Only proceed if GPU is available. CPU fallback causes increasing lag.
+            if (!useGpu) {
+                Log.w(TAG, "GPU not available - AI upscaling disabled to prevent audio lag")
+                Log.w(TAG, "CPU inference too slow for real-time audio processing")
+                setStatus(Status.ERROR)
+                return false
+            }
+            
             interpreter = Interpreter(modelBuffer, options)
             
             allocateBuffers()
@@ -498,6 +507,12 @@ class NeuralAudioProcessorTFLite private constructor() {
      */
     @Synchronized
     fun setEnabled(enabled: Boolean) {
+        // Only allow enabling if the processor is actually ready (GPU available)
+        if (enabled && status != Status.READY) {
+            Log.w(TAG, "Cannot enable - processor not ready (status: $status, GPU required)")
+            isEnabled = false
+            return
+        }
         isEnabled = enabled
         Log.d(TAG, "Enabled: $enabled")
     }
