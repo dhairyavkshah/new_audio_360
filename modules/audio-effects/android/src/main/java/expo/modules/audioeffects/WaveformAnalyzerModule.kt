@@ -325,12 +325,14 @@ class WaveformAnalyzerModule : Module() {
     }
     
     private fun release() {
-        // Stop any scheduled captures first
-        captureHandler?.removeCallbacks(captureRunnable ?: return)
+        // Stop any scheduled captures first (only if both handler and runnable exist)
+        captureRunnable?.let { runnable ->
+            captureHandler?.removeCallbacks(runnable)
+        }
         captureHandler = null
         captureRunnable = null
         
-        // Release visualizer resources
+        // Always release visualizer resources regardless of handler/runnable state
         try {
             visualizer?.setDataCaptureListener(null, 0, false, false)
             visualizer?.enabled = false
