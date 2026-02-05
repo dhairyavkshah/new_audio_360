@@ -13,6 +13,7 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 - **Track End Cooldown**: Added 300ms cooldown to handleTrackEnd to prevent jittery auto-advance from duplicate track end events
 - **Disable Android Ripple Effects**: Added `android_ripple={null}` to all Pressable components in modals (FluentModal, SoundLabScreen) and FluentListItem to prevent RippleDrawable log spam in software-rendered contexts
 - **Resource Leak Fixes**: Fixed MediaMetadataRetriever and ByteArrayOutputStream leaks in MediaStoreScannerModule with proper try-finally cleanup
+- **WaveformAnalyzerModule Memory Fix**: Fixed resource cleanup in release() - now properly nulls captureHandler/captureRunnable and always releases Visualizer resources regardless of capture state
 
 ## User Preferences
 - Concise and direct communication
