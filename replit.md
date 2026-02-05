@@ -10,6 +10,7 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 - **CPU-Only Neural Audio Processing**: Removed GPU delegation from NeuralAudioProcessorTFLite (industry standard for real-time audio - GPU adds memory transfer overhead incompatible with <10ms latency requirements)
 - **Spatial Enhancement Throttling**: Added 50ms throttle to SpatialEnhancementModule to prevent ripple artifacts during rapid slider movement
 - **Track End Cooldown**: Added 300ms cooldown to handleTrackEnd to prevent jittery auto-advance from duplicate track end events
+- **AI Upscaling Performance**: Fixed underrun by adding decimation (50% processing rate), non-blocking lock, and conditional cooldown (500ms after 3 consecutive timeouts)
 
 ## User Preferences
 - Concise and direct communication
