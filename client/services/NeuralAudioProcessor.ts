@@ -17,9 +17,7 @@ const LEVEL_CONFIGS: Record<EnhancementLevel, { blend: number }> = {
 };
 
 const INPUT_LENGTH = 8192;
-const MODEL_VERSION = '1.2.2';
-const TIME_BUDGET_MS = 50; // Max time per chunk before bypass
-const WARMUP_THRESHOLD_MS = 500; // If warmup takes longer, backend is too slow
+const MODEL_VERSION = '1.2.1';
 
 // Custom 1D upsampling using upSampling2d (tf.layers.upSampling1d not available in tfjs)
 // Reshape to 4D, upsample, reshape back to 3D
@@ -64,9 +62,6 @@ class NeuralAudioProcessorClass {
   
   private isEnabled: boolean = false;
   private statusListeners: Set<(status: NeuralProcessorStatus) => void> = new Set();
-  private backendTooSlow: boolean = false;
-  private bypassCount: number = 0;
-  private timeoutBypassCount: number = 0;
 
   constructor() {
     console.log('[NeuralAudioProcessor] Initialized - Kuleshov architecture v' + MODEL_VERSION);
@@ -189,39 +184,19 @@ class NeuralAudioProcessorClass {
       console.log('[NeuralAudioProcessor] Building Kuleshov audio super-resolution model...');
       
       await tf.ready();
-      const backend = tf.getBackend();
-      console.log('[NeuralAudioProcessor] TensorFlow.js backend:', backend);
-      
-      // Check if backend is suitable for real-time audio
-      if (backend === 'cpu') {
-        console.warn('[NeuralAudioProcessor] CPU backend detected - may cause audio lag');
-      }
+      console.log('[NeuralAudioProcessor] TensorFlow.js backend:', tf.getBackend());
       
       this.model = this.buildKuleshovModel();
       console.log('[NeuralAudioProcessor] Model built with', this.model.countParams().toLocaleString(), 'parameters');
       
-      // Time the warmup to detect slow backends
-      const warmupStart = performance.now();
       const warmupInput = tf.zeros([1, INPUT_LENGTH, 1]);
       const warmupOutput = this.model.predict(warmupInput) as tf.Tensor;
       warmupOutput.dispose();
       warmupInput.dispose();
-      const warmupTime = performance.now() - warmupStart;
-      console.log('[NeuralAudioProcessor] Model warmup complete:', warmupTime.toFixed(2), 'ms');
-      
-      // If warmup is too slow, disable to prevent audio lag
-      if (warmupTime > WARMUP_THRESHOLD_MS) {
-        console.warn('[NeuralAudioProcessor] Backend too slow for real-time audio (' + warmupTime.toFixed(0) + 'ms > ' + WARMUP_THRESHOLD_MS + 'ms threshold)');
-        console.warn('[NeuralAudioProcessor] AI upscaling disabled to prevent audio lag');
-        this.backendTooSlow = true;
-        this.model.dispose();
-        this.model = null;
-        this.setStatus('error');
-        return false;
-      }
+      console.log('[NeuralAudioProcessor] Model warmup complete');
       
       this.setStatus('ready');
-      console.log('[NeuralAudioProcessor] Kuleshov model ready (v' + MODEL_VERSION + ', backend: ' + backend + ')');
+      console.log('[NeuralAudioProcessor] Kuleshov model ready (v' + MODEL_VERSION + ')');
       return true;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -232,20 +207,6 @@ class NeuralAudioProcessorClass {
   }
 
   setEnabled(enabled: boolean): void {
-    // Don't allow enabling if backend was detected as too slow
-    if (enabled && this.backendTooSlow) {
-      console.warn('[NeuralAudioProcessor] Cannot enable - backend too slow for real-time audio');
-      this.isEnabled = false;
-      return;
-    }
-    
-    // Don't allow enabling if not ready
-    if (enabled && this.status === 'error') {
-      console.warn('[NeuralAudioProcessor] Cannot enable - processor in error state');
-      this.isEnabled = false;
-      return;
-    }
-    
     this.isEnabled = enabled;
     console.log('[NeuralAudioProcessor] Enabled:', enabled);
     
@@ -319,13 +280,10 @@ class NeuralAudioProcessorClass {
 
   private async processChunk(chunk: Float32Array, blend: number): Promise<Float32Array> {
     if (!this.model) {
-      this.bypassCount++;
       return chunk;
     }
 
-    const startTime = performance.now();
-    
-    const result = tf.tidy(() => {
+    return tf.tidy(() => {
       let maxVal = 0;
       for (let i = 0; i < chunk.length; i++) {
         const absVal = Math.abs(chunk[i]);
@@ -343,35 +301,15 @@ class NeuralAudioProcessorClass {
       const outputTensor = this.model!.predict(inputTensor) as tf.Tensor;
       const outputData = outputTensor.dataSync();
       
-      const processedResult = new Float32Array(INPUT_LENGTH);
+      const result = new Float32Array(INPUT_LENGTH);
       for (let i = 0; i < INPUT_LENGTH; i++) {
         const enhanced = outputData[i] * maxVal;
         const original = chunk[i];
-        processedResult[i] = original + (enhanced - original) * blend;
+        result[i] = original + (enhanced - original) * blend;
       }
       
-      return processedResult;
+      return result;
     });
-    
-    // Check if processing exceeded time budget
-    const processingTime = performance.now() - startTime;
-    if (processingTime > TIME_BUDGET_MS) {
-      this.timeoutBypassCount++;
-      
-      // After 3 consecutive timeouts, disable to prevent audio lag
-      if (this.timeoutBypassCount >= 3) {
-        console.warn('[NeuralAudioProcessor] Disabling due to repeated timeouts (' + processingTime.toFixed(0) + 'ms > ' + TIME_BUDGET_MS + 'ms)');
-        this.isEnabled = false;
-        this.backendTooSlow = true;
-      }
-      
-      // Return original audio for this chunk to prevent lag
-      return chunk;
-    }
-    
-    // Reset timeout counter on successful fast processing
-    this.timeoutBypassCount = 0;
-    return result;
   }
 
   async processBuffer(buffer: AudioBuffer): Promise<AudioBuffer> {
@@ -421,10 +359,6 @@ class NeuralAudioProcessorClass {
       architecture: 'Kuleshov Audio Super-Resolution (1D U-Net CNN)',
       version: MODEL_VERSION,
       parameters: this.model ? this.model.countParams() : 0,
-      backendTooSlow: this.backendTooSlow,
-      bypassCount: this.bypassCount,
-      timeoutBypassCount: this.timeoutBypassCount,
-      timeBudgetMs: TIME_BUDGET_MS,
     };
   }
 }
