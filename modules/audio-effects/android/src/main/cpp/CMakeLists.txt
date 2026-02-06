@@ -24,6 +24,10 @@ target_include_directories(audio_dsp PRIVATE
 find_library(log-lib log)
 find_library(android-lib android)
 
+target_link_options(audio_dsp PRIVATE
+    -Wl,-z,max-page-size=16384
+)
+
 target_link_libraries(audio_dsp
     ${log-lib}
     ${android-lib}

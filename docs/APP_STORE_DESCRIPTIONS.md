@@ -124,16 +124,19 @@ Download now and elevate your music experience!
 ## What's New (500 characters max)
 
 ```
-v31.0 - Theme & UI Polish Update
+v32.0 - Architecture & Performance Update
 
-FULL THEME ADAPTATION
-All 55 themes now dynamically adapt across entire UI with Fluent 2 color tokens.
+C++/NDK DSP FOUNDATION
+ARM NEON SIMD for PCM conversion, gain & soft clip. 32-bit float internal processing.
 
-TAP FEEDBACK
-All interactive elements now show visual feedback when pressed.
+16KB PAGE SIZE SUPPORT
+Android 15+ compatible with proper memory page alignment.
 
-IMPROVED CONSISTENCY
-Unified look and feel across all screens and components.
+PLAYBACK FIXES
+Seek slider lag eliminated. DSP buffer clearing refined for artifact-free transitions.
+
+MEMORY OPTIMISATION
+ByteBufferPool, adaptive waveform capture, CPU-only neural processing.
 
 One-time purchase, lifetime access.
 ```

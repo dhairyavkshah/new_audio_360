@@ -6,7 +6,21 @@
 
 ---
 
-## What's New in v31.0
+## What's New in v32.0
+
+**Architecture & Performance Update** - C++/NDK DSP, 16KB page support, and playback fixes:
+
+- C++/NDK DSP foundation with ARM NEON SIMD for PCM conversion, gain & soft clip operations
+- 32-bit float internal processing for studio-grade dynamic range
+- 16KB memory page size support for Android 15+ compatibility
+- Fixed seek slider lag with isSeeking state guard
+- Refined DSP buffer clearing strategy - single clear on track transitions
+- ByteBufferPool with 2MB cap for Poweramp-level memory efficiency
+- CPU-only neural processing optimised for <10ms real-time latency
+
+---
+
+## v31.0
 
 **Theme & UI Polish Update** - Full theme adaptation and tap feedback:
 
@@ -31,19 +45,43 @@
 ## Google Play Store Release Note (Under 500 Characters)
 
 ```
-v31.0 - Theme & UI Polish Update
+v32.0 - Architecture & Performance Update
 
-FULL THEME ADAPTATION
-All 55 themes now dynamically adapt across entire UI with Fluent 2 color tokens.
+C++/NDK DSP FOUNDATION
+ARM NEON SIMD for PCM conversion, gain & soft clip. 32-bit float internal processing.
 
-TAP FEEDBACK
-All interactive elements now show visual feedback when pressed.
+16KB PAGE SIZE SUPPORT
+Android 15+ compatible with proper memory page alignment.
 
-IMPROVED CONSISTENCY
-Unified look and feel across all screens and components.
+PLAYBACK FIXES
+Seek slider lag eliminated. DSP buffer clearing refined for artifact-free transitions.
+
+MEMORY OPTIMISATION
+ByteBufferPool, adaptive waveform capture, CPU-only neural processing.
 
 One-time purchase, lifetime access.
 ```
+
+---
+
+## Version 32.0 (February 2026)
+
+**Architecture & Performance Update**
+
+### 16KB Page Size Support
+- Added `-Wl,-z,max-page-size=16384` linker flag to CMakeLists.txt
+- Native DSP `.so` binaries now aligned for Android 15+ devices
+- Fully backwards compatible with 4KB page size devices
+
+### Seek Lag Fix
+- Added `isSeeking` state guard to PlayerContext with 500ms timeout
+- ProgressBar accepts `isSeeking` prop to skip position sync during active seeks
+- Eliminates slider "jump back then forward" behaviour during seek operations
+
+### DSP Buffer Clearing Strategy
+- Single buffer clear on track transitions (no duplicates)
+- Proper buffer clearing on explicit DSP value changes
+- EQ excluded from clearing (biquad filters transition smoothly)
 
 ---
 

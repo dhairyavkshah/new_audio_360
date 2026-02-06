@@ -1,12 +1,17 @@
-# New Audio 360 v31.0
+# New Audio 360 v32.0
 
 ## Overview
 New Audio 360 is a premium mobile music player built with React Native and Expo, offering studio-quality audio processing through software-based DSP and neural AI upscaling. It provides 55 customizable themes and extensive music organization features. The application operates on a one-time purchase model with local data storage, aiming to deliver a high-quality, intelligent music experience across Android, iOS, Web, and Windows platforms.
 
-## Recent Changes (v31.0 - February 2026)
+## Recent Changes (v32.0 - February 2026)
+- **16KB Page Size Support**: Added `-Wl,-z,max-page-size=16384` linker flag to CMakeLists.txt for Android 15+ compatibility
+- **Seek Lag Fix**: Added `isSeeking` state guard to PlayerContext with 500ms timeout to prevent slider jump-back during seek operations
+- **ProgressBar Seeking Guard**: ProgressBar now accepts `isSeeking` prop to skip position sync during active seeks
+- **Version Bump**: Updated version to 32.0 across package.json, app.config.js, screens, Kotlin docs, and documentation
+
+### Previous Changes (v31.0)
 - **Full Theme Adaptation**: Created `getThemedFluentColors()` utility and `useThemedColors()` hook for dynamic Fluent 2 color token mapping across all 70+ files
 - **Tap/Click Feedback**: Added opacity 0.9 press feedback to 40+ Pressable components (FluentCard, FluentListItem, all cards, buttons)
-- **Version Bump**: Updated version to 31.0 across package.json, screens, gradle, and documentation
 - **CPU-Only Neural Audio Processing**: Removed GPU delegation from NeuralAudioProcessorTFLite (industry standard for real-time audio - GPU adds memory transfer overhead incompatible with <10ms latency requirements)
 - **AI Upscaling Async Initialization**: Neural model now preloads on PlaybackService startup in background thread (prevents audio stall when enabling AI upscaling)
 - **Spatial Enhancement Debounced Buffer Clear**: Buffer clearing is now debounced to 200ms after slider drag ends (prevents ripple/click artifacts during rapid slider movement)

@@ -16,7 +16,7 @@ import androidx.media3.exoplayer.audio.DefaultAudioSink
  * This module injects our SoftwareDSPAudioProcessor into TrackPlayer's ExoPlayer
  * using reflection after the player is initialized.
  * 
- * Signal Chain Order (v31.0):
+ * Signal Chain Order (v32.0):
  * 1. AI Audio Upscaling (Neural) - First step if enabled
  * 2. 10-Band EQ
  * 3. Bass Shelf
