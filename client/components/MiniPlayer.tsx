@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, memo } from "react";
 import { View, StyleSheet, Pressable, Image, Platform, Text } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 
-// Default album art for songs without artwork
 const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -22,6 +22,10 @@ import {
   FluentSliderSize,
 } from "@/constants/fluent2";
 
+const SPRING_CONFIG = { damping: 22, stiffness: 250, mass: 1 };
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 interface MiniPlayerProps {
   bottomOffset?: number;
   isDismissed?: boolean;
@@ -38,6 +42,7 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   const { currentSong, isPlaying, togglePlayPause, progress } = usePlayerContext();
   const { setNowPlayingSource } = useNavigationContext();
   const insets = useSafeAreaInsets();
+  const scale = useSharedValue(1);
   
   const currentTabName = useNavigationState((state) => {
     const mainRoute = state?.routes?.find((r: any) => r.name === 'Main');
@@ -56,6 +61,18 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   const containerBottom = useMemo(() => bottomOffset + FluentSpacing.s + (insets.bottom > 0 ? 0 : FluentSpacing.s), [bottomOffset, insets.bottom]);
   
   const progressWidth = useMemo(() => `${(progress || 0) * 100}%` as const, [progress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = useCallback(() => {
+    scale.value = withSpring(0.98, SPRING_CONFIG);
+  }, [scale]);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withSpring(1, SPRING_CONFIG);
+  }, [scale]);
 
   const handlePress = useCallback(() => {
     playTapSound();
@@ -125,11 +142,12 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
   }
 
   return (
-    <View style={[
+    <Animated.View style={[
       styles.container, 
-      { bottom: containerBottom, borderRadius: tokens.shapes.cardBorderRadius }, 
+      { bottom: containerBottom, borderRadius: FluentControlRadius.card }, 
       cardEffectStyle,
       glowStyle,
+      animatedStyle,
     ]}>
       <View style={[styles.progressTrack, { backgroundColor: tokens.colors.outline }]}>
         <View 
@@ -138,11 +156,12 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
             { 
               width: progressWidth,
               backgroundColor: tokens.colors.primary,
+              borderRadius: FluentSliderSize.trackThin / 2,
             }
           ]} 
         />
       </View>
-      <View style={[styles.background, { borderRadius: tokens.shapes.cardBorderRadius }]}>
+      <View style={[styles.background, { borderRadius: FluentControlRadius.card }]}>
         <Image 
           source={artworkSource} 
           style={StyleSheet.absoluteFill}
@@ -159,8 +178,13 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
             { backgroundColor: isDark ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)' }
           ]} 
         />
-        <Pressable style={styles.content} onPress={handlePress}>
-          <Image source={artworkSource} style={[styles.artwork, { borderRadius: tokens.shapes.buttonBorderRadius }]} />
+        <AnimatedPressable
+          style={styles.content}
+          onPress={handlePress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+        >
+          <Image source={artworkSource} style={[styles.artwork, { borderRadius: FluentControlRadius.button }]} />
           <View style={styles.info}>
             <Text style={[FluentTypography.body1Strong, { color: tokens.colors.text }]} numberOfLines={1}>
               {currentSong.title}
@@ -195,9 +219,9 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
               color={tokens.colors.text} 
             />
           </Pressable>
-        </Pressable>
+        </AnimatedPressable>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -248,6 +272,7 @@ const styles = StyleSheet.create({
     right: 0,
     height: FluentSliderSize.trackThin,
     zIndex: 10,
+    borderRadius: FluentSliderSize.trackThin / 2,
   },
   progressFill: {
     height: "100%",

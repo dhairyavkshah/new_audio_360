@@ -16,6 +16,8 @@ import {
   FluentDuration,
   FluentCurve,
   FluentSliderSize,
+  FluentRadius,
+  getShadowStyle,
 } from "@/constants/fluent2";
 
 interface ProgressBarProps {
@@ -32,6 +34,7 @@ interface ProgressBarProps {
 const THUMB_SIZE = FluentSliderSize.thumbSmall;
 const TRACK_HEIGHT = FluentSliderSize.trackThin;
 const ACTIVE_TRACK_HEIGHT = FluentSliderSize.trackMedium;
+const TRACK_RADIUS = FluentRadius.large;
 
 export function ProgressBar({
   progress,
@@ -46,6 +49,8 @@ export function ProgressBar({
   const { isDark } = useThemeContext();
   const tokens = useThemeTokens();
   const { trackStyle, progressStyle, trackRadius } = getProgressBarStyle(tokens);
+
+  const thumbShadow = getShadowStyle('shadow4', isDark);
 
   const textShadowStyle = showTextShadow ? Platform.select({
     native: {
@@ -119,8 +124,6 @@ export function ProgressBar({
   const composedGesture = Gesture.Race(panGesture, tapGesture);
 
   const thumbStyle = useAnimatedStyle(() => {
-    // Only update thumb position from progress when NOT dragging and NOT seeking
-    // This prevents the slider from jumping back during seek operations
     if (!isDragging.value && !isSeeking) {
       translateX.value = progress * (width - THUMB_SIZE);
     }
@@ -145,6 +148,7 @@ export function ProgressBar({
             style={[
               styles.track,
               trackStyle,
+              { borderRadius: TRACK_RADIUS },
               trackAnimatedStyle,
             ]}
           >
@@ -152,6 +156,7 @@ export function ProgressBar({
               style={[
                 styles.fill,
                 progressStyle,
+                { borderRadius: TRACK_RADIUS },
                 fillStyle,
               ]}
             />
@@ -164,18 +169,7 @@ export function ProgressBar({
                 height: THUMB_SIZE,
                 borderRadius: THUMB_SIZE / 2,
                 backgroundColor: tokens.colors.primary,
-                ...Platform.select({
-                  ios: {
-                    shadowColor: progressStyle.shadowColor || tokens.colors.primary,
-                    shadowOffset: progressStyle.shadowOffset || { width: 0, height: 2 },
-                    shadowOpacity: progressStyle.shadowOpacity || 0.25,
-                    shadowRadius: progressStyle.shadowRadius || 4,
-                  },
-                  android: {
-                    elevation: 4,
-                  },
-                  default: {},
-                }),
+                ...thumbShadow,
               },
               thumbStyle,
             ]}

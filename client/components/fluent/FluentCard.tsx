@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, PressableProps, View, StyleSheet, Platform } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
 import { FluentSurface } from './FluentSurface';
@@ -9,6 +10,7 @@ import {
   getShadowStyle,
   ShadowLevel,
   FluentBorderWidth,
+  FluentSpring,
 } from '@/constants/fluent2';
 
 type ElevationLevel = 'none' | 'subtle' | 'medium' | 'strong';
@@ -29,6 +31,13 @@ const elevationToShadow: Record<ElevationLevel, ShadowLevel | null> = {
   strong: 'shadow16',
 };
 
+const elevationPressedShadow: Record<ElevationLevel, ShadowLevel | null> = {
+  none: 'shadow2',
+  subtle: 'shadow4',
+  medium: 'shadow16',
+  strong: 'shadow28',
+};
+
 export function FluentCard({
   elevation = 'subtle',
   interactive = false,
@@ -46,9 +55,15 @@ export function FluentCard({
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   const handlePressIn = () => {
     if (!interactive && !onPress) return;
     setIsPressed(true);
+    scale.value = withSpring(0.98, FluentSpring.standard);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -56,6 +71,7 @@ export function FluentCard({
 
   const handlePressOut = () => {
     setIsPressed(false);
+    scale.value = withSpring(1, FluentSpring.standard);
   };
 
   const getBackgroundColor = () => {
@@ -64,7 +80,9 @@ export function FluentCard({
     return colors.colorNeutralBackground1;
   };
 
-  const shadowLevel = elevationToShadow[elevation];
+  const shadowLevel = isPressed
+    ? elevationPressedShadow[elevation]
+    : elevationToShadow[elevation];
   const shadowStyle = shadowLevel ? getShadowStyle(shadowLevel, isDark) : {};
 
   const isInteractive = interactive || !!onPress;
@@ -89,28 +107,29 @@ export function FluentCard({
 
   if (isInteractive) {
     return (
-      <Pressable
-        style={[
-          styles.card,
-          {
-            backgroundColor: getBackgroundColor(),
-            borderRadius: FluentControlRadius.card,
-            opacity: isPressed ? 0.9 : 1,
-          },
-          shadowStyle,
-          style,
-        ]}
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onHoverIn={() => setIsHovered(true)}
-        onHoverOut={() => setIsHovered(false)}
-        accessibilityRole="button"
-        android_ripple={null}
-        {...props}
-      >
-        {cardContent}
-      </Pressable>
+      <Animated.View style={animatedStyle}>
+        <Pressable
+          style={[
+            styles.card,
+            {
+              backgroundColor: getBackgroundColor(),
+              borderRadius: FluentControlRadius.card,
+            },
+            shadowStyle,
+            style,
+          ]}
+          onPress={onPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          onHoverIn={() => setIsHovered(true)}
+          onHoverOut={() => setIsHovered(false)}
+          accessibilityRole="button"
+          android_ripple={null}
+          {...props}
+        >
+          {cardContent}
+        </Pressable>
+      </Animated.View>
     );
   }
 

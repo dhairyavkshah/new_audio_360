@@ -874,7 +874,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     padding: FluentSpacing.m,
-    borderRadius: FluentRadius.medium,
+    borderRadius: FluentRadius.large,
     marginBottom: FluentSpacing.l,
     gap: FluentSpacing.s,
   },

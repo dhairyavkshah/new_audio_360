@@ -1,5 +1,6 @@
-import React from 'react';
-import { Pressable, View, StyleSheet, ViewStyle } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, View, StyleSheet, ViewStyle, Platform } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
@@ -10,6 +11,7 @@ import {
   FluentIconSize,
   FluentTouchTarget,
   getShadowStyle,
+  FluentSpring,
 } from '@/constants/fluent2';
 
 export interface FluentListItemProps {
@@ -40,13 +42,34 @@ export function FluentListItem({
   const { isDark } = useThemeContext();
   const colors = useThemedColors();
 
+  const [isPressed, setIsPressed] = useState(false);
+
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   const handlePress = () => {
     if (disabled || !onPress) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     onPress();
   };
 
-  const backgroundColor = disabled ? colors.colorNeutralBackground2 : colors.colorNeutralBackground2;
+  const handlePressIn = () => {
+    setIsPressed(true);
+    scale.value = withSpring(0.98, FluentSpring.standard);
+  };
+
+  const handlePressOut = () => {
+    setIsPressed(false);
+    scale.value = withSpring(1, FluentSpring.standard);
+  };
+
+  const backgroundColor = isPressed
+    ? colors.colorNeutralBackground3
+    : colors.colorNeutralBackground2;
 
   const shadowStyle = elevation ? getShadowStyle('shadow2', isDark) : {};
 
@@ -103,20 +126,21 @@ export function FluentListItem({
   }
 
   return (
-    <Pressable
-      onPress={handlePress}
-      disabled={disabled}
-      style={({ pressed }) => [
-        ...containerStyle,
-        { opacity: pressed ? 0.9 : 1 },
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
-      accessibilityState={{ disabled }}
-      android_ripple={null}
-    >
-      {content}
-    </Pressable>
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+        style={containerStyle}
+        accessibilityRole="button"
+        accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
+        accessibilityState={{ disabled }}
+        android_ripple={null}
+      >
+        {content}
+      </Pressable>
+    </Animated.View>
   );
 }
 

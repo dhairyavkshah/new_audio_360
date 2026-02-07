@@ -59,7 +59,7 @@ export function FluentModal({
       {presentationStyle === 'overFullScreen' ? (
         <View style={styles.scrimContainer}>
           <Pressable
-            style={[styles.scrim, { backgroundColor: 'rgba(0, 0, 0, 0.4)' }]}
+            style={[styles.scrim, { backgroundColor: 'rgba(0, 0, 0, 0.32)' }]}
             onPress={onClose}
             android_ripple={null}
             accessibilityLabel="Close modal"
@@ -127,6 +127,8 @@ export function FluentModal({
             {
               backgroundColor: colors.colorNeutralBackground1,
               paddingTop: insets.top + FluentSpacing.l,
+              borderTopLeftRadius: FluentControlRadius.bottomSheet,
+              borderTopRightRadius: FluentControlRadius.bottomSheet,
             },
           ]}
         >
@@ -204,9 +206,9 @@ const styles = StyleSheet.create({
     marginBottom: FluentSpacing.m,
   },
   handleBar: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
+    width: 36,
+    height: 5,
+    borderRadius: 2.5,
     marginBottom: FluentSpacing.m,
   },
   header: {

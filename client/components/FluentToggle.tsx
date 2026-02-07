@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Pressable, Platform } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
@@ -7,6 +8,8 @@ import {
   FluentSpacing,
   getShadowStyle,
 } from "@/constants/fluent2";
+
+const SPRING_CONFIG = { damping: 22, stiffness: 250, mass: 1 };
 
 interface FluentToggleProps {
   value: boolean;
@@ -33,6 +36,16 @@ export function FluentToggle({
   const thumbSize = size === 'large' ? 24 : 14;
   const thumbTravel = trackWidth - thumbSize - 6;
   const trackBorderRadius = trackHeight / 2;
+
+  const thumbTranslateX = useSharedValue(value ? thumbTravel : 0);
+
+  useEffect(() => {
+    thumbTranslateX.value = withSpring(value ? thumbTravel : 0, SPRING_CONFIG);
+  }, [value, thumbTravel, thumbTranslateX]);
+
+  const thumbAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: thumbTranslateX.value }],
+  }));
 
   const handlePressIn = () => {
     setIsPressed(true);
@@ -141,7 +154,7 @@ export function FluentToggle({
             },
           ]}
         >
-          <View
+          <Animated.View
             style={[
               styles.thumb,
               {
@@ -149,9 +162,9 @@ export function FluentToggle({
                 height: thumbSize,
                 borderRadius: thumbSize / 2,
                 backgroundColor: thumbColor,
-                transform: [{ translateX: value ? thumbTravel : 0 }],
                 ...thumbShadow,
               },
+              thumbAnimatedStyle,
             ]}
           />
         </View>

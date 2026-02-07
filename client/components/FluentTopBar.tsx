@@ -12,6 +12,7 @@ import {
   FluentControlRadius,
   FluentLayoutSize,
   FluentControlHeight,
+  FluentTouchTarget,
 } from "@/constants/fluent2";
 import { Layout } from "@/constants/theme";
 
@@ -220,6 +221,7 @@ export function FluentTopBar({
               {searchQuery.length > 0 && (
                 <Pressable
                   onPress={handleClearSearch}
+                  style={styles.clearButton}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   accessibilityLabel="Clear search"
                 >
@@ -429,7 +431,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: FluentControlRadius.button,
+    borderRadius: FluentControlRadius.input,
     paddingHorizontal: FluentSpacing.m,
     height: FluentLayoutSize.inputFieldHeight,
   },
@@ -440,6 +442,12 @@ const styles = StyleSheet.create({
     flex: 1,
     height: "100%",
     paddingVertical: 0,
+  },
+  clearButton: {
+    minWidth: FluentTouchTarget.minimum,
+    minHeight: FluentTouchTarget.minimum,
+    justifyContent: "center",
+    alignItems: "center",
   },
   sortButton: {
     flexDirection: "row",
@@ -464,7 +472,7 @@ const styles = StyleSheet.create({
     top: "100%",
     left: FluentSpacing.l,
     right: FluentSpacing.l,
-    borderRadius: FluentControlRadius.card,
+    borderRadius: FluentControlRadius.dialog,
     borderWidth: 1,
     paddingVertical: FluentSpacing.xs,
     zIndex: 101,
@@ -505,7 +513,7 @@ const styles = StyleSheet.create({
     top: "100%",
     right: FluentSpacing.l,
     width: 160,
-    borderRadius: FluentControlRadius.card,
+    borderRadius: FluentControlRadius.dialog,
     borderWidth: 1,
     paddingVertical: FluentSpacing.xs,
     zIndex: 101,

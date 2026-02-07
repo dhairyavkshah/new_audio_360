@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useMemo, memo } from "react";
 import { View, StyleSheet, Pressable, Platform, GestureResponderEvent, TouchableOpacity } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 
-// Default album art for songs without artwork
 const DEFAULT_ALBUM_ART = require("@/assets/images/default_album_art.png");
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -16,7 +16,12 @@ import {
   FluentTypography,
   FluentIconSize,
   FluentTouchTarget,
+  getShadowStyle,
 } from "@/constants/fluent2";
+
+const SPRING_CONFIG = { damping: 22, stiffness: 250, mass: 1 };
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const ActionButton = ({ onPress, accessibilityLabel, children }: { 
   onPress: (e: any) => void; 
@@ -81,7 +86,7 @@ function SongCardComponent({
   const { isFavorite, toggleFavorite } = usePlayerContext();
   const longPressTriggered = useRef(false);
   const favorite = isFavorite(song.id);
-  const [isPressed, setIsPressed] = React.useState(false);
+  const scale = useSharedValue(1);
   
   const artworkSource = useMemo(() => song.artwork ? { uri: song.artwork } : DEFAULT_ALBUM_ART, [song.artwork]);
   
@@ -94,6 +99,10 @@ function SongCardComponent({
   }, []);
   
   const formattedDuration = useMemo(() => formatDuration(song.duration), [formatDuration, song.duration]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const handleFavoritePress = useCallback((e: any) => {
     e.stopPropagation?.();
@@ -115,11 +124,11 @@ function SongCardComponent({
 
   const handlePressIn = () => {
     longPressTriggered.current = false;
-    setIsPressed(true);
+    scale.value = withSpring(0.98, SPRING_CONFIG);
   };
 
   const handlePressOut = () => {
-    setIsPressed(false);
+    scale.value = withSpring(1, SPRING_CONFIG);
   };
 
   const handlePress = () => {
@@ -158,8 +167,10 @@ function SongCardComponent({
 
   const containerProps = useMemo(() => Platform.OS === "web" ? { onContextMenu: handleContextMenuWeb } : {}, [handleContextMenuWeb]);
 
+  const shadowStyle = useMemo(() => getShadowStyle('shadow2', false), []);
+
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -168,20 +179,12 @@ function SongCardComponent({
       android_ripple={null}
       style={[
         styles.container,
+        animatedStyle,
         {
           backgroundColor: fluentColors.colorNeutralBackground2,
           borderColor: isPlaying ? fluentColors.colorBrandStroke1 : fluentColors.colorNeutralStroke2,
           borderWidth: 1,
-          opacity: isPressed ? 0.9 : 1,
-          ...(Platform.OS === "web" ? {
-            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.14)",
-          } : {
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.08,
-            shadowRadius: 2,
-            elevation: 1,
-          }),
+          ...shadowStyle,
         },
       ]}
       accessibilityRole="button"
@@ -267,7 +270,7 @@ function SongCardComponent({
         size={FluentIconSize.small} 
         color={fluentColors.colorNeutralForeground3} 
       />
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -280,6 +283,7 @@ const styles = StyleSheet.create({
     borderRadius: FluentControlRadius.card,
     marginBottom: FluentSpacing.s,
     minHeight: 72,
+    overflow: "hidden",
   },
   artworkContainer: {
     position: "relative",

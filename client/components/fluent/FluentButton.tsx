@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useThemedColors } from '@/contexts/ThemeContext';
 import {
@@ -16,6 +17,7 @@ import {
   FluentSpacing,
   FluentControlHeight,
   FluentIconSize,
+  FluentSpring,
 } from '@/constants/fluent2';
 import { ThemedFluentColors } from '@/lib/themeUtils';
 
@@ -152,8 +154,14 @@ export function FluentButton({
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   const handlePressIn = (e: any) => {
     setIsPressed(true);
+    scale.value = withSpring(0.97, FluentSpring.standard);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -162,6 +170,7 @@ export function FluentButton({
 
   const handlePressOut = (e: any) => {
     setIsPressed(false);
+    scale.value = withSpring(1, FluentSpring.standard);
     onPressOut?.(e);
   };
 
@@ -215,7 +224,7 @@ export function FluentButton({
       android_ripple={null}
       {...props}
     >
-      <View style={styles.content}>
+      <Animated.View style={[styles.content, animatedStyle]}>
         {loading ? (
           <ActivityIndicator
             size="small"
@@ -251,7 +260,7 @@ export function FluentButton({
             )}
           </>
         )}
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }

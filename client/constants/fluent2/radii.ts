@@ -5,20 +5,22 @@ export const FluentRadius = {
   large: 8,
   xLarge: 12,
   xxLarge: 16,
+  xxxLarge: 20,
   circular: 9999,
 } as const;
 
 export const FluentControlRadius = {
-  button: 4,
-  input: 4,
+  button: 8,
+  input: 8,
   checkbox: 2,
-  chip: 4,
-  card: 8,
-  dialog: 12,
-  bottomSheet: 16,
-  fab: 16,
-  heroCard: 16,
+  chip: 8,
+  card: 12,
+  dialog: 16,
+  bottomSheet: 20,
+  fab: 28,
+  heroCard: 20,
   avatar: 9999,
+  popover: 12,
 } as const;
 
 export type RadiusToken = keyof typeof FluentRadius;

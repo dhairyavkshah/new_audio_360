@@ -1,31 +1,48 @@
 import { Platform } from 'react-native';
 
 export interface FluentShadow {
-  shadowColor: string;
-  shadowOffset: { width: number; height: number };
-  shadowOpacity: number;
-  shadowRadius: number;
+  key: {
+    shadowColor: string;
+    shadowOffset: { width: number; height: number };
+    shadowOpacity: number;
+    shadowRadius: number;
+  };
+  ambient: {
+    shadowColor: string;
+    shadowOffset: { width: number; height: number };
+    shadowOpacity: number;
+    shadowRadius: number;
+  };
   elevation: number;
 }
 
-const createShadow = (
-  offsetY: number,
-  blurRadius: number,
-  opacity: number,
+const createDualShadow = (
+  level: number,
+  keyOpacity: number,
+  ambientOpacity: number,
   elevation: number,
-  color: string = '#000000'
+  color: string = '#000000',
+  ambientBlurOverride?: number,
+  ambientYOverride?: number
 ): FluentShadow => ({
-  shadowColor: color,
-  shadowOffset: { width: 0, height: offsetY },
-  shadowOpacity: opacity,
-  shadowRadius: blurRadius,
+  key: {
+    shadowColor: color,
+    shadowOffset: { width: 0, height: level * 0.5 },
+    shadowOpacity: keyOpacity,
+    shadowRadius: level,
+  },
+  ambient: {
+    shadowColor: color,
+    shadowOffset: { width: 0, height: ambientYOverride !== undefined ? ambientYOverride : level * 0.5 },
+    shadowOpacity: ambientOpacity,
+    shadowRadius: ambientBlurOverride !== undefined ? ambientBlurOverride : level,
+  },
   elevation,
 });
 
-const toBoxShadow = (shadow: FluentShadow): string => {
-  const { r, g, b } = hexToRgb(shadow.shadowColor);
-  const alpha = shadow.shadowOpacity;
-  return `0px ${shadow.shadowOffset.height}px ${shadow.shadowRadius}px rgba(${r}, ${g}, ${b}, ${alpha})`;
+const shadowLayerToBoxShadow = (layer: FluentShadow['key']): string => {
+  const { r, g, b } = hexToRgb(layer.shadowColor);
+  return `0px ${layer.shadowOffset.height}px ${layer.shadowRadius}px rgba(${r}, ${g}, ${b}, ${layer.shadowOpacity})`;
 };
 
 const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
@@ -36,39 +53,39 @@ const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
 };
 
 export const FluentShadows = {
-  shadow2: createShadow(1, 2, 0.12, 2),
-  shadow4: createShadow(2, 4, 0.14, 4),
-  shadow8: createShadow(4, 8, 0.14, 8),
-  shadow16: createShadow(8, 16, 0.14, 16),
-  shadow28: createShadow(14, 28, 0.17, 24),
-  shadow64: createShadow(32, 64, 0.22, 28),
+  shadow2: createDualShadow(2, 0.14, 0.14, 2),
+  shadow4: createDualShadow(4, 0.14, 0.14, 4),
+  shadow8: createDualShadow(8, 0.14, 0.14, 8),
+  shadow16: createDualShadow(16, 0.14, 0.14, 16),
+  shadow28: createDualShadow(28, 0.24, 0.20, 24, '#000000', 8, 0),
+  shadow64: createDualShadow(64, 0.24, 0.20, 28, '#000000', 8, 0),
 } as const;
 
 export const FluentShadowsDark = {
-  shadow2: createShadow(1, 2, 0.24, 2),
-  shadow4: createShadow(2, 4, 0.28, 4),
-  shadow8: createShadow(4, 8, 0.28, 8),
-  shadow16: createShadow(8, 16, 0.28, 16),
-  shadow28: createShadow(14, 28, 0.32, 24),
-  shadow64: createShadow(32, 64, 0.36, 28),
+  shadow2: createDualShadow(2, 0.28, 0.14, 2),
+  shadow4: createDualShadow(4, 0.28, 0.14, 4),
+  shadow8: createDualShadow(8, 0.28, 0.14, 8),
+  shadow16: createDualShadow(16, 0.28, 0.14, 16),
+  shadow28: createDualShadow(28, 0.28, 0.20, 24, '#000000', 2, 0),
+  shadow64: createDualShadow(64, 0.28, 0.20, 28, '#000000', 2, 0),
 } as const;
 
 export const getShadowStyle = (level: keyof typeof FluentShadows, isDark: boolean = false) => {
   const shadows = isDark ? FluentShadowsDark : FluentShadows;
   const shadow = shadows[level];
-  
+
   return Platform.select({
     ios: {
-      shadowColor: shadow.shadowColor,
-      shadowOffset: shadow.shadowOffset,
-      shadowOpacity: shadow.shadowOpacity,
-      shadowRadius: shadow.shadowRadius,
+      shadowColor: shadow.key.shadowColor,
+      shadowOffset: shadow.key.shadowOffset,
+      shadowOpacity: shadow.key.shadowOpacity * 1.2,
+      shadowRadius: shadow.key.shadowRadius,
     },
     android: {
       elevation: shadow.elevation,
     },
     default: {
-      boxShadow: toBoxShadow(shadow),
+      boxShadow: `${shadowLayerToBoxShadow(shadow.key)}, ${shadowLayerToBoxShadow(shadow.ambient)}`,
     },
   });
 };

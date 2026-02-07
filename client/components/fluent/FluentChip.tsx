@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useThemedColors } from '@/contexts/ThemeContext';
@@ -17,6 +18,7 @@ import {
   FluentIconSize,
   FluentLayoutSize,
   FluentBorderWidth,
+  FluentSpring,
 } from '@/constants/fluent2';
 
 type ChipSize = 'small' | 'medium';
@@ -70,8 +72,14 @@ export function FluentChip({
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   const handlePressIn = (e: any) => {
     setIsPressed(true);
+    scale.value = withSpring(0.95, FluentSpring.standard);
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -80,6 +88,7 @@ export function FluentChip({
 
   const handlePressOut = (e: any) => {
     setIsPressed(false);
+    scale.value = withSpring(1, FluentSpring.standard);
     onPressOut?.(e);
   };
 
@@ -119,69 +128,71 @@ export function FluentChip({
   const foregroundColor = getForegroundColor();
 
   return (
-    <Pressable
-      style={[
-        styles.chip,
-        {
-          backgroundColor: getBackgroundColor(),
-          borderColor: getBorderColor(),
-          borderRadius: FluentControlRadius.chip,
-          paddingHorizontal: sizeConfig.paddingHorizontal,
-          paddingVertical: sizeConfig.paddingVertical,
-          minHeight: sizeConfig.minHeight,
-          opacity: disabled ? 0.5 : 1,
-        },
-        style,
-      ]}
-      disabled={disabled}
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onHoverIn={() => setIsHovered(true)}
-      onHoverOut={() => setIsHovered(false)}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel || label}
-      accessibilityState={{ disabled: disabled || undefined, selected: selected || undefined }}
-      android_ripple={null}
-      {...props}
-    >
-      <View style={styles.content}>
-        {icon && (
-          <View style={styles.iconWrapper}>
-            {React.cloneElement(icon as React.ReactElement<{ color?: string; size?: number }>, {
-              color: foregroundColor,
-              size: sizeConfig.iconSize,
-            })}
-          </View>
-        )}
-        <Text
-          style={[
-            sizeConfig.typography,
-            { color: foregroundColor },
-            styles.label,
-          ]}
-          numberOfLines={1}
-        >
-          {label}
-        </Text>
-        {dismissible && (
-          <Pressable
-            onPress={handleDismiss}
-            hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
-            style={styles.dismissButton}
-            accessibilityLabel={`Remove ${label}`}
-            accessibilityRole="button"
-            android_ripple={null}
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        style={[
+          styles.chip,
+          {
+            backgroundColor: getBackgroundColor(),
+            borderColor: getBorderColor(),
+            borderRadius: FluentControlRadius.chip,
+            paddingHorizontal: sizeConfig.paddingHorizontal,
+            paddingVertical: sizeConfig.paddingVertical,
+            minHeight: sizeConfig.minHeight,
+            opacity: disabled ? 0.5 : 1,
+          },
+          style,
+        ]}
+        disabled={disabled}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onHoverIn={() => setIsHovered(true)}
+        onHoverOut={() => setIsHovered(false)}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel || label}
+        accessibilityState={{ disabled: disabled || undefined, selected: selected || undefined }}
+        android_ripple={null}
+        {...props}
+      >
+        <View style={styles.content}>
+          {icon && (
+            <View style={styles.iconWrapper}>
+              {React.cloneElement(icon as React.ReactElement<{ color?: string; size?: number }>, {
+                color: foregroundColor,
+                size: sizeConfig.iconSize,
+              })}
+            </View>
+          )}
+          <Text
+            style={[
+              sizeConfig.typography,
+              { color: foregroundColor },
+              styles.label,
+            ]}
+            numberOfLines={1}
           >
-            <MaterialCommunityIcons
-              name="close"
-              size={sizeConfig.dismissSize}
-              color={foregroundColor}
-            />
-          </Pressable>
-        )}
-      </View>
-    </Pressable>
+            {label}
+          </Text>
+          {dismissible && (
+            <Pressable
+              onPress={handleDismiss}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+              style={styles.dismissButton}
+              accessibilityLabel={`Remove ${label}`}
+              accessibilityRole="button"
+              android_ripple={null}
+            >
+              <MaterialCommunityIcons
+                name="close"
+                size={sizeConfig.dismissSize}
+                color={foregroundColor}
+              />
+            </Pressable>
+          )}
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 }
 

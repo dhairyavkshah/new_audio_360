@@ -1,5 +1,6 @@
 import React from "react";
 import { View, StyleSheet, Pressable, Platform, ViewStyle } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useThemeTokens } from "@/contexts/ThemeContext";
@@ -8,7 +9,12 @@ import { getButtonEffectStyle, getGlowStyle, ThemeTokens } from "@/lib/themeUtil
 import {
   FluentSpacing,
   FluentIconSize,
+  FluentTouchTarget,
 } from "@/constants/fluent2";
+
+const SPRING_CONFIG = { damping: 22, stiffness: 250, mass: 1 };
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface PlaybackControlsProps {
   isPlaying: boolean;
@@ -39,6 +45,19 @@ function ControlButton({
   tokens: ThemeTokens;
 }) {
   const { playTapSound } = useUiSound();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(isPrimary ? 0.92 : 0.9, SPRING_CONFIG);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, SPRING_CONFIG);
+  };
 
   const handlePress = () => {
     playTapSound();
@@ -51,7 +70,7 @@ function ControlButton({
   };
 
   const { shapes, components, colors } = tokens;
-  const buttonSize = isPrimary ? shapes.controlSizeLg : shapes.controlSize;
+  const buttonSize = isPrimary ? shapes.controlSizeLg : Math.max(shapes.controlSize, FluentTouchTarget.minimum);
 
   const buttonEffectStyle = isPrimary ? getButtonEffectStyle(tokens, 'primary') : {};
   const glowStyle = (components.useGlow && (isPrimary || isActive)) ? getGlowStyle(tokens) : null;
@@ -77,8 +96,10 @@ function ControlButton({
   } : {};
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       android_ripple={null}
       style={[
         baseStyle,
@@ -86,6 +107,7 @@ function ControlButton({
         activeStyle,
         glowStyle,
         bevelStyle,
+        animatedStyle,
       ]}
     >
       <MaterialCommunityIcons 
@@ -93,7 +115,7 @@ function ControlButton({
         size={size} 
         color={color} 
       />
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -112,7 +134,7 @@ export function PlaybackControls({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.secondaryControls, { width: shapes.controlSize }]}>
+      <View style={[styles.secondaryControls, { width: Math.max(shapes.controlSize, FluentTouchTarget.minimum) }]}>
         {onShuffle ? (
           <ControlButton
             icon={icons.shuffle}
@@ -152,7 +174,7 @@ export function PlaybackControls({
         />
       </View>
 
-      <View style={[styles.secondaryControls, { width: shapes.controlSize }]}>
+      <View style={[styles.secondaryControls, { width: Math.max(shapes.controlSize, FluentTouchTarget.minimum) }]}>
         {onRepeat ? (
           <ControlButton
             icon={repeatMode === "one" ? icons.repeatOnce : icons.repeat}

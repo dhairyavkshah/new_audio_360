@@ -128,6 +128,7 @@ function MainTabNavigator() {
           ...getTabBarStyle(tokens),
         },
         headerShown: false,
+        animation: 'fade',
         tabBarLabelStyle: {
           fontSize: FluentTypography.caption1.fontSize,
           fontWeight: FluentTypography.caption1.fontWeight as any,

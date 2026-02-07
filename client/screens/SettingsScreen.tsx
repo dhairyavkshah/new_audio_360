@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   timerOption: {
     paddingVertical: FluentSpacing.m,
     paddingHorizontal: FluentSpacing.l,
-    borderRadius: FluentRadius.medium,
+    borderRadius: FluentRadius.large,
     minWidth: 72,
     alignItems: "center",
     height: FluentControlHeight.large,

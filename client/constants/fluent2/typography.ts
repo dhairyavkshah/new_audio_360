@@ -22,8 +22,8 @@ export const FluentFontWeight = {
 export const FluentTypography = {
   caption2: {
     fontFamily,
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: FluentFontWeight.regular,
   },
   caption1: {
@@ -41,13 +41,13 @@ export const FluentTypography = {
   body1: {
     fontFamily,
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 24,
     fontWeight: FluentFontWeight.regular,
   },
   body1Strong: {
     fontFamily,
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 24,
     fontWeight: FluentFontWeight.semibold,
   },
   body2: {
@@ -65,43 +65,43 @@ export const FluentTypography = {
   subtitle2: {
     fontFamily,
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 24,
     fontWeight: FluentFontWeight.semibold,
   },
   subtitle1: {
     fontFamily,
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 20,
+    lineHeight: 26,
     fontWeight: FluentFontWeight.semibold,
   },
   title3: {
     fontFamily: fontFamilyDisplay,
     fontSize: 20,
-    lineHeight: 28,
+    lineHeight: 26,
     fontWeight: FluentFontWeight.semibold,
   },
   title2: {
     fontFamily: fontFamilyDisplay,
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: FluentFontWeight.semibold,
   },
   title1: {
     fontFamily: fontFamilyDisplay,
     fontSize: 28,
-    lineHeight: 36,
+    lineHeight: 34,
     fontWeight: FluentFontWeight.semibold,
   },
   largeTitle: {
     fontFamily: fontFamilyDisplay,
     fontSize: 34,
-    lineHeight: 44,
+    lineHeight: 41,
     fontWeight: FluentFontWeight.bold,
   },
   display: {
     fontFamily: fontFamilyDisplay,
-    fontSize: 48,
-    lineHeight: 56,
+    fontSize: 60,
+    lineHeight: 72,
     fontWeight: FluentFontWeight.bold,
   },
 } as const;

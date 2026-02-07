@@ -17,6 +17,7 @@ export const FluentCurve = {
   decelerateMax: Easing.bezier(0, 0, 0, 1),
   easeMax: Easing.bezier(0.8, 0, 0.2, 1),
   linear: Easing.linear,
+  pointToPoint: Easing.bezier(0.55, 0.55, 0, 1),
 } as const;
 
 export const FluentEasingValues = {
@@ -25,12 +26,13 @@ export const FluentEasingValues = {
   decelerateMid: { x1: 0.1, y1: 0.9, x2: 0.2, y2: 1 },
   decelerateMax: { x1: 0, y1: 0, x2: 0, y2: 1 },
   easeMax: { x1: 0.8, y1: 0, x2: 0.2, y2: 1 },
+  pointToPoint: { x1: 0.55, y1: 0.55, x2: 0, y2: 1 },
 } as const;
 
 export const FluentSpring = {
   standard: {
-    damping: 20,
-    stiffness: 200,
+    damping: 22,
+    stiffness: 250,
     mass: 1,
   },
   gentle: {
@@ -39,8 +41,8 @@ export const FluentSpring = {
     mass: 1,
   },
   bouncy: {
-    damping: 12,
-    stiffness: 180,
+    damping: 10,
+    stiffness: 200,
     mass: 1,
   },
   stiff: {
