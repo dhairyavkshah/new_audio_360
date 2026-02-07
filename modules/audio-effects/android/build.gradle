@@ -96,10 +96,9 @@ dependencies {
   // Security for encrypted storage
   implementation 'androidx.security:security-crypto:1.1.0-alpha06'
   
-  // TensorFlow Lite for neural audio processing
-  // Using 2.13.0 for stable GpuDelegate API
-  implementation 'org.tensorflow:tensorflow-lite:2.13.0'
-  implementation 'org.tensorflow:tensorflow-lite-gpu:2.13.0'
+  // LiteRT (successor to TensorFlow Lite) for neural audio processing
+  // LiteRT 1.x maintains Interpreter API compatibility while supporting 16KB page sizes
+  implementation 'com.google.ai.edge.litert:litert:1.4.1'
 }
 
 def safeExtGet(prop, fallback) {
