@@ -12,7 +12,7 @@ import { useThemeContext, useThemedColors } from "@/contexts/ThemeContext";
 import { useMediaLibraryContext } from "@/contexts/MediaLibraryContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { usePlayer } from "@/hooks/usePlayer";
-import { FluentSpacing, FluentRadius, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
+import { FluentSpacing, FluentRadius, FluentControlRadius, FluentIconSize, getShadowStyle } from "@/constants/fluent2";
 import { Song } from "@/lib/data";
 import { ListenStackParamList } from "@/navigation/ListenStackNavigator";
 import { PlayableSong } from "@/contexts/PlayerContext";
@@ -174,9 +174,9 @@ function ListenScreen() {
       />
 
       {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1 }, getShadowStyle('shadow4', isDark)]}>
-          <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
-          <FluentText variant="caption1" style={{ color: colors.colorNeutralForegroundOnBrand, marginLeft: FluentSpacing.s, flex: 1 }}>
+        <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1 + '1A', borderLeftWidth: 3, borderLeftColor: colors.colorPaletteGreenForeground1 }, getShadowStyle('shadow4', isDark)]}>
+          <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color={colors.colorPaletteGreenForeground1} />
+          <FluentText variant="caption1" style={{ color: colors.colorNeutralForeground1, marginLeft: FluentSpacing.s, flex: 1 }}>
             {successMessage}
           </FluentText>
         </View>
@@ -203,7 +203,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: FluentSpacing.l,
     paddingVertical: FluentSpacing.l,
-    borderRadius: FluentRadius.large,
+    borderRadius: FluentControlRadius.button,
+    minHeight: 48,
   },
 });
 

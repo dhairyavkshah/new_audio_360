@@ -66,18 +66,34 @@ export function Toast({
   const getColors = () => {
     switch (type) {
       case 'success':
-        return { bg: fluentColors.colorPaletteGreenForeground1, icon: fluentColors.colorNeutralForegroundOnBrand };
+        return {
+          bg: fluentColors.colorPaletteGreenBackground1,
+          accent: fluentColors.colorPaletteGreenForeground1,
+          text: fluentColors.colorPaletteGreenForeground1,
+        };
       case 'error':
-        return { bg: fluentColors.colorPaletteRedForeground1, icon: fluentColors.colorNeutralForegroundOnBrand };
+        return {
+          bg: fluentColors.colorPaletteRedBackground1,
+          accent: fluentColors.colorPaletteRedForeground1,
+          text: fluentColors.colorPaletteRedForeground1,
+        };
       case 'warning':
-        return { bg: fluentColors.colorPaletteYellowForeground1, icon: fluentColors.colorNeutralForeground1 };
+        return {
+          bg: fluentColors.colorPaletteYellowBackground1,
+          accent: fluentColors.colorPaletteYellowForeground1,
+          text: fluentColors.colorPaletteYellowForeground1,
+        };
       case 'info':
       default:
-        return { bg: fluentColors.colorBrandBackground, icon: fluentColors.colorNeutralForegroundOnBrand };
+        return {
+          bg: fluentColors.colorBrandForeground1 + '1A',
+          accent: fluentColors.colorBrandForeground1,
+          text: fluentColors.colorBrandForeground1,
+        };
     }
   };
 
-  const colors = getColors();
+  const typeColors = getColors();
   const topPosition = insets.top + FluentSpacing.m;
 
   return (
@@ -94,7 +110,9 @@ export function Toast({
           style={[
             styles.toast,
             {
-              backgroundColor: colors.bg,
+              backgroundColor: typeColors.bg,
+              borderLeftWidth: 3,
+              borderLeftColor: typeColors.accent,
               ...toastShadow,
             },
           ]}
@@ -102,16 +120,16 @@ export function Toast({
           <MaterialCommunityIcons
             name={ICONS[type]}
             size={FluentIconSize.regular}
-            color={colors.icon}
+            color={typeColors.accent}
             style={styles.icon}
           />
-          <FluentText variant="body2" style={[styles.message, { color: colors.icon }]}>
+          <FluentText variant="body2" style={[styles.message, { color: typeColors.text }]}>
             {message}
           </FluentText>
           <MaterialCommunityIcons
             name="close"
             size={FluentIconSize.small}
-            color={colors.icon}
+            color={fluentColors.colorNeutralForeground2}
             style={styles.closeIcon}
           />
         </View>
@@ -132,9 +150,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: FluentSpacing.m,
-    borderRadius: FluentControlRadius.card,
+    borderRadius: FluentControlRadius.button,
     minWidth: 200,
     maxWidth: '100%',
+    minHeight: 48,
   },
   icon: {
     marginRight: FluentSpacing.s,

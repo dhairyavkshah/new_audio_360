@@ -1,9 +1,9 @@
-# New Audio 360 v32.0
+# New Audio 360 v33.0
 
 ## Overview
 New Audio 360 is a premium mobile music player built with React Native and Expo, offering studio-quality audio processing through software-based DSP and neural AI upscaling. It provides 55 customizable themes and extensive music organization features. The application operates on a one-time purchase model with local data storage, aiming to deliver a high-quality, intelligent music experience across Android, iOS, Web, and Windows platforms.
 
-## Recent Changes (v32.0 - February 2026)
+## Recent Changes (v33.0 - February 2026)
 - **Pixel-Perfect Fluent 2 Design System**: Complete Microsoft Fluent 2 mobile design system implementation
   - **Typography**: Corrected type ramp (caption2 12/16, body1 lineHeight 24, subtitle1 20/26, title2 22/28, display 60/72)
   - **Corner Radii**: Mobile-correct values (button 8px, card 12px, dialog 16px, bottomSheet 20px, chip 8px, fab 28px)
@@ -16,7 +16,7 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 - **16KB Page Size Support**: Added `-Wl,-z,max-page-size=16384` linker flag to CMakeLists.txt for Android 15+ compatibility
 - **Seek Lag Fix**: Added `isSeeking` state guard to PlayerContext with 500ms timeout to prevent slider jump-back during seek operations
 - **ProgressBar Seeking Guard**: ProgressBar now accepts `isSeeking` prop to skip position sync during active seeks
-- **Version Bump**: Updated version to 32.0 across package.json, app.config.js, screens, Kotlin docs, and documentation
+- **Version Bump**: Updated version to 33.0 across package.json, app.config.js, screens, Kotlin docs, and documentation
 
 ### Previous Changes (v31.0)
 - **Full Theme Adaptation**: Created `getThemedFluentColors()` utility and `useThemedColors()` hook for dynamic Fluent 2 color token mapping across all 70+ files

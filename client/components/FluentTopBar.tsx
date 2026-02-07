@@ -388,13 +388,13 @@ const styles = StyleSheet.create({
   container: {
     borderBottomWidth: 1,
     paddingHorizontal: FluentSpacing.l,
-    paddingBottom: FluentSpacing.s,
+    paddingBottom: FluentSpacing.m,
     zIndex: 100,
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: FluentSpacing.xs,
+    marginBottom: FluentSpacing.s,
   },
   title: {
     flex: 1,

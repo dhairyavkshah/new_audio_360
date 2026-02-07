@@ -37,7 +37,7 @@ export default function AboutScreen() {
             New Audio 360
           </FluentText>
           <FluentText variant="caption1" color="secondary" style={styles.version}>
-            Version 32.0
+            Version 33.0
           </FluentText>
         </View>
 

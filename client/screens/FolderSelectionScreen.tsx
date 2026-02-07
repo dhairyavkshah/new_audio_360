@@ -504,9 +504,9 @@ export default function FolderSelectionScreen() {
       )}
 
       {successMessage ? (
-        <View style={[styles.successToast, getShadowStyle('shadow8', isDark), { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
-          <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color="#FFFFFF" />
-          <FluentText variant="body2" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
+        <View style={[styles.successToast, getShadowStyle('shadow8', isDark), { backgroundColor: colors.colorPaletteGreenForeground1 + '1A', borderLeftWidth: 3, borderLeftColor: colors.colorPaletteGreenForeground1 }]}>
+          <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color={colors.colorPaletteGreenForeground1} />
+          <FluentText variant="body2" style={{ color: colors.colorNeutralForeground1, marginLeft: FluentSpacing.s, flex: 1 }}>
             {successMessage}
           </FluentText>
         </View>
@@ -616,9 +616,9 @@ export default function FolderSelectionScreen() {
       </View>
 
       {successMessage ? (
-        <View style={[styles.successToast, getShadowStyle('shadow8', isDark), { backgroundColor: colors.colorPaletteGreenForeground1 }]}>
-          <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color="#FFFFFF" />
-          <FluentText variant="body2" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
+        <View style={[styles.successToast, getShadowStyle('shadow8', isDark), { backgroundColor: colors.colorPaletteGreenForeground1 + '1A', borderLeftWidth: 3, borderLeftColor: colors.colorPaletteGreenForeground1 }]}>
+          <MaterialCommunityIcons name="check-circle" size={FluentIconSize.regular} color={colors.colorPaletteGreenForeground1} />
+          <FluentText variant="body2" style={{ color: colors.colorNeutralForeground1, marginLeft: FluentSpacing.s, flex: 1 }}>
             {successMessage}
           </FluentText>
         </View>
@@ -754,6 +754,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: FluentSpacing.l,
     paddingVertical: FluentSpacing.m,
-    borderRadius: FluentRadius.large,
+    borderRadius: FluentControlRadius.button,
+    minHeight: 48,
   },
 });

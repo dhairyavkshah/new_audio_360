@@ -295,9 +295,9 @@ export default function PlaylistDetailScreen() {
       </ScrollView>
 
       {successMessage ? (
-        <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1, bottom: insets.bottom + FluentSpacing.l }]}>
-          <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
-          <FluentText variant="body1" style={{ color: "#FFFFFF", marginLeft: FluentSpacing.s, flex: 1 }}>
+        <View style={[styles.successToast, { backgroundColor: colors.colorPaletteGreenForeground1 + '1A', borderLeftWidth: 3, borderLeftColor: colors.colorPaletteGreenForeground1, bottom: insets.bottom + FluentSpacing.l }]}>
+          <MaterialCommunityIcons name="check-circle" size={18} color={colors.colorPaletteGreenForeground1} />
+          <FluentText variant="body1" style={{ color: colors.colorNeutralForeground1, marginLeft: FluentSpacing.s, flex: 1 }}>
             {successMessage}
           </FluentText>
         </View>
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: FluentSpacing.l,
-    borderRadius: FluentControlRadius.card,
-    elevation: 4,
+    borderRadius: FluentControlRadius.button,
+    minHeight: 48,
   },
 });
