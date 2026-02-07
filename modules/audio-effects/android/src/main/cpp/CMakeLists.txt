@@ -26,6 +26,7 @@ find_library(android-lib android)
 
 target_link_options(audio_dsp PRIVATE
     -Wl,-z,max-page-size=16384
+    -Wl,-z,common-page-size=16384
 )
 
 target_link_libraries(audio_dsp

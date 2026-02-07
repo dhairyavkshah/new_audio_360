@@ -30,11 +30,11 @@ afterEvaluate {
 
 android {
   namespace "expo.modules.audioeffects"
-  compileSdkVersion safeExtGet("compileSdkVersion", 34)
+  compileSdkVersion safeExtGet("compileSdkVersion", 35)
 
   defaultConfig {
     minSdkVersion safeExtGet("minSdkVersion", 23)
-    targetSdkVersion safeExtGet("targetSdkVersion", 34)
+    targetSdkVersion safeExtGet("targetSdkVersion", 35)
     
     externalNativeBuild {
       cmake {
@@ -51,7 +51,7 @@ android {
     }
   }
   
-  ndkVersion "25.1.8937393"
+  ndkVersion safeExtGet("ndkVersion", "29.0.13113456")
 
   publishing {
     singleVariant("release") {

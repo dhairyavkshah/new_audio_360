@@ -110,6 +110,10 @@ export default {
         {
           android: {
             newArchEnabled: false,
+            compileSdkVersion: 35,
+            targetSdkVersion: 35,
+            buildToolsVersion: '35.0.0',
+            ndkVersion: '29.0.13113456',
           },
           ios: {
             newArchEnabled: false,
