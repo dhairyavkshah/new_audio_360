@@ -66,6 +66,22 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 - No complex animations - use simple dissolve/appear effects only
 - **Git Workflow**: Replit is always the source of truth. Never merge changes from GitHub to Replit. Use `git push --force` if needed.
 
+## Version Bump Checklist
+When updating the app version, **ALL** of the following must be updated in a single pass:
+1. **`package.json`** → `"version"` field (e.g., `"33.0.0"`)
+2. **`app.config.js`** → `expo.version` (e.g., `'33.0'`) — **this is where EAS Build reads the user-facing version**
+3. **`app.config.js`** → `expo.android.versionCode` (integer, e.g., `33`) — **Android build number for Play Store**
+4. **`app.config.js`** → `expo.ios.buildNumber` (string, e.g., `'33'`) — **iOS build number for App Store**
+5. **`client/screens/SplashScreen.tsx`** → version display string
+6. **`client/screens/SettingsScreen.tsx`** → version display string
+7. **`client/screens/AboutScreen.tsx`** → version display string
+8. **`client/screens/LicenseScreen.tsx`** → version display string
+9. **`docs/RELEASE_NOTES.md`** → new version section header
+10. **`replit.md`** → title and Recent Changes section header
+- `eas.json` has `"appVersionSource": "local"`, meaning EAS Build reads version **exclusively** from `app.config.js`
+- There is no `app.json` — `app.config.js` is the sole config source
+- Always grep for the old version number across the entire codebase after updating to catch any missed references
+
 ## System Architecture
 
 ### Platform & Framework
