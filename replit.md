@@ -1,62 +1,7 @@
 # New Audio 360 v33.0
 
 ## Overview
-New Audio 360 is a premium mobile music player built with React Native and Expo, offering studio-quality audio processing through software-based DSP and neural AI upscaling. It provides 55 customizable themes and extensive music organization features. The application operates on a one-time purchase model with local data storage, aiming to deliver a high-quality, intelligent music experience across Android, iOS, Web, and Windows platforms.
-
-## Recent Changes (v33.0 - February 2026)
-- **Pixel-Perfect Fluent 2 Design System**: Complete Microsoft Fluent 2 mobile design system implementation
-  - **Typography**: Corrected type ramp (caption2 12/16, body1 lineHeight 24, subtitle1 20/26, title2 22/28, display 60/72)
-  - **Corner Radii**: Mobile-correct values (button 8px, card 12px, dialog 16px, bottomSheet 20px, chip 8px, fab 28px)
-  - **Dual-Layer Shadow System**: Key shadow (sharp, defines edges) + ambient shadow (soft, conveys distance) per official Fluent 2 elevation spec
-  - **Motion**: Updated spring configs (standard: damping 22, stiffness 250), added pointToPoint easing curve
-  - **Press Animations**: react-native-reanimated scale feedback on all interactive components (Button 0.97, Card 0.98, Chip 0.95, IconButton 0.92, ListItem 0.98)
-  - **FluentModal**: Updated scrim 0.32 opacity, handle bar 36x5px, bottomSheet 20px top corners
-  - **Composite Components**: SongCard, MiniPlayer, PlaybackControls, ProgressBar, FluentTopBar all updated with corrected tokens and scale animations
-  - **Navigation**: Tab bar fade transitions, verified all key screens for token compliance
-- **16KB Page Size Support**: Added `-Wl,-z,max-page-size=16384` linker flag to CMakeLists.txt for Android 15+ compatibility
-- **Seek Lag Fix**: Added `isSeeking` state guard to PlayerContext with 500ms timeout to prevent slider jump-back during seek operations
-- **ProgressBar Seeking Guard**: ProgressBar now accepts `isSeeking` prop to skip position sync during active seeks
-- **Version Bump**: Updated version to 33.0 across package.json, app.config.js, screens, Kotlin docs, and documentation
-
-### Previous Changes (v31.0)
-- **Full Theme Adaptation**: Created `getThemedFluentColors()` utility and `useThemedColors()` hook for dynamic Fluent 2 color token mapping across all 70+ files
-- **Tap/Click Feedback**: Added opacity 0.9 press feedback to 40+ Pressable components (FluentCard, FluentListItem, all cards, buttons)
-- **CPU-Only Neural Audio Processing**: Removed GPU delegation from NeuralAudioProcessorTFLite (industry standard for real-time audio - GPU adds memory transfer overhead incompatible with <10ms latency requirements)
-- **AI Upscaling Async Initialization**: Neural model now preloads on PlaybackService startup in background thread (prevents audio stall when enabling AI upscaling)
-- **Spatial Enhancement Debounced Buffer Clear**: Buffer clearing is now debounced to 200ms after slider drag ends (prevents ripple/click artifacts during rapid slider movement)
-- **Track End Cooldown**: Added 300ms cooldown to handleTrackEnd to prevent jittery auto-advance from duplicate track end events
-- **Disable Android Ripple Effects**: Added `android_ripple={null}` to all Pressable components in modals (FluentModal, SoundLabScreen) and FluentListItem to prevent RippleDrawable log spam in software-rendered contexts
-- **Resource Leak Fixes**: Fixed MediaMetadataRetriever and ByteArrayOutputStream leaks in MediaStoreScannerModule with proper try-finally cleanup
-- **WaveformAnalyzerModule Memory Fix**: Fixed resource cleanup in release() - now properly nulls captureHandler/captureRunnable and always releases Visualizer resources regardless of capture state
-
-### Poweramp-Level Memory Optimizations (v31.0.1)
-- **DeviceCapabilities Utility** (`client/lib/deviceCapabilities.ts`): RAM detection with 3-tier classification (Low <3GB, Medium 3-6GB, High >6GB)
-- **LazyImage Component** (`client/components/LazyImage.tsx`): Visibility-based image loading with LRU cache (50 items max)
-- **FlatList Optimizations**: Adaptive windowSize (3-10), maxToRenderPerBatch (5-15), removeClippedSubviews, getItemLayout for fixed-height items
-- **Context Memoization**: Wrapped PlayerContext and SoundLabContext values in useMemo/useCallback to prevent unnecessary re-renders
-- **Adaptive Waveform Capture**: 20Hz (low-RAM), 30Hz (medium), 60Hz (high-memory) via NativeAudioService
-- **Memory-Aware AI Upscaling**: Neural processing auto-disabled on devices <4GB RAM via WebAudioEffectsEngine device capability check
-- **Android onTrimMemory Handler** (`DeviceInfoModule.kt`): Responds to memory pressure by clearing delay buffers and releasing neural model
-- **ByteBufferPool** (`ByteBufferPool.kt`): Thread-safe buffer pooling with 2MB cap, integrated into SoftwareDSPAudioProcessor
-- **C++/NDK DSP Foundation**: NEON SIMD implementation for PCM conversion, gain, soft clip operations (`NativeDSPModule.kt`, `simd_processor.cpp`)
-
-### Audio Quality Fixes (v31.0.2 - February 2026)
-- **32-bit Float Internal Processing**: SoftwareDSPAudioProcessor uses 32-bit float internally for maximum dynamic range, outputs in same format as input for AudioSink compatibility
-- **Complete RippleDrawable Fix**: Added `android_ripple={null}` to all remaining Pressable components (SongCard, SoundCloudTrackCard, SoundCloudPlaylistCard, OnlineStationCard, FavoriteStationCard, EQPresetCard, SmartEnhancementCard, ImmersiveModeCard)
-- **Removed Duplicate isEnabled()**: Fixed duplicate function definition in NeuralAudioProcessorTFLite.kt causing Kotlin compilation errors
-- **DSP Buffer Clearing Strategy Overhaul**: 
-  - Buffer clearing on track transitions/auto-advance (single call in PlaybackService.onMediaItemTransition)
-  - Guard: Skip buffer clear when mediaItem is null (prevents duplicate clear from clearMediaItems())
-  - Buffer clearing on explicit user DSP changes (any value change, no percentage thresholds)
-  - Track changes: Clear all buffers once (preserves DSP settings, clears delay/reverb buffers)
-  - EQ presets/bands: No clearing (biquad filters transition smoothly between coefficients)
-  - Bass Boost/Treble Boost: Clear on any value change (previousGain != newGain)
-  - Reverb: Clear on any value change (previousMix != newMix)
-  - Bass Enhancement: Clear on any level change (previousLevel != newLevel)
-  - AI Upscaling: Clear on level change only (toggle defers to level setter to avoid duplicate clear)
-  - Spatial Enhancement: Debounced 200ms after slider stops
-  - Immersive Modes: Clear all buffers when switching modes or setting custom parameters
-  - BassBoostModule: Clear on any strength change (removed >200 threshold)
+New Audio 360 is a premium mobile music player built with React Native and Expo, offering studio-quality audio processing through software-based DSP and neural AI upscaling. It provides 55 customizable themes and extensive music organization features. The application operates on a one-time purchase model with local data storage, aiming to deliver a high-quality, intelligent music experience across Android, iOS, Web, and Windows platforms. Its vision is to provide an intelligent, high-fidelity music experience.
 
 ## User Preferences
 - Concise and direct communication
@@ -66,79 +11,31 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 - No complex animations - use simple dissolve/appear effects only
 - **Git Workflow**: Replit is always the source of truth. Never merge changes from GitHub to Replit. Use `git push --force` if needed.
 
-## Version Bump Checklist
-When updating the app version, **ALL** of the following must be updated in a single pass:
-1. **`package.json`** → `"version"` field (e.g., `"33.0.0"`)
-2. **`app.config.js`** → `expo.version` (e.g., `'33.0'`) — **this is where EAS Build reads the user-facing version**
-3. **`app.config.js`** → `expo.android.versionCode` (integer, e.g., `33`) — **Android build number for Play Store**
-4. **`app.config.js`** → `expo.ios.buildNumber` (string, e.g., `'33'`) — **iOS build number for App Store**
-5. **`client/screens/SplashScreen.tsx`** → version display string
-6. **`client/screens/SettingsScreen.tsx`** → version display string
-7. **`client/screens/AboutScreen.tsx`** → version display string
-8. **`client/screens/LicenseScreen.tsx`** → version display string
-9. **`docs/RELEASE_NOTES.md`** → new version section header
-10. **`replit.md`** → title and Recent Changes section header
-- `eas.json` has `"appVersionSource": "local"`, meaning EAS Build reads version **exclusively** from `app.config.js`
-- There is no `app.json` — `app.config.js` is the sole config source
-- Always grep for the old version number across the entire codebase after updating to catch any missed references
-
 ## System Architecture
 
 ### Platform & Framework
 The application is built with React Native (SDK 53.0.0, React Native 0.79.2) and Expo. State management uses the React Context API with custom hooks. The design system is based on Microsoft Fluent 2, adhering to a 4px grid, semantic tokens, and elevation shadows. Data persistence is handled via local storage mechanisms like AsyncStorage and SecureStorage. It supports Android, iOS, Web, and Windows (PWA with native integration).
 
 ### Core Technical Architecture
-The app utilizes a deeply nested Context Provider hierarchy to manage global state, including `PlatformModeProvider`, `ThemeProvider`, `AuthProvider`, `PlayerProvider`, and `DiscoverFavoritesProvider`. The `PlayerContext` dynamically selects playback engines: a custom Android native ExoPlayer module with integrated DSP (`PlaybackEngineModule`), `react-native-track-player` as a fallback, and Web Audio API (`WebAudioEffectsEngine`) for web platforms.
-
-#### Android Native Modules
-Custom Expo modules developed in Kotlin expose native functionalities:
-- **Audio Processing**: `PlaybackEngineModule` (ExoPlayer with DSP), `SoftwareDSPAudioProcessor` (biquad filters, limiter, spatial processing), `NeuralAudioProcessorTFLite` (TensorFlow Lite AI upscaling), `EqualizerModule`, `BassBoostModule`, `SpatialEnhancementModule`, `ImmersiveModeEngineModule`.
-- **Utilities**: `WaveformAnalyzerModule` (real-time FFT), `MediaStoreScannerModule` (audio scanning), `AppContextModule` (license validation), `SecureStateManager` (encrypted storage), `RuntimeIntegrity` (signature verification).
-
-#### Web Audio Architecture
-For web, `WebAudioEffectsEngine` utilizes the Web Audio API for effects, and `@tensorflow/tfjs` for `NeuralAudioProcessor` (AI upscaling). SoundCloud streaming is handled via `SoundCloudWidgetPlayer` to bypass CORS.
-
-#### Key Services
-- **Audio Management**: `NativeEffectsManager` (bridges PlayerContext to Android DSP), `TrackPlayerService` (react-native-track-player wrapper), `AudioCoordinator` (manages audio sources).
-- **Content Discovery**: `SoundCloudService` (OAuth 2.1 PKCE, API calls), `ArchiveOrgService` (Internet Archive metadata), `OnlineRadioService` (Radio Browser API).
+The app utilizes a deeply nested Context Provider hierarchy for global state. `PlayerContext` dynamically selects playback engines: a custom Android native ExoPlayer module with integrated DSP (`PlaybackEngineModule`), `react-native-track-player` as a fallback, and Web Audio API (`WebAudioEffectsEngine`) for web platforms. Custom Expo modules developed in Kotlin expose native functionalities for audio processing (e.g., `SoftwareDSPAudioProcessor`, `NeuralAudioProcessorTFLite`) and utilities (e.g., `WaveformAnalyzerModule`, `MediaStoreScannerModule`). For web, `WebAudioEffectsEngine` utilizes the Web Audio API for effects and `@tensorflow/tfjs` for AI upscaling. Key services include `NativeEffectsManager`, `TrackPlayerService`, `AudioCoordinator`, `SoundCloudService`, `ArchiveOrgService`, and `OnlineRadioService`.
 
 ### Navigation
 The application uses `@react-navigation` with a `RootStackNavigator` containing a `MainTabNavigator` (Listen, Library, Radio, Discover, Settings) and a persistent MiniPlayer. Each tab has its own stack navigator.
 
 ### Audio Effects (Pure Software DSP + Neural AI)
-The application employs pure software DSP and neural AI upscaling, with all enhancements additive within ±12dB Android headroom. The signal chain order is: AI Audio Upscaling → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble Shelf → Spatial (with HRTF) → Reverb → Limiter → Output.
-
-**Key DSP Components**:
-- 10-Band Parametric EQ with presets.
-- Bass/Treble Boost Filters.
-- Multi-Tap Delay Reverb.
-- Intelligent Brickwall Limiter.
-- Psychoacoustic Spatial Enhancement with HRTF.
-- 6 Immersive Modes.
-- Smart Enhancements: HRTF Binaural Virtualization, Psychoacoustic Bass Enhancement, AI Upscaling (Kuleshov-style 1D U-Net CNN via TensorFlow.js/TensorFlow Lite).
-
-**DSP Architecture Details**:
-- Internal processing is 32-bit float for maximum dynamic range.
-- Android DSP uses a custom ExoPlayer `AudioProcessor` with biquad filters and TensorFlow Lite.
-- Web DSP uses `WebAudioEffectsEngine` with Web Audio API and TensorFlow.js.
-- All Android audio routes through a single DSP chain via `PlaybackEngineModule`.
-- **Audio Quality**: 32-bit float internal processing preserves full dynamic range. Output format matches input (16-bit or 24-bit) for AudioSink compatibility.
+The application employs pure software DSP and neural AI upscaling. The signal chain order is: AI Audio Upscaling → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble Shelf → Spatial (with HRTF) → Reverb → Limiter → Output.
+**Key DSP Components**: 10-Band Parametric EQ, Bass/Treble Boost Filters, Multi-Tap Delay Reverb, Intelligent Brickwall Limiter, Psychoacoustic Spatial Enhancement with HRTF, 6 Immersive Modes, Smart Enhancements (HRTF Binaural Virtualization, Psychoacoustic Bass Enhancement, AI Upscaling). Internal processing is 32-bit float for maximum dynamic range, with Android DSP using a custom ExoPlayer `AudioProcessor` and Web DSP using `WebAudioEffectsEngine`.
 
 ### Theme System Architecture
-The application features a two-layer color system with full dynamic theme adaptation:
-- **Theme Colors** (`tokens.colors`): 55 themes with semantic colors (primary, secondary, surface, text, etc.)
-- **Fluent Color Mapping** (`useThemedColors()`): Maps theme colors to Fluent 2 design tokens dynamically
-- **Key Files**: `client/lib/themeUtils.ts` (getThemedFluentColors), `client/contexts/ThemeContext.tsx` (useThemedColors hook)
-- All components use `useThemedColors()` for consistent theme adaptation
-- Tap/click effects on cards use opacity feedback (0.9 when pressed) - NO animations except waveform
+The application features a two-layer color system with full dynamic theme adaptation: Theme Colors (55 themes with semantic colors) and Fluent Color Mapping (`useThemedColors()`) that dynamically maps theme colors to Fluent 2 design tokens. All components utilize `useThemedColors()` for consistent theme application.
 
 ### Feature Specifications
 - **Sound Lab**: 10 EQ presets, custom 10-band EQ, 6 immersive modes, bass/treble control, Smart Enhancements.
-- **Theming**: 55 fully adaptive themes with dynamic Fluent color token mapping across all UI components.
+- **Theming**: 55 fully adaptive themes with dynamic Fluent color token mapping.
 - **Radio**: Native FM/AM and online streaming with Intelligent Radio Discovery.
 - **Playback**: Background playback, notification controls, queue, shuffle/repeat, playback speed, sleep timer, favorites.
 - **Library Management**: Music folder selection, paginated loading, playlist CRUD.
-- **Open Music Discovery**: Integration with Internet Archive (public domain/CC) and SoundCloud (full track streaming via OAuth 2.1), supporting DSP/AI upscaling.
+- **Open Music Discovery**: Integration with Internet Archive and SoundCloud (full track streaming via OAuth 2.1), supporting DSP/AI upscaling.
 
 ## External Dependencies
 
