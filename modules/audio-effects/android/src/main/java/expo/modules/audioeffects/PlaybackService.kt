@@ -106,6 +106,9 @@ class PlaybackService : MediaSessionService() {
         instance = this
         
         createNotificationChannel()
+        
+        startForeground(NOTIFICATION_ID, buildInitialNotification())
+        
         initializePlayer()
         
         // Preload neural audio processor in background (async, non-blocking)
@@ -148,6 +151,27 @@ class PlaybackService : MediaSessionService() {
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
         }
+    }
+    
+    private fun buildInitialNotification(): Notification {
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+            ?: Intent(this, Class.forName("${packageName}.MainActivity")).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("New Audio 360")
+            .setContentText("Preparing playback...")
+            .setSmallIcon(android.R.drawable.ic_media_play)
+            .setContentIntent(pendingIntent)
+            .setSilent(true)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
     }
     
     private fun initializePlayer() {
