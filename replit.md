@@ -37,6 +37,11 @@ The application features a two-layer color system with full dynamic theme adapta
 - **Library Management**: Music folder selection, paginated loading, playlist CRUD.
 - **Open Music Discovery**: Integration with Internet Archive and SoundCloud (full track streaming via OAuth 2.1), supporting DSP/AI upscaling.
 
+### Performance Architecture
+- **No polling**: SoundLabContext uses AppState-driven refresh (on mount + app focus) instead of interval polling, preventing constant state churn and GC pressure
+- **Debounced DSP updates**: `applyEffectsToEngine` uses 50ms debounce to coalesce rapid state changes into single native DSP reconfigurations
+- **Platform-gated WebAudioEffectsEngine**: All WebAudioEffectsEngine initialization, calls, and cleanup are gated to `Platform.OS === 'web'` only, eliminating dead code execution on Android
+
 ## External Dependencies
 
 ### Core
