@@ -32,10 +32,12 @@ export function SoundCloudPlaylistCard({ playlist, onPress }: SoundCloudPlaylist
       android_ripple={null}
     >
       {playlist.artwork_url ? (
-        <Image 
-          source={{ uri: playlist.artwork_url }} 
-          style={styles.playlistArtwork}
-        />
+        <View style={styles.playlistArtworkWrapper}>
+          <Image 
+            source={{ uri: playlist.artwork_url }} 
+            style={styles.playlistArtworkImage}
+          />
+        </View>
       ) : (
         <View style={[styles.playlistArtwork, { backgroundColor: colors.colorBrandBackground }]}>
           <MaterialCommunityIcons name="playlist-music" size={FluentIconSize.large} color={colors.colorNeutralForegroundOnBrand} />
@@ -88,6 +90,16 @@ const styles = StyleSheet.create({
     borderRadius: FluentControlRadius.card,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  playlistArtworkWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: FluentControlRadius.card,
+    overflow: 'hidden' as const,
+  },
+  playlistArtworkImage: {
+    width: 56,
+    height: 56,
   },
   playlistInfo: {
     flex: 1,

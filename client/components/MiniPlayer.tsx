@@ -184,7 +184,9 @@ function MiniPlayerComponent({ bottomOffset = 0, isDismissed = false, onDismiss,
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
         >
-          <Image source={artworkSource} style={[styles.artwork, { borderRadius: FluentControlRadius.button }]} />
+          <View style={{ width: FluentIconSize.xxlarge, height: FluentIconSize.xxlarge, borderRadius: FluentControlRadius.button, overflow: 'hidden' }}>
+            <Image source={artworkSource} style={styles.artwork} />
+          </View>
           <View style={styles.info}>
             <Text style={[FluentTypography.body1Strong, { color: tokens.colors.text }]} numberOfLines={1}>
               {currentSong.title}

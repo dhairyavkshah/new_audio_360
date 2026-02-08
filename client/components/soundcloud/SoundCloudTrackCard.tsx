@@ -35,10 +35,12 @@ export function SoundCloudTrackCard({ track, onPress, onAddToLibrary, isAdding, 
       android_ripple={null}
     >
       {track.artwork_url ? (
-        <Image 
-          source={{ uri: track.artwork_url }} 
-          style={styles.artworkImage}
-        />
+        <View style={styles.artworkImageWrapper}>
+          <Image 
+            source={{ uri: track.artwork_url }} 
+            style={styles.artworkImage}
+          />
+        </View>
       ) : (
         <View style={[styles.playIcon, { backgroundColor: colors.colorBrandBackground }]}>
           <MaterialCommunityIcons name="soundcloud" size={FluentIconSize.regular} color={colors.colorNeutralForegroundOnBrand} />
@@ -103,10 +105,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  artworkImage: {
+  artworkImageWrapper: {
     width: FluentIconSize.xxlarge,
     height: FluentIconSize.xxlarge,
     borderRadius: FluentControlRadius.card,
+    overflow: 'hidden' as const,
+  },
+  artworkImage: {
+    width: FluentIconSize.xxlarge,
+    height: FluentIconSize.xxlarge,
   },
   durationText: {
     marginRight: FluentSpacing.s,

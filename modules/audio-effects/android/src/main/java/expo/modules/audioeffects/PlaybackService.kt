@@ -299,9 +299,6 @@ class PlaybackService : MediaSessionService() {
                         cachedCurrentIndex = index
                         updateCachedStatus()
                         
-                        // Clear DSP audio buffers on track change (manual or auto-advance)
-                        // This clears delay/reverb buffers but preserves all DSP settings
-                        dspProcessor?.clearAudioBuffers()
                         dspProcessor?.resetSampleCounter(0L)
                         cachedTrackEnded = false
                         

@@ -111,7 +111,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const delayGainRef = useRef<GainNode | null>(null);
 
   const useNativePlaybackRef = useRef(Platform.OS === 'android' && PlaybackEngineModule.isAvailable());
-  const useTrackPlayerRef = useRef(TrackPlayerService.isAvailable());
+  const useTrackPlayerRef = useRef(
+    TrackPlayerService.isAvailable() && !(Platform.OS === 'android' && PlaybackEngineModule.isAvailable())
+  );
   const trackPlayerInitializedRef = useRef(false);
   const nativeAudioSessionIdRef = useRef<number>(0);
   const playbackEngineInitializedRef = useRef<boolean>(false);
@@ -120,6 +122,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const nativeProgressSubscriptionRef = useRef<{ remove: () => void } | null>(null);
   const nativeTrackEndedSubscriptionRef = useRef<{ remove: () => void } | null>(null);
   const nativeIsPlayingSubscriptionRef = useRef<{ remove: () => void } | null>(null);
+  const trackTransitionRef = useRef(false);
   const trackEndHandledRef = useRef<boolean>(false);
   const lastTrackEndTimeRef = useRef<number>(0);
   const lastKnownPositionRef = useRef<number>(0);
@@ -209,15 +212,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       onPlay: () => {
         if (TrackPlayerService.getPlaybackSource() === 'music') {
           setIsPlaying(true);
+          trackTransitionRef.current = false;
         }
       },
       onPause: () => {
-        if (TrackPlayerService.getPlaybackSource() === 'music') {
+        if (TrackPlayerService.getPlaybackSource() === 'music' && !trackTransitionRef.current) {
           setIsPlaying(false);
         }
       },
       onStop: () => {
-        if (TrackPlayerService.getPlaybackSource() === 'music') {
+        if (TrackPlayerService.getPlaybackSource() === 'music' && !trackTransitionRef.current) {
           setIsPlaying(false);
           setCurrentTime(0);
         }
@@ -237,6 +241,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       },
       onTrackChange: async (trackIndex) => {
         if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+        trackTransitionRef.current = true;
+        setTimeout(() => { trackTransitionRef.current = false; }, 2000);
         if (trackIndex !== null && trackIndex >= 0) {
           const currentQueue = queueRef.current;
           if (currentQueue[trackIndex]) {
@@ -274,17 +280,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (TrackPlayerService.getPlaybackSource() !== 'music') return;
         if (state === State.Playing) {
           setIsPlaying(true);
+          trackTransitionRef.current = false;
           setIsBuffering(false);
         } else if (state === State.Paused) {
-          setIsPlaying(false);
+          if (!trackTransitionRef.current) {
+            setIsPlaying(false);
+          }
           setIsBuffering(false);
         } else if (state === State.Buffering || state === State.Loading) {
           setIsBuffering(true);
         } else if (state === State.Stopped) {
-          setIsPlaying(false);
-          setCurrentTime(0);
+          if (!trackTransitionRef.current) {
+            setIsPlaying(false);
+            setCurrentTime(0);
+          }
         } else if (state === State.Error || state === 'error') {
           setIsPlaying(false);
+          trackTransitionRef.current = false;
           setIsBuffering(false);
           console.log('[PlayerContext] TrackPlayer error state - stopping waveform animation');
         }
@@ -1411,19 +1423,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         TrackPlayerService.setPlaybackSource('music');
         
         // Register music callbacks fresh to prevent overwrites from other contexts
+        trackTransitionRef.current = true;
         TrackPlayerService.setCallbacks({
           onPlay: () => {
             if (TrackPlayerService.getPlaybackSource() === 'music') {
               setIsPlaying(true);
+              trackTransitionRef.current = false;
             }
           },
           onPause: () => {
-            if (TrackPlayerService.getPlaybackSource() === 'music') {
+            if (TrackPlayerService.getPlaybackSource() === 'music' && !trackTransitionRef.current) {
               setIsPlaying(false);
             }
           },
           onStop: () => {
-            if (TrackPlayerService.getPlaybackSource() === 'music') {
+            if (TrackPlayerService.getPlaybackSource() === 'music' && !trackTransitionRef.current) {
               setIsPlaying(false);
               setCurrentTime(0);
             }
@@ -1443,6 +1457,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           },
           onTrackChange: async (trackIndex) => {
             if (TrackPlayerService.getPlaybackSource() !== 'music') return;
+            trackTransitionRef.current = true;
+            setTimeout(() => { trackTransitionRef.current = false; }, 2000);
             if (trackIndex !== null && trackIndex >= 0) {
               const currentQueue = queueRef.current;
               if (currentQueue[trackIndex]) {
@@ -1471,17 +1487,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             if (TrackPlayerService.getPlaybackSource() !== 'music') return;
             if (state === State.Playing) {
               setIsPlaying(true);
+              trackTransitionRef.current = false;
               setIsBuffering(false);
             } else if (state === State.Paused) {
-              setIsPlaying(false);
+              if (!trackTransitionRef.current) {
+                setIsPlaying(false);
+              }
               setIsBuffering(false);
             } else if (state === State.Buffering || state === State.Loading) {
               setIsBuffering(true);
             } else if (state === State.Stopped) {
-              setIsPlaying(false);
-              setCurrentTime(0);
+              if (!trackTransitionRef.current) {
+                setIsPlaying(false);
+                setCurrentTime(0);
+              }
             } else if (state === State.Error || state === 'error') {
               setIsPlaying(false);
+              trackTransitionRef.current = false;
               setIsBuffering(false);
               console.log('[PlayerContext] TrackPlayer error state - stopping waveform animation');
             }

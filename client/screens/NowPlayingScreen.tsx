@@ -225,10 +225,12 @@ export default function NowPlayingScreen() {
       >
         <View style={[styles.artworkContainer, { marginTop: isExtraCompact ? 0 : isVeryCompact ? FluentSpacing.xxs : isCompact ? FluentSpacing.s : FluentSpacing.l }]}>
           <View style={styles.artworkWrapper}>
-            <Image
-              source={currentSong.artwork ? { uri: currentSong.artwork } : DEFAULT_ALBUM_ART}
-              style={[styles.artwork, { width: artworkSize, height: artworkSize }]}
-            />
+            <View style={{ width: artworkSize, height: artworkSize, borderRadius: FluentRadius.xLarge, overflow: 'hidden' }}>
+              <Image
+                source={currentSong.artwork ? { uri: currentSong.artwork } : DEFAULT_ALBUM_ART}
+                style={{ width: artworkSize, height: artworkSize }}
+              />
+            </View>
             {(isLoading || isBuffering) ? (
               <View style={styles.loadingOverlay}>
                 <ActivityIndicator size="large" color={colors.colorBrandForeground1} />
