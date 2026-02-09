@@ -42,6 +42,23 @@ The application features a two-layer color system with full dynamic theme adapta
 - **Debounced DSP updates**: `applyEffectsToEngine` uses 50ms debounce to coalesce rapid state changes into single native DSP reconfigurations
 - **Platform-gated WebAudioEffectsEngine**: All WebAudioEffectsEngine initialization, calls, and cleanup are gated to `Platform.OS === 'web'` only, eliminating dead code execution on Android
 
+### Neural AI Upscaling Model
+- **Architecture**: Kuleshov-style 1D U-Net CNN for audio super-resolution (v1.3.0)
+- **Model file**: `modules/audio-effects/android/src/main/assets/audio_sr_model.tflite`
+- **Input**: 8192 samples per chunk, single channel, normalized [-1.0, 1.0]
+- **Processing**: Residual learning with configurable blend (Low 0.3, Medium 0.6, High 1.0)
+- **Stereo handling**: Deinterleaves L/R, processes independently, reinterleaves
+- **Safety**: 10ms time budget per chunk, automatic bypass on timeout/error
+- **CPU-only**: Correct for real-time audio (GPU would add memory transfer latency)
+- **Verified (Feb 2026)**: Original Kuleshov repo (github.com/kuleshov/audio-super-res, 2017 ICLR) provides NO pretrained weights. No official TFLite audio super-resolution models exist from Google/TF Hub. Modern alternatives (AudioSR, ClearerVoice-Studio, VM-ASR 2025) are all PyTorch-based, not TFLite-ready, and too large for real-time mobile processing. Current custom-trained v1.3.0 TFLite model is the appropriate production choice.
+- **Preloading**: Neural model is preloaded asynchronously during PlaybackService.onCreate() on a separate executor. This is correct — does not block audio or main thread, ensures model is ready when user enables AI upscaling.
+
+### Recent Fixes (Feb 2026)
+- **OnlineRadioContext TrackPlayer guard**: Added `useNativePlaybackRef` guard to skip TrackPlayer initialization on Android when PlaybackEngineModule is available, preventing dual ExoPlayer instances
+- **Duplicate initialize() fix**: `ensurePlaybackEngineInitialized()` in PlayerContext now properly captures audioSessionId from `alreadyInitialized` results, preventing redundant 5-second timeout re-initialization
+- **Background/foreground state sync**: Added PlaybackEngineModule state save on background transition and state restore on foreground return in PlayerContext
+- **Visualizer guard**: Deferred WaveformAnalyzerModule.attach() to capture-time (lazy), added playing state check before starting capture to prevent errors on pause
+
 ## External Dependencies
 
 ### Core

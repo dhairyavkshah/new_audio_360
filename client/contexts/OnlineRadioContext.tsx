@@ -107,6 +107,10 @@ export function OnlineRadioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const initializeTrackPlayer = async () => {
+    if (useNativePlaybackRef.current) {
+      console.log('[OnlineRadioContext] Using PlaybackEngineModule for radio, skipping TrackPlayer init');
+      return;
+    }
     if (!TrackPlayerService.isAvailable()) {
       console.log('[OnlineRadioContext] TrackPlayerService not available (web platform)');
       return;

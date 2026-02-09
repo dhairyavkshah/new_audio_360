@@ -77,7 +77,7 @@ class NativeAudioServiceClass {
         }
 
         if (this.isWaveformAvailable()) {
-          await WaveformAnalyzerModule.attach(this.audioSessionId);
+          console.log('[NativeAudioService] Waveform analyzer available, will attach when capture starts');
         }
 
         return { success: true, audioSessionId: this.audioSessionId };
@@ -376,6 +376,16 @@ class NativeAudioServiceClass {
     }
 
     try {
+      const status = this.getStatus();
+      if (!status.isPlaying) {
+        return { success: false, error: 'Cannot start waveform capture: audio not playing' };
+      }
+
+      const sessionId = this.getAudioSessionId();
+      if (sessionId > 0) {
+        await WaveformAnalyzerModule.attach(sessionId);
+      }
+
       let captureRate = rateHz;
       
       if (captureRate === undefined) {

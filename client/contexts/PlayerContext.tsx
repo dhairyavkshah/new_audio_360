@@ -462,6 +462,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           return true;
         } else if (initResult.alreadyInitialized) {
           playbackEngineInitializedRef.current = true;
+          if (initResult.audioSessionId) {
+            nativeAudioSessionIdRef.current = initResult.audioSessionId;
+          }
+          console.log('[PlayerContext] PlaybackEngineModule already initialized (from EagerInit), audioSessionId:', initResult.audioSessionId);
           return true;
         } else if (initResult.error) {
           console.warn('[PlayerContext] PlaybackEngineModule initialization failed:', initResult.error);
@@ -621,6 +625,19 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             lastKnownPositionRef.current = currentTimeRef.current;
             wasPlayingBeforeBackgroundRef.current = false;
           }
+        } else if (useNativePlaybackRef.current && playbackEngineInitializedRef.current) {
+          try {
+            const status = PlaybackEngineModule.getStatus();
+            if (status.isInitialized) {
+              positionToSave = status.currentPositionMs / 1000;
+              lastKnownPositionRef.current = positionToSave;
+              wasPlaying = status.isPlaying;
+              wasPlayingBeforeBackgroundRef.current = wasPlaying;
+            }
+          } catch {
+            lastKnownPositionRef.current = currentTimeRef.current;
+            wasPlayingBeforeBackgroundRef.current = false;
+          }
         } else {
           lastKnownPositionRef.current = currentTimeRef.current;
           wasPlayingBeforeBackgroundRef.current = false;
@@ -688,6 +705,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             }
           } catch (err) {
             console.warn('[PlayerContext] Failed to sync state on foreground:', err);
+          }
+        } else if (useNativePlaybackRef.current && playbackEngineInitializedRef.current) {
+          try {
+            const status = PlaybackEngineModule.getStatus();
+            if (status.isInitialized) {
+              const currentPos = status.currentPositionMs / 1000;
+              setIsPlaying(status.isPlaying);
+              setCurrentTime(currentPos);
+              lastKnownPositionRef.current = currentPos;
+              wasPlayingBeforeBackgroundRef.current = status.isPlaying;
+              if (status.durationMs > 0) {
+                setDuration(status.durationMs / 1000);
+              }
+              setIsBuffering(status.playbackState === 'buffering');
+            }
+          } catch (err) {
+            console.warn('[PlayerContext] Failed to sync native playback state on foreground:', err);
           }
         }
       }
