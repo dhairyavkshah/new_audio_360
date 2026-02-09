@@ -14,10 +14,11 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
   1. `package.json` → `"version"`
   2. `package-lock.json` → `"version"` (top-level and packages[""])
   3. `app.config.js` → `version`, `ios.buildNumber`, `android.versionCode`
-  4. `client/screens/SplashScreen.tsx`, `AboutScreen.tsx`, `SettingsScreen.tsx`, `LicenseScreen.tsx`
-  5. `docs/RELEASE_NOTES.md`, `docs/APP_STORE_DESCRIPTIONS.md`
-  6. `replit.md` title
-  7. Kotlin comments in `SoftwareDSPAudioProcessor.kt`, `CustomMusicService.kt`
+  4. **`android/app/build.gradle`** → `defaultConfig.versionCode` and `defaultConfig.versionName` (THIS IS WHERE EXPO/EAS PICKS THE ACTUAL ANDROID BUILD VERSION FROM)
+  5. `client/screens/SplashScreen.tsx`, `AboutScreen.tsx`, `SettingsScreen.tsx`, `LicenseScreen.tsx`
+  6. `docs/RELEASE_NOTES.md`, `docs/APP_STORE_DESCRIPTIONS.md`
+  7. `replit.md` title
+  8. Kotlin comments in `SoftwareDSPAudioProcessor.kt`, `CustomMusicService.kt`
 
 ## System Architecture
 
