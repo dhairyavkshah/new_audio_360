@@ -6,7 +6,7 @@
 
 ---
 
-## What's New in v33.0
+## What's New in v34.0
 
 **Architecture & Performance Update** - C++/NDK DSP, 16KB page support, and playback fixes:
 
@@ -45,7 +45,7 @@
 ## Google Play Store Release Note (Under 500 Characters)
 
 ```
-v33.0 - Architecture & Performance Update
+v34.0 - Architecture & Performance Update
 
 C++/NDK DSP FOUNDATION
 ARM NEON SIMD for PCM conversion, gain & soft clip. 32-bit float internal processing.
@@ -64,7 +64,7 @@ One-time purchase, lifetime access.
 
 ---
 
-## Version 33.0 (February 2026)
+## Version 34.0 (February 2026)
 
 **Architecture & Performance Update**
 
@@ -312,7 +312,7 @@ One-time purchase, lifetime access.
 - Gapless playback improvements
 - Enhanced notification controls
 
-### Version 33.0 (Planned)
+### Version 34.0 (Planned)
 - Car mode UI
 - Home screen widget
 - Additional themes
