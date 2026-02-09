@@ -36,7 +36,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: getAppIdentifier(),
-      buildNumber: '33',
+      buildNumber: '34',
       infoPlist: {
         NSAppleMusicUsageDescription: 'Allow $(PRODUCT_NAME) to access your music library to play your songs.',
         NSMicrophoneUsageDescription: 'Allow $(PRODUCT_NAME) to access your microphone for voice recording and audio testing.',
@@ -56,7 +56,7 @@ export default {
       },
       edgeToEdgeEnabled: false,
       package: getAppIdentifier(),
-      versionCode: 33,
+      versionCode: 34,
       permissions: [
         'android.permission.READ_EXTERNAL_STORAGE',
         'android.permission.READ_MEDIA_AUDIO',

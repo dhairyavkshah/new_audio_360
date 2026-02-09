@@ -10,6 +10,14 @@ New Audio 360 is a premium mobile music player built with React Native and Expo,
 - Iterative development with justifications
 - No complex animations - use simple dissolve/appear effects only
 - **Git Workflow**: Replit is always the source of truth. Never merge changes from GitHub to Replit. Use `git push --force` if needed.
+- **Version Updates**: When bumping the app version, ALWAYS update ALL of these locations:
+  1. `package.json` → `"version"`
+  2. `package-lock.json` → `"version"` (top-level and packages[""])
+  3. `app.config.js` → `version`, `ios.buildNumber`, `android.versionCode`
+  4. `client/screens/SplashScreen.tsx`, `AboutScreen.tsx`, `SettingsScreen.tsx`, `LicenseScreen.tsx`
+  5. `docs/RELEASE_NOTES.md`, `docs/APP_STORE_DESCRIPTIONS.md`
+  6. `replit.md` title
+  7. Kotlin comments in `SoftwareDSPAudioProcessor.kt`, `CustomMusicService.kt`
 
 ## System Architecture
 
