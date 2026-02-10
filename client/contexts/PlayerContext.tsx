@@ -656,74 +656,84 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       
       if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
-        console.log('[PlayerContext] App returned to foreground - syncing state');
+        console.log('[PlayerContext] App returned to foreground - deferring state sync');
+        appStateRef.current = nextAppState;
         
-        if (useTrackPlayerRef.current) {
+        InteractionManager.runAfterInteractions(async () => {
           try {
-            const isAlive = await TrackPlayerService.isPlayerActive();
+            console.log('[PlayerContext] Running deferred foreground state sync');
             
-            if (!isAlive && trackPlayerInitializedRef.current) {
-              console.log('[PlayerContext] TrackPlayer was killed - reinitializing');
-              trackPlayerInitializedRef.current = false;
-              
-              const reinitialized = await TrackPlayerService.initialize();
-              if (reinitialized) {
-                trackPlayerInitializedRef.current = true;
+            if (useTrackPlayerRef.current) {
+              try {
+                const isAlive = await TrackPlayerService.isPlayerActive();
                 
-                setupTrackPlayerCallbacks();
-                TrackPlayerService.setRepeatMode(repeatRef.current);
-                
-                const savedPosition = lastKnownPositionRef.current;
-                const wasPlaying = wasPlayingBeforeBackgroundRef.current;
-                
-                await restoreTrackPlayerQueue(savedPosition, wasPlaying);
-                
-                console.log('[PlayerContext] TrackPlayer reinitialized and queue restored');
-              }
-            } else {
-              setupTrackPlayerCallbacks();
-            }
-            
-            if (trackPlayerInitializedRef.current && TrackPlayerService.getPlaybackSource() === 'music') {
-              // Batch state and progress calls to reduce lag on foreground return
-              const [state, progress] = await Promise.all([
-                TrackPlayerService.getState(),
-                TrackPlayerService.getProgress()
-              ]);
-              
-              const isCurrentlyPlaying = state === State.Playing;
-              setIsPlaying(isCurrentlyPlaying);
-              
-              if (progress) {
-                setCurrentTime(progress.position);
-                if (progress.duration > 0) {
-                  setDuration(progress.duration);
+                if (!isAlive && trackPlayerInitializedRef.current) {
+                  console.log('[PlayerContext] TrackPlayer was killed - reinitializing');
+                  trackPlayerInitializedRef.current = false;
+                  
+                  const reinitialized = await TrackPlayerService.initialize();
+                  if (reinitialized) {
+                    trackPlayerInitializedRef.current = true;
+                    
+                    setupTrackPlayerCallbacks();
+                    TrackPlayerService.setRepeatMode(repeatRef.current);
+                    
+                    const savedPosition = lastKnownPositionRef.current;
+                    const wasPlaying = wasPlayingBeforeBackgroundRef.current;
+                    
+                    await restoreTrackPlayerQueue(savedPosition, wasPlaying);
+                    
+                    console.log('[PlayerContext] TrackPlayer reinitialized and queue restored');
+                  }
+                } else {
+                  setupTrackPlayerCallbacks();
                 }
+                
+                if (trackPlayerInitializedRef.current && TrackPlayerService.getPlaybackSource() === 'music') {
+                  // Batch state and progress calls to reduce lag on foreground return
+                  const [state, progress] = await Promise.all([
+                    TrackPlayerService.getState(),
+                    TrackPlayerService.getProgress()
+                  ]);
+                  
+                  const isCurrentlyPlaying = state === State.Playing;
+                  setIsPlaying(isCurrentlyPlaying);
+                  
+                  if (progress) {
+                    setCurrentTime(progress.position);
+                    if (progress.duration > 0) {
+                      setDuration(progress.duration);
+                    }
+                  }
+                  
+                  setIsBuffering(state === State.Buffering || state === State.Loading);
+                }
+              } catch (err) {
+                console.warn('[PlayerContext] Failed to sync state on foreground:', err);
               }
-              
-              setIsBuffering(state === State.Buffering || state === State.Loading);
+            } else if (useNativePlaybackRef.current && playbackEngineInitializedRef.current) {
+              try {
+                const status = PlaybackEngineModule.getStatus();
+                if (status.isInitialized) {
+                  const currentPos = status.currentPositionMs / 1000;
+                  setIsPlaying(status.isPlaying);
+                  setCurrentTime(currentPos);
+                  lastKnownPositionRef.current = currentPos;
+                  wasPlayingBeforeBackgroundRef.current = status.isPlaying;
+                  if (status.durationMs > 0) {
+                    setDuration(status.durationMs / 1000);
+                  }
+                  setIsBuffering(status.playbackState === 'buffering');
+                }
+              } catch (err) {
+                console.warn('[PlayerContext] Failed to sync native playback state on foreground:', err);
+              }
             }
           } catch (err) {
-            console.warn('[PlayerContext] Failed to sync state on foreground:', err);
+            console.warn('[PlayerContext] Deferred foreground sync failed:', err);
           }
-        } else if (useNativePlaybackRef.current && playbackEngineInitializedRef.current) {
-          try {
-            const status = PlaybackEngineModule.getStatus();
-            if (status.isInitialized) {
-              const currentPos = status.currentPositionMs / 1000;
-              setIsPlaying(status.isPlaying);
-              setCurrentTime(currentPos);
-              lastKnownPositionRef.current = currentPos;
-              wasPlayingBeforeBackgroundRef.current = status.isPlaying;
-              if (status.durationMs > 0) {
-                setDuration(status.durationMs / 1000);
-              }
-              setIsBuffering(status.playbackState === 'buffering');
-            }
-          } catch (err) {
-            console.warn('[PlayerContext] Failed to sync native playback state on foreground:', err);
-          }
-        }
+        });
+        return;
       }
       appStateRef.current = nextAppState;
     };

@@ -480,15 +480,22 @@ class SoftwareDSPAudioProcessor : AudioProcessor {
     override fun getOutput(): ByteBuffer {
         val output = outputBuffer
         outputBuffer = AudioProcessor.EMPTY_BUFFER
+        
+        // If input has ended and we just returned the last buffer, fire end-of-stream
+        if (inputEnded && !trackEnded && output !== AudioProcessor.EMPTY_BUFFER) {
+            trackEnded = true
+            android.util.Log.d("SoftwareDSP", "Track ended via getOutput - final buffer delivered, total: $samplesProcessed")
+            endOfStreamCallback?.invoke()
+        }
+        
         return output
     }
 
     override fun isEnded(): Boolean {
         val ended = inputEnded && outputBuffer === AudioProcessor.EMPTY_BUFFER
-        // Fire callback when track truly ends (decoder finished + buffer drained)
         if (ended && !trackEnded) {
             trackEnded = true
-            android.util.Log.d("SoftwareDSP", "Track ended - all samples delivered, total: $samplesProcessed")
+            android.util.Log.d("SoftwareDSP", "Track ended via isEnded - buffer already empty, total: $samplesProcessed")
             endOfStreamCallback?.invoke()
         }
         return ended

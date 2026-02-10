@@ -141,9 +141,23 @@ class PlaybackEngineModule : Module() {
                     mainHandler.post { setupServiceCallbacks(service) }
                     isInitialized = true
                     
-                    // Build MediaController for external control
+                    // Build MediaController for external control (only if not already connected)
                     mainHandler.post {
                         try {
+                            if (mediaController != null && mediaController!!.isConnected) {
+                                // MediaController already connected, skip re-creation
+                                promise.resolve(mapOf(
+                                    "success" to true,
+                                    "audioSessionId" to service.getAudioSessionId()
+                                ))
+                                return@post
+                            }
+                            
+                            // Release old controller if disconnected
+                            controllerFuture?.let { MediaController.releaseFuture(it) }
+                            controllerFuture = null
+                            mediaController = null
+                            
                             val sessionToken = SessionToken(
                                 context,
                                 ComponentName(context, PlaybackService::class.java)

@@ -86,6 +86,24 @@ class PlaybackService : MediaSessionService() {
     
     private var currentArtwork: Bitmap? = null
     
+    private val cachedProgressMap = mutableMapOf<String, Any>("position" to 0, "duration" to 0)
+    
+    private val cachedStatusMap = mutableMapOf<String, Any>(
+        "isInitialized" to false,
+        "isPlaying" to false,
+        "currentPositionMs" to 0L,
+        "sampleBasedPositionMs" to 0L,
+        "durationMs" to 0L,
+        "bufferedPositionMs" to 0L,
+        "currentIndex" to 0,
+        "queueLength" to 0,
+        "playbackState" to "idle",
+        "repeatMode" to "off",
+        "shuffleEnabled" to false,
+        "audioSessionId" to 0,
+        "trackEnded" to false
+    )
+    
     // Cached status fields for thread-safe reading without blocking
     // These are updated by player listeners on the main thread
     @Volatile private var cachedIsPlaying: Boolean = false
@@ -400,25 +418,23 @@ class PlaybackService : MediaSessionService() {
      * Safe to call from any thread since all fields are volatile.
      */
     fun getCachedStatus(): Map<String, Any> {
-        // Get latest sample-based position (thread-safe volatile read from DSP)
         val samplePosition = dspProcessor?.getSampleBasedPositionMs() ?: 0L
         val trackEnded = dspProcessor?.hasTrackEnded() ?: false
         
-        return mapOf(
-            "isInitialized" to (player != null),
-            "isPlaying" to cachedIsPlaying,
-            "currentPositionMs" to cachedPositionMs,
-            "sampleBasedPositionMs" to samplePosition,
-            "durationMs" to cachedDurationMs,
-            "bufferedPositionMs" to cachedBufferedPositionMs,
-            "currentIndex" to cachedCurrentIndex,
-            "queueLength" to cachedQueueLength,
-            "playbackState" to cachedPlaybackState,
-            "repeatMode" to cachedRepeatMode,
-            "shuffleEnabled" to cachedShuffleEnabled,
-            "audioSessionId" to cachedAudioSessionId,
-            "trackEnded" to trackEnded
-        )
+        cachedStatusMap["isInitialized"] = (player != null)
+        cachedStatusMap["isPlaying"] = cachedIsPlaying
+        cachedStatusMap["currentPositionMs"] = cachedPositionMs
+        cachedStatusMap["sampleBasedPositionMs"] = samplePosition
+        cachedStatusMap["durationMs"] = cachedDurationMs
+        cachedStatusMap["bufferedPositionMs"] = cachedBufferedPositionMs
+        cachedStatusMap["currentIndex"] = cachedCurrentIndex
+        cachedStatusMap["queueLength"] = cachedQueueLength
+        cachedStatusMap["playbackState"] = cachedPlaybackState
+        cachedStatusMap["repeatMode"] = cachedRepeatMode
+        cachedStatusMap["shuffleEnabled"] = cachedShuffleEnabled
+        cachedStatusMap["audioSessionId"] = cachedAudioSessionId
+        cachedStatusMap["trackEnded"] = trackEnded
+        return cachedStatusMap
     }
     
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
@@ -529,10 +545,9 @@ class PlaybackService : MediaSessionService() {
                         val durationSeconds = (cachedDurationMs / 1000).toInt()
                         
                         // Send progress update in SECONDS (like web's ontimeupdate)
-                        progressCallback?.invoke(mapOf(
-                            "position" to positionSeconds,
-                            "duration" to durationSeconds
-                        ))
+                        cachedProgressMap["position"] = positionSeconds
+                        cachedProgressMap["duration"] = durationSeconds
+                        progressCallback?.invoke(cachedProgressMap)
                         
                         // Note: We DO NOT stop progress updates based on position >= duration
                         // The DSP end-of-stream callback is the authoritative track end signal
@@ -663,26 +678,32 @@ class PlaybackService : MediaSessionService() {
             try {
                 val bitmap = withContext(Dispatchers.IO) {
                     try {
+                        val options = BitmapFactory.Options().apply {
+                            inSampleSize = 2
+                        }
                         when {
                             url.startsWith("data:") -> {
                                 val base64Data = url.substringAfter(",")
                                 val decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
-                                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size, options)
                             }
                             url.startsWith("file://") || url.startsWith("/") -> {
                                 val path = if (url.startsWith("file://")) url.removePrefix("file://") else url
-                                BitmapFactory.decodeFile(path)
+                                BitmapFactory.decodeFile(path, options)
                             }
                             url.startsWith("http://") || url.startsWith("https://") -> {
                                 val connection = URL(url).openConnection()
                                 connection.connectTimeout = 5000
                                 connection.readTimeout = 5000
-                                BitmapFactory.decodeStream(connection.getInputStream())
+                                connection.getInputStream().use { stream ->
+                                    BitmapFactory.decodeStream(stream, null, options)
+                                }
                             }
                             url.startsWith("content://") -> {
                                 val uri = Uri.parse(url)
-                                val inputStream = applicationContext.contentResolver.openInputStream(uri)
-                                BitmapFactory.decodeStream(inputStream)
+                                applicationContext.contentResolver.openInputStream(uri)?.use { stream ->
+                                    BitmapFactory.decodeStream(stream, null, options)
+                                }
                             }
                             else -> {
                                 null
@@ -695,6 +716,7 @@ class PlaybackService : MediaSessionService() {
                 }
                 
                 if (bitmap != null) {
+                    currentArtwork?.recycle()
                     currentArtwork = bitmap
                 }
             } catch (e: Exception) {
