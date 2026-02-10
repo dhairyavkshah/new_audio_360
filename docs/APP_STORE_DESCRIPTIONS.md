@@ -28,88 +28,56 @@ Premium music player with powerful EQ, 55 themes, radio & music discovery.
 ## Full Description (4000 characters max)
 
 ```
-New Audio 360 is the music player that puts you in complete control of how your music sounds and looks. Whether you're a casual listener or someone who cares deeply about sound quality, this app is built to make every song sound its best on your device.
+New Audio 360 transforms how your music sounds. Deep, punchy bass you can feel. Crystal-clear vocals that cut through. Rich, spacious sound that fills your headphones like a live performance. Whether you're commuting, working out, or winding down - your music sounds better than you've ever heard it.
 
 PAY ONCE. KEEP FOREVER.
 
-No subscriptions. No ads. No data collection. No hidden costs. Buy it once and it's yours for life, with free updates included.
+No subscriptions. No ads. No data collection. Buy it once and it's yours for life, with free updates included.
 
-SOUND LAB - MAKE YOUR MUSIC SOUND INCREDIBLE
+SOUND LAB - YOUR PERSONAL SOUND ENGINEER
 
-Fine-tune exactly how your music sounds with a full set of professional audio controls:
+Every pair of headphones sounds different. Every song is mixed differently. Sound Lab lets you shape your audio until it sounds exactly right to your ears:
 
-- 10-Band Equalizer with precise frequency control from 60Hz to 16kHz
-- 10 Ready-Made Presets: Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity
-- Bass & Treble Boost with smooth, distortion-free adjustment up to 12dB
-- Spatial Audio Enhancement for a wider, more immersive soundstage
-- 6 Immersive Modes tuned for Music, 360 Reality, Gaming, Podcasts, Movies, and Sports
-- Smart Limiter that prevents distortion at high volumes
-- Real-time Waveform Visualization so you can see your music
-- AI Audio Enhancement to improve sound quality in real-time
+- 10-Band Equalizer - Sculpt every frequency from deep sub-bass to sparkling highs
+- 10 Presets - Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity, or start from Flat and build your own
+- Bass & Treble Control - Add warmth, punch, or brightness with distortion-free boost
+- Spatial Audio - Widens your soundstage so music surrounds you
+- 6 Immersive Modes - Tuned profiles for Music, 360 Reality, Gaming, Podcasts, Movies, and Sports. Each reshapes EQ, spatial depth, and reverb to match the content
+- Smart Limiter - Crank the volume without clipping or distortion
+- Real-time Waveform Visualization
+- AI Audio Enhancement for improved clarity on the fly
 
-Every effect works consistently across all Android devices - same great sound whether you have a flagship or a budget phone.
+All processing runs in 32-bit float precision - the same standard used in professional studios. Clean, detailed, distortion-free sound on every Android device.
 
 55 THEMES - MAKE IT YOURS
 
-Choose from 55 beautifully crafted themes across 6 collections:
+55 themes across 6 collections: System, Winamp, Retro, Nature, Professional, and Special. From AMOLED Dark to Vaporwave to Neon Galaxy - every theme adapts the entire app.
 
-- System: Light, Dark, Night AMOLED, Warm Neutral, Cool Blue
-- Winamp: Classic, Modern, Bento, and nostalgic fan favourites
-- Retro: VHS, Cassette, Vaporwave, Cyberpunk vibes
-- Nature: Forest, Ocean, Sunset, Aurora atmospheres
-- Professional: Midnight, Corporate, Slate, Graphite tones
-- Special: Neon, Holographic, Candy, Galaxy effects
+RADIO - WORLDWIDE STATIONS
 
-Every theme adapts the entire app - buttons, backgrounds, text, player controls - everything matches.
-
-RADIO - STATIONS FROM AROUND THE WORLD
-
-Discover and stream radio stations from across the globe:
-
-- Smart station discovery that finds the best stations by country and popularity
-- Quality-verified streams so you don't waste time on broken links
-- Local station detection based on your location
-- Apply all Sound Lab effects to live radio - EQ, bass boost, spatial audio, everything
-- Native FM/AM support on compatible devices
+Discover stations from around the globe with smart discovery by country and popularity. Quality-verified streams, local station detection, and all Sound Lab effects applied to live radio.
 
 DISCOVER NEW MUSIC
 
-Explore and stream music from SoundCloud and the Internet Archive:
+Stream from SoundCloud and the Internet Archive. Connect your SoundCloud account, browse public domain music, and apply all Sound Lab effects to streamed audio.
 
-- Connect your SoundCloud account to access your likes, playlists, and discover new tracks
-- Browse the Internet Archive's vast collection of public domain and Creative Commons music
-- All Sound Lab effects work on streamed tracks too
-- Save your favourite discoveries for quick access later
+YOUR LIBRARY, ORGANISED
 
-YOUR MUSIC LIBRARY, ORGANISED
-
-- Fast scanning and indexing of your music collection
-- Choose exactly which folders to include
-- Smart categories: Recently Played, Most Played, Favourites
-- Create, edit, and reorder playlists with full drag-and-drop support
-- Hide songs you don't want to see without deleting them
+Fast scanning, folder selection, smart categories, full playlist support with drag-and-drop, and the ability to hide songs without deleting.
 
 PLAYBACK THAT JUST WORKS
 
-- Background playback with full notification controls
-- Lock screen album art and controls
-- Queue management with drag-to-reorder
-- Shuffle and repeat modes
-- Adjustable playback speed (0.5x to 2.0x)
-- Sleep timer for bedtime listening
+Background playback, lock screen controls, queue management, shuffle, repeat, playback speed (0.5x-2.0x), and sleep timer.
 
-YOUR PRIVACY MATTERS
+PRIVACY FIRST
 
-- All your data stays on your device
-- No analytics, no tracking, no cloud uploads
-- Works fully offline
-- Your music library is never scanned or shared
+All data stays on your device. No analytics, no tracking, no cloud uploads. Works fully offline.
 
 BUILT WITH CARE
 
-New Audio 360 is designed with a clean, modern interface inspired by Microsoft's Fluent 2 design system. It's built to run smoothly even on devices with limited memory, using efficient audio processing that doesn't drain your battery.
+Clean, modern interface. Runs smoothly on devices with limited memory. Efficient processing that won't drain your battery.
 
-We're a small team that genuinely loves music and great software. Every update is focused on making your listening experience better.
+We're just one person team that genuinely loves music and great software. Every update is focused on making your listening experience better.
 
 Download New Audio 360 and hear the difference.
 ```
