@@ -124,7 +124,7 @@ Download now and elevate your music experience!
 ## What's New (500 characters max)
 
 ```
-v34.0 - Architecture & Performance Update
+v35.0 - Stability & Service Update
 
 C++/NDK DSP FOUNDATION
 ARM NEON SIMD for PCM conversion, gain & soft clip. 32-bit float internal processing.
