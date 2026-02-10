@@ -28,7 +28,11 @@ Premium music player with powerful EQ, 55 themes, radio & music discovery.
 ## Full Description (4000 characters max)
 
 ```
-New Audio 360 transforms how your music sounds. Deep, punchy bass you can feel. Crystal-clear vocals that cut through. Rich, spacious sound that fills your headphones like a live performance. Whether you're commuting, working out, or winding down - your music sounds better than you've ever heard it.
+Most music players just play your files. New Audio 360 makes you feel them.
+
+No heavy processing that muddies your music. No artificial colouring that changes what the artist intended. Instead, every song feels like it's reaching out and touching you directly - smooth, honest, and true to the original. The vocals sit right in front of you. The instruments breathe around you. The bass lands in your chest without overpowering anything. It's the kind of sound that makes you close your eyes and just listen.
+
+Once you hear your favourite songs through New Audio 360, you won't go back to anything else.
 
 PAY ONCE. KEEP FOREVER.
 
@@ -38,16 +42,16 @@ SOUND LAB - YOUR PERSONAL SOUND ENGINEER
 
 Every pair of headphones sounds different. Every song is mixed differently. Sound Lab lets you shape your audio until it sounds exactly right to your ears:
 
-- 10-Band Equalizer - Sculpt every frequency from deep sub-bass to sparkling highs
-- 10 Presets - Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity, or start from Flat and build your own
+- 10-Band Equalizer - Shape every frequency from deep sub-bass to sparkling highs
+- 10 Presets - Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity, or start from Flat and craft your own
 - Bass & Treble Control - Add warmth, punch, or brightness with distortion-free boost
-- Spatial Audio - Widens your soundstage so music surrounds you
-- 6 Immersive Modes - Tuned profiles for Music, 360 Reality, Gaming, Podcasts, Movies, and Sports. Each reshapes EQ, spatial depth, and reverb to match the content
-- Smart Limiter - Crank the volume without clipping or distortion
+- Spatial Audio - Widens your soundstage so music surrounds you naturally
+- 6 Immersive Modes - Purpose-tuned for Music, 360 Reality, Gaming, Podcasts, Movies, and Sports
+- Smart Limiter - Full volume, zero distortion
 - Real-time Waveform Visualization
-- AI Audio Enhancement for improved clarity on the fly
+- AI Audio Enhancement for added clarity on the fly
 
-All processing runs in 32-bit float precision - the same standard used in professional studios. Clean, detailed, distortion-free sound on every Android device.
+All processing runs in 32-bit float precision - the same standard used in professional studios. Clean, transparent, true-to-life sound on every Android device.
 
 55 THEMES - MAKE IT YOURS
 
@@ -55,19 +59,19 @@ All processing runs in 32-bit float precision - the same standard used in profes
 
 RADIO - WORLDWIDE STATIONS
 
-Discover stations from around the globe with smart discovery by country and popularity. Quality-verified streams, local station detection, and all Sound Lab effects applied to live radio.
+Discover stations from around the globe. Smart discovery by country and popularity, quality-verified streams, local station detection, and all Sound Lab effects on live radio.
 
 DISCOVER NEW MUSIC
 
-Stream from SoundCloud and the Internet Archive. Connect your SoundCloud account, browse public domain music, and apply all Sound Lab effects to streamed audio.
+Stream from SoundCloud and the Internet Archive. Browse, discover, and apply all Sound Lab effects to streamed audio.
 
 YOUR LIBRARY, ORGANISED
 
-Fast scanning, folder selection, smart categories, full playlist support with drag-and-drop, and the ability to hide songs without deleting.
+Fast scanning, folder selection, smart categories, playlists with drag-and-drop, and the ability to hide songs without deleting.
 
 PLAYBACK THAT JUST WORKS
 
-Background playback, lock screen controls, queue management, shuffle, repeat, playback speed (0.5x-2.0x), and sleep timer.
+Background playback, lock screen controls, queue management, shuffle, repeat, speed control (0.5x-2.0x), and sleep timer.
 
 PRIVACY FIRST
 
@@ -75,7 +79,7 @@ All data stays on your device. No analytics, no tracking, no cloud uploads. Work
 
 BUILT WITH CARE
 
-Clean, modern interface. Runs smoothly on devices with limited memory. Efficient processing that won't drain your battery.
+Clean, modern interface. Runs smoothly even on devices with limited memory. Efficient processing that won't drain your battery.
 
 We're just one person team that genuinely loves music and great software. Every update is focused on making your listening experience better.
 
