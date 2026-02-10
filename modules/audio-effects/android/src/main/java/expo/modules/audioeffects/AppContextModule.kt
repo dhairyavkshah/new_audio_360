@@ -276,7 +276,7 @@ class AppContextModule : Module() {
         try {
             val client = bc ?: BillingClient.newBuilder(ctx)
                 .setListener { _, _ -> }
-                .enablePendingPurchases()
+                .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
                 .build().also { bc = it }
             
             if (!client.isReady) {

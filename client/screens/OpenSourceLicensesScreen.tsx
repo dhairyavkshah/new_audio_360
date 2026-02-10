@@ -107,7 +107,7 @@ const UTILITY_LIBRARIES = [
 ];
 
 const ANDROID_NATIVE_LIBRARIES = [
-  { name: "Google Play Billing Library", license: "Apache License 2.0", version: "6.1.0" },
+  { name: "Google Play Billing Library", license: "Apache License 2.0", version: "7.1.1" },
   { name: "AndroidX Security Crypto", license: "Apache License 2.0", version: "1.1.0" },
   { name: "Android NDK (C++/NEON SIMD)", license: "Apache License 2.0", version: "25.1.8937393" },
 ];

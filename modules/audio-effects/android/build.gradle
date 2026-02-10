@@ -90,8 +90,8 @@ dependencies {
   implementation 'androidx.media3:media3-common:1.2.1'
   implementation 'androidx.media3:media3-session:1.2.1'
   
-  // Google Play Billing for license verification
-  implementation 'com.android.billingclient:billing-ktx:6.1.0'
+  // Google Play Billing for license verification (v7+ required by Google Play from Aug 2025)
+  implementation 'com.android.billingclient:billing-ktx:7.1.1'
   
   // Security for encrypted storage
   implementation 'androidx.security:security-crypto:1.1.0-alpha06'
