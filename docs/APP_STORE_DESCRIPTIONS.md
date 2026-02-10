@@ -2,7 +2,7 @@
 
 ## New Audio 360
 
-**Tagline:** "Your music. Your sound. Your style."
+**Tagline:** "Not louder. Just truer."
 
 ---
 
@@ -20,7 +20,7 @@
 ## Short Description (80 characters max)
 
 ```
-Premium music player with powerful EQ, 55 themes, radio & music discovery.
+Not louder. Just truer. Premium music with real sound, 55 themes & radio.
 ```
 
 ---
@@ -28,62 +28,67 @@ Premium music player with powerful EQ, 55 themes, radio & music discovery.
 ## Full Description (4000 characters max)
 
 ```
-Most music players just play your files. New Audio 360 makes you feel them.
+Not louder. Just truer.
 
-No heavy processing that muddies your music. No artificial colouring that changes what the artist intended. Instead, every song feels like it's reaching out and touching you directly - smooth, honest, and true to the original. The vocals sit right in front of you. The instruments breathe around you. The bass lands in your chest without overpowering anything. It's the kind of sound that makes you close your eyes and just listen.
+Most music apps chase loudness. They compress, clip, and push your audio into a wall. New Audio 360 does the opposite. It preserves headroom. No forced ceilings. No artificial compression. Your sound stays whole — the way it was meant to be heard.
 
-Once you hear your favourite songs through New Audio 360, you won't go back to anything else.
+Audio is treated as a continuum here, not something to be pushed and clipped. Balance first. Clarity second. Impact — only when it's earned. Every song feels like it's reaching out and touching you directly. Smooth, honest, and true. The kind of sound that makes you close your eyes and just listen.
 
-PAY ONCE. KEEP FOREVER.
+Once you hear your music through New Audio 360, you won't go back to anything else.
 
-No subscriptions. No ads. No data collection. Buy it once and it's yours for life, with free updates included.
+SOUND THAT FEELS NATURAL
 
-SOUND LAB - YOUR PERSONAL SOUND ENGINEER
+Bass with restraint. Mids with honesty. Highs with air — not fatigue. You hear more because nothing is fighting for attention. No heavy processing that muddies what the artist intended. Just clean, transparent, true-to-life sound. 32-bit float precision — the same standard used in professional studios.
 
-Every pair of headphones sounds different. Every song is mixed differently. Sound Lab lets you shape your audio until it sounds exactly right to your ears:
+SOUND LAB
 
-- 10-Band Equalizer - Shape every frequency from deep sub-bass to sparkling highs
-- 10 Presets - Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity, or start from Flat and craft your own
-- Bass & Treble Control - Add warmth, punch, or brightness with distortion-free boost
-- Spatial Audio - Widens your soundstage so music surrounds you naturally
-- 6 Immersive Modes - Purpose-tuned for Music, 360 Reality, Gaming, Podcasts, Movies, and Sports
-- Smart Limiter - Full volume, zero distortion
+Shape your sound with precision:
+
+- 10-Band Equalizer across the full frequency range
+- 10 Presets including Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity — or build your own from Flat
+- Bass & Treble control with smooth, distortion-free boost
+- Smart Limiter — full volume, zero clipping
 - Real-time Waveform Visualization
-- AI Audio Enhancement for added clarity on the fly
+- AI Audio Enhancement for added clarity
 
-All processing runs in 32-bit float precision - the same standard used in professional studios. Clean, transparent, true-to-life sound on every Android device.
+MODE INTELLIGENCE
 
-55 THEMES - MAKE IT YOURS
+Every mode is purpose-built. Not one curve pretending to fit all.
 
-55 themes across 6 collections: System, Winamp, Retro, Nature, Professional, and Special. From AMOLED Dark to Vaporwave to Neon Galaxy - every theme adapts the entire app.
+Music. Movies. Gaming. Sports. Podcast. 360 Reality. Each tuned for what you're actually listening to — reshaping EQ, spatial depth, and reverb to match the content.
 
-RADIO - WORLDWIDE STATIONS
+SPATIAL, DONE RIGHT
 
-Discover stations from around the globe. Smart discovery by country and popularity, quality-verified streams, local station detection, and all Sound Lab effects on live radio.
+Spatial audio isn't an effect here. It's placement. Width without blur. Depth without echo. Immersion without distraction. Your music surrounds you naturally.
 
-DISCOVER NEW MUSIC
+YOUR MUSIC, YOUR WAY
 
-Stream from SoundCloud and the Internet Archive. Browse, discover, and apply all Sound Lab effects to streamed audio.
+Offline library. Online discovery. Worldwide radio. All your music — played on your terms.
 
-YOUR LIBRARY, ORGANISED
+- Your local library with fast scanning, folder selection, smart categories, and full playlist support
+- Stream from SoundCloud and the Internet Archive
+- Discover radio stations from around the globe with smart, quality-verified discovery
+- All Sound Lab effects work on everything — local, streamed, and live radio
 
-Fast scanning, folder selection, smart categories, playlists with drag-and-drop, and the ability to hide songs without deleting.
+55 THEMES
+
+55 beautifully crafted themes across 6 collections. From AMOLED Dark to Vaporwave to Neon Galaxy — every theme adapts the entire app. Your player, your look.
 
 PLAYBACK THAT JUST WORKS
 
-Background playback, lock screen controls, queue management, shuffle, repeat, speed control (0.5x-2.0x), and sleep timer.
+Background playback, lock screen controls, queue management, shuffle, repeat, speed control, and sleep timer. It just works.
 
-PRIVACY FIRST
+NO SUBSCRIPTIONS
 
-All data stays on your device. No analytics, no tracking, no cloud uploads. Works fully offline.
+One-time purchase. Lifetime access. By intent. Because music shouldn't expire. No ads. No data collection. No tracking. All your data stays on your device.
 
-BUILT WITH CARE
+BUILT WITH CARE. TUNED WITH RESTRAINT.
 
-Clean, modern interface. Runs smoothly even on devices with limited memory. Efficient processing that won't drain your battery.
+Clean, modern interface. Runs smoothly even on limited memory. Efficient processing that won't drain your battery.
 
 We're just one person team that genuinely loves music and great software. Every update is focused on making your listening experience better.
 
-Download New Audio 360 and hear the difference.
+Made for people who truly listen.
 ```
 
 ---
