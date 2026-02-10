@@ -301,7 +301,7 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyModeMusic() {
         applyImmersiveSettings(
-            eqGains = listOf(+0.93, +0.70, +0.27, -0.30, -0.30, +0.07, +0.47, +0.53, +0.20, -1.13),
+            eqGains = listOf(+1.00, +0.80, +0.40, -0.30, -0.30, +0.10, +0.50, +0.60, +0.30, -1.10),
             reverbWetMix = 0.08f,
             spatialParams = SpatialParams(sideGain = 7f, itdMs = 0.18f, decorrelation = 6f, wetMix = 30f)
         )
@@ -309,23 +309,23 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyMode360Reality() {
         applyImmersiveSettings(
-            eqGains = listOf(+0.70, +0.53, +0.10, -0.27, -0.20, +0.20, +0.60, +0.67, +0.33, -0.77),
+            eqGains = listOf(+0.80, +0.60, +0.20, -0.20, -0.20, +0.40, +0.70, +0.70, +0.40, -0.80),
             reverbWetMix = 0.17f,
-            spatialParams = SpatialParams(sideGain = 15f, itdMs = 0.45f, decorrelation = 13f, wetMix = 58f)
+            spatialParams = SpatialParams(sideGain = 15f, itdMs = 0.45f, decorrelation = 13f, wetMix = 63f)
         )
     }
     
     private fun applyModeGaming() {
         applyImmersiveSettings(
-            eqGains = listOf(+1.13, +0.93, +0.40, -0.57, -0.57, +0.20, +0.77, +0.83, +0.47, -1.80),
+            eqGains = listOf(+1.20, +1.00, +0.50, -0.50, -0.60, +0.20, +0.80, +0.90, +0.60, -1.80),
             reverbWetMix = 0.07f,
-            spatialParams = SpatialParams(sideGain = 15f, itdMs = 0.35f, decorrelation = 9f, wetMix = 57f)
+            spatialParams = SpatialParams(sideGain = 15f, itdMs = 0.35f, decorrelation = 9f, wetMix = 60f)
         )
     }
     
     private fun applyModePodcast() {
         applyImmersiveSettings(
-            eqGains = listOf(-1.00, -0.80, -0.27, +0.20, +1.20, +1.40, +1.00, +0.73, +0.67, -1.67),
+            eqGains = listOf(-1.10, -0.80, -0.20, +0.30, +1.30, +1.50, +1.00, +0.80, +0.70, -1.70),
             reverbWetMix = 0f,
             spatialParams = SpatialParams(sideGain = 0f, itdMs = 0f, decorrelation = 0f, wetMix = 0f)
         )
@@ -333,17 +333,17 @@ class ImmersiveModeEngineModule : Module() {
     
     private fun applyModeMovie() {
         applyImmersiveSettings(
-            eqGains = listOf(+0.63, +0.53, +0.23, +0.77, +1.17, +1.23, +0.77, -0.23, -0.43, -1.50),
+            eqGains = listOf(+0.70, +0.60, +0.30, +0.90, +1.30, +1.30, +0.80, -0.30, -0.50, -1.50),
             reverbWetMix = 0.14f,
-            spatialParams = SpatialParams(sideGain = 12f, itdMs = 0.30f, decorrelation = 10f, wetMix = 47f)
+            spatialParams = SpatialParams(sideGain = 12f, itdMs = 0.30f, decorrelation = 10f, wetMix = 52f)
         )
     }
     
     private fun applyModeSports() {
         applyImmersiveSettings(
-            eqGains = listOf(+1.00, +0.80, +0.30, -0.27, -0.23, +0.27, +0.50, +0.30, -0.57, -1.67),
+            eqGains = listOf(+1.10, +0.90, +0.40, -0.20, -0.20, +0.30, +0.50, +0.30, -0.60, -1.70),
             reverbWetMix = 0.11f,
-            spatialParams = SpatialParams(sideGain = 13f, itdMs = 0.28f, decorrelation = 9f, wetMix = 51f)
+            spatialParams = SpatialParams(sideGain = 13f, itdMs = 0.28f, decorrelation = 9f, wetMix = 52f)
         )
     }
     
