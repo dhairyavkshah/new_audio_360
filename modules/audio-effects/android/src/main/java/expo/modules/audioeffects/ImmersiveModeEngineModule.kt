@@ -309,42 +309,42 @@ class ImmersiveModeEngineModule : Module() {
         // Balanced "smile curve" - warm bass, slight mid scoop, sparkly highs
         // Subtle openness, vocals locked
         applyImmersiveSettings(
-            eqGains = listOf(+0.3, +0.3, -0.4, -1.0, -1.0, 0.0, +1.0, +1.5, +0.4, -1.1),
-            bassGainUnits = 0.5f,       // +1.2 dB at 150Hz
-            trebleGainUnits = 0.54f,    // +1.3 dB at 6kHz
-            reverbWetMix = 0.08f,       // 8% reverb
-            spatialParams = SpatialParams(sideGain = 6f, itdMs = 0.15f, decorrelation = 5f, wetMix = 20f)
+            eqGains = listOf(+0.8, +0.7, +0.1, -0.7, -0.7, 0.0, +1.0, +1.4, +0.5, -0.7),
+            bassGainUnits = 0.542f,     // +1.3 dB
+            trebleGainUnits = 0.542f,   // +1.3 dB
+            reverbWetMix = 0.06f,       // 6% reverb
+            spatialParams = SpatialParams(sideGain = 6f, itdMs = 0.15f, decorrelation = 5f, wetMix = 25f)
         )
     }
     
     private fun applyMode360Reality() {
         // Sony 360 Reality Audio inspired - maximum safe width, cinematic
         applyImmersiveSettings(
-            eqGains = listOf(0.0, 0.0, -0.6, -0.6, -0.6, 0.0, +1.0, +1.2, +0.3, -0.7),
-            bassGainUnits = 0.33f,      // +0.8 dB
+            eqGains = listOf(+0.3, +0.3, -0.3, -0.6, -0.6, 0.0, +0.9, +1.2, +0.3, -0.6),
+            bassGainUnits = 0.375f,     // +0.9 dB
             trebleGainUnits = 0.625f,   // +1.5 dB
-            reverbWetMix = 0.18f,       // 18% reverb
-            spatialParams = SpatialParams(sideGain = 14f, itdMs = 0.45f, decorrelation = 12f, wetMix = 40f)
+            reverbWetMix = 0.17f,       // 17% reverb
+            spatialParams = SpatialParams(sideGain = 14f, itdMs = 0.45f, decorrelation = 12f, wetMix = 55f)
         )
     }
     
     private fun applyModeGaming() {
         // Competitive gaming - strong positional cues
         applyImmersiveSettings(
-            eqGains = listOf(+0.8, +0.8, +0.4, -1.1, -1.1, 0.0, +1.0, +1.7, +0.8, -1.9),
-            bassGainUnits = 0.5f,       // +1.2 dB
+            eqGains = listOf(+1.0, +0.9, +0.5, -1.0, -1.0, 0.0, +1.2, +1.8, +0.9, -1.5),
+            bassGainUnits = 0.625f,     // +1.5 dB
             trebleGainUnits = 0.875f,   // +2.1 dB
-            reverbWetMix = 0.08f,       // 8% reverb
-            spatialParams = SpatialParams(sideGain = 16f, itdMs = 0.35f, decorrelation = 8f, wetMix = 35f)
+            reverbWetMix = 0.06f,       // 6% reverb
+            spatialParams = SpatialParams(sideGain = 16f, itdMs = 0.35f, decorrelation = 8f, wetMix = 58f)
         )
     }
     
     private fun applyModePodcast() {
         // Voice clarity mode - pure, untouched signal
         applyImmersiveSettings(
-            eqGains = listOf(-1.9, -1.9, -0.9, -0.7, +0.4, +1.0, +1.0, +1.4, +1.8, -0.2),
-            bassGainUnits = -0.42f,     // -1.0 dB (removes rumble)
-            trebleGainUnits = 0.958f,   // +2.3 dB (clarity)
+            eqGains = listOf(-1.8, -1.6, -0.7, -0.5, +0.7, +1.3, +1.1, +1.4, +1.8, 0.0),
+            bassGainUnits = -0.458f,    // -1.1 dB
+            trebleGainUnits = 1.083f,   // +2.6 dB
             reverbWetMix = 0f,          // 0% reverb
             spatialParams = SpatialParams(sideGain = 0f, itdMs = 0f, decorrelation = 0f, wetMix = 0f)
         )
@@ -353,22 +353,22 @@ class ImmersiveModeEngineModule : Module() {
     private fun applyModeMovie() {
         // Cinematic experience - dialogue-safe cinematic stage
         applyImmersiveSettings(
-            eqGains = listOf(-0.8, -0.8, -0.4, +0.7, +1.1, +1.0, +1.0, -0.3, -0.5, -1.7),
-            bassGainUnits = 0.75f,      // +1.8 dB
+            eqGains = listOf(-0.6, -0.5, -0.1, +0.7, +1.1, +1.1, +0.9, -0.3, -0.7, -1.4),
+            bassGainUnits = 0.833f,     // +2.0 dB
             trebleGainUnits = 0.625f,   // +1.5 dB
-            reverbWetMix = 0.12f,       // 12% reverb
-            spatialParams = SpatialParams(sideGain = 12f, itdMs = 0.30f, decorrelation = 10f, wetMix = 45f)
+            reverbWetMix = 0.11f,       // 11% reverb
+            spatialParams = SpatialParams(sideGain = 12f, itdMs = 0.30f, decorrelation = 10f, wetMix = 48f)
         )
     }
     
     private fun applyModeSports() {
         // Stadium/broadcast mode - wide ambience, focused commentary
         applyImmersiveSettings(
-            eqGains = listOf(+1.2, +1.2, +0.5, -0.7, -0.7, 0.0, +1.0, +1.2, -0.9, -2.5),
-            bassGainUnits = 0.917f,     // +2.2 dB (stadium atmosphere)
-            trebleGainUnits = 0.33f,    // +0.8 dB
-            reverbWetMix = 0.10f,       // 10% reverb
-            spatialParams = SpatialParams(sideGain = 10f, itdMs = 0.25f, decorrelation = 7f, wetMix = 30f)
+            eqGains = listOf(+1.1, +1.0, +0.5, -0.6, -0.6, 0.0, +1.0, +1.0, -0.9, -2.2),
+            bassGainUnits = 0.958f,     // +2.3 dB
+            trebleGainUnits = 0.333f,   // +0.8 dB
+            reverbWetMix = 0.09f,       // 9% reverb
+            spatialParams = SpatialParams(sideGain = 10f, itdMs = 0.25f, decorrelation = 7f, wetMix = 45f)
         )
     }
     

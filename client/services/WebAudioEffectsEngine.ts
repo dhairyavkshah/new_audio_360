@@ -101,62 +101,62 @@ const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
     // Balanced "smile curve" - warm bass, slight mid scoop, sparkly highs
     // Subtle openness, vocals locked
     name: 'Music',
-    eqPreset: [+0.3, +0.3, -0.4, -1.0, -1.0, 0.0, +1.0, +1.5, +0.4, -1.1],
-    bassBoost: 0.5,     // +1.2 dB at 150Hz
-    trebleBoost: 0.54,  // +1.3 dB at 6kHz
-    reverb: 0.08,       // 8% reverb
+    eqPreset: [+0.8, +0.7, +0.1, -0.7, -0.7, 0.0, +1.0, +1.4, +0.5, -0.7],
+    bassBoost: 0.542,    // +1.3 dB
+    trebleBoost: 0.542,  // +1.3 dB
+    reverb: 0.06,        // 6% reverb
     spatialEnhancement: 2, // Legacy level (backward compatibility)
-    spatialParams: { sideGain: 6, itdMs: 0.15, decorrelation: 5, wetMix: 20 },
+    spatialParams: { sideGain: 6, itdMs: 0.15, decorrelation: 5, wetMix: 25 },
   },
   '360_reality': {
     // Sony 360 Reality Audio inspired - maximum safe width, cinematic
     name: '360 Reality',
-    eqPreset: [0.0, 0.0, -0.6, -0.6, -0.6, 0.0, +1.0, +1.2, +0.3, -0.7],
-    bassBoost: 0.33,    // +0.8 dB
-    trebleBoost: 0.625, // +1.5 dB
-    reverb: 0.18,       // 18% reverb
+    eqPreset: [+0.3, +0.3, -0.3, -0.6, -0.6, 0.0, +0.9, +1.2, +0.3, -0.6],
+    bassBoost: 0.375,    // +0.9 dB
+    trebleBoost: 0.625,  // +1.5 dB
+    reverb: 0.17,        // 17% reverb
     spatialEnhancement: 5, // Legacy level (backward compatibility)
-    spatialParams: { sideGain: 14, itdMs: 0.45, decorrelation: 12, wetMix: 40 },
+    spatialParams: { sideGain: 14, itdMs: 0.45, decorrelation: 12, wetMix: 55 },
   },
   gaming: {
     // Competitive gaming - strong positional cues
     name: 'Gaming',
-    eqPreset: [+0.8, +0.8, +0.4, -1.1, -1.1, 0.0, +1.0, +1.7, +0.8, -1.9],
-    bassBoost: 0.5,     // +1.2 dB
-    trebleBoost: 0.875, // +2.1 dB
-    reverb: 0.08,       // 8% reverb
+    eqPreset: [+1.0, +0.9, +0.5, -1.0, -1.0, 0.0, +1.2, +1.8, +0.9, -1.5],
+    bassBoost: 0.625,    // +1.5 dB
+    trebleBoost: 0.875,  // +2.1 dB
+    reverb: 0.06,        // 6% reverb
     spatialEnhancement: 3, // Legacy level (backward compatibility)
-    spatialParams: { sideGain: 16, itdMs: 0.35, decorrelation: 8, wetMix: 35 },
+    spatialParams: { sideGain: 16, itdMs: 0.35, decorrelation: 8, wetMix: 58 },
   },
   podcast: {
     // Voice clarity mode - pure, untouched signal
     name: 'Podcast',
-    eqPreset: [-1.9, -1.9, -0.9, -0.7, +0.4, +1.0, +1.0, +1.4, +1.8, -0.2],
-    bassBoost: -0.42,   // -1.0 dB (removes rumble)
-    trebleBoost: 0.958, // +2.3 dB (clarity)
-    reverb: 0,          // 0% reverb
+    eqPreset: [-1.8, -1.6, -0.7, -0.5, +0.7, +1.3, +1.1, +1.4, +1.8, 0.0],
+    bassBoost: -0.458,   // -1.1 dB
+    trebleBoost: 1.083,  // +2.6 dB
+    reverb: 0,           // 0% reverb
     spatialEnhancement: 0, // Legacy level (backward compatibility)
     spatialParams: { sideGain: 0, itdMs: 0, decorrelation: 0, wetMix: 0 },
   },
   movie: {
     // Cinematic experience - dialogue-safe cinematic stage
     name: 'Movie',
-    eqPreset: [-0.8, -0.8, -0.4, +0.7, +1.1, +1.0, +1.0, -0.3, -0.5, -1.7],
-    bassBoost: 0.75,    // +1.8 dB
-    trebleBoost: 0.625, // +1.5 dB
-    reverb: 0.12,       // 12% reverb
+    eqPreset: [-0.6, -0.5, -0.1, +0.7, +1.1, +1.1, +0.9, -0.3, -0.7, -1.4],
+    bassBoost: 0.833,    // +2.0 dB
+    trebleBoost: 0.625,  // +1.5 dB
+    reverb: 0.11,        // 11% reverb
     spatialEnhancement: 4, // Legacy level (backward compatibility)
-    spatialParams: { sideGain: 12, itdMs: 0.30, decorrelation: 10, wetMix: 45 },
+    spatialParams: { sideGain: 12, itdMs: 0.30, decorrelation: 10, wetMix: 48 },
   },
   sports: {
     // Stadium/broadcast mode - wide ambience, focused commentary
     name: 'Sports',
-    eqPreset: [+1.2, +1.2, +0.5, -0.7, -0.7, 0.0, +1.0, +1.2, -0.9, -2.5],
-    bassBoost: 0.917,   // +2.2 dB (stadium atmosphere)
-    trebleBoost: 0.33,  // +0.8 dB
-    reverb: 0.10,       // 10% reverb
+    eqPreset: [+1.1, +1.0, +0.5, -0.6, -0.6, 0.0, +1.0, +1.0, -0.9, -2.2],
+    bassBoost: 0.958,    // +2.3 dB
+    trebleBoost: 0.333,  // +0.8 dB
+    reverb: 0.09,        // 9% reverb
     spatialEnhancement: 2, // Legacy level (backward compatibility)
-    spatialParams: { sideGain: 10, itdMs: 0.25, decorrelation: 7, wetMix: 30 },
+    spatialParams: { sideGain: 10, itdMs: 0.25, decorrelation: 7, wetMix: 45 },
   },
 };
 
