@@ -57,8 +57,6 @@ export interface SpatialEnhancementParams {
 export interface ImmersiveMode {
   name: string;
   eqPreset: number[];
-  bassBoost: number;
-  trebleBoost: number;
   reverb: number; // 0-1 wet mix (0 = dry, 1 = full reverb)
   spatialEnhancement: number; // Legacy 0-5 level (kept for backward compatibility)
   spatialParams: SpatialEnhancementParams; // Explicit spatial parameters
@@ -98,65 +96,46 @@ const MAX_HF_RESTORATION_DB = 3;
 // Spatial Parameters: sideGain (%), itdMs (milliseconds), decorrelation (%), wetMix (%)
 const IMMERSIVE_MODES: Record<string, ImmersiveMode> = {
   music: {
-    // Balanced "smile curve" - warm bass, slight mid scoop, sparkly highs
-    // Subtle openness, vocals locked
     name: 'Music',
-    eqPreset: [+0.8, +0.7, +0.1, -0.7, -0.7, 0.0, +1.0, +1.4, +0.5, -0.7],
-    bassBoost: 0.542,    // +1.3 dB
-    trebleBoost: 0.542,  // +1.3 dB
-    reverb: 0.06,        // 6% reverb
-    spatialEnhancement: 2, // Legacy level (backward compatibility)
-    spatialParams: { sideGain: 6, itdMs: 0.15, decorrelation: 5, wetMix: 25 },
+    eqPreset: [+0.93, +0.70, +0.27, -0.30, -0.30, +0.07, +0.47, +0.53, +0.20, -1.13],
+    reverb: 0.08,
+    spatialEnhancement: 2,
+    spatialParams: { sideGain: 7, itdMs: 0.18, decorrelation: 6, wetMix: 30 },
   },
   '360_reality': {
-    // Sony 360 Reality Audio inspired - maximum safe width, cinematic
     name: '360 Reality',
-    eqPreset: [+0.3, +0.3, -0.3, -0.6, -0.6, 0.0, +0.9, +1.2, +0.3, -0.6],
-    bassBoost: 0.375,    // +0.9 dB
-    trebleBoost: 0.625,  // +1.5 dB
-    reverb: 0.17,        // 17% reverb
-    spatialEnhancement: 5, // Legacy level (backward compatibility)
-    spatialParams: { sideGain: 14, itdMs: 0.45, decorrelation: 12, wetMix: 55 },
+    eqPreset: [+0.70, +0.53, +0.10, -0.27, -0.20, +0.20, +0.60, +0.67, +0.33, -0.77],
+    reverb: 0.17,
+    spatialEnhancement: 5,
+    spatialParams: { sideGain: 15, itdMs: 0.45, decorrelation: 13, wetMix: 58 },
   },
   gaming: {
-    // Competitive gaming - strong positional cues
     name: 'Gaming',
-    eqPreset: [+1.0, +0.9, +0.5, -1.0, -1.0, 0.0, +1.2, +1.8, +0.9, -1.5],
-    bassBoost: 0.625,    // +1.5 dB
-    trebleBoost: 0.875,  // +2.1 dB
-    reverb: 0.06,        // 6% reverb
-    spatialEnhancement: 3, // Legacy level (backward compatibility)
-    spatialParams: { sideGain: 16, itdMs: 0.35, decorrelation: 8, wetMix: 58 },
+    eqPreset: [+1.13, +0.93, +0.40, -0.57, -0.57, +0.20, +0.77, +0.83, +0.47, -1.80],
+    reverb: 0.07,
+    spatialEnhancement: 3,
+    spatialParams: { sideGain: 15, itdMs: 0.35, decorrelation: 9, wetMix: 57 },
   },
   podcast: {
-    // Voice clarity mode - pure, untouched signal
     name: 'Podcast',
-    eqPreset: [-1.8, -1.6, -0.7, -0.5, +0.7, +1.3, +1.1, +1.4, +1.8, 0.0],
-    bassBoost: -0.458,   // -1.1 dB
-    trebleBoost: 1.083,  // +2.6 dB
-    reverb: 0,           // 0% reverb
-    spatialEnhancement: 0, // Legacy level (backward compatibility)
+    eqPreset: [-1.00, -0.80, -0.27, +0.20, +1.20, +1.40, +1.00, +0.73, +0.67, -1.67],
+    reverb: 0,
+    spatialEnhancement: 0,
     spatialParams: { sideGain: 0, itdMs: 0, decorrelation: 0, wetMix: 0 },
   },
   movie: {
-    // Cinematic experience - dialogue-safe cinematic stage
     name: 'Movie',
-    eqPreset: [-0.6, -0.5, -0.1, +0.7, +1.1, +1.1, +0.9, -0.3, -0.7, -1.4],
-    bassBoost: 0.833,    // +2.0 dB
-    trebleBoost: 0.625,  // +1.5 dB
-    reverb: 0.11,        // 11% reverb
-    spatialEnhancement: 4, // Legacy level (backward compatibility)
-    spatialParams: { sideGain: 12, itdMs: 0.30, decorrelation: 10, wetMix: 48 },
+    eqPreset: [+0.63, +0.53, +0.23, +0.77, +1.17, +1.23, +0.77, -0.23, -0.43, -1.50],
+    reverb: 0.14,
+    spatialEnhancement: 4,
+    spatialParams: { sideGain: 12, itdMs: 0.30, decorrelation: 10, wetMix: 47 },
   },
   sports: {
-    // Stadium/broadcast mode - wide ambience, focused commentary
     name: 'Sports',
-    eqPreset: [+1.1, +1.0, +0.5, -0.6, -0.6, 0.0, +1.0, +1.0, -0.9, -2.2],
-    bassBoost: 0.958,    // +2.3 dB
-    trebleBoost: 0.333,  // +0.8 dB
-    reverb: 0.09,        // 9% reverb
-    spatialEnhancement: 2, // Legacy level (backward compatibility)
-    spatialParams: { sideGain: 10, itdMs: 0.25, decorrelation: 7, wetMix: 45 },
+    eqPreset: [+1.00, +0.80, +0.30, -0.27, -0.23, +0.27, +0.50, +0.30, -0.57, -1.67],
+    reverb: 0.11,
+    spatialEnhancement: 2,
+    spatialParams: { sideGain: 13, itdMs: 0.28, decorrelation: 9, wetMix: 51 },
   },
 };
 
@@ -1108,7 +1087,7 @@ class WebAudioEffectsEngineClass {
     // Immersive modes use their own dedicated settings WITHOUT zero-sum normalization
     // This allows for the full creative EQ curves designed for each mode
     // Limiter in PlayerContext still prevents distortion
-    this.applyImmersiveEQ(mode.eqPreset, mode.bassBoost, mode.trebleBoost, mode.reverb, mode.spatialParams);
+    this.applyImmersiveEQ(mode.eqPreset, mode.reverb, mode.spatialParams);
     this.currentMode = modeName;
   }
 
@@ -1117,7 +1096,7 @@ class WebAudioEffectsEngineClass {
    * Immersive modes have their own creative curves that shouldn't be balanced.
    * The limiter in PlayerContext handles distortion prevention.
    */
-  private applyImmersiveEQ(bands: number[], bassBoost: number, trebleBoost: number, reverb: number = 0, spatialParams?: SpatialEnhancementParams): void {
+  private applyImmersiveEQ(bands: number[], reverb: number = 0, spatialParams?: SpatialEnhancementParams): void {
     if (!this.isInitialized || this.eqFilters.length === 0) {
       console.log('[WebAudioEffectsEngine] Not initialized, cannot apply immersive EQ');
       return;
@@ -1136,15 +1115,6 @@ class WebAudioEffectsEngineClass {
     paddedBands.forEach((value, index) => {
       if (this.eqFilters[index]) {
         let dbValue = value * DB_PER_UNIT;
-        
-        // Apply immersive mode's bass boost to low frequencies
-        if (index <= 1) {
-          dbValue += bassBoost * DB_PER_UNIT;
-        }
-        // Apply immersive mode's treble boost to high frequencies
-        if (index >= 6) {
-          dbValue += trebleBoost * DB_PER_UNIT;
-        }
         
         const clampedDb = Math.max(-MAX_DB, Math.min(MAX_DB, dbValue));
         this.eqFilters[index].gain.value = clampedDb;
@@ -1170,7 +1140,7 @@ class WebAudioEffectsEngineClass {
     const paramsStr = spatialParams 
       ? `sideGain:${spatialParams.sideGain}%, ITD:${spatialParams.itdMs}ms, decorr:${spatialParams.decorrelation}%, wetMix:${spatialParams.wetMix}%`
       : 'disabled';
-    console.log(`[WebAudioEffectsEngine] Applied immersive mode with bass:${bassBoost}, treble:${trebleBoost}, reverb:${reverb}, spatial:[${paramsStr}]`);
+    console.log(`[WebAudioEffectsEngine] Applied immersive mode with reverb:${reverb}, spatial:[${paramsStr}]`);
   }
 
   /**
