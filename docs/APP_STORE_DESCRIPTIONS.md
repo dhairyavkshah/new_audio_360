@@ -2,7 +2,7 @@
 
 ## New Audio 360
 
-**Tagline:** "The top-grade intelligent music experience built for you"
+**Tagline:** "Your music. Your sound. Your style."
 
 ---
 
@@ -20,7 +20,7 @@
 ## Short Description (80 characters max)
 
 ```
-Premium music player with studio-grade DSP, 55 themes, radio & music discovery.
+Premium music player with powerful EQ, 55 themes, radio & music discovery.
 ```
 
 ---
@@ -28,95 +28,90 @@ Premium music player with studio-grade DSP, 55 themes, radio & music discovery.
 ## Full Description (4000 characters max)
 
 ```
-New Audio 360 delivers a top-grade music experience crafted for audio enthusiasts who demand exceptional sound quality and beautiful design.
+New Audio 360 is the music player that puts you in complete control of how your music sounds and looks. Whether you're a casual listener or someone who cares deeply about sound quality, this app is built to make every song sound its best on your device.
 
-STUDIO-GRADE SOUND LAB
+PAY ONCE. KEEP FOREVER.
 
-Pure software-based DSP for consistent, professional audio on every Android device:
+No subscriptions. No ads. No data collection. No hidden costs. Buy it once and it's yours for life, with free updates included.
 
-- 10-Band Parametric Equalizer - Fine-tune 60Hz to 16kHz frequencies
-- 10 EQ Presets - Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity
-- Bass & Treble Controls - Precise shelf filters with up to 12 dB boost
-- 6-Level Spatial Enhancement - Psychoacoustic stereo widening with ITD processing
-- Multi-Tap Reverb - Rich room ambience with 4 delay lines
-- Brickwall Limiter - Intelligent distortion prevention at any volume
-- 6 Immersive Modes - Music, 360 Reality, Gaming, Podcast, Movie, Sports
-- Real-time Waveform Visualization
+SOUND LAB - MAKE YOUR MUSIC SOUND INCREDIBLE
 
-Same studio-quality sound on ALL Android devices.
+Fine-tune exactly how your music sounds with a full set of professional audio controls:
 
-55 STUNNING THEMES
+- 10-Band Equalizer with precise frequency control from 60Hz to 16kHz
+- 10 Ready-Made Presets: Flat, Rock, Pop, Jazz, Classical, Electronic, Hip-Hop, Acoustic, Bass+, Clarity
+- Bass & Treble Boost with smooth, distortion-free adjustment up to 12dB
+- Spatial Audio Enhancement for a wider, more immersive soundstage
+- 6 Immersive Modes tuned for Music, 360 Reality, Gaming, Podcasts, Movies, and Sports
+- Smart Limiter that prevents distortion at high volumes
+- Real-time Waveform Visualization so you can see your music
+- AI Audio Enhancement to improve sound quality in real-time
 
-Express yourself with our extensive theme collection across 6 categories:
+Every effect works consistently across all Android devices - same great sound whether you have a flagship or a budget phone.
 
-- System (5) - Fluent Light, Dark, Night AMOLED, Warm Neutral, Cool Blue
-- Winamp (10) - Classic, Modern, Bento, and nostalgic styles
-- Retro (10) - VHS, Cassette, Vaporwave, Cyberpunk aesthetics
-- Nature (10) - Forest, Ocean, Sunset, Aurora environments
-- Professional (10) - Midnight, Corporate, Slate, Graphite
-- Special (10) - Neon, Holographic, Candy, Galaxy effects
+55 THEMES - MAKE IT YOURS
 
-INTELLIGENT RADIO DISCOVERY
+Choose from 55 beautifully crafted themes across 6 collections:
 
-Access 40,000+ radio stations worldwide with our smart discovery system:
+- System: Light, Dark, Night AMOLED, Warm Neutral, Cool Blue
+- Winamp: Classic, Modern, Bento, and nostalgic fan favourites
+- Retro: VHS, Cassette, Vaporwave, Cyberpunk vibes
+- Nature: Forest, Ocean, Sunset, Aurora atmospheres
+- Professional: Midnight, Corporate, Slate, Graphite tones
+- Special: Neon, Holographic, Candy, Galaxy effects
 
-- Auto-Discovery - Scans Radio Browser API for quality stations
-- Country-Based - Up to 1000 stations per country, sorted by popularity
-- Quality Filtering - Only verified, working streams
-- Smart Caching - 30-day cache with manual refresh option
-- Location Awareness - Finds local stations automatically
-- Sound Lab Integration - Apply audio effects to live radio
+Every theme adapts the entire app - buttons, backgrounds, text, player controls - everything matches.
 
-Plus native FM/AM radio support on compatible devices.
+RADIO - STATIONS FROM AROUND THE WORLD
 
-OPEN MUSIC DISCOVERY
+Discover and stream radio stations from across the globe:
 
-Explore millions of tracks from SoundCloud and Internet Archive:
+- Smart station discovery that finds the best stations by country and popularity
+- Quality-verified streams so you don't waste time on broken links
+- Local station detection based on your location
+- Apply all Sound Lab effects to live radio - EQ, bass boost, spatial audio, everything
+- Native FM/AM support on compatible devices
 
-- SoundCloud Integration - Login to access your likes, playlists, and search tracks
-- Internet Archive - Stream public domain and Creative Commons music
-- Full DSP Support - Apply all Sound Lab effects to streaming audio
-- Neural AI Upscaling - Enhance streaming audio quality in real-time
-- Quick Access Favorites - Save streaming tracks to your favorites for easy access
+DISCOVER NEW MUSIC
 
-POWERFUL LIBRARY MANAGEMENT
+Explore and stream music from SoundCloud and the Internet Archive:
 
-- Fast Library Scanning - Quick indexing of your music collection
-- Folder Selection - Choose specific music directories
-- Smart Categories - Recently Played, Most Played, Favorites
-- Hide Songs - Remove tracks from view without deleting
-- Full Playlist Support - Create, edit, reorder, delete playlists
+- Connect your SoundCloud account to access your likes, playlists, and discover new tracks
+- Browse the Internet Archive's vast collection of public domain and Creative Commons music
+- All Sound Lab effects work on streamed tracks too
+- Save your favourite discoveries for quick access later
 
-SEAMLESS PLAYBACK
+YOUR MUSIC LIBRARY, ORGANISED
 
-- Background playback with notification controls
+- Fast scanning and indexing of your music collection
+- Choose exactly which folders to include
+- Smart categories: Recently Played, Most Played, Favourites
+- Create, edit, and reorder playlists with full drag-and-drop support
+- Hide songs you don't want to see without deleting them
+
+PLAYBACK THAT JUST WORKS
+
+- Background playback with full notification controls
+- Lock screen album art and controls
 - Queue management with drag-to-reorder
 - Shuffle and repeat modes
-- Playback speed adjustment (0.5x to 2.0x)
+- Adjustable playback speed (0.5x to 2.0x)
 - Sleep timer for bedtime listening
-- Lock screen album art display
 
-ONE-TIME PURCHASE, LIFETIME ACCESS
+YOUR PRIVACY MATTERS
 
-No subscriptions. No ads. No limitations. No data collection. Pay once, own forever.
+- All your data stays on your device
+- No analytics, no tracking, no cloud uploads
+- Works fully offline
+- Your music library is never scanned or shared
 
-PRIVACY-FIRST DESIGN
+BUILT WITH CARE
 
-- All data stored locally on your device
-- No analytics or tracking
-- No cloud storage required
-- Works fully offline after purchase
+New Audio 360 is designed with a clean, modern interface inspired by Microsoft's Fluent 2 design system. It's built to run smoothly even on devices with limited memory, using efficient audio processing that doesn't drain your battery.
 
-WHY CHOOSE NEW AUDIO 360?
+We're a small team that genuinely loves music and great software. Every update is focused on making your listening experience better.
 
-- Professional Sound Quality - Studio-grade DSP on any device
-- Beautiful Design - Microsoft Fluent 2 interface
-- 55 Unique Themes - Complete personalization
-- 40,000+ Radio Stations - Intelligent discovery worldwide
-- Regular Updates - New features and improvements
-- Built by audio enthusiasts, for audio enthusiasts
-
-Download now and elevate your music experience!
+Download New Audio 360 and hear the difference.
 ```
 
 ---
@@ -126,17 +121,17 @@ Download now and elevate your music experience!
 ```
 v35.0 - Stability & Service Update
 
-C++/NDK DSP FOUNDATION
-ARM NEON SIMD for PCM conversion, gain & soft clip. 32-bit float internal processing.
+FOREGROUND SERVICE FIX
+Resolved crashes on Android 12+ when service starts from background. Graceful fallback prevents force-close.
 
-16KB PAGE SIZE SUPPORT
-Android 15+ compatible with proper memory page alignment.
+BILLING LIBRARY 7.1.1
+Updated for Google Play compliance.
 
-PLAYBACK FIXES
-Seek slider lag eliminated. DSP buffer clearing refined for artifact-free transitions.
+IMMERSIVE MODE TUNING
+Refined EQ curves and spatial levels across all 6 modes.
 
-MEMORY OPTIMISATION
-ByteBufferPool, adaptive waveform capture, CPU-only neural processing.
+INIT PERFORMANCE
+Improved startup reliability for audio engine initialization.
 
 One-time purchase, lifetime access.
 ```
@@ -146,7 +141,7 @@ One-time purchase, lifetime access.
 ## Keywords/Tags
 
 ```
-music player, audio player, equalizer, bass boost, treble, EQ, radio, online radio, soundcloud, internet archive, streaming, themes, audiophile, hifi, sound quality, playlist, music library, audio effects, offline music, premium player, internet radio, dsp, music discovery
+music player, audio player, equalizer, bass boost, treble, EQ, radio, online radio, soundcloud, internet archive, streaming, themes, audiophile, hifi, sound quality, playlist, music library, audio effects, offline music, premium player, internet radio, dsp, music discovery, spatial audio, immersive sound, waveform, sleep timer, background playback
 ```
 
 ---
@@ -164,15 +159,14 @@ music player, audio player, equalizer, bass boost, treble, EQ, radio, online rad
 
 ## Screenshot Order
 
-1. Now Playing - Main player with album art
-2. Sound Lab EQ - Equalizer visualization
-3. Bass & Treble - Audio controls
-4. Immersive Modes - 6 mode selection
-5. Theme Gallery - Multiple themes
-6. Music Library - Album grid view
-7. Intelligent Radio - Station discovery
-8. Playlist View - User playlists
-9. Discover Tab - SoundCloud & Archive browsing
+1. Now Playing - Main player with album art and waveform
+2. Sound Lab EQ - 10-band equalizer with presets
+3. Immersive Modes - 6 mode selection screen
+4. Theme Gallery - Multiple themes showcased
+5. Music Library - Album grid and playlist view
+6. Radio Discovery - Station browsing by country
+7. Discover Tab - SoundCloud & Internet Archive browsing
+8. Settings - Privacy and customisation options
 
 ---
 
@@ -188,4 +182,4 @@ music player, audio player, equalizer, bass boost, treble, EQ, radio, online rad
 
 ---
 
-*Last Updated: February 1, 2026*
+*Last Updated: February 10, 2026*
