@@ -125,10 +125,6 @@ class PlaybackService : MediaSessionService() {
         
         createNotificationChannel()
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            setListener(MediaSessionServiceListener())
-        }
-        
         try {
             startForeground(NOTIFICATION_ID, buildInitialNotification())
         } catch (e: Exception) {
@@ -990,17 +986,4 @@ class OAuthDataSourceFactory(
         }
     }
 
-    @androidx.annotation.RequiresApi(Build.VERSION_CODES.S)
-    private inner class MediaSessionServiceListener : Listener {
-        override fun onForegroundServiceStartNotAllowedException() {
-            Log.w(TAG, "Media3 cannot start foreground service from background - posting fallback notification")
-            try {
-                val notificationManager = getSystemService(NotificationManager::class.java)
-                val notification = buildInitialNotification()
-                notificationManager?.notify(NOTIFICATION_ID, notification)
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to post fallback notification: ${e.message}")
-            }
-        }
-    }
 }
