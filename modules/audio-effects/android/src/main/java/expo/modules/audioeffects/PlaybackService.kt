@@ -125,7 +125,21 @@ class PlaybackService : MediaSessionService() {
         
         createNotificationChannel()
         
-        startForeground(NOTIFICATION_ID, buildInitialNotification())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            setListener(MediaSessionServiceListener())
+        }
+        
+        try {
+            startForeground(NOTIFICATION_ID, buildInitialNotification())
+        } catch (e: Exception) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && e is android.app.ForegroundServiceStartNotAllowedException) {
+                Log.w(TAG, "Cannot start foreground service from background - stopping service")
+                stopSelf()
+                return
+            } else {
+                Log.e(TAG, "Failed to start foreground: ${e.message}", e)
+            }
+        }
         
         initializePlayer()
         
@@ -973,6 +987,20 @@ class OAuthDataSourceFactory(
                 }
             }
             return builder.build()
+        }
+    }
+
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.S)
+    private inner class MediaSessionServiceListener : Listener {
+        override fun onForegroundServiceStartNotAllowedException() {
+            Log.w(TAG, "Media3 cannot start foreground service from background - posting fallback notification")
+            try {
+                val notificationManager = getSystemService(NotificationManager::class.java)
+                val notification = buildInitialNotification()
+                notificationManager?.notify(NOTIFICATION_ID, notification)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to post fallback notification: ${e.message}")
+            }
         }
     }
 }

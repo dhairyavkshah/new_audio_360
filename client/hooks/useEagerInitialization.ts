@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import { PlaybackEngineModule } from 'audio-effects';
 import { NativeEffectsManager } from '@/services/NativeEffectsManager';
 
-const INIT_TIMEOUT_MS = 5000;
+const INIT_TIMEOUT_MS = 8000;
 
 export interface InitializationState {
   isComplete: boolean;
