@@ -10,6 +10,7 @@ import { LazyImage } from "@/components/LazyImage";
 import { useThemedColors } from "@/contexts/ThemeContext";
 import { useUiSound } from "@/contexts/UiSoundContext";
 import { usePlayerContext, PlayableSong } from "@/contexts/PlayerContext";
+import { useDiscoverFavorites } from "@/contexts/DiscoverFavoritesContext";
 import {
   FluentSpacing,
   FluentControlRadius,
@@ -84,8 +85,9 @@ function SongCardComponent({
   const fluentColors = useThemedColors();
   const { playTapSound } = useUiSound();
   const { isFavorite, toggleFavorite } = usePlayerContext();
+  const { isSoundCloudFavorite, isArchiveFavorite } = useDiscoverFavorites();
   const longPressTriggered = useRef(false);
-  const favorite = isFavorite(song.id);
+  const favorite = isFavorite(song.id) || isSoundCloudFavorite(song.id) || isArchiveFavorite(song.id);
   const scale = useSharedValue(1);
   
   const artworkSource = useMemo(() => song.artwork ? { uri: song.artwork } : DEFAULT_ALBUM_ART, [song.artwork]);

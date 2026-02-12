@@ -883,7 +883,7 @@ class SoundCloudServiceClass {
         title: track.title,
         artist: track.artist,
         album: track.album,
-        duration: Math.floor(track.duration / 1000),
+        duration: track.duration,
         encryptedUrl: this.simpleEncrypt(track.stream_url),
         artwork_url: track.artwork_url,
         playbackCount: track.playbackCount,
