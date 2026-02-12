@@ -1335,7 +1335,25 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         
         // For SoundCloud streaming, we need to resolve the final stream URL with token
         let finalAudioSource = audioSource;
-        if (isSoundCloudTrack && audioSource.includes('api.soundcloud.com')) {
+        if (isSoundCloudTrack && audioSource.startsWith('widget:')) {
+          console.log('[PlayerContext] Resolving widget: URL to actual stream URL for SoundCloud track:', song.id);
+          try {
+            const resolvedUrl = await SoundCloudService.getStreamUrl(song.id);
+            if (resolvedUrl) {
+              finalAudioSource = resolvedUrl;
+            } else {
+              setError('Could not resolve SoundCloud stream URL');
+              setIsLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.error('[PlayerContext] Failed to resolve SoundCloud stream URL:', e);
+            setError('Failed to resolve SoundCloud stream URL');
+            setIsLoading(false);
+            return;
+          }
+        }
+        if (isSoundCloudTrack && finalAudioSource.includes('api.soundcloud.com')) {
           const soundCloudToken = await SoundCloudService.getAccessToken();
           if (!soundCloudToken) {
             setError('SoundCloud session expired. Please sign in again.');

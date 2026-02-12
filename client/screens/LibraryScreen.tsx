@@ -277,6 +277,7 @@ function LibraryScreen() {
       duration: (stored.duration || 0) * 1000,
       audioUrl: ArchiveOrgService.getStreamUrl(stored),
       artwork: undefined,
+      source: 'archive.org',
     }));
     const likedSoundCloudSongs: PlayableSong[] = soundcloudFavorites.map(stored => ({
       id: stored.id,
@@ -284,8 +285,9 @@ function LibraryScreen() {
       artist: stored.artist,
       album: stored.album || 'SoundCloud',
       duration: stored.duration * 1000,
-      audioUrl: `widget:${stored.id.replace('sc_', '')}`,
+      audioUrl: SoundCloudService.getStoredStreamUrl(stored),
       artwork: stored.artwork_url || undefined,
+      source: 'soundcloud',
     }));
     
     const likedSongs = [...likedDeviceSongs, ...likedArchiveSongs, ...likedSoundCloudSongs];

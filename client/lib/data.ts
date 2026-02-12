@@ -6,6 +6,7 @@ export interface Song {
   duration: number;
   artwork?: string;
   audioUrl?: string;
+  source?: string;
 }
 
 export interface PlayerState {
