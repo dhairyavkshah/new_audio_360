@@ -1,4 +1,4 @@
-# New Audio 360 v35.0
+# New Audio 360 v36.0
 
 ## Overview
 New Audio 360 is a premium mobile music player built with React Native and Expo, offering studio-quality audio processing through software-based DSP and neural AI upscaling. It provides 55 customizable themes and extensive music organization features. The application operates on a one-time purchase model with local data storage, aiming to deliver a high-quality, intelligent music experience across Android, iOS, Web, and Windows platforms. Its vision is to provide an intelligent, high-fidelity music experience.

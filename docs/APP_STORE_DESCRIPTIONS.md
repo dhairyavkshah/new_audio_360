@@ -96,19 +96,19 @@ Made for people who truly listen.
 ## What's New (500 characters max)
 
 ```
-v35.0 - Stability & Service Update
+v36.0 - Playback & Streaming Fix
 
-FOREGROUND SERVICE FIX
-Resolved crashes on Android 12+ when service starts from background. Graceful fallback prevents force-close.
+LIKED SONG PLAYBACK FIX
+SoundCloud and Archive favourites now play correctly from Library.
 
-BILLING LIBRARY 7.1.1
-Updated for Google Play compliance.
+AI UPSCALING STABILITY
+Pre-allocated buffers eliminate GC pauses. Thread-safe tryLock prevents audio blocking.
 
-IMMERSIVE MODE TUNING
-Refined EQ curves and spatial levels across all 6 modes.
+INIT RACE FIX
+Duplicate initialization resolved. No more 5-second timeouts.
 
-INIT PERFORMANCE
-Improved startup reliability for audio engine initialization.
+MEMORY OPTIMISATION
+Reusable audio buffers for 2-4GB RAM devices.
 
 One-time purchase, lifetime access.
 ```

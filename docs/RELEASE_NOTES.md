@@ -6,7 +6,19 @@
 
 ---
 
-## What's New in v35.0
+## What's New in v36.0
+
+**Playback & Streaming Fix Update** - Liked song playback, AI upscaling stability, and init race fixes:
+
+- Fixed liked SoundCloud/Archive songs failing to play from Library
+- Pre-allocated audio buffers to eliminate GC pressure on 2-4GB RAM devices
+- Fixed duplicate PlaybackEngineModule initialization race condition
+- Resolved neural AI upscaling thread blocking with tryLock timeout strategy
+- Fixed PlaybackService latch replacement race in prepareForStart()
+
+---
+
+## v35.0
 
 **Architecture & Performance Update** - C++/NDK DSP, 16KB page support, and playback fixes:
 
@@ -45,22 +57,41 @@
 ## Google Play Store Release Note (Under 500 Characters)
 
 ```
-v35.0 - Stability & Service Update
+v36.0 - Playback & Streaming Fix
 
-C++/NDK DSP FOUNDATION
-ARM NEON SIMD for PCM conversion, gain & soft clip. 32-bit float internal processing.
+LIKED SONG PLAYBACK FIX
+SoundCloud and Archive favourites now play correctly from Library.
 
-16KB PAGE SIZE SUPPORT
-Android 15+ compatible with proper memory page alignment.
+AI UPSCALING STABILITY
+Pre-allocated buffers eliminate GC pauses. Thread-safe tryLock prevents audio blocking.
 
-PLAYBACK FIXES
-Seek slider lag eliminated. DSP buffer clearing refined for artifact-free transitions.
+INIT RACE FIX
+Duplicate PlaybackEngineModule initialization resolved. No more 5-second timeouts.
 
 MEMORY OPTIMISATION
-ByteBufferPool, adaptive waveform capture, CPU-only neural processing.
+Reusable audio buffers for 2-4GB RAM devices. Reduced allocations on audio thread.
 
 One-time purchase, lifetime access.
 ```
+
+---
+
+## Version 36.0 (February 2026)
+
+**Playback & Streaming Fix Update**
+
+### Liked Song Playback Fix
+- Fixed SoundCloud liked songs using invalid `widget:` URLs instead of actual stream URLs
+- Fixed Archive/SoundCloud liked songs missing `source` identifier for proper playback handling
+- Added defensive `widget:` URL resolution fallback in PlayerContext for legacy favourites
+- Added `source` property to Song interface for track type identification
+
+### AI Upscaling & Init Stability
+- Pre-allocated 5 reusable FloatArray buffers to eliminate GC pressure on audio thread
+- Changed neural processingLock from `withLock` to `tryLock` with timeout to prevent audio thread blocking
+- Fixed duplicate PlaybackEngineModule.initialize() race condition with AtomicBoolean guard
+- Fixed PlaybackService CountDownLatch replacement race in prepareForStart()
+- Extended awaitReady timeout from 5000ms to 8000ms
 
 ---
 
@@ -312,7 +343,7 @@ One-time purchase, lifetime access.
 - Gapless playback improvements
 - Enhanced notification controls
 
-### Version 35.0 (February 2026)
+### Version 36.0 (February 2026)
 - Car mode UI
 - Home screen widget
 - Additional themes
