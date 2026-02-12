@@ -68,7 +68,9 @@ class PlaybackService : MediaSessionService() {
         }
         
         fun prepareForStart() {
-            readyLatch = CountDownLatch(1)
+            if (readyLatch == null) {
+                readyLatch = CountDownLatch(1)
+            }
         }
     }
     

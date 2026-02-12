@@ -11,6 +11,7 @@ import java.nio.channels.FileChannel
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.withLock
 
 /**
@@ -116,6 +117,13 @@ class NeuralAudioProcessorTFLite private constructor() {
     private var outputBuffer: ByteBuffer? = null
     private val inputShape = intArrayOf(1, INPUT_LENGTH, 1)
     private val outputShape = intArrayOf(1, INPUT_LENGTH, 1)
+    
+    // Pre-allocated reusable buffers for stereo processing (avoid GC pressure on audio thread)
+    private var leftChannelBuffer: FloatArray = FloatArray(0)
+    private var rightChannelBuffer: FloatArray = FloatArray(0)
+    private var stereoResultBuffer: FloatArray = FloatArray(0)
+    private var monoWorkBuffer: FloatArray = FloatArray(0)
+    private var chunkResultBuffer: FloatArray = FloatArray(INPUT_LENGTH)
     
     private val statusListeners = mutableSetOf<(Status) -> Unit>()
     
@@ -304,15 +312,16 @@ class NeuralAudioProcessorTFLite private constructor() {
         
         val startTime = System.nanoTime()
         
-        return processingLock.withLock {
+        if (!processingLock.tryLock(TIME_BUDGET_MS, TimeUnit.MILLISECONDS)) {
+            recordBypass(BypassReason.TIMEOUT)
+            return samples
+        }
+        return try {
             try {
                 if (status == Status.RELEASED) {
                     recordBypass(BypassReason.RELEASED)
-                    return@withLock samples
+                    return samples
                 }
-                
-                val previousStatus = status
-                setStatus(Status.PROCESSING)
                 
                 var maxVal = 0f
                 for (i in 0 until INPUT_LENGTH) {
@@ -330,29 +339,28 @@ class NeuralAudioProcessorTFLite private constructor() {
                 
                 val elapsedBeforeInference = (System.nanoTime() - startTime) / 1_000_000
                 if (elapsedBeforeInference > TIME_BUDGET_MS) {
-                    setStatus(Status.READY)
                     recordBypass(BypassReason.TIMEOUT)
-                    return@withLock samples
+                    return samples
                 }
                 
                 try {
                     currentInterpreter.run(currentInputBuffer, currentOutputBuffer)
                 } catch (e: Exception) {
                     Log.e(TAG, "Inference failed: ${e.message}")
-                    setStatus(Status.READY)
                     recordBypass(BypassReason.ERROR)
-                    return@withLock samples
+                    return samples
                 }
                 
                 val inferenceMs = (System.nanoTime() - startTime) / 1_000_000
                 if (inferenceMs > TIME_BUDGET_MS) {
-                    setStatus(Status.READY)
-                    recordBypass(BypassReason.TIMEOUT)
-                    return@withLock samples
+                    if (inferenceMs % 50 == 0L) {
+                        Log.w(TAG, "Inference exceeded budget: ${inferenceMs}ms > ${TIME_BUDGET_MS}ms")
+                    }
                 }
                 
                 currentOutputBuffer.rewind()
-                val result = FloatArray(INPUT_LENGTH)
+                // Reuse pre-allocated chunk result buffer
+                val result = chunkResultBuffer
                 for (i in 0 until INPUT_LENGTH) {
                     val enhanced = (currentOutputBuffer.float) * maxVal
                     val original = samples[i]
@@ -360,7 +368,6 @@ class NeuralAudioProcessorTFLite private constructor() {
                 }
                 
                 totalProcessedChunks.incrementAndGet()
-                setStatus(Status.READY)
                 
                 val totalMs = (System.nanoTime() - startTime) / 1_000_000.0
                 if (totalMs > 50) {
@@ -374,6 +381,8 @@ class NeuralAudioProcessorTFLite private constructor() {
                 recordBypass(BypassReason.ERROR)
                 samples
             }
+        } finally {
+            processingLock.unlock()
         }
     }
     
@@ -410,7 +419,6 @@ class NeuralAudioProcessorTFLite private constructor() {
      * @param blend Blend factor between original and enhanced (0.0-1.0)
      * @return Enhanced audio samples in the same format as input
      */
-    @Synchronized
     fun processAudio(samples: FloatArray, channelCount: Int, blend: Float): FloatArray {
         if (!isEnabled || interpreter == null || status != Status.READY) {
             return samples
@@ -440,14 +448,20 @@ class NeuralAudioProcessorTFLite private constructor() {
      */
     private fun processMonoAudio(samples: FloatArray, blend: Float): FloatArray {
         val paddedLength = ((samples.size + INPUT_LENGTH - 1) / INPUT_LENGTH) * INPUT_LENGTH
-        val paddedInput = FloatArray(paddedLength)
-        samples.copyInto(paddedInput, 0, 0, samples.size)
+        
+        // Reuse work buffer, resize only if needed
+        if (monoWorkBuffer.size != paddedLength) {
+            monoWorkBuffer = FloatArray(paddedLength)
+        } else {
+            monoWorkBuffer.fill(0f)
+        }
+        samples.copyInto(monoWorkBuffer, 0, 0, samples.size)
         
         val result = FloatArray(samples.size)
         var offset = 0
         
         while (offset < paddedLength) {
-            val chunk = paddedInput.copyOfRange(offset, offset + INPUT_LENGTH)
+            val chunk = monoWorkBuffer.copyOfRange(offset, offset + INPUT_LENGTH)
             val enhancedChunk = processChunk(chunk, blend)
             
             val copyLength = minOf(INPUT_LENGTH, samples.size - offset)
@@ -467,24 +481,31 @@ class NeuralAudioProcessorTFLite private constructor() {
     private fun processStereoAudio(samples: FloatArray, blend: Float): FloatArray {
         val frameCount = samples.size / 2
         
-        val leftChannel = FloatArray(frameCount)
-        val rightChannel = FloatArray(frameCount)
-        
-        for (i in 0 until frameCount) {
-            leftChannel[i] = samples[i * 2]
-            rightChannel[i] = samples[i * 2 + 1]
+        // Reuse pre-allocated buffers, resize only if needed
+        if (leftChannelBuffer.size != frameCount) {
+            leftChannelBuffer = FloatArray(frameCount)
+            rightChannelBuffer = FloatArray(frameCount)
+        }
+        if (stereoResultBuffer.size != samples.size) {
+            stereoResultBuffer = FloatArray(samples.size)
         }
         
-        val enhancedLeft = processMonoAudio(leftChannel, blend)
-        val enhancedRight = processMonoAudio(rightChannel, blend)
-        
-        val result = FloatArray(samples.size)
+        // Deinterleave
         for (i in 0 until frameCount) {
-            result[i * 2] = enhancedLeft[i]
-            result[i * 2 + 1] = enhancedRight[i]
+            leftChannelBuffer[i] = samples[i * 2]
+            rightChannelBuffer[i] = samples[i * 2 + 1]
         }
         
-        return result
+        val enhancedLeft = processMonoAudio(leftChannelBuffer, blend)
+        val enhancedRight = processMonoAudio(rightChannelBuffer, blend)
+        
+        // Reinterleave into reusable result
+        for (i in 0 until frameCount) {
+            stereoResultBuffer[i * 2] = enhancedLeft[i]
+            stereoResultBuffer[i * 2 + 1] = enhancedRight[i]
+        }
+        
+        return stereoResultBuffer
     }
     
     /**

@@ -14,10 +14,12 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.Promise
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 class PlaybackEngineModule : Module() {
     private var isInitialized = false
+    private val initializingInProgress = AtomicBoolean(false)
     private var currentIndex = 0
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var mediaController: MediaController? = null
@@ -113,6 +115,29 @@ class PlaybackEngineModule : Module() {
                         }
                     }
                     
+                    if (!initializingInProgress.compareAndSet(false, true)) {
+                        val ready = PlaybackService.awaitReady(8000)
+                        if (ready) {
+                            val service = PlaybackService.getInstance()
+                            if (service != null) {
+                                mainHandler.post { setupServiceCallbacks(service) }
+                                isInitialized = true
+                                mainHandler.post {
+                                    promise.resolve(mapOf(
+                                        "success" to true,
+                                        "alreadyInitialized" to true,
+                                        "audioSessionId" to service.getAudioSessionId()
+                                    ))
+                                }
+                                return@Thread
+                            }
+                        }
+                        mainHandler.post {
+                            promise.reject("INIT_ERROR", "Concurrent initialization in progress", null)
+                        }
+                        return@Thread
+                    }
+                    
                     // Prepare the readiness latch before starting service
                     PlaybackService.prepareForStart()
                     
@@ -121,9 +146,10 @@ class PlaybackEngineModule : Module() {
                         context.startForegroundService(serviceIntent)
                     }
                     
-                    // Wait for service to be ready (up to 5 seconds)
-                    val ready = PlaybackService.awaitReady(5000)
+                    // Wait for service to be ready (up to 8 seconds)
+                    val ready = PlaybackService.awaitReady(8000)
                     if (!ready) {
+                        initializingInProgress.set(false)
                         mainHandler.post {
                             promise.reject("INIT_ERROR", "Timeout waiting for PlaybackService to start", null)
                         }
@@ -132,6 +158,7 @@ class PlaybackEngineModule : Module() {
                     
                     val service = PlaybackService.getInstance()
                     if (service == null) {
+                        initializingInProgress.set(false)
                         mainHandler.post {
                             promise.reject("INIT_ERROR", "PlaybackService not available after start", null)
                         }
@@ -140,6 +167,7 @@ class PlaybackEngineModule : Module() {
                     
                     mainHandler.post { setupServiceCallbacks(service) }
                     isInitialized = true
+                    initializingInProgress.set(false)
                     
                     // Build MediaController for external control (only if not already connected)
                     mainHandler.post {
@@ -182,6 +210,7 @@ class PlaybackEngineModule : Module() {
                     }
                     
                 } catch (e: Exception) {
+                    initializingInProgress.set(false)
                     mainHandler.post {
                         promise.reject("INIT_ERROR", e.message, e)
                     }
