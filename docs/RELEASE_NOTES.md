@@ -6,7 +6,7 @@
 
 ---
 
-## What's New in v36.0
+## What's New in v37.0
 
 **Playback & Streaming Fix Update** - Liked song playback, AI upscaling stability, and init race fixes:
 
@@ -57,7 +57,7 @@
 ## Google Play Store Release Note (Under 500 Characters)
 
 ```
-v36.0 - Playback & Streaming Fix
+v37.0 - Playback & Streaming Fix
 
 LIKED SONG PLAYBACK FIX
 SoundCloud and Archive favourites now play correctly from Library.
@@ -76,7 +76,7 @@ One-time purchase, lifetime access.
 
 ---
 
-## Version 36.0 (February 2026)
+## Version 37.0 (February 2026)
 
 **Playback & Streaming Fix Update**
 
@@ -343,7 +343,7 @@ One-time purchase, lifetime access.
 - Gapless playback improvements
 - Enhanced notification controls
 
-### Version 36.0 (February 2026)
+### Version 37.0 (February 2026)
 - Car mode UI
 - Home screen widget
 - Additional themes

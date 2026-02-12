@@ -186,7 +186,7 @@ export default function LicenseScreen() {
             {isLicensed ? "Lifetime access \u2014 all features unlocked forever" : "Install from Google Play to activate"}
           </FluentText>
           <FluentText variant="caption2" color="tertiary" style={{ marginTop: FluentSpacing.xs }}>
-            v36.0
+            v37.0
           </FluentText>
         </View>
 

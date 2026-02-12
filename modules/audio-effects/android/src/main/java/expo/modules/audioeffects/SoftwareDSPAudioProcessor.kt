@@ -24,10 +24,10 @@ import java.nio.ByteOrder
  * Audio Quality: Internal 32-bit float processing preserves full dynamic range.
  * Output format matches input to ensure AudioSink compatibility across all devices.
  * 
- * Signal Chain (v36.0):
+ * Signal Chain (v37.0):
  * Input → AI Audio Upscaling (Neural) → 10-Band EQ → Bass Shelf → Bass Enhancement → Treble Shelf → Spatial Enhancement (with HRTF) → Reverb → Limiter → Output
  * 
- * Smart Enhancements (v36.0):
+ * Smart Enhancements (v37.0):
  * - HRTF Binaural: Pinna filters @ 2.7kHz (Q=2.0, +0-5dB) and 8kHz (Q=1.5, +0-3dB) for spatial levels 2-5
  * - Bass Enhancement: Harmonic generation via soft-clipping, 75Hz crossover, max +4dB
  * - HF Restoration / AI Upscaling: Neural audio super-resolution via TensorFlow Lite (Kuleshov 1D U-Net)

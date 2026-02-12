@@ -96,7 +96,7 @@ Made for people who truly listen.
 ## What's New (500 characters max)
 
 ```
-v36.0 - Playback & Streaming Fix
+v37.0 - Playback & Streaming Fix
 
 LIKED SONG PLAYBACK FIX
 SoundCloud and Archive favourites now play correctly from Library.
