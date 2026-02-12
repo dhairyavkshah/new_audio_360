@@ -124,6 +124,8 @@ class NeuralAudioProcessorTFLite private constructor() {
     private var stereoResultBuffer: FloatArray = FloatArray(0)
     private var monoWorkBuffer: FloatArray = FloatArray(0)
     private var chunkResultBuffer: FloatArray = FloatArray(INPUT_LENGTH)
+    private var monoResultBuffer: FloatArray = FloatArray(0)
+    private var monoChunkBuffer: FloatArray = FloatArray(INPUT_LENGTH)
     
     private val statusListeners = mutableSetOf<(Status) -> Unit>()
     
@@ -445,11 +447,13 @@ class NeuralAudioProcessorTFLite private constructor() {
     
     /**
      * Process mono audio by chunking into INPUT_LENGTH segments.
+     * Zero-allocation: uses pre-allocated monoResultBuffer and monoChunkBuffer.
+     * Result is written to monoResultBuffer and returned.
+     * IMPORTANT: The returned array is shared — caller must copy data before calling again.
      */
     private fun processMonoAudio(samples: FloatArray, blend: Float): FloatArray {
         val paddedLength = ((samples.size + INPUT_LENGTH - 1) / INPUT_LENGTH) * INPUT_LENGTH
         
-        // Reuse work buffer, resize only if needed
         if (monoWorkBuffer.size != paddedLength) {
             monoWorkBuffer = FloatArray(paddedLength)
         } else {
@@ -457,31 +461,35 @@ class NeuralAudioProcessorTFLite private constructor() {
         }
         samples.copyInto(monoWorkBuffer, 0, 0, samples.size)
         
-        val result = FloatArray(samples.size)
+        if (monoResultBuffer.size != samples.size) {
+            monoResultBuffer = FloatArray(samples.size)
+        }
+        
         var offset = 0
         
         while (offset < paddedLength) {
-            val chunk = monoWorkBuffer.copyOfRange(offset, offset + INPUT_LENGTH)
-            val enhancedChunk = processChunk(chunk, blend)
+            System.arraycopy(monoWorkBuffer, offset, monoChunkBuffer, 0, INPUT_LENGTH)
+            val enhancedChunk = processChunk(monoChunkBuffer, blend)
             
             val copyLength = minOf(INPUT_LENGTH, samples.size - offset)
             if (copyLength > 0 && offset < samples.size) {
-                enhancedChunk.copyInto(result, offset, 0, copyLength)
+                System.arraycopy(enhancedChunk, 0, monoResultBuffer, offset, copyLength)
             }
             
             offset += INPUT_LENGTH
         }
         
-        return result
+        return monoResultBuffer
     }
     
     /**
      * Process stereo audio by deinterleaving, processing each channel, and reinterleaving.
+     * Zero-allocation: interleaves left result into stereoResultBuffer before processing right,
+     * since both channels share the same monoResultBuffer.
      */
     private fun processStereoAudio(samples: FloatArray, blend: Float): FloatArray {
         val frameCount = samples.size / 2
         
-        // Reuse pre-allocated buffers, resize only if needed
         if (leftChannelBuffer.size != frameCount) {
             leftChannelBuffer = FloatArray(frameCount)
             rightChannelBuffer = FloatArray(frameCount)
@@ -490,19 +498,19 @@ class NeuralAudioProcessorTFLite private constructor() {
             stereoResultBuffer = FloatArray(samples.size)
         }
         
-        // Deinterleave
         for (i in 0 until frameCount) {
             leftChannelBuffer[i] = samples[i * 2]
             rightChannelBuffer[i] = samples[i * 2 + 1]
         }
         
-        val enhancedLeft = processMonoAudio(leftChannelBuffer, blend)
-        val enhancedRight = processMonoAudio(rightChannelBuffer, blend)
-        
-        // Reinterleave into reusable result
+        processMonoAudio(leftChannelBuffer, blend)
         for (i in 0 until frameCount) {
-            stereoResultBuffer[i * 2] = enhancedLeft[i]
-            stereoResultBuffer[i * 2 + 1] = enhancedRight[i]
+            stereoResultBuffer[i * 2] = monoResultBuffer[i]
+        }
+        
+        processMonoAudio(rightChannelBuffer, blend)
+        for (i in 0 until frameCount) {
+            stereoResultBuffer[i * 2 + 1] = monoResultBuffer[i]
         }
         
         return stereoResultBuffer
