@@ -27,7 +27,7 @@ export default {
   expo: {
     name: getAppName(),
     slug: 'new-audio-360',
-    version: '38.0',
+    version: '1.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     userInterfaceStyle: 'automatic',
@@ -36,7 +36,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: getAppIdentifier(),
-      buildNumber: '38',
+      buildNumber: '1',
       infoPlist: {
         NSAppleMusicUsageDescription: 'Allow $(PRODUCT_NAME) to access your music library to play your songs.',
         NSMicrophoneUsageDescription: 'Allow $(PRODUCT_NAME) to access your microphone for voice recording and audio testing.',
@@ -56,7 +56,7 @@ export default {
       },
       edgeToEdgeEnabled: false,
       package: getAppIdentifier(),
-      versionCode: 38,
+      versionCode: 1,
       permissions: [
         'android.permission.READ_EXTERNAL_STORAGE',
         'android.permission.READ_MEDIA_AUDIO',
