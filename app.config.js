@@ -17,10 +17,10 @@ const getAppName = () => {
 };
 
 const getAppIdentifier = () => {
-  if (IS_DEV) return 'com.theteam360.newaudio360.dev';
-  if (IS_PREVIEW) return 'com.theteam360.newaudio360.preview';
+  if (IS_DEV) return 'app.theteam360.newaudio360.dev';
+  if (IS_PREVIEW) return 'app.theteam360.newaudio360.preview';
   // Testing uses production package (same APK as production, just without license check)
-  return 'com.theteam360.newaudio360';
+  return 'app.theteam360.newaudio360';
 };
 
 export default {

@@ -1,4 +1,4 @@
-package com.theteam360.newaudio360
+package app.theteam360.newaudio360
 
 import android.app.Application
 import android.content.res.Configuration

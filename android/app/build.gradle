@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.theteam360.newaudio360'
+    namespace 'app.theteam360.newaudio360'
     defaultConfig {
-        applicationId 'com.theteam360.newaudio360'
+        applicationId 'app.theteam360.newaudio360'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 37

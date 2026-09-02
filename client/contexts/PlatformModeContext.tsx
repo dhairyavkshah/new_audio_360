@@ -34,7 +34,7 @@ const ANDROID_CAPABILITIES: PlatformCapabilities = {
   requiresAppStoreCompliance: false,
   requiresPlayStoreCompliance: true,
   storeDisplayName: 'Google Play Store',
-  storePurchaseUrl: 'https://play.google.com/store/apps/details?id=com.theteam360.newaudio360',
+  storePurchaseUrl: 'https://play.google.com/store/apps/details?id=app.theteam360.newaudio360',
 };
 
 const IPHONE_CAPABILITIES: PlatformCapabilities = {

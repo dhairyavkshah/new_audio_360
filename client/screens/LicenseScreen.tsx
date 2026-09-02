@@ -8,7 +8,7 @@ import { useSubscription, PRICING } from "@/contexts/SubscriptionContext";
 import { useSafeTabBarHeight } from "@/hooks/useSafeTabBarHeight";
 import { FluentSpacing, FluentControlRadius, FluentIconSize } from "@/constants/fluent2";
 
-const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.theteam360.newaudio360';
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=app.theteam360.newaudio360';
 
 type FeatureCategory = {
   id: string;

@@ -1,0 +1,1 @@
+- [Expo preview routing](expo-preview-routing.md) — use a static web export for Replit preview; Expo dev mode can expose only the platform status wrapper.

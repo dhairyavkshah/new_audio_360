@@ -1,5 +1,5 @@
 {
-  "name": "new-audio-360",
+  "name": "app.theteam360.newaudio360",
   "description": "Premium music player with studio-quality audio processing",
   "author": "The Team 360 <dhairyashah@theteam360.com>",
   "main": "client/index.js",
@@ -15,7 +15,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web:build": "npx expo export --platform web",
-    "web:serve": "npx serve dist",
+    "web:serve": "serve dist -l 5000",
+    "server:prod": "serve dist -l 5000",
     "windows:icons": "node windows/scripts/generate-icons.js assets/images/icon.png",
     "electron:dev": "npm run web:build && electron electron/main.js",
     "electron:build": "npm run web:build && electron-builder --config electron/electron-builder.yml",
@@ -82,6 +83,7 @@
     "react-native-track-player": "^4.1.1",
     "react-native-web": "~0.20.0",
     "react-native-webview": "^13.16.0",
+    "serve": "^14.2.6",
     "zod": "^3.24.2",
     "zod-validation-error": "^3.4.0"
   },
@@ -91,7 +93,7 @@
     "@types/react": "~19.0.10",
     "babel-plugin-module-resolver": "^5.0.2",
     "electron": "^40.0.0",
-    "electron-builder": "^26.4.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
     "eslint-config-prettier": "^10.1.8",
@@ -100,6 +102,9 @@
     "patch-package": "^8.0.1",
     "prettier": "3.6.2",
     "typescript": "~5.8.3"
+  },
+  "overrides": {
+    "tar": "7.5.22"
   },
   "private": true,
   "expo": {
