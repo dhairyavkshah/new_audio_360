@@ -1,4 +1,4 @@
-name: Build Testing APK (Production without License Check)
+name: Build Developer APK (No Google Play License Check)
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       message:
         description: 'Build message'
         required: false
-        default: 'Testing build'
+        default: 'Developer testing build'
   push:
     branches:
       - develop
@@ -14,7 +14,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Build Testing APK
+    name: Build Standalone Developer APK
     
     steps:
       - name: Checkout repository
@@ -42,19 +42,19 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Build Testing APK
-        run: eas build --platform android --profile testing --non-interactive
+      - name: Build Standalone Developer APK
+        run: eas build --platform android --profile testing --non-interactive --clear-cache
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build Complete
         run: |
           echo "================================================"
-          echo "Testing APK build submitted to EAS!"
+          echo "Developer APK build submitted to EAS!"
           echo "================================================"
           echo ""
-          echo "This is a PRODUCTION build without license check."
-          echo "Same package name, same features, no verification."
+          echo "This is a standalone testing APK without the Google Play license check."
+          echo "Production APK/AAB builds still enforce Google Play installation verification."
           echo ""
           echo "Download from:"
           echo "https://expo.dev/accounts/shahdhairyavk/projects/new-audio-360/builds"
