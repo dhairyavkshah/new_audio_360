@@ -37,6 +37,9 @@
       }
     },
     "production": {
+      "buildArtifactPaths": [
+        "android/app/build/outputs/mapping/release/mapping.txt"
+      ],
       "env": {
         "APP_ENV": "production",
         "SOUNDCLOUD_CLIENT_ID": "@SOUNDCLOUD_CLIENT_ID",

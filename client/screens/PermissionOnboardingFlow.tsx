@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
-import * as MediaLibrary from 'expo-media-library';
 
 import { FluentText, FluentSurface } from '@/components/fluent';
 import { useThemeContext, useThemedColors } from '@/contexts/ThemeContext';
@@ -34,12 +33,6 @@ const PERMISSION_STEPS: PermissionStep[] = [
     description: "Access your device's music library to play your favorite songs and audio files",
   },
   {
-    id: 'photos',
-    icon: 'image-multiple',
-    title: 'Photos & Videos',
-    description: 'Display album artwork and media thumbnails for your music collection',
-  },
-  {
     id: 'notifications',
     icon: 'bell',
     title: 'Notifications',
@@ -58,7 +51,6 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
   const [currentStep, setCurrentStep] = useState(0);
   const [permissions, setPermissions] = useState<Record<string, PermissionStatus>>({
     media: 'pending',
-    photos: 'pending',
     notifications: 'pending',
   });
   const [isRequesting, setIsRequesting] = useState(false);
@@ -94,10 +86,6 @@ export default function PermissionOnboardingFlow({ onComplete, onSkip }: Permiss
       switch (currentPermission.id) {
         case 'media':
           granted = await requestMediaPermission();
-          break;
-        case 'photos':
-          const photoResult = await MediaLibrary.requestPermissionsAsync();
-          granted = photoResult.granted;
           break;
         case 'notifications':
           await setupNotificationChannel();

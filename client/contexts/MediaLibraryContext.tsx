@@ -211,7 +211,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     }
 
     try {
-      const { status } = await MediaLibrary.getPermissionsAsync();
+      const { status } = await MediaLibrary.getPermissionsAsync(false, ['audio']);
       setPermissionStatus(status);
       const granted = status === MediaLibrary.PermissionStatus.GRANTED;
       setHasPermission(granted);
@@ -230,7 +230,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
     }
 
     try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
+      const { status } = await MediaLibrary.requestPermissionsAsync(false, ['audio']);
       setPermissionStatus(status);
       const granted = status === MediaLibrary.PermissionStatus.GRANTED;
       setHasPermission(granted);
@@ -475,7 +475,7 @@ export function MediaLibraryProvider({ children }: MediaLibraryProviderProps) {
       const storedOnboarding = await AsyncStorage.getItem(ONBOARDING_COMPLETE_KEY);
       if (storedOnboarding === 'true') {
         // Check if permissions are actually granted
-        const { status } = await MediaLibrary.getPermissionsAsync();
+        const { status } = await MediaLibrary.getPermissionsAsync(false, ['audio']);
         if (status !== MediaLibrary.PermissionStatus.GRANTED) {
           // Permissions were revoked - reset onboarding
           console.log('Permissions revoked, resetting onboarding status');

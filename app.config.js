@@ -27,7 +27,7 @@ export default {
   expo: {
     name: getAppName(),
     slug: 'new-audio-360',
-    version: '1.0',
+    version: '2.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     userInterfaceStyle: 'automatic',
@@ -36,7 +36,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: getAppIdentifier(),
-      buildNumber: '1',
+      buildNumber: '2',
       infoPlist: {
         NSAppleMusicUsageDescription: 'Allow $(PRODUCT_NAME) to access your music library to play your songs.',
         NSMicrophoneUsageDescription: 'Allow $(PRODUCT_NAME) to access your microphone for voice recording and audio testing.',
@@ -56,7 +56,7 @@ export default {
       },
       edgeToEdgeEnabled: false,
       package: getAppIdentifier(),
-      versionCode: 1,
+      versionCode: 2,
       permissions: [
         'android.permission.READ_EXTERNAL_STORAGE',
         'android.permission.READ_MEDIA_AUDIO',
@@ -70,6 +70,12 @@ export default {
         'android.permission.USE_BIOMETRIC',
         'android.permission.USE_FINGERPRINT',
         'android.permission.WRITE_EXTERNAL_STORAGE',
+      ],
+      blockedPermissions: [
+        'android.permission.READ_MEDIA_IMAGES',
+        'android.permission.READ_MEDIA_VIDEO',
+        'android.permission.READ_MEDIA_VISUAL_USER_SELECTED',
+        'android.permission.ACCESS_MEDIA_LOCATION',
       ],
     },
     web: {
@@ -110,9 +116,9 @@ export default {
         {
           android: {
             newArchEnabled: false,
-            compileSdkVersion: 35,
-            targetSdkVersion: 35,
-            buildToolsVersion: '35.0.0',
+            compileSdkVersion: 36,
+            targetSdkVersion: 36,
+            buildToolsVersion: '36.0.0',
             ndkVersion: '29.0.13113456',
           },
           ios: {
@@ -136,9 +142,9 @@ export default {
       [
         'expo-media-library',
         {
-          photosPermission: 'Allow $(PRODUCT_NAME) to access your photos.',
-          savePhotosPermission: 'Allow $(PRODUCT_NAME) to save photos.',
-          isAccessMediaLocationEnabled: true,
+          photosPermission: false,
+          savePhotosPermission: false,
+          isAccessMediaLocationEnabled: false,
         },
       ],
       'expo-web-browser',
